@@ -243,6 +243,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls,
  * Side effects:
  *       None.
  *
+ * This function is copied as _mongoc_stream_tls_secure_transport_writev
  *--------------------------------------------------------------------------
  */
 
@@ -383,6 +384,8 @@ _mongoc_stream_tls_openssl_writev (mongoc_stream_t *stream,
  *
  * Side effects:
  *       iov buffers will be written to.
+ *
+ * This function is copied as _mongoc_stream_tls_secure_transport_readv
  *
  *--------------------------------------------------------------------------
  */

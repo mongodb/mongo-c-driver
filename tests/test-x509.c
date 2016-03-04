@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include "mongoc-ssl-private.h"
 
 #include "TestSuite.h"
 

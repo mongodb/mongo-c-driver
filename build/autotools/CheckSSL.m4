@@ -1,13 +1,13 @@
 AC_MSG_CHECKING([whether to enable crypto and TLS])
 AC_ARG_ENABLE([ssl],
-              [AS_HELP_STRING([--enable-ssl=@<:@auto/no/openssl/native@:>@],
+              [AS_HELP_STRING([--enable-ssl=@<:@auto/no/openssl/darwin@:>@],
                               [Enable TLS connections and SCRAM-SHA-1 authentication.])],
               [],
               [enable_ssl=auto])
 AC_MSG_RESULT([$enable_ssl])
 
 AS_IF([test "$enable_ssl" != "no"],[
-   AS_IF([test "$enable_ssl" != "native"],[
+   AS_IF([test "$enable_ssl" != "darwin"],[
       PKG_CHECK_MODULES(SSL, [openssl], [enable_openssl=auto], [
          AC_CHECK_LIB([ssl],[SSL_library_init],[have_ssl_lib=yes],[have_ssl_lib=no])
          AC_CHECK_LIB([crypto],[CRYPTO_set_locking_callback],[have_crypto_lib=yes],[have_crypto_lib=no])
@@ -36,11 +36,17 @@ AS_IF([test "$enable_ssl" != "no"],[
          enable_ssl=openssl
       elif test "$enable_ssl" = "openssl"; then
          AC_MSG_ERROR([You must install the OpenSSL development headers to enable OpenSSL support.])
+      else
+         enable_ssl=auto
       fi
    ])
    AS_IF([test "$enable_ssl" != "openssl" -a "$os_darwin" = "yes"],[
       SSL_LIBS="-framework Security -framework CoreFoundation"
       enable_ssl="darwin"
+   ])
+   dnl If its still auto, its no.
+   AS_IF([test "$enable_ssl" = "auto"],[
+      enable_ssl="no"
    ])
    AC_MSG_CHECKING([which TLS library to use])
    AC_MSG_RESULT([$enable_ssl])

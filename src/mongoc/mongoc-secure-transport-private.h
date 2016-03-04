@@ -45,10 +45,6 @@ mongoc_secure_transport_read              (SSLConnectionRef                     
                                            size_t                               *data_length);
 
 bool
-mongoc_secure_transport_verify_trust      (mongoc_stream_tls_secure_transport_t *secure_transport,
-                                            bool                                 weak_cert_validation);
-
-bool
 mongoc_secure_transport_setup_ca          (mongoc_stream_tls_secure_transport_t *secure_transport,
                                            mongoc_ssl_opt_t                     *opt);
 bool

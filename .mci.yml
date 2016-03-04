@@ -172,7 +172,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./configure --enable-optimizations --enable-ssl=darwin --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
       osx_nossl: &compile_osx_nossl
         compile_script: |

@@ -35,6 +35,7 @@
 #endif
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-stream-tls.h"
 #endif
 #include "mongoc-b64-private.h"

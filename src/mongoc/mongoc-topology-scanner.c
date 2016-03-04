@@ -581,7 +581,7 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 {
    bool r;
 
-   r = mongoc_async_run (ts->async, 276447231);
+   r = mongoc_async_run (ts->async, timeout_msec);
 
    if (! r) {
       ts->in_progress = false;

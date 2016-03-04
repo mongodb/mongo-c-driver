@@ -26,21 +26,6 @@
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
 
-#ifdef MONGOC_ENABLE_OPENSSL
-#define MONGOC_TLS_TYPE 1
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
-#define MONGOC_TLS_TYPE 2
-#endif
-
-BSON_BEGIN_DECLS
-
-/* Available TLS Implementations */
-typedef enum
-{
-   MONGOC_TLS_OPENSSL = 1,
-   MONGOC_TLS_SECURE_TRANSPORT = 2
-} mongoc_tls_types_t;
-
 /**
  * mongoc_stream_tls_t:
  *

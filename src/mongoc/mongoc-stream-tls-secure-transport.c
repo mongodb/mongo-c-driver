@@ -149,6 +149,8 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
 
    RETURN(write_ret);
 }
+
+/* This is copypasta from _mongoc_stream_tls_openssl_writev */
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 static ssize_t
 _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
@@ -269,6 +271,7 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
    RETURN (ret);
 }
 
+/* This function is copypasta of _mongoc_stream_tls_openssl_readv */
 static ssize_t
 _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
                                            mongoc_iovec_t  *iov,
@@ -426,8 +429,8 @@ mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
 
    do {
       ret = SSLHandshake (secure_transport->ssl_ctx_ref);
+      /* Weak certificate validation requested, eg: none */
       if (ret == errSSLServerAuthCompleted) {
-         MONGOC_WARNING("Weak validation enabled, allowing server cert whatever it is");
          ret = errSSLWouldBlock;
       }
    } while (ret == errSSLWouldBlock);
@@ -483,11 +486,11 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    mongoc_secure_transport_setup_ca (secure_transport, opt);
 
    if (opt->ca_dir) {
-      MONGOC_WARNING("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
+      MONGOC_ERROR("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
             "Secure Transport");
    }
    if (opt->crl_file) {
-      MONGOC_WARNING("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
+      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
             "Secure Transport");
    }
 

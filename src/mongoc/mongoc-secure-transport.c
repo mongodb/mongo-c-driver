@@ -273,7 +273,7 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
    }
 
    if (type != kSecItemTypeAggregate) {
-      MONGOC_WARNING ("What sort of privat key is '%d'that?", type);
+      MONGOC_WARNING ("What sort of private key is type '%d'?", type);
       CFRelease (items);
       return false;
    }
@@ -361,6 +361,9 @@ mongoc_secure_transport_read (SSLConnectionRef connection,
    ENTRY;
 
    errno = 0;
+   /* 4 arguments is *min_bytes* -- This is not a negotiation.
+    * Secure Transport wants all or nothing. We must continue reading until
+    * we get this amount, or timeout */
    length = mongoc_stream_read (tls->base_stream, data, *data_length, *data_length,
                                 tls->timeout_msec);
 

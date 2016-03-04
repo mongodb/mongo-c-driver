@@ -122,7 +122,8 @@ INST_H_FILES += \
 	src/mongoc/mongoc-stream-tls.h \
 	src/mongoc/mongoc-openssl-private.h \
 	src/mongoc/mongoc-secure-transport-private.h \
-	src/mongoc/mongoc-ssl.h
+	src/mongoc/mongoc-ssl.h \
+	src/mongoc/mongoc-ssl-private.h
 endif
 
 MONGOC_SOURCES_SHARED += \
