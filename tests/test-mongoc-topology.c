@@ -838,6 +838,8 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
-   TestSuite_AddFull (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors, NULL, NULL, test_framework_skip_if_offline);
+   TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
+                      test_multiple_selection_errors,
+                      NULL, NULL, test_framework_skip_if_offline);
    TestSuite_Add (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }
