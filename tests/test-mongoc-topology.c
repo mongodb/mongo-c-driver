@@ -402,7 +402,7 @@ test_invalid_cluster_node (void)
 }
 
 static void
-test_max_wire_version_race_condition (void)
+test_max_wire_version_race_condition (void *ctx)
 {
    mongoc_topology_scanner_node_t *scanner_node;
    mongoc_server_description_t *sd;
@@ -832,7 +832,9 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
    TestSuite_Add (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
-   TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
+   TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
+                      test_max_wire_version_race_condition,
+                      NULL, NULL, test_framework_skip_if_no_auth);
    TestSuite_Add (suite, "/Topology/cooldown/standalone", test_cooldown_standalone);
    TestSuite_Add (suite, "/Topology/cooldown/rs", test_cooldown_rs);
    TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);

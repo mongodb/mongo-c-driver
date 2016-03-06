@@ -127,23 +127,6 @@ test_mongoc_client_authenticate (void *context)
 }
 
 
-static int should_run_auth_tests (void)
-{
-   char *user;
-#ifndef MONGOC_ENABLE_OPENSSL
-   if (test_framework_max_wire_version_at_least (3)) {
-      /* requires SSL for SCRAM implementation, can't test auth */
-      return 0;
-   }
-#endif
-
-   /* run auth tests if the MONGOC_TEST_USER env var is set */
-   user = test_framework_get_admin_user ();
-   bson_free (user);
-   return user ? 1 : 0;
-}
-
-
 static void
 test_mongoc_client_authenticate_failure (void *context)
 {
@@ -1536,9 +1519,15 @@ test_client_install (TestSuite *suite)
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
 
-   TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
-   TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
-   TestSuite_AddFull (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout, NULL, NULL, should_run_auth_tests);
+   TestSuite_AddFull (suite, "/Client/authenticate",
+                      test_mongoc_client_authenticate, NULL, NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite, "/Client/authenticate_failure",
+                      test_mongoc_client_authenticate_failure, NULL, NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite, "/Client/authenticate_timeout",
+                      test_mongoc_client_authenticate_timeout, NULL, NULL,
+                      test_framework_skip_if_no_auth);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
