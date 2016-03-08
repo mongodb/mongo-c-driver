@@ -69,7 +69,9 @@ extern "C" {
 #define ASSERT_CMPUINT(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "u")
 #define ASSERT_CMPLONG(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "ld")
 #define ASSERT_CMPULONG(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, "lu")
+#define ASSERT_CMPINT32(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId32)
 #define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
+#define ASSERT_CMPUINT16(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "hu")
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zd")
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zx")
@@ -169,6 +171,16 @@ extern "C" {
       ASSERT_CMPINT (error.code, ==, _code); \
       ASSERT_CONTAINS (error.message, _message); \
    } while (0);
+
+#define ASSERT_HAS_FIELD(_bson, _field) \
+   do { \
+      if (!bson_has_field ((_bson), (_field))) { \
+         fprintf(stderr, \
+                 "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
+                 (_field), bson_as_json (_bson, NULL)); \
+         abort(); \
+      } \
+   } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
 

@@ -70,7 +70,7 @@ struct _mongoc_cursor_t
 
    mongoc_query_flags_t       flags;
    uint32_t                   skip;
-   uint32_t                   limit;
+   int32_t                    limit;
    uint32_t                   count;
    uint32_t                   batch_size;
    uint32_t                   max_await_time_ms;
@@ -96,7 +96,7 @@ mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t          
                                                        const char                   *db_and_collection,
                                                        mongoc_query_flags_t          flags,
                                                        uint32_t                      skip,
-                                                       uint32_t                      limit,
+                                                       int32_t                       limit,
                                                        uint32_t                      batch_size,
                                                        bool                          is_command,
                                                        const bson_t                 *query,

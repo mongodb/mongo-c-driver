@@ -47,6 +47,8 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
    if (cursor->is_command) {
       /* commands always have n_return of 1 */
       return 1;
+   } else if (cursor->limit < 0) {
+      return cursor->limit;
    } else if (cursor->limit) {
       int32_t remaining = cursor->limit - cursor->count;
       BSON_ASSERT (remaining > 0);
@@ -67,7 +69,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
                     mongoc_query_flags_t       qflags,
                     uint32_t                   skip,
-                    uint32_t                   limit,
+                    int32_t                    limit,
                     uint32_t                   batch_size,
                     bool                       is_command,
                     const bson_t              *query,
@@ -535,6 +537,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                              read_prefs_result.flags);
 
    if (!mongoc_cluster_run_command_rpc (cluster, server_stream->stream,
+                                        server_stream->sd->id,
                                         _mongoc_get_command_name (&cursor->query),
                                         &rpc, &cursor->rpc, &cursor->buffer,
                                         &cursor->error)) {
@@ -738,7 +741,11 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
    }
 
    if (cursor->limit) {
-      bson_append_int64 (command, "limit", 5, cursor->limit);
+      if (cursor->limit < 0) {
+         bson_append_bool (command, "singleBatch", 11, true);
+      }
+
+      bson_append_int64 (command, "limit", 5, labs(cursor->limit));
    }
 
    if (cursor->batch_size) {
@@ -1035,7 +1042,7 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * If we reached our limit, make sure we mark this as done and do not try to
     * make further progress.
     */
-   if (cursor->limit && cursor->count >= cursor->limit) {
+   if (cursor->limit && cursor->count >= labs(cursor->limit)) {
       cursor->done = true;
       RETURN (false);
    }
