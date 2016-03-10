@@ -341,7 +341,7 @@
                 "$numberLong": "42"
               },
               "collection": "test",
-              "batchSize": {"$numberLong": "3"}
+              "batchSize": {"$numberLong": "1"}
             },
             "command_name": "getMore",
             "database_name": "command-monitoring-tests"
@@ -470,7 +470,7 @@
                 "$numberLong": "42"
               },
               "collection": "test",
-              "batchSize": {"$numberLong": "3"}
+              "batchSize": {"$numberLong": "1"}
             },
             "command_name": "getMore",
             "database_name": "command-monitoring-tests"

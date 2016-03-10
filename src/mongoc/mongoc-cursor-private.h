@@ -94,6 +94,7 @@ struct _mongoc_cursor_t
 };
 
 
+int32_t                   _mongoc_n_return            (mongoc_cursor_t              *cursor);
 void                      _mongoc_set_cursor_ns       (mongoc_cursor_t              *cursor,
                                                        const char                   *ns,
                                                        uint32_t                      nslen);

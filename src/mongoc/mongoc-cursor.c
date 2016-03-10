@@ -45,7 +45,7 @@ static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 
 
-static int32_t
+int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
    int64_t n_return;
