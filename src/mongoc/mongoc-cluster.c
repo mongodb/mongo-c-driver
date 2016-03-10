@@ -151,6 +151,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    int32_t msg_len;
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
+   mongoc_apm_command_failed_t failed_event;
    bool ret = false;
 
    ENTRY;
@@ -179,8 +180,9 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
     * prepare the request
     */
    bson_snprintf (cmd_ns, sizeof cmd_ns, "%s.$cmd", db_name);
+   request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, command, flags);
-   rpc.query.request_id = request_id = ++cluster->request_id;
+   rpc.query.request_id = request_id;
    _mongoc_rpc_gather (&rpc, &ar);
    _mongoc_rpc_swab_to_le (&rpc);
 
@@ -195,8 +197,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                        server_id,
                                        cluster->client->apm_context);
 
-      cluster->client->apm_callbacks.started (&started_event);
-
+      callbacks->started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);
    }
 
@@ -274,8 +275,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                          server_id,
                                          cluster->client->apm_context);
 
-      cluster->client->apm_callbacks.succeeded (&succeeded_event);
-
+      callbacks->succeeded (&succeeded_event);
       mongoc_apm_command_succeeded_cleanup (&succeeded_event);
    }
 
@@ -296,6 +296,21 @@ done:
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid reply from server.");
+   }
+
+   if (!ret && monitored && callbacks->failed) {
+      mongoc_apm_command_failed_init (&failed_event,
+                                      bson_get_monotonic_time () - started,
+                                      command_name,
+                                      error,
+                                      request_id,
+                                      cluster->operation_id,
+                                      host,
+                                      server_id,
+                                      cluster->client->apm_context);
+
+      callbacks->failed (&failed_event);
+      mongoc_apm_command_failed_cleanup (&failed_event);
    }
 
    RETURN (ret);

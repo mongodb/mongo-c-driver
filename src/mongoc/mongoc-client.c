@@ -1364,8 +1364,8 @@ static void
 _mongoc_client_monitor_op_killcursors (mongoc_cluster_t       *cluster,
                                        mongoc_server_stream_t *server_stream,
                                        int64_t                 cursor_id,
-                                       int64_t                 operation_id,
                                        int64_t                 request_id,
+                                       int64_t                 operation_id,
                                        const char             *db,
                                        const char             *collection)
 {
@@ -1407,8 +1407,8 @@ _mongoc_client_monitor_op_killcursors_succeeded (
    int64_t                 duration,
    mongoc_server_stream_t *server_stream,
    int64_t                 cursor_id,
-   int64_t                 operation_id,
-   int64_t                 request_id)
+   int64_t                 request_id,
+   int64_t                 operation_id)
 {
    mongoc_client_t *client;
    bson_t doc;
@@ -1448,6 +1448,44 @@ _mongoc_client_monitor_op_killcursors_succeeded (
 
 
 static void
+_mongoc_client_monitor_op_killcursors_failed (
+   mongoc_cluster_t       *cluster,
+   int64_t                 duration,
+   mongoc_server_stream_t *server_stream,
+   const bson_error_t     *error,
+   int64_t                 request_id,
+   int64_t                 operation_id)
+{
+   mongoc_client_t *client;
+   bson_t doc;
+   mongoc_apm_command_failed_t event;
+
+   ENTRY;
+
+   client = cluster->client;
+
+   if (!client->apm_callbacks.failed) {
+      EXIT;
+   }
+
+   mongoc_apm_command_failed_init (&event,
+                                   duration,
+                                   "killCursors",
+                                   error,
+                                   request_id,
+                                   operation_id,
+                                   &server_stream->sd->host,
+                                   server_stream->sd->id,
+                                   client->apm_context);
+
+   client->apm_callbacks.failed (&event);
+
+   mongoc_apm_command_failed_cleanup (&event);
+   bson_destroy (&doc);
+}
+
+
+static void
 _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
                                mongoc_server_stream_t *server_stream,
                                int64_t                 cursor_id,
@@ -1457,12 +1495,16 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
 {
    int64_t started;
    mongoc_rpc_t rpc = { { 0 } };
+   uint32_t request_id;
+   bson_error_t error;
    bool r;
 
    started = bson_get_monotonic_time ();
 
+   request_id = ++cluster->request_id;
+
    rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = ++cluster->request_id;
+   rpc.kill_cursors.request_id = request_id;
    rpc.kill_cursors.response_to = 0;
    rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
@@ -1470,12 +1512,11 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    rpc.kill_cursors.n_cursors = 1;
 
    _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id,
-                                          operation_id,
-                                          rpc.kill_cursors.request_id,
+                                          request_id, operation_id,
                                           db, collection);
 
    r = mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
-                                       NULL, NULL);
+                                       NULL, &error);
 
    if (r) {
       _mongoc_client_monitor_op_killcursors_succeeded (
@@ -1483,8 +1524,16 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
          bson_get_monotonic_time () - started,
          server_stream,
          cursor_id,
-         operation_id,
-         rpc.kill_cursors.request_id);
+         request_id,
+         operation_id);
+   } else {
+      _mongoc_client_monitor_op_killcursors_failed (
+         cluster,
+         bson_get_monotonic_time () - started,
+         server_stream,
+         &error,
+         request_id,
+         operation_id);
    }
 }
 

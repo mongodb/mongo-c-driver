@@ -64,6 +64,11 @@
             "command_name": "count",
             "database_name": "command-monitoring-tests"
           }
+        },
+        {
+          "command_failed_event": {
+            "command_name": "count"
+          }
         }
       ]
     },

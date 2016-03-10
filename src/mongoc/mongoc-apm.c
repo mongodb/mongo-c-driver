@@ -122,7 +122,7 @@ void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t                      duration,
                                 const char                  *command_name,
-                                bson_error_t                *error,
+                                const bson_error_t          *error,
                                 int64_t                      request_id,
                                 int64_t                      operation_id,
                                 const mongoc_host_list_t    *host,
@@ -304,7 +304,7 @@ mongoc_apm_command_failed_get_error (
    const mongoc_apm_command_failed_t *event,
    bson_error_t                      *error)
 {
-   memcpy (error, &event->error, sizeof *event->error);
+   memcpy (error, event->error, sizeof *event->error);
 }
 
 

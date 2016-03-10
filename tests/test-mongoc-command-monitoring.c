@@ -346,6 +346,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
    context_t *context = (context_t *)
       mongoc_apm_command_succeeded_get_context (event);
+   int64_t operation_id;
    char *reply_json;
    bson_t reply = BSON_INITIALIZER;
    char str[16];
@@ -363,9 +364,54 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    BSON_ASSERT (mongoc_apm_command_succeeded_get_server_id (event) > 0);
    assert_host_in_uri (event->host, context->test_framework_uri);
 
+   /* subsequent events share the first event's operation id */
+   operation_id = mongoc_apm_command_succeeded_get_operation_id (event);
+   ASSERT_CMPINT64 (operation_id, !=, (int64_t) 0);
+   ASSERT_CMPINT64 (context->operation_id, ==, operation_id);
+
    convert_command_for_test (context, event->reply, &reply, NULL);
    new_event = BCON_NEW ("command_succeeded_event", "{",
                          "reply", BCON_DOCUMENT (&reply),
+                         "command_name", BCON_UTF8 (event->command_name),
+                         "}");
+
+   bson_uint32_to_string (context->n_events, &key, str, sizeof str);
+   BSON_APPEND_DOCUMENT (&context->events, key, new_event);
+
+   context->n_events++;
+
+   bson_destroy (new_event);
+   bson_destroy (&reply);
+}
+
+
+static void
+failed_cb (const mongoc_apm_command_failed_t *event)
+{
+   context_t *context = (context_t *)
+      mongoc_apm_command_failed_get_context (event);
+   int64_t operation_id;
+   bson_t reply = BSON_INITIALIZER;
+   char str[16];
+   const char *key;
+   bson_t *new_event;
+
+   if (context->verbose) {
+      fprintf (stderr, "\t\t<-- %s FAILED: %s\n",
+               event->command_name, event->error->message);
+      fflush (stdout);
+   }
+
+   BSON_ASSERT (mongoc_apm_command_failed_get_request_id (event) > 0);
+   BSON_ASSERT (mongoc_apm_command_failed_get_server_id (event) > 0);
+   assert_host_in_uri (event->host, context->test_framework_uri);
+
+   /* subsequent events share the first event's operation id */
+   operation_id = mongoc_apm_command_failed_get_operation_id (event);
+   ASSERT_CMPINT64 (operation_id, !=, (int64_t) 0);
+   ASSERT_CMPINT64 (context->operation_id, ==, operation_id);
+
+   new_event = BCON_NEW ("command_failed_event", "{",
                          "command_name", BCON_UTF8 (event->command_name),
                          "}");
 
@@ -651,6 +697,7 @@ one_test (mongoc_collection_t *collection,
 
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
    mongoc_client_set_apm_callbacks (collection->client, callbacks, &context);
 
    bson_lookup_doc (test, "operation", &operation);

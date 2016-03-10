@@ -533,6 +533,42 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
 }
 
 
+static void
+_mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
+                               int64_t                 duration,
+                               uint32_t                request_id,
+                               bool                    first_batch,
+                               mongoc_server_stream_t *stream)
+{
+   mongoc_apm_command_failed_t event;
+   mongoc_client_t *client;
+
+   ENTRY;
+
+   client = cursor->client;
+
+   if (!client->apm_callbacks.failed) {
+      EXIT;
+   }
+
+   mongoc_apm_command_failed_init (&event,
+                                   duration,
+                                   first_batch ? "find" : "getMore",
+                                   &cursor->error,
+                                   request_id,
+                                   cursor->operation_id,
+                                   &stream->sd->host,
+                                   stream->sd->id,
+                                   client->apm_context);
+
+   client->apm_callbacks.failed (&event);
+
+   mongoc_apm_command_failed_cleanup (&event);
+
+   EXIT;
+}
+
+
 static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream)
@@ -550,8 +586,10 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
 
+   request_id = ++cursor->client->cluster.request_id;
+
    rpc.query.msg_len = 0;
-   rpc.query.request_id = request_id = ++cursor->client->cluster.request_id;
+   rpc.query.request_id = request_id;
    rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = cursor->flags;
@@ -657,6 +695,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
 failure:
    cursor->done = true;
+
+   _mongoc_cursor_monitor_failed (cursor,
+                                  bson_get_monotonic_time () - started,
+                                  request_id,
+                                  true, /* first_batch */
+                                  server_stream);
 
    apply_read_prefs_result_cleanup (&result);
 
@@ -1012,18 +1056,21 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
    int64_t started;
    mongoc_rpc_t rpc;
    uint32_t request_id;
-   bool ret = false;
+   mongoc_cluster_t *cluster;
 
    ENTRY;
 
    started = bson_get_monotonic_time ();
+   cluster = &cursor->client->cluster;
 
    if (cursor->in_exhaust) {
       request_id = (uint32_t) cursor->rpc.header.request_id;
    } else {
+      request_id = ++cluster->request_id;
+
       rpc.get_more.cursor_id = cursor->rpc.reply.cursor_id;
       rpc.get_more.msg_len = 0;
-      rpc.get_more.request_id = ++cursor->client->cluster.request_id;
+      rpc.get_more.request_id = request_id;
       rpc.get_more.response_to = 0;
       rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
       rpc.get_more.zero = 0;
@@ -1037,16 +1084,13 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
       if (!_mongoc_cursor_monitor_legacy_get_more (cursor,
                                                    rpc.get_more.request_id,
                                                    server_stream)) {
-         GOTO (done);
+         GOTO (fail);
       }
 
-      if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
-                                           &rpc, 1, server_stream,
+      if (!mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
                                            NULL, &cursor->error)) {
-         GOTO (done);
+         GOTO (fail);
       }
-
-      request_id = BSON_UINT32_FROM_LE (rpc.header.request_id);
    }
 
    _mongoc_buffer_clear (&cursor->buffer, false);
@@ -1056,7 +1100,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                              &cursor->buffer,
                              server_stream,
                              &cursor->error)) {
-      GOTO (done);
+      GOTO (fail);
    }
 
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
@@ -1065,7 +1109,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid opcode. Expected %d, got %d.",
                       MONGOC_OPCODE_REPLY, cursor->rpc.header.opcode);
-      GOTO (done);
+      GOTO (fail);
    }
 
    if (cursor->rpc.header.response_to != request_id) {
@@ -1074,12 +1118,12 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Invalid response_to for getmore. Expected %d, got %d.",
                       request_id, cursor->rpc.header.response_to);
-      GOTO (done);
+      GOTO (fail);
    }
 
    if (_mongoc_rpc_parse_query_error (&cursor->rpc,
                                       &cursor->error)) {
-      GOTO (done);
+      GOTO (fail);
    }
 
    if (cursor->reader) {
@@ -1090,16 +1134,21 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
       cursor->rpc.reply.documents,
       (size_t)cursor->rpc.reply.documents_len);
 
-   ret = true;
-
    _mongoc_cursor_monitor_succeeded (cursor,
                                      bson_get_monotonic_time () - started,
                                      request_id,
                                      false, /* not first batch */
                                      server_stream);
 
-done:
-   RETURN (ret);
+   RETURN (true);
+
+fail:
+   _mongoc_cursor_monitor_failed (cursor,
+                                  bson_get_monotonic_time () - started,
+                                  request_id,
+                                  false, /* not first batch */
+                                  server_stream);
+   RETURN (false);
 }
 
 
