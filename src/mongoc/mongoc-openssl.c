@@ -396,19 +396,32 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
     * Disable session caching (see SERVER-10261) */
    SSL_CTX_set_session_cache_mode (ctx, SSL_SESS_CACHE_OFF);
 
-   /* Load in verification certs, private keys and revocation lists */
-   if ((!opt->pem_file ||
-        _mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd))
-       && (!(opt->ca_file ||
-             opt->ca_dir) ||
-           _mongoc_openssl_setup_ca (ctx, opt->ca_file, opt->ca_dir))
-       && (!opt->crl_file || _mongoc_openssl_setup_crl (ctx, opt->crl_file))
-       ) {
-      return ctx;
-   } else {
+   /* Load my private keys to present to the server */
+   if (opt->pem_file &&
+         !_mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd)) {
       SSL_CTX_free (ctx);
       return NULL;
    }
+
+   /* Load in my Certificate Authority, to verify the server against
+    * If none provided, fallback to the distro defaults */
+   if (opt->ca_file || opt->ca_dir) {
+      if (!_mongoc_openssl_setup_ca (ctx, opt->ca_file, opt->ca_dir)) {
+         SSL_CTX_free (ctx);
+         return NULL;
+      }
+   } else {
+      /* If the server certificate is issued by known CA we trust it by default */
+      SSL_CTX_set_default_verify_paths (ctx);
+   }
+
+   /* Load my revocation list, to verify the server against */
+   if (opt->crl_file && !_mongoc_openssl_setup_crl (ctx, opt->crl_file)) {
+      SSL_CTX_free (ctx);
+      return NULL;
+   }
+
+   return ctx;
 }
 
 
