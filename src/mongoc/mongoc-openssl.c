@@ -207,8 +207,6 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
    verify_status = SSL_get_verify_result (ssl);
 
-   /** TODO: should we return this somehow? */
-
    if (verify_status == X509_V_OK) {
       /* get's a stack of alt names that we can iterate through */
       sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
@@ -391,10 +389,6 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    /* If renegotiation is needed, don't return from recv() or send() until it's successful.
     * Note: this is for blocking sockets only. */
    SSL_CTX_set_mode (ctx, SSL_MODE_AUTO_RETRY);
-
-   /* TODO: does this cargo cult actually matter?
-    * Disable session caching (see SERVER-10261) */
-   SSL_CTX_set_session_cache_mode (ctx, SSL_SESS_CACHE_OFF);
 
    /* Load my private keys to present to the server */
    if (opt->pem_file &&
