@@ -1364,7 +1364,6 @@ static void
 _mongoc_client_monitor_op_killcursors (mongoc_cluster_t       *cluster,
                                        mongoc_server_stream_t *server_stream,
                                        int64_t                 cursor_id,
-                                       int64_t                 request_id,
                                        int64_t                 operation_id,
                                        const char             *db,
                                        const char             *collection)
@@ -1387,7 +1386,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t       *cluster,
                                     &doc,
                                     db,
                                     "killCursors",
-                                    request_id,
+                                    cluster->request_id,
                                     operation_id,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
@@ -1407,7 +1406,6 @@ _mongoc_client_monitor_op_killcursors_succeeded (
    int64_t                 duration,
    mongoc_server_stream_t *server_stream,
    int64_t                 cursor_id,
-   int64_t                 request_id,
    int64_t                 operation_id)
 {
    mongoc_client_t *client;
@@ -1434,7 +1432,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
                                       duration,
                                       &doc,
                                       "killCursors",
-                                      request_id,
+                                      cluster->request_id,
                                       operation_id,
                                       &server_stream->sd->host,
                                       server_stream->sd->id,
@@ -1453,7 +1451,6 @@ _mongoc_client_monitor_op_killcursors_failed (
    int64_t                 duration,
    mongoc_server_stream_t *server_stream,
    const bson_error_t     *error,
-   int64_t                 request_id,
    int64_t                 operation_id)
 {
    mongoc_client_t *client;
@@ -1472,7 +1469,7 @@ _mongoc_client_monitor_op_killcursors_failed (
                                    duration,
                                    "killCursors",
                                    error,
-                                   request_id,
+                                   cluster->request_id,
                                    operation_id,
                                    &server_stream->sd->host,
                                    server_stream->sd->id,
@@ -1495,16 +1492,15 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
 {
    int64_t started;
    mongoc_rpc_t rpc = { { 0 } };
-   uint32_t request_id;
    bson_error_t error;
    bool r;
 
    started = bson_get_monotonic_time ();
 
-   request_id = ++cluster->request_id;
+   ++cluster->request_id;
 
    rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = request_id;
+   rpc.kill_cursors.request_id = cluster->request_id;
    rpc.kill_cursors.response_to = 0;
    rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
@@ -1512,8 +1508,7 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    rpc.kill_cursors.n_cursors = 1;
 
    _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id,
-                                          request_id, operation_id,
-                                          db, collection);
+                                          operation_id, db, collection);
 
    r = mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
                                        NULL, &error);
@@ -1524,7 +1519,6 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
          bson_get_monotonic_time () - started,
          server_stream,
          cursor_id,
-         request_id,
          operation_id);
    } else {
       _mongoc_client_monitor_op_killcursors_failed (
@@ -1532,7 +1526,6 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
          bson_get_monotonic_time () - started,
          server_stream,
          &error,
-         request_id,
          operation_id);
    }
 }

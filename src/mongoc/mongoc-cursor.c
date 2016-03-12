@@ -412,7 +412,6 @@ done:
 
 static bool
 _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
-                                     int32_t                 request_id,
                                      mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
@@ -440,7 +439,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
                                     &doc,
                                     db,
                                     "find",
-                                    request_id,
+                                    client->cluster.request_id,
                                     cursor->operation_id,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
@@ -478,7 +477,6 @@ _mongoc_cursor_append_docs_array (mongoc_cursor_t *cursor,
 static void
 _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
                                   int64_t                 duration,
-                                  uint32_t                request_id,
                                   bool                    first_batch,
                                   mongoc_server_stream_t *stream)
 {
@@ -517,7 +515,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
                                       duration,
                                       &reply,
                                       first_batch ? "find" : "getMore",
-                                      request_id,
+                                      client->cluster.request_id,
                                       cursor->operation_id,
                                       &stream->sd->host,
                                       stream->sd->id,
@@ -536,7 +534,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
 static void
 _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
                                int64_t                 duration,
-                               uint32_t                request_id,
                                bool                    first_batch,
                                mongoc_server_stream_t *stream)
 {
@@ -555,7 +552,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
                                    duration,
                                    first_batch ? "find" : "getMore",
                                    &cursor->error,
-                                   request_id,
+                                   client->cluster.request_id,
                                    cursor->operation_id,
                                    &stream->sd->host,
                                    stream->sd->id,
@@ -613,9 +610,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    rpc.query.query = bson_get_data (result.query_with_read_prefs);
    rpc.query.flags = result.flags;
 
-   if (!_mongoc_cursor_monitor_legacy_query (cursor,
-                                             request_id,
-                                             server_stream)) {
+   if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream)) {
       GOTO (failure);
    }
 
@@ -680,7 +675,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    _mongoc_cursor_monitor_succeeded (cursor,
                                      bson_get_monotonic_time () - started,
-                                     request_id,
                                      true, /* first_batch */
                                      server_stream);
 
@@ -698,7 +692,6 @@ failure:
 
    _mongoc_cursor_monitor_failed (cursor,
                                   bson_get_monotonic_time () - started,
-                                  request_id,
                                   true, /* first_batch */
                                   server_stream);
 
@@ -1008,7 +1001,6 @@ failure:
 
 static bool
 _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t        *cursor,
-                                        int32_t                 request_id,
                                         mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
@@ -1035,7 +1027,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t        *cursor,
                                     &doc,
                                     db,
                                     "getMore",
-                                    request_id,
+                                    client->cluster.request_id,
                                     cursor->operation_id,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
@@ -1081,9 +1073,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
          rpc.get_more.n_return = _mongoc_n_return(cursor);
       }
 
-      if (!_mongoc_cursor_monitor_legacy_get_more (cursor,
-                                                   rpc.get_more.request_id,
-                                                   server_stream)) {
+      if (!_mongoc_cursor_monitor_legacy_get_more (cursor, server_stream)) {
          GOTO (fail);
       }
 
@@ -1136,7 +1126,6 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
 
    _mongoc_cursor_monitor_succeeded (cursor,
                                      bson_get_monotonic_time () - started,
-                                     request_id,
                                      false, /* not first batch */
                                      server_stream);
 
@@ -1145,7 +1134,6 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
 fail:
    _mongoc_cursor_monitor_failed (cursor,
                                   bson_get_monotonic_time () - started,
-                                  request_id,
                                   false, /* not first batch */
                                   server_stream);
    RETURN (false);

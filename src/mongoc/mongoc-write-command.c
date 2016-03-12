@@ -286,7 +286,6 @@ _mongoc_write_command_init (bson_t                       *doc,
 static void
 _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                               mongoc_write_command_t       *command,
-                              int64_t                       request_id,
                               const char                   *db,
                               const char                   *collection,
                               const mongoc_write_concern_t *write_concern,
@@ -312,7 +311,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                                     &doc,
                                     db,
                                     gCommandNames[command->type],
-                                    request_id,
+                                    client->cluster.request_id,
                                     command->operation_id,
                                     &stream->sd->host,
                                     stream->sd->id,
@@ -438,7 +437,6 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t        *client,
                                         int64_t                 duration,
                                         mongoc_write_command_t *command,
                                         const bson_t           *gle,
-                                        int64_t                 request_id,
                                         mongoc_server_stream_t *stream)
 {
    bson_iter_t iter;
@@ -550,7 +548,7 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t        *client,
                                       duration,
                                       &doc,
                                       gCommandNames[command->type],
-                                      request_id,
+                                      client->cluster.request_id,
                                       command->operation_id,
                                       &stream->sd->host,
                                       stream->sd->id,
@@ -574,7 +572,6 @@ _mongoc_monitor_legacy_write_failed (mongoc_client_t        *client,
                                      int64_t                 duration,
                                      mongoc_write_command_t *command,
                                      const bson_error_t     *error,
-                                     int64_t                 request_id,
                                      mongoc_server_stream_t *stream)
 {
    mongoc_apm_command_failed_t event;
@@ -589,7 +586,7 @@ _mongoc_monitor_legacy_write_failed (mongoc_client_t        *client,
                                    duration,
                                    gCommandNames[command->type],
                                    error,
-                                   request_id,
+                                   client->cluster.request_id,
                                    command->operation_id,
                                    &stream->sd->host,
                                    stream->sd->id,
@@ -679,9 +676,8 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                          : MONGOC_DELETE_SINGLE_REMOVE;
       rpc.delete_.selector = data;
 
-      _mongoc_monitor_legacy_write (client, command, request_id,
-                                    database, collection, write_concern,
-                                    server_stream);
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
@@ -708,7 +704,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
          bson_get_monotonic_time () - started,
          command,
          gle,
-         request_id,
          server_stream);
 
       if (gle) {
@@ -727,7 +722,6 @@ fail:
       bson_get_monotonic_time () - started,
       command,
       error,
-      request_id,
       server_stream);
 }
 
@@ -908,9 +902,8 @@ again:
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
 
-      _mongoc_monitor_legacy_write (client, command, rpc.insert.request_id,
-                                    database, collection, write_concern,
-                                    server_stream);
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
@@ -948,7 +941,6 @@ again:
          bson_get_monotonic_time () - started,
          command,
          gle,
-         request_id,
          server_stream);
 
       started = bson_get_monotonic_time ();
@@ -976,7 +968,6 @@ cleanup:
          bson_get_monotonic_time () - started,
          command,
          error,
-         request_id,
          server_stream);
    }
 
@@ -1143,9 +1134,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          }
       }
 
-      _mongoc_monitor_legacy_write (client, command, request_id,
-                                    database, collection, write_concern,
-                                    server_stream);
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
@@ -1197,7 +1187,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          bson_get_monotonic_time () - started,
          command,
          gle,
-         request_id,
          server_stream);
 
       if (gle) {
@@ -1214,7 +1203,6 @@ fail:
       bson_get_monotonic_time () - started,
       command,
       error,
-      request_id,
       server_stream);
 }
 
