@@ -43,6 +43,7 @@
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
+#include "mongoc-stream-tls.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-trace.h"
@@ -1581,6 +1582,32 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                          sd->host.host_and_port);
          return NULL;
       }
+
+#ifdef MONGOC_ENABLE_SSL
+      if (cluster->client->use_ssl) {
+         mongoc_stream_t *tls_stream;
+
+         for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
+               tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
+         }
+
+         if (!mongoc_stream_tls_do_handshake (tls_stream, topology->connect_timeout_msec * 1000)) {
+            mongoc_topology_scanner_node_disconnect (scanner_node, true);
+            bson_set_error (error, MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "Failed TLS handhsake.");
+            return NULL;
+         }
+         if (!mongoc_stream_tls_check_cert (tls_stream, sd->host.host)) {
+            mongoc_topology_scanner_node_disconnect (scanner_node, true);
+            bson_set_error (error, MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "Failed to verify peer certificate");
+            return NULL;
+         }
+      }
+#endif
+
 
       if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
          return NULL;

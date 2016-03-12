@@ -76,7 +76,7 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
       } else {
          bson_set_error (error, MONGOC_ERROR_STREAM,
                          MONGOC_ERROR_STREAM_SOCKET,
-                         "Failed to verify TLS cert.");
+                         "Failed to verify peer certificate");
          return -1;
       }
    } else if (mongoc_stream_tls_should_retry (tls_stream)) {
