@@ -169,7 +169,7 @@ $ make man html</screen>
     <info><link type="guide" xref="index#installation"/></info>
     <title>Installing on Mac OS X</title>
     <p>To build the C Driver on a Mac, install the prerequisites in order to build it from source. It is recommended to use <link href="http://brew.sh">Homebrew</link>:</p>
-    <screen><output style="prompt">$ brew install git automake autoconf libtool pkgconfig</output></screen>
+    <screen><output style="prompt">$ brew install automake autoconf libtool pkgconfig</output></screen>
     <p>Additionally, <link href="http://developer.apple.com/xcode">XCode</link> is required. The driver can then be installed by following the directions for <link xref="installing#build-yourself">building from source</link>.</p>
   </section>
 
