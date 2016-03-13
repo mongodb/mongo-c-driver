@@ -10,7 +10,7 @@
 
     <title>Supported Platforms</title>
 
-    <p>The MongoDB C Driver is continuously tested on GNU/Linux, Windows 7, Mac OS X 10.10, and Solaris 11 (Intel and Sparc). GCC, Clang, and Visual Studio 2013 compilers are continuously tested.</p>
+    <p>The MongoDB C Driver is continuously tested on GNU/Linux, Windows 7, Mac OS X 10.10, and Solaris 11 (Intel and Sparc), with GCC, Clang, and Visual Studio 2010, 2013, and 2015.</p>
     <p>The driver supports the following operating systems and CPU architectures:</p>
 
     <table>
@@ -41,7 +41,7 @@
           <list>
             <item><p>GCC 4.1 and newer</p></item>
             <item><p>Clang 3.3 and newer</p></item>
-            <item><p>Microsoft Visual Studio 2013 and newer</p></item>
+            <item><p>Microsoft Visual Studio 2010 and newer</p></item>
             <item><p><link href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html">Oracle Solaris Studio 12</link></p></item>
             <item><p>MinGW</p></item>
           </list>
