@@ -654,7 +654,7 @@ mongoc_server_description_filter_eligible (
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 
-   /* for each read preference tagset */
+   /* for each read preference tag set */
    while (bson_iter_next (&rp_tagset_iter)) {
       found = description_len;
 
@@ -664,7 +664,6 @@ mongoc_server_description_filter_eligible (
          bson_iter_recurse (&rp_tagset_iter, &rp_iter);
 
          while (bson_iter_next (&rp_iter)) {
-            /* TODO: can we have non-utf8 tags? */
             rp_val = bson_iter_utf8 (&rp_iter, &rp_len);
 
             if (bson_iter_init_find (&sd_iter, &descriptions[i]->tags, bson_iter_key (&rp_iter))) {
