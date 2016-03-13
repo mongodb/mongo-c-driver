@@ -92,10 +92,6 @@ int32_t
 mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
                                       uint32_t          server_id);
 
-int32_t
-mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
-                                      uint32_t          server_id);
-
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,
                                 mongoc_rpc_t                 *rpcs,
