@@ -382,6 +382,9 @@ if (ENABLE_TESTS)
 endif ()
 
 mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
+mongoc_add_example(
+   example-application-performance-monitoring TRUE
+   ${SOURCE_DIR}/examples/example-application-performance-monitoring.c)
 mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)

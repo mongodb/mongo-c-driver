@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_apm_callbacks_new">
+
+  <info>
+    <link type="guide" xref="mongoc_apm_callbacks_t" group="function"/>
+  </info>
+  <title>mongoc_apm_callbacks_new()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_apm_callbacks_t *
+mongoc_apm_callbacks_new (void);
+]]></code></synopsis>
+    <p>Create a struct to hold event-notification callbacks.</p>
+    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>A new <code>mongoc_apm_callbacks_t</code> you must free with <code xref="mongoc_apm_callbacks_destroy">mongoc_apm_callbacks_destroy</code>.</p>
+  </section>
+
+</page>

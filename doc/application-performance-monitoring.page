@@ -1,0 +1,47 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="application-performance-monitoring">
+  <info><link xref="index#apm" type="guide"/></info>
+  <title>Introduction to Application Performance Monitoring</title>
+
+  <p>The MongoDB C Driver allows you to monitor all the MongoDB operations the driver executes. This event-notification system conforms to the <link href="https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst">Command Monitoring Spec</link> for MongoDB drivers.</p>
+  <p>To receive notifications, create a <code>mongoc_apm_callbacks_t</code> with <code xref="mongoc_apm_callbacks_new">mongoc_apm_callbacks_new</code>, set callbacks on it, then pass it to <code xref="mongoc_client_set_apm_callbacks">mongoc_client_set_apm_callbacks</code> or <code xref="mongoc_client_pool_set_apm_callbacks">mongoc_client_pool_set_apm_callbacks</code>.</p>
+
+  <section id="apm-example">
+    <title>APM Example</title>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/example-application-performance-monitoring.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+
+    <p>This example program prints:</p>
+
+    <synopsis><code><![CDATA[Command drop started on 127.0.0.1:
+{ "drop" : "test" }
+
+Command drop failed:
+"ns not found"
+
+Command insert started on 127.0.0.1:
+{ "insert" : "test", "documents" : [ { "_id" : 1 } ] }
+
+Command insert succeeded:
+{ "ok" : 1, "n" : 1 }
+
+Command insert started on 127.0.0.1:
+{ "insert" : "test", "documents" : [ { "_id" : 1 } ] }
+
+Command insert succeeded:
+{ "ok" : 1,
+  "n" : 0,
+  "writeErrors" : [ {
+     "index" : 0, "code" : 11000,
+     "errmsg" : "E11000 duplicate key error"
+} ] }]]>
+
+started: 3
+succeeded: 2
+failed: 1</code></synopsis>
+
+    <p>In older versions of the MongoDB wire protocol, queries and write operations are sent to the server with special <link href="https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/#request-opcodes">opcodes</link>, not as commands. To provide consistent event notifications with any MongoDB version, these legacy opcodes are reported as if they had used modern commands.</p>
+    <p>The final "insert" command is considered successful, despite the writeError, because the server replied to the overall command with <code>"ok": 1</code>.</p>
+  </section>
+
+</page>

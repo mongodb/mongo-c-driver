@@ -47,4 +47,8 @@
   <section id="api-reference" style="2column">
     <title>API Reference</title>
   </section>
+
+  <section id="apm" style="2column">
+    <title>Application Performance Monitoring</title>
+  </section>
 </page>
