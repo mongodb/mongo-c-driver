@@ -2666,7 +2666,6 @@ test_bulk_write_concern_over_1000(void)
    client = test_framework_client_new ();
    assert (client);
 
-
    write_concern = mongoc_write_concern_new();
    mongoc_write_concern_set_w (write_concern, 1);
    mongoc_client_set_write_concern (client, write_concern);
