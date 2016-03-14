@@ -598,6 +598,8 @@ test_get_collection_names_error (void)
    request_t *request;
    char **names;
 
+   capture_logs (true);
+
    server = mock_server_new ();
    mock_server_auto_ismaster (server, "{'ismaster': true,"
                                        " 'maxWireVersion': 3}");
@@ -605,8 +607,6 @@ test_get_collection_names_error (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
-   suppress_one_message ();
-   suppress_one_message ();
    future = future_database_get_collection_names (database, &error);
    request = mock_server_receives_command (server,
                                             "test",

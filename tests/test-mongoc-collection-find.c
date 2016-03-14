@@ -1011,7 +1011,9 @@ _test_tailable_timeout (bool pooled)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_t reply;
-   
+
+   capture_logs (true);
+
    if (pooled) {
       pool = test_framework_client_pool_new ();
       client = mongoc_client_pool_pop (pool);
@@ -1038,7 +1040,6 @@ _test_tailable_timeout (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    client->cluster.sockettimeoutms = 100;
-   suppress_one_message ();
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
       0, 0, 0, tmp_bson ("{'a': 1}"), NULL, NULL);

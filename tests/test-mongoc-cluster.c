@@ -150,6 +150,8 @@ _test_cluster_node_disconnect (bool pooled)
    uint16_t client_port_0, client_port_1;
    bson_error_t error;
 
+   capture_logs (true);
+
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
 
@@ -167,9 +169,6 @@ _test_cluster_node_disconnect (bool pooled)
 
    /* query 0 fails. set client_port_0 to the port used by the query. */
    START_QUERY (client_port_0);
-   if (pooled) {
-      suppress_one_message ();
-   }
 
    mock_server_resets (request);
    ASSERT_CURSOR_ERR ();
@@ -225,6 +224,8 @@ _test_cluster_command_timeout (bool pooled)
    uint16_t client_port;
    bson_t reply;
 
+   capture_logs (true);
+
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -238,7 +239,6 @@ _test_cluster_command_timeout (bool pooled)
    }
 
    /* server doesn't respond in time */
-   suppress_one_message ();
    future = future_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
                                           NULL, NULL, &error);
    request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,

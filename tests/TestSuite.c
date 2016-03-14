@@ -473,6 +473,8 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       }
 #endif
 
+      capture_logs (false);
+
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
 

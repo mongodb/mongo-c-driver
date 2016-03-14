@@ -79,16 +79,123 @@ extern void test_stream_tls_error_install        (TestSuite *suite);
 #endif
 
 
-static int gSuppressCount;
+typedef struct {
+   mongoc_log_level_t  level;
+   char               *msg;
+} log_entry_t;
+
+static mongoc_mutex_t captured_logs_mutex;
+static mongoc_array_t captured_logs;
+static bool capturing_logs;
 #ifdef MONGOC_ENABLE_OPENSSL
 static mongoc_ssl_opt_t gSSLOptions;
 #endif
 
 
-void
-suppress_one_message (void)
+static log_entry_t *
+log_entry_create (mongoc_log_level_t  level,
+                  const char         *msg)
 {
-   gSuppressCount++;
+   log_entry_t *log_entry;
+
+   log_entry = bson_malloc (sizeof (log_entry_t));
+   log_entry->level = level;
+   log_entry->msg = bson_strdup (msg);
+
+   return log_entry;
+}
+
+
+static void
+log_entry_destroy (log_entry_t *log_entry)
+{
+   bson_free (log_entry->msg);
+   bson_free (log_entry);
+}
+
+
+void
+capture_logs (bool capture)
+{
+   capturing_logs = capture;
+   clear_captured_logs ();
+}
+
+
+void
+clear_captured_logs (void)
+{
+   size_t i;
+   log_entry_t *log_entry;
+
+   mongoc_mutex_lock (&captured_logs_mutex);
+   for (i = 0; i < captured_logs.len; i++) {
+      log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
+      log_entry_destroy (log_entry);
+   }
+
+   captured_logs.len = 0;
+   mongoc_mutex_unlock (&captured_logs_mutex);
+}
+
+
+bool
+has_captured_log (mongoc_log_level_t  level,
+                  const char         *msg)
+{
+   size_t i;
+   log_entry_t *log_entry;
+
+   mongoc_mutex_lock (&captured_logs_mutex);
+
+   for (i = 0; i < captured_logs.len; i++) {
+      log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
+      if (level == log_entry->level && strstr (log_entry->msg, msg)) {
+         mongoc_mutex_unlock (&captured_logs_mutex);
+         return true;
+      }
+   }
+
+   mongoc_mutex_unlock (&captured_logs_mutex);
+
+   return false;
+}
+
+
+bool
+has_captured_logs (void)
+{
+   bool ret;
+
+   mongoc_mutex_lock (&captured_logs_mutex);
+   ret = 0 != captured_logs.len;
+   mongoc_mutex_unlock (&captured_logs_mutex);
+
+   return ret;
+}
+
+
+void
+print_captured_logs (const char *prefix)
+{
+   size_t i;
+   log_entry_t *log_entry;
+
+   mongoc_mutex_lock (&captured_logs_mutex);
+   for (i = 0; i < captured_logs.len; i++) {
+      log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
+      if (prefix) {
+         fprintf (stderr, "%s%s %s",
+                  prefix,
+                  mongoc_log_level_str (log_entry->level),
+                  log_entry->msg);
+      } else {
+         fprintf (stderr, "%s %s",
+                  mongoc_log_level_str (log_entry->level),
+                  log_entry->msg);
+      }
+   }
+   mongoc_mutex_unlock (&captured_logs_mutex);
 }
 
 
@@ -107,11 +214,17 @@ log_handler (mongoc_log_level_t  log_level,
              const char         *message,
              void               *user_data)
 {
+   log_entry_t *log_entry;
+
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
-      if (gSuppressCount) {
-         gSuppressCount--;
+      if (capturing_logs) {
+         log_entry = log_entry_create (log_level, message);
+         mongoc_mutex_lock (&captured_logs_mutex);
+         _mongoc_array_append_val (&captured_logs, log_entry);
+         mongoc_mutex_unlock (&captured_logs_mutex);
          return;
       }
+
       mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
@@ -1456,6 +1569,8 @@ main (int   argc,
                   "test_%u_%u", (unsigned)time (NULL),
                   (unsigned)gettestpid ());
 
+   mongoc_mutex_init (&captured_logs_mutex);
+   _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
    mongoc_log_set_handler (log_handler, NULL);
 
 #ifdef MONGOC_ENABLE_OPENSSL
@@ -1517,6 +1632,8 @@ main (int   argc,
 
    TestSuite_Destroy (&suite);
 
+   capture_logs (false);  /* clear entries */
+   _mongoc_array_destroy (&captured_logs);
    mongoc_cleanup();
 
    return ret;

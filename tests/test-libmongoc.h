@@ -23,7 +23,12 @@ mongoc_database_t *get_test_database (mongoc_client_t *client);
 char *gen_collection_name (const char *prefix);
 mongoc_collection_t *get_test_collection (mongoc_client_t *client,
                                           const char      *prefix);
-void suppress_one_message (void);
+void capture_logs (bool capture);
+void clear_captured_logs (void);
+bool has_captured_log (mongoc_log_level_t  level,
+                       const char         *msg);
+bool has_captured_logs (void);
+void print_captured_logs (const char *prefix);
 int64_t get_future_timeout_ms (void);
 char *test_framework_getenv (const char *name);
 bool test_framework_getenv_bool (const char *name);

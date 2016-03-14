@@ -1043,8 +1043,11 @@ test_update (bool ordered)
 
    /* update doc without $-operators rejected */
    sel = tmp_bson ("{'a': {'$gte': 2}}");
-   suppress_one_message ();
+   capture_logs (true);
    mongoc_bulk_operation_update (bulk, sel, bad_update_doc, false);
+   ASSERT_CAPTURED_LOG ("update with $-operators",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "only works with $ operators");
    ASSERT_CMPINT (0, ==, (int)bulk->commands.len);
 
    update_doc = tmp_bson ("{'$set': {'foo': 'bar'}}");

@@ -415,6 +415,8 @@ _mock_test_exhaust (bool                 pooled,
    future_t *future;
    request_t *request;
 
+   capture_logs (true);
+
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
 
@@ -450,7 +452,6 @@ _mock_test_exhaust (bool                 pooled,
       future = future_cursor_next (cursor, &doc);
    }
 
-   suppress_one_message ();
    _request_error (request, error_type);
    ASSERT (!future_get_bool (future));
    _check_error (client, cursor, error_type);

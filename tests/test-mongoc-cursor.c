@@ -412,6 +412,8 @@ _test_getmore_fail (bool has_primary,
    future_t *future;
    request_t *request;
 
+   capture_logs (true);
+
    /* wire version 0, five secondaries, no arbiters */
    rs = mock_rs_with_autoismaster (0, has_primary, 5, 0);
    mock_rs_run (rs);
@@ -441,7 +443,6 @@ _test_getmore_fail (bool has_primary,
    future_destroy (future);
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
-   suppress_one_message ();
    mock_rs_hangs_up (request);
    assert (! future_get_bool (future));
    request_destroy (request);

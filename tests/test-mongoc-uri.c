@@ -8,11 +8,6 @@
 
 #include "test-libmongoc.h"
 
-#define ASSERT_SUPPRESS(x) \
-   do { \
-      suppress_one_message (); \
-      ASSERT (x); \
-   } while (0)
 
 static void
 test_mongoc_uri_new (void)
@@ -27,24 +22,26 @@ test_mongoc_uri_new (void)
    bson_iter_t iter;
    bson_iter_t child;
 
+   capture_logs (true);
+
    /* bad uris */
    ASSERT(!mongoc_uri_new("mongodb://"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost:\x80/"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?ipv6=\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?foo=\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?\x80=bar"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://\x80:pass@localhost"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user:\x80@localhost"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                                   "authMechanism=\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                                   "authMechanism=GSSAPI"
-                                   "&authMechanismProperties=SERVICE_NAME:\x80"));
-   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                                   "authMechanism=GSSAPI"
-                                   "&authMechanismProperties=\x80:mongodb"));
+   ASSERT(!mongoc_uri_new("mongodb://\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost/\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:\x80/"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost/?ipv6=\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost/?foo=\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost/?\x80=bar"));
+   ASSERT(!mongoc_uri_new("mongodb://\x80:pass@localhost"));
+   ASSERT(!mongoc_uri_new("mongodb://user:\x80@localhost"));
+   ASSERT(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                          "authMechanism=\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                          "authMechanism=GSSAPI"
+                          "&authMechanismProperties=SERVICE_NAME:\x80"));
+   ASSERT(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                          "authMechanism=GSSAPI"
+                          "&authMechanismProperties=\x80:mongodb"));
    ASSERT(!mongoc_uri_new("mongodb://::"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
    ASSERT(!mongoc_uri_new("mongodb://localhost,localhost::"));
@@ -659,11 +656,16 @@ test_mongoc_uri_read_prefs (void)
    for (i = 0; tests[i].uri; i++) {
       t = &tests[i];
 
+      capture_logs (true);
       uri = mongoc_uri_new(t->uri);
       if (t->parses) {
          assert(uri);
+         ASSERT_NO_CAPTURED_LOGS (t->uri);
       } else {
          assert(!uri);
+         ASSERT_CAPTURED_LOG (
+            t->uri, MONGOC_LOG_LEVEL_WARNING,
+            "Primary read preference mode conflicts with tags");
          continue;
       }
 
@@ -693,6 +695,7 @@ typedef struct
    int32_t     w;
    const char *wtag;
    int32_t     wtimeoutms;
+   const char *log_msg;
 } write_concern_test;
 
 
@@ -717,23 +720,34 @@ test_mongoc_uri_write_concern (void)
       { "mongodb://localhost/?w=mytag&safe=false", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
       { "mongodb://localhost/?w=1&safe=false", true, 1 },
       { "mongodb://localhost/?journal=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
-      { "mongodb://localhost/?w=0&journal=true", false, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
-      { "mongodb://localhost/?w=-1&journal=true", false, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
       { "mongodb://localhost/?w=1&journal=true", true, 1 },
       { "mongodb://localhost/?w=2&wtimeoutms=1000", true, 2, NULL, 1000 },
       { "mongodb://localhost/?w=majority&wtimeoutms=1000", true, MONGOC_WRITE_CONCERN_W_MAJORITY, NULL, 1000 },
       { "mongodb://localhost/?w=mytag&wtimeoutms=1000", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag", 1000 },
+      { "mongodb://localhost/?w=0&journal=true", false, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED,
+        NULL, 0, "Journal conflicts with w value [w=0]" },
+      { "mongodb://localhost/?w=-1&journal=true",          false,
+        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED,
+        NULL, 0, "Journal conflicts with w value [w=-1]" },
       { NULL }
    };
-
-   /* Suppress warnings from two invalid URIs ("journal" and "w" conflict) */
-   suppress_one_message();
-   suppress_one_message();
 
    for (i = 0; tests [i].uri; i++) {
       t = &tests [i];
 
+      capture_logs (true);
       uri = mongoc_uri_new (t->uri);
+
+      if (tests [i].log_msg) {
+         ASSERT_CAPTURED_LOG (tests [i].uri,
+                              MONGOC_LOG_LEVEL_WARNING,
+                              tests [i].log_msg);
+      } else {
+         ASSERT_NO_CAPTURED_LOGS (tests [i].uri);
+      }
+
+      capture_logs (false);  /* clear captured logs */
+
       if (t->parses) {
          assert (uri);
       } else {
@@ -803,7 +817,6 @@ test_mongoc_uri_read_concern (void)
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "");
    mongoc_uri_destroy (uri);
 }
-
 
 
 void

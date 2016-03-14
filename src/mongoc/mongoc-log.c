@@ -30,7 +30,7 @@
 #include "mongoc-thread-private.h"
 
 
-static mongoc_mutex_t       gLogMutex;
+static mongoc_mutex_t     gLogMutex;
 static mongoc_log_func_t  gLogFunc = mongoc_log_default_handler;
 #ifdef MONGOC_TRACE
 static bool               gLogTrace = true;

@@ -284,7 +284,7 @@ _test_topology_invalidate_server (bool pooled)
       client = mongoc_client_pool_pop (pool);
 
       /* background scanner complains about failed connection */
-      suppress_one_message ();
+      capture_logs (true);
    } else {
       client = test_framework_client_new ();
    }

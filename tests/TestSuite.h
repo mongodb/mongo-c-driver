@@ -173,6 +173,28 @@ extern "C" {
       ASSERT_CONTAINS (error.message, _message); \
    } while (0);
 
+#define ASSERT_CAPTURED_LOG(_info, _level, _msg) \
+   do { \
+      if (!has_captured_log (_level, _msg)) { \
+         fprintf (stderr, \
+                  "%s:%d %s(): testing %s didn't log \"%s\"\n", \
+                  __FILE__, __LINE__, BSON_FUNC, _info, _msg); \
+         print_captured_logs ("\t"); \
+         abort (); \
+      } \
+   } while (0);
+
+#define ASSERT_NO_CAPTURED_LOGS(_info) \
+   do { \
+      if (has_captured_logs ()) { \
+         fprintf (stderr, \
+                  "%s:%d %s(): testing %s shouldn't have logged:\n", \
+                  __FILE__, __LINE__, BSON_FUNC, _info); \
+         print_captured_logs ("\t"); \
+         abort (); \
+      } \
+   } while (0);
+
 #define ASSERT_HAS_FIELD(_bson, _field) \
    do { \
       if (!bson_has_field ((_bson), (_field))) { \

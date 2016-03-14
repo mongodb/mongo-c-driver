@@ -143,6 +143,8 @@ test_mongoc_client_authenticate_failure (void *context)
                                                          "baduser",
                                                          "badpass");
 
+   capture_logs (true);
+
    /*
     * Try authenticating with bad user.
     */
@@ -151,10 +153,8 @@ test_mongoc_client_authenticate_failure (void *context)
    test_framework_set_ssl_opts (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
-   suppress_one_message ();
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
-   suppress_one_message ();
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
@@ -167,9 +167,6 @@ test_mongoc_client_authenticate_failure (void *context)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
-   suppress_one_message ();
-   suppress_one_message ();
-   suppress_one_message ();
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
                                  &empty, NULL, &error);
    assert (!r);
@@ -180,9 +177,6 @@ test_mongoc_client_authenticate_failure (void *context)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
-   suppress_one_message ();
-   suppress_one_message ();
-   suppress_one_message ();
    r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE,
                                  &q, &empty, NULL, &error);
    assert (!r);
@@ -336,6 +330,8 @@ test_mongoc_client_command_secondary (void)
    bson_t cmd = BSON_INITIALIZER;
    const bson_t *reply;
 
+   capture_logs (true);
+
    client = test_framework_client_new ();
    assert (client);
 
@@ -343,7 +339,6 @@ test_mongoc_client_command_secondary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
-   suppress_one_message ();
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
    mongoc_cursor_next (cursor, &reply);
 
@@ -1223,7 +1218,7 @@ test_ssl_pooled (void)
 static void
 test_mongoc_client_ssl_disabled (void)
 {
-   suppress_one_message ();
+   capture_logs (true);
    ASSERT (NULL == mongoc_client_new ("mongodb://host/?ssl=true"));
 }
 #endif

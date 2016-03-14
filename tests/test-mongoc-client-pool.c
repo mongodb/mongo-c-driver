@@ -156,7 +156,7 @@ test_mongoc_client_pool_ssl_disabled (void)
    mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?ssl=true");
 
    ASSERT (uri);
-   suppress_one_message ();
+   capture_logs (true);
    ASSERT (NULL == mongoc_client_pool_new (uri));
 
    mongoc_uri_destroy (uri);
