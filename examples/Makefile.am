@@ -1,5 +1,3 @@
-DOC_EXAMPLES = examples/example-client.c
-
 EXAMPLE_LDADD = libmongoc-1.0.la
 if EXPLICIT_LIBS
 EXAMPLE_LDADD += $(BSON_LIBS)
