@@ -26,7 +26,6 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"

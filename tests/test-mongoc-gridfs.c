@@ -4,7 +4,6 @@
 #undef MONGOC_INSIDE
 
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "mock_server/mock-server.h"

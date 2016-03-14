@@ -8,7 +8,6 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
-#include "mongoc-tests.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 

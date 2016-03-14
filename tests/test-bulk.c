@@ -5,7 +5,6 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"

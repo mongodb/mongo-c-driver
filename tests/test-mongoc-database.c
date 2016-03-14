@@ -5,7 +5,6 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "mongoc-client-private.h"
 #include "mongoc-database-private.h"
 #include "mock_server/future-functions.h"

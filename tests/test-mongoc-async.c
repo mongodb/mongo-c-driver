@@ -2,7 +2,6 @@
 
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
 #include "mongoc-errno-private.h"

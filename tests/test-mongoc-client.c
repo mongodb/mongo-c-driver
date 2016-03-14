@@ -13,7 +13,6 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
-#include "mongoc-tests.h"
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -2,7 +2,6 @@
 #include <mongoc-uri-private.h>
 
 #include "mongoc-client-private.h"
-#include "mongoc-tests.h"
 #include "mongoc-util-private.h"
 #include "TestSuite.h"
 

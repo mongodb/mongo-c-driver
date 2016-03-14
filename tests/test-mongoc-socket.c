@@ -1,7 +1,6 @@
 #include <fcntl.h>
 #include <mongoc.h>
 
-#include "mongoc-tests.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-errno-private.h"

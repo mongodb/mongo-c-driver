@@ -9,7 +9,6 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "test-conveniences.h"
 
 

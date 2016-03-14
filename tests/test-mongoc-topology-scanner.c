@@ -3,7 +3,6 @@
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
 
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"

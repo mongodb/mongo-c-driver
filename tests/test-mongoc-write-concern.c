@@ -2,7 +2,6 @@
 #include <mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
-#include "mongoc-tests.h"
 
 
 static void
