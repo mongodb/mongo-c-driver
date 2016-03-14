@@ -49,7 +49,9 @@
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-uri-private.h"
-
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-stream-tls.h"
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -1395,8 +1397,11 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 {
    mongoc_stream_t *stream = NULL;
    mongoc_topology_scanner_node_t *scanner_node;
+   int64_t timeout_ms;
    int64_t expire_at;
    bson_t reply;
+
+   timeout_ms = topology->connect_timeout_msec;
 
    scanner_node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
    BSON_ASSERT (scanner_node && !scanner_node->retired);
@@ -1413,7 +1418,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       }
       stream = scanner_node->stream;
 
-      expire_at = bson_get_monotonic_time() + topology->connect_timeout_msec * 1000;
+      expire_at = bson_get_monotonic_time() + timeout_ms * 1000;
+
       if (!mongoc_stream_wait (stream, expire_at)) {
          bson_set_error (error,
                          MONGOC_ERROR_STREAM,
@@ -1424,6 +1430,28 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
          mongoc_topology_scanner_node_disconnect (scanner_node, true);
          return NULL;
       }
+
+#ifdef MONGOC_ENABLE_SSL
+      if (scanner_node->ts->ssl_opts) {
+         if (!mongoc_stream_tls_do_handshake (stream, (int32_t) timeout_ms)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "TLS handshake failed.");
+            mongoc_topology_scanner_node_disconnect (scanner_node, true);
+            return NULL;
+         }
+
+         if (!mongoc_stream_tls_check_cert (stream, scanner_node->host.host)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_SOCKET,
+                            "Failed to verify peer certificate.");
+            mongoc_topology_scanner_node_disconnect (scanner_node, true);
+            return NULL;
+         }
+      }
+#endif
 
       if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
          mongoc_topology_scanner_node_disconnect (scanner_node, true);
