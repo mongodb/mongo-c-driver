@@ -1568,6 +1568,7 @@ _test_ssl_reconnect (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
 
    if (pooled) {
+      capture_logs (true);
       pool = mongoc_client_pool_new (uri);
       mongoc_client_pool_set_ssl_opts (pool, &client_opts);
       client = mongoc_client_pool_pop (pool);
@@ -1584,13 +1585,13 @@ _test_ssl_reconnect (bool pooled)
    mock_server_set_ssl_opts (server, &server_opts);
 
    /* server closes connections */
-   if (pooled) {
-      /* bg thread warns "failed to buffer", "handshake failed" */
-      suppress_one_message ();
-      suppress_one_message ();
-   }
 
    ASSERT (!_cmd (server, client, false /* server hangs up */, &error));
+   if (pooled) {
+      ASSERT_CAPTURED_LOG ("failed to write data because server closed the connection",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Failure to buffer 4 bytes: Failed to buffer 4 bytes within 10000 milliseconds");
+   }
 
    /* next operation comes on a new connection, server verification fails */
    future = future_client_command_simple (client, "db", tmp_bson ("{'cmd': 1}"),
