@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project (libmongoc)
 
-# CDRIVER-749 TODO: This needs to be updated for --enable-openssl and friends
 option(ENABLE_SSL
        "Use OpenSSL for TLS connections and SCRAM-SHA-1 authentication.\
 NOTE: OpenSSL is required for authenticating to MongoDB 3.0 and later."
