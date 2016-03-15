@@ -14,36 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
-#define MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
+#ifndef MONGOC_SSL_PRIVATE_H
+#define MONGOC_SSL_PRIVATE_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
 #endif
 
-#ifdef MONGOC_ENABLE_SECURE_TRANSPORT
 #include <bson.h>
 
-#include <Security/Security.h>
 
 BSON_BEGIN_DECLS
 
 
-/**
- * mongoc_stream_tls_secure_transport_t:
- *
- * Private storage for Secure Transport Streams
- */
-typedef struct
-{
-    SSLContextRef      ssl_ctx_ref;
-    CFArrayRef         anchors;
-    CFMutableArrayRef  my_cert;
-} mongoc_stream_tls_secure_transport_t;
+char                   *mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
 
 
 BSON_END_DECLS
 
-#endif /* MONGOC_ENABLE_SECURE_TRANSPORT */
-#endif /* MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H */
+
+#endif /* MONGOC_SSL_PRIVATE_H */
 

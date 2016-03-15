@@ -30,19 +30,7 @@
 
 BSON_BEGIN_DECLS
 
-#ifdef MONGOC_ENABLE_LIBCRYPTO
-#define MONGOC_CRYPTO_TYPE 1
-#elif defined(MONGOC_ENABLE_COMMON_CRYPTO)
-#define MONGOC_CRYPTO_TYPE 2
-#endif
-
 typedef struct _mongoc_crypto_t mongoc_crypto_t;
-
-typedef enum
-{
-   MONGOC_CRYPTO_OPENSSL = 1,
-   MONGOC_CRYPTO_COMMON_CRYPTO = 2
-} mongoc_crypto_types_t;
 
 struct _mongoc_crypto_t
 {

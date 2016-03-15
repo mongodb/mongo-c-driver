@@ -36,8 +36,6 @@ Build configuration:
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
-  OpenSSL                                          : ${enable_openssl}
-  Secure Transport (darwin)                        : ${enable_secure_transport}
   Libbson                                          : ${with_libbson}
 
 Documentation:

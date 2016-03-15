@@ -26,21 +26,6 @@
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
 
-#ifdef MONGOC_ENABLE_OPENSSL
-#define MONGOC_TLS_TYPE 1
-#else
-/* FIXME: TLS through Secure Transport isn't implemented yet ! */
-#define MONGOC_TLS_TYPE 1
-#endif
-
-BSON_BEGIN_DECLS
-
-/* Available TLS Implementations */
-typedef enum
-{
-   MONGOC_TLS_OPENSSL = 1
-} mongoc_tls_types_t;
-
 /**
  * mongoc_stream_tls_t:
  *
@@ -59,7 +44,6 @@ struct _mongoc_stream_tls_t
    bool (*check_cert)   (mongoc_stream_t *stream, const char *host);
    bool (*should_retry) (mongoc_stream_t *stream);
    bool (*should_read)  (mongoc_stream_t *stream);
-   bool (*should_write) (mongoc_stream_t *stream);
 };
 
 

@@ -62,7 +62,7 @@ test_ismaster_impl (bool with_ssl)
    int errcode;
    bson_t q = BSON_INITIALIZER;
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = { 0 };
    mongoc_ssl_opt_t copt = { 0 };
 #endif
@@ -73,7 +73,7 @@ test_ismaster_impl (bool with_ssl)
       /* use max wire versions just to distinguish among responses */
       servers[i] = mock_server_with_autoismaster (i);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          sopt.pem_file = PEMFILE_NOPASS;
          sopt.ca_file = CAFILE;
@@ -109,7 +109,7 @@ test_ismaster_impl (bool with_ssl)
 
       sock_streams[i] = mongoc_stream_socket_new (conn_sock);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          copt.ca_file = CAFILE;
          copt.weak_cert_validation = 1;
@@ -164,7 +164,7 @@ test_ismaster (void)
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 static void
 test_ismaster_ssl (void)
 {
@@ -177,7 +177,9 @@ void
 test_async_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
+#ifndef MONGOC_ENABLE_SECURE_TRANSPORT
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
+#endif
 #endif
 }

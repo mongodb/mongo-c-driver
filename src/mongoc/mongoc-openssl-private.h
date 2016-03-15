@@ -36,7 +36,8 @@ bool     _mongoc_openssl_check_cert      (SSL              *ssl,
                                           const char       *host,
                                           bool              weak_cert_validation);
 SSL_CTX *_mongoc_openssl_ctx_new         (mongoc_ssl_opt_t *opt);
-char    *_mongoc_openssl_extract_subject (const char       *filename);
+char    *_mongoc_openssl_extract_subject (const char       *filename,
+                                          const char *passphrase);
 void     _mongoc_openssl_init            (void);
 void     _mongoc_openssl_cleanup         (void);
 

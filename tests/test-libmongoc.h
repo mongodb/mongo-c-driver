@@ -53,7 +53,7 @@ size_t test_framework_mongos_count (void);
 size_t test_framework_replset_member_count (void);
 size_t test_framework_server_count (void);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 const mongoc_ssl_opt_t *test_framework_get_ssl_opts (void);
 #endif
 void test_framework_set_ssl_opts (mongoc_client_t *client);

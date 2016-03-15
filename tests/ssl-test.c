@@ -101,7 +101,7 @@ ssl_test_server (void * ptr)
 #ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
 #else
-      unsigned long err = 42;
+      unsigned long err = 43;
 #endif
       assert(err);
 
@@ -202,7 +202,7 @@ ssl_test_client (void * ptr)
 #ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
 #else
-      unsigned long err = 42;
+      unsigned long err = 44;
 #endif
       assert(err);
 
@@ -223,7 +223,7 @@ ssl_test_client (void * ptr)
 #ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
 #else
-      unsigned long err = 42;
+      unsigned long err = 45;
 #endif
       assert(err || errno_captured);
 

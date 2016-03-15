@@ -162,7 +162,7 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 
 check: test abicheck
 
-TEST_ARGS =
+TEST_ARGS = "--no-fork"
 
 if ENABLE_SSL
 test: $(TEST_PROGS) test_certs

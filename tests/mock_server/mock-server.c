@@ -23,6 +23,7 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
+#include "mongoc-stream-tls.h"
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"
@@ -53,7 +54,7 @@ struct _mock_server_t
    int last_autoresponder_id;
    int64_t start_time;
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    bool ssl;
    mongoc_ssl_opt_t ssl_opts;
 #endif
@@ -193,7 +194,7 @@ mock_server_down (void)
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 
 /*--------------------------------------------------------------------------
  *
@@ -1489,7 +1490,7 @@ main_thread (void *data)
 
          client_stream = mongoc_stream_socket_new (client_sock);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
          mongoc_mutex_lock (&server->mutex);
          if (server->ssl) {
             client_stream = mongoc_stream_tls_new (client_stream,

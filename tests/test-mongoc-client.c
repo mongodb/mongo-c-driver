@@ -1131,7 +1131,7 @@ test_mongoc_client_mismatched_me (void)
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 static void
 _test_mongoc_client_ssl_opts (bool pooled)
 {
@@ -1219,9 +1219,8 @@ test_ssl_pooled (void)
 {
    _test_mongoc_client_ssl_opts (true);
 }
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
 #else
-/* MONGOC_ENABLE_OPENSSL is not defined */
+/* MONGOC_ENABLE_SSL is not defined */
 static void
 test_mongoc_client_ssl_disabled (void)
 {
@@ -1681,7 +1680,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
 #endif
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
    TestSuite_Add (suite, "/Client/ssl/reconnect/single",

@@ -35,7 +35,8 @@
 #endif
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
-#include "mongoc-openssl-private.h"
+#include "mongoc-ssl-private.h"
+#include "mongoc-stream-tls.h"
 #endif
 #include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
@@ -1011,7 +1012,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
       }
 
       if (cluster->client->ssl_opts.pem_file) {
-         username = mongoc_ssl_extract_subject (cluster->client->ssl_opts.pem_file);
+         username = mongoc_ssl_extract_subject (cluster->client->ssl_opts.pem_file,
+                                                cluster->client->ssl_opts.pem_pwd);
          MONGOC_INFO ("X509: got username (%s) from certificate", username);
       }
    }
