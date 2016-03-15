@@ -294,12 +294,43 @@ LIBMONGOC_1.3 {
 
 LIBMONGOC_1.4 {
     global:
+        mongoc_apm_callbacks_destroy;
+        mongoc_apm_callbacks_new;
+        mongoc_apm_command_failed_get_command_name;
+        mongoc_apm_command_failed_get_context;
+        mongoc_apm_command_failed_get_duration;
+        mongoc_apm_command_failed_get_error;
+        mongoc_apm_command_failed_get_host;
+        mongoc_apm_command_failed_get_operation_id;
+        mongoc_apm_command_failed_get_request_id;
+        mongoc_apm_command_failed_get_server_id;
+        mongoc_apm_command_started_get_command;
+        mongoc_apm_command_started_get_command_name;
+        mongoc_apm_command_started_get_context;
+        mongoc_apm_command_started_get_database_name;
+        mongoc_apm_command_started_get_host;
+        mongoc_apm_command_started_get_operation_id;
+        mongoc_apm_command_started_get_request_id;
+        mongoc_apm_command_started_get_server_id;
+        mongoc_apm_command_succeeded_get_command_name;
+        mongoc_apm_command_succeeded_get_context;
+        mongoc_apm_command_succeeded_get_duration;
+        mongoc_apm_command_succeeded_get_host;
+        mongoc_apm_command_succeeded_get_operation_id;
+        mongoc_apm_command_succeeded_get_reply;
+        mongoc_apm_command_succeeded_get_request_id;
+        mongoc_apm_command_succeeded_get_server_id;
+        mongoc_apm_set_command_failed_cb;
+        mongoc_apm_set_command_started_cb;
+        mongoc_apm_set_command_succeeded_cb;
         mongoc_bulk_operation_get_hint;
         mongoc_client_command_simple_with_server_id;
         mongoc_client_get_server_description;
         mongoc_client_get_server_descriptions;
-        mongoc_cursor_get_limit;
+        mongoc_client_pool_set_apm_callbacks;
         mongoc_client_select_server;
+        mongoc_client_set_apm_callbacks;
+        mongoc_cursor_get_limit;
         mongoc_cursor_new_from_command_reply;
         mongoc_cursor_set_limit;
         mongoc_log_trace_disable;
