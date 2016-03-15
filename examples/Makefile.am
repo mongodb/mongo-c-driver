@@ -22,10 +22,10 @@ filter_bsondump_SOURCES = examples/filter-bsondump.c
 filter_bsondump_CFLAGS = -Wno-deprecated-declarations $(EXAMPLE_CFLAGS)
 filter_bsondump_LDADD = $(EXAMPLE_LDADD)
 
-noinst_PROGRAMS += example-application-performance-monitoring
-example_application_performance_monitoring_SOURCES = examples/example-application-performance-monitoring.c
-example_application_performance_monitoring_CFLAGS = $(EXAMPLE_CFLAGS)
-example_application_performance_monitoring_LDADD = $(EXAMPLE_LDADD)
+#noinst_PROGRAMS += example-application-performance-monitoring
+#example_application_performance_monitoring_SOURCES = examples/example-application-performance-monitoring.c
+#example_application_performance_monitoring_CFLAGS = $(EXAMPLE_CFLAGS)
+#example_application_performance_monitoring_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += example-client
 example_client_SOURCES = examples/example-client.c
