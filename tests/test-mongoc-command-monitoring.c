@@ -6,6 +6,9 @@
 #include "json-test.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 
 typedef struct
@@ -803,8 +806,55 @@ test_all_spec_tests (TestSuite *suite)
    }
 }
 
+
+static void
+test_get_error_failed_cb (const mongoc_apm_command_failed_t *event)
+{
+   bson_error_t *error;
+
+   error = (bson_error_t *) mongoc_apm_command_failed_get_context (event);
+   mongoc_apm_command_failed_get_error (event, error);
+}
+
+
+static void
+test_get_error (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   future_t *future;
+   request_t *request;
+   bson_error_t error = { 0 };
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_failed_cb (callbacks, test_get_error_failed_cb);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
+   future = future_client_command_simple (client, "db",
+                                          tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, NULL);
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
+                                           "{'foo': 1}");
+   mock_server_replies_simple (request,
+                               "{'ok': 0, 'errmsg': 'foo', 'code': 42}");
+   ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_QUERY, 42, "foo");
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
+   TestSuite_Add (suite, "/command_monitoring/get_error", test_get_error);
 }
