@@ -568,39 +568,6 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t        *client,
 
 
 static void
-_mongoc_monitor_legacy_write_failed (mongoc_client_t        *client,
-                                     int64_t                 duration,
-                                     mongoc_write_command_t *command,
-                                     const bson_error_t     *error,
-                                     mongoc_server_stream_t *stream)
-{
-   mongoc_apm_command_failed_t event;
-
-   ENTRY;
-
-   if (!client->apm_callbacks.failed) {
-      EXIT;
-   }
-
-   mongoc_apm_command_failed_init (&event,
-                                   duration,
-                                   gCommandNames[command->type],
-                                   error,
-                                   client->cluster.request_id,
-                                   command->operation_id,
-                                   &stream->sd->host,
-                                   stream->sd->id,
-                                   client->apm_context);
-
-   client->apm_callbacks.failed (&event);
-
-   mongoc_apm_command_failed_cleanup (&event);
-
-   EXIT;
-}
-
-
-static void
 _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      mongoc_client_t              *client,
                                      mongoc_server_stream_t       *server_stream,
@@ -683,13 +650,13 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                            &rpc, 1, server_stream,
                                            write_concern, error)) {
          result->failed = true;
-         GOTO (fail);
+         EXIT;
       }
 
       if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
-            GOTO (fail);
+            EXIT;
          }
 
          _mongoc_write_result_merge_legacy (
@@ -715,14 +682,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    } while (bson_iter_next (&iter));
 
    EXIT;
-
-fail:
-   _mongoc_monitor_legacy_write_failed (
-      client,
-      bson_get_monotonic_time () - started,
-      command,
-      error,
-      server_stream);
 }
 
 
@@ -962,15 +921,6 @@ cleanup:
       GOTO (again);
    }
 
-   if (result->failed) {
-      _mongoc_monitor_legacy_write_failed (
-         client,
-         bson_get_monotonic_time () - started,
-         command,
-         error,
-         server_stream);
-   }
-
    bson_free (iov);
 
    EXIT;
@@ -1141,13 +1091,13 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                            &rpc, 1, server_stream,
                                            write_concern, error)) {
          result->failed = true;
-         GOTO (fail);
+         EXIT;
       }
 
       if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
-            GOTO (fail);
+            EXIT;
          }
 
          if (bson_iter_init_find (&subiter, gle, "n") &&
@@ -1196,14 +1146,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
 
       started = bson_get_monotonic_time ();
    }
-
-fail:
-   _mongoc_monitor_legacy_write_failed (
-      client,
-      bson_get_monotonic_time () - started,
-      command,
-      error,
-      server_stream);
 }
 
 

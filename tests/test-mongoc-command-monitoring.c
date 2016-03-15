@@ -135,7 +135,8 @@ check_expectations (const bson_t *events,
    ctx.errmsg = errmsg;
    ctx.errmsg_len = sizeof errmsg;
 
-   if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
+   if (bson_count_keys (expectations) != bson_count_keys (events) ||
+       !match_bson_with_ctx (events, expectations, false, &ctx)) {
       MONGOC_ERROR ("command monitoring test failed expectations:\n\n"
                     "%s\n\n"
                     "events:\n%s\n\n%s\n",
