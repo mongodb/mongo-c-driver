@@ -158,7 +158,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 #endif
 
 #ifdef MONGOC_ENABLE_SECURE_TRANSPORT
-      case MONGOC_TLS_OPENSSL:
+      case MONGOC_TLS_SECURE_TRANSPORT:
          return mongoc_stream_tls_secure_transport_new (base_stream, opt, client);
          break;
 #endif

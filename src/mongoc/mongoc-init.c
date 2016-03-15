@@ -78,6 +78,9 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_OPENSSL
    _mongoc_openssl_init();
+#endif
+
+#ifdef MONGOC_ENABLE_SSL
    _mongoc_scram_startup();
 #endif
 

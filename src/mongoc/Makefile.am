@@ -184,34 +184,36 @@ if ENABLE_CRYPTO
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto.c \
 	src/mongoc/mongoc-scram.c
-endif
-if ENABLE_SSL
-MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-stream-tls.c \
-	src/mongoc/mongoc-ssl.c
-endif
+
 if ENABLE_LIBCRYPTO
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto-openssl.c \
 	src/mongoc/mongoc-rand-openssl.c
-endif
-if ENABLE_OPENSSL
-MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-openssl.c \
-	src/mongoc/mongoc-stream-tls-openssl.c \
-	src/mongoc/mongoc-stream-tls-openssl-bio.c
 endif
 if ENABLE_COMMON_CRYPTO
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto-common-crypto.c \
 	src/mongoc/mongoc-rand-common-crypto.c
 endif
+endif
+
+if ENABLE_SSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-stream-tls.c \
+	src/mongoc/mongoc-ssl.c
+
+if ENABLE_OPENSSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-openssl.c \
+	src/mongoc/mongoc-stream-tls-openssl.c \
+	src/mongoc/mongoc-stream-tls-openssl-bio.c
+endif
 if ENABLE_SECURE_TRANSPORT
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-secure-transport.c \
 	src/mongoc/mongoc-stream-tls-secure-transport.c
 endif
-
+endif
 
 if ENABLE_SASL
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c

@@ -401,6 +401,7 @@ mongoc_stream_tls_secure_transport_do_handshake (mongoc_stream_t *stream,
     * the handshake - and proper server verification.
     */
 
+   tls->timeout_msec = timeout_msec;
    RETURN (true);
 }
 
