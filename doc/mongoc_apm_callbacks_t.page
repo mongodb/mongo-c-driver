@@ -5,9 +5,7 @@
       xmlns="http://projectmallard.org/1.0/"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/">
-  <info>
-    <link type="guide" xref="index#apm" />
-  </info>
+  <info><link type="guide" xref="index#apm" /></info>
   <title>mongoc_apm_callbacks_t</title>
   <subtitle>Application Performance Monitoring callbacks</subtitle>
   <section id="description">

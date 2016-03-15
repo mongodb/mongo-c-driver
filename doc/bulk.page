@@ -1,6 +1,7 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       id="bulk">
+  <info><link xref="index#bulk" type="guide"/></info>
   <title>Bulk Write Operations</title>
 
   <p>This tutorial explains how to take advantage of MongoDB C driver bulk write operation features. Executing write operations in batches reduces the number of network round trips, increasing write throughput.</p>

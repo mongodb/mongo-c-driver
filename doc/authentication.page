@@ -1,7 +1,7 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       id="authentication">
-
+  <info><link type="guide" xref="index#authentication" /></info>
   <title>Authentication</title>
   <p>This guide covers the use of authentication options with the MongoDB C Driver. Ensure that the MongoDB server is also properly configured for authentication before making a connection. For more information, see the <link href="https://docs.mongodb.org/manual/administration/security/">MongoDB security documentation</link>.</p>
 

@@ -2,7 +2,6 @@
 <page id="tutorial"
       type="topic"
       xmlns="http://projectmallard.org/1.0/">
-
   <title>Tutorial</title>
   <p>This guide offers a brief introduction to the MongoDB C Driver.</p>
   <p>For more information on the C API, please refer to the <link xref="index#api-reference">API Documentation</link>.</p>

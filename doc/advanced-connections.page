@@ -1,7 +1,7 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       id="advanced-connections">
-
+  <info><link type="guide" xref="index#advanced-connections" /></info>
   <title>Advanced Connections</title>
   <p>The following guide contains information specific to certain types of MongoDB configurations.</p>
   <p>For an example of connecting to a simple standalone server, see the <link xref="tutorial#connecting">Tutorial</link>. To establish a connection with authentication options enabled, see the <link xref="authentication">Authentication</link> page.</p>

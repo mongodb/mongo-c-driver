@@ -1,7 +1,7 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       id="matcher">
-
+  <info><link type="guide" xref="index#matching" /></info>
   <title>Client Side Document Matching</title>
 
   <section id="basic-matching">

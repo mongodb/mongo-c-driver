@@ -6,49 +6,60 @@
 
   <section id="installation">
     <title>Installation</title>
+    <links type="topic" />
   </section>
 
   <section id="tutorial">
     <title>Tutorial</title>
   </section>
 
-  <section id="basic-operations" style="2column">
+  <section id="basic-operations">
     <title>Basic Operations</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="advanced-connections" style="2column">
+  <section id="advanced-connections">
     <title>Advanced Connections</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="authentication" style="2column">
+  <section id="authentication">
     <title>Authentication</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="cursors" style="2column">
+  <section id="cursors">
     <title>Cursors</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="bulk" style="2column">
+  <section id="bulk">
     <title>Bulk Operations</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="aggregation" style="2column">
+  <section id="aggregation">
     <title>Aggregation Framework</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="matching" style="2column">
+  <section id="matching">
     <title>Client Side Document Matching</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="debugging" style="2column">
+  <section id="debugging">
     <title>Troubleshooting</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="api-reference" style="2column">
+  <section id="api-reference">
     <title>API Reference</title>
+    <links type="topic" style="2column" />
   </section>
 
-  <section id="apm" style="2column">
+  <section id="apm">
     <title>Application Performance Monitoring</title>
+    <links type="topic" style="2column" />
   </section>
 </page>

@@ -1,6 +1,7 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       id="installing">
+  <info><link type="guide" xref="index#installation" /></info>
   <title>Installing the MongoDB C Driver</title>
 
   <p>The following guide will step you through the process of downloading, building, and installing the current release of the MongoDB C Driver.</p>
