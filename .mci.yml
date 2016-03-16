@@ -344,7 +344,7 @@ functions:
         rm -rf mongo-c-driver*
         ls -la
         curl -s https://s3.amazonaws.com/mciuploads/mongo-c-driver/${revision}/${version_id}/artifacts/mongo-c-driver-archive.tar.gz --output mongo-c-driver-archive.tar.gz
-        tar zxvf mongo-c-driver-archive.tar.gz
+        tar zxf mongo-c-driver-archive.tar.gz
         rm mongo-c-driver-archive.tar.gz
         mv mongo-c-driver* mongo-c-driver
 
@@ -387,7 +387,7 @@ functions:
         set -o errexit
         ls -la
         curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent --max-time 120
-        tar -xzf ${build_id}.tar.gz
+        tar zxf ${build_id}.tar.gz
 
   "compile function" :
     command: shell.exec
@@ -624,7 +624,7 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                tar -czf ../mongo-c-driver.tar.gz .
+                tar czf ../mongo-c-driver.tar.gz .
         - command: s3.put
           params:
             aws_key: ${aws_key}
