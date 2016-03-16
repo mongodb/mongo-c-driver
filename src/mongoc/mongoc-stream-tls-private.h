@@ -26,6 +26,8 @@
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
 
+BSON_BEGIN_DECLS
+
 /**
  * mongoc_stream_tls_t:
  *
