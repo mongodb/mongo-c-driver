@@ -96,14 +96,10 @@ ssl_test_server (void * ptr)
    }
    assert(ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
+       mongoc_stream_tls_check_cert (ssl_stream, data->host);
    if (!r) {
-#ifdef MONGOC_ENABLE_OPENSSL
-      unsigned long err = ERR_get_error();
-#else
       unsigned long err = 43;
-#endif
-      assert(err);
 
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_HANDSHAKE;
@@ -163,7 +159,6 @@ ssl_test_client (void * ptr)
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *conn_sock;
    int i;
-   int errno_captured;
    char buf[1024];
    ssize_t r;
    mongoc_iovec_t riov;
@@ -216,32 +211,14 @@ ssl_test_client (void * ptr)
    assert(ssl_stream);
 
    errno = 0;
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   errno_captured = errno;
+   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
+       mongoc_stream_tls_check_cert (ssl_stream, data->host);
 
    if (! r) {
-#ifdef MONGOC_ENABLE_OPENSSL
-      unsigned long err = ERR_get_error();
-#else
       unsigned long err = 45;
-#endif
-      assert(err || errno_captured);
 
-      if (err) {
-         data->client_result->ssl_err = err;
-      } else {
-         data->client_result->err = errno_captured;
-      }
-
+      data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_HANDSHAKE;
-
-      mongoc_stream_destroy(ssl_stream);
-      return NULL;
-   }
-
-   r = mongoc_stream_tls_check_cert (ssl_stream, data->host);
-   if (! r) {
-      data->client_result->result = SSL_TEST_SSL_VERIFY;
 
       mongoc_stream_destroy(ssl_stream);
       return NULL;

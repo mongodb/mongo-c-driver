@@ -80,7 +80,7 @@ ssl_error_server (void *ptr)
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
       r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-      mongoc_stream_tls_check_cert (ssl_stream, data->host);
+          mongoc_stream_tls_check_cert (ssl_stream, data->host);
       assert (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
@@ -154,7 +154,7 @@ ssl_hangup_client (void *ptr)
    assert (ssl_stream);
 
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-      mongoc_stream_tls_check_cert (ssl_stream, data->host);
+       mongoc_stream_tls_check_cert (ssl_stream, data->host);
    assert (r);
 
    wiov.iov_base = (void *)&buf;

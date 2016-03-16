@@ -49,6 +49,7 @@ test_mongoc_tls_password (void)
    sopt.pem_file = PEMFILE_PASS;
    sopt.ca_file = CAFILE;
    sopt.pem_pwd = PASSWORD;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
@@ -89,6 +90,7 @@ test_mongoc_tls_no_verify (void)
 
    sopt.pem_file = PEMFILE_NOPASS;
    sopt.ca_file = CAFILE;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
    copt.weak_cert_validation = 1;
@@ -110,12 +112,13 @@ test_mongoc_tls_bad_verify (void)
 
    sopt.pem_file = PEMFILE_NOPASS;
    sopt.ca_file = CAFILE;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
    ssl_test (&copt, &sopt, "bad_domain.com", &cr, &sr);
 
-   ASSERT (cr.result == SSL_TEST_SSL_VERIFY);
+   ASSERT (cr.result == SSL_TEST_SSL_HANDSHAKE);
    ASSERT (sr.result == SSL_TEST_TIMEOUT);
 }
 
@@ -130,6 +133,7 @@ test_mongoc_tls_basic (void)
 
    sopt.pem_file = PEMFILE_NOPASS;
    sopt.ca_file = CAFILE;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
@@ -171,6 +175,7 @@ test_mongoc_tls_altname (void)
 
    sopt.ca_file = CAFILE;
    sopt.pem_file = PEMFILE_ALT;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
@@ -191,6 +196,7 @@ test_mongoc_tls_wild (void)
 
    sopt.pem_file = PEMFILE_ALT;
    sopt.ca_file = CAFILE;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
@@ -211,6 +217,7 @@ test_mongoc_tls_ip (void)
 
    sopt.pem_file = PEMFILE_ALT;
    sopt.ca_file = CAFILE;
+   sopt.weak_cert_validation = true;
 
    copt.ca_file = CAFILE;
 
@@ -232,6 +239,7 @@ test_mongoc_tls_trust_dir (void)
 
    sopt.pem_file = PEMFILE_NOPASS;
    sopt.ca_dir = VERIFY_DIR;
+   sopt.weak_cert_validation = true;
 
    copt.ca_dir = VERIFY_DIR;
 
