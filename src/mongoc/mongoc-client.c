@@ -1749,18 +1749,41 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
 }
 
 
-void
+bool
+_mongoc_client_set_apm_callbacks_private (mongoc_client_t        *client,
+                                          mongoc_apm_callbacks_t *callbacks,
+                                          void                   *context)
+{
+   if (client->apm_callbacks.started ||
+       client->apm_callbacks.succeeded ||
+       client->apm_callbacks.failed ||
+       client->apm_context) {
+      MONGOC_ERROR ("Can only set callbacks once");
+      return false;
+   }
+
+   if (callbacks) {
+      memcpy (&client->apm_callbacks, callbacks, sizeof client->apm_callbacks);
+   }
+
+   client->apm_context = context;
+
+   return true;
+}
+
+
+bool
 mongoc_client_set_apm_callbacks (mongoc_client_t        *client,
                                  mongoc_apm_callbacks_t *callbacks,
                                  void                   *context)
 {
-   if (callbacks) {
-      memcpy (&client->apm_callbacks, callbacks, sizeof client->apm_callbacks);
-   } else {
-      memset (&client->apm_callbacks, 0, sizeof client->apm_callbacks);
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR ("Cannot set callbacks on a pooled client, use "
+                    "mongoc_client_pool_set_apm_callbacks");
+      return false;
    }
 
-   client->apm_context = context;
+   return _mongoc_client_set_apm_callbacks_private (client, callbacks, context);
 }
 
 

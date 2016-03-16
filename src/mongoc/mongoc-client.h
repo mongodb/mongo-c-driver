@@ -160,7 +160,7 @@ void                           mongoc_client_set_read_prefs                (mong
 void                           mongoc_client_set_ssl_opts                  (mongoc_client_t              *client,
                                                                             const mongoc_ssl_opt_t       *opts);
 #endif
-void                           mongoc_client_set_apm_callbacks             (mongoc_client_t              *client,
+bool                           mongoc_client_set_apm_callbacks             (mongoc_client_t              *client,
                                                                             mongoc_apm_callbacks_t       *callbacks,
                                                                             void                         *context);
 mongoc_server_description_t   *mongoc_client_get_server_description        (mongoc_client_t              *client,

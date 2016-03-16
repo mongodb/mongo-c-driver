@@ -163,6 +163,9 @@ again:
    if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
+         _mongoc_client_set_apm_callbacks_private (client,
+                                                   &pool->apm_callbacks,
+                                                   pool->apm_context);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
@@ -279,16 +282,25 @@ mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
    EXIT;
 }
 
-void
+bool
 mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                       mongoc_apm_callbacks_t *callbacks,
                                       void                   *context)
 {
+
+   if (pool->apm_callbacks.started ||
+       pool->apm_callbacks.succeeded ||
+       pool->apm_callbacks.failed ||
+       pool->apm_context) {
+      MONGOC_ERROR ("Can only set callbacks once");
+      return false;
+   }
+
    if (callbacks) {
       memcpy (&pool->apm_callbacks, callbacks, sizeof pool->apm_callbacks);
-   } else {
-      memset (&pool->apm_callbacks, 0, sizeof pool->apm_callbacks);
    }
 
    pool->apm_context = context;
+
+   return true;
 }

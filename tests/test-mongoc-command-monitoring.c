@@ -739,7 +739,6 @@ one_test (mongoc_collection_t *collection,
    check_expectations (&context.events, &expectations);
 
 done:
-   mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    mongoc_apm_callbacks_destroy (callbacks);
    context_destroy (&context);
    mongoc_read_prefs_destroy (read_prefs);
@@ -772,21 +771,22 @@ test_command_monitoring_cb (bson_t *scenario)
    db_name = bson_lookup_utf8 (scenario, "database_name");
    collection_name = bson_lookup_utf8 (scenario, "collection_name");
 
-   client = test_framework_client_new ();
-   collection = mongoc_client_get_collection (client, db_name, collection_name);
-
    BSON_ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
    BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
    bson_iter_recurse (&iter, &tests_iter);
 
    while (bson_iter_next (&tests_iter)) {
+      client = test_framework_client_new ();
+      collection = mongoc_client_get_collection (client,
+                                                 db_name,
+                                                 collection_name);
+
       insert_data (collection, scenario);
       bson_iter_bson (&tests_iter, &test_op);
       one_test (collection, &test_op);
+      mongoc_collection_destroy (collection);
+      mongoc_client_destroy (client);
    }
-
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
@@ -853,9 +853,99 @@ test_get_error (void)
 }
 
 
+static void
+test_set_callbacks_cb (const mongoc_apm_command_started_t *event)
+{
+   int *n_calls = (int *) mongoc_apm_command_started_get_context (event);
+
+   (*n_calls)++;
+}
+
+
+static void
+_test_set_callbacks (bool pooled)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_apm_callbacks_t *callbacks;
+   int n_calls = 0;
+   bson_error_t error;
+   bson_t b;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, test_set_callbacks_cb);
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks,
+                                                    (void *) &n_calls));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks,
+                                               (void *) &n_calls));
+   }
+
+   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL, &b, &error),
+                    error);
+   ASSERT_CMPINT (1, ==, n_calls);
+
+   capture_logs (true);
+
+   if (pooled) {
+      ASSERT (!mongoc_client_pool_set_apm_callbacks (pool, NULL,
+                                                     (void*) &n_calls));
+      ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Can only set callbacks once");
+
+      clear_captured_logs ();
+      ASSERT (!mongoc_client_set_apm_callbacks (client, NULL,
+                                                (void *) &n_calls));
+      ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Cannot set callbacks on a pooled client");
+   } else {
+      ASSERT (!mongoc_client_set_apm_callbacks (client, NULL,
+                                                (void *) &n_calls));
+      ASSERT_CAPTURED_LOG ("mongoc_client_set_apm_callbacks",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Can only set callbacks once");
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   bson_destroy (&b);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static void
+test_set_callbacks_single (void)
+{
+   _test_set_callbacks (false);
+}
+
+
+static void
+test_set_callbacks_pooled (void)
+{
+   _test_set_callbacks (true);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_Add (suite, "/command_monitoring/get_error", test_get_error);
+   TestSuite_Add (suite, "/command_monitoring/set_callbacks/single",
+                  test_set_callbacks_single);
+   TestSuite_Add (suite, "/command_monitoring/set_callbacks/pooled",
+                  test_set_callbacks_pooled);
 }

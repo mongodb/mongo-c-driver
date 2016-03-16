@@ -52,7 +52,7 @@ void                  mongoc_client_pool_min_size          (mongoc_client_pool_t
 void                  mongoc_client_pool_set_ssl_opts      (mongoc_client_pool_t   *pool,
                                                             const mongoc_ssl_opt_t *opts);
 #endif
-void                  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
+bool                  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                                             mongoc_apm_callbacks_t *callbacks,
                                                             void                   *context);
 
