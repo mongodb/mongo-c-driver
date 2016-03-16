@@ -1683,11 +1683,12 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+#ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/Client/ssl/reconnect/single",
                   test_ssl_reconnect_single);
    TestSuite_Add (suite, "/Client/ssl/reconnect/pooled",
                   test_ssl_reconnect_pooled);
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#endif
 #else
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
