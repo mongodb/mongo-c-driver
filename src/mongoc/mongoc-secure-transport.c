@@ -48,7 +48,7 @@ _bson_append_cftyperef (bson_string_t *retval, const char *label, CFTypeRef str)
 {
    if (str) {
       if (CFGetTypeID (str) == CFStringGetTypeID ()) {
-         const char *cs = CFStringGetCStringPtr (str, kCFStringEncodingUTF8);
+         const char *cs = CFStringGetCStringPtr (str, CFStringGetFastestEncoding(str));
 
          bson_string_append_printf (retval, "%s%s", label, cs);
       }
@@ -188,7 +188,7 @@ _mongoc_secure_transport_import_pem (const char *filename, const char *passphras
 
    if (error) {
       CFStringRef str = CFErrorCopyDescription (error);
-      MONGOC_WARNING ("Failed importing PEM '%s': %s", filename, CFStringGetCStringPtr (str, kCFStringEncodingUTF8));
+      MONGOC_WARNING ("Failed importing PEM '%s': %s", filename, CFStringGetCStringPtr (str, CFStringGetFastestEncoding(str)));
       CFRelease (str);
       CFRelease (sec_transform);
       CFRelease (read_stream);
