@@ -400,8 +400,8 @@ failed_cb (const mongoc_apm_command_failed_t *event)
    bson_t *new_event;
 
    if (context->verbose) {
-      fprintf (stderr, "\t\t<-- %s FAILED: %s\n",
-               event->command_name, event->error->message);
+      printf ("\t\t<-- %s FAILED: %s\n",
+              event->command_name, event->error->message);
       fflush (stdout);
    }
 
