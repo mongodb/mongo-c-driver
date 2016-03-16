@@ -23,6 +23,7 @@ depcomp
 .dirstamp
 .DS_Store
 echo-server
+example-application-performance-monitoring
 example-client
 example-scram
 example-gridfs
