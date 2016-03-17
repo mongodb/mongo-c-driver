@@ -28,6 +28,7 @@
         <code mime="text/x-csrc"><include parse="text" href="../examples/find_and_modify_with_opts/update.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
         <code mime="text/x-csrc"><include parse="text" href="../examples/find_and_modify_with_opts/fields.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
         <code mime="text/x-csrc"><include parse="text" href="../examples/find_and_modify_with_opts/sort.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+        <code mime="text/x-csrc"><include parse="text" href="../examples/find_and_modify_with_opts/opts.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
         <code mime="text/x-csrc"><include parse="text" href="../examples/find_and_modify_with_opts/fam.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
       </screen>
       <p>Outputs:</p>

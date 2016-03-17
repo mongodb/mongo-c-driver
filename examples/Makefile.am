@@ -104,5 +104,6 @@ EXTRA_DIST += \
     examples/find_and_modify_with_opts/bypass.c \
     examples/find_and_modify_with_opts/fields.c \
     examples/find_and_modify_with_opts/flags.c \
+    examples/find_and_modify_with_opts/opts.c \
     examples/find_and_modify_with_opts/sort.c \
     examples/find_and_modify_with_opts/update.c

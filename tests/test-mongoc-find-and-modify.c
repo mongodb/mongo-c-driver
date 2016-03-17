@@ -340,6 +340,41 @@ test_find_and_modify (void)
 }
 
 
+static void
+test_find_and_modify_opts (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_find_and_modify_opts_t *opts;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = mongoc_find_and_modify_opts_new ();
+   assert (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
+   assert (mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
+
+   future = future_collection_find_and_modify_with_opts (
+      collection, tmp_bson ("{}"), opts, NULL, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'maxTimeMS': 42, 'foo': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
 
 
 void
@@ -357,4 +392,5 @@ test_find_and_modify_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/find_and_modify/find_and_modify/write_concern_failure",
                   test_find_and_modify_write_concern_wire_32_failure, NULL, NULL,
                   should_run_fam_wc);
+   TestSuite_Add (suite, "/find_and_modify/opts", test_find_and_modify_opts);
 }

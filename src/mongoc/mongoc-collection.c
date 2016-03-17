@@ -2110,7 +2110,6 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
-
    cluster = &collection->client->cluster;
    server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    if (!server_stream) {
@@ -2151,6 +2150,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
                         !!opts->bypass_document_validation);
    }
 
+   if (opts->max_time_ms > 0) {
+      BSON_APPEND_INT32 (&command, "maxTimeMS", opts->max_time_ms);
+   }
+
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) {
       if (!mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
@@ -2165,6 +2168,16 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
       if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
          _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
       }
+   }
+
+   if (!bson_concat (&command, &opts->extra)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "mongoc_find_and_modify_opts_t.extra is corrupt.");
+      bson_destroy (&command);
+      mongoc_server_stream_cleanup (server_stream);
+      RETURN (false);
    }
 
    ret = mongoc_cluster_run_command_monitored (cluster, server_stream,

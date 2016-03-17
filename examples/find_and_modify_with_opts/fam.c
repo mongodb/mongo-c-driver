@@ -1,3 +1,4 @@
+
 #include <bcon.h>
 #include <mongoc.h>
 
@@ -5,6 +6,7 @@
 #include "bypass.c"
 #include "update.c"
 #include "fields.c"
+#include "opts.c"
 #include "sort.c"
 
 int main(void)
@@ -18,9 +20,13 @@ int main(void)
    client = mongoc_client_new ("mongodb://localhost:27017/admin");
    database = mongoc_client_get_database (client, "databaseName");
 
-   options = BCON_NEW ( "validator", "{", "age", "{", "$lte", BCON_INT32 (34), "}", "}", "validationAction", BCON_UTF8 ("error"), "validationLevel", BCON_UTF8 ("moderate"));
+   options = BCON_NEW ("validator", "{",
+                       "age", "{", "$lte", BCON_INT32 (34), "}", "}",
+                       "validationAction", BCON_UTF8 ("error"),
+                       "validationLevel", BCON_UTF8 ("moderate"));
 
-   collection = mongoc_database_create_collection (database, "collectionName", options, &error);
+   collection = mongoc_database_create_collection (database, "collectionName",
+                                                   options, &error);
    if (!collection) {
       fprintf(stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
       return 1;
@@ -30,6 +36,7 @@ int main(void)
    fam_bypass (collection);
    fam_update (collection);
    fam_fields (collection);
+   fam_opts (collection);
    fam_sort (collection);
 
    mongoc_collection_drop (collection, NULL);

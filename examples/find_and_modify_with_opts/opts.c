@@ -1,11 +1,12 @@
 
-void fam_bypass(mongoc_collection_t *collection)
+void fam_opts(mongoc_collection_t *collection)
 {
    mongoc_find_and_modify_opts_t *opts;
    bson_t reply;
    bson_t *update;
    bson_error_t error;
    bson_t query = BSON_INITIALIZER;
+   bson_t extra = BSON_INITIALIZER;
    bool success;
 
 
@@ -21,8 +22,13 @@ void fam_bypass(mongoc_collection_t *collection)
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_update (opts, update);
-   /* He can still play, even though he is pretty old. */
-   mongoc_find_and_modify_opts_set_bypass_document_validation (opts, true);
+
+   /* Abort if the operation takes too long. */
+   mongoc_find_and_modify_opts_set_max_time_ms (opts, 100);
+
+   /* Some future findAndModify option the driver doesn't support conveniently */
+   BSON_APPEND_INT32 (&extra, "futureOption", 42);
+   mongoc_find_and_modify_opts_append (opts, &extra);
 
    success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
 
@@ -37,6 +43,7 @@ void fam_bypass(mongoc_collection_t *collection)
    }
 
    bson_destroy (&reply);
+   bson_destroy (&extra);
    bson_destroy (update);
    bson_destroy (&query);
    mongoc_find_and_modify_opts_destroy (opts);

@@ -36,6 +36,7 @@ mongoc_find_and_modify_opts_new (void)
    mongoc_find_and_modify_opts_t *opts = NULL;
 
    opts = (mongoc_find_and_modify_opts_t *)bson_malloc0 (sizeof *opts);
+   bson_init (&opts->extra);
    opts->bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
 
    return opts;
@@ -105,6 +106,26 @@ mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modi
    return true;
 }
 
+bool
+mongoc_find_and_modify_opts_set_max_time_ms (mongoc_find_and_modify_opts_t *opts,
+                                             uint32_t                       max_time_ms)
+{
+   BSON_ASSERT (opts);
+
+   opts->max_time_ms = max_time_ms;
+   return true;
+}
+
+bool
+mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
+                                    const bson_t                  *extra)
+{
+   BSON_ASSERT (opts);
+   BSON_ASSERT (extra);
+
+   return bson_concat (&opts->extra, extra);
+}
+
 /**
  * mongoc_find_and_modify_opts_destroy:
  * @opts: A mongoc_find_and_modify_opts_t.
@@ -118,6 +139,7 @@ mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *opts)
       _mongoc_bson_destroy_if_set (opts->sort);
       _mongoc_bson_destroy_if_set (opts->update);
       _mongoc_bson_destroy_if_set (opts->fields);
+      bson_destroy (&opts->extra);
       bson_free (opts);
    }
 }

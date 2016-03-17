@@ -333,6 +333,8 @@ LIBMONGOC_1.4 {
         mongoc_cursor_get_limit;
         mongoc_cursor_new_from_command_reply;
         mongoc_cursor_set_limit;
+        mongoc_find_and_modify_opts_set_max_time_ms;
+        mongoc_find_and_modify_opts_append;
         mongoc_log_trace_disable;
         mongoc_log_trace_enable;
         mongoc_server_description_ismaster;

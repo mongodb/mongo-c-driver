@@ -13,6 +13,11 @@ Server Selection Spec. These are the affected functions:
   * mongoc_collection_command
   * mongoc_collection_command_simple
 
+New functions to send maxTimeMS or any arbitrary options with findAndModify:
+
+  * mongoc_find_and_modify_opts_set_max_time_ms
+  * mongoc_find_and_modify_opts_append
+
 New functions support language drivers (specifically the PHP and HHVM drivers)
 using only the libmongoc public API:
 
