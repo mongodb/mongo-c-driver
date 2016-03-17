@@ -183,12 +183,12 @@ print_captured_logs (const char *prefix)
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       if (prefix) {
-         fprintf (stderr, "%s%s %s",
+         fprintf (stderr, "%s%s %s\n",
                   prefix,
                   mongoc_log_level_str (log_entry->level),
                   log_entry->msg);
       } else {
-         fprintf (stderr, "%s %s",
+         fprintf (stderr, "%s %s\n",
                   mongoc_log_level_str (log_entry->level),
                   log_entry->msg);
       }
