@@ -27,6 +27,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
+#include "mongoc-error.h"
 
 #if defined(MONGOC_ENABLE_OPENSSL)
 # include "mongoc-stream-tls-openssl.h"
@@ -41,11 +42,80 @@
 
 
 /**
- * mongoc_stream_tls_do_handshake:
+ * mongoc_stream_tls_handshake:
  *
- * force an ssl handshake
- *
- * This will happen on the first read or write otherwise
+ * Performs TLS handshake dance
+ */
+bool
+mongoc_stream_tls_handshake (mongoc_stream_t *stream,
+                             const char      *host,
+                             int32_t          timeout_msec,
+                             int             *events,
+                             bson_error_t    *error)
+{
+   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
+
+   BSON_ASSERT (stream_tls);
+   BSON_ASSERT (stream_tls->handshake);
+
+   stream_tls->timeout_msec = timeout_msec;
+
+   return stream_tls->handshake (stream, host, events, error);
+}
+
+bool
+mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
+                                   const char      *host,
+                                   int32_t          timeout_msec,
+                                   bson_error_t    *error)
+{
+   int events;
+   ssize_t ret = 0;
+   mongoc_stream_poll_t poller;
+   int64_t now;
+   int64_t expire = 0;
+
+   if (timeout_msec >= 0) {
+      expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
+   }
+
+   do {
+      events = 0;
+
+      if (mongoc_stream_tls_handshake (stream, host, timeout_msec, &events, error)) {
+         return true;
+      }
+
+      if (events) {
+         poller.stream = stream;
+         poller.events = events;
+         poller.revents = 0;
+
+         if (expire) {
+            now = bson_get_monotonic_time ();
+            if ((expire - now) < 0) {
+               bson_set_error (error,
+                               MONGOC_ERROR_STREAM,
+                               MONGOC_ERROR_STREAM_SOCKET,
+                               "TLS handshake timedout.");
+               return false;
+            } else {
+               timeout_msec = (expire - now) / 1000L;
+            }
+         }
+         ret = mongoc_stream_poll (&poller, 1, timeout_msec);
+      }
+   } while (events && ret > 0);
+
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "TLS handshake failed.");
+   return false;
+}
+/**
+ * Deprecated. Was never supposed to be part of the public API.
+ * See mongoc_stream_tls_handshake.
  */
 bool
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
@@ -54,57 +124,15 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
    mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
 
    BSON_ASSERT (stream_tls);
-   BSON_ASSERT (stream_tls->do_handshake);
 
-   return stream_tls->do_handshake(stream, timeout_msec);
-}
-
-
-/**
- * mongoc_stream_tls_should_retry:
- *
- * If the stream should be retried
- */
-bool
-mongoc_stream_tls_should_retry (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
-
-   BSON_ASSERT (stream_tls);
-   BSON_ASSERT (stream_tls->should_retry);
-
-   if (stream_tls->should_retry) {
-      return stream_tls->should_retry (stream);
-   }
+   MONGOC_ERROR ("This function doesn't do anything. Please call mongoc_stream_tls_handshake()");
    return false;
 }
 
 
 /**
- * mongoc_stream_tls_should_read:
- *
- * If the stream should read
- */
-bool
-mongoc_stream_tls_should_read (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
-
-   BSON_ASSERT (stream_tls);
-   BSON_ASSERT (stream_tls->should_read);
-
-   if (stream_tls->should_read) {
-      return stream_tls->should_read (stream);
-   }
-
-   return false;
-}
-
-
-/**
- * mongoc_stream_tls_check_cert:
- *
- * check the cert returned by the other party
+ * Deprecated. Was never supposed to be part of the public API.
+ * See mongoc_stream_tls_handshake.
  */
 bool
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
@@ -113,9 +141,9 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
    mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
 
    BSON_ASSERT (stream_tls);
-   BSON_ASSERT (stream_tls->check_cert);
 
-   return stream_tls->check_cert(stream, host);
+   MONGOC_ERROR ("This function doesn't do anything. Please call mongoc_stream_tls_handshake()");
+   return false;
 }
 
 

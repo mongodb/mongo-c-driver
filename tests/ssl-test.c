@@ -41,6 +41,7 @@ ssl_test_server (void * ptr)
    socklen_t sock_len;
    char buf[4 * NUM_IOVECS];
    ssize_t r;
+   bson_error_t error;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
    int len;
@@ -96,8 +97,8 @@ ssl_test_server (void * ptr)
    }
    assert(ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-       mongoc_stream_tls_check_cert (ssl_stream, data->host);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
+
    if (!r) {
       unsigned long err = 43;
 
@@ -166,6 +167,7 @@ ssl_test_client (void * ptr)
    mongoc_iovec_t wiov_many[NUM_IOVECS];
    struct sockaddr_in server_addr = { 0 };
    int len;
+   bson_error_t error;
 
    riov.iov_base = buf;
    riov.iov_len = sizeof buf;
@@ -210,11 +212,9 @@ ssl_test_client (void * ptr)
    }
    assert(ssl_stream);
 
-   errno = 0;
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-       mongoc_stream_tls_check_cert (ssl_stream, data->host);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
 
-   if (! r) {
+   if (!r) {
       unsigned long err = 45;
 
       data->client_result->ssl_err = err;

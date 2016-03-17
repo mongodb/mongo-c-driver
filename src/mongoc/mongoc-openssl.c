@@ -165,7 +165,7 @@ _mongoc_openssl_hostcheck (const char *pattern,
 bool
 _mongoc_openssl_check_cert (SSL        *ssl,
                             const char *host,
-                            bool weak_cert_validation)
+                            bool        weak_cert_validation)
 {
    X509 *peer;
    X509_NAME *subject_name;

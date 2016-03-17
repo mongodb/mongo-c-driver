@@ -1593,18 +1593,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
          }
 
-         if (!mongoc_stream_tls_do_handshake (tls_stream, topology->connect_timeout_msec * 1000)) {
+         if (!mongoc_stream_tls_handshake_block (tls_stream, sd->host.host, topology->connect_timeout_msec * 1000, error)) {
             mongoc_topology_scanner_node_disconnect (scanner_node, true);
-            bson_set_error (error, MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed TLS handshake.");
-            return NULL;
-         }
-         if (!mongoc_stream_tls_check_cert (tls_stream, sd->host.host)) {
-            mongoc_topology_scanner_node_disconnect (scanner_node, true);
-            bson_set_error (error, MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed to verify peer certificate");
             return NULL;
          }
       }

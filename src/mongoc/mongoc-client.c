@@ -343,19 +343,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
          connecttimeoutms = mongoc_uri_get_option_as_int32 (
             uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
-         if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "TLS handshake failed.");
-            mongoc_stream_destroy (base_stream);
-         }
-
-         if (!mongoc_stream_tls_check_cert (base_stream, host->host)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed to verify peer certificate");
+         if (!mongoc_stream_tls_handshake_block (base_stream, host->host, connecttimeoutms, error)) {
             mongoc_stream_destroy (base_stream);
             return NULL;
          }

@@ -35,6 +35,7 @@
 #include "mongoc-openssl-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-log.h"
+#include "mongoc-error.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -203,9 +204,7 @@ _mongoc_stream_tls_openssl_write (mongoc_stream_tls_t *tls,
    }
 
    ret = BIO_write (openssl->bio, buf, buf_len);
-   TRACE("BIO_write returned %ld", ret);
 
-   TRACE("I got ret: %ld and retry: %d", ret, BIO_should_retry (openssl->bio));
    if (ret <= 0) {
       return ret;
    }
@@ -528,29 +527,35 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 
 
 /**
- * mongoc_stream_tls_openssl_do_handshake:
- *
- * force an ssl handshake
- *
- * This will happen on the first read or write otherwise
+ * mongoc_stream_tls_openssl_handshake:
  */
 bool
-mongoc_stream_tls_openssl_do_handshake (mongoc_stream_t *stream,
-                                        int32_t          timeout_msec)
+mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
+                                     const char      *host,
+                                     int             *events,
+                                     bson_error_t    *error)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
 
    BSON_ASSERT (tls);
+   BSON_ASSERT (host);
    ENTRY;
 
-   tls->timeout_msec = timeout_msec;
-
    if (BIO_do_handshake (openssl->bio) == 1) {
-      RETURN(true);
+      SSL *ssl;
+
+      BIO_get_ssl (openssl->bio, &ssl);
+      if (_mongoc_openssl_check_cert (ssl, host, tls->weak_cert_validation)) {
+         RETURN (true);
+      }
+
+      *events = 0;
+      RETURN (false);
    }
 
-   if (!timeout_msec) {
+   if (BIO_should_retry (openssl->bio)) {
+      *events = BIO_should_read (openssl->bio) ? POLLIN : POLLOUT;
       RETURN(false);
    }
 
@@ -562,65 +567,14 @@ mongoc_stream_tls_openssl_do_handshake (mongoc_stream_t *stream,
 #endif
    }
 
+
+   *events = 0;
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "TLS handshake failed.");
+
    RETURN(false);
-}
-
-/**
- * mongoc_stream_tls_openssl_should_retry:
- *
- * If the stream should be retried
- */
-bool
-mongoc_stream_tls_openssl_should_retry (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
-
-   BSON_ASSERT (tls);
-   ENTRY;
-
-   RETURN(BIO_should_retry (openssl->bio));
-}
-
-
-/**
- * mongoc_stream_tls_openssl_should_read:
- *
- * If the stream should read
- */
-bool
-mongoc_stream_tls_openssl_should_read (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
-
-   BSON_ASSERT (tls);
-   ENTRY;
-
-   RETURN(BIO_should_read (openssl->bio));
-}
-
-
-/**
- * mongoc_stream_tls_openssl_check_cert:
- *
- * check the cert returned by the other party
- */
-bool
-mongoc_stream_tls_openssl_check_cert (mongoc_stream_t *stream,
-                                      const char      *host)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
-   SSL *ssl;
-
-   BSON_ASSERT (tls);
-   BSON_ASSERT (host);
-   ENTRY;
-
-   BIO_get_ssl (openssl->bio, &ssl);
-
-   RETURN(_mongoc_openssl_check_cert (ssl, host, tls->weak_cert_validation));
 }
 
 
@@ -705,10 +659,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    tls->parent.get_base_stream = _mongoc_stream_tls_openssl_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_openssl_check_closed;
    tls->weak_cert_validation = opt->weak_cert_validation;
-   tls->should_read = mongoc_stream_tls_openssl_should_read;
-   tls->should_retry = mongoc_stream_tls_openssl_should_retry;
-   tls->do_handshake = mongoc_stream_tls_openssl_do_handshake;
-   tls->check_cert = mongoc_stream_tls_openssl_check_cert;
+   tls->handshake = mongoc_stream_tls_openssl_handshake;
    tls->ctx = (void *)openssl;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;

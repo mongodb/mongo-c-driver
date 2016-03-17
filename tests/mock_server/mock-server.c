@@ -1493,6 +1493,7 @@ main_thread (void *data)
 #ifdef MONGOC_ENABLE_SSL
          mongoc_mutex_lock (&server->mutex);
          if (server->ssl) {
+            server->ssl_opts.weak_cert_validation = 1;
             client_stream = mongoc_stream_tls_new (client_stream,
                                                    &server->ssl_opts, 0);
             if (!client_stream) {
@@ -1569,7 +1570,12 @@ worker_thread (void *data)
    mongoc_mutex_unlock (&server->mutex);
 
    if (ssl) {
-      mongoc_stream_tls_do_handshake (client_stream, TIMEOUT);
+      if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
+         MONGOC_ERROR("Blocking TLS handshake failed");
+         mongoc_stream_close (client_stream);
+         mongoc_stream_destroy (client_stream);
+         RETURN (NULL);
+      }
    }
 #endif
 
@@ -1586,7 +1592,7 @@ again:
    mongoc_mutex_unlock (&server->mutex);
 
    if (stopped) {
-      goto failure;
+      GOTO(failure);
    }
 
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, TIMEOUT, &error) == -1) {

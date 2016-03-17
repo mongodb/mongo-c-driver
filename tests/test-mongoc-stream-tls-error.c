@@ -36,6 +36,7 @@ ssl_error_server (void *ptr)
    ssize_t r;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
+   bson_error_t error;
 
    iov.iov_base = &buf;
    iov.iov_len = 1;
@@ -79,8 +80,7 @@ ssl_error_server (void *ptr)
       _mongoc_usleep (data->handshake_stall_ms * 1000);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
-      r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-          mongoc_stream_tls_check_cert (ssl_stream, data->host);
+      r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
       assert (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
@@ -129,6 +129,7 @@ ssl_hangup_client (void *ptr)
    mongoc_iovec_t wiov;
    struct sockaddr_in server_addr = { 0 };
    int64_t start_time;
+   bson_error_t error;
 
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    assert (conn_sock);
@@ -153,8 +154,7 @@ ssl_hangup_client (void *ptr)
    ssl_stream = mongoc_stream_tls_new (sock_stream, data->client, 1);
    assert (ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT) &&
-       mongoc_stream_tls_check_cert (ssl_stream, data->host);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
    assert (r);
 
    wiov.iov_base = (void *)&buf;

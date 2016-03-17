@@ -27,6 +27,7 @@
 #include "mongoc-stream-tls-secure-transport-private.h"
 #include "mongoc-secure-transport-private.h"
 #include "mongoc-ssl.h"
+#include "mongoc-error.h"
 #include "mongoc-counters-private.h"
 
 #include <Security/Security.h>
@@ -126,7 +127,6 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
          break;
 
       case errSSLClosedAbort:
-         TRACE("%s", "Got errno indicating failure");
          errno = ECONNRESET;
 
       default:
@@ -386,35 +386,16 @@ _mongoc_stream_tls_secure_transport_check_closed (mongoc_stream_t *stream) /* IN
 }
 
 bool
-mongoc_stream_tls_secure_transport_do_handshake (mongoc_stream_t *stream,
-                                                 int32_t          timeout_msec)
+mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
+                                              const char      *host,
+                                              int             *events,
+                                              bson_error_t    *error)
 {
+   int64_t now;
+   OSStatus ret = 0;
+   int64_t expire = 0;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
-
-   ENTRY;
-   BSON_ASSERT (secure_transport);
-   /* This is a bit backwards -- but the handshake is actually in check_cert.
-    * It is far preferable to let Secure Transport to the heavy weight of
-    * verifying and validating the server certificate, trust and hostname,
-    * rather then doing it ourself.
-    * Unfortunately, this API was designed around broken OpenSSL API where this
-    * was not the case, and verification is done after the handshake, not during.
-    * See mongoc_stream_tls_secure_transport_check_cert () that actually performs
-    * the handshake - and proper server verification.
-    */
-
-   tls->timeout_msec = timeout_msec;
-   RETURN (true);
-}
-
-bool
-mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
-                                               const char      *host)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
-   OSStatus ret;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -426,16 +407,28 @@ mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
          SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
       }
    }
+   ret = SSLHandshake (secure_transport->ssl_ctx_ref);
+   /* Weak certificate validation requested, eg: none */
 
-   do {
-      ret = SSLHandshake (secure_transport->ssl_ctx_ref);
-      /* Weak certificate validation requested, eg: none */
-      if (ret == errSSLServerAuthCompleted) {
-         ret = errSSLWouldBlock;
-      }
-   } while (ret == errSSLWouldBlock);
+   if (ret == errSSLServerAuthCompleted) {
+      ret = errSSLWouldBlock;
+   }
 
-   RETURN (ret == noErr);
+   if (ret == noErr) {
+      RETURN (true);
+   }
+
+   if (ret == errSSLWouldBlock) {
+      *events = POLLIN | POLLOUT;
+   } else {
+      *events = 0;
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: %d", ret);
+   }
+
+   RETURN (false);
 }
 
 mongoc_stream_t *
@@ -465,10 +458,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    tls->parent.get_base_stream = _mongoc_stream_tls_secure_transport_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_transport_check_closed;
    tls->weak_cert_validation = opt->weak_cert_validation;
-   tls->should_read = NULL;
-   tls->should_retry = NULL;
-   tls->do_handshake = mongoc_stream_tls_secure_transport_do_handshake;
-   tls->check_cert = mongoc_stream_tls_secure_transport_check_cert;
+   tls->handshake = mongoc_stream_tls_secure_transport_handshake;
    tls->ctx = (void *)secure_transport;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;

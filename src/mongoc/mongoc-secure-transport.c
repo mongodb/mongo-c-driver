@@ -342,8 +342,9 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
          secure_transport->anchors = CFRetain (items);
       }
 
+      /* This should be SSLSetCertificateAuthorities But the /TLS/* tests fail when it is */
       success = !SSLSetTrustedRoots (secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
-      MONGOC_DEBUG("Setting certificate authority %s", success ? "succeeded" : "failed");
+      MONGOC_DEBUG("Setting certificate authority %s (%s)", success ? "succeeded" : "failed", opt->ca_file);
       return true;
    }
 

@@ -42,10 +42,10 @@ struct _mongoc_stream_tls_t
    void            *ctx;         /* TLS lib specific configuration or wrappers */
    int32_t          timeout_msec;
    bool             weak_cert_validation;
-   bool (*do_handshake) (mongoc_stream_t *stream, int32_t     timeout_msec);
-   bool (*check_cert)   (mongoc_stream_t *stream, const char *host);
-   bool (*should_retry) (mongoc_stream_t *stream);
-   bool (*should_read)  (mongoc_stream_t *stream);
+   bool (*handshake)    (mongoc_stream_t *stream,
+                         const char      *host,
+                         int             *events /* OUT*/,
+                         bson_error_t    *error);
 };
 
 

@@ -75,6 +75,7 @@ test_ismaster_impl (bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
+         sopt.weak_cert_validation = true;
          sopt.pem_file = PEMFILE_NOPASS;
          sopt.ca_file = CAFILE;
 

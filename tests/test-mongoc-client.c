@@ -1556,6 +1556,7 @@ _test_ssl_reconnect (bool pooled)
 
    client_opts.ca_file = CAFILE;
 
+   server_opts.weak_cert_validation = true;
    server_opts.ca_file = CAFILE;
    server_opts.pem_file = PEMFILE_LOCALHOST;
 
@@ -1595,11 +1596,12 @@ _test_ssl_reconnect (bool pooled)
    /* next operation comes on a new connection, server verification fails */
    future = future_client_command_simple (client, "db", tmp_bson ("{'cmd': 1}"),
                                           NULL, NULL, &error);
+
    ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "Failed to verify peer certificate");
+                          "TLS handshake failed");
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -1688,6 +1690,7 @@ test_client_install (TestSuite *suite)
                   test_ssl_reconnect_single);
    TestSuite_Add (suite, "/Client/ssl/reconnect/pooled",
                   test_ssl_reconnect_pooled);
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
 #endif
 #else
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
