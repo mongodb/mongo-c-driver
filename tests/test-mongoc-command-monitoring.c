@@ -896,20 +896,20 @@ _test_set_callbacks (bool pooled)
       ASSERT (!mongoc_client_pool_set_apm_callbacks (pool, NULL,
                                                      (void*) &n_calls));
       ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_WARNING,
+                           MONGOC_LOG_LEVEL_ERROR,
                            "Can only set callbacks once");
 
       clear_captured_logs ();
       ASSERT (!mongoc_client_set_apm_callbacks (client, NULL,
                                                 (void *) &n_calls));
       ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_WARNING,
+                           MONGOC_LOG_LEVEL_ERROR,
                            "Cannot set callbacks on a pooled client");
    } else {
       ASSERT (!mongoc_client_set_apm_callbacks (client, NULL,
                                                 (void *) &n_calls));
       ASSERT_CAPTURED_LOG ("mongoc_client_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_WARNING,
+                           MONGOC_LOG_LEVEL_ERROR,
                            "Can only set callbacks once");
    }
 
