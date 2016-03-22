@@ -498,11 +498,13 @@ mock_rs_receives_command (mock_rs_t *rs,
                                            formatted_command_json,
                                            NULL,
                                            true)) {
+      bson_free (formatted_command_json);
       request_destroy (request);
       return NULL;
    }
 
    bson_free (ns);
+   bson_free (formatted_command_json);
 
    return request;
 }
