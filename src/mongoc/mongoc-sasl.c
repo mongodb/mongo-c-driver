@@ -183,7 +183,7 @@ _mongoc_sasl_is_failure (int           status,
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
                          status,
-                         "SASL Failrue: insufficient memory.");
+                         "SASL Failure: insufficient memory.");
          break;
       case SASL_NOMECH:
          bson_set_error (error,

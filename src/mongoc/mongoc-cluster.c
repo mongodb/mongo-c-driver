@@ -1597,7 +1597,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
             mongoc_topology_scanner_node_disconnect (scanner_node, true);
             bson_set_error (error, MONGOC_ERROR_STREAM,
                             MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed TLS handhsake.");
+                            "Failed TLS handshake.");
             return NULL;
          }
          if (!mongoc_stream_tls_check_cert (tls_stream, sd->host.host)) {

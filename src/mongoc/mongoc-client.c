@@ -494,7 +494,7 @@ _bson_to_error (const bson_t *b,
    bson_set_error(error,
                   MONGOC_ERROR_QUERY,
                   MONGOC_ERROR_QUERY_FAILURE,
-                  "An unknown error ocurred on the server.");
+                  "An unknown error occurred on the server.");
 }
 
 
