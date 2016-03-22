@@ -682,7 +682,9 @@ _test_connect_timeout (bool pooled, bool try_once)
          expected_duration_usec += 1000 * (
             connect_timeout_ms + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
 
-         ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
+         if (!test_suite_valgrind ()) {
+            ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
+         }
 
          /* single client puts server 0 in cooldown for 5 sec */
          if (pooled || !server0_in_cooldown) {
@@ -704,10 +706,12 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    duration_usec = bson_get_monotonic_time () - start;
 
-   if (try_once) {
-      ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
-   } else {
-      ASSERT_ALMOST_EQUAL (duration_usec / 1000, server_selection_timeout_ms);
+   if (!test_suite_valgrind ()) {
+      if (try_once) {
+         ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
+      } else {
+         ASSERT_ALMOST_EQUAL (duration_usec / 1000, server_selection_timeout_ms);
+      }
    }
 
    if (pooled) {
