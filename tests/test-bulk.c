@@ -866,7 +866,7 @@ test_replace_one (bool ordered)
  * CDRIVER-1082
  */
 static void
-test_upsert_large (void)
+test_upsert_large (void *ctx)
 {
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
@@ -919,7 +919,7 @@ test_upsert_large (void)
 
 
 static void
-test_upsert_huge (void)
+test_upsert_huge (void *ctx)
 {
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
@@ -2021,7 +2021,7 @@ test_wtimeout_plus_duplicate_key_err_write_commands (void)
 
 
 static void
-test_large_inserts_ordered (void)
+test_large_inserts_ordered (void *ctx)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -2133,7 +2133,7 @@ test_large_inserts_ordered (void)
 
 
 static void
-test_large_inserts_unordered (void)
+test_large_inserts_unordered (void *ctx)
 {
    mongoc_client_t *client;
    bson_t *huge_doc;
@@ -2897,10 +2897,10 @@ test_bulk_install (TestSuite *suite)
                   test_upsert_ordered);
    TestSuite_Add (suite, "/BulkOperation/upsert_unordered",
                   test_upsert_unordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_large",
-                  test_upsert_large);
-   TestSuite_Add (suite, "/BulkOperation/upsert_huge",
-                  test_upsert_huge);
+   TestSuite_AddFull (suite, "/BulkOperation/upsert_large",
+                  test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/BulkOperation/upsert_huge",
+                  test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/BulkOperation/upserted_index_ordered",
                   test_upserted_index_ordered);
    TestSuite_Add (suite, "/BulkOperation/upserted_index_unordered",
@@ -2953,10 +2953,10 @@ test_bulk_install (TestSuite *suite)
                   test_wtimeout_plus_duplicate_key_err_legacy);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
                   test_wtimeout_plus_duplicate_key_err_write_commands);
-   TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",
-                  test_large_inserts_ordered);
-   TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",
-                  test_large_inserts_unordered);
+   TestSuite_AddFull (suite, "/BulkOperation/large_inserts_ordered",
+                  test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/BulkOperation/large_inserts_unordered",
+                  test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/BulkOperation/numerous_ordered",
                   test_numerous_ordered);
    TestSuite_Add (suite, "/BulkOperation/numerous_unordered",

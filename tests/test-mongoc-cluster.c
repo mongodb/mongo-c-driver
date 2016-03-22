@@ -198,14 +198,14 @@ _test_cluster_node_disconnect (bool pooled)
 
 
 static void
-test_cluster_node_disconnect_single (void)
+test_cluster_node_disconnect_single (void *ctx)
 {
    _test_cluster_node_disconnect (false);
 }
 
 
 static void
-test_cluster_node_disconnect_pooled (void)
+test_cluster_node_disconnect_pooled (void *ctx)
 {
    _test_cluster_node_disconnect (true);
 }
@@ -369,14 +369,14 @@ _test_write_disconnect (bool legacy)
 
 
 static void
-test_write_command_disconnect (void)
+test_write_command_disconnect (void *ctx)
 {
    _test_write_disconnect (false);
 }
 
 
 static void
-test_legacy_write_disconnect (void)
+test_legacy_write_disconnect (void *ctx)
 {
    _test_write_disconnect (true);
 }
@@ -476,12 +476,12 @@ test_cluster_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_Add (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
-   TestSuite_Add (suite, "/Cluster/disconnect/single", test_cluster_node_disconnect_single);
-   TestSuite_Add (suite, "/Cluster/disconnect/pooled", test_cluster_node_disconnect_pooled);
+   TestSuite_AddFull  (suite, "/Cluster/disconnect/single", test_cluster_node_disconnect_single, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull  (suite, "/Cluster/disconnect/pooled", test_cluster_node_disconnect_pooled, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Cluster/command/timeout/single", test_cluster_command_timeout_single);
    TestSuite_Add (suite, "/Cluster/command/timeout/pooled", test_cluster_command_timeout_pooled);
-   TestSuite_Add (suite, "/Cluster/write_command/disconnect", test_write_command_disconnect);
-   TestSuite_Add (suite, "/Cluster/legacy_write/disconnect", test_legacy_write_disconnect);
+   TestSuite_AddFull (suite, "/Cluster/write_command/disconnect", test_write_command_disconnect, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull  (suite, "/Cluster/legacy_write/disconnect", test_legacy_write_disconnect, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Cluster/write_command/socket_check", test_write_command_socket_check);
    TestSuite_Add (suite, "/Cluster/legacy_write/socket_check", test_legacy_write_socket_check);
 }

@@ -571,7 +571,7 @@ test_stream (void)
 
 
 static void
-test_long_seek (void)
+test_long_seek (void *ctx)
 {
    const uint64_t four_mb = 4 * 1024 * 1024;
 
@@ -696,7 +696,7 @@ test_remove_by_filename (void)
 }
 
 static void
-test_missing_chunk (void)
+test_missing_chunk (void *ctx)
 {
    mongoc_client_t *client;
    bson_error_t error;
@@ -893,8 +893,8 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
-   TestSuite_Add (suite, "/GridFS/test_long_seek", test_long_seek);
+   TestSuite_AddFull (suite, "/GridFS/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
-   TestSuite_Add (suite, "/GridFS/missing_chunk", test_missing_chunk);
+   TestSuite_AddFull (suite, "/GridFS/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }

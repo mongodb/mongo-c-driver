@@ -357,7 +357,7 @@ test_mongoc_socket_check_closed (void)
 }
 
 static void
-test_mongoc_socket_sendv (void)
+test_mongoc_socket_sendv (void *ctx)
 {
    socket_test_data_t data = { 0 };
    mongoc_thread_t threads[2];
@@ -385,5 +385,5 @@ void
 test_socket_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
-   TestSuite_Add (suite, "/Socket/sendv", test_mongoc_socket_sendv);
+   TestSuite_AddFull (suite, "/Socket/sendv", test_mongoc_socket_sendv, NULL, NULL, test_framework_skip_if_slow);
 }

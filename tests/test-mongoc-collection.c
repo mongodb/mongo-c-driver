@@ -1955,7 +1955,7 @@ test_aggregate_modern (void *data)
 
 
 static void
-test_validate (void)
+test_validate (void *ctx)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -2219,7 +2219,7 @@ test_find_and_modify (void)
 
 
 static void
-test_large_return (void)
+test_large_return (void *ctx)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -2972,7 +2972,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
-   TestSuite_Add (suite, "/Collection/validate", test_validate);
+   TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/find_read_concern", test_find_read_concern);
@@ -2981,7 +2981,7 @@ test_collection_install (TestSuite *suite)
                   test_find_and_modify_write_concern_wire_32);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern_pre_32",
                   test_find_and_modify_write_concern_wire_pre_32);
-   TestSuite_Add (suite, "/Collection/large_return", test_large_return);
+   TestSuite_AddFull (suite, "/Collection/large_return", test_large_return, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
    TestSuite_Add (suite, "/Collection/limit", test_find_limit);
    TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);

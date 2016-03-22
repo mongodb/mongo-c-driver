@@ -907,7 +907,7 @@ test_mongos_seeds_reconnect_pooled (void)
 
 
 static void
-test_recovering (void)
+test_recovering (void *ctx)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -1670,7 +1670,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mongos_seeds_connect/pooled", test_mongos_seeds_connect_pooled);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/single", test_mongos_seeds_reconnect_single);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
-   TestSuite_Add (suite, "/Client/recovering", test_recovering);
+   TestSuite_AddFull (suite, "/Client/recovering", test_recovering, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);

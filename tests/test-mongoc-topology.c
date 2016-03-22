@@ -109,7 +109,7 @@ test_topology_client_pool_creation (void)
 }
 
 static void
-test_server_selection_try_once_option (void)
+test_server_selection_try_once_option (void *ctx)
 {
    const char *uri_strings[3] = {
       "mongodb://a",
@@ -243,13 +243,13 @@ _test_server_selection (bool try_once)
 }
 
 static void
-test_server_selection_try_once (void)
+test_server_selection_try_once (void *ctx)
 {
    _test_server_selection (true);
 }
 
 static void
-test_server_selection_try_once_false (void)
+test_server_selection_try_once_false (void *ctx)
 {
    _test_server_selection (false);
 }
@@ -352,7 +352,7 @@ test_topology_invalidate_server_pooled (void)
 }
 
 static void
-test_invalid_cluster_node (void)
+test_invalid_cluster_node (void *ctx)
 {
    mongoc_client_pool_t *pool;
    mongoc_cluster_node_t *cluster_node;
@@ -455,7 +455,7 @@ test_max_wire_version_race_condition (void *ctx)
 
 
 static void
-test_cooldown_standalone (void)
+test_cooldown_standalone (void *ctx)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -516,7 +516,7 @@ test_cooldown_standalone (void)
 
 
 static void
-test_cooldown_rs (void)
+test_cooldown_rs (void *ctx)
 {
    mock_server_t *servers[2];  /* two secondaries, no primary */
    char *uri_str;
@@ -760,21 +760,21 @@ _test_connect_timeout (bool pooled, bool try_once)
 
 
 static void
-test_connect_timeout_pooled (void)
+test_connect_timeout_pooled (void *ctx)
 {
    _test_connect_timeout (true, false);
 }
 
 
 static void
-test_connect_timeout_single(void)
+test_connect_timeout_single(void *ctx)
 {
    _test_connect_timeout (false, true);
 }
 
 
 static void
-test_connect_timeout_try_once_false(void)
+test_connect_timeout_try_once_false(void *ctx)
 {
    _test_connect_timeout (false, false);
 }
@@ -831,20 +831,20 @@ test_topology_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
-   TestSuite_Add (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option);
-   TestSuite_Add (suite, "/Topology/server_selection_try_once", test_server_selection_try_once);
-   TestSuite_Add (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once", test_server_selection_try_once, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
    TestSuite_Add (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
-   TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
+   TestSuite_AddFull (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
-   TestSuite_Add (suite, "/Topology/cooldown/standalone", test_cooldown_standalone);
-   TestSuite_Add (suite, "/Topology/cooldown/rs", test_cooldown_rs);
-   TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
-   TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
-   TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
+   TestSuite_AddFull (suite, "/Topology/cooldown/standalone", test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/cooldown/rs", test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,
                       NULL, NULL, test_framework_skip_if_offline);

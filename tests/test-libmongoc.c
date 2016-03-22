@@ -1345,6 +1345,13 @@ int test_framework_skip_if_offline (void)
 
 
 int
+test_framework_skip_if_slow (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_SLOW") ? 0 : 1;
+}
+
+
+int
 test_framework_skip_if_windows (void)
 {
 #ifdef _WIN32

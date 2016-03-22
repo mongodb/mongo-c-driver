@@ -830,7 +830,7 @@ test_getmore_batch_size (void)
 
 
 static void
-test_getmore_invalid_reply (void)
+test_getmore_invalid_reply (void *ctx)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -1133,8 +1133,8 @@ test_collection_find_install (TestSuite *suite)
                   test_query_flags);
    TestSuite_Add (suite, "/Collection/getmore/batch_size",
                   test_getmore_batch_size);
-   TestSuite_Add (suite, "/Collection/getmore/invalid_reply",
-                  test_getmore_invalid_reply);
+   TestSuite_AddFull (suite, "/Collection/getmore/invalid_reply",
+                  test_getmore_invalid_reply, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Collection/getmore/await",
                   test_getmore_await);
    TestSuite_Add (suite, "/Collection/tailable/timeout/single",

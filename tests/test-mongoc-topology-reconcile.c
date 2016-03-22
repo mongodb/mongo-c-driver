@@ -225,14 +225,14 @@ _test_topology_reconcile_rs (bool pooled)
 
 
 static void
-test_topology_reconcile_rs_single (void)
+test_topology_reconcile_rs_single (void *ctx)
 {
    _test_topology_reconcile_rs (false);
 }
 
 
 static void
-test_topology_reconcile_rs_pooled (void)
+test_topology_reconcile_rs_pooled (void *ctx)
 {
    _test_topology_reconcile_rs (true);
 }
@@ -358,10 +358,10 @@ test_topology_reconcile_sharded_pooled (void)
 void
 test_topology_reconcile_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/TOPOLOGY/reconcile/rs/pooled",
-                  test_topology_reconcile_rs_pooled);
-   TestSuite_Add (suite, "/TOPOLOGY/reconcile/rs/single",
-                  test_topology_reconcile_rs_single);
+   TestSuite_AddFull (suite, "/TOPOLOGY/reconcile/rs/pooled",
+                  test_topology_reconcile_rs_pooled, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/TOPOLOGY/reconcile/rs/single",
+                  test_topology_reconcile_rs_single, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/pooled",
                   test_topology_reconcile_sharded_pooled);
    TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/single",
