@@ -125,6 +125,7 @@ test_command (void)
    assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
    assert (strstr (error.message, "a_non_existing_command"));
 
+   bson_destroy (&reply);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
