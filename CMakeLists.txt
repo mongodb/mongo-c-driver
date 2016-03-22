@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 
 project (libmongoc)
 
-option(ENABLE_SSL
-       "Use OpenSSL for TLS connections and SCRAM-SHA-1 authentication.\
-NOTE: OpenSSL is required for authenticating to MongoDB 3.0 and later."
-       ON)
+set (ENABLE_SSL AUTO CACHE STRING
+     "Enable TLS connections and SCRAM-SHA-1 authentication.\
+ Options are \"DARWIN\" to use Apple's Secure Transport, \"OPENSSL\", \"AUTO\",\
+ or \"OFF\". These options are case-sensitive. The default is \"AUTO\". Note\
+ that SCRAM-SHA-1 is required for authenticating to MongoDB 3.0 and later.")
 
 option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
@@ -17,22 +18,62 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 include(InstallRequiredSystemLibraries)
 include(FindBSON REQUIRED)
 
-if (ENABLE_SSL)
-    include(FindOpenSSL)
+if (NOT (ENABLE_SSL STREQUAL DARWIN
+         OR ENABLE_SSL STREQUAL OPENSSL
+         OR ENABLE_SSL STREQUAL AUTO
+         OR ENABLE_SSL STREQUAL OFF))
+   message (FATAL_ERROR
+            "ENABLE_SSL option must be DARWIN, OPENSSL, AUTO, or OFF")
+endif()
+
+if (NOT ENABLE_SSL STREQUAL OFF)
+   # If "AUTO", try OpenSSL. In version 2.0 we'll default to "DARWIN" on Mac.
+   if (ENABLE_SSL STREQUAL AUTO OR ENABLE_SSL STREQUAL OPENSSL)
+      # Sets OPENSSL_FOUND on success.
+      include (FindOpenSSL)
+   endif ()
+
+   if (ENABLE_SSL STREQUAL DARWIN)
+      if (APPLE)
+         set (SECURE_TRANSPORT 1)
+      else ()
+         message (FATAL_ERROR "ENABLE_SSL=DARWIN only supported on Mac OS X")
+      endif ()
+   endif ()
+
+   if (ENABLE_SSL STREQUAL AUTO AND NOT OPENSSL_FOUND AND APPLE)
+      set (SECURE_TRANSPORT 1)
+   endif ()
+
+   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT)
+      if (ENABLE_SSL STREQUAL AUTO)
+         set (ENABLE_SSL OFF)
+      else ()
+         message (FATAL_ERROR "No SSL library found")
+      endif ()
+   endif ()
 endif ()
-if (ENABLE_SSL AND OPENSSL_FOUND)
+
+# Defaults.
+set (MONGOC_ENABLE_SSL 0)
+set (MONGOC_ENABLE_OPENSSL 0)
+set (MONGOC_ENABLE_SECURE_TRANSPORT 0)
+
+set (MONGOC_ENABLE_CRYPTO 0)
+set (MONGOC_ENABLE_LIBCRYPTO 0)
+set (MONGOC_ENABLE_COMMON_CRYPTO 0)
+
+if (OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_OPENSSL 1)
-   set (MONGOC_ENABLE_LIBCRYPTO 1)
    set (MONGOC_ENABLE_CRYPTO 1)
-else ()
-   set (MONGOC_ENABLE_SSL 0)
-   set (MONGOC_ENABLE_OPENSSL 0)
-   set (MONGOC_ENABLE_LIBCRYPTO 0)
-   set (MONGOC_ENABLE_CRYPTO 0)
+   set (MONGOC_ENABLE_LIBCRYPTO 1)
+elseif (SECURE_TRANSPORT)
+   set (MONGOC_ENABLE_SSL 1)
+   set (MONGOC_ENABLE_SECURE_TRANSPORT 1)
+   set (MONGOC_ENABLE_CRYPTO 1)
+   set (MONGOC_ENABLE_COMMON_CRYPTO 1)
 endif ()
-set (MONGOC_ENABLE_SECURE_TRANSPORT 0)
-set (MONGOC_ENABLE_COMMON_CRYPTO 0)
 
 if (ENABLE_SASL)
    include(FindSASL2)
@@ -213,26 +254,41 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
 
-if (OPENSSL_FOUND)
+if (NOT ENABLE_SSL STREQUAL OFF)
    set (HEADERS ${HEADERS}
-      ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
-      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
-      ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
-      ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h)
-   set (SOURCES ${SOURCES}
-      ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
+        ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h
    )
-   set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
-   include_directories(${OPENSSL_INCLUDE_DIR})
-endif()
+   set (SOURCES ${SOURCES}
+        ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
+        ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
+        ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
+        ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
+   )
+
+   if (OPENSSL_FOUND)
+      set (SOURCES ${SOURCES}
+           ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+           ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+           ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
+           ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
+           ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
+      )
+      set (LIBS ${LIBS} ${OPENSSL_LIBRARIES})
+      include_directories (${OPENSSL_INCLUDE_DIR})
+   elseif (SECURE_TRANSPORT)
+      set (SOURCES ${SOURCES}
+              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
+      )
+      set (LIBS ${LIBS} "-framework CoreFoundation -framework Security")
+   endif ()
+endif () # ENABLE_SSL
+
 
 if (MONGOC_ENABLE_SASL)
    set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
