@@ -461,7 +461,7 @@ _bson_to_error (const bson_t *b,
                 bson_error_t *error)
 {
    bson_iter_t iter;
-   int code = 0;
+   uint32_t code = 0;
 
    BSON_ASSERT (b);
 
@@ -470,7 +470,7 @@ _bson_to_error (const bson_t *b,
    }
 
    if (bson_iter_init_find(&iter, b, "code") && BSON_ITER_HOLDS_INT32(&iter)) {
-      code = bson_iter_int32(&iter);
+      code = (uint32_t) bson_iter_int32 (&iter);
    }
 
    if (bson_iter_init_find(&iter, b, "$err") && BSON_ITER_HOLDS_UTF8(&iter)) {
