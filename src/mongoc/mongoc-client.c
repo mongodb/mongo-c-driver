@@ -39,6 +39,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-set-private.h"
+#include "mongoc-log.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -446,10 +447,15 @@ _mongoc_client_recv (mongoc_client_t        *client,
 
 static void
 _bson_to_error (const bson_t *b,
+                int32_t       error_api_version,
                 bson_error_t *error)
 {
    bson_iter_t iter;
    uint32_t code = 0;
+   mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2
+      ? MONGOC_ERROR_SERVER
+      : MONGOC_ERROR_QUERY;
 
    BSON_ASSERT (b);
 
@@ -463,7 +469,7 @@ _bson_to_error (const bson_t *b,
 
    if (bson_iter_init_find(&iter, b, "$err") && BSON_ITER_HOLDS_UTF8(&iter)) {
       bson_set_error(error,
-                     MONGOC_ERROR_QUERY,
+                     domain,
                      code,
                      "%s",
                      bson_iter_utf8(&iter, NULL));
@@ -472,7 +478,7 @@ _bson_to_error (const bson_t *b,
 
    if (bson_iter_init_find(&iter, b, "errmsg") && BSON_ITER_HOLDS_UTF8(&iter)) {
       bson_set_error(error,
-                     MONGOC_ERROR_QUERY,
+                     domain,
                      code,
                      "%s",
                      bson_iter_utf8(&iter, NULL));
@@ -557,7 +563,7 @@ _mongoc_client_recv_gle (mongoc_client_t        *client,
 
    if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
       if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-         _bson_to_error (&b, error);
+         _bson_to_error (&b, client->error_api_version, error);
          bson_destroy (&b);
          GOTO (cleanup);
       }
@@ -569,7 +575,7 @@ _mongoc_client_recv_gle (mongoc_client_t        *client,
       if (!bson_iter_init_find (&iter, &b, "ok") ||
           BSON_ITER_HOLDS_DOUBLE (&iter)) {
         if (bson_iter_double (&iter) == 0.0) {
-          _bson_to_error (&b, error);
+          _bson_to_error (&b, client->error_api_version, error);
         }
       }
 
@@ -729,6 +735,8 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
    client->topology = topology;
+   client->error_api_version = MONGOC_ERROR_API_VERSION_LEGACY;
+   client->error_api_set = false;
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -1856,4 +1864,25 @@ mongoc_client_select_server (mongoc_client_t           *client,
                                   for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ,
                                   prefs,
                                   error);
+}
+
+bool
+mongoc_client_set_error_api (mongoc_client_t *client,
+                             int32_t          version)
+{
+   if (!client->topology->single_threaded) {
+      MONGOC_ERROR ("Cannot set Error API Version on a pooled client, use "
+                    "mongoc_client_pool_set_error_api");
+      return false;
+   }
+
+   if (version != MONGOC_ERROR_API_VERSION_LEGACY &&
+       version != MONGOC_ERROR_API_VERSION_2) {
+      MONGOC_ERROR ("Unsupported Error API Version: %" PRId32, version);
+      return false;
+   }
+
+   client->error_api_version = version;
+
+   return true;
 }

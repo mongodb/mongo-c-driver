@@ -1813,6 +1813,92 @@ test_write_concern_write_command_unordered_multi_err (void)
 
 
 static void
+_test_write_concern_err_api (bool    has_write_commands,
+                             int32_t error_api_version)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   uint32_t expected_code;
+
+   /* set wire protocol version for legacy writes or write commands */
+   mock_server = mock_server_with_autoismaster (has_write_commands ? 3 : 0);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   ASSERT (mongoc_client_set_error_api (client, error_api_version));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (has_write_commands) {
+      request = mock_server_receives_command (mock_server, "test",
+                                              MONGOC_QUERY_NONE, NULL);
+
+      mock_server_replies_simple (
+         request,
+         "{'ok': 1.0, 'n': 1, "
+         " 'writeConcernError': {'code': 42, 'errmsg': 'foo'}}");
+   } else {
+      request = mock_server_receives_insert (
+         mock_server, "test.test", MONGOC_INSERT_NONE, "{'_id': 1}");
+
+      request_destroy (request);
+      request = mock_server_receives_gle (mock_server, "test");
+      mock_server_replies_simple (
+         request, "{'ok': 1.0, 'n': 1, 'err': 'foo', 'wtimeout': true}");
+   }
+
+   assert (!future_get_uint32_t (future));
+   /* legacy write concern errs have no code from server, driver uses 64 */
+   expected_code = has_write_commands ? 42 : 64;
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
+                          expected_code, "foo");
+
+   future_destroy (future);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+
+static void
+test_write_concern_error_legacy_v1 (void)
+{
+   _test_write_concern_err_api (false, 1);
+}
+
+
+static void
+test_write_concern_error_write_command_v1 (void)
+{
+   _test_write_concern_err_api (true, 1);
+}
+
+
+static void
+test_write_concern_error_legacy_v2 (void)
+{
+   _test_write_concern_err_api (false, 2);
+}
+
+
+static void
+test_write_concern_error_write_command_v2 (void)
+{
+   _test_write_concern_err_api (true, 2);
+}
+
+
+static void
 test_multiple_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
@@ -2546,14 +2632,63 @@ test_bulk_new (void)
 typedef enum {
     INSERT,
     UPDATE,
-    REMOVE
+    REMOVE,
+    OP_TYPE_LAST
 } op_type_t;
 
 
-static void
-_test_legacy_write_err (op_type_t op_type)
+static const char *
+op_type_str (op_type_t op_type)
 {
+   switch (op_type) {
+   case INSERT:
+      return "insert";
+   case UPDATE:
+      return "update";
+   case REMOVE:
+      return "remove";
+   case OP_TYPE_LAST:
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
+   }
+}
+
+
+typedef enum
+{
+   HANGUP,
+   SERVER_ERROR,
+   ERR_TYPE_LAST
+} err_type_t;
+
+
+static const char *
+err_type_str (err_type_t err_type)
+{
+   if (err_type == HANGUP) {
+      return "hangup";
+   } else {
+      return "server_error";
+   }
+}
+
+
+typedef struct
+{
+   op_type_t  op_type;
+   err_type_t err_type;
+   int        pooled;
+   int32_t    err_api_version;
+} err_test_t;
+
+
+static void
+_test_legacy_write_err (void *ctx)
+{
+   err_test_t *err_test;
    mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
@@ -2563,14 +2698,25 @@ _test_legacy_write_err (op_type_t op_type)
    future_t *future;
    request_t *request = NULL;
 
+   err_test = (err_test_t *) ctx;
+
    server = mock_server_with_autoismaster (0);  /* wire version = 0 */
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   if (err_test->pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      assert (mongoc_client_pool_set_error_api (pool,
+                                                err_test->err_api_version));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      assert (mongoc_client_set_error_api (client, err_test->err_api_version));
+   }
+
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
-   switch (op_type) {
+   switch (err_test->op_type) {
    case INSERT:
       mongoc_bulk_operation_insert (bulk, doc);
       break;
@@ -2583,14 +2729,15 @@ _test_legacy_write_err (op_type_t op_type)
    case REMOVE:
       mongoc_bulk_operation_remove (bulk, doc);
       break;
+   case OP_TYPE_LAST:
    default:
-      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      fprintf (stderr, "Invalid op_type: : %d\n", err_test->op_type);
       abort ();
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   switch (op_type) {
+   switch (err_test->op_type) {
    case INSERT:
       request = mock_server_receives_insert (server, "test.test",
                                              MONGOC_INSERT_NONE,
@@ -2607,46 +2754,53 @@ _test_legacy_write_err (op_type_t op_type)
                                              MONGOC_REMOVE_NONE,
                                              "{'_id': 1}");
       break;
+   case OP_TYPE_LAST:
    default:
-      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      fprintf (stderr, "Invalid op_type: : %d\n", err_test->op_type);
       abort ();
    }
 
    request_destroy (request);
    request = mock_server_receives_gle (server, "test");
-   mock_server_hangs_up (request);
+
+   if (err_test->err_type == HANGUP) {
+      capture_logs (true);
+      mock_server_hangs_up (request);
+   } else {
+      /* getlasterror reply has ok: 1, even if reporting an error */
+      mock_server_replies_simple (request,
+                                  "{'ok': 1, 'err': 'oops', 'code': 42}");
+   }
+
    request_destroy (request);
 
    /* bulk operation fails */
    assert (!future_get_uint32_t (future));
 
+   if (err_test->err_type == HANGUP) {
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET, "Failed to read");
+   } else if (err_test->err_api_version == 2) {
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 42, "oops");
+   } else {
+      /* legacy error API */
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 42, "oops");
+   }
+
    future_destroy (future);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
+
+   if (err_test->pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    mock_server_destroy (server);
 }
 
-
-static void
-test_legacy_insert_err (void)
-{
-   _test_legacy_write_err (INSERT);
-}
-
-
-static void
-test_legacy_update_err (void)
-{
-   _test_legacy_write_err (UPDATE);
-}
-
-
-static void
-test_legacy_remove_err (void)
-{
-   _test_legacy_write_err (REMOVE);
-}
 
 static void
 test_bulk_write_concern_over_1000(void)
@@ -2879,7 +3033,40 @@ test_hint_pooled_command_primary (void)
 void
 test_bulk_install (TestSuite *suite)
 {
+   op_type_t op_type;
+   err_type_t err_type;
+   int pooled;
+   int32_t err_api_version;
+   char *name;
+   /* (op types) X (err types) X (pooled / single) X (err API versions) */
+   static err_test_t err_tests[3 * 2 * 2 * 2];
+   err_test_t *err_test = err_tests;
+
    atexit (test_bulk_cleanup);
+
+   for (op_type = (op_type_t) 0; op_type < OP_TYPE_LAST; op_type++) {
+      for (err_type = (err_type_t) 0; err_type < ERR_TYPE_LAST; err_type++) {
+         for (pooled = 0; pooled <= 1; pooled++) {
+            for (err_api_version = 1; err_api_version <= 2; err_api_version++) {
+               err_test->op_type = op_type;
+               err_test->err_type = err_type;
+               err_test->pooled = pooled;
+               err_test->err_api_version = err_api_version;
+
+               name = bson_strdup_printf ("/BulkOperation/error/%s/%s/%s/v%d",
+                                          op_type_str (op_type),
+                                          err_type_str (err_type),
+                                          pooled ? "pooled" : "single",
+                                          err_api_version);
+
+               TestSuite_AddFull (suite, name, _test_legacy_write_err, NULL,
+                                  (void *) err_test, NULL);
+
+               err_test++;
+            }
+         }
+      }
+   }
 
    TestSuite_Add (suite, "/BulkOperation/basic",
                   test_bulk);
@@ -2947,6 +3134,14 @@ test_bulk_install (TestSuite *suite)
                   test_write_concern_write_command_unordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered/multi_err",
                   test_write_concern_write_command_unordered_multi_err);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/legacy/v1",
+                  test_write_concern_error_legacy_v1);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/write_command/v1",
+                  test_write_concern_error_write_command_v1);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/legacy/v2",
+                  test_write_concern_error_legacy_v2);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/write_command/v2",
+                  test_write_concern_error_write_command_v2);
    TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
                   test_multiple_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/legacy",
@@ -2971,11 +3166,6 @@ test_bulk_install (TestSuite *suite)
                   test_bulk_edge_over_1000);
    TestSuite_Add (suite, "/BulkOperation/write_concern/over_1000",
                   test_bulk_write_concern_over_1000);
-
-   TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
-   TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);
-   TestSuite_Add (suite, "/BulkOperation/error/remove", test_legacy_remove_err);
-
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/secondary",
                   test_hint_single_legacy_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/primary",

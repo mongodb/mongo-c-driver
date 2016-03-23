@@ -667,7 +667,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
          }
 
          _mongoc_write_result_merge_legacy (
-            result, command, gle,
+            result, command, gle, client->error_api_version,
             MONGOC_ERROR_COLLECTION_DELETE_FAILED, offset);
 
          offset++;
@@ -831,7 +831,7 @@ again:
                           max_bson_obj_size, &write_err_doc);
 
          _mongoc_write_result_merge_legacy (
-            result, command, &write_err_doc,
+            result, command, &write_err_doc, client->error_api_version,
             MONGOC_ERROR_COLLECTION_INSERT_FAILED, offset + idx);
 
          bson_destroy (&write_err_doc);
@@ -918,8 +918,8 @@ cleanup:
 
    if (gle) {
       _mongoc_write_result_merge_legacy (
-         result, command, gle, MONGOC_ERROR_COLLECTION_INSERT_FAILED,
-         current_offset);
+         result, command, gle, client->error_api_version,
+         MONGOC_ERROR_COLLECTION_INSERT_FAILED, current_offset);
 
       current_offset = offset + idx;
       bson_destroy (gle);
@@ -1005,7 +1005,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    int32_t affected = 0;
    int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
-               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+                 | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
    ENTRY;
 
@@ -1135,7 +1135,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          }
 
          _mongoc_write_result_merge_legacy (
-            result, command, gle,
+            result, command, gle, client->error_api_version,
             MONGOC_ERROR_COLLECTION_UPDATE_FAILED, offset);
 
          offset++;
@@ -1475,6 +1475,7 @@ _append_write_concern_err_legacy (mongoc_write_result_t *result,
 static void
 _append_write_err_legacy (mongoc_write_result_t *result,
                           const char            *err,
+                          mongoc_error_domain_t  domain,
                           int32_t                code,
                           uint32_t               offset)
 {
@@ -1483,8 +1484,7 @@ _append_write_err_legacy (mongoc_write_result_t *result,
 
    BSON_ASSERT (code > 0);
 
-   bson_set_error (&result->error, MONGOC_ERROR_COLLECTION, (uint32_t) code,
-                   "%s", err);
+   bson_set_error (&result->error, domain, (uint32_t) code, "%s", err);
 
    /* stop processing, if result->ordered */
    result->failed = true;
@@ -1513,6 +1513,7 @@ void
 _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
                                    mongoc_write_command_t *command, /* IN */
                                    const bson_t           *reply,   /* IN */
+                                   int32_t                 error_api_version,
                                    mongoc_error_code_t     default_code,
                                    uint32_t                offset)
 {
@@ -1524,11 +1525,16 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
    int32_t code = 0;
    int32_t n = 0;
    int32_t upsert_idx = 0;
+   mongoc_error_domain_t domain;
 
    ENTRY;
 
    BSON_ASSERT (result);
    BSON_ASSERT (reply);
+
+   domain = error_api_version >= MONGOC_ERROR_API_VERSION_2
+            ? MONGOC_ERROR_SERVER
+            : MONGOC_ERROR_COLLECTION;
 
    if (bson_iter_init_find (&iter, reply, "n") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
@@ -1563,7 +1569,7 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
             code = (int32_t) default_code;
          }
 
-         _append_write_err_legacy (result, err, code, offset);
+         _append_write_err_legacy (result, err, domain, code, offset);
       }
    }
 
@@ -1870,11 +1876,18 @@ _set_error_from_response (bson_t *bson_array,
 bool
 _mongoc_write_result_complete (mongoc_write_result_t *result,
                                bson_t                *bson,
+                               int32_t                error_api_version,
                                bson_error_t          *error)
 {
+   mongoc_error_domain_t domain;
+
    ENTRY;
 
    BSON_ASSERT (result);
+
+   domain = error_api_version >= MONGOC_ERROR_API_VERSION_2
+            ? MONGOC_ERROR_SERVER
+            : MONGOC_ERROR_COMMAND;
 
    if (bson) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
@@ -1896,7 +1909,7 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
 
    /* set bson_error_t from first write error or write concern error */
    _set_error_from_response (&result->writeErrors,
-                             MONGOC_ERROR_COMMAND,
+                             domain,
                              "write",
                              &result->error);
 

@@ -106,8 +106,10 @@ void _mongoc_rpc_prep_command       (mongoc_rpc_t                 *rpc,
                                      const bson_t                 *command,
                                      mongoc_query_flags_t          flags);
 bool _mongoc_rpc_parse_command_error(mongoc_rpc_t                 *rpc,
+                                     int32_t                       error_api_version,
                                      bson_error_t                 *error);
 bool _mongoc_rpc_parse_query_error  (mongoc_rpc_t                 *rpc,
+                                     int32_t                       error_api_version,
                                      bson_error_t                 *error);
 
 

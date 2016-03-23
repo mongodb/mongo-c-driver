@@ -173,6 +173,8 @@ mongoc_server_description_t   *mongoc_client_select_server                 (mong
                                                                             bool                          for_writes,
                                                                             const mongoc_read_prefs_t    *prefs,
                                                                             bson_error_t                 *error);
+bool                           mongoc_client_set_error_api                 (mongoc_client_t              *client,
+                                                                            int32_t                       version);
 BSON_END_DECLS
 
 

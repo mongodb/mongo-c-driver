@@ -384,6 +384,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
+   ${SOURCE_DIR}/tests/test-mongoc-error.c
    ${SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c

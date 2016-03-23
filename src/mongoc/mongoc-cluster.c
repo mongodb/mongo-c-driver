@@ -261,7 +261,9 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    }
 
    reply_local_initialized = true;
-   if (_mongoc_rpc_parse_command_error (&rpc, error)) {
+   if (_mongoc_rpc_parse_command_error (&rpc,
+                                        cluster->client->error_api_version,
+                                        error)) {
       GOTO (done);
    }
 

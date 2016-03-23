@@ -55,6 +55,8 @@ void                  mongoc_client_pool_set_ssl_opts      (mongoc_client_pool_t
 bool                  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                                             mongoc_apm_callbacks_t *callbacks,
                                                             void                   *context);
+bool                  mongoc_client_pool_set_error_api     (mongoc_client_pool_t   *pool,
+                                                            int32_t                 version);
 
 
 BSON_END_DECLS

@@ -650,11 +650,13 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    if (cursor->is_command) {
        if (_mongoc_rpc_parse_command_error (&cursor->rpc,
+                                            cursor->client->error_api_version,
                                             &cursor->error)) {
           GOTO (failure);
        }
    } else {
       if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                         cursor->client->error_api_version,
                                          &cursor->error)) {
          GOTO (failure);
       }
@@ -1112,6 +1114,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
    }
 
    if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                      cursor->client->error_api_version,
                                       &cursor->error)) {
       GOTO (fail);
    }

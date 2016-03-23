@@ -58,6 +58,11 @@
     <links type="topic" style="2column" />
   </section>
 
+  <section id="error-api">
+    <title>Error API</title>
+    <links type="topic" style="2column" />
+  </section>
+
   <section id="apm">
     <title>Application Performance Monitoring</title>
     <links type="topic" style="2column" />

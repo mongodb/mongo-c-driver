@@ -453,7 +453,10 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    }
 
 cleanup:
-   ret = _mongoc_write_result_complete (&bulk->result, reply, error);
+   ret = _mongoc_write_result_complete (&bulk->result,
+                                        reply,
+                                        bulk->client->error_api_version,
+                                        error);
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret ? bulk->server_id : 0);

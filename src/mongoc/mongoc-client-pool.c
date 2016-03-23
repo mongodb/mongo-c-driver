@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc.h"
 #include "mongoc-apm-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool-private.h"
@@ -42,6 +43,7 @@ struct _mongoc_client_pool_t
 #endif
    mongoc_apm_callbacks_t  apm_callbacks;
    void                   *apm_context;
+   int32_t                 error_api_version;
 };
 
 
@@ -100,6 +102,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    topology = mongoc_topology_new(uri, false);
    pool->topology = topology;
+   pool->error_api_version = MONGOC_ERROR_API_VERSION_LEGACY;
 
    b = mongoc_uri_get_options(pool->uri);
 
@@ -163,6 +166,7 @@ again:
    if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
+         client->error_api_version = pool->error_api_version;
          _mongoc_client_set_apm_callbacks_private (client,
                                                    &pool->apm_callbacks,
                                                    pool->apm_context);
@@ -301,6 +305,21 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
    }
 
    pool->apm_context = context;
+
+   return true;
+}
+
+bool
+mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool,
+                                  int32_t               version)
+{
+   if (version != MONGOC_ERROR_API_VERSION_LEGACY &&
+       version != MONGOC_ERROR_API_VERSION_2) {
+      MONGOC_ERROR ("Unsupported Error API Version: %" PRId32, version);
+      return false;
+   }
+
+   pool->error_api_version = version;
 
    return true;
 }
