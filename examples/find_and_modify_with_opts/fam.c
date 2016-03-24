@@ -17,6 +17,7 @@ int main(void)
    bson_error_t error;
    bson_t *options;
 
+   mongoc_init();
    client = mongoc_client_new ("mongodb://localhost:27017/admin");
    database = mongoc_client_get_database (client, "databaseName");
 
@@ -45,6 +46,7 @@ int main(void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 
+   mongoc_cleanup ();
    return 0;
 }
 
