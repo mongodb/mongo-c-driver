@@ -819,6 +819,7 @@ bson_type_to_str (bson_type_t t)
    case BSON_TYPE_INT64: return "INT64";
    case BSON_TYPE_MAXKEY: return "MAXKEY";
    case BSON_TYPE_MINKEY: return "MINKEY";
+   case BSON_TYPE_DECIMAL128: return "DECIMAL128";
    default: return "Unknown";
    }
 }
@@ -1040,6 +1041,9 @@ match_bson_value (const bson_value_t *doc,
 
    case BSON_TYPE_DBPOINTER:
       MONGOC_ERROR ("DBPointer comparison not implemented");
+      abort ();
+   case BSON_TYPE_DECIMAL128:
+      MONGOC_ERROR ("Decimal128 comparison not implemented");
       abort ();
 
    default:
