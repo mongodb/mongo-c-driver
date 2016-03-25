@@ -4,5 +4,5 @@ html/*.css
 html/*.js
 html/*.png
 man/*.3
-installing.page
+mongoc_installing.page
 mongoc_version.page

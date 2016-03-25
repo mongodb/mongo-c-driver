@@ -49,7 +49,7 @@ AC_CONFIG_FILES([
     src/libmongoc-priv.pc
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
-    doc/installing.page
+    doc/mongoc_installing.page
     doc/mongoc_version.page
 ])
 
