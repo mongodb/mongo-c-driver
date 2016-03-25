@@ -1559,9 +1559,9 @@ _test_count_read_concern_live (bool supports_read_concern)
 }
 
 int
-mongod_supports_decimal128 (void)
+skip_unless_server_has_decimal128 (void)
 {
-   if (test_framework_get_server_version () <= test_framework_str_to_version("3.3.3")) {
+   if (test_framework_get_server_version () >= test_framework_str_to_version("3.3.4")) {
       return 1;
    }
    return 0;
@@ -3037,7 +3037,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_Add (suite, "/Collection/index_storage", test_index_storage);
    TestSuite_Add (suite, "/Collection/regex", test_regex);
-   TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, mongod_supports_decimal128);
+   TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
    TestSuite_Add (suite, "/Collection/update", test_update);
    TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
