@@ -96,7 +96,7 @@ mongoc_cond_timedwait (mongoc_cond_t  *cond,
 {
    int r;
 
-   if (SleepConditionVariableCS(cond, mutex, timeout_msec)) {
+   if (SleepConditionVariableCS(cond, mutex, (DWORD)timeout_msec)) {
       return 0;
    } else {
       r = GetLastError();

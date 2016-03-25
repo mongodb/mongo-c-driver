@@ -91,6 +91,7 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
+
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
@@ -140,6 +141,10 @@ endif()
 if (APPLE)
    cmake_policy(SET CMP0042 OLD)
 endif()
+
+if (MSVC)
+   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif ()
 
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
