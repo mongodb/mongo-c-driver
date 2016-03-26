@@ -939,6 +939,173 @@ test_set_callbacks_pooled (void)
 }
 
 
+typedef struct {
+   int64_t request_id;
+   int64_t op_id;
+} ids_t;
+
+
+typedef struct
+{
+   mongoc_array_t started_ids;
+   mongoc_array_t succeeded_ids;
+   mongoc_array_t failed_ids;
+   int            started_calls;
+   int            succeeded_calls;
+   int            failed_calls;
+} op_id_test_t;
+
+
+static void
+op_id_test_init (op_id_test_t *test)
+{
+   _mongoc_array_init (&test->started_ids, sizeof (ids_t));
+   _mongoc_array_init (&test->succeeded_ids, sizeof (ids_t));
+   _mongoc_array_init (&test->failed_ids, sizeof (ids_t));
+
+   test->started_calls = 0;
+   test->succeeded_calls = 0;
+   test->failed_calls = 0;
+}
+
+
+static void
+test_bulk_op_id_started_cb (const mongoc_apm_command_started_t *event)
+{
+   op_id_test_t *test;
+   ids_t ids;
+
+   test = (op_id_test_t *) mongoc_apm_command_started_get_context (event);
+   ids.request_id = mongoc_apm_command_started_get_request_id (event);
+   ids.op_id = mongoc_apm_command_started_get_operation_id (event);
+
+   _mongoc_array_append_val (&test->started_ids, ids);
+
+   test->started_calls++;
+}
+
+
+static void
+test_bulk_op_id_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
+{
+   op_id_test_t *test;
+   ids_t ids;
+
+   test = (op_id_test_t *) mongoc_apm_command_succeeded_get_context (event);
+   ids.request_id = mongoc_apm_command_succeeded_get_request_id (event);
+   ids.op_id = mongoc_apm_command_succeeded_get_operation_id (event);
+
+   _mongoc_array_append_val (&test->succeeded_ids, ids);
+
+   test->succeeded_calls++;
+}
+
+
+static void
+test_bulk_op_id_failed_cb (const mongoc_apm_command_failed_t *event)
+{
+   op_id_test_t *test;
+   ids_t ids;
+
+   test = (op_id_test_t *) mongoc_apm_command_failed_get_context (event);
+   ids.request_id = mongoc_apm_command_failed_get_request_id (event);
+   ids.op_id = mongoc_apm_command_failed_get_operation_id (event);
+
+   _mongoc_array_append_val (&test->failed_ids, ids);
+
+   test->failed_calls++;
+}
+
+
+#define REQUEST_ID(_event_type, _index) \
+    _mongoc_array_index (&test._event_type ## _ids, ids_t, _index).request_id
+
+#define OP_ID(_event_type, _index) \
+    _mongoc_array_index (&test._event_type ## _ids, ids_t, _index).op_id
+
+static void
+_test_bulk_operation_id (bool pooled)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   op_id_test_t test;
+
+   op_id_test_init (&test);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, test_bulk_op_id_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        test_bulk_op_id_succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, test_bulk_op_id_failed_cb);
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks,
+                                                    (void *) &test));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks,
+                                               (void *) &test));
+   }
+
+   collection = get_test_collection (client, "test_bulk_operation_id");
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+   mongoc_bulk_operation_update_one (bulk, tmp_bson ("{'_id': 1}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"), false);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
+
+   /* write errors don't trigger failed events, so we only test success */
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   ASSERT_CMPINT (test.started_calls, ==, 3);
+   ASSERT_CMPINT (test.succeeded_calls, ==, 3);
+
+   /* 3 unique request ids */
+   ASSERT_CMPINT64 (REQUEST_ID (started, 0), !=, REQUEST_ID (started, 1));
+   ASSERT_CMPINT64 (REQUEST_ID (started, 0), !=, REQUEST_ID (started, 2));
+   ASSERT_CMPINT64 (REQUEST_ID (started, 1), !=, REQUEST_ID (started, 2));
+   ASSERT_CMPINT64 (REQUEST_ID (succeeded, 0), !=, REQUEST_ID (succeeded, 1));
+   ASSERT_CMPINT64 (REQUEST_ID (succeeded, 0), !=, REQUEST_ID (succeeded, 2));
+   ASSERT_CMPINT64 (REQUEST_ID (succeeded, 1), !=, REQUEST_ID (succeeded, 2));
+
+   /* operation ids all the same */
+   ASSERT_CMPINT64 (OP_ID (started, 0), !=, (int64_t) 0);
+   ASSERT_CMPINT64 (OP_ID (started, 0), ==, OP_ID (started, 1));
+   ASSERT_CMPINT64 (OP_ID (started, 0), ==, OP_ID (started, 2));
+   ASSERT_CMPINT64 (OP_ID (succeeded, 0), !=, (int64_t) 0);
+   ASSERT_CMPINT64 (OP_ID (succeeded, 0), ==, OP_ID (succeeded, 1));
+   ASSERT_CMPINT64 (OP_ID (succeeded, 0), ==, OP_ID (succeeded, 2));
+
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_bulk_operation_id_single (void)
+{
+   _test_bulk_operation_id (false);
+}
+
+
+static void
+test_bulk_operation_id_pooled (void)
+{
+   _test_bulk_operation_id (true);
+}
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -948,4 +1115,8 @@ test_command_monitoring_install (TestSuite *suite)
                   test_set_callbacks_single);
    TestSuite_Add (suite, "/command_monitoring/set_callbacks/pooled",
                   test_set_callbacks_pooled);
+   TestSuite_Add (suite, "/command_monitoring/operation_id/bulk/single",
+                  test_bulk_operation_id_single);
+   TestSuite_Add (suite, "/command_monitoring/operation_id/bulk/pooled",
+                  test_bulk_operation_id_pooled);
 }
