@@ -84,6 +84,8 @@ void mock_server_set_rand_delay (mock_server_t *server,
 
 double mock_server_get_uptime_sec (mock_server_t *server);
 
+request_t *mock_server_receives_request (mock_server_t *server);
+
 request_t *mock_server_receives_command (mock_server_t *server,
                                          const char *database_name,
                                          mongoc_query_flags_t flags,
