@@ -33,7 +33,6 @@
 BSON_BEGIN_DECLS
 
 
-typedef struct _mongoc_collection_t mongoc_collection_t;  /* forward decl */
 typedef struct _mongoc_database_t mongoc_database_t;
 
 
