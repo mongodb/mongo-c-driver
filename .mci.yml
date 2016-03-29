@@ -179,24 +179,32 @@ c_driver_variables:
           set -o verbose
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+          make abicheck
+          (cd src/libbson && make test)
       osx_nativessl: &compile_osx_nativessl
         compile_script: |
           set -o errexit
           set -o verbose
           ./configure --enable-optimizations --enable-ssl=darwin --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+          make abicheck
+          (cd src/libbson && make test)
       osx_nossl: &compile_osx_nossl
         compile_script: |
           set -o errexit
           set -o verbose
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+          make abicheck
+          (cd src/libbson && make test)
       unix: &compile_unix
         compile_script: |
           set -o errexit
           set -o verbose
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+          make abicheck
+          (cd src/libbson && make test)
       solaris64: &compile_solaris64
         compile_script: |
           set -o errexit
@@ -206,12 +214,16 @@ c_driver_variables:
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
+          make abicheck
+          (cd src/libbson && make test)
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
           set -o verbose
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
+          make abicheck
+          (cd src/libbson && make test)
       msvc: &compile_msvc
         compile_script: |
           file "tests/binary/gridfs-large.dat"
@@ -230,6 +242,7 @@ c_driver_variables:
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
+          (cd src/libbson && ./Debug/test-libbson.exe)
 
     connection_flags:
       ssl: &connection_flags_ssl
@@ -257,19 +270,19 @@ c_driver_variables:
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
           export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
-          make TEST_ARGS="-d -F test-results.json" check
+          make TEST_ARGS="-d -F test-results.json" test
 
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          make TEST_ARGS="-d -F test-results.json" check
+          make TEST_ARGS="-d -F test-results.json" test
 
       osx: &run_integration_tests_osx
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          make TEST_ARGS="--no-fork -d -F test-results.json" check
+          make TEST_ARGS="--no-fork -d -F test-results.json" test
 
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common
