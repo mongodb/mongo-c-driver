@@ -23,6 +23,9 @@ c_driver_variables:
   release_archive: &release_archive_builder
     - name: "releasearchive"
 
+  just_compile: &just_compile
+    - name: "compile"
+
   topology_test_list: &topology_tests
     - name: "compile"
     - name: "integration-test-2.4"
@@ -1093,6 +1096,14 @@ buildvariants:
   run_on:
   - ubuntu1204-test
   tasks: *topology_tests
+
+- name: rhel-72-zseries
+  display_name: "RHEL 7.2 zSeries"
+  expansions:
+    <<: *unix_common
+  run_on:
+     - rhel72-zseries-build
+  tasks: *just_compile
 
 ## Ubuntu 1404
 
