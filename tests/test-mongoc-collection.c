@@ -1670,6 +1670,9 @@ _test_count_read_concern_live (bool supports_read_concern)
 int
 skip_unless_server_has_decimal128 (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    if (test_framework_get_server_version () >= test_framework_str_to_version("3.3.5")) {
       return 1;
    }
@@ -3198,8 +3201,8 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
-   TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
-   TestSuite_Add (suite,
+   TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
+   TestSuite_AddLive (suite,
                   "/Collection/insert_bulk_empty",
                   test_insert_bulk_empty);
    TestSuite_Add (suite,
@@ -3224,46 +3227,46 @@ test_collection_install (TestSuite *suite)
                   "/Collection/bulk_insert/legacy/oversized_last_continue",
                   test_legacy_bulk_insert_oversized_last_continue);
 
-   TestSuite_Add (suite, "/Collection/copy", test_copy);
-   TestSuite_Add (suite, "/Collection/insert", test_insert);
+   TestSuite_AddLive (suite, "/Collection/copy", test_copy);
+   TestSuite_AddLive (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/insert/oversize", test_legacy_insert_oversize_mongos);
    TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
-   TestSuite_Add (suite, "/Collection/save", test_save);
-   TestSuite_Add (suite, "/Collection/insert/w0", test_insert_w0);
-   TestSuite_Add (suite, "/Collection/update/w0", test_update_w0);
-   TestSuite_Add (suite, "/Collection/remove/w0", test_remove_w0);
-   TestSuite_Add (suite, "/Collection/index", test_index);
-   TestSuite_Add (suite, "/Collection/index_compound", test_index_compound);
-   TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);
-   TestSuite_Add (suite, "/Collection/index_storage", test_index_storage);
-   TestSuite_Add (suite, "/Collection/regex", test_regex);
+   TestSuite_AddLive (suite, "/Collection/save", test_save);
+   TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
+   TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
+   TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
+   TestSuite_AddLive (suite, "/Collection/index", test_index);
+   TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
+   TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
+   TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);
+   TestSuite_AddLive (suite, "/Collection/regex", test_regex);
    TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
-   TestSuite_Add (suite, "/Collection/update", test_update);
-   TestSuite_Add (suite, "/Collection/remove", test_remove);
-   TestSuite_Add (suite, "/Collection/count", test_count);
+   TestSuite_AddLive (suite, "/Collection/update", test_update);
+   TestSuite_AddLive (suite, "/Collection/remove", test_remove);
+   TestSuite_AddLive (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);
    TestSuite_Add (suite, "/Collection/count/read_concern", test_count_read_concern);
    TestSuite_AddFull (suite, "/Collection/count/read_concern_live", test_count_read_concern_live, NULL, NULL, mongod_supports_majority_read_concern);
-   TestSuite_Add (suite, "/Collection/drop", test_drop);
-   TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
-   TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
+   TestSuite_AddLive (suite, "/Collection/drop", test_drop);
+   TestSuite_AddLive (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_AddLive (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Collection/rename", test_rename);
-   TestSuite_Add (suite, "/Collection/stats", test_stats);
+   TestSuite_AddLive (suite, "/Collection/rename", test_rename);
+   TestSuite_AddLive (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/stats/read_pref", test_stats_read_pref);
    TestSuite_Add (suite, "/Collection/find_read_concern", test_find_read_concern);
-   TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
+   TestSuite_AddLive  (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern",
                   test_find_and_modify_write_concern_wire_32);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern_pre_32",
                   test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite, "/Collection/large_return", test_large_return, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Collection/many_return", test_many_return);
+   TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
    TestSuite_Add (suite, "/Collection/limit", test_find_limit);
    TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
    TestSuite_AddFull (suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
-   TestSuite_Add (suite, "/Collection/get_index_info", test_get_index_info);
+   TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
 }

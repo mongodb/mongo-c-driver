@@ -3104,56 +3104,56 @@ test_bulk_install (TestSuite *suite)
       }
    }
 
-   TestSuite_Add (suite, "/BulkOperation/basic",
-                  test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/insert_ordered",
-                  test_insert_ordered);
-   TestSuite_Add (suite, "/BulkOperation/insert_unordered",
-                  test_insert_unordered);
-   TestSuite_Add (suite, "/BulkOperation/insert_check_keys",
-                  test_insert_check_keys);
-   TestSuite_Add (suite, "/BulkOperation/update_ordered",
-                  test_update_ordered);
-   TestSuite_Add (suite, "/BulkOperation/update_unordered",
-                  test_update_unordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_ordered",
-                  test_upsert_ordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_unordered",
-                  test_upsert_unordered);
+   TestSuite_AddLive (suite, "/BulkOperation/basic",
+                      test_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_ordered",
+                       test_insert_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_unordered",
+                       test_insert_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_check_keys",
+                       test_insert_check_keys);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_ordered",
+                       test_update_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_unordered",
+                       test_update_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/upsert_ordered",
+                       test_upsert_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/upsert_unordered",
+                       test_upsert_unordered);
    TestSuite_AddFull (suite, "/BulkOperation/upsert_large",
-                  test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
+                      test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/BulkOperation/upsert_huge",
-                  test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/BulkOperation/upserted_index_ordered",
-                  test_upserted_index_ordered);
-   TestSuite_Add (suite, "/BulkOperation/upserted_index_unordered",
-                  test_upserted_index_unordered);
-   TestSuite_Add (suite, "/BulkOperation/update_one_ordered",
-                  test_update_one_ordered);
-   TestSuite_Add (suite, "/BulkOperation/update_one_unordered",
-                  test_update_one_unordered);
-   TestSuite_Add (suite, "/BulkOperation/replace_one_ordered",
-                  test_replace_one_ordered);
-   TestSuite_Add (suite, "/BulkOperation/replace_one_unordered",
-                  test_replace_one_unordered);
-   TestSuite_Add (suite, "/BulkOperation/index_offset",
-                  test_index_offset);
-   TestSuite_Add (suite, "/BulkOperation/single_ordered_bulk",
-                  test_single_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/insert_continue_on_error",
-                  test_insert_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/update_continue_on_error",
-                  test_update_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/remove_continue_on_error",
-                  test_remove_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/single_error_ordered_bulk",
-                  test_single_error_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/multiple_error_ordered_bulk",
-                  test_multiple_error_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/single_unordered_bulk",
-                  test_single_unordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/single_error_unordered_bulk",
-                  test_single_error_unordered_bulk);
+                      test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_ordered",
+                       test_upserted_index_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_unordered",
+                       test_upserted_index_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_one_ordered",
+                       test_update_one_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_one_unordered",
+                       test_update_one_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/replace_one_ordered",
+                       test_replace_one_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/replace_one_unordered",
+                       test_replace_one_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/index_offset",
+                       test_index_offset);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_ordered_bulk",
+                       test_single_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_continue_on_error",
+                       test_insert_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_continue_on_error",
+                       test_update_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/remove_continue_on_error",
+                       test_remove_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_error_ordered_bulk",
+                       test_single_error_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/multiple_error_ordered_bulk",
+                       test_multiple_error_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_unordered_bulk",
+                       test_single_unordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_error_unordered_bulk",
+                       test_single_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered",
                   test_write_concern_legacy_ordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered/multi_err",
@@ -3178,30 +3178,30 @@ test_bulk_install (TestSuite *suite)
                   test_write_concern_error_legacy_v2);
    TestSuite_Add (suite, "/BulkOperation/write_concern/error/write_command/v2",
                   test_write_concern_error_write_command_v2);
-   TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
-                  test_multiple_error_unordered_bulk);
+   TestSuite_AddLive (suite, "/BulkOperation/multiple_error_unordered_bulk",
+                      test_multiple_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/legacy",
                   test_wtimeout_plus_duplicate_key_err_legacy);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
                   test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull (suite, "/BulkOperation/large_inserts_ordered",
-                  test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow);
+                      test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/BulkOperation/large_inserts_unordered",
-                  test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/BulkOperation/numerous_ordered",
-                  test_numerous_ordered);
-   TestSuite_Add (suite, "/BulkOperation/numerous_unordered",
-                  test_numerous_unordered);
-   TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_ordered",
-                  test_bulk_edge_case_372_ordered);
-   TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_unordered",
-                  test_bulk_edge_case_372_unordered);
-   TestSuite_Add (suite, "/BulkOperation/new",
-                  test_bulk_new);
-   TestSuite_Add (suite, "/BulkOperation/over_1000",
-                  test_bulk_edge_over_1000);
-   TestSuite_Add (suite, "/BulkOperation/write_concern/over_1000",
-                  test_bulk_write_concern_over_1000);
+                      test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/BulkOperation/numerous_ordered",
+                      test_numerous_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/numerous_unordered",
+                      test_numerous_unordered);
+   TestSuite_AddLive (suite, "/BulkOperation/CDRIVER-372_ordered",
+                      test_bulk_edge_case_372_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/CDRIVER-372_unordered",
+                      test_bulk_edge_case_372_unordered);
+   TestSuite_AddLive (suite, "/BulkOperation/new",
+                      test_bulk_new);
+   TestSuite_AddLive (suite, "/BulkOperation/over_1000",
+                      test_bulk_edge_over_1000);
+   TestSuite_AddLive (suite, "/BulkOperation/write_concern/over_1000",
+                      test_bulk_write_concern_over_1000);
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/secondary",
                   test_hint_single_legacy_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/primary",
@@ -3218,6 +3218,6 @@ test_bulk_install (TestSuite *suite)
                   test_hint_pooled_command_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/pooled/command/primary",
                   test_hint_pooled_command_primary);
-   TestSuite_Add (suite, "/BulkOperation/reply_w0",
-                  test_bulk_reply_w0);
+   TestSuite_AddLive (suite, "/BulkOperation/reply_w0",
+                      test_bulk_reply_w0);
 }

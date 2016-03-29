@@ -646,9 +646,9 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Database/copy", test_copy);
-   TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
-   TestSuite_Add (suite, "/Database/command", test_command);
+   TestSuite_AddLive (suite, "/Database/copy", test_copy);
+   TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
+   TestSuite_AddLive (suite, "/Database/command", test_command);
    TestSuite_Add (suite, "/Database/command/read_prefs/simple/single",
                   test_db_command_simple_read_prefs_single);
    TestSuite_Add (suite, "/Database/command/read_prefs/simple/pooled",
@@ -657,15 +657,15 @@ test_database_install (TestSuite *suite)
                   test_db_command_read_prefs_single);
    TestSuite_Add (suite, "/Database/command/read_prefs/pooled",
                   test_db_command_read_prefs_pooled);
-   TestSuite_Add (suite, "/Database/drop", test_drop);
-   TestSuite_Add (suite, "/Database/create_collection", test_create_collection);
-   TestSuite_Add (suite, "/Database/get_collection_info",
+   TestSuite_AddLive (suite, "/Database/drop", test_drop);
+   TestSuite_AddLive (suite, "/Database/create_collection", test_create_collection);
+   TestSuite_AddLive (suite, "/Database/get_collection_info",
                   test_get_collection_info);
-   TestSuite_Add (suite, "/Database/get_collection",
+   TestSuite_AddLive (suite, "/Database/get_collection",
                   test_get_collection);
-   TestSuite_Add (suite, "/Database/get_collection_names",
+   TestSuite_AddLive (suite, "/Database/get_collection_names",
                   test_get_collection_names);
-   TestSuite_Add (suite, "/Database/get_collection_names_error",
+   TestSuite_AddLive (suite, "/Database/get_collection_names_error",
                   test_get_collection_names_error);
    TestSuite_Add (suite, "/Database/get_default_database",
                   test_get_default_database);

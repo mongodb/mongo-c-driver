@@ -122,8 +122,8 @@ test_command_error_v2 (void)
 void
 test_error_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Error/set_api/single", test_set_error_api_single);
-   TestSuite_Add (suite, "/Error/set_api/pooled", test_set_error_api_pooled);
+   TestSuite_AddLive (suite, "/Error/set_api/single", test_set_error_api_single);
+   TestSuite_AddLive (suite, "/Error/set_api/pooled", test_set_error_api_pooled);
    TestSuite_Add (suite, "/Error/command/default", test_command_error_default);
    TestSuite_Add (suite, "/Error/command/v1", test_command_error_v1);
    TestSuite_Add (suite, "/Error/command/v2", test_command_error_v2);

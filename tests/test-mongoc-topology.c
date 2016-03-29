@@ -944,16 +944,16 @@ test_invalid_server_id (void)
 void
 test_topology_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
-   TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
+   TestSuite_AddLive (suite, "/Topology/client_creation", test_topology_client_creation);
+   TestSuite_AddLive (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option",
                       test_server_selection_try_once_option, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/server_selection_try_once",
                       test_server_selection_try_once, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/server_selection_try_once_false",
                       test_server_selection_try_once_false, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
-   TestSuite_Add (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
+   TestSuite_AddLive (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
+   TestSuite_AddLive (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
    TestSuite_AddFull (suite, "/Topology/invalid_cluster_node",
                       test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
@@ -978,5 +978,5 @@ test_topology_install (TestSuite *suite)
                       NULL, NULL, test_framework_skip_if_offline);
    TestSuite_Add (suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
    TestSuite_Add (suite, "/Topology/try_once/succeed", test_select_after_try_once);
-   TestSuite_Add (suite, "/Topology/invalid_server_id", test_invalid_server_id);
+   TestSuite_AddLive (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }

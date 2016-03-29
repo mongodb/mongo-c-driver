@@ -931,18 +931,18 @@ test_inherit_client_config (void)
 void
 test_gridfs_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/GridFS/create", test_create);
-   TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);
-   TestSuite_Add (suite, "/GridFS/list", test_list);
-   TestSuite_Add (suite, "/GridFS/properties", test_properties);
-   TestSuite_Add (suite, "/GridFS/empty", test_empty);
-   TestSuite_Add (suite, "/GridFS/read", test_read);
-   TestSuite_Add (suite, "/GridFS/seek", test_seek);
-   TestSuite_Add (suite, "/GridFS/stream", test_stream);
-   TestSuite_Add (suite, "/GridFS/remove", test_remove);
-   TestSuite_Add (suite, "/GridFS/write", test_write);
+   TestSuite_AddLive (suite, "/GridFS/create", test_create);
+   TestSuite_AddLive (suite, "/GridFS/create_from_stream", test_create_from_stream);
+   TestSuite_AddLive (suite, "/GridFS/list", test_list);
+   TestSuite_AddLive (suite, "/GridFS/properties", test_properties);
+   TestSuite_AddLive (suite, "/GridFS/empty", test_empty);
+   TestSuite_AddLive (suite, "/GridFS/read", test_read);
+   TestSuite_AddLive (suite, "/GridFS/seek", test_seek);
+   TestSuite_AddLive (suite, "/GridFS/stream", test_stream);
+   TestSuite_AddLive (suite, "/GridFS/remove", test_remove);
+   TestSuite_AddLive (suite, "/GridFS/write", test_write);
    TestSuite_AddFull (suite, "/GridFS/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
+   TestSuite_AddLive (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
    TestSuite_AddFull (suite, "/GridFS/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }

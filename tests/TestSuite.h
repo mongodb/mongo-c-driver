@@ -306,6 +306,10 @@ void TestSuite_Init    (TestSuite *suite,
 void TestSuite_Add     (TestSuite *suite,
                         const char *name,
                         TestFunc func);
+int TestSuite_CheckLive (void);
+void TestSuite_AddLive (TestSuite *suite,
+                        const char *name,
+                        TestFunc func);
 void TestSuite_AddWC   (TestSuite *suite,
                         const char *name,
                         TestFuncWC func,

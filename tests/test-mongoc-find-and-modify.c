@@ -35,6 +35,9 @@ auto_ismaster (mock_server_t *server,
 int
 should_run_fam_wc (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    if (test_framework_is_replset()) {
       return test_framework_max_wire_version_at_least (WIRE_VERSION_FAM_WRITE_CONCERN);
    }
@@ -380,7 +383,7 @@ test_find_and_modify_opts (void)
 void
 test_find_and_modify_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
+   TestSuite_AddLive (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/true",
                   test_find_and_modify_bypass_true);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/false",

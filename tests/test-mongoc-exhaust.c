@@ -20,6 +20,9 @@
 
 int skip_if_mongos (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_is_mongos () ? 0 : 1;
 }
 
@@ -527,7 +530,7 @@ test_exhaust_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_mongos);
-   TestSuite_Add (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
+   TestSuite_AddLive (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/single", test_exhaust_network_err_1st_batch_single);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/pooled", test_exhaust_network_err_1st_batch_pooled);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/single", test_exhaust_server_err_1st_batch_single);

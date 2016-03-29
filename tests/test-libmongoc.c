@@ -1339,6 +1339,10 @@ int test_framework_skip_if_no_auth (void)
    }
 #endif
 
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
    /* run auth tests if the MONGOC_TEST_USER env var is set */
    user = test_framework_get_admin_user ();
    bson_free (user);
@@ -1526,46 +1530,70 @@ test_version_cmp (void)
 int
 test_framework_skip_if_single (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return (test_framework_is_mongos () || test_framework_is_replset());
 }
 
 int
 test_framework_skip_if_mongos (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_is_mongos() ? 0 : 1;
 }
 
 int
 test_framework_skip_if_replset (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_is_replset() ? 0 : 1;
 }
 
 int
 test_framework_skip_if_not_single (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return !test_framework_skip_if_single ();
 }
 
 int
 test_framework_skip_if_not_mongos (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return !test_framework_skip_if_mongos ();
 }
 
 int
 test_framework_skip_if_not_replset (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return !test_framework_skip_if_replset ();
 }
 
 int test_framework_skip_if_max_version_version_less_than_2 (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_max_wire_version_at_least (2);
 }
 
 int test_framework_skip_if_max_version_version_less_than_4 (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_max_wire_version_at_least (4);
 }
 

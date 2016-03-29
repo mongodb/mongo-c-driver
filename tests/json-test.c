@@ -298,6 +298,6 @@ install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callba
       assert(ext);
       ext[0] = '\0';
 
-      TestSuite_AddWC(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test);
+      TestSuite_AddFull(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test, TestSuite_CheckLive);
    }
 }

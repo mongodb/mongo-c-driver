@@ -911,11 +911,11 @@ test_tailable_alive (void)
 void
 test_cursor_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Cursor/get_host", test_get_host);
-   TestSuite_Add (suite, "/Cursor/clone", test_clone);
-   TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
-   TestSuite_Add (suite, "/Cursor/limit", test_limit);
-   TestSuite_Add (suite, "/Cursor/kill/live", test_kill_cursor_live);
+   TestSuite_AddLive (suite, "/Cursor/get_host", test_get_host);
+   TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
+   TestSuite_AddLive (suite, "/Cursor/invalid_query", test_invalid_query);
+   TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
+   TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
    TestSuite_Add (suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
@@ -950,11 +950,11 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Cursor/new_from_find_batches",
                       test_cursor_new_from_find_batches, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_4);
-   TestSuite_Add (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
-   TestSuite_Add (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
+   TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
    TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
    TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
-   TestSuite_Add (suite, "/Cursor/tailable/alive", test_tailable_alive);
+   TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
 }

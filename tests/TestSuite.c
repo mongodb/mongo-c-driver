@@ -278,6 +278,12 @@ TestSuite_Init (TestSuite *suite,
 }
 
 
+int
+TestSuite_CheckLive (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? 0 : 1;
+}
+
 static int
 TestSuite_CheckDummy (void)
 {
@@ -298,6 +304,15 @@ TestSuite_Add (TestSuite  *suite, /* IN */
                TestFunc    func)  /* IN */
 {
    TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckDummy);
+}
+
+
+void
+TestSuite_AddLive (TestSuite  *suite, /* IN */
+                   const char *name,  /* IN */
+                   TestFunc    func)  /* IN */
+{
+   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckLive);
 }
 
 

@@ -233,8 +233,8 @@ test_bypass_validation (void *context)
 void
 test_write_command_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/WriteCommand/split_insert", test_split_insert);
-   TestSuite_Add (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
+   TestSuite_AddLive (suite, "/WriteCommand/split_insert", test_split_insert);
+   TestSuite_AddLive (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
    TestSuite_AddFull (suite, "/WriteCommand/bypass_validation", test_bypass_validation,
                       NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_4);

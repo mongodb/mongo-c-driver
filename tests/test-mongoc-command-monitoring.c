@@ -1458,13 +1458,13 @@ test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_Add (suite, "/command_monitoring/get_error", test_get_error);
-   TestSuite_Add (suite, "/command_monitoring/set_callbacks/single",
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/single",
                   test_set_callbacks_single);
-   TestSuite_Add (suite, "/command_monitoring/set_callbacks/pooled",
+   TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/pooled",
                   test_set_callbacks_pooled);
-   TestSuite_Add (suite, "/command_monitoring/operation_id/bulk/single",
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/single",
                   test_bulk_operation_id_single);
-   TestSuite_Add (suite, "/command_monitoring/operation_id/bulk/pooled",
+   TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/pooled",
                   test_bulk_operation_id_pooled);
    TestSuite_Add (suite, "/command_monitoring/operation_id/query/single/cmd",
                   test_query_operation_id_single_cmd);
@@ -1474,8 +1474,8 @@ test_command_monitoring_install (TestSuite *suite)
                   test_query_operation_id_single_op_query);
    TestSuite_Add (suite, "/command_monitoring/operation_id/query/pooled/op_query",
                   test_query_operation_id_pooled_op_query);
-   TestSuite_Add (suite, "/command_monitoring/client_cmd",
+   TestSuite_AddLive (suite, "/command_monitoring/client_cmd",
                   test_client_cmd);
-   TestSuite_Add (suite, "/command_monitoring/client_cmd_simple",
+   TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple",
                   test_client_cmd_simple);
 }

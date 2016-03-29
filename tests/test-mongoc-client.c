@@ -1640,14 +1640,14 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/authenticate_timeout",
                       test_mongoc_client_authenticate_timeout, NULL, NULL,
                       test_framework_skip_if_no_auth);
-   TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
-   TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
+   TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);
    TestSuite_Add (suite, "/Client/command/read_prefs/single", test_command_read_prefs_single);
    TestSuite_Add (suite, "/Client/command/read_prefs/pooled", test_command_read_prefs_pooled);
-   TestSuite_Add (suite, "/Client/command_not_found/cursor", test_command_not_found);
-   TestSuite_Add (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
+   TestSuite_AddLive (suite, "/Client/command_not_found/cursor", test_command_not_found);
+   TestSuite_AddLive (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
@@ -1662,7 +1662,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/single", test_mongos_seeds_reconnect_single);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull (suite, "/Client/recovering", test_recovering, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Client/server_status", test_server_status);
+   TestSuite_AddLive (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
@@ -1672,8 +1672,8 @@ test_client_install (TestSuite *suite)
 #endif
 
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
-   TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+   TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
+   TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/Client/ssl/reconnect/single",
                   test_ssl_reconnect_single);
@@ -1685,11 +1685,11 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
 
-   TestSuite_Add (suite, "/Client/get_description/single", test_mongoc_client_get_description_single);
-   TestSuite_Add (suite, "/Client/get_description/pooled", test_mongoc_client_get_description_pooled);
-   TestSuite_Add (suite, "/Client/descriptions", test_mongoc_client_descriptions);
-   TestSuite_Add (suite, "/Client/select_server/single", test_mongoc_client_select_server_single);
-   TestSuite_Add (suite, "/Client/select_server/pooled", test_mongoc_client_select_server_pooled);
-   TestSuite_Add (suite, "/Client/select_server/err/single", test_mongoc_client_select_server_error_single);
-   TestSuite_Add (suite, "/Client/select_server/err/pooled", test_mongoc_client_select_server_error_pooled);
+   TestSuite_AddLive (suite, "/Client/get_description/single", test_mongoc_client_get_description_single);
+   TestSuite_AddLive (suite, "/Client/get_description/pooled", test_mongoc_client_get_description_pooled);
+   TestSuite_AddLive (suite, "/Client/descriptions", test_mongoc_client_descriptions);
+   TestSuite_AddLive (suite, "/Client/select_server/single", test_mongoc_client_select_server_single);
+   TestSuite_AddLive (suite, "/Client/select_server/pooled", test_mongoc_client_select_server_pooled);
+   TestSuite_AddLive (suite, "/Client/select_server/err/single", test_mongoc_client_select_server_error_single);
+   TestSuite_AddLive (suite, "/Client/select_server/err/pooled", test_mongoc_client_select_server_error_pooled);
 }

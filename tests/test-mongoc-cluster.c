@@ -474,8 +474,8 @@ test_legacy_write_socket_check (void)
 void
 test_cluster_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
-   TestSuite_Add (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
+   TestSuite_AddLive (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
+   TestSuite_AddLive (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
    TestSuite_AddFull  (suite, "/Cluster/disconnect/single", test_cluster_node_disconnect_single, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull  (suite, "/Cluster/disconnect/pooled", test_cluster_node_disconnect_pooled, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Cluster/command/timeout/single", test_cluster_command_timeout_single);
