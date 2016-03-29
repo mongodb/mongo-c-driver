@@ -91,3 +91,13 @@ test-replica-set-ssl
 test-secondary
 test-sharded-cluster
 test-x509
+# Windows things
+*.dir
+*.vcxproj*
+*.cmake
+Debug
+x64
+*.sdf
+*.sln
+install_manifest.txt
+.vs
