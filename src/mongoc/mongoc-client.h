@@ -171,7 +171,7 @@ void                           mongoc_server_descriptions_destroy_all      (mong
                                                                             size_t                        n);
 mongoc_server_description_t   *mongoc_client_select_server                 (mongoc_client_t              *client,
                                                                             bool                          for_writes,
-                                                                            mongoc_read_prefs_t          *prefs,
+                                                                            const mongoc_read_prefs_t    *prefs,
                                                                             bson_error_t                 *error);
 BSON_END_DECLS
 
