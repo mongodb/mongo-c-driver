@@ -1146,6 +1146,14 @@ buildvariants:
      - rhel72-zseries-build
   tasks: *just_compile
 
+- name: rhel-71-power8
+  display_name: "RHEL 7.1 Power8"
+  expansions:
+    <<: *unix_common
+  run_on:
+     - rhel71-power8-test
+  tasks: *just_compile
+
 ## Ubuntu 1404
 
 - name: ubuntu-1404-64
