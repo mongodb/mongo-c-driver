@@ -84,8 +84,14 @@ c_driver_variables:
       mongo_url_platform: ""
     windows32: &mongo_url_windows32
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
+    rhel70: &mongo_url_rhel70
+      mongo_url_platform: "rhel70-"
+      <<: *mongo_url_linux64
+    rhel62: &mongo_url_rhel62
+      mongo_url_platform: "rhel62-"
+      <<: *mongo_url_linux64
     rhel55: &mongo_url_rhel55
-      mongo_url_platform: "rhel57-"
+      mongo_url_platform: "rhel55-"
       <<: *mongo_url_linux64
     rhel55_32: &mongo_url_rhel55_32
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
@@ -100,6 +106,8 @@ c_driver_variables:
   cflags:
     standard: &cflags_64
       cflags: "-m64 -march=x86-64 -Werror"
+    standard_no_werror: &cflags_64_no_werror
+      cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
       cflags: "-m32 -march=i386 -Werror"
     osx_108: &cflags_osx_108
@@ -1095,6 +1103,26 @@ buildvariants:
     <<: *unix_common
   run_on:
   - ubuntu1204-test
+  tasks: *topology_tests
+
+- name: rhel-62
+  display_name: "RHEL 6.2 64"
+  expansions:
+    <<: *cflags_64_no_werror
+    <<: *mongo_url_rhel62
+    <<: *unix_common
+  run_on:
+     - rhel62-test
+  tasks: *topology_tests
+
+- name: rhel-70
+  display_name: "RHEL 7.0 64"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_url_rhel70
+    <<: *unix_common
+  run_on:
+  - rhel70
   tasks: *topology_tests
 
 - name: rhel-72-zseries
