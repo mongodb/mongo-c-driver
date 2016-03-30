@@ -182,6 +182,15 @@ extern "C" {
       } \
    } while (0)
 
+/* don't check durations when testing with valgrind */
+#define ASSERT_CMPTIME(actual, maxduration) \
+   do { \
+      if (!test_suite_valgrind ()) { \
+         ASSERT_CMPINT (actual, <, maxduration); \
+      }\
+   } while (0)
+
+
 #define MAX_TEST_NAME_LENGTH 500
 
 
@@ -236,6 +245,9 @@ void TestSuite_AddFull (TestSuite *suite,
                         int (*check) (void));
 int  TestSuite_Run     (TestSuite *suite);
 void TestSuite_Destroy (TestSuite *suite);
+
+int test_suite_debug_output (void);
+int test_suite_valgrind (void);
 
 #ifdef __cplusplus
 }

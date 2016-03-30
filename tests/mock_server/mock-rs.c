@@ -134,9 +134,6 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->n_secondaries = n_secondaries;
    rs->n_arbiters = n_arbiters;
    rs->request_timeout_msec = 10 * 1000;
-   _mongoc_array_init (&rs->secondaries, sizeof (mock_server_t *));
-   _mongoc_array_init (&rs->arbiters, sizeof (mock_server_t *));
-   _mongoc_array_init (&rs->servers, sizeof (mock_server_t *));
    rs->q = q_new ();
    rs->verbose = test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE");
 
@@ -263,6 +260,7 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* add all servers to replica set */
+   _mongoc_array_init (&rs->servers, sizeof(mock_server_t *));
    if (rs->has_primary) {
       _mongoc_array_append_val (&rs->servers, rs->primary);
    }
@@ -500,9 +498,13 @@ mock_rs_receives_command (mock_rs_t *rs,
                                            formatted_command_json,
                                            NULL,
                                            true)) {
+      bson_free (formatted_command_json);
       request_destroy (request);
       return NULL;
    }
+
+   bson_free (ns);
+   bson_free (formatted_command_json);
 
    return request;
 }
