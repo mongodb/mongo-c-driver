@@ -24,6 +24,8 @@
 # include "mongoc-crypto-openssl-private.h"
 #elif defined(MONGOC_ENABLE_COMMON_CRYPTO)
 # include "mongoc-crypto-common-crypto-private.h"
+#elif defined(MONGOC_ENABLE_CRYPTO_CNG)
+# include "mongoc-crypto-cng-private.h"
 #endif
 
 void
@@ -35,6 +37,9 @@ mongoc_crypto_init (mongoc_crypto_t *crypto)
 #elif defined(MONGOC_ENABLE_COMMON_CRYPTO)
    crypto->hmac_sha1 = mongoc_crypto_common_crypto_hmac_sha1;
    crypto->sha1 = mongoc_crypto_common_crypto_sha1;
+#elif defined(MONGOC_ENABLE_CRYPTO_CNG)
+   crypto->hmac_sha1 = mongoc_crypto_cng_hmac_sha1;
+   crypto->sha1 = mongoc_crypto_cng_sha1;
 #endif
 }
 

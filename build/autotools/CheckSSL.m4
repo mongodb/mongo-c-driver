@@ -59,6 +59,9 @@ AC_SUBST(SSL_CFLAGS)
 AC_SUBST(SSL_LIBS)
 
 
+AC_SUBST(MONGOC_ENABLE_SECURE_CHANNEL, 0)
+AC_SUBST(MONGOC_ENABLE_CRYPTO_CNG,  0)
+
 if test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"; then
    AC_SUBST(MONGOC_ENABLE_SSL,     1)
    AC_SUBST(MONGOC_ENABLE_CRYPTO,  1)

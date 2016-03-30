@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 2.8)
 project (libmongoc)
 
 set (ENABLE_SSL AUTO CACHE STRING
-     "Enable TLS connections and SCRAM-SHA-1 authentication.\
- Options are \"DARWIN\" to use Apple's Secure Transport, \"OPENSSL\", \"AUTO\",\
- or \"OFF\". These options are case-sensitive. The default is \"AUTO\". Note\
- that SCRAM-SHA-1 is required for authenticating to MongoDB 3.0 and later.")
+     "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
+     \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
+     Secure Channel, \"OPENSSL\", \"AUTO\",\ or \"OFF\". These options are
+     case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
+     required for authenticating to MongoDB 3.0 and later.")
 
 option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
@@ -19,11 +20,12 @@ include(InstallRequiredSystemLibraries)
 include(FindBSON REQUIRED)
 
 if (NOT (ENABLE_SSL STREQUAL DARWIN
+         OR ENABLE_SSL STREQUAL WINDOWS
          OR ENABLE_SSL STREQUAL OPENSSL
          OR ENABLE_SSL STREQUAL AUTO
          OR ENABLE_SSL STREQUAL OFF))
    message (FATAL_ERROR
-            "ENABLE_SSL option must be DARWIN, OPENSSL, AUTO, or OFF")
+            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, AUTO, or OFF")
 endif()
 
 if (NOT ENABLE_SSL STREQUAL OFF)
@@ -45,7 +47,19 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       set (SECURE_TRANSPORT 1)
    endif ()
 
-   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT)
+   if (ENABLE_SSL STREQUAL WINDOWS)
+      if (WIN32)
+         set (SECURE_CHANNEL 1)
+      else ()
+         message (FATAL_ERROR "ENABLE_SSL=WINDOWS only supported on Windows")
+      endif ()
+   endif ()
+
+   if (ENABLE_SSL STREQUAL AUTO AND NOT OPENSSL_FOUND AND WIN32)
+      set (SECURE_CHANNEL 1)
+   endif ()
+
+   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL)
       if (ENABLE_SSL STREQUAL AUTO)
          set (ENABLE_SSL OFF)
       else ()
@@ -58,10 +72,12 @@ endif ()
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_OPENSSL 0)
 set (MONGOC_ENABLE_SECURE_TRANSPORT 0)
+set (MONGOC_ENABLE_SECURE_CHANNEL 0)
 
 set (MONGOC_ENABLE_CRYPTO 0)
 set (MONGOC_ENABLE_LIBCRYPTO 0)
 set (MONGOC_ENABLE_COMMON_CRYPTO 0)
+set (MONGOC_ENABLE_CRYPTO_CNG 0)
 
 if (OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
@@ -73,6 +89,11 @@ elseif (SECURE_TRANSPORT)
    set (MONGOC_ENABLE_SECURE_TRANSPORT 1)
    set (MONGOC_ENABLE_CRYPTO 1)
    set (MONGOC_ENABLE_COMMON_CRYPTO 1)
+elseif (SECURE_CHANNEL)
+   set (MONGOC_ENABLE_SSL 1)
+   set (MONGOC_ENABLE_SECURE_CHANNEL 1)
+   set (MONGOC_ENABLE_CRYPTO 1)
+   set (MONGOC_ENABLE_CRYPTO_CNG 1)
 endif ()
 
 if (ENABLE_SASL)
@@ -291,6 +312,14 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
       )
       set (LIBS ${LIBS} "-framework CoreFoundation -framework Security")
+   elseif (SECURE_CHANNEL)
+      set (SOURCES ${SOURCES}
+              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
+      )
+      set(LIBS ${LIBS} secur32.lib crypt32.lib Bcrypt.lib)
    endif ()
 endif () # ENABLE_SSL
 

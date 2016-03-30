@@ -35,6 +35,9 @@
 #elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
 # include "mongoc-secure-transport-private.h"
 # include "mongoc-stream-tls-secure-transport.h"
+#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+# include "mongoc-secure-channel-private.h"
+# include "mongoc-stream-tls-secure-channel.h"
 #endif
 
 #undef MONGOC_LOG_DOMAIN
@@ -181,6 +184,8 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    return mongoc_stream_tls_openssl_new (base_stream, opt, client);
 #elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, opt, client);
+#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+   return mongoc_stream_tls_secure_channel_new (base_stream, opt, client);
 #else
 #error "Don't know how to create TLS stream"
 #endif
