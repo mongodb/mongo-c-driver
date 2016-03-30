@@ -1,6 +1,11 @@
+libmongoc (1.3.4-1) unstable; urgency=low
+
+  * Upstream release
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Wed, 30 Mar 2016 19:15:51 +0000
+
 libmongoc (1.3.3-1) unstable; urgency=low
 
-  [ A. Jesse Jiryu Davis ]
   * Upstream release
 
  -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Tue, 08 Mar 2016 22:29:31 +0000
