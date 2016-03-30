@@ -1,3 +1,22 @@
+mongo-c-driver 1.3.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.3.5. This release fixes a crash
+in mongoc_cleanup when an allocator had been set with bson_mem_set_vtable, and
+introduces a configure option MONGOC_NO_AUTOMATIC_GLOBALS which prevents code
+built with GCC from automatically calling mongoc_init and mongoc_cleanup when
+your code does not.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.3.4
 ====================
 
