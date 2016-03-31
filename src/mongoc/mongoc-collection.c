@@ -1514,7 +1514,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
             MONGOC_ERROR_COMMAND_INVALID_ARG,
             "Failed to append bson to create update.");
       bson_destroy (&selector);
-      return NULL;
+      return false;
    }
 
    ret = mongoc_collection_update(collection,
