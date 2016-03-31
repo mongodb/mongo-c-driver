@@ -426,7 +426,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* Try to get the current chunk */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
-         return -1;
+      return -1;
    }
 
    for (i = 0; i < iovcnt; i++) {
