@@ -74,7 +74,7 @@ c_driver_variables:
       <<: *mongo_url_linux64
     rhel55_32: &mongo_url_rhel55_32
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
-    osx-108: &mongo_url_osx_108
+    osx-1010: &mongo_url_osx_1010
       mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
@@ -85,7 +85,7 @@ c_driver_variables:
       cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
       cflags: "-m32 -march=i386"
-    osx_108: &cflags_osx_108
+    osx_1010: &cflags_osx_1010
       cflags: "-m64 -march=x86-64"
 
   ## Extra $PATH entries
@@ -862,14 +862,14 @@ buildvariants:
 #         OS X Buildvariants          #
 #######################################
 
-- name: os-x-108-64
-  display_name: "OS X 10.8 64-bit"
+- name: os-x-1010-64
+  display_name: "OS X 10.10 64-bit"
   expansions:
-    <<: *mongo_url_osx_108
-    <<: *cflags_osx_108
+    <<: *mongo_url_osx_1010
+    <<: *cflags_osx_1010
     <<: *osx_common
   run_on:
-  - osx-108
+  - osx-1010
   tasks: *topology_tests
 
 #######################################
