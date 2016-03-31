@@ -56,6 +56,17 @@ c_driver_variables:
     - name: "integration-test-latest-replica-set-no-auth"
     - name: "integration-test-latest-sharded-no-auth"
 
+  topology_test_latest: &topology_tests_latest
+    - name: "compile"
+    - name: "integration-test-latest"
+    - name: "integration-test-latest-no-auth"
+    - name: "integration-test-latest-ssl"
+    - name: "integration-test-latest-ssl-no-auth"
+    - name: "integration-test-latest-replica-set"
+    - name: "integration-test-latest-replica-set-no-auth"
+    - name: "integration-test-latest-sharded"
+    - name: "integration-test-latest-sharded-no-auth"
+
 ## We don't have OSX SSL (Enterprise) Builds until 3.1.x
   ssl_osx_test_list: &ssl_osx_tests
     - name: "compile"
@@ -71,6 +82,8 @@ c_driver_variables:
 
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
+    linuxppc64le: &mongo_url_linuxppc64le
+      mongo_url_prefix: "http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-"
     linux64: &mongo_url_linux64
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-"
     ubuntu1204: &mongo_url_ubuntu1204
@@ -101,9 +114,14 @@ c_driver_variables:
       mongo_url_prefix: "http://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-"
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
+    rhel71_ppc64le: &mongo_url_ppc64le_rhel71
+      mongo_url_platform: "rhel71-"
+      <<: *mongo_url_linuxppc64le
 
   ## Common sets of CFLAGS
   cflags:
+    standard: &cflags_power8
+      cflags: "-mcpu=power8 -mtune=power8 -mcmodel=medium -Werror"
     standard: &cflags_64
       cflags: "-m64 -march=x86-64 -Werror"
     standard_no_werror: &cflags_64_no_werror
@@ -1149,10 +1167,12 @@ buildvariants:
 - name: rhel-71-power8
   display_name: "RHEL 7.1 Power8"
   expansions:
+    <<: *cflags_power8
+    <<: *mongo_url_ppc64le_rhel71
     <<: *unix_common
   run_on:
      - rhel71-power8-test
-  tasks: *just_compile
+  tasks: *topology_tests_latest
 
 ## Ubuntu 1404
 
