@@ -108,9 +108,9 @@ c_driver_variables:
       <<: *mongo_url_linux64
     rhel55_32: &mongo_url_rhel55_32
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
-    osx-108: &mongo_url_osx_108
+    osx-1010: &mongo_url_osx_1010
       mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
-    osx-108: &mongo_url_osx_108_enterprise
+    osx-1010: &mongo_url_osx_1010_enterprise
       mongo_url_prefix: "http://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-"
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
@@ -128,7 +128,7 @@ c_driver_variables:
       cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
       cflags: "-m32 -march=i386 -Werror"
-    osx_108: &cflags_osx_108
+    osx_1010: &cflags_osx_1010
       cflags: "-m64 -march=x86-64"
     solaris_64: &cflags_solaris_64
       cflags: "-m64 -march=x86-64"
@@ -1203,11 +1203,11 @@ buildvariants:
 #         OS X Buildvariants          #
 #######################################
 
-- name: os-x-108-64-nossl
-  display_name: "OSX 10.8 clang 64 NOSSL"
+- name: os-x-1010-64-nossl
+  display_name: "OSX 10.10 clang 64 NOSSL"
   expansions:
-    <<: *mongo_url_osx_108
-    <<: *cflags_osx_108
+    <<: *mongo_url_osx_1010
+    <<: *cflags_osx_1010
     <<: *compile_osx_nossl
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_osx
@@ -1215,14 +1215,14 @@ buildvariants:
     <<: *unix_path
     <<: *osx_path
   run_on:
-  - osx-108
+  - osx-1010
   tasks: *topology_tests_no_auth
 
-- name: os-x-108-64-openssl
-  display_name: "OSX 10.8 clang 64 OpenSSL"
+- name: os-x-1010-64-openssl
+  display_name: "OSX 10.10 clang 64 OpenSSL"
   expansions:
-    <<: *mongo_url_osx_108_enterprise
-    <<: *cflags_osx_108
+    <<: *mongo_url_osx_1010_enterprise
+    <<: *cflags_osx_1010
     <<: *compile_osx_openssl
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_osx
@@ -1231,14 +1231,14 @@ buildvariants:
     <<: *osx_path
     <<: *ssl
   run_on:
-  - osx-108
+  - osx-1010
   tasks: *ssl_osx_tests
 
-- name: os-x-108-64-nativessl
-  display_name: "OSX 10.8 clang 64 NativeSSL"
+- name: os-x-1010-64-nativessl
+  display_name: "OSX 10.10 clang 64 NativeSSL"
   expansions:
-    <<: *mongo_url_osx_108_enterprise
-    <<: *cflags_osx_108
+    <<: *mongo_url_osx_1010_enterprise
+    <<: *cflags_osx_1010
     <<: *compile_osx_nativessl
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_osx
@@ -1247,7 +1247,7 @@ buildvariants:
     <<: *osx_path
     <<: *ssl
   run_on:
-  - osx-108
+  - osx-1010
   tasks: *ssl_osx_tests
 
 #######################################
