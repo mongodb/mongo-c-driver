@@ -347,6 +347,11 @@ c_driver_variables:
       generator: Visual Studio 12 2013 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2013: &with_msvc2013_nativessl
+      generator: Visual Studio 12 2013 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=WINDOWS"
     msvc2015_32bit: &with_msvc2015_32bit
       generator: Visual Studio 14 2015
       # Evergreen builders only have 64-bit SSL and SASL available.
@@ -356,6 +361,11 @@ c_driver_variables:
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2015: &with_msvc2015_nativessl
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=WINDOWS"
 
   ## all windows buildvariants have these attributes in common
   windows_common: &windows_common
@@ -1294,6 +1304,16 @@ buildvariants:
   - windows-64-vs2013-compile
   tasks: *topology_tests
 
+- name: windows-64-vs2013-nativessl
+  display_name: "Win VS2013 64 NativeSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2013_nativessl
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *topology_tests
+
 - name: windows-32-vs2015
   display_name: "Win VS2015 32"
   expansions:
@@ -1310,6 +1330,16 @@ buildvariants:
     <<: *msvc_common
     <<: *mongo_url_windows64
     <<: *with_msvc2015
+  run_on:
+  - windows-64-vs2015-compile
+  tasks: *topology_tests
+
+- name: windows-64-vs2015-nativessl
+  display_name: "Win VS2015 64 NativeSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2015_nativessl
   run_on:
   - windows-64-vs2015-compile
   tasks: *topology_tests
