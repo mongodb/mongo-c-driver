@@ -1525,6 +1525,15 @@ mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
    return cursor->limit;
 }
 
+void
+mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
+                        uint32_t         server_id)
+{
+   BSON_ASSERT (cursor);
+
+   cursor->server_id = server_id;
+}
+
 uint32_t
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
 {
