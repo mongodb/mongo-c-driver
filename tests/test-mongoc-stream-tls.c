@@ -254,6 +254,7 @@ test_mongoc_tls_trust_dir (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
+#ifndef MONGOC_ENABLE_SECURE_CHANNEL
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
    TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
@@ -272,5 +273,6 @@ test_stream_tls_install (TestSuite *suite)
 #endif
 #if !defined(_WIN32) && defined(MONGOC_ENABLE_OPENSSL)
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
+#endif
 #endif
 }

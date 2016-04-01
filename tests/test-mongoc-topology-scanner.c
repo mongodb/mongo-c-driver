@@ -299,10 +299,8 @@ void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
-#ifdef MONGOC_ENABLE_SSL
-#ifndef MONGOC_ENABLE_SECURE_TRANSPORT
+#ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
-#endif
 #endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_discovery",
                   test_topology_scanner_discovery);

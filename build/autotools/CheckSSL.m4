@@ -89,6 +89,8 @@ AM_CONDITIONAL([ENABLE_SSL],              [test "$enable_ssl" = "darwin" -o "$en
 AM_CONDITIONAL([ENABLE_CRYPTO],           [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"])
 AM_CONDITIONAL([ENABLE_OPENSSL],          [test "$enable_ssl" = "openssl"])
 AM_CONDITIONAL([ENABLE_LIBCRYPTO],        [test "$enable_ssl" = "openssl"])
+AM_CONDITIONAL([ENABLE_CRYPTO_CNG],        false)
 AM_CONDITIONAL([ENABLE_COMMON_CRYPTO],    [test "$enable_ssl" = "darwin"])
 AM_CONDITIONAL([ENABLE_SECURE_TRANSPORT], [test "$enable_ssl" = "darwin"])
+AM_CONDITIONAL([ENABLE_SECURE_CHANNEL],    false)
 

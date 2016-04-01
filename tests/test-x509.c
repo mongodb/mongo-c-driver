@@ -57,8 +57,10 @@ test_extract_subject_extra (void)
 void
 test_x509_install (TestSuite *suite)
 {
+#ifndef MONGOC_ENABLE_SECURE_CHANNEL
    TestSuite_Add (suite, "/SSL/extract_subject", test_extract_subject);
 #ifndef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/SSL/extract_subject/extra", test_extract_subject_extra);
+#endif
 #endif
 }

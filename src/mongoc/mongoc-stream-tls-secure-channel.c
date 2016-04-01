@@ -42,17 +42,14 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
    ENTRY;
    BSON_ASSERT (secure_channel);
 
-   /* TODO close stream handlers */
 
    mongoc_stream_destroy (tls->base_stream);
-
-   /* TODO free meta data */
 
    bson_free (secure_channel);
    bson_free (stream);
 
-   mongoc_counter_streams_active_dec();
-   mongoc_counter_streams_disposed_inc();
+   mongoc_counter_streams_active_dec ();
+   mongoc_counter_streams_disposed_inc ();
    EXIT;
 }
 
@@ -89,6 +86,7 @@ _mongoc_stream_tls_secure_channel_flush (mongoc_stream_t *stream)
    RETURN (0);
 }
 
+static ssize_t
 _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
                                             mongoc_iovec_t  *iov,
                                             size_t           iovcnt,
@@ -116,12 +114,6 @@ _mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
-   ssize_t ret = 0;
-   size_t i;
-   size_t read_ret;
-   size_t iov_pos = 0;
-   int64_t now;
-   int64_t expire = 0;
 
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -129,33 +121,7 @@ _mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
    ENTRY;
 
    tls->timeout_msec = timeout_msec;
-
-   if (timeout_msec >= 0) {
-      expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
-   }
-
-
-   if (expire) {
-      now = bson_get_monotonic_time ();
-
-      if ((expire - now) < 0) {
-         if (read_ret == 0) {
-            mongoc_counter_streams_timeout_inc();
-            errno = ETIMEDOUT;
-            RETURN (-1);
-         }
-
-         tls->timeout_msec = 0;
-      } else {
-         tls->timeout_msec = (expire - now) / 1000L;
-      }
-   }
-
-   if (ret >= 0) {
-      mongoc_counter_streams_ingress_add(ret);
-   }
-
-   RETURN (ret);
+   RETURN (0);
 }
 
 static int
@@ -202,12 +168,10 @@ _mongoc_stream_tls_secure_channel_check_closed (mongoc_stream_t *stream) /* IN *
 
 bool
 mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
-                                              const char      *host,
-                                              int             *events,
-                                              bson_error_t    *error)
+                                            const char      *host,
+                                            int             *events,
+                                            bson_error_t    *error)
 {
-   int64_t now;
-   int64_t expire = 0;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *) tls->ctx;
 
@@ -238,8 +202,8 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
    mongoc_stream_tls_secure_channel_t *secure_channel;
 
    ENTRY;
-   BSON_ASSERT(base_stream);
-   BSON_ASSERT(opt);
+   BSON_ASSERT (base_stream);
+   BSON_ASSERT (opt);
 
 
    secure_channel = (mongoc_stream_tls_secure_channel_t *)bson_malloc0 (sizeof *secure_channel);
@@ -267,17 +231,17 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
    mongoc_secure_channel_setup_ca (secure_channel, opt);
 
    if (opt->ca_dir) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
+      MONGOC_ERROR ("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
             "Secure Transport");
    }
    if (opt->crl_file) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
+      MONGOC_ERROR ("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
             "Secure Transport");
    }
 
 
-   mongoc_counter_streams_active_inc();
-   RETURN((mongoc_stream_t *)tls);
+   mongoc_counter_streams_active_inc ();
+   RETURN ((mongoc_stream_t *)tls);
 }
 #endif /* MONGOC_ENABLE_SECURE_CHANNEL */
 

@@ -47,7 +47,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
 
 bool
 mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                  mongoc_ssl_opt_t *opt)
+                                mongoc_ssl_opt_t *opt)
 {
    return false;
 }
