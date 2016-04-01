@@ -391,9 +391,7 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
                                               int             *events,
                                               bson_error_t    *error)
 {
-   int64_t now;
    OSStatus ret = 0;
-   int64_t expire = 0;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
