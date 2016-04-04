@@ -145,7 +145,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-cursor-cursorid.c \
 	src/mongoc/mongoc-cursor-transform.c \
 	src/mongoc/mongoc-database.c \
-	src/mongoc/mongoc-error.c \
 	src/mongoc/mongoc-find-and-modify.c \
 	src/mongoc/mongoc-host-list.c \
 	src/mongoc/mongoc-init.c \
