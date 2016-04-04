@@ -709,6 +709,126 @@ test_cursor_new_invalid (void)
    mongoc_client_destroy (client);
 }
 
+
+static uint32_t
+server_id_for_read_mode (mongoc_client_t *client,
+                         mongoc_read_mode_t read_mode)
+{
+   mongoc_read_prefs_t *prefs;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   uint32_t server_id;
+
+   prefs = mongoc_read_prefs_new (read_mode);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
+                                &error);
+
+   ASSERT_OR_PRINT (sd, error);
+   server_id = sd->id;
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (prefs);
+
+   return server_id;
+}
+
+
+static void
+_test_cursor_hint (bool pooled,
+                   bool use_primary)
+{
+
+   mock_rs_t *rs;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *q = BCON_NEW ("a", BCON_INT32 (1));
+   mongoc_cursor_t *cursor;
+   uint32_t server_id;
+   const bson_t *doc = NULL;
+   future_t *future;
+   request_t *request;
+
+   /* wire version 0, primary, two secondaries, no arbiters */
+   rs = mock_rs_with_autoismaster (0, true, 2, 0);
+   mock_rs_run (rs);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_rs_get_uri (rs));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   }
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q,
+                                    NULL, NULL);
+   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
+
+   if (use_primary) {
+      server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
+   } else {
+      server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
+   }
+
+   mongoc_cursor_set_hint (cursor, server_id);
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{'a': 1}", NULL);
+
+   if (use_primary) {
+      BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
+   } else {
+      BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   }
+
+   mock_rs_replies (request, 0, 0, 0, 1, "{'b': 1}");
+   assert (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'b': 1}");
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_rs_destroy (rs);
+}
+
+static void
+test_hint_single_secondary (void)
+{
+   _test_cursor_hint (false, false);
+}
+
+static void
+test_hint_single_primary (void)
+{
+   _test_cursor_hint (false, true);
+}
+
+static void
+test_hint_pooled_secondary (void)
+{
+   _test_cursor_hint (true, false);
+}
+
+static void
+test_hint_pooled_primary (void)
+{
+   _test_cursor_hint (true, true);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -752,4 +872,8 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_find_batches, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
+   TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
+   TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
+   TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
 }
