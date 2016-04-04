@@ -723,15 +723,15 @@ test_cursor_hint_errors (void)
                                     tmp_bson ("{}"), NULL, NULL);
 
    capture_logs (true);
-   mongoc_cursor_set_hint (cursor, 0);
+   ASSERT (!mongoc_cursor_set_hint (cursor, 0));
    ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
                         "cannot set server_id to 0");
 
    capture_logs (true);  /* clear logs */
-   mongoc_cursor_set_hint (cursor, 123);
+   ASSERT (mongoc_cursor_set_hint (cursor, 123));
    ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
    ASSERT_NO_CAPTURED_LOGS ("mongoc_cursor_set_hint");
-   mongoc_cursor_set_hint (cursor, 42);
+   ASSERT (!mongoc_cursor_set_hint (cursor, 42));
    ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
                         "server_id already set");
 
@@ -803,7 +803,7 @@ _test_cursor_hint (bool pooled,
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
    }
 
-   mongoc_cursor_set_hint (cursor, server_id);
+   ASSERT (mongoc_cursor_set_hint (cursor, server_id));
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
 
    future = future_cursor_next (cursor, &doc);

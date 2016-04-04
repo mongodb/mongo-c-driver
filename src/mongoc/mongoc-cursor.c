@@ -1528,7 +1528,7 @@ mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
    return cursor->limit;
 }
 
-void
+bool
 mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
                         uint32_t         server_id)
 {
@@ -1536,15 +1536,20 @@ mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
 
    if (cursor->server_id) {
       MONGOC_ERROR ("mongoc_cursor_set_hint: server_id already set");
-      return;
+      return false;
    }
 
    if (!server_id) {
       MONGOC_ERROR ("mongoc_cursor_set_hint: cannot set server_id to 0");
-      return;
+      return false;
    }
 
    cursor->server_id = server_id;
+
+   /* directly querying a server, set slaveOk in case it's secondary */
+   cursor->flags |= MONGOC_QUERY_SLAVE_OK;
+
+   return true;
 }
 
 uint32_t

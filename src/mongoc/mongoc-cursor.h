@@ -54,7 +54,7 @@ bool             mongoc_cursor_set_limit              (mongoc_cursor_t         *
 int64_t          mongoc_cursor_get_limit              (const mongoc_cursor_t   *cursor);
 /* These names include the term "hint" for backward compatibility, should be
  * mongoc_cursor_get_server_id, mongoc_cursor_set_server_id. */
-void             mongoc_cursor_set_hint               (mongoc_cursor_t         *cursor,
+bool             mongoc_cursor_set_hint               (mongoc_cursor_t         *cursor,
                                                        uint32_t                 server_id);
 uint32_t         mongoc_cursor_get_hint               (const mongoc_cursor_t   *cursor);
 int64_t          mongoc_cursor_get_id                 (const mongoc_cursor_t   *cursor);
