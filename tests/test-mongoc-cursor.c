@@ -710,6 +710,37 @@ test_cursor_new_invalid (void)
 }
 
 
+static void
+test_cursor_hint_errors (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    tmp_bson ("{}"), NULL, NULL);
+
+   capture_logs (true);
+   mongoc_cursor_set_hint (cursor, 0);
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
+                        "cannot set server_id to 0");
+
+   capture_logs (true);  /* clear logs */
+   mongoc_cursor_set_hint (cursor, 123);
+   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_cursor_set_hint");
+   mongoc_cursor_set_hint (cursor, 42);
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
+                        "server_id already set");
+
+   /* last set_hint had no effect */
+   ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
+}
+
+
+
 static uint32_t
 server_id_for_read_mode (mongoc_client_t *client,
                          mongoc_read_mode_t read_mode)
@@ -872,6 +903,7 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_find_batches, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_Add (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
    TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
    TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);

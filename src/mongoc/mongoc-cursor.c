@@ -1534,6 +1534,16 @@ mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
 {
    BSON_ASSERT (cursor);
 
+   if (cursor->server_id) {
+      MONGOC_ERROR ("mongoc_cursor_set_hint: server_id already set");
+      return;
+   }
+
+   if (!server_id) {
+      MONGOC_ERROR ("mongoc_cursor_set_hint: cannot set server_id to 0");
+      return;
+   }
+
    cursor->server_id = server_id;
 }
 
