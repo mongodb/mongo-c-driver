@@ -111,7 +111,6 @@ INST_H_FILES += \
 	src/mongoc/mongoc-crypto-common-crypto-private.h \
 	src/mongoc/mongoc-crypto-openssl-private.h \
 	src/mongoc/mongoc-openssl-private.h \
-	src/mongoc/mongoc-openssl-private.h \
 	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \
 	src/mongoc/mongoc-secure-channel-private.h \
