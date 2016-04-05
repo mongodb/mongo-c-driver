@@ -1561,7 +1561,7 @@ _test_count_read_concern_live (bool supports_read_concern)
 int
 skip_unless_server_has_decimal128 (void)
 {
-   if (test_framework_get_server_version () >= test_framework_str_to_version("3.3.4")) {
+   if (test_framework_get_server_version () >= test_framework_str_to_version("3.3.5")) {
       return 1;
    }
    return 0;
