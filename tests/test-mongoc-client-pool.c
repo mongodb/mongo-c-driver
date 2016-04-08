@@ -56,8 +56,8 @@ test_mongoc_client_pool_min_size_zero (void)
 
    client1 = mongoc_client_pool_pop (pool);
    client2 = mongoc_client_pool_pop (pool);
-   mongoc_client_pool_push (pool, client1);
    mongoc_client_pool_push (pool, client2);
+   mongoc_client_pool_push (pool, client1);
 
    assert (mongoc_client_pool_get_size (pool) == 2);
    client3 = mongoc_client_pool_pop (pool);
@@ -103,7 +103,7 @@ test_mongoc_client_pool_min_size_dispose (void)
    assert (mongoc_client_pool_get_size (pool) == 3);
 
    /* assert oldest clients were destroyed, newest were stored */
-   for (i = 7; i < 10; i++) {
+   for (i = 9; i >= 7; i--) {
       client = mongoc_client_pool_pop (pool);
       assert (client);
       assert (client == _mongoc_array_index (&conns, mongoc_client_t *, i));

@@ -236,7 +236,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
       }
    }
 
-   _mongoc_queue_push_tail (&pool->queue, client);
+   _mongoc_queue_push_head (&pool->queue, client);
 
    mongoc_cond_signal(&pool->cond);
    mongoc_mutex_unlock(&pool->mutex);
