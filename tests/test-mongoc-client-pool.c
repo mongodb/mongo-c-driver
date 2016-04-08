@@ -42,6 +42,38 @@ test_mongoc_client_pool_try_pop (void)
 }
 
 static void
+test_mongoc_client_pool_min_size_zero (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client1;
+   mongoc_client_t *client2;
+   mongoc_client_t *client3;
+   mongoc_client_t *client4;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new (NULL);
+   pool = mongoc_client_pool_new (uri);
+
+   client1 = mongoc_client_pool_pop (pool);
+   client2 = mongoc_client_pool_pop (pool);
+   mongoc_client_pool_push (pool, client1);
+   mongoc_client_pool_push (pool, client2);
+
+   assert (mongoc_client_pool_get_size (pool) == 2);
+   client3 = mongoc_client_pool_pop (pool);
+
+   /* min pool size zero means "no min", so clients weren't destroyed */
+   assert (client3 == client1);
+   client4 = mongoc_client_pool_pop (pool);
+   assert (client4 == client2);
+
+   mongoc_client_pool_push (pool, client4);
+   mongoc_client_pool_push (pool, client3);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+}
+
+static void
 test_mongoc_client_pool_min_size_dispose (void)
 {
    mongoc_client_pool_t *pool;

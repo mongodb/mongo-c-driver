@@ -87,9 +87,10 @@
 
   <section id="pool-options">
     <title>Connection Pool Options</title>
+    <p>These options govern the behavior of a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>. They are ignored by a non-pooled <code xref="mongoc_client_t">mongoc_client_t</code>.</p>
     <table>
-      <tr><td><p>maxPoolSize</p></td><td><p>The maximum number of connections in the pool. The default value is 100.</p></td></tr>
-      <tr><td><p>minPoolSize</p></td><td><p>The minimum number of connections in the connection pool. Default value is 0. These are lazily created.</p></td></tr>
+      <tr><td><p>maxPoolSize</p></td><td><p>The maximum number of clients created by a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> total (both in the pool and checked out). The default value is 100. Once it is reached, <code xref="mongoc_client_pool_pop">mongoc_client_pool_pop</code> blocks until another thread pushes a client.</p></td></tr>
+      <tr><td><p>minPoolSize</p></td><td><p>The number of clients to keep in the pool; once it is reached, <code xref="mongoc_client_pool_push">mongoc_client_pool_push</code> destroys clients instead of pushing them. The default value, 0, means "no minimum": a client pushed into the pool is always stored, not destroyed.</p></td></tr>
       <tr><td><p>maxIdleTimeMS</p></td><td><p>Not implemented.</p></td></tr>
       <tr><td><p>waitQueueMultiple</p></td><td><p>Not implemented.</p></td></tr>
       <tr><td><p>waitQueueTimeoutMS</p></td><td><p>Not implemented.</p></td></tr>
