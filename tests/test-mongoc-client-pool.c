@@ -69,6 +69,21 @@ test_mongoc_client_pool_min_size_dispose (void)
    }
 
    assert (mongoc_client_pool_get_size (pool) == 3);
+
+   /* assert oldest clients were destroyed, newest were stored */
+   for (i = 7; i < 10; i++) {
+      client = mongoc_client_pool_pop (pool);
+      assert (client);
+      assert (client == _mongoc_array_index (&conns, mongoc_client_t *, i));
+   }
+
+   /* clean up */
+   for (i = 7; i < 10; i++) {
+      client = _mongoc_array_index (&conns, mongoc_client_t *, i);
+      assert (client);
+      mongoc_client_pool_push (pool, client);
+   }
+
    _mongoc_array_clear (&conns);
    _mongoc_array_destroy (&conns);
    mongoc_uri_destroy (uri);
@@ -168,6 +183,7 @@ test_client_pool_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add (suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
+   TestSuite_Add (suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
    TestSuite_Add (suite, "/ClientPool/min_size_dispose", test_mongoc_client_pool_min_size_dispose);
    TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
    TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
