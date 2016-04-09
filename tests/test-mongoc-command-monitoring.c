@@ -85,6 +85,39 @@ check_server_version (const bson_t *test,
 }
 
 
+static bool
+check_topology_type (const bson_t *test)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+   bool is_mongos;
+   const char *s;
+
+   /* so far this field can only contain an array like ["sharded"],
+    * see https://github.com/mongodb/specifications/pull/75
+    */
+   if (bson_iter_init_find (&iter, test, "ignore_if_topology_type")) {
+      ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+      ASSERT (bson_iter_recurse (&iter, &child));
+
+      is_mongos = test_framework_is_mongos ();
+
+      while (bson_iter_next (&child)) {
+         if (BSON_ITER_HOLDS_UTF8 (&child)) {
+            s = bson_iter_utf8 (&child, NULL);
+
+            /* skip test if topology type is sharded */
+            if (!strcmp (s, "sharded") && is_mongos) {
+               return false;
+            }
+         }
+      }
+   }
+
+   return true;
+}
+
+
 static void
 insert_data (mongoc_collection_t *collection,
              const bson_t        *test)
@@ -696,7 +729,7 @@ one_test (mongoc_collection_t *collection,
       fflush (stdout);
    }
 
-   if (!check_server_version (test, &context)) {
+   if (!check_server_version (test, &context) || !check_topology_type (test)) {
       goto done;
    }
 
