@@ -398,7 +398,7 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
    ENTRY;
    BSON_ASSERT (secure_transport);
 
-   if (!tls->weak_cert_validation) {
+   if (!tls->ssl_opts.allow_invalid_hostname) {
       /* Silly check for Unix Domain Sockets */
       if (host[0] != '/' || access (host, F_OK) == -1) {
          TRACE("Verifying hostname against: %s", host);
@@ -455,7 +455,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    tls->parent.setsockopt = _mongoc_stream_tls_secure_transport_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_secure_transport_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_transport_check_closed;
-   tls->weak_cert_validation = opt->weak_cert_validation;
+   memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_secure_transport_handshake;
    tls->ctx = (void *)secure_transport;
    tls->timeout_msec = -1;

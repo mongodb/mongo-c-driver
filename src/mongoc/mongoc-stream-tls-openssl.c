@@ -546,7 +546,7 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
       SSL *ssl;
 
       BIO_get_ssl (openssl->bio, &ssl);
-      if (_mongoc_openssl_check_cert (ssl, host, tls->weak_cert_validation)) {
+      if (_mongoc_openssl_check_cert (ssl, host, tls->ssl_opts.allow_invalid_hostname)) {
          RETURN (true);
       }
 
@@ -624,8 +624,13 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
 
    if (opt->weak_cert_validation) {
       SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
+      opt->allow_invalid_hostname = true;
    } else {
       SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
+   }
+
+   if (!client) {
+      opt->allow_invalid_hostname = true;
    }
 
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
@@ -658,7 +663,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    tls->parent.setsockopt = _mongoc_stream_tls_openssl_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_openssl_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_openssl_check_closed;
-   tls->weak_cert_validation = opt->weak_cert_validation;
+   memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_openssl_handshake;
    tls->ctx = (void *)openssl;
    tls->timeout_msec = -1;

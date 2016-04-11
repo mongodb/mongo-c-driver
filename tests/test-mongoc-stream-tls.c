@@ -100,6 +100,29 @@ test_mongoc_tls_no_verify (void)
 
 
 static void
+test_mongoc_tls_allow_invalid_hostname (void)
+{
+   mongoc_ssl_opt_t sopt = { 0 };
+   mongoc_ssl_opt_t copt = { 0 };
+   ssl_test_result_t sr;
+   ssl_test_result_t cr;
+
+   sopt.ca_file = CERT_CA;
+   sopt.pem_file = CERT_SERVER;
+
+   copt.ca_file = CERT_CA;
+   copt.pem_file = CERT_CLIENT;
+   copt.allow_invalid_hostname = 1;
+
+   /* Connect to a domain not listed in the cert */
+   ssl_test (&copt, &sopt, "bad_domain.com", &cr, &sr);
+
+   ASSERT_CMPINT (cr.result, ==, SSL_TEST_SUCCESS);
+   ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
+}
+
+
+static void
 test_mongoc_tls_bad_verify (void)
 {
    mongoc_ssl_opt_t sopt = { 0 };
@@ -355,6 +378,7 @@ test_stream_tls_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/commonName", test_mongoc_tls_common_name);
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
+   TestSuite_Add (suite, "/TLS/allow_invalid_hostname", test_mongoc_tls_allow_invalid_hostname);
    TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
    TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
    TestSuite_Add (suite, "/TLS/bad_verify", test_mongoc_tls_bad_verify);

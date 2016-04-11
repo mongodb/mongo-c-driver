@@ -41,7 +41,7 @@ struct _mongoc_stream_tls_t
    mongoc_stream_t *base_stream; /* The underlying actual stream */
    void            *ctx;         /* TLS lib specific configuration or wrappers */
    int32_t          timeout_msec;
-   bool             weak_cert_validation;
+   mongoc_ssl_opt_t ssl_opts;
    bool (*handshake)    (mongoc_stream_t *stream,
                          const char      *host,
                          int             *events /* OUT*/,

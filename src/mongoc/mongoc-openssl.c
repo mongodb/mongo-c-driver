@@ -165,7 +165,7 @@ _mongoc_openssl_hostcheck (const char *pattern,
 bool
 _mongoc_openssl_check_cert (SSL        *ssl,
                             const char *host,
-                            bool        weak_cert_validation)
+                            bool        allow_invalid_hostname)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -188,7 +188,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    BSON_ASSERT (ssl);
    BSON_ASSERT (host);
 
-   if (weak_cert_validation) {
+   if (allow_invalid_hostname) {
       return true;
    }
 

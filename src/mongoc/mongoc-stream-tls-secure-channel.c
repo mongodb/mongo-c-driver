@@ -219,7 +219,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
    tls->parent.setsockopt = _mongoc_stream_tls_secure_channel_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_secure_channel_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_channel_check_closed;
-   tls->weak_cert_validation = opt->weak_cert_validation;
+   memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_secure_channel_handshake;
    tls->ctx = (void *)secure_channel;
    tls->timeout_msec = -1;
