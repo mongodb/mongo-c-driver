@@ -18,13 +18,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
 
-#define TRUST_DIR "tests/trust_dir"
-#define VERIFY_DIR TRUST_DIR "/verify"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_LOCALHOST TRUST_DIR "/keys/127.0.0.1.pem"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
-
 static char *
 gen_test_user (void)
 {
@@ -1554,11 +1547,11 @@ _test_ssl_reconnect (bool pooled)
    bson_error_t error;
    future_t *future;
 
-   client_opts.ca_file = CAFILE;
+   client_opts.ca_file = CERT_CA;
 
    server_opts.weak_cert_validation = true;
-   server_opts.ca_file = CAFILE;
-   server_opts.pem_file = PEMFILE_LOCALHOST;
+   server_opts.ca_file = CERT_CA;
+   server_opts.pem_file = CERT_SERVER;
 
    server = mock_server_with_autoismaster (0);
    mock_server_set_ssl_opts (server, &server_opts);
@@ -1580,8 +1573,8 @@ _test_ssl_reconnect (bool pooled)
    ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
                     error);
 
-   /* man-in-the-middle: hostname switches from 127.0.0.1 to mongodb.com */
-   server_opts.pem_file = PEMFILE_NOPASS;
+   /* man-in-the-middle: certificate changed, for example expired*/
+   server_opts.pem_file = CERT_EXPIRED;
    mock_server_set_ssl_opts (server, &server_opts);
 
    /* server closes connections */

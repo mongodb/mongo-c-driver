@@ -14,10 +14,6 @@
 #define TIMEOUT 20000 /* milliseconds */
 #define NSERVERS 10
 
-#define TRUST_DIR "tests/trust_dir"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
 static void
 test_topology_scanner_helper (uint32_t      id,
                               const bson_t *bson,
@@ -64,7 +60,7 @@ _test_topology_scanner(bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
-      copt.ca_file = CAFILE;
+      copt.ca_file = CERT_CA;
       copt.weak_cert_validation = 1;
 
       mongoc_topology_scanner_set_ssl_opts (topology_scanner, &copt);
@@ -78,8 +74,8 @@ _test_topology_scanner(bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
-         sopt.pem_file = PEMFILE_NOPASS;
-         sopt.ca_file = CAFILE;
+         sopt.ca_file = CERT_CA;
+         sopt.pem_file = CERT_SERVER;
 
          mock_server_set_ssl_opts (servers[i], &sopt);
       }

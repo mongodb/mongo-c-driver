@@ -31,6 +31,21 @@ extern "C" {
 # define BINARY_DIR "tests/binary"
 #endif
 
+#ifndef CERT_TEST_DIR
+# define CERT_TEST_DIR "tests/x509gen"
+#endif
+
+#define CERT_CA                  CERT_TEST_DIR "/ca.pem"
+#define CERT_CRL                 CERT_TEST_DIR "/crl.pem"
+#define CERT_SERVER              CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */
+#define CERT_CLIENT              CERT_TEST_DIR "/client.pem"
+#define CERT_ALTNAME             CERT_TEST_DIR "/altname.pem" /* alternative.mongodb.org */
+#define CERT_WILD                CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
+#define CERT_COMMONNAME          CERT_TEST_DIR "/commonName.pem" /* 127.0.0.1 & localhost */
+#define CERT_EXPIRED             CERT_TEST_DIR "/expired.pem" /* 127.0.0.1 & localhost */
+#define CERT_PASSWORD            "qwerty"
+#define CERT_PASSWORD_PROTECTED  CERT_TEST_DIR "/password_protected.pem"
+
 
 #ifdef ASSERT
 # undef ASSERT

@@ -491,7 +491,7 @@ mongoc_add_example(mongoc-rpc-validate FALSE ${SOURCE_DIR}/examples/mongoc-rpc-v
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
-file(COPY ${SOURCE_DIR}/tests/certificates DESTINATION ${PROJECT_BINARY_DIR}/tests)
+file(COPY ${SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 install(
   TARGETS mongoc_shared mongoc_static ${EXAMPLES}

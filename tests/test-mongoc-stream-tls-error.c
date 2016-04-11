@@ -102,10 +102,7 @@ ssl_error_server (void *ptr)
 }
 
 
-#define TRUST_DIR "tests/trust_dir"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
-#if !defined(__sun)
+#if !defined(__sun) && !defined(__APPLE__)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -187,7 +184,7 @@ test_mongoc_tls_hangup (void)
    mongoc_thread_t threads[2];
    int i, r;
 
-   sopt.pem_file = PEMFILE_NOPASS;
+   sopt.pem_file = CERT_SERVER;
    sopt.weak_cert_validation = 1;
    copt.weak_cert_validation = 1;
 
@@ -294,7 +291,7 @@ test_mongoc_tls_handshake_stall (void)
    mongoc_thread_t threads[2];
    int i, r;
 
-   sopt.pem_file = PEMFILE_NOPASS;
+   sopt.pem_file = CERT_SERVER;
    sopt.weak_cert_validation = 1;
    copt.weak_cert_validation = 1;
 
@@ -332,7 +329,7 @@ test_stream_tls_error_install (TestSuite *suite)
 {
    /* TLS stream doesn't detect hangup promptly on Solaris for some reason */
 #ifndef MONGOC_ENABLE_SECURE_CHANNEL
-#if !defined(__sun)
+#if !defined(__sun) && !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 

@@ -149,7 +149,7 @@ c_driver_variables:
     mongo_orchestration:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
+          trap 'set +o errexit; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
           pidfile=/cygdrive/c/mo.pid
           if [ -f $pidfile ]; then
             echo "Existing pidfile $pidfile"
@@ -159,17 +159,19 @@ c_driver_variables:
           fi
           ls -la
           fsutil volume diskfree c:
+          if [ ! -d /cygdrive/c/tmp/mongoc-test-certificates ]; then
+             mkdir -p /cygdrive/c/tmp/mongoc-test-certificates
+          fi
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern --pidfile c:\\mo.pid
           sleep 10
           cat c:\\mo.pid
           cat orchestration.config
-          cat server.log
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
+          trap 'set +o errexit; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
           pidfile=/data/mo.pid
           if [ -f $pidfile ]; then
             echo "Existing pidfile $pidfile"
@@ -179,6 +181,9 @@ c_driver_variables:
           fi
           df -h
           ls -la
+          if [ ! -d /tmp/mongoc-test-certificates ]; then
+             mkdir /tmp/mongoc-test-certificates
+          fi
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern --pidfile $pidfile
@@ -265,7 +270,7 @@ c_driver_variables:
     connection_flags:
       ssl: &connection_flags_ssl
         set_connection_flags: |
-          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
           export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
           export MONGOC_TEST_SSL_PEM_FILE=/tmp/mongoc-test-certificates/client.pem
           export MONGOC_TEST_SSL_CA_FILE=/tmp/mongoc-test-certificates/ca.pem
@@ -274,8 +279,6 @@ c_driver_variables:
       msvc: &run_integration_tests_msvc
         run_integration_tests: |
           export PATH=$PATH:`pwd`/tests
-          ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
-          touch tests/trust_dir/done
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
@@ -578,8 +581,9 @@ functions:
       script: |
         set -o errexit
         set -o verbose
-        # TODO: this won't work for Windows
-        cp -rf orchestration_configs/certificates /tmp/mongoc-test-certificates
+        cp -rf tests/x509gen /tmp/mongoc-test-certificates
+        mkdir /tmp/mongoc-test-certificates/lib
+        cp /tmp/mongoc-test-certificates/client.pem /tmp/mongoc-test-certificates/lib/
 
   "run integration tests" :
     command: shell.exec
@@ -595,6 +599,7 @@ functions:
         fi
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
+        export MONGO_ORCHESTRATION_HOME=/tmp/mongoc-test-certificates
         ${set_connection_flags}
         ${start_mongo_orchestration}
         ${start_topology}
@@ -628,7 +633,6 @@ post:
             fi
             pkill -9 mongo-orchestration; pkill -9 mongod; pkill -9 mongos;
             rm -rf /tmp/mongo* /data/db
-            cat server.log
     - command: shell.cleanup
 
 

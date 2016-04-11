@@ -12,11 +12,6 @@
 #define TIMEOUT 10000  /* milliseconds */
 #define NSERVERS 10
 
-#define TRUST_DIR "tests/trust_dir"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
-
 struct result {
    int32_t  max_wire_version;
    bool     finished;
@@ -76,8 +71,8 @@ test_ismaster_impl (bool with_ssl)
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          sopt.weak_cert_validation = true;
-         sopt.pem_file = PEMFILE_NOPASS;
-         sopt.ca_file = CAFILE;
+         sopt.pem_file = CERT_SERVER;
+         sopt.ca_file = CERT_CA;
 
          mock_server_set_ssl_opts (servers[i], &sopt);
       }
@@ -112,7 +107,7 @@ test_ismaster_impl (bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
-         copt.ca_file = CAFILE;
+         copt.ca_file = CERT_CA;
          copt.weak_cert_validation = 1;
 
          sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
