@@ -341,6 +341,7 @@ LIBMONGOC_1.4 {
         mongoc_log_trace_disable;
         mongoc_log_trace_enable;
         mongoc_server_description_ismaster;
+        mongoc_server_description_round_trip_time;
         mongoc_server_description_type;
         mongoc_server_descriptions_destroy_all;
         mongoc_uri_get_option_as_bool;
