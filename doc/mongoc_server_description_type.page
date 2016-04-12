@@ -12,7 +12,7 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[const char *
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_server_description_type_t
 mongoc_server_description_type (const mongoc_server_description_t *description);
 
 ]]></code></synopsis>
@@ -27,18 +27,12 @@ mongoc_server_description_type (const mongoc_server_description_t *description);
 
   <section id="description">
     <title>Description</title>
-    <p>This function returns a string, one of the server types defined Server Discovery And Monitoring Spec:</p>
-    <list>
-      <item><p>Standalone</p></item>
-      <item><p>Mongos</p></item>
-      <item><p>PossiblePrimary</p></item>
-      <item><p>RSPrimary</p></item>
-      <item><p>RSSecondary</p></item>
-      <item><p>RSArbiter</p></item>
-      <item><p>RSOther</p></item>
-      <item><p>RSGhost</p></item>
-      <item><p>Unknown</p></item>
-    </list>
+    <p>Returns the <code xref="mongoc_server_description_type_t">mongoc_server_description_type_t</code> for the server.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns the server type.</p>
   </section>
 
 </page>

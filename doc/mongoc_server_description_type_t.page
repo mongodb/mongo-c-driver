@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<page id="mongoc_server_description_type_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+  <info>
+    <link type="guide" xref="index#api-reference" />
+  </info>
+  <title>mongoc_server_description_type_t</title>
+  <subtitle>Server description types</subtitle>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef enum
+{
+   MONGOC_SERVER_UNKNOWN,
+   MONGOC_SERVER_STANDALONE,
+   MONGOC_SERVER_MONGOS,
+   MONGOC_SERVER_POSSIBLE_PRIMARY,
+   MONGOC_SERVER_RS_PRIMARY,
+   MONGOC_SERVER_RS_SECONDARY,
+   MONGOC_SERVER_RS_ARBITER,
+   MONGOC_SERVER_RS_OTHER,
+   MONGOC_SERVER_RS_GHOST,
+} mongoc_server_description_type_t;]]></code></synopsis>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>This enum describes server types, which are defined in the Server Discovery And Monitoring Spec.</p>
+  </section>
+
+</page>

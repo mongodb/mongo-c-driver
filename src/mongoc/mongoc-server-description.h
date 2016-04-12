@@ -22,6 +22,20 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-host-list.h"
 
+typedef enum
+{
+   MONGOC_SERVER_UNKNOWN,
+   MONGOC_SERVER_STANDALONE,
+   MONGOC_SERVER_MONGOS,
+   MONGOC_SERVER_POSSIBLE_PRIMARY,
+   MONGOC_SERVER_RS_PRIMARY,
+   MONGOC_SERVER_RS_SECONDARY,
+   MONGOC_SERVER_RS_ARBITER,
+   MONGOC_SERVER_RS_OTHER,
+   MONGOC_SERVER_RS_GHOST,
+   /* Update MONGOC_SERVER_DESCRIPTION_TYPES when extending this enum */
+} mongoc_server_description_type_t;
+
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
 
 void
@@ -39,8 +53,8 @@ mongoc_server_description_host (mongoc_server_description_t *description);
 int64_t
 mongoc_server_description_round_trip_time (mongoc_server_description_t *description);
 
-const char *
-mongoc_server_description_type (mongoc_server_description_t *description);
+mongoc_server_description_type_t
+mongoc_server_description_type (const mongoc_server_description_t *description);
 
 const bson_t *
 mongoc_server_description_ismaster (mongoc_server_description_t *description);
