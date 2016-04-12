@@ -273,6 +273,26 @@ mongoc_server_description_host (mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_round_trip_time --
+ *
+ *      Get the round trip time of this server, which is the client's
+ *      measurement of the duration of an "ismaster" command.
+ *
+ * Returns:
+ *      The server's round trip time in milliseconds.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int64_t
+mongoc_server_description_round_trip_time (mongoc_server_description_t *description)
+{
+   return description->round_trip_time;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_type --
  *
  *      Get this server's type, one of the types defined in the Server
