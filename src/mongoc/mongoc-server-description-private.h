@@ -95,6 +95,9 @@ void
 mongoc_server_description_set_election_id (mongoc_server_description_t *description,
                                            const bson_oid_t            *election_id);
 
+const char *
+mongoc_server_description_type_string (const mongoc_server_description_t *description);
+
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time);

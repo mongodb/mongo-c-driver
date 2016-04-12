@@ -1370,6 +1370,46 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_type_string --
+ *
+ *      Get this topology's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec, as a string.
+ *
+ *      NOTE: this method should only be called while holding the mutex on
+ *      the owning topology object.
+ *
+ * Returns:
+ *       A string.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static const char *
+_mongoc_topology_description_type_string (mongoc_topology_description_t *topology)
+{
+   switch (topology->type) {
+   case MONGOC_TOPOLOGY_UNKNOWN:
+      return "Unknown";
+   case MONGOC_TOPOLOGY_SHARDED:
+      return "Sharded";
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+      return "RSNoPrimary";
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      return "RSWithPrimary";
+   case MONGOC_TOPOLOGY_SINGLE:
+      return "Single";
+   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
+   default:
+      MONGOC_ERROR ("Invalid mongoc_topology_description_type_t type\n");
+      return "Invalid";
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_description_handle_ismaster --
  *
  *      Handle an ismaster. This is called by the background SDAM process,
@@ -1403,9 +1443,9 @@ mongoc_topology_description_handle_ismaster (
                                               error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
-      TRACE("Transitioning to %d for %d", topology->type, sd->type);
+      TRACE("Transitioning to %s for %s", _mongoc_topology_description_type_string(topology), mongoc_server_description_type_string(sd));
       gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
    } else {
-      TRACE("No transition entry to %d for %d", topology->type, sd->type);
+      TRACE("No transition entry to %s for %s", _mongoc_topology_description_type_string(topology), mongoc_server_description_type_string(sd));
    }
 }

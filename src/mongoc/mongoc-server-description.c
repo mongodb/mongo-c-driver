@@ -313,6 +313,48 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_type_string --
+ *
+ *      Get this server's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec, as a string.
+ *
+ * Returns:
+ *      A string denoting this server's type.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char *
+mongoc_server_description_type_string (const mongoc_server_description_t *description)
+{
+   switch (description->type) {
+   case MONGOC_SERVER_UNKNOWN:
+      return "Unknown";
+   case MONGOC_SERVER_STANDALONE:
+      return "Standalone";
+   case MONGOC_SERVER_MONGOS:
+      return "Mongos";
+   case MONGOC_SERVER_POSSIBLE_PRIMARY:
+      return "PossiblePrimary";
+   case MONGOC_SERVER_RS_PRIMARY:
+      return "RSPrimary";
+   case MONGOC_SERVER_RS_SECONDARY:
+      return "RSSecondary";
+   case MONGOC_SERVER_RS_ARBITER:
+      return "RSArbiter";
+   case MONGOC_SERVER_RS_OTHER:
+      return "RSOther";
+   case MONGOC_SERVER_RS_GHOST:
+      return "RSGhost";
+   default:
+      MONGOC_ERROR ("Invalid mongoc_server_description_t type\n");
+      return "Invalid";
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_ismaster --
  *
  *      Return this server's most recent "ismaster" command response.
