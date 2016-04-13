@@ -7,6 +7,7 @@
 
 #include "ssl-test.h"
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 static void
 test_mongoc_tls_no_certs (void)
@@ -16,11 +17,12 @@ test_mongoc_tls_no_certs (void)
    ssl_test_result_t sr;
    ssl_test_result_t cr;
 
+   capture_logs (true);
    /* No server cert is not valid TLS at all */
    ssl_test (&copt, &sopt, "doesnt_matter", &cr, &sr);
 
-   ASSERT_CMPINT (cr.result, ==, SSL_TEST_SSL_HANDSHAKE);
-   ASSERT_CMPINT (sr.result, ==, SSL_TEST_SSL_HANDSHAKE);
+   ASSERT_CMPINT (cr.result, !=, SSL_TEST_SUCCESS);
+   ASSERT_CMPINT (sr.result, !=, SSL_TEST_SUCCESS);
 }
 
 
@@ -61,6 +63,7 @@ test_mongoc_tls_bad_password (void)
    copt.pem_pwd = "incorrect password";
 
 
+   capture_logs (true);
    /* Incorrect password cannot unlock the key */
    ssl_test (&copt, &sopt, "localhost", &cr, &sr);
 
@@ -136,6 +139,7 @@ test_mongoc_tls_bad_verify (void)
    copt.ca_file = CERT_CA;
    copt.pem_file = CERT_CLIENT;
 
+   capture_logs (true);
    ssl_test (&copt, &sopt, "bad_domain.com", &cr, &sr);
 
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SSL_HANDSHAKE);
@@ -187,6 +191,7 @@ test_mongoc_tls_weak_cert_validation (void)
    copt.crl_file = CERT_CRL;
    copt.pem_file = CERT_CLIENT;
 
+   capture_logs (true);
    /* Certificate has has been revoked, this should fail */
    ssl_test (&copt, &sopt, "localhost", &cr, &sr);
 
@@ -223,6 +228,7 @@ test_mongoc_tls_crl (void)
    ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
 
    copt.crl_file = CERT_CRL;
+   capture_logs (true);
    ssl_test (&copt, &sopt, "localhost", &cr, &sr);
 
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SSL_HANDSHAKE);
@@ -251,6 +257,7 @@ test_mongoc_tls_expired (void)
    copt.ca_file = CERT_CA;
    copt.pem_file = CERT_CLIENT;
 
+   capture_logs (true);
    ssl_test (&copt, &sopt, "localhost", &cr, &sr);
 
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SSL_HANDSHAKE);

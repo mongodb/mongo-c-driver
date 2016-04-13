@@ -30,7 +30,8 @@
 #include "../test-libmongoc.h"
 
 
-#define TIMEOUT 100
+/* /Async/ismaster_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
+#define TIMEOUT 500
 
 
 struct _mock_server_t

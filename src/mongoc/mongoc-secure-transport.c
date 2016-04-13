@@ -163,7 +163,7 @@ _mongoc_secure_transport_import_pem (const char *filename, const char *passphras
 
 
    if (!filename) {
-      MONGOC_WARNING("%s", "No certificate provided");
+      MONGOC_INFO ("%s", "No certificate provided");
       return false;
    }
 
@@ -188,7 +188,7 @@ _mongoc_secure_transport_import_pem (const char *filename, const char *passphras
 
    if (error) {
       CFStringRef str = CFErrorCopyDescription (error);
-      MONGOC_WARNING ("Failed importing PEM '%s': %s", filename, CFStringGetCStringPtr (str, CFStringGetFastestEncoding(str)));
+      MONGOC_ERROR ("Failed importing PEM '%s': %s", filename, CFStringGetCStringPtr (str, CFStringGetFastestEncoding(str)));
       CFRelease (str);
       CFRelease (sec_transform);
       CFRelease (read_stream);
@@ -210,6 +210,7 @@ _mongoc_secure_transport_import_pem (const char *filename, const char *passphras
       CFRelease (params.passphrase);
    }
    if (res) {
+      MONGOC_ERROR ("Failed importing PEM '%s' (code: %d)", filename, res);
       return false;
    }
 
@@ -219,14 +220,21 @@ _mongoc_secure_transport_import_pem (const char *filename, const char *passphras
 char *
 _mongoc_secure_transport_extract_subject (const char *filename, const char *passphrase)
 {
+   bool success;
    char *retval = NULL;
    CFArrayRef items = NULL;
    SecExternalItemType type = kSecItemTypeCertificate;
 
-   bool success = _mongoc_secure_transport_import_pem (filename, passphrase, &items, &type);
+
+   if (!filename) {
+      MONGOC_INFO ("No private key provided, the server won't be able to verify us");
+      return false;
+   }
+
+   success = _mongoc_secure_transport_import_pem (filename, passphrase, &items, &type);
 
    if (!success) {
-      MONGOC_WARNING("Can't find certificate in '%s'", filename);
+      MONGOC_ERROR ("Can't find certificate in '%s'", filename);
       return NULL;
    }
 
@@ -262,18 +270,18 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
    SecExternalItemType type = kSecItemTypeCertificate;
 
    if (!opt->pem_file) {
-      MONGOC_WARNING ("No private key provided, the server won't be able to verify us");
+      MONGOC_INFO ("No private key provided, the server won't be able to verify us");
       return false;
    }
 
    success = _mongoc_secure_transport_import_pem (opt->pem_file, opt->pem_pwd, &items, &type);
    if (!success) {
-      MONGOC_WARNING("Can't find certificate in '%s'", opt->pem_file);
+      MONGOC_ERROR ("Can't find certificate in: '%s'", opt->pem_file);
       return false;
    }
 
    if (type != kSecItemTypeAggregate) {
-      MONGOC_WARNING ("What sort of private key is type '%d'?", type);
+      MONGOC_ERROR ("Cannot work with keys of type \"%d\". Please file a JIRA", type);
       CFRelease (items);
       return false;
    }
@@ -289,7 +297,7 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
    }
 
    if (!cert || !key) {
-      MONGOC_WARNING("Couldn't find valid private key");
+      MONGOC_ERROR ("Couldn't find valid private key");
       CFRelease (items);
       return false;
    }
@@ -322,7 +330,7 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
       bool success = _mongoc_secure_transport_import_pem (opt->ca_file, NULL, &items, &type);
 
       if (!success) {
-         MONGOC_WARNING("Can't find certificate in '%s'", opt->ca_file);
+         MONGOC_ERROR ("Can't find certificate in \"%s\"", opt->ca_file);
          return false;
       }
 
@@ -344,11 +352,11 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
 
       /* This should be SSLSetCertificateAuthorities But the /TLS/ tests fail when it is */
       success = !SSLSetTrustedRoots (secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
-      MONGOC_DEBUG("Setting certificate authority %s (%s)", success ? "succeeded" : "failed", opt->ca_file);
+      MONGOC_DEBUG ("Setting certificate authority %s (%s)", success ? "succeeded" : "failed", opt->ca_file);
       return true;
    }
 
-   MONGOC_WARNING("No CA provided, using defaults");
+   MONGOC_INFO ("No CA provided, using defaults");
    return false;
 }
 

@@ -82,6 +82,15 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
       expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
    }
 
+   /*
+    * error variables get re-used a lot. To prevent cross-contamination of error
+    * messages, and still be able to provide a generic failure message when
+    * mongoc_stream_tls_handshake fails without a specific reason, we need to init
+    * the error code to 0.
+    */
+   if (error) {
+      error->code = 0;
+   }
    do {
       events = 0;
 
@@ -110,10 +119,12 @@ mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
       }
    } while (events && ret > 0);
 
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "TLS handshake failed.");
+   if (error && !error->code) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed.");
+   }
    return false;
 }
 /**

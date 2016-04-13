@@ -31,7 +31,7 @@ test_ismaster_helper (mongoc_async_cmd_result_t result,
    if (result != MONGOC_ASYNC_CMD_SUCCESS) {
       fprintf(stderr, "error: %s\n", error->message);
    }
-   assert(result == MONGOC_ASYNC_CMD_SUCCESS);
+   ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
    assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));

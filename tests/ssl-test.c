@@ -89,6 +89,7 @@ ssl_test_server (void * ptr)
 
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_INIT;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy (sock_stream);
       mongoc_socket_destroy (listen_sock);
@@ -102,6 +103,10 @@ ssl_test_server (void * ptr)
    if (!r) {
       unsigned long err = 43;
 
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
+#ifdef MONGOC_ENABLE_OPENSSL
+      MONGOC_ERROR("msg: %s\n", ERR_error_string(ERR_get_error(), NULL));
+#endif
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_HANDSHAKE;
 
@@ -115,6 +120,7 @@ ssl_test_server (void * ptr)
    if (r < 0) {
       data->server_result->err = errno;
       data->server_result->result = SSL_TEST_TIMEOUT;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(ssl_stream);
       mongoc_socket_destroy (listen_sock);
@@ -205,6 +211,7 @@ ssl_test_client (void * ptr)
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_INIT;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(sock_stream);
 
@@ -219,6 +226,7 @@ ssl_test_client (void * ptr)
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_HANDSHAKE;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(ssl_stream);
       return NULL;

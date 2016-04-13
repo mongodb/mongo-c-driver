@@ -118,7 +118,7 @@ test_topology_scanner ()
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 void
 test_topology_scanner_ssl ()
 {
