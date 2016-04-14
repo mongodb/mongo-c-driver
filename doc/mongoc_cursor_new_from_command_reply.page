@@ -22,7 +22,7 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
     <title>Parameters</title>
     <table>
       <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
-      <tr><td><p>reply</p></td><td><p>The reply to a command, such as "aggregate", "find", or "listCollections", that returns a cursor document. The reply <code xref="bson:bson_t">bson_t</code> <em>must</em> have been heap-allocated with <code xref="bson:bson_new">bson_new</code>, not stack-allocated and initialized with <code xref="bson:bson_init">bson_init</code>. The new <code xref="mongoc_cursor_t">mongoc_cursor_t</code> takes ownership of <code>reply</code>.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>The reply to a command, such as "aggregate", "find", or "listCollections", that returns a cursor document. The reply is destroyed by <code>mongoc_cursor_new_from_command_reply</code> and must not be accessed afterward.</p></td></tr>
       <tr><td><p>server_id</p></td><td><p>The opaque id of the server used to execute the command.</p></td></tr>
     </table>
   </section>

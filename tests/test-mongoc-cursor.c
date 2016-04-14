@@ -615,7 +615,7 @@ _test_cursor_new_from_command (const char *cmd_json,
    bson_error_t error;
    mongoc_server_description_t *sd;
    uint32_t server_id;
-   bson_t *reply;
+   bson_t reply;
    mongoc_cursor_t *cmd_cursor;
 
    client = test_framework_client_new ();
@@ -634,11 +634,10 @@ _test_cursor_new_from_command (const char *cmd_json,
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
-   reply = bson_new ();
    mongoc_client_command_simple_with_server_id (client, "test",
                                                 tmp_bson (cmd_json),
-                                                NULL, server_id, reply, &error);
-   cmd_cursor = mongoc_cursor_new_from_command_reply (client, reply, server_id);
+                                                NULL, server_id, &reply, &error);
+   cmd_cursor = mongoc_cursor_new_from_command_reply (client, &reply, server_id);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cmd_cursor));
    ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
@@ -695,16 +694,16 @@ test_cursor_new_invalid (void)
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_cursor_t *cursor;
+   bson_t b = BSON_INITIALIZER;
 
    client = test_framework_client_new ();
-   cursor = mongoc_cursor_new_from_command_reply (client, tmp_bson ("{}"), 0);
+   cursor = mongoc_cursor_new_from_command_reply (client, &b, 0);
    ASSERT (cursor);
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Couldn't parse cursor document");
-
 
    mongoc_client_destroy (client);
 }

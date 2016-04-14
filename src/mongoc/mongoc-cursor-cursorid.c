@@ -36,8 +36,8 @@ _mongoc_cursor_cursorid_new (void)
 
    ENTRY;
 
-   cid = (mongoc_cursor_cursorid_t *)bson_malloc0 (sizeof *cid);
-   cid->array = NULL;
+   cid = (mongoc_cursor_cursorid_t *) bson_malloc0 (sizeof *cid);
+   bson_init (&cid->array);
    cid->in_batch = false;
    cid->in_reader = false;
 
@@ -55,10 +55,7 @@ _mongoc_cursor_cursorid_destroy (mongoc_cursor_t *cursor)
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
-   if (cid->array) {
-      bson_destroy (cid->array);
-   }
-
+   bson_destroy (&cid->array);
    bson_free (cid);
    _mongoc_cursor_destroy (cursor);
 
@@ -83,9 +80,8 @@ _mongoc_cursor_cursorid_start_batch (mongoc_cursor_t *cursor)
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
 
    BSON_ASSERT (cid);
-   BSON_ASSERT (cid->array);
 
-   if (bson_iter_init_find (&iter, cid->array, "cursor") &&
+   if (bson_iter_init_find (&iter, &cid->array, "cursor") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter) &&
        bson_iter_recurse (&iter, &child)) {
       while (bson_iter_next (&child)) {
@@ -119,15 +115,11 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
-   if (cid->array) {
-      bson_destroy (cid->array);
-   }
-
-   cid->array = bson_new ();
+   bson_destroy (&cid->array);
 
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
-   if (_mongoc_cursor_run_command (cursor, command, cid->array) &&
+   if (_mongoc_cursor_run_command (cursor, command, &cid->array) &&
        _mongoc_cursor_cursorid_start_batch (cursor)) {
 
       RETURN (true);
@@ -362,11 +354,8 @@ _mongoc_cursor_cursorid_init_with_reply (mongoc_cursor_t *cursor,
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
-   if (cid->array) {
-      bson_destroy (cid->array);
-   }
-
-   cid->array = reply;
+   bson_destroy (&cid->array);
+   bson_steal (&cid->array, reply);
 
    if (!_mongoc_cursor_cursorid_start_batch (cursor)) {
       bson_set_error (&cursor->error,
