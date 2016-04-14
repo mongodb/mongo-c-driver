@@ -1671,6 +1671,7 @@ test_aggregate_bypass (void *context)
    bson_t reply;
    bool r;
    int i;
+   char *json;
 
    client = test_framework_client_new ();
    assert (client);
@@ -1683,8 +1684,8 @@ test_aggregate_bypass (void *context)
 
    collname = gen_collection_name ("bypass");
    options = tmp_bson ("{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
-   ASSERT_OR_PRINT (mongoc_database_create_collection (database, collname, options, &error), error);
-   out_collection = mongoc_database_get_collection (database, collname);
+   out_collection = mongoc_database_create_collection (database, collname, options, &error);
+   ASSERT_OR_PRINT (out_collection, error);
 
    bson_free (dbname);
    bson_free (collname);
@@ -1692,16 +1693,20 @@ test_aggregate_bypass (void *context)
    /* Generate some example data */
    bulk = mongoc_collection_create_bulk_operation(data_collection, true, NULL);
    for (i = 0; i < 3; i++) {
-      bson_t *document = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+      json = bson_strdup_printf ("{'number': 3, 'high': %d }", i);
+      bson_t *document = tmp_bson (json);
 
       mongoc_bulk_operation_insert (bulk, document);
+
+      bson_free (json);
    }
-   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT(r, error);
    mongoc_bulk_operation_destroy (bulk);
-   /* }}} */
 
-   pipeline = tmp_bson (bson_strdup_printf ("[{'$out': '%s'}]", out_collection->collection));
+   json = bson_strdup_printf ("[{'$out': '%s'}]", out_collection->collection);
+   pipeline = tmp_bson (json);
 
    cursor = mongoc_collection_aggregate(data_collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
    ASSERT (cursor);
@@ -1709,19 +1714,22 @@ test_aggregate_bypass (void *context)
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_STARTSWITH (error.message, "insert for $out failed");
+   mongoc_cursor_destroy (cursor);
 
    options = tmp_bson("{'bypassDocumentValidation': true}");
    cursor = mongoc_collection_aggregate(data_collection, MONGOC_QUERY_NONE, pipeline, options, NULL);
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
 
+   ASSERT_OR_PRINT (mongoc_collection_drop (data_collection, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_drop (out_collection, &error), error);
 
-   ASSERT_OR_PRINT (mongoc_collection_drop(data_collection, &error), error);
-   ASSERT_OR_PRINT (mongoc_collection_drop(out_collection, &error), error);
-   mongoc_collection_destroy(data_collection);
-   mongoc_collection_destroy(out_collection);
-   mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (data_collection);
+   mongoc_collection_destroy (out_collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   bson_free (json);
 }
 
 
@@ -1957,13 +1965,13 @@ test_aggregate_legacy (void *data)
    mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
    assert (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
+   request_destroy (request);
+   future_destroy (future);
 
    /* cursor is completed */
    assert (!mongoc_cursor_next (cursor, &doc));
 
    mongoc_cursor_destroy (cursor);
-   request_destroy (request);
-   future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);

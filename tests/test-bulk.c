@@ -3063,6 +3063,8 @@ test_bulk_install (TestSuite *suite)
                                   (void *) err_test, NULL);
 
                err_test++;
+
+               bson_free (name);
             }
          }
       }
