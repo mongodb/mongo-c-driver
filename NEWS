@@ -1,6 +1,10 @@
 NEXT RELEASE
 ============
 
+Unacknowledged writes (writes whose mongoc_write_concern_t "w" value is zero)
+now reply with an empty document instead of one with nInserted: 0, nUpdated: 0,
+and so on.
+
 Command functions now ignore the read preferences set on a client, database,
 or collection. Instead, they use the mongoc_read_prefs_t passed in explicitly,
 or default to "primary". This change was made to bring them in line with the

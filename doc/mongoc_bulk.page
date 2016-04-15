@@ -78,7 +78,7 @@ Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></co
     <p>The <code xref="bson:bson_error_t">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code> and its code is 11000. </p>
   </section>
 
-  <section id="bulk-write-concern">
+  <section id="bulk-write-bypass-document-validation">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Bulk Operation Bypassing Document Validation</title>
     <note style="tip"><p>This feature is only available when using MongoDB 3.2 and later.</p></note>
@@ -111,6 +111,15 @@ Error: Document failed validation
 
 Error: waiting for replication timed out]]></code></synopsis>
     <p>The <code xref="bson:bson_error_t">bson_error_t</code> domain is <code>MONGOC_ERROR_WRITE_CONCERN</code> if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied <em>yet</em>.</p>
+  </section>
+
+  <section id="bulk-unacknowledged">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Unacknowledged Bulk Writes</title>
+    <p>Set "w" to zero for an unacknowledged write. The driver sends unacknowledged writes using the legacy opcodes <code>OP_INSERT</code>, <code>OP_UPDATE</code>, and <code>OP_DELETE</code>.</p>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk6.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+    <p>The <code>reply</code> document is empty:</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[{ }]]></code></synopsis>
   </section>
 
   <section id="bulk-spec">

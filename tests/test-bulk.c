@@ -3030,6 +3030,40 @@ test_hint_pooled_command_primary (void)
    _test_bulk_hint (true, true, true);
 }
 
+
+static void
+test_bulk_reply_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
+   mongoc_bulk_operation_update (bulk, tmp_bson ("{}"),
+                                 tmp_bson ("{'$set': {'x': 1}}"), false);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
+
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, &reply, &error),
+                    error);
+
+   ASSERT (bson_empty (&reply));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -3184,4 +3218,6 @@ test_bulk_install (TestSuite *suite)
                   test_hint_pooled_command_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/pooled/command/primary",
                   test_hint_pooled_command_primary);
+   TestSuite_Add (suite, "/BulkOperation/reply_w0",
+                  test_bulk_reply_w0);
 }

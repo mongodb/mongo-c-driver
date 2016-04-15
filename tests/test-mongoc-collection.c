@@ -1068,6 +1068,79 @@ test_remove (void)
    mongoc_client_destroy(client);
 }
 
+
+static void
+test_insert_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, tmp_bson ("{}"),
+                                 wc, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (bson_empty (mongoc_collection_get_last_error (collection)));
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_update_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   bson_error_t error;
+
+   bool r;
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, tmp_bson ("{}"),
+                                 tmp_bson ("{'$set': {'x': 1}}"), wc, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (bson_empty (mongoc_collection_get_last_error (collection)));
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_remove_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_remove_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE,
+                                 tmp_bson ("{}"), wc, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (bson_empty (mongoc_collection_get_last_error (collection)));
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_index (void)
 {
@@ -3041,6 +3114,9 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/insert/oversize", test_legacy_insert_oversize_mongos);
    TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_Add (suite, "/Collection/save", test_save);
+   TestSuite_Add (suite, "/Collection/insert/w0", test_insert_w0);
+   TestSuite_Add (suite, "/Collection/update/w0", test_update_w0);
+   TestSuite_Add (suite, "/Collection/remove/w0", test_remove_w0);
    TestSuite_Add (suite, "/Collection/index", test_index);
    TestSuite_Add (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);

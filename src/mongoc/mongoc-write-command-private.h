@@ -141,8 +141,9 @@ void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
                                         mongoc_error_code_t            default_code,
                                         uint32_t                       offset);
 bool _mongoc_write_result_complete     (mongoc_write_result_t         *result,
-                                        bson_t                        *reply,
                                         int32_t                        error_api_version,
+                                        const mongoc_write_concern_t  *wc,
+                                        bson_t                        *reply,
                                         bson_error_t                  *error);
 void _mongoc_write_result_destroy      (mongoc_write_result_t         *result);
 

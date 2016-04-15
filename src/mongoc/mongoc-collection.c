@@ -1284,8 +1284,9 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result,
-                                        collection->gle,
                                         collection->client->error_api_version,
+                                        write_concern,
+                                        collection->gle,
                                         error);
 
    _mongoc_write_result_destroy (&result);
@@ -1370,8 +1371,9 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result,
-                                        collection->gle,
                                         collection->client->error_api_version,
+                                        write_concern,
+                                        collection->gle,
                                         error);
 
    _mongoc_write_result_destroy (&result);
@@ -1465,9 +1467,11 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result,
-                                        collection->gle,
                                         collection->client->error_api_version,
+                                        write_concern,
+                                        collection->gle,
                                         error);
+
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
@@ -1603,9 +1607,11 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result,
-                                        collection->gle,
                                         collection->client->error_api_version,
+                                        write_concern,
+                                        collection->gle,
                                         error);
+
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 

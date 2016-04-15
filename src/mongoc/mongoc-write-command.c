@@ -1874,12 +1874,14 @@ _set_error_from_response (bson_t *bson_array,
 
 
 bool
-_mongoc_write_result_complete (mongoc_write_result_t *result,
-                               bson_t                *bson,
-                               int32_t                error_api_version,
-                               bson_error_t          *error)
+_mongoc_write_result_complete (mongoc_write_result_t        *result,            /* IN */
+                               int32_t                       error_api_version, /* IN */
+                               const mongoc_write_concern_t *wc,                /* IN */
+                               bson_t                       *bson,              /* OUT */
+                               bson_error_t                 *error)             /* OUT */
 {
    mongoc_error_domain_t domain;
+   bool acknowledged;
 
    ENTRY;
 
@@ -1889,7 +1891,10 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
             ? MONGOC_ERROR_SERVER
             : MONGOC_ERROR_COMMAND;
 
-   if (bson) {
+   /* NULL write concern is acknowledged by default */
+   acknowledged = wc ? mongoc_write_concern_is_acknowledged (wc) : true;
+
+   if (bson && acknowledged) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
       if (!result->omit_nModified) {

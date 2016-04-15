@@ -26,6 +26,7 @@ test_split_insert (void)
    bson_error_t error;
    mongoc_server_stream_t *server_stream;
    int i;
+   bool r;
 
    client = test_framework_client_new ();
    assert (client);
@@ -58,8 +59,9 @@ test_split_insert (void)
    _mongoc_write_command_execute (&command, client, server_stream, collection->db,
                                   collection->collection, NULL, 0, &result);
 
-   ASSERT_OR_PRINT (_mongoc_write_result_complete (&result, &reply, 2, &error),
-                    error);
+   r = _mongoc_write_result_complete (&result, 2, collection->write_concern,
+                                      &reply, &error);
+   ASSERT_OR_PRINT (r, error);
    assert (result.nInserted == 3000);
 
    _mongoc_write_command_destroy (&command);
@@ -116,7 +118,8 @@ test_invalid_write_concern (void)
                                   collection->db, collection->collection,
                                   write_concern, 0, &result);
 
-   r = _mongoc_write_result_complete (&result, &reply, 2, &error);
+   r = _mongoc_write_result_complete (&result, 2, collection->write_concern,
+                                      &reply, &error);
 
    assert(!r);
    ASSERT_CMPINT(error.domain, ==, MONGOC_ERROR_COMMAND);

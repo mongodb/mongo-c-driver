@@ -90,6 +90,11 @@ bulk5_SOURCES = examples/bulk/bulk5.c
 bulk5_CFLAGS = $(EXAMPLE_CFLAGS)
 bulk5_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += bulk6
+bulk6_SOURCES = examples/bulk/bulk6.c
+bulk6_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk6_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += aggregation1
 aggregation1_SOURCES = examples/aggregation/aggregation1.c
 aggregation1_CFLAGS = $(EXAMPLE_CFLAGS)
