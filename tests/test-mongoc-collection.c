@@ -1693,8 +1693,9 @@ test_aggregate_bypass (void *context)
    /* Generate some example data */
    bulk = mongoc_collection_create_bulk_operation(data_collection, true, NULL);
    for (i = 0; i < 3; i++) {
+      bson_t *document;
       json = bson_strdup_printf ("{'number': 3, 'high': %d }", i);
-      bson_t *document = tmp_bson (json);
+      document = tmp_bson (json);
 
       mongoc_bulk_operation_insert (bulk, document);
 
