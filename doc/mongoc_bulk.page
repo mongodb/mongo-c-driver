@@ -14,7 +14,7 @@
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);]]></code></synopsis>
     <p>We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.</p>
     <p>The bulk operation will coalesce insertions as a single batch for each consecutive call to <code xref="mongoc_bulk_operation_insert">mongoc_bulk_operation_insert()</code>. This creates a pipelined effect when possible.</p>
-    <note style="tip"><p>The bulk operation API will automatically handle MongoDB servers &lt; 2.6 by speaking the old wire protocol. However, some performance degredation may occur.</p></note>
+    <note style="tip"><p>The bulk operation API will automatically handle MongoDB servers &lt; 2.6 by speaking the old wire protocol. However, some performance degradation may occur.</p></note>
     <p>To execute the bulk operation and receive the result we call <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk1.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
       <p>Example <code>reply</code> document:</p>
