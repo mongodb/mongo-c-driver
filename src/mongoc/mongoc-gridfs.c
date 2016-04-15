@@ -71,9 +71,10 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
    bson_init (&keys);
 
    bson_append_int32 (&keys, "filename", -1, 1);
+   bson_append_int32 (&keys, "uploadDate", -1, 1);
    opt.unique = 0;
 
-   r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
+   r = mongoc_collection_create_index (gridfs->files, &keys, &opt, error);
 
    bson_destroy (&keys);
 

@@ -36,23 +36,69 @@ drop_collections (mongoc_gridfs_t *gridfs,
 
 
 static void
+_check_index (mongoc_collection_t *collection,
+              const char          *index_json)
+{
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *info;
+   const char *index_name;
+   bson_t index_key;
+   int n;
+
+   cursor = mongoc_collection_find_indexes (collection, &error);
+   ASSERT_OR_PRINT (cursor, error);
+
+   n = 0;
+
+   while (mongoc_cursor_next (cursor, &info)) {
+      index_name = bson_lookup_utf8 (info, "name");
+
+      /* if this is NOT the "_id" index */
+      if (strcmp (index_name, "_id_")) {
+         bson_lookup_doc (info, "key", &index_key);
+         ASSERT_MATCH (&index_key, index_json);
+      }
+
+      n++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   /* _id index plus the expected index */
+   ASSERT_CMPINT (n, ==, 2);
+
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
 test_create (void)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
    mongoc_client_t *client;
    bson_error_t error;
+   mongoc_collection_t *files;
+   mongoc_collection_t *chunks;
 
    client = test_framework_client_new ();
    ASSERT (client);
+
+   files = mongoc_client_get_collection (client, "test", "foo.files");
+   chunks = mongoc_client_get_collection (client, "test", "foo.chunks");
+   mongoc_collection_drop (files, NULL);
+   mongoc_collection_drop (chunks, NULL);
 
    ASSERT_OR_PRINT (
       (gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error)),
       error);
 
-   mongoc_gridfs_drop (gridfs, &error);
-
    file = mongoc_gridfs_create_file (gridfs, NULL);
+
+   _check_index (files, "{'filename': 1, 'uploadDate': 1}");
+   _check_index (chunks, "{'files_id': 1, 'n': 1}");
+
    ASSERT (file);
    ASSERT (mongoc_gridfs_file_save (file));
 
@@ -61,6 +107,8 @@ test_create (void)
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
+   mongoc_collection_destroy (chunks);
+   mongoc_collection_destroy (files);
    mongoc_client_destroy (client);
 }
 
