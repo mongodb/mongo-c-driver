@@ -299,13 +299,33 @@ mongoc_server_description_round_trip_time (mongoc_server_description_t *descript
  *      Discovery And Monitoring Spec.
  *
  * Returns:
- *      A string.
+ *      A mongoc_server_description_type_t, this server's type.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_server_description_type_t
+mongoc_server_description_type (const mongoc_server_description_t *description)
+{
+   return description->type;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_type_string --
+ *
+ *      Get this server's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec, as a string.
+ *
+ * Returns:
+ *      A string denoting this server's type.
  *
  *--------------------------------------------------------------------------
  */
 
 const char *
-mongoc_server_description_type (mongoc_server_description_t *description)
+mongoc_server_description_type_string (const mongoc_server_description_t *description)
 {
    switch (description->type) {
    case MONGOC_SERVER_UNKNOWN:
@@ -326,7 +346,6 @@ mongoc_server_description_type (mongoc_server_description_t *description)
       return "RSOther";
    case MONGOC_SERVER_RS_GHOST:
       return "RSGhost";
-   case MONGOC_SERVER_DESCRIPTION_TYPES:
    default:
       MONGOC_ERROR ("Invalid mongoc_server_description_t type\n");
       return "Invalid";

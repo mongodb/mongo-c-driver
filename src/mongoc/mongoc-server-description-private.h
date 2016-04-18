@@ -28,19 +28,9 @@
 /* represent a server or topology with no replica set config version */
 #define MONGOC_NO_SET_VERSION -1
 
-typedef enum
-   {
-      MONGOC_SERVER_UNKNOWN,
-      MONGOC_SERVER_STANDALONE,
-      MONGOC_SERVER_MONGOS,
-      MONGOC_SERVER_POSSIBLE_PRIMARY,
-      MONGOC_SERVER_RS_PRIMARY,
-      MONGOC_SERVER_RS_SECONDARY,
-      MONGOC_SERVER_RS_ARBITER,
-      MONGOC_SERVER_RS_OTHER,
-      MONGOC_SERVER_RS_GHOST,
-      MONGOC_SERVER_DESCRIPTION_TYPES,
-   } mongoc_server_description_type_t;
+/* this is used for declaring gSDAMTransitionTable and should be defined as the
+ * number of unique states in mongoc_server_description_type_t */
+#define MONGOC_SERVER_DESCRIPTION_TYPES 9
 
 struct _mongoc_server_description_t
 {
@@ -104,6 +94,10 @@ mongoc_server_description_set_set_version (mongoc_server_description_t *descript
 void
 mongoc_server_description_set_election_id (mongoc_server_description_t *description,
                                            const bson_oid_t            *election_id);
+
+const char *
+mongoc_server_description_type_string (const mongoc_server_description_t *description);
+
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time);

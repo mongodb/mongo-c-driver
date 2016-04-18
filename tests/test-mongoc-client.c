@@ -1349,7 +1349,7 @@ _test_mongoc_client_select_server (bool pooled)
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
    mongoc_server_description_t *sd;
-   const char *server_type;
+   mongoc_server_description_type_t server_type;
    bson_error_t error;
    mongoc_read_prefs_t *prefs;
 
@@ -1367,9 +1367,9 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSPrimary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (server_type != MONGOC_SERVER_STANDALONE ||
+           server_type != MONGOC_SERVER_RS_PRIMARY ||
+           server_type != MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_destroy (sd);
    sd = mongoc_client_select_server (client,
@@ -1379,9 +1379,9 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSPrimary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (server_type != MONGOC_SERVER_STANDALONE ||
+           server_type != MONGOC_SERVER_RS_PRIMARY ||
+           server_type != MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_destroy (sd);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1392,9 +1392,9 @@ _test_mongoc_client_select_server (bool pooled)
 
    ASSERT (sd);
    server_type = mongoc_server_description_type (sd);
-   ASSERT (!strcmp (server_type, "Standalone") ||
-           !strcmp (server_type, "RSSecondary") ||
-           !strcmp (server_type, "Mongos"));
+   ASSERT (server_type != MONGOC_SERVER_STANDALONE ||
+           server_type != MONGOC_SERVER_RS_SECONDARY ||
+           server_type != MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_destroy (sd);
    mongoc_read_prefs_destroy (prefs);
@@ -1431,7 +1431,7 @@ _test_mongoc_client_select_server_error (bool pooled)
    mongoc_server_description_t *sd;
    bson_error_t error;
    mongoc_read_prefs_t *prefs;
-   const char *server_type;
+   mongoc_server_description_type_t server_type;
 
    if (pooled) {
       uri = test_framework_get_uri ();
@@ -1467,8 +1467,8 @@ _test_mongoc_client_select_server_error (bool pooled)
    if (client->topology->description.type == MONGOC_TOPOLOGY_SINGLE) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
-      ASSERT (!strcmp (server_type, "Standalone") ||
-              !strcmp (server_type, "Mongos"));
+      ASSERT (server_type != MONGOC_SERVER_STANDALONE ||
+              server_type != MONGOC_SERVER_MONGOS);
       mongoc_server_description_destroy (sd);
    } else {
       ASSERT (!sd);
