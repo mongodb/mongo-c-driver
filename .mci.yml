@@ -282,7 +282,6 @@ c_driver_variables:
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          ./src/libbson/Debug/test-libbson.exe -d -F test-results-bson.json
           ./Debug/test-libmongoc.exe -d -F test-results.json
       solaris: &run_integration_tests_solaris
         run_integration_tests: |
