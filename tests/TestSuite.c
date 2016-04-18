@@ -54,47 +54,15 @@
 static int test_flags;
 
 
-#define TEST_VERBOSE   (1 << 0)
-#define TEST_NOFORK    (1 << 1)
-#define TEST_HELPONLY  (1 << 2)
-#define TEST_THREADS    (1 << 3)
-#define TEST_DEBUGOUTPUT (1 << 4)
-#define TEST_TRACE     (1 << 5)
-#define TEST_VALGRIND  (1 << 6)
+#define TEST_VERBOSE     (1 << 0)
+#define TEST_NOFORK      (1 << 1)
+#define TEST_HELPONLY    (1 << 2)
+#define TEST_DEBUGOUTPUT (1 << 3)
+#define TEST_TRACE       (1 << 4)
+#define TEST_VALGRIND    (1 << 5)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
-
-
-#if !defined(_WIN32)
-#  include <pthread.h>
-#  define Mutex                   pthread_mutex_t
-#  define Mutex_Init(_n)          pthread_mutex_init((_n), NULL)
-#  define Mutex_Lock              pthread_mutex_lock
-#  define Mutex_Unlock            pthread_mutex_unlock
-#  define Mutex_Destroy           pthread_mutex_destroy
-#  define Thread                  pthread_t
-#  define Thread_Create(_t,_f,_d) pthread_create((_t), NULL, (_f), (_d))
-#  define Thread_Join(_n)         pthread_join((_n), NULL)
-#else
-#  define Mutex                   CRITICAL_SECTION
-#  define Mutex_Init              InitializeCriticalSection
-#  define Mutex_Lock              EnterCriticalSection
-#  define Mutex_Unlock            LeaveCriticalSection
-#  define Mutex_Destroy           DeleteCriticalSection
-#  define Thread                  HANDLE
-#  define Thread_Join(_n)         WaitForSingleObject ((_n), INFINITE)
-#  define strdup _strdup
-#endif
-
-
-#if !defined(Memory_Barrier)
-# define Memory_Barrier() bson_memory_barrier()
-#endif
-
-
-# define AtomicInt_DecrementAndTest(p) (bson_atomic_int_add(p, -1) == 0)
-
 
 #if !defined(BSON_HAVE_TIMESPEC)
 struct timespec
@@ -102,18 +70,6 @@ struct timespec
    time_t tv_sec;
    long   tv_nsec;
 };
-#endif
-
-
-#if defined(_WIN32)
-static int
-Thread_Create (Thread *thread,
-               void *(*cb)(void *),
-               void *arg)
-{
-   *thread = CreateThread (NULL, 0, (void *)cb, arg, 0, NULL);
-   return 0;
-}
 #endif
 
 
@@ -259,11 +215,9 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_VERBOSE;
       } else if (0 == strcmp ("-d", argv [i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
-      } else if (0 == strcmp ("--no-fork", argv [i])) {
+      } else if ((0 == strcmp ("-f", argv [i])) ||
+                 (0 == strcmp ("--no-fork", argv [i]))) {
          suite->flags |= TEST_NOFORK;
-      } else if (0 == strcmp ("--threads", argv [i])) {
-         suite->flags |= TEST_THREADS;
-         _Print_StdErr ("--threads is an experimental probably-not-working option\n");
       } else if ((0 == strcmp ("-t", argv [i])) ||
                  (0 == strcmp ("--trace", argv [i]))) {
 #ifdef MONGOC_TRACE
@@ -420,7 +374,6 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 static int
 TestSuite_RunTest (TestSuite *suite,       /* IN */
                    Test *test,             /* IN */
-                   Mutex *mutex, /* IN */
                    int *count)             /* INOUT */
 {
    struct timespec ts1;
@@ -478,7 +431,6 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
 
-      Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"%s\", "
                       "\"test_file\": \"%s\", "
@@ -502,10 +454,8 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
       }
-      Mutex_Unlock (mutex);
    } else {
       status = 0;
-      Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"SKIP\", \"test_file\": \"%s\" },\n",
                 test->name);
@@ -515,7 +465,6 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
       }
-      Mutex_Unlock (mutex);
    }
 
    return status ? 1 : 0;
@@ -532,14 +481,13 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "usage: %s [OPTIONS]\n"
 "\n"
 "Options:\n"
-"    -h, --help   Show this help menu.\n"
-"    -f           Do not fork() before running tests.\n"
-"    -l NAME      Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
-"    -p           Do not run tests in parallel.\n"
-"    -v           Be verbose with logs.\n"
-"    -F FILENAME  Write test results (JSON) to FILENAME.\n"
-"    -d           Print debug output (useful if a test hangs).\n"
-"    -t, --trace  Enable mongoc tracing (useful to debug tests).\n"
+"    -h, --help    Show this help menu.\n"
+"    -f, --no-fork Do not fork() before running tests.\n"
+"    -l NAME       Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
+"    -v            Be verbose with logs.\n"
+"    -F FILENAME   Write test results (JSON) to FILENAME.\n"
+"    -d            Print debug output (useful if a test hangs).\n"
+"    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
 "\n"
 "Tests:\n",
             suite->prgname);
@@ -661,7 +609,6 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"IPv6\": %s\n"
             "  },\n"
             "  \"options\": {\n"
-            "    \"parallel\": %s,\n"
             "    \"fork\": %s,\n"
             "    \"tracing\": %s\n"
             "  },\n"
@@ -682,7 +629,6 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             get_future_timeout_ms (),
             test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
-            (suite->flags & TEST_THREADS) ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
             (suite->flags & TEST_TRACE) ? "true" : "false"
    );
@@ -702,96 +648,19 @@ TestSuite_PrintJsonFooter (FILE *stream) /* IN */
 }
 
 
-typedef struct
-{
-   TestSuite *suite;
-   Test *test;
-   Mutex *mutex;
-   int *count;
-} ParallelInfo;
-
-
-static void *
-TestSuite_ParallelWorker (void *data) /* IN */
-{
-   ParallelInfo *info = (ParallelInfo *)data;
-   int status;
-
-   ASSERT (info);
-
-   status = TestSuite_RunTest (info->suite, info->test, info->mutex, info->count);
-
-   if (AtomicInt_DecrementAndTest (info->count)) {
-      TestSuite_PrintJsonFooter (stdout);
-      if (info->suite->outfile) {
-         TestSuite_PrintJsonFooter (info->suite->outfile);
-      }
-      exit (status);
-   }
-
-   return NULL;
-}
-
-
-static void
-TestSuite_RunParallel (TestSuite *suite) /* IN */
-{
-   ParallelInfo *info;
-   Thread *threads;
-   Mutex mutex;
-   Test *test;
-   int count = 0;
-   int i;
-
-   ASSERT (suite);
-
-   Mutex_Init (&mutex);
-
-   for (test = suite->tests; test; test = test->next) {
-      count++;
-   }
-
-   threads = (Thread *)calloc (count, sizeof *threads);
-
-   Memory_Barrier ();
-
-   for (test = suite->tests, i = 0; test; test = test->next, i++) {
-      info = (ParallelInfo *)calloc (1, sizeof *info);
-      info->suite = suite;
-      info->test = test;
-      info->count = &count;
-      info->mutex = &mutex;
-      Thread_Create (&threads [i], TestSuite_ParallelWorker, info);
-   }
-
-#ifdef _WIN32
-   Sleep (30000);
-#else
-   sleep (30);
-#endif
-
-   _Print_StdErr ("Timed out, aborting!\n");
-
-   abort ();
-}
-
-
 static int
 TestSuite_RunSerial (TestSuite *suite) /* IN */
 {
    Test *test;
-   Mutex mutex;
    int count = 0;
    int status = 0;
-
-   Mutex_Init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       count++;
    }
 
    for (test = suite->tests; test; test = test->next) {
-      status += TestSuite_RunTest (suite, test, &mutex, &count);
+      status += TestSuite_RunTest (suite, test, &count);
       count--;
    }
 
@@ -799,8 +668,6 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
    if (suite->outfile) {
       TestSuite_PrintJsonFooter (suite->outfile);
    }
-
-   Mutex_Destroy (&mutex);
 
    return status;
 }
@@ -810,7 +677,6 @@ static int
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
-   Mutex mutex;
    char name[128];
    Test *test;
    int count = 1;
@@ -820,8 +686,6 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
 
    ASSERT (suite);
    ASSERT (testname);
-
-   Mutex_Init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       snprintf (name, sizeof name, "%s%s",
@@ -835,7 +699,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       }
 
       if (match) {
-         status += TestSuite_RunTest (suite, test, &mutex, &count);
+         status += TestSuite_RunTest (suite, test, &count);
       }
    }
 
@@ -844,7 +708,6 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       TestSuite_PrintJsonFooter (suite->outfile);
    }
 
-   Mutex_Destroy (&mutex);
    return status;
 }
 
@@ -867,8 +730,6 @@ TestSuite_Run (TestSuite *suite) /* IN */
    if (suite->tests) {
       if (suite->testname) {
          failures += TestSuite_RunNamed (suite, suite->testname);
-      } else if ((suite->flags & TEST_THREADS)) {
-         TestSuite_RunParallel (suite);
       } else {
          failures += TestSuite_RunSerial (suite);
       }
