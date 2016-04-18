@@ -642,7 +642,6 @@ test_long_seek (void *ctx)
    client = test_framework_client_new ();
    gridfs = get_test_gridfs (client, "long_seek", &error);
    ASSERT_OR_PRINT (gridfs, error);
-   mongoc_gridfs_drop (gridfs, NULL);
    file = mongoc_gridfs_create_file (gridfs, &opt);
    ASSERT (file);
 
@@ -668,6 +667,7 @@ test_long_seek (void *ctx)
    ASSERT_CMPSSIZE_T (r, ==, buflen);
    ASSERT_TELL (file, (uint64_t) buflen);
    cursor_id = mongoc_cursor_get_id (file->cursor);
+   ASSERT_CMPINT64 ((int64_t) 0, !=, cursor_id);
 
    /* seek forward into next batch and read, gridfs advances cursor */
    i = mongoc_gridfs_file_seek (file, four_mb, SEEK_CUR);
@@ -677,6 +677,7 @@ test_long_seek (void *ctx)
    ASSERT_TELL (file, four_mb + 2 * buflen);
 
    /* same as the cursor we started with */
+   ASSERT_CMPINT64 ((int64_t) 0, !=, mongoc_cursor_get_id (file->cursor));
    ASSERT_CMPINT64 (cursor_id, ==, mongoc_cursor_get_id (file->cursor));
 
    /* seek more than a batch forward, gridfs discards cursor */
@@ -819,20 +820,25 @@ _get_gridfs (mock_server_t *server,
    future_t *future;
    bson_error_t error;
    request_t *request;
-   int i;
    mongoc_gridfs_t *gridfs;
 
-   /* gridfs ensures two indexes on fs.chunks */
+   /* gridfs ensures two indexes */
    future = future_client_get_gridfs (client, "db", NULL, &error);
-   for (i = 0; i < 2; i++) {
-      request = mock_server_receives_command (
-         server,
-         "db",
-         MONGOC_QUERY_NONE,
-         "{'createIndexes': 'fs.chunks'}");
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'createIndexes': 'fs.chunks'}");
 
-      mock_server_replies_ok_and_destroys (request);
-   }
+   mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'createIndexes': 'fs.files'}");
+
+   mock_server_replies_ok_and_destroys (request);
 
    gridfs = future_get_mongoc_gridfs_ptr (future);
    ASSERT (gridfs);
