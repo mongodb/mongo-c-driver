@@ -328,7 +328,7 @@ mongoc_server_description_type (mongoc_server_description_t *description)
       return "RSGhost";
    case MONGOC_SERVER_DESCRIPTION_TYPES:
    default:
-      MONGOC_ERROR ("Invalid mongoc_server_description_t type\n");
+      MONGOC_ERROR ("Invalid mongoc_server_description_t type");
       return "Invalid";
    }
 }
