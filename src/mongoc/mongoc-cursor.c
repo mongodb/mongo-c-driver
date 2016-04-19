@@ -412,12 +412,13 @@ done:
 
 static bool
 _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
-                                     mongoc_server_stream_t *server_stream)
+                                     mongoc_server_stream_t *server_stream,
+                                     const char             *cmd_name)
 {
    bson_t doc;
-   char db[MONGOC_NAMESPACE_MAX];
    mongoc_client_t *client;
    mongoc_apm_command_started_t event;
+   char db[MONGOC_NAMESPACE_MAX];
 
    ENTRY;
 
@@ -428,17 +429,21 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
    }
    
    bson_init (&doc);
-   if (!_mongoc_cursor_prepare_find_command (cursor, &doc)) {
-      /* cursor->error is set */
-      bson_destroy (&doc);
-      RETURN (false);
+   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+
+   if (!cursor->is_command) {
+      /* simulate a MongoDB 3.2+ "find" command */
+      if (!_mongoc_cursor_prepare_find_command (cursor, &doc)) {
+         /* cursor->error is set */
+         bson_destroy (&doc);
+         RETURN (false);
+      }
    }
 
-   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
    mongoc_apm_command_started_init (&event,
-                                    &doc,
+                                    cursor->is_command ? &cursor->query : &doc,
                                     db,
-                                    "find",
+                                    cmd_name,
                                     client->cluster.request_id,
                                     cursor->operation_id,
                                     &server_stream->sd->host,
@@ -478,13 +483,13 @@ static void
 _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
                                   int64_t                 duration,
                                   bool                    first_batch,
-                                  mongoc_server_stream_t *stream)
+                                  mongoc_server_stream_t *stream,
+                                  const char             *cmd_name)
 {
    mongoc_apm_command_succeeded_t event;
    mongoc_client_t *client;
    bson_t reply;
    bson_t reply_cursor;
-   bson_t docs_array;
 
    ENTRY;
 
@@ -494,27 +499,38 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
       EXIT;
    }
 
-   /* fake reply to find/getMore command:
-    * {ok: 1, cursor: {id: 1234, ns: "...", first/nextBatch: [ ... docs ... ]}}
-    */
-   bson_init (&docs_array);
-   _mongoc_cursor_append_docs_array (cursor, &docs_array);
+   if (cursor->is_command) {
+      /* cursor is from mongoc_client_command. we're in mongoc_cursor_next. */
+      if (!_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &reply)) {
+         MONGOC_ERROR ("_mongoc_cursor_monitor_succeeded can't parse reply");
+         EXIT;
+      }
+   } else {
+      bson_t docs_array;
 
-   bson_init (&reply);
-   bson_append_int32 (&reply, "ok", 2, 1);
-   bson_append_document_begin (&reply, "cursor", 6, &reply_cursor);
-   bson_append_int64 (&reply_cursor, "id", 2, mongoc_cursor_get_id (cursor));
-   bson_append_utf8 (&reply_cursor, "ns", 2, cursor->ns, cursor->nslen);
-   bson_append_array (&reply_cursor,
-                      first_batch ? "firstBatch" : "nextBatch",
-                      first_batch ? 10 : 9,
-                      &docs_array);
-   bson_append_document_end (&reply, &reply_cursor);
+      /* fake reply to find/getMore command:
+       * {ok: 1, cursor: {id: 17, ns: "...", first/nextBatch: [ ... docs ... ]}}
+       */
+      bson_init (&docs_array);
+      _mongoc_cursor_append_docs_array (cursor, &docs_array);
+
+      bson_init (&reply);
+      bson_append_int32 (&reply, "ok", 2, 1);
+      bson_append_document_begin (&reply, "cursor", 6, &reply_cursor);
+      bson_append_int64 (&reply_cursor, "id", 2, mongoc_cursor_get_id (cursor));
+      bson_append_utf8 (&reply_cursor, "ns", 2, cursor->ns, cursor->nslen);
+      bson_append_array (&reply_cursor,
+                         first_batch ? "firstBatch" : "nextBatch",
+                         first_batch ? 10 : 9,
+                         &docs_array);
+      bson_append_document_end (&reply, &reply_cursor);
+      bson_destroy (&docs_array);
+   }
 
    mongoc_apm_command_succeeded_init (&event,
                                       duration,
                                       &reply,
-                                      first_batch ? "find" : "getMore",
+                                      cmd_name,
                                       client->cluster.request_id,
                                       cursor->operation_id,
                                       &stream->sd->host,
@@ -525,7 +541,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
 
    mongoc_apm_command_succeeded_cleanup (&event);
    bson_destroy (&reply);
-   bson_destroy (&docs_array);
 
    EXIT;
 }
@@ -534,8 +549,8 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
 static void
 _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
                                int64_t                 duration,
-                               bool                    first_batch,
-                               mongoc_server_stream_t *stream)
+                               mongoc_server_stream_t *stream,
+                               const char             *cmd_name)
 {
    mongoc_apm_command_failed_t event;
    mongoc_client_t *client;
@@ -550,7 +565,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
 
    mongoc_apm_command_failed_init (&event,
                                    duration,
-                                   first_batch ? "find" : "getMore",
+                                   cmd_name,
                                    &cursor->error,
                                    client->cluster.request_id,
                                    cursor->operation_id,
@@ -574,6 +589,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
    mongoc_rpc_t rpc;
    uint32_t request_id;
+   const char *cmd_name; /* for command monitoring */
    const bson_t *bson = NULL;
 
    ENTRY;
@@ -610,7 +626,14 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    rpc.query.query = bson_get_data (result.query_with_read_prefs);
    rpc.query.flags = result.flags;
 
-   if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream)) {
+   if (cursor->is_command) {
+      cmd_name = _mongoc_get_command_name (&cursor->query);
+      BSON_ASSERT (cmd_name);
+   } else {
+      cmd_name = "find";
+   }
+
+   if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream, cmd_name)) {
       GOTO (failure);
    }
 
@@ -678,7 +701,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    _mongoc_cursor_monitor_succeeded (cursor,
                                      bson_get_monotonic_time () - started,
                                      true, /* first_batch */
-                                     server_stream);
+                                     server_stream,
+                                     cmd_name);
 
    cursor->done = false;
    cursor->end_of_event = false;
@@ -694,8 +718,8 @@ failure:
 
    _mongoc_cursor_monitor_failed (cursor,
                                   bson_get_monotonic_time () - started,
-                                  true, /* first_batch */
-                                  server_stream);
+                                  server_stream,
+                                  cmd_name);
 
    apply_read_prefs_result_cleanup (&result);
 
@@ -1130,15 +1154,16 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
    _mongoc_cursor_monitor_succeeded (cursor,
                                      bson_get_monotonic_time () - started,
                                      false, /* not first batch */
-                                     server_stream);
+                                     server_stream,
+                                     "getMore");
 
    RETURN (true);
 
 fail:
    _mongoc_cursor_monitor_failed (cursor,
                                   bson_get_monotonic_time () - started,
-                                  false, /* not first batch */
-                                  server_stream);
+                                  server_stream,
+                                  "getMore");
    RETURN (false);
 }
 
