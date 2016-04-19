@@ -38,6 +38,8 @@ mock_server_t *mock_server_new ();
 
 mock_server_t *mock_server_with_autoismaster (int32_t max_wire_version);
 
+mock_server_t *mock_mongos_new (int32_t max_wire_version);
+
 mock_server_t *mock_server_down (void);
 
 int mock_server_autoresponds (mock_server_t *server,

@@ -865,13 +865,7 @@ test_inherit_client_config (void)
    mongoc_gridfs_file_t *file;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_server_new ();
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'maxWireVersion': 4,"
-                              " 'ismaster': true,"
-                              " 'msg': 'isdbgrid'}");
-
+   server = mock_mongos_new (4);
    mock_server_run (server);
 
    /* configure read / write concern and read prefs on client */

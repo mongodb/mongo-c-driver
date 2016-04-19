@@ -4,7 +4,6 @@
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 
 #include "TestSuite.h"
@@ -374,12 +373,7 @@ _test_command_read_prefs (bool simple,
    const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_server_new ();
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'msg': 'isdbgrid'}");
-
+   server = mock_mongos_new (0);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);

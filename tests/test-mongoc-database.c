@@ -148,12 +148,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_server_new ();
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'msg': 'isdbgrid'}");
-
+   server = mock_mongos_new (0);
    mock_server_run (server);
 
    if (pooled) {

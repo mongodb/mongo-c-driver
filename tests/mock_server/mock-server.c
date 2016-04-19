@@ -158,6 +158,43 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * mock_mongos_new --
+ *
+ *       A new mock_server_t that autoresponds to ismaster as if it were a
+ *       mongos. Call mock_server_run to start it, then mock_server_get_uri
+ *       to connect.
+ *
+ * Returns:
+ *       A server you must mock_server_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mock_server_t *
+mock_mongos_new (int32_t max_wire_version)
+{
+   mock_server_t *server = mock_server_new ();
+
+   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                        " 'ismaster': true,"
+                                        " 'msg': 'isdbgrid',"
+                                        " 'minWireVersion': 0,"
+                                        " 'maxWireVersion': %d}",
+                                        max_wire_version);
+
+   mock_server_auto_ismaster (server, ismaster);
+
+   bson_free (ismaster);
+
+   return server;
+}
+
+
 static bool
 hangup (request_t *request,
         void *ctx)
