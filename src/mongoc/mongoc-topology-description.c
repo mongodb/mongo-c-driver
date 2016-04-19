@@ -1367,6 +1367,7 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
    }
 };
 
+#ifdef MONGOC_TRACE
 /*
  *--------------------------------------------------------------------------
  *
@@ -1406,6 +1407,7 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
       return "Invalid";
    }
 }
+#endif
 
 /*
  *--------------------------------------------------------------------------
