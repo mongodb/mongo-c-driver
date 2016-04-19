@@ -1414,6 +1414,42 @@ test_count (void)
 
 
 static void
+test_count_read_pref (void)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   mongoc_collection_set_read_prefs (collection, prefs);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE,
+                                     NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'count': 'collection'},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_count_read_concern (void)
 {
    mongoc_collection_t *collection;
@@ -1660,35 +1696,31 @@ test_count_read_concern_live (void *context)
 static void
 test_count_with_opts (void)
 {
+   mock_server_t *server;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
    bson_error_t error;
-   int64_t count;
-   bson_t b;
-   bson_t opts;
 
-   client = test_framework_client_new ();
-   ASSERT (client);
+   /* use a mongos since we don't send SLAVE_OK to mongos by default */
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
 
-   collection = mongoc_client_get_collection (client, "test", "test");
-   ASSERT (collection);
+   future = future_collection_count_with_opts (
+      collection, MONGOC_QUERY_SLAVE_OK, NULL, 0, 0, tmp_bson ("{'opt': 1}"),
+      NULL, &error);
 
-   bson_init (&opts);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK, "{'count': 'collection', 'opt': 1}");
 
-   BSON_APPEND_UTF8 (&opts, "hint", "_id_");
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
 
-   bson_init (&b);
-   count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, &b,
-                                              0, 0, &opts, NULL, &error);
-   bson_destroy (&b);
-   bson_destroy (&opts);
-
-   if (count == -1) {
-      MONGOC_WARNING ("%s\n", error.message);
-   }
-
-   ASSERT (count != -1);
-
+   request_destroy (request);
+   future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2227,6 +2259,41 @@ test_stats (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_destroy (&doc);
+}
+
+
+static void
+test_stats_read_pref (void)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   bson_t stats;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_collection_set_read_prefs (collection, prefs);
+   future = future_collection_stats (collection, NULL, &stats, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'collStats': 'collection'},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   bson_destroy (&stats);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -3133,6 +3200,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
+   TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);
    TestSuite_Add (suite, "/Collection/count/read_concern", test_count_read_concern);
    TestSuite_AddFull (suite, "/Collection/count/read_concern_live", test_count_read_concern_live, NULL, NULL, mongod_supports_majority_read_concern);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
@@ -3143,6 +3211,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
+   TestSuite_Add (suite, "/Collection/stats/read_pref", test_stats_read_pref);
    TestSuite_Add (suite, "/Collection/find_read_concern", test_find_read_concern);
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern",

@@ -630,6 +630,9 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
                          const mongoc_read_prefs_t *read_prefs,  /* IN */
                          bson_error_t              *error)       /* OUT */
 {
+   /* Server Selection Spec: "may-use-secondary" commands SHOULD take a read
+    * preference argument and otherwise MUST use the default read preference
+    * from client, database or collection configuration. */
    return mongoc_collection_count_with_opts (
       collection,
       flags,
@@ -637,7 +640,7 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
       skip,
       limit,
       NULL,
-      read_prefs,
+      read_prefs ? read_prefs : collection->read_prefs,
       error);
 }
 
@@ -654,25 +657,24 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
 {
    mongoc_server_stream_t *server_stream;
    mongoc_cluster_t *cluster;
+   mongoc_apply_read_prefs_result_t read_prefs_result = READ_PREFS_RESULT_INIT;
    bson_iter_t iter;
    int64_t ret = -1;
    bool success;
    bson_t reply;
-   bson_t cmd;
+   bson_t cmd = BSON_INITIALIZER;
    bson_t q;
 
    ENTRY;
 
-
    cluster = &collection->client->cluster;
    server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    if (!server_stream) {
-      RETURN (-1);
+      GOTO (done);
    }
 
    BSON_ASSERT (collection);
 
-   bson_init(&cmd);
    bson_append_utf8(&cmd, "count", 5, collection->collection,
                     collection->collectionlen);
    if (query) {
@@ -696,9 +698,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                          "The selected server does not support readConcern");
-         bson_destroy (&cmd);
-         mongoc_server_stream_cleanup (server_stream);
-         RETURN (-1);
+         GOTO (done);
       }
 
       read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
@@ -708,18 +708,23 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
        bson_concat(&cmd, opts);
    }
 
-   success = mongoc_cluster_run_command_monitored (cluster,
-                                                   server_stream,
-                                                   MONGOC_QUERY_SLAVE_OK,
-                                                   collection->db,
-                                                   &cmd, &reply, error);
+   apply_read_preferences (read_prefs, server_stream,
+                           &cmd, flags, &read_prefs_result);
+
+   success = mongoc_cluster_run_command_monitored (
+      cluster, server_stream, read_prefs_result.flags, collection->db,
+      read_prefs_result.query_with_read_prefs, &reply, error);
 
    if (success && bson_iter_init_find(&iter, &reply, "n")) {
       ret = bson_iter_as_int64(&iter);
    }
+
    bson_destroy (&reply);
-   bson_destroy (&cmd);
+
+done:
+   apply_read_prefs_result_cleanup (&read_prefs_result);
    mongoc_server_stream_cleanup (server_stream);
+   bson_destroy (&cmd);
 
    RETURN (ret);
 }
@@ -2053,7 +2058,12 @@ mongoc_collection_stats (mongoc_collection_t *collection,
       bson_concat (&cmd, options);
    }
 
-   ret = mongoc_collection_command_simple (collection, &cmd, NULL, stats, error);
+   /* Server Selection Spec: "may-use-secondary" commands SHOULD take a read
+    * preference argument and otherwise MUST use the default read preference
+    * from client, database or collection configuration. */
+   ret = mongoc_collection_command_simple (collection, &cmd,
+                                           collection->read_prefs,
+                                           stats, error);
 
    bson_destroy (&cmd);
 

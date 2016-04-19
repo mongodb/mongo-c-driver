@@ -17,6 +17,12 @@ Server Selection Spec. These are the affected functions:
   * mongoc_collection_command
   * mongoc_collection_command_simple
 
+On the other hand, the following command-specific helper functions now use the
+collection's read preference:
+
+  * mongoc_collection_count
+  * mongoc_collection_stats
+
 New functions to send maxTimeMS or any arbitrary options with findAndModify:
 
   * mongoc_find_and_modify_opts_set_max_time_ms

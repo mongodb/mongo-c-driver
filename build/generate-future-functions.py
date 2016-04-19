@@ -139,6 +139,17 @@ future_functions = [
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("int64_t",
+                    "mongoc_collection_count_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("mongoc_query_flags_t", "flags"),
+                     param("const_bson_ptr", "query"),
+                     param("int64_t", "skip"),
+                     param("int64_t", "limit"),
+                     param("const_bson_ptr", "opts"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("bool",
                     "mongoc_collection_find_and_modify_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
@@ -158,6 +169,13 @@ future_functions = [
                      param("bool", "upsert"),
                      param("bool", "_new"),
                      param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_stats",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_bson_ptr", "options"),
+                     param("bson_ptr", "stats"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
