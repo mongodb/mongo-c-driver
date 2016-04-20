@@ -439,7 +439,6 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-util.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
-   ${SOURCE_DIR}/tests/test-sasl.c
    ${SOURCE_DIR}/tests/test-write-commands.c
    ${SOURCE_DIR}/tests/TestSuite.c
 )
@@ -456,6 +455,12 @@ if (MONGOC_ENABLE_SSL)
       ${SOURCE_DIR}/tests/mongoc-tests.c
    )
 endif()
+
+if (MONGOC_ENABLE_SASL)
+   set(test-libmongoc-sources ${test-libmongoc-sources}
+      ${SOURCE_DIR}/tests/test-sasl.c
+   )
+endif ()
 
 mongoc_add_test(test-load FALSE
    ${SOURCE_DIR}/tests/test-load.c

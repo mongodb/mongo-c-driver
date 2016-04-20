@@ -17,7 +17,6 @@
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
 #include <mongoc-sasl-private.h>
-#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

@@ -55,7 +55,6 @@ extern void test_queue_install                   (TestSuite *suite);
 extern void test_read_prefs_install              (TestSuite *suite);
 extern void test_rpc_install                     (TestSuite *suite);
 extern void test_sdam_install                    (TestSuite *suite);
-extern void test_sasl_install                    (TestSuite *suite);
 extern void test_server_selection_install        (TestSuite *suite);
 extern void test_server_selection_errors_install (TestSuite *suite);
 extern void test_set_install                     (TestSuite *suite);
@@ -75,6 +74,9 @@ extern void test_write_concern_install           (TestSuite *suite);
 extern void test_stream_tls_install              (TestSuite *suite);
 extern void test_x509_install                    (TestSuite *suite);
 extern void test_stream_tls_error_install        (TestSuite *suite);
+#endif
+#ifdef MONGOC_ENABLE_SASL
+extern void test_sasl_install                    (TestSuite *suite);
 #endif
 
 
@@ -1613,7 +1615,6 @@ main (int   argc,
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
-   test_sasl_install (&suite);
    test_socket_install (&suite);
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
@@ -1633,6 +1634,9 @@ main (int   argc,
    test_stream_tls_install (&suite);
    test_x509_install (&suite);
    test_stream_tls_error_install (&suite);
+#endif
+#ifdef MONGOC_ENABLE_SASL
+   test_sasl_install (&suite);
 #endif
 
    ret = TestSuite_Run (&suite);
