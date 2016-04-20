@@ -410,7 +410,7 @@ mongoc_write_concern_is_acknowledged (
               write_concern->fsync_ == true ||
               mongoc_write_concern_get_journal (write_concern));
    }
-   return false;
+   return true;
 }
 
 

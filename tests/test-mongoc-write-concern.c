@@ -157,6 +157,10 @@ test_write_concern_fsync_and_journal_gle_and_validity (void)
     * a combination of options will be considered invalid.
     */
 
+   /* No write concern needs GLE, but not "valid" */
+   ASSERT(mongoc_write_concern_is_acknowledged (NULL));
+   ASSERT(!mongoc_write_concern_is_valid (NULL));
+
    /* Default write concern needs GLE and is valid */
    ASSERT(write_concern);
    ASSERT(mongoc_write_concern_is_acknowledged (write_concern));

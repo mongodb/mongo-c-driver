@@ -26,6 +26,7 @@ mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concer
   <section id="description">
     <title>Description</title>
     <p>Test if this is an acknowledged or unacknowledged write concern.</p>
+    <p>If <code>write_concern</code> is NULL, returns true. (In other words, writes are acknowledged by default.)</p>
   </section>
 
 </page>

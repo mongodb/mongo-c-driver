@@ -1881,7 +1881,6 @@ _mongoc_write_result_complete (mongoc_write_result_t        *result,            
                                bson_error_t                 *error)             /* OUT */
 {
    mongoc_error_domain_t domain;
-   bool acknowledged;
 
    ENTRY;
 
@@ -1891,10 +1890,7 @@ _mongoc_write_result_complete (mongoc_write_result_t        *result,            
             ? MONGOC_ERROR_SERVER
             : MONGOC_ERROR_COMMAND;
 
-   /* NULL write concern is acknowledged by default */
-   acknowledged = wc ? mongoc_write_concern_is_acknowledged (wc) : true;
-
-   if (bson && acknowledged) {
+   if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
       if (!result->omit_nModified) {
