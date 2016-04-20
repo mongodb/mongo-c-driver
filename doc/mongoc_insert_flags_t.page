@@ -8,7 +8,7 @@
     <link type="guide" xref="index#api-reference"/>
   </info>
   <title>mongoc_insert_flags_t</title>
-  <subtitle>Flags for deletion operations</subtitle>
+  <subtitle>Flags for insert operations</subtitle>
 
   <section id="synopsis">
     <title>Synopsis</title>
