@@ -36,18 +36,19 @@ Feb  9 13:48:51 2013  Feb  9 23:48:51 2013  krbtgt/EXAMPLE.COM@EXAMPLE.COM</outp
 
 client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI");
 ]]></code></screen>
-
-    <p>The default service name used by MongoDB and the MongoDB C driver is <code>mongodb</code>. A custom service name can be specified with the <code>gssapiServiceName</code> option:</p>
-
+    <p>The driver supports these GSSAPI properties:</p>
+    <list>
+      <item><p><code>CANONICALIZE_HOST_NAME</code>: This might be required when the hosts report different hostnames than what is used in the kerberos database. The default is "false".</p></item>
+      <item><p><code>SERVICE_NAME</code>: Use a different service name than the default, "mongodb".</p></item>
+    </list>
+    <p>Set properties in the URL:</p>
     <screen><code><![CDATA[mongoc_client_t *client;
 
-client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI&gssapiServiceName=myservicename");
+client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI&"
+                            "authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
 ]]></code></screen>
-
-    <note style="info">
-      <p>When encountering errors such as <code>Invalid net address</code>, check if the application is behind a NAT (Network Address Translation) firewall. If so, create a ticket that uses <code>forwardable</code> and <code>addressless</code> Kerberos tickets. This can be done by passing <code>-f -A</code> to <code>kinit</code>.</p>
-      <screen><output style="prompt">$ </output><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen>
-    </note>
+    <p>If you encounter errors such as <code>Invalid net address</code>, check if the application is behind a NAT (Network Address Translation) firewall. If so, create a ticket that uses <code>forwardable</code> and <code>addressless</code> Kerberos tickets. This can be done by passing <code>-f -A</code> to <code>kinit</code>.</p>
+    <screen><output style="prompt">$ </output><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen>
   </section>
 
   <section id="ssl">

@@ -70,6 +70,9 @@ mongoc_client_get_database_names no longer filters out a replica set member's
 mongoc_client_get_gridfs now ensures the proper indexes on the files and chunks
 collections.
 
+The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now properly
+parsed from the URI, see the driver's authentication documentation for details.
+
 mongo-c-driver 1.3.3
 ====================
 

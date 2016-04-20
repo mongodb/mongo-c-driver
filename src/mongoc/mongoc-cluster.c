@@ -769,11 +769,9 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
 {
    uint32_t buflen = 0;
    mongoc_sasl_t sasl;
-   const bson_t *options;
    bson_iter_t iter;
    bool ret = false;
    char real_name [BSON_HOST_NAME_MAX + 1];
-   const char *service_name;
    const char *mechanism;
    const char *tmpstr;
    uint8_t buf[4096] = { 0 };
@@ -784,22 +782,15 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   options = mongoc_uri_get_options (cluster->uri);
-
    _mongoc_sasl_init (&sasl);
 
    if ((mechanism = mongoc_uri_get_auth_mechanism (cluster->uri))) {
       _mongoc_sasl_set_mechanism (&sasl, mechanism);
    }
 
-   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
-       BSON_ITER_HOLDS_UTF8 (&iter) &&
-       (service_name = bson_iter_utf8 (&iter, NULL))) {
-      _mongoc_sasl_set_service_name (&sasl, service_name);
-   }
-
    _mongoc_sasl_set_pass (&sasl, mongoc_uri_get_password (cluster->uri));
    _mongoc_sasl_set_user (&sasl, mongoc_uri_get_username (cluster->uri));
+   _mongoc_sasl_set_properties (&sasl, cluster->uri);
 
    /*
     * If the URI requested canonicalizeHostname, we need to resolve the real
@@ -812,15 +803,11 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
     *
     * See CDRIVER-323 for more information.
     */
-   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-      if (_mongoc_cluster_get_canonicalized_name (cluster, stream, real_name,
-                                                  sizeof real_name, error)) {
+   if (sasl.canonicalize_host_name &&
+       _mongoc_cluster_get_canonicalized_name (cluster, stream, real_name,
+                                               sizeof real_name, error))
+   {
          _mongoc_sasl_set_service_host (&sasl, real_name);
-      } else {
-         _mongoc_sasl_set_service_host (&sasl, hostname);
-      }
    } else {
       _mongoc_sasl_set_service_host (&sasl, hostname);
    }
