@@ -274,7 +274,6 @@ test_mongoc_tls_expired (void)
 static void
 test_mongoc_tls_common_name (void)
 {
-#if 0
    mongoc_ssl_opt_t sopt = { 0 };
    mongoc_ssl_opt_t copt = { 0 };
    ssl_test_result_t sr;
@@ -291,7 +290,6 @@ test_mongoc_tls_common_name (void)
 
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SUCCESS);
    ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
-#endif
 }
 
 
