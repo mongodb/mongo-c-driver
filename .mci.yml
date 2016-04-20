@@ -203,7 +203,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       osx_nativessl: &compile_osx_nativessl
         compile_script: |
           set -o errexit
@@ -211,7 +211,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-ssl=darwin --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       osx_nossl: &compile_osx_nossl
         compile_script: |
           set -o errexit
@@ -219,7 +219,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       unix: &compile_unix
         compile_script: |
           set -o errexit
@@ -227,7 +227,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris64: &compile_solaris64
         compile_script: |
           set -o errexit
@@ -238,7 +238,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
@@ -246,7 +246,7 @@ c_driver_variables:
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
-          (cd src/libbson && make test)
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       msvc: &compile_msvc
         compile_script: |
           file "tests/binary/gridfs-large.dat"
@@ -265,7 +265,7 @@ c_driver_variables:
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
-          (cd src/libbson && ./Debug/test-libbson.exe)
+          (cd src/libbson && ./Debug/test-libbson.exe --no-fork -d)
 
     connection_flags:
       ssl: &connection_flags_ssl
