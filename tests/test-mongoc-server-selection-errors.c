@@ -5,7 +5,9 @@
 #include "test-libmongoc.h"
 
 static void
-server_selection_error_dns (const char *uri, const char *errmsg, bool assert_as)
+server_selection_error_dns (const char *uri,
+                            const char *errmsg,
+                            bool        assert_as)
 {
 
    mongoc_client_t *client;
@@ -20,7 +22,8 @@ server_selection_error_dns (const char *uri, const char *errmsg, bool assert_as)
    collection = mongoc_client_get_collection (client, "test", "test");
 
    command = tmp_bson("{'ping': 1}");
-   success = mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
+   success = mongoc_collection_command_simple (collection, command, NULL,
+                                               &reply, &error);
    ASSERT_OR_PRINT(success == assert_as, error);
 
    if (!success && errmsg) {
@@ -36,8 +39,9 @@ static void
 test_server_selection_error_dns_single (void)
 {
    server_selection_error_dns (
-      "mongodb://non-existing-localhost:27017/",
-      "No suitable servers found (`serverselectiontryonce` set): [Failed to resolve 'non-existing-localhost']",
+      "mongodb://example-localhost:27017/",
+      "No suitable servers found (`serverselectiontryonce` set): "
+      "[Failed to resolve 'example-localhost']",
       false
    );
 }
@@ -46,8 +50,10 @@ static void
 test_server_selection_error_dns_multi_fail (void)
 {
    server_selection_error_dns (
-      "mongodb://non-existing-localhost:27017,other-non-existing-localhost:27017/",
-      "No suitable servers found (`serverselectiontryonce` set): [Failed to resolve 'non-existing-localhost'] [Failed to resolve 'other-non-existing-localhost']",
+      "mongodb://example-localhost:27017,other-example-localhost:27017/",
+      "No suitable servers found (`serverselectiontryonce` set):"
+      " [Failed to resolve 'example-localhost']"
+      " [Failed to resolve 'other-example-localhost']",
       false
    );
 }
@@ -58,9 +64,9 @@ test_server_selection_error_dns_multi_success (void *context)
    char *uri_str;
 
    uri_str = bson_strdup_printf (
-      "mongodb://non-existing-localhost:27017,"
+      "mongodb://example-localhost:27017,"
       "%s:%d,"
-      "other-non-existing-localhost:27017/",
+      "other-example-localhost:27017/",
       test_framework_get_host (),
       test_framework_get_port ());
 
@@ -129,9 +135,17 @@ test_server_selection_uds_not_found (void *context)
 void
 test_server_selection_errors_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/server_selection/errors/dns/single", test_server_selection_error_dns_single);
-   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail", test_server_selection_error_dns_multi_fail);
-   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success", test_server_selection_error_dns_multi_success, NULL, NULL, test_framework_skip_if_single);
-   TestSuite_AddFull (suite, "/server_selection/errors/uds/auth_failure", test_server_selection_uds_auth_failure, NULL, NULL, test_framework_skip_if_no_uds);
-   TestSuite_AddFull (suite, "/server_selection/errors/uds/not_found", test_server_selection_uds_not_found, NULL, NULL, test_framework_skip_if_windows);
+   TestSuite_Add (suite, "/server_selection/errors/dns/single",
+                  test_server_selection_error_dns_single);
+   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail",
+                  test_server_selection_error_dns_multi_fail);
+   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success",
+                      test_server_selection_error_dns_multi_success, NULL, NULL,
+                      test_framework_skip_if_single);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/auth_failure",
+                      test_server_selection_uds_auth_failure, NULL, NULL,
+                      test_framework_skip_if_no_uds);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/not_found",
+                      test_server_selection_uds_not_found, NULL, NULL,
+                      test_framework_skip_if_windows);
 }
