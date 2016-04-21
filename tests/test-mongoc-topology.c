@@ -207,11 +207,12 @@ _test_server_selection (bool try_once)
    assert (!future_get_mongoc_server_description_ptr (future));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
+   ASSERT_STARTSWITH (error.message, "No suitable servers found");
 
    if (try_once) {
-      ASSERT_CMPSTR ("No suitable servers found (`serverselectiontryonce` set)", error.message);
+      ASSERT_CONTAINS (error.message, "serverSelectionTryOnce");
    } else {
-      ASSERT_CMPSTR ("No suitable servers found: `minheartbeatfrequencyms` not reached yet", error.message);
+      ASSERT_CONTAINS (error.message, "minHeartbeatFrequencyMS");
    }
 
    assert (client->topology->stale);
