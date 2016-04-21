@@ -457,8 +457,9 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    } else {
       status = 0;
       snprintf (buf, sizeof buf,
-                "    { \"status\": \"SKIP\", \"test_file\": \"%s\" },\n",
-                test->name);
+                "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
+                test->name,
+                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = '\0';
       _Print_StdOut ("%s", buf);
       if (suite->outfile) {
