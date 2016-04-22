@@ -1878,6 +1878,15 @@ test_aggregate (void)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    mongoc_cursor_destroy (cursor);
 
+   /* empty collection */
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   ASSERT (cursor);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   ASSERT (!r);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+
    for (i = 0; i < 2; i++) {
       ASSERT_OR_PRINT (mongoc_collection_insert(
          collection,
