@@ -1838,8 +1838,13 @@ test_aggregate (void)
    broken_pipeline = BCON_NEW ("pipeline", "[", "{", "$asdf", "{", "foo", BCON_UTF8 ("bar"), "}", "}", "]");
    b = BCON_NEW ("hello", BCON_UTF8 ("world"));
 
-again:
-   mongoc_collection_drop(collection, &error);
+   /* empty collection */
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   ASSERT (cursor);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
 
    for (i = 0; i < 2; i++) {
       ASSERT_OR_PRINT (mongoc_collection_insert(
@@ -1847,6 +1852,7 @@ again:
          MONGOC_INSERT_NONE, b, NULL, &error), error);
    }
 
+again:
    cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, broken_pipeline, NULL, NULL);
    ASSERT (cursor);
 
