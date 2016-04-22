@@ -57,35 +57,6 @@
          } \
       } while(0); \
 
-static bool
-validate_name (const char *str)
-{
-   const char *c;
-
-   if (str && *str) {
-      for (c = str; *c; c++) {
-         switch (*c) {
-         case '/':
-         case '\\':
-         case '.':
-         case '"':
-         case '*':
-         case '<':
-         case '>':
-         case ':':
-         case '|':
-         case '?':
-            return false;
-         default:
-            break;
-         }
-      }
-      return ((0 != strcmp (str, "oplog.$main")) &&
-              (0 != strcmp (str, "$cmd")));
-   }
-
-   return false;
-}
 
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
@@ -1965,7 +1936,7 @@ mongoc_collection_rename (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (new_name);
 
-   if (!validate_name (new_name)) {
+   if (strchr (new_name, '$')) {
       bson_set_error (error,
                       MONGOC_ERROR_NAMESPACE,
                       MONGOC_ERROR_NAMESPACE_INVALID,

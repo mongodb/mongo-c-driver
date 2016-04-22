@@ -2209,27 +2209,50 @@ test_validate (void *ctx)
 static void
 test_rename (void)
 {
-   mongoc_collection_t *collection;
    mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
    bson_error_t error;
+   char *dbname;
    bson_t doc = BSON_INITIALIZER;
+   char **name;
+   char **names;
+   bool found;
 
    client = test_framework_client_new ();
    ASSERT (client);
 
-   collection = get_test_collection (client, "test_rename");
-   ASSERT (collection);
+   dbname = gen_collection_name ("dbtest");
+   database = mongoc_client_get_database (client, dbname);
+   collection = mongoc_database_get_collection (database, "test_rename");
 
    ASSERT_OR_PRINT (mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, &doc, NULL, &error), error);
 
    ASSERT_OR_PRINT (mongoc_collection_rename (
-      collection, "test", "test_rename_2", false, &error), error);
+      collection, dbname, "test_rename.2", false, &error), error);
 
+   names = mongoc_database_get_collection_names (database, &error);
+   ASSERT_OR_PRINT (names, error);
+   found = false;
+   for (name = names; *name; ++name) {
+      if (!strcmp (*name, "test_rename.2")) {
+         found = true;
+      }
+
+      bson_free (*name);
+   }
+
+   ASSERT (found);
+   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
+   bson_free (names);
    mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
    mongoc_client_destroy (client);
+   bson_free (dbname);
    bson_destroy (&doc);
 }
 
