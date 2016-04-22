@@ -34,7 +34,8 @@ connecting to: test
 WriteResult({ "nInserted" : 1 })
 bye</output>
 <output style="prompt">$ </output><input>mongodump -d test -c test -o - | filter-bsondump</input>
-<output>{ "_id" : { "$oid" : "537afac9a70e5b4d556153bc" }, "hello" : "world" }</output></screen>
+<output>{ "_id" : { "$oid" : "537afac9a70e5b4d556153bc" }, "hello" : "world" }
+</output></screen>
 
   </section>
 

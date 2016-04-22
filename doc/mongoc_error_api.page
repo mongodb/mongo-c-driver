@@ -4,6 +4,9 @@
   <info><link xref="index#error-api" type="guide"/></info>
   <title>Configuring How The C Driver Reports Errors</title>
 
+  <section id="description">
+  <title>Description</title>
+
   <p>Many C Driver functions report errors by filling out a <code xref="bson:bson_error_t">bson_error_t</code> structure with an error domain, error code, and message.</p>
 
   <p>The driver's error reporting began with a design flaw: when the error <em style="strong">domain</em> is <code>MONGOC_ERROR_COLLECTION</code>, <code>MONGOC_ERROR_QUERY</code>, or <code>MONGOC_ERROR_COMMAND</code>, the error <em style="strong">code</em> might originate from the server or the driver. An application cannot always know where an error originated, and therefore cannot tell what the code means.</p>
@@ -45,9 +48,7 @@
     </tr>
     <tr>
       <td>
-        <p><code xref="mongoc_client_command">mongoc_client_command</code>,</p>
-        <p><code xref="mongoc_database_command">mongoc_database_command</code>,</p>
-        <p>and other command functions</p>
+        <p><code xref="mongoc_client_command">mongoc_client_command</code>, <code xref="mongoc_database_command">mongoc_database_command</code>, and other command functions</p>
       </td>
       <td>
         <p>
@@ -62,9 +63,7 @@
     </tr>
     <tr>
       <td>
-        <p><code xref="mongoc_collection_count_with_opts">mongoc_collection_count_with_opts</code>,</p>
-        <p><code xref="mongoc_client_get_database_names">mongoc_client_get_database_names</code>,</p>
-        <p>and other command helper functions</p>
+        <p><code xref="mongoc_collection_count_with_opts">mongoc_collection_count_with_opts</code>, <code xref="mongoc_client_get_database_names">mongoc_client_get_database_names</code>, and other command helper functions</p>
       </td>
       <td>
         <p>
@@ -140,6 +139,8 @@
   </table>
 
   <p>The Error API Versions are defined with <code>MONGOC_ERROR_API_VERSION_LEGACY</code> and <code>MONGOC_ERROR_API_VERSION_2</code>. Set the version with <code xref="mongoc_client_set_error_api">mongoc_client_set_error_api</code> or <code xref="mongoc_client_pool_set_error_api">mongoc_client_pool_set_error_api</code>.</p>
+
+  </section>
 
   <section id="seealso">
     <title>See Also</title>

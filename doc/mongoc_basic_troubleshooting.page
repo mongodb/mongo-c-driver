@@ -49,7 +49,7 @@
 
       <p>To access counters for a given process, simply provide the process id to the <code>mongoc-stat</code> program installed with the MongoDB C Driver.</p>
 
-      <screen><output style="prompt">$ </output><input>mongoc-stat 22203</input><![CDATA[
+      <screen><output style="prompt">$ </output><input>mongoc-stat 22203</input><code><![CDATA[
    Operations : Egress Total        : The number of sent operations.                    : 13247
    Operations : Ingress Total       : The number of received operations.                : 13246
    Operations : Egress Queries      : The number of sent Query operations.              : 13247
@@ -82,7 +82,7 @@
      Protocol : Ingress Errors      : The number of protocol errors on ingress.         : 0
          Auth : Failures            : The number of failed authentication requests.     : 0
          Auth : Success             : The number of successful authentication requests. : 0
-]]></screen>
+]]></code></screen>
 
     </section>
 
@@ -93,7 +93,7 @@
 
       <title>Submitting a Bug Report</title>
 
-      <p>Think you’ve found a bug? Want to see a new feature in the MongoDB C driver? Please open a case in our issue management tool, JIRA:</p>
+      <p>Think you've found a bug? Want to see a new feature in the MongoDB C driver? Please open a case in our issue management tool, JIRA:</p>
 
       <list>
         <item><p><link href="https://jira.mongodb.org">Create an account and login</link>.</p></item>
