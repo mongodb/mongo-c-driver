@@ -302,6 +302,7 @@ _mongoc_openssl_setup_ca (SSL_CTX    *ctx,
    BSON_ASSERT(cert || cert_dir);
 
    if (!SSL_CTX_load_verify_locations (ctx, cert, cert_dir)) {
+      MONGOC_ERROR ("Cannot load Certificate Authorities from '%s' and '%s'", cert, cert_dir);
       return 0;
    }
 
@@ -334,6 +335,7 @@ _mongoc_openssl_setup_pem_file (SSL_CTX    *ctx,
                                 const char *password)
 {
    if (!SSL_CTX_use_certificate_chain_file (ctx, pem_file)) {
+      MONGOC_ERROR ("Cannot find certificate in '%s'", pem_file);
       return 0;
    }
 
@@ -343,10 +345,12 @@ _mongoc_openssl_setup_pem_file (SSL_CTX    *ctx,
    }
 
    if (!(SSL_CTX_use_PrivateKey_file (ctx, pem_file, SSL_FILETYPE_PEM))) {
+      MONGOC_ERROR ("Cannot find private key in: '%s'", pem_file);
       return 0;
    }
 
    if (!(SSL_CTX_check_private_key (ctx))) {
+      MONGOC_ERROR ("Cannot load private key: '%s'", pem_file);
       return 0;
    }
 
