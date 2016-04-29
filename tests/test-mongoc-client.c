@@ -1575,9 +1575,11 @@ _test_ssl_reconnect (bool pooled)
 
    ASSERT (!_cmd (server, client, false /* server hangs up */, &error));
    if (pooled) {
-      ASSERT_CAPTURED_LOG ("failed to write data because server closed the connection",
-                           MONGOC_LOG_LEVEL_WARNING,
-                           "Failure to buffer 4 bytes: Failed to buffer 4 bytes within 10000 milliseconds");
+      ASSERT_CAPTURED_LOG (
+         "failed to write data because server closed the connection",
+         MONGOC_LOG_LEVEL_WARNING,
+         "Failure to buffer 36 bytes: Failed to buffer 36 bytes"
+         " within 10000 milliseconds");
    }
 
    /* next operation comes on a new connection, server verification fails */

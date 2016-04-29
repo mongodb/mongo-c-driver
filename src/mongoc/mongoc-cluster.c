@@ -108,6 +108,25 @@ _bson_error_message_printf (bson_error_t *error,
 }
 
 
+#define RUN_CMD_ERR_FMT(_domain, _code, _msg, ...) \
+   do { \
+      bson_set_error (error, _domain, _code, _msg, __VA_ARGS__); \
+      _bson_error_message_printf ( \
+         error, \
+         "Failed to send \"%s\" command with database \"%s\": %s", \
+         command_name, db_name, error->message); \
+   } while (0)
+
+
+#define RUN_CMD_ERR(_domain, _code, _msg) \
+   do { \
+      bson_set_error (error, _domain, _code, _msg); \
+      _bson_error_message_printf ( \
+         error, \
+         "Failed to send \"%s\" command with database \"%s\": %s", \
+         command_name, db_name, error->message); \
+   } while (0)
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -143,14 +162,17 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    const char *command_name;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_array_t ar;                /* data to server */
-   mongoc_buffer_t buffer;           /* data from server */
-   mongoc_rpc_t rpc;                 /* stores request, then stores response */
+   const size_t reply_header_size = sizeof (mongoc_rpc_reply_header_t);
+   uint8_t reply_header_buf[sizeof (mongoc_rpc_reply_header_t)];
+   uint8_t *reply_buf;               /* reply body */
+   mongoc_rpc_t rpc;                 /* sent to server */
    bson_error_t err_local;           /* in case the passed-in "error" is NULL */
    bson_t reply_local;
-   bool reply_local_initialized = false;
+   bson_t *reply_ptr;
    char cmd_ns[MONGOC_NAMESPACE_MAX];
    uint32_t request_id;
    int32_t msg_len;
+   size_t doc_len;
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
@@ -166,11 +188,12 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    /*
     * setup
     */
+   reply_ptr = reply ? reply : &reply_local;
+   bson_init (reply_ptr);
    command_name = _mongoc_get_command_name (command);
    BSON_ASSERT (command_name);
    callbacks = &cluster->client->apm_callbacks;
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
-   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
    if (!error) {
       error = &err_local;
@@ -215,10 +238,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
     * send and receive
     */
    if (!_mongoc_stream_writev_full (stream, (mongoc_iovec_t *)ar.data, ar.len,
-                                    cluster->sockettimeoutms, error) ||
-       !_mongoc_buffer_append_from_stream (&buffer, stream, 4,
-                                           cluster->sockettimeoutms, error)) {
-
+                                    cluster->sockettimeoutms, error)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
 
       /* add info about the command to writev_full's error message */
@@ -230,40 +250,52 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
       GOTO (done);
    }
 
-   BSON_ASSERT (buffer.len == 4);
-   memcpy (&msg_len, buffer.data, 4);
-   msg_len = BSON_UINT32_FROM_LE(msg_len);
-   if ((msg_len < 16) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
+   if (reply_header_size != mongoc_stream_read (stream, &reply_header_buf,
+                                           reply_header_size, reply_header_size,
+                                           cluster->sockettimeoutms)) {
+      mongoc_cluster_disconnect_node (cluster, server_id);
+      RUN_CMD_ERR_FMT (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                       "Failed to read %lu bytes from socket within "
+                       "%" PRIu32 " milliseconds.",
+                       (unsigned long) reply_header_size,
+                       cluster->sockettimeoutms);
+
       GOTO (done);
    }
 
-   if (!_mongoc_buffer_append_from_stream (&buffer, stream, (size_t) msg_len - 4,
-                                           cluster->sockettimeoutms, error)) {
+   memcpy (&msg_len, reply_header_buf, 4);
+   msg_len = BSON_UINT32_FROM_LE (msg_len);
+   if ((msg_len < reply_header_size) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
       GOTO (done);
    }
 
-   if (!_mongoc_rpc_scatter (&rpc, buffer.data, buffer.len)) {
+   if (!_mongoc_rpc_scatter_reply_header_only (&rpc, reply_header_buf,
+                                               reply_header_size)) {
       GOTO (done);
    }
 
    _mongoc_rpc_swab_from_le (&rpc);
-   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+   if (rpc.header.opcode != MONGOC_OPCODE_REPLY ||
+       rpc.reply_header.n_returned != 1) {
       GOTO (done);
    }
 
-   /* static-init reply_local to point into buffer */
-   if (!_mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Failed to decode reply BSON document.");
-      GOTO (done);
+   doc_len = (size_t) msg_len - reply_header_size;
+   reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
+   BSON_ASSERT (reply_buf);
+
+   if (doc_len != mongoc_stream_read (stream, (void *) reply_buf, doc_len,
+                                      doc_len, cluster->sockettimeoutms)) {
+      RUN_CMD_ERR_FMT (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                       "Failed to read %lu bytes from socket within"
+                       " %" PRIu32 " milliseconds.",
+                       (unsigned long) doc_len,
+                       cluster->sockettimeoutms);
    }
 
-   reply_local_initialized = true;
-   if (_mongoc_rpc_parse_command_error (&rpc,
-                                        cluster->client->error_api_version,
-                                        error)) {
+   if (_mongoc_populate_cmd_error (reply_ptr,
+                                   cluster->client->error_api_version,
+                                   error)) {
       GOTO (done);
    }
 
@@ -271,7 +303,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    if (monitored && callbacks->succeeded) {
       mongoc_apm_command_succeeded_init (&succeeded_event,
                                          bson_get_monotonic_time () - started,
-                                         &reply_local,
+                                         reply_ptr,
                                          command_name,
                                          request_id,
                                          cluster->operation_id,
@@ -284,22 +316,13 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    }
 
 done:
-   if (reply && reply_local_initialized) {
-      bson_copy_to (&reply_local, reply);
-      bson_destroy (&reply_local);
-   } else if (reply) {
-      bson_init (reply);
-   }
-
-   _mongoc_buffer_destroy (&buffer);
    _mongoc_array_destroy (&ar);
 
    if (!ret && error->code == 0) {
       /* generic error */
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid reply from server.");
+      RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                   MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                   "Invalid reply from server.");
    }
 
    if (!ret && monitored && callbacks->failed) {
@@ -315,6 +338,10 @@ done:
 
       callbacks->failed (&failed_event);
       mongoc_apm_command_failed_cleanup (&failed_event);
+   }
+
+   if (reply_ptr == &reply_local) {
+      bson_destroy (reply_ptr);
    }
 
    RETURN (ret);
