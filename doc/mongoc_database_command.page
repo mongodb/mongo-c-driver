@@ -38,7 +38,7 @@ mongoc_database_command (mongoc_database_t         *database,
       <tr><td><p>batch_size</p></td><td><p>Attempt to batch results from the server in groups of <code>batch_size</code> documents.</p></td></tr>
       <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command.</p></td></tr>
       <tr><td><p>fields</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing the fields to return. <code>NULL</code> for all fields.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>. Otherwise, the command uses mode <code>MONGOC_READ_PRIMARY</code>.</p></td></tr>
     </table>
   </section>
 
