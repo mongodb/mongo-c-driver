@@ -290,19 +290,21 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
+          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
           make TEST_ARGS="-d -F test-results.json" test
 
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
           make TEST_ARGS="-d -F test-results.json" test
 
       osx: &run_integration_tests_osx
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
           make TEST_ARGS="--no-fork -d -F test-results.json" test
 
 ## Other OS-specific attributes, grouped by OS

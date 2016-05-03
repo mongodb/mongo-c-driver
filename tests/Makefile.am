@@ -20,8 +20,6 @@ endif
 TEST_CFLAGS += \
 	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
-	-DBINARY_DIR="\"$(abs_srcdir)/tests/binary\"" \
-	-DCERT_TEST_DIR="\"$(abs_srcdir)/tests/x509gen\"" \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS) \

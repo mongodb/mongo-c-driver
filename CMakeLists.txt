@@ -169,7 +169,6 @@ endif ()
 
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
-add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
 if (APPLE)
    # Until CDRIVER-520.
    add_definitions(-Wno-deprecated-declarations)
