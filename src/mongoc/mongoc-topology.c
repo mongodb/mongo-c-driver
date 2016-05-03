@@ -329,7 +329,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t      *error)
 {
    mongoc_topology_scanner_t *scanner;
-   
+
    scanner = topology->scanner;
    mongoc_topology_scanner_start (scanner,
                                   (int32_t) topology->connect_timeout_msec,
@@ -443,7 +443,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                /* selection timeout will expire before min heartbeat passes */
                _mongoc_server_selection_error (
                   "No suitable servers found: "
-                  "(`minHeartbeatFrequencyMS` not reached yet)",
+                  "`serverselectiontimeoutms` timed out",
                   &scanner_error, error);
                goto FAIL;
             }
@@ -455,6 +455,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
             /* takes up to connectTimeoutMS. sets "last_scan", clears "stale" */
             _mongoc_topology_do_blocking_scan (topology, &scanner_error);
+            loop_end = topology->last_scan;
             tried_once = true;
          }
 

@@ -212,7 +212,7 @@ _test_server_selection (bool try_once)
    if (try_once) {
       ASSERT_CONTAINS (error.message, "serverSelectionTryOnce");
    } else {
-      ASSERT_CONTAINS (error.message, "minHeartbeatFrequencyMS");
+      ASSERT_CONTAINS (error.message, "serverselectiontimeoutms");
    }
 
    assert (client->topology->stale);
@@ -625,6 +625,7 @@ _test_connect_timeout (bool pooled, bool try_once)
 {
    const int32_t connect_timeout_ms = 200;
    const int32_t server_selection_timeout_ms = 10 * 1000;  /* 10 seconds */
+   const int64_t min_heartbeat_ms = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
 
    mock_server_t *servers[2];
    int i;
@@ -686,6 +687,12 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    server0_last_ismaster = start = bson_get_monotonic_time ();
 
+   if (mock_server_get_verbose (servers[0])) {
+      printf ("server on port %hu down, server on port %hu secondary\n",
+              mock_server_get_port (servers[0]),
+              mock_server_get_port (servers[1]));
+   }
+
    /* server 0 doesn't respond */
    request = mock_server_receives_ismaster (servers[0]);
    assert (request);
@@ -701,18 +708,20 @@ _test_connect_timeout (bool pooled, bool try_once)
       server0_in_cooldown = true;
       expected_duration_usec = 0;
 
-      while (expected_duration_usec < server_selection_timeout_ms) {
+      if (!pooled) {
+         /* single-threaded client starts counting minHeartbeatFrequencyMS
+          * AFTER each connection timeout */
+         expected_duration_usec = 1000 * connect_timeout_ms;
+      }
+
+      while (expected_duration_usec / 1000 + min_heartbeat_ms
+             < server_selection_timeout_ms) {
          request = mock_server_receives_ismaster (servers[1]);
          mock_server_replies_simple (request, secondary_response);
          request_destroy (request);
 
          duration_usec = bson_get_monotonic_time () - start;
-         expected_duration_usec += 1000 * (
-            connect_timeout_ms + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
-
-         if (!test_suite_valgrind ()) {
-            ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
-         }
+         expected_duration_usec += 1000 * min_heartbeat_ms;
 
          /* single client puts server 0 in cooldown for 5 sec */
          if (pooled || !server0_in_cooldown) {
@@ -720,6 +729,11 @@ _test_connect_timeout (bool pooled, bool try_once)
             assert (request);
             server0_last_ismaster = bson_get_monotonic_time ();
             request_destroy (request);  /* don't respond */
+            expected_duration_usec += 1000 * connect_timeout_ms;
+         }
+
+         if (!test_suite_valgrind ()) {
+            ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
          }
 
          server0_in_cooldown =
