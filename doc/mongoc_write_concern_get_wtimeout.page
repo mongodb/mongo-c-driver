@@ -26,7 +26,7 @@ mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern);
 
   <section id="description">
     <title>Description</title>
-    <p>Fetches the write timeout to use as part of the write concern. If the write has not completed before this timeout, an error will be returned.</p>
+    <p>Get the timeout in milliseconds that the server should wait before returning with a write concern timeout.</p>
     <p>A value of 0 indicates no write timeout.</p>
   </section>
 

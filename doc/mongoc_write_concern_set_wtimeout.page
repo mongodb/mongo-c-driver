@@ -28,7 +28,7 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
 
   <section id="description">
     <title>Description</title>
-    <p>Set the timeout in milliseconds that the server should wait before indicating that the write has failed. This is not the same as a socket timeout. A value of zero may be used to indicate no timeout.</p>
+    <p>Set the timeout in milliseconds that the server should wait before returning with a write concern timeout. This is not the same as a socket timeout. A value of zero may be used to indicate no write concern timeout.</p>
   </section>
 
 </page>

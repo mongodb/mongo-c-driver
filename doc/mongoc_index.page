@@ -58,8 +58,8 @@
     <links type="topic" style="2column" />
   </section>
 
-  <section id="error-api">
-    <title>Error API</title>
+  <section id="errors">
+    <title>Errors</title>
     <links type="topic" style="2column" />
   </section>
 
