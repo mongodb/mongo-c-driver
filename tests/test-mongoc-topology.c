@@ -945,20 +945,29 @@ test_topology_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
-   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/server_selection_try_once", test_server_selection_try_once, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option",
+                      test_server_selection_try_once_option, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once",
+                      test_server_selection_try_once, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_false",
+                      test_server_selection_try_once_false, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
    TestSuite_Add (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
-   TestSuite_AddFull (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/invalid_cluster_node",
+                      test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
-   TestSuite_AddFull (suite, "/Topology/cooldown/standalone", test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/cooldown/rs", test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
+                      test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/cooldown/rs",
+                      test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
+                      test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
+                      test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false",
+                      test_connect_timeout_try_once_false, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,
                       NULL, NULL, test_framework_skip_if_offline);
