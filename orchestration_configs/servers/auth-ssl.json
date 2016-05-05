@@ -10,9 +10,9 @@
         "port": 27017
     },
     "sslParams": {
-        "sslCAFile": "/tmp/mongoc-test-certificates/ca.pem",
+        "sslCAFile": "/tmp/orchestration-home/ca.pem",
         "sslOnNormalPorts": true,
-        "sslPEMKeyFile": "/tmp/mongoc-test-certificates/server.pem",
+        "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
         "sslWeakCertificateValidation": true
     }
 }
