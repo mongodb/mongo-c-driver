@@ -2577,6 +2577,7 @@ END_IGNORE_DEPRECATIONS;
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000,
                                     &query, NULL, NULL);
    assert (cursor);
+   assert (mongoc_cursor_is_alive (cursor));
    bson_destroy (&query);
 
    i = 0;
@@ -2584,12 +2585,14 @@ END_IGNORE_DEPRECATIONS;
    while (mongoc_cursor_next (cursor, &doc)) {
       assert (doc);
       i++;
+      assert (mongoc_cursor_is_alive (cursor));
    }
 
    assert (i == N_BSONS);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
+   assert (!mongoc_cursor_is_alive (cursor));
 
    mongoc_cursor_destroy (cursor);
 

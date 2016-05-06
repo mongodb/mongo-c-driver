@@ -298,7 +298,8 @@ again:
    }
 
 done:
-   RETURN (*bson ? true : false);
+   cursor->done = *bson ? false : true;
+   RETURN (!cursor->done);
 }
 
 

@@ -859,6 +859,55 @@ test_hint_pooled_primary (void)
 }
 
 
+static void
+test_tailable_alive (void)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   char *collection_name;
+   mongoc_collection_t *collection;
+   bool r;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   client = test_framework_client_new ();
+   database = mongoc_client_get_database (client, "test");
+   collection_name = gen_collection_name ("test");
+
+   collection = mongoc_database_get_collection (database, collection_name);
+   mongoc_collection_drop (collection, NULL);
+   mongoc_collection_destroy (collection);
+
+   collection = mongoc_database_create_collection (
+      database, collection_name,
+      tmp_bson ("{'capped': true, 'size': 10000}"), &error);
+
+   ASSERT_OR_PRINT (collection, error);
+
+   r = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
+      0, 0, 0, tmp_bson (NULL), NULL, NULL);
+
+   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+
+   /* still alive */
+   ASSERT (mongoc_cursor_is_alive (cursor));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   bson_free (collection_name);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -907,4 +956,5 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
+   TestSuite_Add (suite, "/Cursor/tailable/alive", test_tailable_alive);
 }

@@ -1498,11 +1498,7 @@ mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
 {
    BSON_ASSERT (cursor);
 
-   return (!cursor->sent ||
-           (!CURSOR_FAILED (cursor) &&
-            !cursor->done &&
-            (cursor->rpc.header.opcode == MONGOC_OPCODE_REPLY) &&
-            cursor->rpc.reply.cursor_id));
+   return !cursor->done;
 }
 
 
