@@ -73,6 +73,45 @@ collections.
 The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now properly
 parsed from the URI, see the driver's authentication documentation for details.
 
+
+mongo-c-driver 1.3.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.3.5. This release fixes a crash
+in mongoc_cleanup when an allocator had been set with bson_mem_set_vtable, and
+introduces a configure option MONGOC_NO_AUTOMATIC_GLOBALS which prevents code
+built with GCC from automatically calling mongoc_init and mongoc_cleanup when
+your code does not.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.3.4
+====================
+
+It is my pleasure to announce the MongoDB C Driver 1.3.4. This release fixes a
+security vulnerability: when a mongoc_client_t uses SSL and is disconnected, it
+failed to re-verify the server certificate after reconnecting. This flaw affects
+single clients, not pooled ones.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.3.3
 ====================
 
