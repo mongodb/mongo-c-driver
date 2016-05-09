@@ -1145,7 +1145,9 @@ test_collection_find_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/tailable/timeout/single",
                   test_tailable_timeout_single);
 #ifndef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
    TestSuite_Add (suite, "/Collection/tailable/timeout/pooled",
                   test_tailable_timeout_pooled);
+#endif
 #endif
 }

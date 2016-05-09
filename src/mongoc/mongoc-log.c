@@ -159,7 +159,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
    case MONGOC_LOG_LEVEL_ERROR:
    case MONGOC_LOG_LEVEL_CRITICAL:
    case MONGOC_LOG_LEVEL_WARNING:
-      stream = stderr;
+      stream = stdout;
       break;
    case MONGOC_LOG_LEVEL_MESSAGE:
    case MONGOC_LOG_LEVEL_INFO:
@@ -185,6 +185,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
             mongoc_log_level_str(log_level),
             log_domain,
             message);
+   fflush(stream);
 }
 
 bool

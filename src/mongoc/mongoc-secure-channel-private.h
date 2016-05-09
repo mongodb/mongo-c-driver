@@ -26,20 +26,44 @@
 #include "mongoc-ssl.h"
 #include "mongoc-stream-tls-secure-channel-private.h"
 
+#define SECURITY_WIN32
+#include <security.h>
+#include <schnlsp.h>
+#include <schannel.h>
 
 BSON_BEGIN_DECLS
 
 
 char *
-_mongoc_secure_channel_extract_subject  (const char                         *filename,
-                                         const char                         *passphrase);
+_mongoc_secure_channel_extract_subject      (const char                         *filename,
+                                             const char                         *passphrase);
 
 bool
-mongoc_secure_channel_setup_ca          (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                         mongoc_ssl_opt_t                   *opt);
-bool
-mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                         mongoc_ssl_opt_t                   *opt);
+mongoc_secure_channel_setup_ca              (mongoc_stream_tls_secure_channel_t *secure_channel,
+                                             mongoc_ssl_opt_t                   *opt);
+PCCERT_CONTEXT
+mongoc_secure_channel_setup_certificate     (mongoc_stream_tls_secure_channel_t *secure_channel,
+                                             mongoc_ssl_opt_t                   *opt);
+
+
+
+
+/* Both schannel buffer sizes must be > 0 */
+#define MONGOC_SCHANNEL_BUFFER_INIT_SIZE 4096
+#define MONGOC_SCHANNEL_BUFFER_FREE_SIZE 1024
+
+void
+_mongoc_secure_channel_init_sec_buffer      (SecBuffer                          *buffer,
+                                             unsigned long                       buf_type,
+                                             void                               *buf_data_ptr,
+                                             unsigned long                       buf_byte_size);
+
+void
+_mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc                      *desc,
+                                             SecBuffer                          *buffer_array,
+                                             unsigned long                       buffer_count);
+
+
 
 BSON_END_DECLS
 
