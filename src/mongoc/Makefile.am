@@ -188,12 +188,12 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto.c \
 	src/mongoc/mongoc-scram.c
 
-if ENABLE_LIBCRYPTO
+if ENABLE_CRYPTO_LIBCRYPTO
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto-openssl.c \
 	src/mongoc/mongoc-rand-openssl.c
 endif
-if ENABLE_COMMON_CRYPTO
+if ENABLE_CRYPTO_COMMON_CRYPTO
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto-common-crypto.c \
 	src/mongoc/mongoc-rand-common-crypto.c
@@ -210,18 +210,18 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
 
-if ENABLE_OPENSSL
+if ENABLE_SSL_OPENSSL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-openssl.c \
 	src/mongoc/mongoc-stream-tls-openssl.c \
 	src/mongoc/mongoc-stream-tls-openssl-bio.c
 endif
-if ENABLE_SECURE_TRANSPORT
+if ENABLE_SSL_SECURE_TRANSPORT
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-secure-transport.c \
 	src/mongoc/mongoc-stream-tls-secure-transport.c
 endif
-if ENABLE_SECURE_CHANNEL
+if ENABLE_SSL_SECURE_CHANNEL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-secure-channel.c \
 	src/mongoc/mongoc-stream-tls-secure-channel.c

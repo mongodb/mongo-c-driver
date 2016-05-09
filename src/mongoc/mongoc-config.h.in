@@ -20,13 +20,13 @@
 
 
 /*
- * MONGOC_ENABLE_SECURE_CHANNEL is set from configure to determine if we are
+ * MONGOC_ENABLE_SSL_SECURE_CHANNEL is set from configure to determine if we are
  * compiled with Native SSL support on Windows
  */
-#define MONGOC_ENABLE_SECURE_CHANNEL @MONGOC_ENABLE_SECURE_CHANNEL@
+#define MONGOC_ENABLE_SSL_SECURE_CHANNEL @MONGOC_ENABLE_SSL_SECURE_CHANNEL@
 
-#if MONGOC_ENABLE_SECURE_CHANNEL != 1
-#  undef MONGOC_ENABLE_SECURE_CHANNEL
+#if MONGOC_ENABLE_SSL_SECURE_CHANNEL != 1
+#  undef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #endif
 
 
@@ -42,46 +42,46 @@
 
 
 /*
- * MONGOC_ENABLE_SECURE_TRANSPORT is set from configure to determine if we are
+ * MONGOC_ENABLE_SSL_SECURE_TRANSPORT is set from configure to determine if we are
  * compiled with Native SSL support on Darwin
  */
-#define MONGOC_ENABLE_SECURE_TRANSPORT @MONGOC_ENABLE_SECURE_TRANSPORT@
+#define MONGOC_ENABLE_SSL_SECURE_TRANSPORT @MONGOC_ENABLE_SSL_SECURE_TRANSPORT@
 
-#if MONGOC_ENABLE_SECURE_TRANSPORT != 1
-#  undef MONGOC_ENABLE_SECURE_TRANSPORT
+#if MONGOC_ENABLE_SSL_SECURE_TRANSPORT != 1
+#  undef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 #endif
 
 
 /*
- * MONGOC_ENABLE_COMMON_CRYPTO is set from configure to determine if we are
+ * MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO is set from configure to determine if we are
  * compiled with Native Crypto support on Darwin
  */
-#define MONGOC_ENABLE_COMMON_CRYPTO @MONGOC_ENABLE_COMMON_CRYPTO@
+#define MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO @MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@
 
-#if MONGOC_ENABLE_COMMON_CRYPTO != 1
-#  undef MONGOC_ENABLE_COMMON_CRYPTO
+#if MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO != 1
+#  undef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
 #endif
 
 
 /*
- * MONGOC_ENABLE_OPENSSL is set from configure to determine if we are
+ * MONGOC_ENABLE_SSL_OPENSSL is set from configure to determine if we are
  * compiled with OpenSSL support.
  */
-#define MONGOC_ENABLE_OPENSSL @MONGOC_ENABLE_OPENSSL@
+#define MONGOC_ENABLE_SSL_OPENSSL @MONGOC_ENABLE_SSL_OPENSSL@
 
-#if MONGOC_ENABLE_OPENSSL != 1
-#  undef MONGOC_ENABLE_OPENSSL
+#if MONGOC_ENABLE_SSL_OPENSSL != 1
+#  undef MONGOC_ENABLE_SSL_OPENSSL
 #endif
 
 
 /*
- * MONGOC_ENABLE_LIBCRYPTO is set from configure to determine if we are
+ * MONGOC_ENABLE_CRYPTO_LIBCRYPTO is set from configure to determine if we are
  * compiled with OpenSSL support.
  */
-#define MONGOC_ENABLE_LIBCRYPTO @MONGOC_ENABLE_LIBCRYPTO@
+#define MONGOC_ENABLE_CRYPTO_LIBCRYPTO @MONGOC_ENABLE_CRYPTO_LIBCRYPTO@
 
-#if MONGOC_ENABLE_LIBCRYPTO != 1
-#  undef MONGOC_ENABLE_LIBCRYPTO
+#if MONGOC_ENABLE_CRYPTO_LIBCRYPTO != 1
+#  undef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
 #endif
 
 

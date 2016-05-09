@@ -1080,7 +1080,7 @@ test_tailable_timeout_single (void)
 }
 
 
-#ifndef MONGOC_ENABLE_SECURE_TRANSPORT
+#ifndef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 static void
 test_tailable_timeout_pooled (void)
 {
@@ -1144,7 +1144,7 @@ test_collection_find_install (TestSuite *suite)
                   test_getmore_await);
    TestSuite_Add (suite, "/Collection/tailable/timeout/single",
                   test_tailable_timeout_single);
-#ifndef MONGOC_ENABLE_SECURE_TRANSPORT
+#ifndef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
    TestSuite_Add (suite, "/Collection/tailable/timeout/pooled",
                   test_tailable_timeout_pooled);
 #endif

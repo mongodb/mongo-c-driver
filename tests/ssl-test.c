@@ -2,7 +2,7 @@
 #include <errno.h>
 
 #include "mongoc-config.h"
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #endif
@@ -80,7 +80,7 @@ ssl_test_server (void * ptr)
    assert (sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
    if (!ssl_stream) {
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();
 #else
       unsigned long err = 42;
@@ -104,7 +104,7 @@ ssl_test_server (void * ptr)
       unsigned long err = 43;
 
       MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
       MONGOC_ERROR("msg: %s\n", ERR_error_string(ERR_get_error(), NULL));
 #endif
       data->server_result->ssl_err = err;
@@ -202,7 +202,7 @@ ssl_test_client (void * ptr)
    assert(sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
    if (! ssl_stream) {
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();
 #else
       unsigned long err = 44;

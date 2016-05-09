@@ -1327,7 +1327,7 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 int test_framework_skip_if_no_auth (void)
 {
    char *user;
-#ifndef MONGOC_ENABLE_OPENSSL
+#ifndef MONGOC_ENABLE_SSL_OPENSSL
    if (test_framework_max_wire_version_at_least (3)) {
       /* requires SSL for SCRAM implementation, can't test auth */
       return 0;

@@ -3,7 +3,7 @@
 #include <mongoc-util-private.h>
 #include <mongoc-stream-tls.h>
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 # include <openssl/err.h>
 #endif
 
@@ -328,7 +328,7 @@ void
 test_stream_tls_error_install (TestSuite *suite)
 {
    /* TLS stream doesn't detect hangup promptly on Solaris for some reason */
-#ifndef MONGOC_ENABLE_SECURE_CHANNEL
+#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #if !defined(__sun) && !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif

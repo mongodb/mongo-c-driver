@@ -21,7 +21,7 @@
 # error "Only <mongoc.h> can be included directly."
 #endif
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <bson.h>
 
 BSON_BEGIN_DECLS
@@ -41,5 +41,5 @@ typedef struct
 
 BSON_END_DECLS
 
-#endif /* MONGOC_ENABLE_OPENSSL */
+#endif /* MONGOC_ENABLE_SSL_OPENSSL */
 #endif /* MONGOC_STREAM_TLS_OPENSSL_PRIVATE_H */

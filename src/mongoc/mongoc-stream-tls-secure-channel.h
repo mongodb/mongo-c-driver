@@ -21,7 +21,7 @@
 # error "Only <mongoc.h> can be included directly."
 #endif
 
-#ifdef MONGOC_ENABLE_SECURE_CHANNEL
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 #include <bson.h>
 
 BSON_BEGIN_DECLS
@@ -33,6 +33,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
 
 BSON_END_DECLS
 
-#endif /* MONGOC_ENABLE_SECURE_CHANNEL */
+#endif /* MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 #endif /* MONGOC_STREAM_TLS_SECURE_CHANNEL_H */
 

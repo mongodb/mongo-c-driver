@@ -22,11 +22,11 @@
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
 
-#if defined(MONGOC_ENABLE_OPENSSL)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #  include "mongoc-openssl-private.h"
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #  include "mongoc-secure-transport-private.h"
-#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 #  include "mongoc-secure-channel-private.h"
 #endif
 
@@ -56,11 +56,11 @@ mongoc_ssl_opt_get_default (void)
 char *
 mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 {
-#if defined(MONGOC_ENABLE_OPENSSL)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
 	return _mongoc_openssl_extract_subject (filename, passphrase);
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 	return _mongoc_secure_transport_extract_subject (filename, passphrase);
-#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 	return _mongoc_secure_channel_extract_subject (filename, passphrase);
 #endif
 }

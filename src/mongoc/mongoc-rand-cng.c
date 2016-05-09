@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_SECURE_CHANNEL
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 
 #include "mongoc-rand.h"
 #include "mongoc-rand-private.h"

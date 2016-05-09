@@ -1,7 +1,7 @@
 #include <mongoc.h>
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 # include <openssl/err.h>
 #endif
 
@@ -175,7 +175,7 @@ test_mongoc_tls_basic (void)
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 test_mongoc_tls_weak_cert_validation (void)
 {
@@ -356,7 +356,7 @@ test_mongoc_tls_ip (void)
 }
 
 
-#if !defined(_WIN32) && defined(MONGOC_ENABLE_OPENSSL)
+#if !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL)
 static void
 test_mongoc_tls_trust_dir (void)
 {
@@ -381,7 +381,7 @@ test_mongoc_tls_trust_dir (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
-#ifndef MONGOC_ENABLE_SECURE_CHANNEL
+#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
    TestSuite_Add (suite, "/TLS/commonName", test_mongoc_tls_common_name);
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
@@ -393,7 +393,7 @@ test_stream_tls_install (TestSuite *suite)
 
    TestSuite_Add (suite, "/TLS/expired", test_mongoc_tls_expired);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
    TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
    TestSuite_Add (suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
@@ -401,7 +401,7 @@ test_stream_tls_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/crl", test_mongoc_tls_crl);
 #endif
 
-#if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_OPENSSL)
+#if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL)
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
 #endif
 #endif

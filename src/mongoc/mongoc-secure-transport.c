@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_SECURE_TRANSPORT
+#ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 
 #include <bson.h>
 

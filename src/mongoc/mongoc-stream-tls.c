@@ -29,13 +29,13 @@
 #include "mongoc-trace.h"
 #include "mongoc-error.h"
 
-#if defined(MONGOC_ENABLE_OPENSSL)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
 # include "mongoc-stream-tls-openssl.h"
 # include "mongoc-openssl-private.h"
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 # include "mongoc-secure-transport-private.h"
 # include "mongoc-stream-tls-secure-transport.h"
-#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 # include "mongoc-secure-channel-private.h"
 # include "mongoc-stream-tls-secure-channel.h"
 #endif
@@ -191,11 +191,11 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 {
    BSON_ASSERT (base_stream);
 
-#if defined(MONGOC_ENABLE_OPENSSL)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, opt, client);
-#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, opt, client);
-#elif defined(MONGOC_ENABLE_SECURE_CHANNEL)
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    return mongoc_stream_tls_secure_channel_new (base_stream, opt, client);
 #else
 #error "Don't know how to create TLS stream"

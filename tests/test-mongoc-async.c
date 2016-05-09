@@ -160,7 +160,7 @@ test_ismaster (void)
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 test_ismaster_ssl (void)
 {
@@ -173,7 +173,7 @@ void
 test_async_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #endif
 }

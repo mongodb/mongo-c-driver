@@ -23,7 +23,7 @@
 #ifdef MONGOC_ENABLE_SSL
 # include "mongoc-scram-private.h"
 # include "mongoc-ssl.h"
-# ifdef MONGOC_ENABLE_OPENSSL
+# ifdef MONGOC_ENABLE_SSL_OPENSSL
 #  include "mongoc-openssl-private.h"
 # endif
 #endif
@@ -76,7 +76,7 @@ mongoc_sasl_mutex_free (void *mutex)
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init();
 #endif
 
@@ -126,7 +126,7 @@ mongoc_init (void)
 
 static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 {
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_cleanup();
 #endif
 

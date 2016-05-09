@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_COMMON_CRYPTO
+#ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
 
 #include "mongoc-rand.h"
 #include "mongoc-rand-private.h"

@@ -21,7 +21,7 @@
 # error "Only <mongoc.h> can be included directly."
 #endif
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <bson.h>
 
 #include <openssl/bio.h>
@@ -63,5 +63,5 @@ mongoc_stream_tls_openssl_bio_puts (BIO        *b,
 
 BSON_END_DECLS
 
-#endif /* MONGOC_ENABLE_OPENSSL */
+#endif /* MONGOC_ENABLE_SSL_OPENSSL */
 #endif /* MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H */

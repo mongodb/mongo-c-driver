@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 
 #include <bson.h>
 
@@ -675,4 +675,4 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    RETURN((mongoc_stream_t *)tls);
 }
 
-#endif /* MONGOC_ENABLE_OPENSSL */
+#endif /* MONGOC_ENABLE_SSL_OPENSSL */

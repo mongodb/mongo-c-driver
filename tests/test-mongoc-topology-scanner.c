@@ -118,7 +118,7 @@ test_topology_scanner ()
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 void
 test_topology_scanner_ssl ()
 {
@@ -295,7 +295,7 @@ void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_discovery",
