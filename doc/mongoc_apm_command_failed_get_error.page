@@ -26,7 +26,7 @@ mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
     <title>Parameters</title>
     <table>
       <tr><td><p>event</p></td><td><p>A <code xref="mongoc_apm_command_failed_t">mongoc_apm_command_failed_t</code>.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>A pointer to a <code xref="bson:bson_error_t">bson_error_t</code> that will be updated with the error's domain, code, and message.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A pointer to a <code xref="errors">bson_error_t</code> that will be updated with the error's domain, code, and message.</p></td></tr>
     </table>
   </section>
 

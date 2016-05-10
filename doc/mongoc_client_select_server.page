@@ -31,7 +31,7 @@ mongoc_client_select_server (mongoc_client_t           *client,
       <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
       <tr><td><p>for_writes</p></td><td><p>Whether to choose a server suitable for writes or reads.</p></td></tr>
       <tr><td><p>prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>. If <code>for_writes</code> is true, <code>prefs</code> must be NULL. Otherwise, use <code>prefs</code> to customize server selection, or pass NULL to use the read preference configured on the client.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

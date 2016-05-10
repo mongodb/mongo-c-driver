@@ -27,7 +27,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
     <table>
       <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
       <tr><td><p>name</p></td><td><p>A string containing the name of the collection.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

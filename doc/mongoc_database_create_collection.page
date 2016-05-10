@@ -29,7 +29,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
       <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
       <tr><td><p>name</p></td><td><p>The name of the new collection.</p></td></tr>
       <tr><td><p>options</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> for options to the <code>createDatabase</code> command.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>A location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

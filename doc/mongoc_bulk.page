@@ -75,7 +75,7 @@
   "writeConcernErrors" : [] }
 
 Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></code></synopsis>
-    <p>The <code xref="bson:bson_error_t">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code> and its code is 11000. </p>
+    <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code> and its code is 11000. </p>
   </section>
 
   <section id="bulk-write-bypass-document-validation">
@@ -89,7 +89,7 @@ Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></co
 Error: Document failed validation
 { "nInserted" : 2, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : [  ] }
 ]]></code></synopsis>
-    <p>The <code xref="bson:bson_error_t">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code>.</p>
+    <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code>.</p>
   </section>
 
   <section id="bulk-write-concern">
@@ -110,7 +110,7 @@ Error: Document failed validation
 ] }
 
 Error: waiting for replication timed out]]></code></synopsis>
-    <p>The <code xref="bson:bson_error_t">bson_error_t</code> domain is <code>MONGOC_ERROR_WRITE_CONCERN</code> if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied <em>yet</em>.</p>
+    <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_WRITE_CONCERN</code> if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied <em>yet</em>.</p>
   </section>
 
   <section id="bulk-unacknowledged">
