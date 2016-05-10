@@ -130,7 +130,6 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-version.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
-	tests/test-sasl.c \
 	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
@@ -141,6 +140,10 @@ test_libmongoc_SOURCES += \
 	tests/test-mongoc-stream-tls-error.c \
 	tests/ssl-test.c \
 	tests/ssl-test.h
+endif
+if ENABLE_SASL
+test_libmongoc_SOURCES += \
+	tests/test-sasl.c
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
 test_libmongoc_LDADD = $(TEST_LIBS)
