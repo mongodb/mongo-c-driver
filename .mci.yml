@@ -286,7 +286,7 @@ c_driver_variables:
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
-          make TEST_ARGS="--no-fork -d -F test-results.json" test
+          make TEST_ARGS="-d -F test-results.json" test
 
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common

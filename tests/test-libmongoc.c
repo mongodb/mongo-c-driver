@@ -215,7 +215,10 @@ log_handler (mongoc_log_level_t  log_level,
              const char         *message,
              void               *user_data)
 {
+   TestSuite *suite;
    log_entry_t *log_entry;
+
+   suite = (TestSuite *) user_data;
 
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
       if (capturing_logs) {
@@ -226,7 +229,9 @@ log_handler (mongoc_log_level_t  log_level,
          return;
       }
 
-      mongoc_log_default_handler (log_level, log_domain, message, NULL);
+      if (!suite->silent) {
+         mongoc_log_default_handler (log_level, log_domain, message, NULL);
+      }
    }
 }
 
@@ -1581,7 +1586,7 @@ main (int   argc,
 
    mongoc_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
-   mongoc_log_set_handler (log_handler, NULL);
+   mongoc_log_set_handler (log_handler, (void *) &suite);
 
 #ifdef MONGOC_ENABLE_SSL
    test_framework_global_ssl_opts_init ();

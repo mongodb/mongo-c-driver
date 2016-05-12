@@ -209,6 +209,7 @@ TestSuite_Init (TestSuite *suite,
    suite->name = strdup (name);
    suite->flags = 0;
    suite->prgname = strdup (argv [0]);
+   suite->silent = false;
 
    for (i = 0; i < argc; i++) {
       if (0 == strcmp ("-v", argv [i])) {
@@ -247,6 +248,9 @@ TestSuite_Init (TestSuite *suite,
       } else if ((0 == strcmp ("-h", argv [i])) ||
                  (0 == strcmp ("--help", argv [i]))) {
          suite->flags |= TEST_HELPONLY;
+      } else if ((0 == strcmp ("-s", argv [i])) ||
+                 (0 == strcmp ("--silent", argv [i]))) {
+         suite->silent = true;
       } else if ((0 == strcmp ("-l", argv [i]))) {
          if (argc - 1 == i) {
             _Print_StdErr ("-l requires an argument.\n");
@@ -258,6 +262,15 @@ TestSuite_Init (TestSuite *suite,
    
    if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
       suite->flags |= TEST_VALGRIND;
+   }
+
+   if (suite->silent) {
+      if (suite->outfile) {
+         _Print_StdErr ("Cannot combine -F with --silent\n");
+         abort ();
+      }
+
+      suite->flags &= ~(TEST_DEBUGOUTPUT | TEST_VERBOSE);
    }
 
    /* HACK: copy flags to global var */
@@ -330,7 +343,79 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
 }
 
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+static void
+_print_getlasterror_win (const char *msg)
+{
+   LPTSTR err_msg;
+
+   FormatMessage (
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,
+      GetLastError (),
+      MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+      &err_msg,
+      0,
+      NULL);
+
+   _Print_StdErr ("%s: %s\n", msg, err_msg);
+
+   LocalFree (err_msg);
+}
+
+
+static int
+TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
+                          Test *test)       /* IN */
+{
+   STARTUPINFO si;
+   PROCESS_INFORMATION pi;
+   char *cmdline;
+   DWORD exit_code = -1;
+
+   ZeroMemory (&si, sizeof (si));
+   si.cb = sizeof (si);
+   ZeroMemory (&pi, sizeof (pi));
+
+   cmdline = bson_strdup_printf ("%s --silent --no-fork -l %s",
+                                 suite->prgname, test->name);
+
+   if (!CreateProcess (NULL,
+                       cmdline,
+                       NULL,    /* Process handle not inheritable  */
+                       NULL,    /* Thread handle not inheritable   */
+                       FALSE,   /* Set handle inheritance to FALSE */
+                       0,       /* No creation flags               */
+                       NULL,    /* Use parent's environment block  */
+                       NULL,    /* Use parent's starting directory */
+                       &si,
+                       &pi)) {
+      _Print_StdErr ("CreateProcess failed (%d).\n", GetLastError ());
+      bson_free (cmdline);
+
+      return -1;
+   }
+
+   if (WaitForSingleObject (pi.hProcess, INFINITE) != WAIT_OBJECT_0) {
+      _print_getlasterror_win ("Couldn't await process");
+      goto done;
+   }
+
+   if (!GetExitCodeProcess (pi.hProcess, &exit_code)) {
+      _print_getlasterror_win ("Couldn't get exit code");
+      goto done;
+   }
+
+done:
+   CloseHandle (pi.hProcess);
+   CloseHandle (pi.hThread);
+   bson_free (cmdline);
+
+   return exit_code;
+}
+#else  /* Unix */
 static int
 TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                           Test *test)       /* IN */
@@ -355,11 +440,9 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       fd = open ("/dev/null", O_WRONLY);
       dup2 (fd, STDOUT_FILENO);
       close (fd);
-      srand (test->seed);
-      test->func (test->ctx);
-
-      TestSuite_Destroy (suite);
-      exit (0);
+      execl (suite->prgname, suite->prgname, "--no-fork",
+             "-l", test->name, (char *) 0);
+      exit (-1);
    }
 
    if (-1 == waitpid (child, &exit_code, 0)) {
@@ -393,21 +476,10 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        * TODO: If not verbose, close()/dup(/dev/null) for stdout.
        */
 
-      /* Tracing is superduper slow */
-#if defined(_WIN32)
-      srand (test->seed);
-
       if (suite->flags & TEST_DEBUGOUTPUT) {
          _Print_StdOut ("Begin %s\n", name);
       }
 
-      test->func (test->ctx);
-      status = 0;
-#else
-      if (suite->flags & TEST_DEBUGOUTPUT) {
-         _Print_StdOut ("Begin %s\n", name);
-      }
-      
       if ((suite->flags & TEST_NOFORK)) {
 #ifdef MONGOC_TRACE
          if (suite->flags & TEST_TRACE) {
@@ -424,9 +496,12 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       } else {
          status = TestSuite_RunFuncInChild (suite, test);
       }
-#endif
 
       capture_logs (false);
+
+      if (suite->silent) {
+         return status;
+      }
 
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
@@ -454,7 +529,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
       }
-   } else {
+   } else if (!suite->silent) {
       status = 0;
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
@@ -483,9 +558,10 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "\n"
 "Options:\n"
 "    -h, --help    Show this help menu.\n"
-"    -f, --no-fork Do not fork() before running tests.\n"
+"    -f, --no-fork Do not spawn a process per test (abort on first error).\n"
 "    -l NAME       Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
 "    -v            Be verbose with logs.\n"
+"    -s, --silent  Suppress all output.\n"
 "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
 "    -d            Print debug output (useful if a test hangs).\n"
 "    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
@@ -665,6 +741,10 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
       count--;
    }
 
+   if (suite->silent) {
+      return status;
+   }
+
    TestSuite_PrintJsonFooter (stdout);
    if (suite->outfile) {
       TestSuite_PrintJsonFooter (suite->outfile);
@@ -704,6 +784,10 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       }
    }
 
+   if (suite->silent) {
+      return status;
+   }
+
    TestSuite_PrintJsonFooter (stdout);
    if (suite->outfile) {
       TestSuite_PrintJsonFooter (suite->outfile);
@@ -723,9 +807,11 @@ TestSuite_Run (TestSuite *suite) /* IN */
       return 0;
    }
 
-   TestSuite_PrintJsonHeader (suite, stdout);
-   if (suite->outfile) {
-      TestSuite_PrintJsonHeader (suite, suite->outfile);
+   if (!suite->silent) {
+      TestSuite_PrintJsonHeader (suite, stdout);
+      if (suite->outfile) {
+         TestSuite_PrintJsonHeader (suite, suite->outfile);
+      }
    }
 
    if (suite->tests) {
@@ -734,7 +820,7 @@ TestSuite_Run (TestSuite *suite) /* IN */
       } else {
          failures += TestSuite_RunSerial (suite);
       }
-   } else {
+   } else if (!suite->silent) {
       TestSuite_PrintJsonFooter (stdout);
       if (suite->outfile) {
          TestSuite_PrintJsonFooter (suite->outfile);

@@ -205,14 +205,18 @@ The test runner can be configured by declaring the `TEST_ARGS` environment
 variable. The following options can be provided:
 
 ```
-    -h, --help   Show this help menu.
-    -f           Do not fork() before running tests.
-    -l NAME      Run test by name, e.g. "/Client/command" or "/Client/*".
-    -p           Do not run tests in parallel.
-    -v           Be verbose with logs.
+    -h, --help    Show this help menu.
+    -f, --no-fork Do not spawn a process per test (abort on first error).
+    -l NAME       Run test by name, e.g. "/Client/command" or "/Client/*".
+    -v            Be verbose with logs.
+    -s, --silent  Suppress all output.
+    -F FILENAME   Write test results (JSON) to FILENAME.
+    -d            Print debug output (useful if a test hangs).
+    -t, --trace   Enable mongoc tracing (useful to debug tests).
 ```
 
-`TEST_ARGS` is set to "-f -p" by default.
+`TEST_ARGS` is set to "--no-fork" by default, meaning that the suite aborts on
+the first test failure. Use "--fork" to continue after failures.
 
 To run just a specific portion of the test suite use the -l option like so:
 

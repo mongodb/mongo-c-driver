@@ -295,6 +295,7 @@ struct _TestSuite
    Test *tests;
    FILE *outfile;
    int flags;
+   int silent;
 };
 
 
