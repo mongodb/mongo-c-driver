@@ -578,14 +578,28 @@ functions:
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
         export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
-        trap "set +o errexit; mongo-orchestration stop; cat $MONGO_ORCHESTRATION_HOME/server.log" EXIT
+
+        # Run this function on exit.
+        done=false
+        finish () {
+           set +o errexit
+           if [ "$done" = false ]; then
+              # There was an error.
+              mongo-orchestration stop
+              cat $MONGO_ORCHESTRATION_HOME/server.log
+           fi
+        }
+
+        trap finish EXIT
+
         ${set_connection_flags}
         ${start_mongo_orchestration}
         ${start_topology}
+        set +o errexit
         ${run_integration_tests}
 
-        echo "Stopping Mongo Orchestration..."
         mongo-orchestration stop
+        done=true
 
   "report results" :
     command: attach.results
