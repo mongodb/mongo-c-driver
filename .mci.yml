@@ -232,7 +232,7 @@ c_driver_variables:
           cmake="/cygdrive/c/cmake/bin/cmake"
           dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
           cd src/libbson
-          echo "GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
+          echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
@@ -255,8 +255,7 @@ c_driver_variables:
     integration_tests:
       msvc: &run_integration_tests_msvc
         run_integration_tests: |
-          export PATH=$PATH:`pwd`/tests
-          export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+          export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           ./Debug/test-libmongoc.exe -d -F test-results.json
