@@ -962,12 +962,14 @@ test_topology_install (TestSuite *suite)
                       test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/cooldown/rs",
                       test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
+#ifndef _WIN32
    TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
                       test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
                       test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false",
                       test_connect_timeout_try_once_false, NULL, NULL, test_framework_skip_if_slow);
+#endif
    TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,
                       NULL, NULL, test_framework_skip_if_offline);
