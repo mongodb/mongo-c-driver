@@ -1455,7 +1455,6 @@ _mongoc_client_monitor_op_killcursors_failed (
    int64_t                 operation_id)
 {
    mongoc_client_t *client;
-   bson_t doc;
    mongoc_apm_command_failed_t event;
 
    ENTRY;
@@ -1479,7 +1478,6 @@ _mongoc_client_monitor_op_killcursors_failed (
    client->apm_callbacks.failed (&event);
 
    mongoc_apm_command_failed_cleanup (&event);
-   bson_destroy (&doc);
 }
 
 
