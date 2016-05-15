@@ -24,7 +24,7 @@ server_selection_error_dns (const char *uri_str,
 
    if (!assert_as) {
       /* since we expect to fail, fail fast */
-      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1);
+      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
    }
 
    if (pooled) {
