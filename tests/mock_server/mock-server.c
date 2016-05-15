@@ -23,7 +23,6 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
-#include "mongoc-stream-tls.h"
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"
