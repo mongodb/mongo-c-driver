@@ -31,7 +31,7 @@
 
 
 /* /Async/ismaster_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
-#define TIMEOUT 500
+#define TIMEOUT 5000
 
 
 struct _mock_server_t
@@ -1507,7 +1507,7 @@ main_thread (void *data)
    for (; ;) {
       client_sock = mongoc_socket_accept_ex (
             server->sock,
-            bson_get_monotonic_time () + TIMEOUT,
+            bson_get_monotonic_time () + 100 * 1000,
             &port);
 
       mongoc_mutex_lock (&server->mutex);
@@ -1633,7 +1633,7 @@ again:
       GOTO(failure);
    }
 
-   if (_mongoc_buffer_fill (&buffer, client_stream, 4, TIMEOUT, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, client_stream, 4, 100, &error) == -1) {
       GOTO (again);
    }
 
