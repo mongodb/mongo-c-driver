@@ -705,9 +705,9 @@ mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_set_rand_delay --
+ * mock_server_get_uptime_sec --
  *
- *       Whether to delay a random duration before responding.
+ *       How long since mock_server_run() was called.
  *
  *--------------------------------------------------------------------------
  */
