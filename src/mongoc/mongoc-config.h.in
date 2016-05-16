@@ -108,6 +108,16 @@
 
 
 /*
+ * Use system crypto profile
+ */
+#define MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE @MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@
+
+#if MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE != 1
+#  undef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
+#endif
+
+
+/*
  * MONGOC_ENABLE_SASL is set from configure to determine if we are
  * compiled with SASL support.
  */
@@ -152,6 +162,5 @@
 #if MONGOC_NO_AUTOMATIC_GLOBALS != 1
 #  undef MONGOC_NO_AUTOMATIC_GLOBALS
 #endif
-
 
 #endif /* MONGOC_CONFIG_H */

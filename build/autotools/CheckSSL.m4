@@ -6,6 +6,13 @@ AC_ARG_ENABLE([ssl],
               [enable_ssl=auto])
 AC_MSG_RESULT([$enable_ssl])
 
+AC_MSG_CHECKING([whether to use system crypto profile])
+AC_ARG_ENABLE(crypto-system-profile,
+    AC_HELP_STRING([--enable-crypto-system-profile], [use system crypto profile (OpenSSL only) [default=no]]),
+    [],
+    [enable_crypto_system_profile="no"])
+AC_MSG_RESULT([$enable_crypto_system_profile])
+
 AS_IF([test "$enable_ssl" != "no"],[
    AS_IF([test "$enable_ssl" != "darwin"],[
       PKG_CHECK_MODULES(SSL, [openssl], [enable_openssl=auto], [
@@ -84,6 +91,15 @@ else
    AC_SUBST(MONGOC_ENABLE_CRYPTO, 0)
    AC_SUBST(MONGOC_ENABLE_CRYPTO_LIBCRYPTO, 0)
    AC_SUBST(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO, 0)
+fi
+if test "x$enable_crypto_system_profile" = xyes; then
+   if test "$enable_ssl" = "openssl"; then
+      AC_SUBST(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE, 1)
+   else
+      AC_MSG_ERROR([--enable-crypto-system-profile only available with OpenSSL.])
+   fi
+else
+    AC_SUBST(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE, 0)
 fi
 
 AM_CONDITIONAL([ENABLE_SSL],                  [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"])
