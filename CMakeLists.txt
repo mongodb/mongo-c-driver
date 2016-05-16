@@ -13,6 +13,7 @@ option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
+option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -79,6 +80,8 @@ set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 0)
 set (MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO 0)
 set (MONGOC_ENABLE_CRYPTO_CNG 0)
 
+set (MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE 0)
+
 if (OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
@@ -94,6 +97,14 @@ elseif (SECURE_CHANNEL)
    set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
    set (MONGOC_ENABLE_CRYPTO_CNG 1)
+endif ()
+
+if (ENABLE_CRYPTO_SYSTEM_PROFILE)
+   if (OPENSSL_FOUND)
+      set (MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE 1)
+   else ()
+      message (FATAL_ERROR "ENABLE_CRYPTO_SYSTEM_PROFILE only available with OpenSSL")
+   endif ()
 endif ()
 
 if (ENABLE_SASL)
