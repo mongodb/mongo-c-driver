@@ -194,10 +194,10 @@ $ make man html</screen>
 
     <p>Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, <code>cmake</code> is required to generate Visual Studio project files.</p>
 
-    <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
+    <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft.</p>
 
     <screen>cd mongo-c-driver-@MONGOC_RELEASED_VERSION@\src\libbson
-cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
+cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
     <p>(Run <code>cmake -LH .</code> for a list of other options.)</p>
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>
@@ -213,7 +213,7 @@ cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</sc
     <p>Now let's do the same for the MongoDB C driver.</p>
 
     <screen>cd mongo-c-driver-@MONGOC_RELEASED_VERSION@
-cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>
 
