@@ -572,7 +572,7 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_SOCKET,
-                   "TLS handshake failed.");
+                   "TLS handshake failed: %s", ERR_error_string (ERR_get_error(), NULL));
 
    RETURN(false);
 }

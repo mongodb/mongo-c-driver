@@ -202,6 +202,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
+      MONGOC_WARNING ("SSL Certification verification failed: %s", ERR_error_string(ERR_get_error(), NULL));
       return false;
    }
 
