@@ -274,6 +274,11 @@ c_driver_variables:
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+
+          # This libtool wrapper script was built in a unique dir like
+          # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongo-c-driver",
+          # replace its absolute path with "." so it can run in the CWD.
+          sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongo-c-driver/./g' test-libmongoc
           make TEST_ARGS="-d -F test-results.json" test
 
       osx: &run_integration_tests_osx
