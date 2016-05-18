@@ -3,6 +3,11 @@
       id="index">
   <title>MongoDB C Driver</title>
   <subtitle>A Cross Platform MongoDB Client Library for C</subtitle>
+  <section id="introduction">
+    <title>Introduction</title>
+    <p>The MongoDB C Driver, also known as "libmongoc", is a library for using MongoDB from C applications, and for writing MongoDB drivers in higher-level languages.</p>
+    <p>It depends on <link xref="bson:index">libbson</link> to generate and parse BSON documents, the native data format of MongoDB.</p>
+  </section>
 
   <section id="installation">
     <title>Installation</title>
