@@ -1,24 +1,8 @@
 libmongoc (1.3.5-1) unstable; urgency=low
 
+  [ A. Jesse Jiryu Davis]
   * Upstream release
-
- -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Wed, 30 Mar 2016 21:16:23 +0000
-
-libmongoc (1.3.4-1) unstable; urgency=low
-
-  * Upstream release
-
- -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Wed, 30 Mar 2016 19:15:51 +0000
-
-libmongoc (1.3.3-1) unstable; urgency=low
-
-  * Upstream release
-
- -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Tue, 08 Mar 2016 22:29:31 +0000
-
-libmongoc (1.3.1-2~1.gbp00ef95) UNRELEASED; urgency=medium
-
-  ** SNAPSHOT build @00ef931b6d9fe73e9d53bcf00c632df491863493 **
+  * Updated to Standards-Version 3.9.8 (no changes)
 
   [ Roberto C. Sanchez ]
   * Adjust which files get installed into the binary packages:
@@ -27,10 +11,10 @@ libmongoc (1.3.1-2~1.gbp00ef95) UNRELEASED; urgency=medium
   * Make sure man pages are picked up from the proper directory
 
   [ Ondřej Surý ]
-  * Add stricter dependency on libbson >= 1.3.1
+  * Add stricter dependency on libbson
   * Remove -dbg package and add a simple BC compatible dbgsym support
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 19 Feb 2016 10:41:15 +0100
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Tue, 17 May 2016 12:12:28 -0400
 
 libmongoc (1.3.1-1) experimental; urgency=low
 
