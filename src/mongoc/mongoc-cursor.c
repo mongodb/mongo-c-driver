@@ -1230,6 +1230,14 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
       return false;
    }
 
+   if (cursor->done) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Cannot advance a completed or failed cursor.");
+      return false;
+   }
+
    /*
     * We cannot proceed if another cursor is receiving results in exhaust mode.
     */
@@ -1282,14 +1290,6 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    if (bson) {
       *bson = NULL;
-   }
-
-   if (cursor->done || CURSOR_FAILED (cursor)) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "Cannot advance a completed or failed cursor.");
-      RETURN (false);
    }
 
    /*

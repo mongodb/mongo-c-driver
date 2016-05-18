@@ -2590,9 +2590,16 @@ END_IGNORE_DEPRECATIONS;
 
    assert (i == N_BSONS);
 
+   assert (!mongoc_cursor_error (cursor, &error));
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
    assert (!mongoc_cursor_is_alive (cursor));
+   /* mongoc_cursor_next after done is considered an error */
+   assert (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot advance a completed or failed cursor")
 
    mongoc_cursor_destroy (cursor);
 
