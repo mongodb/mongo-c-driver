@@ -591,7 +591,13 @@ functions:
            if [ "$done" = false ]; then
               # There was an error.
               mongo-orchestration stop
-              cat $MONGO_ORCHESTRATION_HOME/server.log
+              echo "ORCHESTRATION LOG"
+              if [ ${windows|false} = true ]; then
+                cat /cygdrive/c/tmp/orchestration-home/server.log
+              else
+                cat /tmp/orchestration-home/server.log
+              fi
+              echo "  END OF ORCHESTRATION LOG"
            fi
         }
 
