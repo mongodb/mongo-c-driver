@@ -830,9 +830,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
          bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
       }
 
-      MONGOC_INFO ("SASL: authenticating \"%s\" (step %d)",
-                   mongoc_uri_get_username (cluster->uri),
-                   sasl.step);
+      TRACE ("SASL: authenticating (step %d)", sasl.step);
 
       if (!mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
                                        "$external", &cmd, &reply, error)) {
@@ -854,8 +852,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
           !(conv_id = bson_iter_int32 (&iter)) ||
           !bson_iter_init_find (&iter, &reply, "payload") ||
           !BSON_ITER_HOLDS_UTF8 (&iter)) {
-         MONGOC_INFO ("SASL: authentication failed for \"%s\"",
-                      mongoc_uri_get_username (cluster->uri));
+         MONGOC_DEBUG ("SASL: authentication failed");
          bson_destroy (&reply);
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -881,8 +878,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
       bson_destroy (&reply);
    }
 
-   MONGOC_INFO ("SASL: \"%s\" authenticated",
-                mongoc_uri_get_username (cluster->uri));
+   TRACE ("%s", "SASL: authenticated");
 
    ret = true;
 
@@ -990,7 +986,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
 
    username_from_uri = mongoc_uri_get_username (cluster->uri);
    if (username_from_uri) {
-      MONGOC_INFO ("X509: got username (%s) from URI", username_from_uri);
+      TRACE ("%s", "X509: got username from URI");
    } else {
       if (!cluster->client->ssl_opts.pem_file) {
          bson_set_error (error,
@@ -1011,7 +1007,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
          return false;
       }
 
-      MONGOC_INFO ("X509: got username (%s) from certificate", username_from_subject);
+      TRACE ("X509: got username from certificate");
    }
 
    bson_init (&cmd);
@@ -1088,9 +1084,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
          bson_append_binary (&cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
       }
 
-      MONGOC_INFO ("SCRAM: authenticating \"%s\" (step %d)",
-                   mongoc_uri_get_username (cluster->uri),
-                   scram.step);
+      TRACE ("SCRAM: authenticating (step %d)", scram.step);
 
       if (!mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
                                        auth_source, &cmd, &reply, error)) {
@@ -1118,8 +1112,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
           !BSON_ITER_HOLDS_BINARY(&iter)) {
          const char *errmsg = "Received invalid SCRAM reply from MongoDB server.";
 
-         MONGOC_INFO ("SCRAM: authentication failed for \"%s\"",
-                      mongoc_uri_get_username (cluster->uri));
+         MONGOC_DEBUG ("SCRAM: authentication failed");
 
          if (bson_iter_init_find (&iter, &reply, "errmsg") &&
                BSON_ITER_HOLDS_UTF8 (&iter)) {
@@ -1150,8 +1143,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
       bson_destroy (&reply);
    }
 
-   MONGOC_INFO ("SCRAM: \"%s\" authenticated",
-                mongoc_uri_get_username (cluster->uri));
+   TRACE ("SCRAM: authenticated");
 
    ret = true;
 
