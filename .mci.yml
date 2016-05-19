@@ -151,7 +151,11 @@ c_driver_variables:
         start_mongo_orchestration: |
           echo "Starting Mongo Orchestration..."
           export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
-          mkdir -p /cygdrive/c/$MONGO_ORCHESTRATION_HOME
+          if [ -f "/cygdrive/c/tmp/orchestration-home/server.pid" ]; then
+            echo "Prior Mongo Orchestration?"
+            mongo-orchestration stop
+          fi
+          mkdir -p /cygdrive/c/tmp/orchestration-home
           rm -f /cygdrive/c/$MONGO_ORCHESTRATION_HOME/server.pid
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern
@@ -160,6 +164,10 @@ c_driver_variables:
         start_mongo_orchestration: |
           echo "Starting Mongo Orchestration..."
           export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
+          if [ -f /tmp/orchestration-home/server.pid ]; then
+            echo "Prior Mongo Orchestration?"
+            mongo-orchestration stop
+          fi
           mkdir -p $MONGO_ORCHESTRATION_HOME
           rm -f $MONGO_ORCHESTRATION_HOME/server.pid
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
