@@ -111,7 +111,6 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-#include "op-reply-header.def"
 #include "op-update.def"
 
 
@@ -300,7 +299,6 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-#include "op-reply-header.def"
 #include "op-update.def"
 
 
