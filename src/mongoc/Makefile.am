@@ -13,6 +13,7 @@ MONGOC_DEF_FILES = \
 	src/mongoc/op-msg.def \
 	src/mongoc/op-query.def \
 	src/mongoc/op-reply.def \
+	src/mongoc/op-reply-header.def \
 	src/mongoc/op-update.def \
 	src/mongoc/mongoc-counters.defs
 
