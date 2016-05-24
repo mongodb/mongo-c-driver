@@ -155,6 +155,7 @@ c_driver_variables:
             echo "Prior Mongo Orchestration?"
             mongo-orchestration stop
           fi
+          echo 'foo' > /cygdrive/c/tmp/orchestration-home/server.log
           mkdir -p /cygdrive/c/tmp/orchestration-home
           rm -f /cygdrive/c/$MONGO_ORCHESTRATION_HOME/server.pid
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
