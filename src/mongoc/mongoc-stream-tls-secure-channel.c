@@ -979,19 +979,23 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
       TRACE ("Ignoring hostname verification");
    }
 
+   if (opt->ca_file) {
+      mongoc_secure_channel_setup_ca (secure_channel, opt);
+   }
+
+   if (opt->crl_file) {
+      mongoc_secure_channel_setup_crl (secure_channel, opt);
+   }
+
    if (opt->pem_file) {
 	  PCCERT_CONTEXT cert = mongoc_secure_channel_setup_certificate (secure_channel, opt);
 
       if (cert) {
          schannel_cred.cCreds = 1;
          schannel_cred.paCred = &cert;
-         TRACE ("Found client certificate");
-      } else {
-         MONGOC_WARNING ("Error retrieving certificate");
       }
    }
 
-   mongoc_secure_channel_setup_ca (secure_channel, opt);
 
    schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT;
 
@@ -1024,10 +1028,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
 
    if (opt->ca_dir) {
       MONGOC_ERROR ("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against Secure Channel");
-   }
-
-   if (opt->crl_file) {
-      MONGOC_ERROR ("Setting mongoc_ssl_opt_t.crl_file has no effect when built against Secure Channel");
    }
 
 
