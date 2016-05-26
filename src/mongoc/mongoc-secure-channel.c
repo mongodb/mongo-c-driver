@@ -237,8 +237,6 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    PCCERT_CONTEXT cert = NULL;
    DWORD encrypted_cert_len = 0;
    LPBYTE encrypted_cert = NULL;
-   DWORD cbKeyBlob = 0;
-   LPBYTE pbKeyBlob = NULL;
 
    file = fopen (opt->ca_file, "r");
    if (!file) {
@@ -250,7 +248,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (length < 1) {
-      MONGOC_WARNING ("Couldn't determin file size of '%s'", opt->ca_file);
+      MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->ca_file);
       return false;
    }
 
@@ -725,7 +723,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
             LPTSTR msg = NULL;
             FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_ARGUMENT_ARRAY,
                            NULL, GetLastError(), LANG_NEUTRAL, (LPTSTR)&msg, 0, NULL );
-            MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: ",
+            MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: %s",
                           (sspi_status >> 16) & 0xffff, sspi_status & 0xffff, msg);
             LocalFree (msg);
          }

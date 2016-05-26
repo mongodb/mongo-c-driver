@@ -738,7 +738,6 @@ _mongoc_stream_tls_secure_channel_readv (mongoc_stream_t *stream,
    mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *)tls->ctx;
    ssize_t ret = 0;
    size_t i;
-   size_t read_ret;
    size_t iov_pos = 0;
    int64_t now;
    int64_t expire = 0;
@@ -1020,7 +1019,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
       LPTSTR msg = NULL;
       FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_ARGUMENT_ARRAY,
             NULL, GetLastError(), LANG_NEUTRAL, (LPTSTR)&msg, 0, NULL );
-      MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: ",
+      MONGOC_ERROR ("Failed to initialize security context, error code: 0x%04X%04X: '%s'",
                     (sspi_status >> 16) & 0xffff, sspi_status & 0xffff, msg);
       LocalFree (msg);
       RETURN (NULL);
