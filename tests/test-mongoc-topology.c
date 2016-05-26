@@ -774,12 +774,13 @@ _test_connect_timeout (bool pooled, bool try_once)
 }
 
 
+#if !defined(__sun) // CDRIVER-1305
 static void
 test_connect_timeout_pooled (void *ctx)
 {
    _test_connect_timeout (true, false);
 }
-
+#endif
 
 static void
 test_connect_timeout_single(void *ctx)
@@ -963,8 +964,10 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Topology/cooldown/rs",
                       test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
 #ifndef _WIN32
+#if !defined(__sun) // CDRIVER-1305
    TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
                       test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
+#endif
    TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
                       test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false",
