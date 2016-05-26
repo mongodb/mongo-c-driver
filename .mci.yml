@@ -92,6 +92,9 @@ c_driver_variables:
     ubuntu1404: &mongo_url_ubuntu1404
       mongo_url_platform: "ubuntu1404-"
       <<: *mongo_url_linux64
+    windows64ssl: &mongo_url_windows64ssl
+      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-"
+      mongo_url_platform: ""
     windows64: &mongo_url_windows64
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-"
       mongo_url_platform: ""
@@ -271,6 +274,13 @@ c_driver_variables:
           export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
           export MONGOC_TEST_SSL_PEM_FILE=/tmp/orchestration-home/client.pem
           export MONGOC_TEST_SSL_CA_FILE=/tmp/orchestration-home/ca.pem
+
+      winssl: &connection_flags_winssl
+        set_connection_flags: |
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/cygdrive/c/tmp/orchestration-home/ca.pem --sslPEMKeyFile=/cygdrive/c/tmp/orchestration-home/client.pem"
+          export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
+          export MONGOC_TEST_SSL_PEM_FILE=/cygdrive/c/tmp/orchestration-home/client.pem
+          export MONGOC_TEST_SSL_CA_FILE=/cygdrive/c/tmp/orchestration-home/ca.pem
 
     integration_tests:
       msvc: &run_integration_tests_msvc
@@ -584,9 +594,15 @@ functions:
       script: |
         set -o errexit
         set -o verbose
-        mkdir -p /tmp/orchestration-home/lib
-        cp -rf tests/x509gen/* /tmp/orchestration-home
-        cp -f /tmp/orchestration-home/client.pem /tmp/orchestration-home/lib/
+        if [ ${windows|false} = true ]; then
+           mkdir -p /cygdrive/c/tmp/orchestration-home/lib
+           cp -rf tests/x509gen/* /cygdrive/c/tmp/orchestration-home
+           cp -f /cygdrive/c/tmp/orchestration-home/client.pem /cygdrive/c/tmp/orchestration-home/lib/
+        else
+           mkdir -p /tmp/orchestration-home/lib
+           cp -rf tests/x509gen/* /tmp/orchestration-home
+           cp -f /tmp/orchestration-home/client.pem /tmp/orchestration-home/lib/
+        fi
 
   "run integration tests" :
     command: shell.exec
@@ -1314,11 +1330,12 @@ buildvariants:
   display_name: "Win VS2013 64 NativeSSL"
   expansions:
     <<: *msvc_common
-    <<: *mongo_url_windows64
+    <<: *mongo_url_windows64ssl
     <<: *with_msvc2013_nativessl
+    <<: *ssl
   run_on:
   - windows-64-vs2013-compile
-  tasks: *topology_tests
+  tasks: *ssl_tests
 
 - name: windows-32-vs2015
   display_name: "Win VS2015 32"
@@ -1344,11 +1361,12 @@ buildvariants:
   display_name: "Win VS2015 64 NativeSSL"
   expansions:
     <<: *msvc_common
-    <<: *mongo_url_windows64
+    <<: *mongo_url_windows64ssl
     <<: *with_msvc2015_nativessl
+    <<: *ssl
   run_on:
   - windows-64-vs2015-compile
-  tasks: *topology_tests
+  tasks: *ssl_tests
 
 #######################################
 #        Solaris Buildvariant         #
