@@ -270,7 +270,7 @@ c_driver_variables:
     connection_flags:
       ssl: &connection_flags_ssl
         set_connection_flags: |
-          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/tmp/orchestration-home/ca.pem"
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/tmp/orchestration-home/ca.pem --sslPEMKeyFile=/tmp/orchestration-home/client.pem"
           export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
           export MONGOC_TEST_SSL_PEM_FILE=/tmp/orchestration-home/client.pem
           export MONGOC_TEST_SSL_CA_FILE=/tmp/orchestration-home/ca.pem

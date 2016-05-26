@@ -11,8 +11,7 @@
     },
     "sslParams": {
         "sslCAFile": "/tmp/orchestration-home/ca.pem",
-        "sslOnNormalPorts": true,
         "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
-        "sslWeakCertificateValidation": true
+        "sslMode": "requireSSL"
     }
 }
