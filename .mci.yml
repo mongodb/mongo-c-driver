@@ -93,7 +93,7 @@ c_driver_variables:
       mongo_url_platform: "ubuntu1404-"
       <<: *mongo_url_linux64
     windows64ssl: &mongo_url_windows64ssl
-      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-2008plus-ssl-"
+      mongo_url_prefix: "http://downloads.10gen.com/win32/mongodb-win32-x86_64-enterprise-windows-64-"
       mongo_url_platform: ""
     windows64: &mongo_url_windows64
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-"
