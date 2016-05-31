@@ -197,7 +197,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -205,7 +205,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-ssl=darwin --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -213,7 +213,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -221,7 +221,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -232,7 +232,7 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -240,17 +240,17 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       msvc: &compile_msvc
         compile_script: |
-          file "tests/binary/gridfs-large.dat"
           set -o errexit
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
           dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
+          git submodule update --init
           cd src/libbson
           echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
@@ -683,11 +683,11 @@ tasks:
             content_type: ${content_type|application/x-gzip}
 
     - name: compile
-      depends_on:
-        - name: "releasearchive"
-          variant: ubuntu-1404-64-release
       commands:
-        - func: "fetch releasearchive"
+        - func: "fetch source"
+        - command: git.apply_patch
+          params:
+            directory: "mongo-c-driver"
         - func: "compile function"
         - command: shell.exec
           params:
