@@ -60,15 +60,12 @@ c_driver_variables:
     - name: "compile"
     - name: "integration-test-latest"
     - name: "integration-test-latest-no-auth"
-    - name: "integration-test-latest-ssl"
-    - name: "integration-test-latest-ssl-no-auth"
     - name: "integration-test-latest-replica-set"
     - name: "integration-test-latest-replica-set-no-auth"
     - name: "integration-test-latest-sharded"
     - name: "integration-test-latest-sharded-no-auth"
 
-## We don't have OSX SSL (Enterprise) Builds until 3.1.x
-  ssl_osx_test_list: &ssl_osx_tests
+  ssl_tests_test_list: &ssl_tests_latest
     - name: "compile"
     - name: "integration-test-latest-ssl"
     - name: "integration-test-latest-ssl-no-auth"
@@ -1206,6 +1203,17 @@ buildvariants:
      - rhel71-power8-test
   tasks: *topology_tests_latest
 
+- name: rhel-71-power8-ssl
+  display_name: "RHEL 7.1 Power8 SSL"
+  expansions:
+    <<: *cflags_power8
+    <<: *mongo_url_ppc64le_rhel71
+    <<: *unix_common
+    <<: *ssl
+  run_on:
+     - rhel71-power8-test
+  tasks: *ssl_tests_latest
+
 ## Ubuntu 1404
 
 - name: ubuntu-1404-64
@@ -1264,7 +1272,7 @@ buildvariants:
     <<: *ssl
   run_on:
   - osx-1010
-  tasks: *ssl_osx_tests
+  tasks: *ssl_tests_latest
 
 - name: os-x-1010-64-nativessl
   display_name: "OSX 10.10 clang 64 NativeSSL"
@@ -1280,7 +1288,7 @@ buildvariants:
     <<: *ssl
   run_on:
   - osx-1010
-  tasks: *ssl_osx_tests
+  tasks: *ssl_tests_latest
 
 #######################################
 #        Windows Buildvariants        #
