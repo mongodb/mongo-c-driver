@@ -226,7 +226,7 @@ get_bson_from_json_file(char *filename)
    bson_error_t error;
    const char *buffer;
 
-   file = fopen(filename, "r");
+   file = fopen(filename, "rb");
    if (!file) {
       return NULL;
    }

@@ -63,7 +63,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    LPBYTE encrypted_private = NULL;
 
 
-   file = fopen (opt->pem_file, "r");
+   file = fopen (opt->pem_file, "rb");
    if (!file) {
       MONGOC_WARNING ("Couldn't open file '%s'", opt->pem_file);
       return false;
@@ -238,7 +238,7 @@ mongoc_secure_channel_setup_ca (mongoc_stream_tls_secure_channel_t *secure_chann
    DWORD encrypted_cert_len = 0;
    LPBYTE encrypted_cert = NULL;
 
-   file = fopen (opt->ca_file, "r");
+   file = fopen (opt->ca_file, "rb");
    if (!file) {
       MONGOC_WARNING ("Couldn't open file '%s'", opt->ca_file);
       return false;
