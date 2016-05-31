@@ -249,18 +249,15 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
-          dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
           git submodule update --init
           cd src/libbson
           echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
-          "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
           "$MSBUILD" /m ALL_BUILD.vcxproj
-          "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
           (cd src/libbson && ./Debug/test-libbson.exe --no-fork -d)
 
