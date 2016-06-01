@@ -133,6 +133,10 @@ c_driver_variables:
     solaris_64: &cflags_solaris_64
       cflags: "-m64 -march=x86-64"
 
+  configure:
+  standard: &configure_flags_default
+     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-optimizations --enable-maintainer-flags --disable-silent-rules --with-libbson=bundled"
+
   ## Extra $PATH entries
   paths:
     unix_path: &unix_path
@@ -463,6 +467,24 @@ functions:
           export CFLAGS="${cflags}"
           ${compile_script}
 
+  "quick unix compile function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          set -o errexit
+          set -o verbose
+          CC=${CC} CFLAGS="${CFLAGS}" ./autogen.sh ${configure_flags}
+          make -j8
+
+  "quick unix test function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+
   "set topology standalone" :
     command: expansions.update
     params:
@@ -678,6 +700,18 @@ tasks:
             bucket: mciuploads
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
+
+    - name: compileunixtest
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          params:
+             configure_flags: ${configure_flags}
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
 
     - name: compile
       commands:
@@ -1112,34 +1146,6 @@ buildvariants:
 #         Linux Buildvariants         #
 #######################################
 
-### RHEL 5.5
-#
-#- name: rhel55
-#  display_name: "RHEL 5.5"
-#  expansions:
-#    <<: *cflags_64
-#    <<: *warning_flags_rhel55
-#    <<: *cpppath_rhel55
-#    <<: *libpath_rhel55_64
-#    <<: *mongo_url_rhel55
-#  run_on:
-#  - rhel55-test
-#  tasks: *topology_tests
-#
-### RHEL 5.5 32-bit
-#
-#- name: rhel55-32-bit
-#  display_name: "RHEL 5.5 32"
-#  expansions:
-#    <<: *cflags_32
-#    <<: *warning_flags_rhel55
-#    <<: *cpppath_rhel55
-#    <<: *libpath_rhel55_32
-#    <<: *mongo_url_rhel55_32
-#  run_on:
-#  - rhel55-test
-#  tasks: *topology_tests
-
 - name: ubuntu-1404-64-release
   display_name: "Release Archive Creator"
   expansions:
@@ -1396,3 +1402,130 @@ buildvariants:
   run_on:
       - solaris
   tasks: *topology_tests
+
+
+##### Compiler and distro sanitychecks
+
+- name: compile-clang35
+  display_name: "Debian 8.1 (clang 3.5)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_default
+  run_on:
+  - debian81-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-clang37
+  display_name: "Archlinux (clang 3.7)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_default
+  run_on:
+  - archlinux-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-clang38
+  display_name: "Ubuntu 16.04 (clang 3.8)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_default
+  run_on:
+  - ubuntu1604-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-gcc48
+  display_name: "RHEL 7.0 (GCC 4.8)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - rhel70
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-gcc49
+  display_name: "Debian 8.1 (GCC 4.9)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - debian81-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-gcc53
+  display_name: "Ubuntu 16.04 (GCC 5.3)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - ubuntu1604-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-archlinux
+  display_name: "Archlinux (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - archlinux-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-rhel55
+  display_name: "RHEL 5.5 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - rhel55
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-rhel62
+  display_name: "RHEL 6.2 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    <<: *configure_flags_default
+  run_on:
+  - rhel62-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-rhel70
+  display_name: "RHEL 7.0 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - rhel70
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-ubuntu1204
+  display_name: "Ubuntu 12.04 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - ubuntu1204-build
+  tasks:
+    - name: "compileunixtest"
+
+- name: compile-ubuntu1404
+  display_name: "Ubuntu 14.04 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_default
+  run_on:
+  - ubuntu1404-build
+  tasks:
+    - name: "compileunixtest"
+
