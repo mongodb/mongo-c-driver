@@ -15,6 +15,7 @@
  */
 
 
+#include <strings.h>
 #include "mongoc.h"
 
 #include "mongoc-buffer-private.h"

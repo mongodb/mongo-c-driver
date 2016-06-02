@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <strings.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
 

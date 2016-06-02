@@ -15,6 +15,7 @@
  */
 
 
+#include <strings.h>
 #include <bson.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
