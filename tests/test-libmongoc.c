@@ -1333,16 +1333,17 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 int test_framework_skip_if_no_auth (void)
 {
    char *user;
+
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
 #ifndef MONGOC_ENABLE_SSL_OPENSSL
    if (test_framework_max_wire_version_at_least (3)) {
       /* requires SSL for SCRAM implementation, can't test auth */
       return 0;
    }
 #endif
-
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
 
    /* run auth tests if the MONGOC_TEST_USER env var is set */
    user = test_framework_get_admin_user ();

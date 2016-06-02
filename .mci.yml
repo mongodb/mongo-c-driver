@@ -135,7 +135,7 @@ c_driver_variables:
 
   configure:
   standard: &configure_flags_default
-     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-optimizations --enable-maintainer-flags --disable-silent-rules --with-libbson=bundled"
+     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --with-libbson=bundled"
 
   ## Extra $PATH entries
   paths:
@@ -702,14 +702,86 @@ tasks:
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-    - name: compileunixtest
+    - name: compileunixtest-c11
       commands:
         - command: git.get_project
           params:
             directory: mongo-c-driver
         - func: "quick unix compile function"
-          params:
+          vars:
              configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c11 -D_XOPEN_SOURCE=600"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-c99
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c99 -D_XOPEN_SOURCE=600"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-c89
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c89 -D_POSIX_C_SOURCE=200112L"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-openssl-sasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl --enable-ssl=openssl"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-openssl-nosasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl=no --enable-ssl=openssl"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-nossl-sasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl --enable-ssl=no"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-nossl-nosasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl=no --enable-ssl=no"
              CFLAGS: ${CFLAGS}
              CC: ${CC|gcc}
         - func: "quick unix test function"
@@ -1416,7 +1488,13 @@ buildvariants:
   run_on:
   - debian81-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-clang37
   display_name: "Archlinux (clang 3.7)"
@@ -1427,7 +1505,13 @@ buildvariants:
   run_on:
   - archlinux-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-clang38
   display_name: "Ubuntu 16.04 (clang 3.8)"
@@ -1438,7 +1522,13 @@ buildvariants:
   run_on:
   - ubuntu1604-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-gcc48
   display_name: "RHEL 7.0 (GCC 4.8)"
@@ -1448,7 +1538,13 @@ buildvariants:
   run_on:
   - rhel70
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-gcc49
   display_name: "Debian 8.1 (GCC 4.9)"
@@ -1458,7 +1554,13 @@ buildvariants:
   run_on:
   - debian81-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-gcc53
   display_name: "Ubuntu 16.04 (GCC 5.3)"
@@ -1468,7 +1570,13 @@ buildvariants:
   run_on:
   - ubuntu1604-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-archlinux
   display_name: "Archlinux (GCC)"
@@ -1478,7 +1586,13 @@ buildvariants:
   run_on:
   - archlinux-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-rhel55
   display_name: "RHEL 5.5 (GCC)"
@@ -1488,7 +1602,13 @@ buildvariants:
   run_on:
   - rhel55
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-rhel62
   display_name: "RHEL 6.2 (GCC)"
@@ -1498,7 +1618,13 @@ buildvariants:
   run_on:
   - rhel62-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-rhel70
   display_name: "RHEL 7.0 (GCC)"
@@ -1508,7 +1634,13 @@ buildvariants:
   run_on:
   - rhel70
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-ubuntu1204
   display_name: "Ubuntu 12.04 (GCC)"
@@ -1518,7 +1650,13 @@ buildvariants:
   run_on:
   - ubuntu1204-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
 - name: compile-ubuntu1404
   display_name: "Ubuntu 14.04 (GCC)"
@@ -1528,5 +1666,11 @@ buildvariants:
   run_on:
   - ubuntu1404-build
   tasks:
-    - name: "compileunixtest"
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
 
