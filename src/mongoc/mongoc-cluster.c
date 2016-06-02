@@ -1034,7 +1034,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
          return false;
       }
 
-      TRACE ("X509: got username from certificate");
+      TRACE ("%s", "X509: got username from certificate");
    }
 
    bson_init (&cmd);
@@ -1170,7 +1170,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
       bson_destroy (&reply);
    }
 
-   TRACE ("SCRAM: authenticated");
+   TRACE ("%s", "SCRAM: authenticated");
 
    ret = true;
 
