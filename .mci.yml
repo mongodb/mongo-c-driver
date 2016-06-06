@@ -26,7 +26,7 @@ c_driver_variables:
   just_compile: &just_compile
     - name: "compile"
 
-  compile_unix_variants: &compile_unix_variants:
+  compile_unix_variants: &compile_unix_variants
     - name: "compileunixtest-c89"
     - name: "compileunixtest-c99"
     - name: "compileunixtest-c11"
