@@ -26,6 +26,15 @@ c_driver_variables:
   just_compile: &just_compile
     - name: "compile"
 
+  compile_unix_variants: &compile_unix_variants:
+    - name: "compileunixtest-c89"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
+
   topology_test_list: &topology_tests
     - name: "compile"
     - name: "integration-test-2.4"
@@ -1487,14 +1496,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - debian81-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-clang37
   display_name: "Archlinux (clang 3.7)"
@@ -1504,14 +1506,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - archlinux-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-clang38
   display_name: "Ubuntu 16.04 (clang 3.8)"
@@ -1521,14 +1516,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - ubuntu1604-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-gcc48
   display_name: "RHEL 7.0 (GCC 4.8)"
@@ -1537,14 +1525,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - rhel70
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-gcc49
   display_name: "Debian 8.1 (GCC 4.9)"
@@ -1553,14 +1534,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - debian81-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-gcc53
   display_name: "Ubuntu 16.04 (GCC 5.3)"
@@ -1569,14 +1543,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - ubuntu1604-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-archlinux
   display_name: "Archlinux (GCC)"
@@ -1585,14 +1552,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - archlinux-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-rhel55
   display_name: "RHEL 5.5 (GCC)"
@@ -1601,14 +1561,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - rhel55
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-rhel62
   display_name: "RHEL 6.2 (GCC)"
@@ -1617,14 +1570,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - rhel62-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-rhel70
   display_name: "RHEL 7.0 (GCC)"
@@ -1633,14 +1579,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - rhel70
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-ubuntu1204
   display_name: "Ubuntu 12.04 (GCC)"
@@ -1649,14 +1588,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - ubuntu1204-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
 - name: compile-ubuntu1404
   display_name: "Ubuntu 14.04 (GCC)"
@@ -1665,12 +1597,5 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - ubuntu1404-build
-  tasks:
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
-    - name: "compileunixtest-c11"
-    - name: "compileunixtest-openssl-sasl"
-    - name: "compileunixtest-openssl-nosasl"
-    - name: "compileunixtest-nossl-sasl"
-    - name: "compileunixtest-nossl-nosasl"
+  tasks: *compile_unix_variants
 
