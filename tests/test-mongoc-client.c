@@ -1528,6 +1528,75 @@ _cmd (mock_server_t   *server,
    return r;
 }
 
+static void test_client_set_ssl_copies_args (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_ssl_opt_t client_opts = { 0 };
+   mongoc_ssl_opt_t server_opts = { 0 };
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bson_error_t error;
+   char* mutable_client_ca = NULL;
+   const size_t ca_bufsize = strlen (CERT_CA) + 1;
+
+   mutable_client_ca = bson_malloc (ca_bufsize);
+   bson_strncpy (mutable_client_ca, CERT_CA, ca_bufsize);
+
+   client_opts.ca_file = mutable_client_ca;
+
+   server_opts.weak_cert_validation = true;
+   server_opts.ca_file = CERT_CA;
+   server_opts.pem_file = CERT_SERVER;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_set_ssl_opts (server, &server_opts);
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
+
+   if (pooled) {
+      capture_logs (true);
+      pool = mongoc_client_pool_new (uri);
+      mongoc_client_pool_set_ssl_opts (pool, &client_opts);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      mongoc_client_set_ssl_opts (client, &client_opts);
+   }
+
+   /* Now change the client ca string to be something else */
+   bson_strncpy (mutable_client_ca, "garbage", ca_bufsize);
+
+   ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
+                    error);
+
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   bson_free (mutable_client_ca);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+}
+
+static void
+test_ssl_client_single_copies_args (void)
+{
+   test_client_set_ssl_copies_args (false);
+}
+
+
+static void
+test_ssl_client_pooled_copies_args (void)
+{
+   test_client_set_ssl_copies_args (true);
+}
 
 
 static void
@@ -1618,6 +1687,7 @@ test_ssl_reconnect_pooled (void)
 {
    _test_ssl_reconnect (true);
 }
+
 #endif
 
 
@@ -1675,6 +1745,12 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+
+   TestSuite_Add (suite, "/Client/ssl_opts/copies_single",
+                  test_ssl_client_single_copies_args);
+   TestSuite_Add (suite, "/Client/ssl_opts/copies_pooled",
+                  test_ssl_client_pooled_copies_args);
+
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/Client/ssl/reconnect/single",
                   test_ssl_reconnect_single);
