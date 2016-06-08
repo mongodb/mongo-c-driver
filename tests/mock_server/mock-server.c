@@ -15,7 +15,6 @@
  */
 
 
-#include <strings.h>
 #include "mongoc.h"
 
 #include "mongoc-buffer-private.h"
@@ -29,6 +28,9 @@
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 /* /Async/ismaster_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
 #define TIMEOUT 5000

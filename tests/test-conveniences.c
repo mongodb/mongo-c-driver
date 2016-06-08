@@ -23,7 +23,10 @@
 
 #include "test-conveniences.h"
 
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
+
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;

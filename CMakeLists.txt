@@ -123,6 +123,8 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
+include(CheckIncludeFiles)
+CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 

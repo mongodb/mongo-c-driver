@@ -15,7 +15,6 @@
  */
 
 
-#include <strings.h>
 #include <bson.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
@@ -31,6 +30,9 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 extern void test_array_install                   (TestSuite *suite);
 extern void test_async_install                   (TestSuite *suite);

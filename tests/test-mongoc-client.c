@@ -1,5 +1,4 @@
 #include <fcntl.h>
-#include <strings.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
 
@@ -14,6 +13,9 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"

@@ -16,7 +16,9 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
 
 #define MAX_NUM_TESTS 100
 
