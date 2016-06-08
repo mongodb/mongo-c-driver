@@ -142,9 +142,12 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
    ts->tv_sec = atime * 1e-9;
    ts->tv_nsec = atime - (ts->tv_sec * 1e9);
 #elif defined(_WIN32)
+   /* GetTickCount64() returns milliseconds */
    ULONGLONG ticks = GetTickCount64 ();
-   ts->tv_sec = ticks / NANOSEC_PER_SEC;
-   ts->tv_nsec = ticks % NANOSEC_PER_SEC;
+   ts->tv_sec = ticks / 1000;
+
+   /* milliseconds -> microseconds -> nanoseconds*/
+   ts->tv_nsec = (ticks % 1000) * 1000 * 1000;
 #else
 # warning "Monotonic clock is not yet supported on your platform."
 #endif
