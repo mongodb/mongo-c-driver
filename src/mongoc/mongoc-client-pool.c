@@ -22,11 +22,13 @@
 #include "mongoc-client-pool.h"
 #include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"
-#include "mongoc-ssl-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-trace.h"
 
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-ssl-private.h"
+#endif
 
 struct _mongoc_client_pool_t
 {
@@ -144,7 +146,11 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
    mongoc_cond_destroy(&pool->cond);
+
+#ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
+#endif
+
    bson_free(pool);
 
    mongoc_counter_client_pools_active_dec();

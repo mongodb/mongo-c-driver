@@ -39,11 +39,11 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-set-private.h"
-#include "mongoc-ssl-private.h"
 #include "mongoc-log.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
+#include "mongoc-ssl-private.h"
 #endif
 
 
@@ -796,7 +796,9 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
 
+#ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup (&client->ssl_opts);
+#endif
 
       bson_free (client);
 
