@@ -64,4 +64,30 @@ mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 	return _mongoc_secure_channel_extract_subject (filename, passphrase);
 #endif
 }
+
+void _mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t* src,
+                               mongoc_ssl_opt_t* dst)
+{
+   BSON_ASSERT (src);
+   BSON_ASSERT (dst);
+
+   dst->pem_file = bson_strdup (src->pem_file);
+   dst->pem_pwd = bson_strdup (src->pem_pwd);
+   dst->ca_file = bson_strdup (src->ca_file);
+   dst->ca_dir = bson_strdup (src->ca_dir);
+   dst->crl_file = bson_strdup (src->crl_file);
+   dst->weak_cert_validation = src->weak_cert_validation;
+   dst->allow_invalid_hostname = src->allow_invalid_hostname;
+}
+
+void _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t* opt)
+{
+   bson_free (opt->pem_file);
+   bson_free (opt->pem_pwd);
+   bson_free (opt->ca_file);
+   bson_free (opt->ca_dir);
+   bson_free (opt->crl_file);
+}
+
+
 #endif

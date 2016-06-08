@@ -39,6 +39,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-set-private.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-log.h"
 
 #ifdef MONGOC_ENABLE_SSL
@@ -659,8 +660,10 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    BSON_ASSERT (client);
    BSON_ASSERT (opts);
 
+   _mongoc_ssl_opts_cleanup (&client->ssl_opts);
+
    client->use_ssl = true;
-   memcpy (&client->ssl_opts, opts, sizeof client->ssl_opts);
+   _mongoc_ssl_opts_copy_to (opts, &client->ssl_opts);
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner,
@@ -792,6 +795,9 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_read_prefs_destroy (client->read_prefs);
       mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
+
+      _mongoc_ssl_opts_cleanup (&client->ssl_opts);
+
       bson_free (client);
 
       mongoc_counter_clients_active_dec ();

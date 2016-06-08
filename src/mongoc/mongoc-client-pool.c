@@ -22,6 +22,7 @@
 #include "mongoc-client-pool.h"
 #include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-trace.h"
@@ -56,13 +57,14 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 
    mongoc_mutex_lock (&pool->mutex);
 
+   _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
+
    memset (&pool->ssl_opts, 0, sizeof pool->ssl_opts);
    pool->ssl_opts_set = false;
 
    if (opts) {
-      memcpy (&pool->ssl_opts, opts, sizeof pool->ssl_opts);
+      _mongoc_ssl_opts_copy_to (opts, &pool->ssl_opts);
       pool->ssl_opts_set = true;
-
    }
 
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
@@ -142,6 +144,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
    mongoc_cond_destroy(&pool->cond);
+   _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
    bson_free(pool);
 
    mongoc_counter_client_pools_active_dec();
