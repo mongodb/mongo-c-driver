@@ -1183,6 +1183,86 @@ test_index (void)
 }
 
 static void
+test_index_2 ()
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt;
+   bson_error_t error;
+   bson_t keys;
+   bson_t reply;
+   bool result;
+
+   mongoc_index_opt_init (&opt);
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_index");
+   ASSERT (collection);
+
+   bson_init (&keys);
+   bson_append_int32 (&keys, "hello", -1, 1);
+   ASSERT_OR_PRINT (mongoc_collection_create_index_2 (collection, &keys,
+                                                      &opt, &reply, &error),
+                    error);
+
+   /* Be sure the reply is valid */
+   ASSERT (bson_validate (&reply, 0, NULL));
+
+   if (!test_framework_max_wire_version_at_least (2)) {
+      /* On very old versions of the server, create_index_2 will give an
+         empty reply even if the call succeeds */
+      ASSERT (bson_empty (&reply));
+   } else {
+      ASSERT (!bson_empty (&reply));
+   }
+   bson_destroy (&reply);
+
+   /* Make sure it doesn't crash with a NULL reply */
+   ASSERT_OR_PRINT (mongoc_collection_create_index_2 (collection, &keys,
+                                                      &opt, NULL, &error),
+                    error);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "hello_1",
+                                                  &error),
+                    error);
+
+   /* Now attempt to create an invalid index which the server will reject */
+   bson_reinit (&keys);
+
+   /* Try to create an index like {abc: "hallo thar"} (won't work,
+      should really be something like {abc: 1})
+
+      This fails both on legacy and modern versions of the server
+   */
+   BSON_APPEND_UTF8 (&keys, "abc", "hallo thar");
+   result = mongoc_collection_create_index_2 (collection, &keys,
+                                              &opt, &reply, &error);
+
+   ASSERT (!result);
+   ASSERT (strlen (error.message) > 0);
+   memset (&error, 0, sizeof (error));
+
+   /* Try again but with reply NULL. Shouldn't crash */
+   result = mongoc_collection_create_index_2 (collection, &keys,
+                                              &opt, NULL, &error);
+   ASSERT (!result);
+   ASSERT (strlen (error.message) > 0);
+
+   bson_destroy (&keys);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_index_compound (void)
 {
    mongoc_collection_t *collection;
@@ -3236,6 +3316,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
    TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
    TestSuite_AddLive (suite, "/Collection/index", test_index);
+   TestSuite_AddLive (suite, "/Collection/index_2", test_index_2);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);
