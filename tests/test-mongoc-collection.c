@@ -2253,6 +2253,8 @@ test_validate (void *ctx)
    bson_t opts = BSON_INITIALIZER;
    bson_t reply;
    bool r;
+   const uint32_t expected_err_domain = MONGOC_ERROR_BSON;
+   const uint32_t expected_err_code = MONGOC_ERROR_BSON_INVALID;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -2272,13 +2274,31 @@ test_validate (void *ctx)
 
    bson_destroy (&reply);
 
+   /* Make sure we don't segfault when reply is NULL */
+   ASSERT_OR_PRINT (mongoc_collection_validate (collection, &opts,
+                                                NULL, &error), error);
+
    bson_reinit (&opts);
    BSON_APPEND_UTF8 (&opts, "full", "bad_value");
 
+   /* invalidate reply */
+   reply.len = 0;
+   assert (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
+
    r = mongoc_collection_validate (collection, &opts, &reply, &error);
    assert (!r);
-   assert (error.domain == MONGOC_ERROR_BSON);
-   assert (error.code == MONGOC_ERROR_BSON_INVALID);
+   assert (error.domain == expected_err_domain);
+   assert (error.code == expected_err_code);
+
+   /* check that reply has been initialized */
+   assert (bson_validate (&reply, 0, NULL));
+
+   /* Make sure we don't segfault when reply is NULL */
+   memset (&error, 0, sizeof (error));
+   r = mongoc_collection_validate (collection, &opts, NULL, &error);
+   assert (!r);
+   assert (error.domain == expected_err_domain);
+   assert (error.code == expected_err_code);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
