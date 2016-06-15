@@ -97,6 +97,11 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
 uint64_t
 mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);
 
+bool 
+mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file, 
+                           const bson_value_t   *id, 
+                           bson_error_t         *error);
+
 bool
 mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);
 
