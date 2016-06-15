@@ -848,6 +848,49 @@ _get_gridfs (mock_server_t *server,
    return gridfs;
 }
 
+/* check that user can specify _id of any type for file */
+static void
+test_set_id (void) 
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_value_t id;
+   bson_t *query;
+   mongoc_gridfs_file_t *file;
+   mongoc_gridfs_file_t *result;
+   mongoc_gridfs_file_opt_t opt = { 0 };
+
+   /* create new client and grab gridfs handle */ 
+   client = test_framework_client_new ();
+   ASSERT (client); 
+   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error); 
+   ASSERT_OR_PRINT (gridfs, error);
+      
+   /* create bson */
+   id.value_type = BSON_TYPE_INT32;
+   id.value.v_int32 = 1;
+   
+   /* query for finding file */ 
+   query = tmp_bson ("{'_id': 1}");
+ 
+   /* create new file */
+   opt.filename = "test";
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   ASSERT (file); 
+  
+   /* if we find a file with new id, then file_set_id worked */
+   ASSERT_OR_PRINT (mongoc_gridfs_file_set_id (file, &id, &error), error);
+   ASSERT (mongoc_gridfs_file_save (file));
+   result = mongoc_gridfs_find_one (gridfs, query, 
+                                    &error); 
+   ASSERT_OR_PRINT (result, error); 
+
+   mongoc_gridfs_file_destroy (result);
+   mongoc_gridfs_file_destroy (file); 
+   mongoc_gridfs_destroy (gridfs); 
+   mongoc_client_destroy (client);  
+}
 
 /* check gridfs inherits read / write concern, read prefs from the client */
 static void
@@ -944,5 +987,6 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/GridFS/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddLive (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
    TestSuite_AddFull (suite, "/GridFS/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id); 
    TestSuite_Add (suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }
