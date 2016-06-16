@@ -83,15 +83,6 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology,
                               uint32_t           id,
                               bson_error_t      *error);
 
-bool mongoc_topology_get_server_type (mongoc_topology_t                  *topology,
-                                      uint32_t                            id,
-                                      mongoc_topology_description_type_t *topology_type,
-                                      mongoc_server_description_type_t   *server_type,
-                                      bson_error_t                       *error);
-
-void
-mongoc_topology_request_scan (mongoc_topology_t *topology);
-
 void
 mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
                                    uint32_t            id,

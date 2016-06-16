@@ -593,58 +593,6 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology,
 }
 
 /*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_get_server_type --
- *
- *      Get the topology type, and the server type for @id, if that server
- *      is present in @description. Otherwise, return false and fill out
- *      the optional @error.
- *
- *      NOTE: this method locks and unlocks @topology's mutex.
- *
- * Returns:
- *      True on success.
- *
- * Side effects:
- *      Fills out optional @error if server not found.
- *
- *-------------------------------------------------------------------------
- */
-
-bool
-mongoc_topology_get_server_type (
-   mongoc_topology_t *topology,
-   uint32_t id,
-   mongoc_topology_description_type_t *topology_type /* OUT */,
-   mongoc_server_description_type_t *server_type     /* OUT */,
-   bson_error_t *error)
-{
-   mongoc_server_description_t *sd;
-   bool ret = false;
-
-   BSON_ASSERT (topology);
-   BSON_ASSERT (topology_type);
-   BSON_ASSERT (server_type);
-
-   mongoc_mutex_lock (&topology->mutex);
-
-   sd = mongoc_topology_description_server_by_id (&topology->description,
-                                                  id,
-                                                  error);
-
-   if (sd) {
-      *topology_type = topology->description.type;
-      *server_type = sd->type;
-      ret = true;
-   }
-
-   mongoc_mutex_unlock (&topology->mutex);
-
-   return ret;
-}
-
-/*
  *--------------------------------------------------------------------------
  *
  * _mongoc_topology_request_scan --
@@ -660,28 +608,6 @@ _mongoc_topology_request_scan (mongoc_topology_t *topology)
    topology->scan_requested = true;
 
    mongoc_cond_signal (&topology->cond_server);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_topology_request_scan --
- *
- *       Used from within the driver to request an immediate topology check.
- *
- *       NOTE: this method locks and unlocks @topology's mutex.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mongoc_topology_request_scan (mongoc_topology_t *topology)
-{
-   mongoc_mutex_lock (&topology->mutex);
-
-   _mongoc_topology_request_scan (topology);
-
-   mongoc_mutex_unlock (&topology->mutex);
 }
 
 /*
