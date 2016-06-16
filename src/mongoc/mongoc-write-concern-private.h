@@ -33,7 +33,7 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_write_concern_t
 {
-   int8_t    fsync_;
+   int8_t    fsync_;  /* deprecated */
    int8_t    journal;
    int32_t   w;
    int32_t   wtimeout;
