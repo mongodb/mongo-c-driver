@@ -95,6 +95,16 @@ typedef enum
 } my_flags_t;
 ```
 
+### Adding a new error code or domain                                              
+                                                                                   
+When adding a new error code or domain, you must do the following. This is most 
+applicable if you are adding a new symbol with a bson_error_t as a parameter,   
+and the existing codes or domains are inappropriate.                               
+                                                                                   
+ - Add the domain to `mongoc_error_domain_t` in `src/mongoc/mongoc-error.h`        
+ - Add the code to `mongoc_error_code_t` in `src/mongoc/mongoc-error.h`            
+ - Add documentation for the domain or code to the table in `doc/mongoc_errors.page`
+                              
 ### Adding a new symbol
 
 This should be done rarely but there are several things that you need to do
