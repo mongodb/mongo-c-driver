@@ -97,8 +97,8 @@ typedef enum
 
 ### Adding a new error code or domain                                              
                                                                                    
-When adding a new error code or domain, you must do the following. This is most 
-applicable if you are adding a new symbol with a bson_error_t as a parameter,   
+When adding a new error code or domain, you must do the following. This is most
+applicable if you are adding a new symbol with a bson_error_t as a parameter,
 and the existing codes or domains are inappropriate.                               
                                                                                    
  - Add the domain to `mongoc_error_domain_t` in `src/mongoc/mongoc-error.h`        
