@@ -1,8 +1,12 @@
-<page id="common-task-examples"
+<page id="mongoc-common-task-examples"
       type="topic"
       xmlns="http://projectmallard.org/1.0/">
+  <info>
+    <link type="guide" xref="index#basic-operations"/>
+  </info>
+  <title>Common Tasks</title>
 
-  <title>Performing Common Tasks</title>
+  <section id="common-tasks">
   <p>Drivers for some other languages provide helper functions to perform certain common tasks. In the C Driver we must explicitly build commands to send to the server.</p>
   <p>This snippet contains example code for the <code>explain</code>, <code>copydb</code> and <code>cloneCollection</code> commands.</p>
 
@@ -53,7 +57,63 @@
 <output>
 Inserting data
 explain
-{ "queryPlanner" : { "plannerVersion" : 1, "namespace" : "test.things", "indexFilterSet" : false, "parsedQuery" : { "x" : { "$eq" : 1 } }, "winningPlan" : { "stage" : "COLLSCAN", "filter" : { "x" : { "$eq" : 1 } }, "direction" : "forward" }, "rejectedPlans" : [  ] }, "executionStats" : { "executionSuccess" : true, "nReturned" : 19, "executionTimeMillis" : 0, "totalKeysExamined" : 0, "totalDocsExamined" : 76, "executionStages" : { "stage" : "COLLSCAN", "filter" : { "x" : { "$eq" : 1 } }, "nReturned" : 19, "executionTimeMillisEstimate" : 0, "works" : 78, "advanced" : 19, "needTime" : 58, "needYield" : 0, "saveState" : 0, "restoreState" : 0, "isEOF" : 1, "invalidates" : 0, "direction" : "forward", "docsExamined" : 76 }, "allPlansExecution" : [  ] }, "serverInfo" : { "host" : "MacBook-Pro-57.local", "port" : 27017, "version" : "3.2.6", "gitVersion" : "05552b562c7a0b3143a729aaa0838e558dc49b25" }, "ok" : 1 }
+{
+   "executionStats" : {
+      "allPlansExecution" : [],
+      "executionStages" : {
+         "advanced" : 19,
+         "direction" : "forward" ,
+         "docsExamined" : 76,
+         "executionTimeMillisEstimate" : 0,
+         "filter" : {
+            "x" : {
+               "$eq" : 1
+            }
+         },
+         "invalidates" : 0,
+         "isEOF" : 1,
+         "nReturned" : 19,
+         "needTime" : 58,
+         "needYield" : 0,
+         "restoreState" : 0,
+         "saveState" : 0,
+         "stage" : "COLLSCAN" ,
+         "works" : 78
+      },
+      "executionSuccess" : true,
+      "executionTimeMillis" : 0,
+      "nReturned" : 19,
+      "totalDocsExamined" : 76,
+      "totalKeysExamined" : 0
+   },
+   "ok" : 1,
+   "queryPlanner" : {
+      "indexFilterSet" : false,
+      "namespace" : "test.things",
+      "parsedQuery" : {
+         "x" : {
+            "$eq" : 1
+         }
+      },
+      "plannerVersion" : 1,
+      "rejectedPlans" : [],
+      "winningPlan" : {
+         "direction" : "forward" ,
+         "filter" : {
+            "x" : {
+               "$eq" : 1
+            }
+         },
+         "stage" : "COLLSCAN"
+      }
+   },
+   "serverInfo" : {
+      "gitVersion" : "05552b562c7a0b3143a729aaa0838e558dc49b25" ,
+      "host" : "MacBook-Pro-57.local",
+      "port" : 27017,
+      "version" : "3.2.6"
+   }
+}
 copydb
 { "ok" : 1 }
 clone collection
@@ -61,5 +121,6 @@ clone collection
 </output>
 
   </screen>
+  </section>
   </section>
 </page>
