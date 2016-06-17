@@ -1,0 +1,65 @@
+<page id="common-task-examples"
+      type="topic"
+      xmlns="http://projectmallard.org/1.0/">
+
+  <title>Performing Common Tasks</title>
+  <p>Drivers for some other languages provide helper functions to perform certain common tasks. In the C Driver we must explicitly build commands to send to the server.</p>
+  <p>This snippet contains example code for the <code>explain</code>, <code>copydb</code> and <code>cloneCollection</code> commands.</p>
+
+  <section id="setup">
+    <title>Setup</title>
+    <p>First we'll write some code to insert sample data:</p>
+    <code mime="text/x-csrc"><include parse="text" href="../examples/doc-common-insert.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+  </section>
+
+  <section id="explain">
+    <title><code>explain</code></title>
+  <p>This is how to use the <code>explain</code> command in MongoDB 3.2+:</p>
+  <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/explain.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+  </section>
+
+  <section id="copydb">
+    <title><code>copydb</code></title>
+      <p>This example requires two instances of mongo to be running.</p>
+      <p>Here's how to use the <code>copydb</code> command to copy a database from another instance of MongoDB:</p>
+    <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/copydb.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+  </section>
+
+  <section id="clone-collection">
+    <title><code>cloneCollection</code></title>
+    <p>This example requires two instances of mongo to be running.</p>
+    <p>Here's an example of the <code>cloneCollection</code> command to clone a collection from another instance of MongoDB:</p>
+
+
+  <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/clone-collection.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+  </section>
+
+  <section id="main">
+    <title>Running</title>
+  <listing>
+    <title>examples/common-operations.c</title>
+    <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/common-operations.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
+  </listing>
+
+  <p>First launch two separate instances of mongod (must be done from separate shells):</p>
+  <screen><output style="prompt">$ </output><input>mongod</input></screen>
+  <screen><output style="prompt">$ </output><input>mkdir /tmp/db2</input>
+<output style="prompt">$ </output><input>mongod --dbpath /tmp/db2 --port 27018 # second instance</input></screen>
+
+  <p>Now compile and run the example program:</p>
+  <screen><output style="prompt">$ </output><input>cd examples/common_operations/</input>
+<output style="prompt">$ </output><input>gcc -Wall -o example common-operations.c $(pkg-config --cflags --libs libmongoc-1.0)</input>
+<output style="prompt">$ </output><input>./example localhost:27017 localhost:27018</input>
+<output>
+Inserting data
+explain
+{ "queryPlanner" : { "plannerVersion" : 1, "namespace" : "test.things", "indexFilterSet" : false, "parsedQuery" : { "x" : { "$eq" : 1 } }, "winningPlan" : { "stage" : "COLLSCAN", "filter" : { "x" : { "$eq" : 1 } }, "direction" : "forward" }, "rejectedPlans" : [  ] }, "executionStats" : { "executionSuccess" : true, "nReturned" : 19, "executionTimeMillis" : 0, "totalKeysExamined" : 0, "totalDocsExamined" : 76, "executionStages" : { "stage" : "COLLSCAN", "filter" : { "x" : { "$eq" : 1 } }, "nReturned" : 19, "executionTimeMillisEstimate" : 0, "works" : 78, "advanced" : 19, "needTime" : 58, "needYield" : 0, "saveState" : 0, "restoreState" : 0, "isEOF" : 1, "invalidates" : 0, "direction" : "forward", "docsExamined" : 76 }, "allPlansExecution" : [  ] }, "serverInfo" : { "host" : "MacBook-Pro-57.local", "port" : 27017, "version" : "3.2.6", "gitVersion" : "05552b562c7a0b3143a729aaa0838e558dc49b25" }, "ok" : 1 }
+copydb
+{ "ok" : 1 }
+clone collection
+{ "ok" : 1 }
+</output>
+
+  </screen>
+  </section>
+</page>
