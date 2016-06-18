@@ -13,20 +13,20 @@
   </section>
 
   <section id="explain">
-    <title><code>explain</code></title>
+    <title>"explain" Command</title>
   <p>This is how to use the <code>explain</code> command in MongoDB 3.2+:</p>
   <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/explain.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
   </section>
 
   <section id="copydb">
-    <title><code>copydb</code></title>
+    <title>"copydb" Command</title>
       <p>This example requires two instances of mongo to be running.</p>
       <p>Here's how to use the <code>copydb</code> command to copy a database from another instance of MongoDB:</p>
     <code mime="text/x-csrc"><include parse="text" href="../examples/common_operations/copydb.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
   </section>
 
   <section id="clone-collection">
-    <title><code>cloneCollection</code></title>
+    <title>"cloneCollection" Command</title>
     <p>This example requires two instances of mongo to be running.</p>
     <p>Here's an example of the <code>cloneCollection</code> command to clone a collection from another instance of MongoDB:</p>
 
