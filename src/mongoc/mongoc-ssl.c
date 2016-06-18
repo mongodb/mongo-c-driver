@@ -82,11 +82,11 @@ void _mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t* src,
 
 void _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t* opt)
 {
-   bson_free (opt->pem_file);
-   bson_free (opt->pem_pwd);
-   bson_free (opt->ca_file);
-   bson_free (opt->ca_dir);
-   bson_free (opt->crl_file);
+   bson_free ((char*)opt->pem_file);
+   bson_free ((char*)opt->pem_pwd);
+   bson_free ((char*)opt->ca_file);
+   bson_free ((char*)opt->ca_dir);
+   bson_free ((char*)opt->crl_file);
 }
 
 
