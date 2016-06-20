@@ -32,14 +32,14 @@ typedef struct _mongoc_ssl_opt_t mongoc_ssl_opt_t;
 
 struct _mongoc_ssl_opt_t
 {
-   char *pem_file;
-   char *pem_pwd;
-   char *ca_file;
-   char *ca_dir;
-   char *crl_file;
-   bool  weak_cert_validation;
-   bool  allow_invalid_hostname;
-   void *padding [7];
+   const char *pem_file;
+   const char *pem_pwd;
+   const char *ca_file;
+   const char *ca_dir;
+   const char *crl_file;
+   bool        weak_cert_validation;
+   bool        allow_invalid_hostname;
+   void       *padding [7];
 };
 
 
