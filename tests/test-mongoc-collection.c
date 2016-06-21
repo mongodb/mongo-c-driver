@@ -13,6 +13,113 @@
 
 
 static void
+test_read_prefs_is_valid (void) {
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   bson_t *pipeline;
+   mongoc_read_prefs_t *read_prefs; 
+   bson_t reply;
+  
+   client = test_framework_client_new ();
+   ASSERT (client);
+   
+   database = get_test_database (client);
+   ASSERT (database);
+   
+   collection = get_test_collection (client, "test_aggregate");
+   ASSERT (collection);
+   
+   pipeline = BCON_NEW ("pipeline", "[", "{", "$match", "{", "hello", 
+                        BCON_UTF8 ("world"), "}", "}", "]");
+   
+   /* if read prefs is not valid */ 
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   ASSERT (read_prefs);
+   mongoc_read_prefs_set_tags (read_prefs, 
+                               tmp_bson ("[{'does-not-exist': 'x'}]"));
+  
+   /* mongoc_collection_aggregate */
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, 
+                                         pipeline, NULL, read_prefs);
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   mongoc_cursor_destroy (cursor);
+  
+   /* mongoc_collection_command */
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, 
+                                       tmp_bson ("{}"), NULL, read_prefs); 
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   mongoc_cursor_destroy (cursor);
+
+   /* mongoc_collection_command_simple */
+   ASSERT (!mongoc_collection_command_simple (collection, 
+                                              tmp_bson ("{'ping': 1}"), 
+                                              read_prefs, &reply, &error));
+   
+   /* mongoc_collection_count_with_opts */
+   ASSERT (mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, 
+           tmp_bson ("{}"), 0, 0, NULL, read_prefs, &error)  == -1);   
+
+   /* mongoc_collection_find */
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, 
+                                    tmp_bson ("{}"), NULL, read_prefs); 
+
+   ASSERT (cursor); 
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   mongoc_cursor_destroy (cursor);
+ 
+   /* if read prefs is valid */
+   mongoc_read_prefs_destroy (read_prefs); 
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   ASSERT (read_prefs);
+   
+   /* mongoc_collection_aggregate */ 
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, 
+                                         pipeline, NULL, read_prefs);
+   ASSERT (cursor);
+ 
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+
+   /* mongoc_collection_command */
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 0, 0, 
+                                       tmp_bson ("{}"), NULL, read_prefs); 
+   ASSERT (cursor); 
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+ 
+   /* mongoc_collection_command_simple */
+   ASSERT_OR_PRINT (mongoc_collection_command_simple (collection, 
+                                                      tmp_bson ("{'ping': 1}"), 
+                                                      read_prefs, &reply, 
+                                                      &error), error);
+   /* mongoc_collection_count_with_opts */
+   ASSERT_OR_PRINT (mongoc_collection_count_with_opts (collection, 
+                    MONGOC_QUERY_NONE, tmp_bson ("{}"), 0, 0, NULL, read_prefs, 
+                    &error)  != -1, error);   
+ 
+   /* mongoc_collection_find */
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, 
+                                    tmp_bson ("{}"), NULL, read_prefs); 
+ 
+   ASSERT (cursor); 
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+ 
+   mongoc_read_prefs_destroy (read_prefs); 
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+   bson_destroy(pipeline);
+   bson_destroy(&reply);
+
+}
+
+static void
 test_copy (void)
 {
    mongoc_database_t *database;
@@ -3201,6 +3308,8 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
+   TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid", 
+                      test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_AddLive (suite,
                   "/Collection/insert_bulk_empty",

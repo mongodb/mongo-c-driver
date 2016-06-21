@@ -1186,7 +1186,10 @@ mongoc_client_command (mongoc_client_t           *client,
    cursor = _mongoc_cursor_new (
       client, db_name, flags, skip, limit, batch_size, true, query, fields,
       read_prefs ? read_prefs : local_prefs, NULL);
-   
+  
+   if (cursor->error.domain == 0) { 
+      _mongoc_read_prefs_validate (read_prefs, &cursor->error);    
+   }
    mongoc_read_prefs_destroy (local_prefs);  /* ok if NULL */
 
    return cursor;
@@ -1229,7 +1232,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_error_t              *error)
 {
    mongoc_cluster_t *cluster;
-   mongoc_server_stream_t *server_stream;
+   mongoc_server_stream_t *server_stream = NULL;
    bool ret;
 
    ENTRY;
@@ -1237,6 +1240,10 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
+
+   if (!_mongoc_read_prefs_validate (read_prefs, error)) {
+      RETURN (false); 
+   }
 
    cluster = &client->cluster;
 
@@ -1284,6 +1291,10 @@ mongoc_client_command_simple_with_server_id (mongoc_client_t           *client,
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
+   
+   if (!_mongoc_read_prefs_validate (read_prefs, error)) {
+      RETURN (false);  
+   }
 
    cluster = &client->cluster;
    server_stream = mongoc_cluster_stream_for_server (
@@ -1855,6 +1866,10 @@ mongoc_client_select_server (mongoc_client_t           *client,
                      MONGOC_ERROR_SERVER_SELECTION,
                      MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                      "Cannot use read preferences with for_writes = true");
+      return NULL;
+   }
+
+   if (!_mongoc_read_prefs_validate (prefs, error)) {
       return NULL;
    }
 

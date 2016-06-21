@@ -55,6 +55,10 @@ apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
 void
 apply_read_prefs_result_cleanup (mongoc_apply_read_prefs_result_t *result);
 
+bool
+_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
+                             bson_error_t              *error);
+
 BSON_END_DECLS
 
 
