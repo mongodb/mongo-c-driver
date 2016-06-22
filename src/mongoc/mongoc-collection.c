@@ -302,7 +302,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_server_description_t *selected_server;
+   mongoc_server_description_t *selected_server = NULL;
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
    bson_t command;
@@ -322,6 +322,11 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    }
 
    cursor = _mongoc_collection_cursor_new (collection, flags);
+
+   if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
+      GOTO (done); 
+   }
+
    selected_server = mongoc_topology_select(collection->client->topology,
                                             MONGOC_SS_READ,
                                             read_prefs,
@@ -476,6 +481,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
 {
+   mongoc_cursor_t *cursor;
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
@@ -484,10 +490,15 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    if (!read_prefs) {
       read_prefs = collection->read_prefs;
    }
-
-   return _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
-                              limit, batch_size, false, query, fields, read_prefs,
-                              collection->read_concern);
+   
+   cursor = _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
+                                limit, batch_size, false, query, fields, 
+                                read_prefs, collection->read_concern);
+   if (cursor->error.domain == 0) {
+      _mongoc_read_prefs_validate (read_prefs, &cursor->error);
+   }
+   
+   return cursor;   
 }
 
 
@@ -626,7 +637,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
                                    const mongoc_read_prefs_t *read_prefs,  /* IN */
                                    bson_error_t              *error)       /* OUT */
 {
-   mongoc_server_stream_t *server_stream;
+   mongoc_server_stream_t *server_stream = NULL;
    mongoc_cluster_t *cluster;
    mongoc_apply_read_prefs_result_t read_prefs_result = READ_PREFS_RESULT_INIT;
    bson_iter_t iter;
@@ -642,6 +653,10 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    if (!server_stream) {
       GOTO (done);
+   }
+
+   if (!_mongoc_read_prefs_validate (read_prefs, error)) {
+      GOTO (done); 
    }
 
    BSON_ASSERT (collection);
