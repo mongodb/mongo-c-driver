@@ -95,6 +95,33 @@ main (int   argc,
       <p>Connecting directly to a UNIX domain socket is not a common practice.</p>
     </note>
   </section>
+   
+  <section id="SSL">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
+    <title>Connecting to a server that requires SSL</title> 
+<p>These are instructions for configuring TLS/SSL connections.</p>
+   <listing> 
+   <title>Basic Configuration</title>
+    <p>To run a server locally (on port 27017, for example):</p>
+    <screen><code>$ mongod --port 27017 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem </code></screen>
+    <p>Add <code>/?ssl=true</code> to the end of a client URI.</p>
+    <screen><code>mongoc_client_t *client = NULL;
+client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");</code></screen></listing>
+   <listing><title>Specifying Client Certificates and CA Files</title>
+   <p>The C Driver can be configured to present a client certificate using a <code>mongoc_ssl_opt_t</code>:</p>
+<screen><code>const mongoc_ssl_opt_t *ssl_default = mongoc_ssl_opt_get_default ();
+mongoc_ssl_opts_t ssl_opts = { 0 };
+mongoc_client_t client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");
+
+/* optionally copy in a custom trust directory or file; otherwise the default is used. */
+memcpy (&amp;ssl_opts, ssl_default, sizeof ssl_opts);
+ssl_opts.pem_file = "client.pem" 
+ssl_opts.ca_file = "ca.pem" 
+ssl_weak.weak_cert_validation = false; 
+
+mongoc_client_set_ssl_opts (client, &amp;ssl_opts);</code></screen></listing>
+  </section>
+
 
   <section id="additional-options">
     <info><link type="guide" xref="index#advanced-connections" /></info>

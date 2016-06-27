@@ -51,22 +51,6 @@ client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?au
     <screen><output style="prompt">$ </output><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen>
   </section>
 
-  <section id="ssl">
-    <info><link type="guide" xref="index#authentication" /></info>
-    <title>SSL Authentication</title>
-    <note style="warning">
-      <p>The MongoDB C Driver must be compiled with the <code>--enable-ssl</code> option to use SSL authentication.</p>
-    </note>
-
-    <p>To connect to a MongoDB server enabled with SSL, add the <code>?ssl=true</code> option in the MongoDB URI.</p>
-
-    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost/?ssl=true");]]></code></screen>
-
-    <note style="important">
-      <p>Connecting to a server that does not support SSL will fail if the <code>?ssl=true</code> parameter is provided in the URI. This is to prevent unintentional information leak.</p>
-    </note>
-  </section>
-
   <section id="sasl-plain">
     <info><link type="guide" xref="index#authentication" /></info>
     <title>SASL Plain Authentication</title>
@@ -87,7 +71,9 @@ client = mongoc_client_new ("mongodb://user:password@example.com/?authMechanism=
     <info><link type="guide" xref="index#authentication" /></info>
     <title>X.509 Certificate Authentication</title>
     <note style="warning">
-      <p>The MongoDB C Driver must be compiled with SSL support for X.509 authentication support.</p>
+      <p>The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options: </p>
+<code>$ mongod --clusterAuthMode x509 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem</code> 
+
     </note>
 
     <p>The <code>MONGODB-X509</code> mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during SSL negotiation. This authentication method requires the use of SSL connections with certificate validation and is available in MongoDB 2.5.1 and newer:</p>
@@ -105,6 +91,6 @@ client = mongoc_client_new ("mongodb://x509_derived_username@localhost/?authMech
 mongoc_client_set_ssl_opts (client, &ssl_opts);
 ]]></code></screen>
 
-    <p><code>MONGODB-X509</code> authenticates against the <code>$external</code> database, so specifying a database is not required.</p>
+    <p><code>MONGODB-X509</code> authenticates against the <code>$external</code> database, so specifying a database is not required. For more information on the x509_derived_username, see the MongoDB server <link href="https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user">x.509 tutorial</link>.</p>
   </section>
 </page>
