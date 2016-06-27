@@ -193,6 +193,8 @@ class Convert(object):
         # Try to render the title first
         for child in section.getchildren():
             if child.tag == TITLE:
+                if child.text is None:
+                    raise RuntimeError("Can't put formatting tags in <title>")
                 s = child.text.strip().upper()
                 self._writeCommand('.SH "%s"' % s.replace('"', ''))
         for child in section.getchildren():

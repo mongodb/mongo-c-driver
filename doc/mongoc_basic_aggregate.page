@@ -12,13 +12,13 @@
   </section>
 
   <section id="distinct">
-    <title><code>distinct</code></title>
+    <title>"distinct" command</title>
     <p>This is how to use the <code>distinct</code> command to get the distinct values of <code>x</code> which are greater than <code>1</code>:</p>
     <code mime="text/x-csrc"><include parse="text" href="../examples/basic_aggregation/distinct.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
   </section>
 
   <section id="map-reduce-basic">
-    <title><code>mapReduce</code> - basic example</title>
+    <title>"mapReduce" - basic example</title>
     <p>A simple example using the map reduce framework. It simply adds up the number of occurrences of each "tag".</p>
 
     <p>First define the <code>map</code> and <code>reduce</code> functions:</p>
@@ -29,14 +29,15 @@
   </section>
 
   <section id="map-reduce-advanced">
+    <title>"mapReduce" - more complicated example</title>
     <p>You must have replica set running for this.</p>
     <p>In this example we contact a secondary in the replica set and do an "inline" map reduce, so the results are returned immediately:</p>
-    <title><code>mapReduce</code> - more complicated example</title>
     <code mime="text/x-csrc"><include parse="text" href="../examples/basic_aggregation/map-reduce-advanced.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
   </section>
 
   <section id="running">
     <title>Running</title>
+    <p>Here's how to run the example code</p>
   <listing>
     <title>basic-aggregation.c</title>
     <code mime="text/x-csrc"><include parse="text" href="../examples/basic_aggregation/basic-aggregation.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
@@ -62,8 +63,6 @@ map reduce
 { "_id" : "mouse", "value" : 21 }
 more complicated map reduce
 { "results" : [ { "_id" : "cat", "value" : 63 }, { "_id" : "dog", "value" : 42 }, { "_id" : "mouse", "value" : 21 } ], "timeMillis" : 14, "counts" : { "input" : 84, "emit" : 126, "reduce" : 3, "output" : 3 }, "ok" : 1 }
-<output>
-
-</output></screen>
+</screen>
   </section>
 </page>
