@@ -33,36 +33,37 @@
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED 60000
 
 typedef enum {
-   MONGOC_TOPOLOGY_BG_OFF,
-   MONGOC_TOPOLOGY_BG_RUNNING,
-   MONGOC_TOPOLOGY_BG_SHUTTING_DOWN,
-} mongoc_topology_bg_state_t;
+   MONGOC_TOPOLOGY_SCANNER_OFF,
+   MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
+   MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN,
+   MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED,
+} mongoc_topology_scanner_state_t;
 
 typedef struct _mongoc_topology_t
 {
-   mongoc_topology_description_t description;
-   mongoc_uri_t                 *uri;
-   mongoc_topology_scanner_t    *scanner;
-   bool                          server_selection_try_once;
+   mongoc_topology_description_t      description;
+   mongoc_uri_t                      *uri;
+   mongoc_topology_scanner_t         *scanner;
+   bool                               server_selection_try_once;
 
-   int64_t                       last_scan;
-   int64_t                       local_threshold_msec;
-   int64_t                       connect_timeout_msec;
-   int64_t                       server_selection_timeout_msec;
-   int64_t                       heartbeat_msec;
+   int64_t                            last_scan;
+   int64_t                            local_threshold_msec;
+   int64_t                            connect_timeout_msec;
+   int64_t                            server_selection_timeout_msec;
+   int64_t                            heartbeat_msec;
 
-   mongoc_mutex_t                mutex;
-   mongoc_cond_t                 cond_client;
-   mongoc_cond_t                 cond_server;
-   mongoc_thread_t               thread;
+   mongoc_mutex_t                     mutex;
+   mongoc_cond_t                      cond_client;
+   mongoc_cond_t                      cond_server;
+   mongoc_thread_t                    thread;
 
-   mongoc_topology_bg_state_t    bg_thread_state;
-   bool                          scan_requested;
-   bool                          scanning;
-   bool                          got_ismaster;
-   bool                          shutdown_requested;
-   bool                          single_threaded;
-   bool                          stale;
+   mongoc_topology_scanner_state_t    scanner_state;
+   bool                               scan_requested;
+   bool                               scanning;
+   bool                               got_ismaster;
+   bool                               shutdown_requested;
+   bool                               single_threaded;
+   bool                               stale;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -101,4 +102,6 @@ int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology,
                                   uint32_t           id);
 
+bool _mongoc_topology_start_background_scanner (mongoc_topology_t* topology);
+bool _mongoc_topology_is_scanner_active (mongoc_topology_t* topology);
 #endif

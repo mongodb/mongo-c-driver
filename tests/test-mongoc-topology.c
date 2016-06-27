@@ -57,7 +57,7 @@ test_topology_client_creation (void)
 
    /* ensure that their topologies are running in single-threaded mode */
    assert (topology_a->single_threaded);
-   assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
+   assert (topology_a->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
 
    /* ensure that we are sharing streams with the client */
    server_stream = mongoc_cluster_stream_for_reads (&client_a->cluster,
@@ -101,7 +101,7 @@ test_topology_client_pool_creation (void)
 
    /* ensure that that topology is running in a background thread */
    assert (!topology_a->single_threaded);
-   assert (topology_a->bg_thread_state != MONGOC_TOPOLOGY_BG_OFF);
+   assert (topology_a->scanner_state != MONGOC_TOPOLOGY_SCANNER_OFF);
 
    mongoc_client_pool_push (pool, client_a);
    mongoc_client_pool_push (pool, client_b);
