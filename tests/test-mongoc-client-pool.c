@@ -210,6 +210,40 @@ test_mongoc_client_pool_ssl_disabled (void)
 }
 #endif
 
+static void
+test_mongoc_client_pool_metadata (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   pool = mongoc_client_pool_new (uri);
+
+
+   ASSERT (mongoc_client_pool_set_appname (pool, "some application"));
+   /* Be sure we can't set it twice */
+   ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
+   mongoc_client_pool_destroy (pool);
+
+   /* Make sure that after we pop a client we can't set metadata anymore */
+   pool = mongoc_client_pool_new (uri);
+
+   client = mongoc_client_pool_pop (pool);
+
+   /* Be sure a client can't set it now that we've popped them */
+   ASSERT (!mongoc_client_set_appname (client, "a"));
+
+   mongoc_client_pool_push (pool, client);
+
+   /* even now that we pushed the client back we shouldn't be able to set
+      the metadata */
+   ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
+
+   mongoc_uri_destroy(uri);
+   mongoc_client_pool_destroy(pool);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -219,6 +253,7 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (suite, "/ClientPool/min_size_dispose", test_mongoc_client_pool_min_size_dispose);
    TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
    TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
+   TestSuite_Add (suite, "/ClientPool/metadata", test_mongoc_client_pool_metadata);
 
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);

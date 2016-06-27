@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "mongoc-metadata.h"
+#include "mongoc-metadata-private.h"
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-client-private.h"
@@ -326,6 +328,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    mongoc_topology_scanner_t *scanner;
 
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED;
+   _mongoc_metadata_freeze ();
 
    scanner = topology->scanner;
    mongoc_topology_scanner_start (scanner,
@@ -851,7 +854,8 @@ DONE:
  *       Start the topology background thread running. This should only be
  *       called once per pool. If clients are created separately (not
  *       through a pool) the SDAM logic will not be run in a background
- *       thread.
+ *       thread. Returns whether or not the scanner is running on termination
+ *       of the function.
  *
  *       NOTE: this method uses @topology's mutex.
  *
@@ -861,26 +865,21 @@ DONE:
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
 {
-   bool launch_thread = true;
-
    if (topology->single_threaded) {
       return false;
    }
 
    mongoc_mutex_lock (&topology->mutex);
-   if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
-      launch_thread = false;
-   }
+   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
+      topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
+      _mongoc_metadata_freeze ();
 
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
-   mongoc_mutex_unlock (&topology->mutex);
-
-   if (launch_thread) {
       mongoc_thread_create (&topology->thread, _mongoc_topology_run_background,
                             topology);
    }
 
-   return launch_thread;
+   mongoc_mutex_unlock (&topology->mutex);
+   return true;
 }
 
 /*
@@ -930,4 +929,19 @@ _mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
       mongoc_thread_join (topology->thread);
       mongoc_cond_broadcast (&topology->cond_client);
    }
+}
+
+bool
+_mongoc_topology_set_appname (mongoc_topology_t *topology,
+                              const char *appname)
+{
+   bool ret = false;
+   mongoc_mutex_lock (&topology->mutex);
+
+   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
+      ret = _mongoc_topology_scanner_set_appname (topology->scanner,
+                                                  appname);
+   }
+   mongoc_mutex_unlock (&topology->mutex);
+   return ret;
 }
