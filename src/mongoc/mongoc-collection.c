@@ -2239,6 +2239,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
          }
       }
       bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+      ret = false; 
    }
    if (reply) {
       bson_copy_to (&reply_local, reply);
