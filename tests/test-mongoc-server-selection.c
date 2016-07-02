@@ -181,7 +181,6 @@ test_server_selection_logic_cb (bson_t *test)
    /* get optype */
    assert (bson_iter_init_find(&iter, test, "operation"));
    op = optype_from_test(bson_iter_utf8(&iter, NULL));
-   ASSERT(op != 0);
 
    /* read in candidate servers */
    assert (bson_iter_init_find(&iter, test, "candidate_servers"));
