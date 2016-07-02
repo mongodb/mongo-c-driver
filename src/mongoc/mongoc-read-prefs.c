@@ -28,6 +28,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
    read_prefs = (mongoc_read_prefs_t *)bson_malloc0(sizeof *read_prefs);
    read_prefs->mode = mode;
    bson_init(&read_prefs->tags);
+   read_prefs->max_staleness_ms = 0;  /* no maximum staleness */
 
    return read_prefs;
 }
@@ -96,18 +97,41 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 }
 
 
+int32_t
+mongoc_read_prefs_get_max_staleness_ms (const mongoc_read_prefs_t *read_prefs)
+{
+   BSON_ASSERT (read_prefs);
+
+   return read_prefs->max_staleness_ms;
+}
+
+
+void
+mongoc_read_prefs_set_max_staleness_ms (mongoc_read_prefs_t *read_prefs,
+                                        int32_t              max_staleness_ms)
+{
+   BSON_ASSERT (read_prefs);
+
+   read_prefs->max_staleness_ms = max_staleness_ms;
+}
+
+
 bool
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (read_prefs);
 
    /*
-    * Tags are not supported with PRIMARY mode.
+    * Tags or maxStalenessMS are not supported with PRIMARY mode.
     */
    if (read_prefs->mode == MONGOC_READ_PRIMARY) {
-      if (!bson_empty(&read_prefs->tags)) {
+      if (!bson_empty(&read_prefs->tags) || read_prefs->max_staleness_ms > 0) {
          return false;
       }
+   }
+
+   if (read_prefs->max_staleness_ms < 0) {
+      return false;
    }
 
    return true;
@@ -132,6 +156,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
    if (read_prefs) {
       ret = mongoc_read_prefs_new(read_prefs->mode);
       bson_copy_to(&read_prefs->tags, &ret->tags);
+      ret->max_staleness_ms = read_prefs->max_staleness_ms;
    }
 
    return ret;

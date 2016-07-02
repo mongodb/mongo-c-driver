@@ -549,7 +549,8 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
-       !strcasecmp(key, "wtimeoutms");
+       !strcasecmp(key, "wtimeoutms") ||
+       !strcasecmp(key, "maxstalenessms");
 }
 
 bool
@@ -923,6 +924,7 @@ mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
+   int32_t max_staleness_ms;
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
@@ -946,6 +948,8 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
+   max_staleness_ms = mongoc_uri_get_option_as_int32 (uri, "maxstalenessms", 0);
+   mongoc_read_prefs_set_max_staleness_ms (uri->read_prefs, max_staleness_ms);
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
