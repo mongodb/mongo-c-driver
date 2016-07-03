@@ -1,11 +1,9 @@
 {
-    "candidate_servers": [], 
-    "eligible_servers": [], 
     "in_latency_window": [], 
     "operation": "read", 
     "read_preference": {
         "mode": "Primary", 
-        "tags": [
+        "tag_sets": [
             {}
         ]
     }, 
@@ -15,21 +13,17 @@
             {
                 "address": "b:27017", 
                 "avg_rtt_ms": 5, 
-                "tags": [
-                    {
-                        "data_center": "nyc"
-                    }
-                ], 
+                "tags": {
+                    "data_center": "nyc"
+                }, 
                 "type": "RSSecondary"
             }, 
             {
                 "address": "c:27017", 
                 "avg_rtt_ms": 100, 
-                "tags": [
-                    {
-                        "data_center": "nyc"
-                    }
-                ], 
+                "tags": {
+                    "data_center": "nyc"
+                }, 
                 "type": "RSSecondary"
             }
         ], 

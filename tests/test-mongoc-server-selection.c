@@ -101,13 +101,10 @@ test_server_selection_logic_cb (bson_t *test)
    bson_iter_t topology_iter;
    bson_iter_t server_iter;
    bson_iter_t sd_iter;
-   bson_iter_t sd_child_iter;
    bson_iter_t read_pref_iter;
    bson_t test_topology;
    bson_t test_servers;
    bson_t server;
-   bson_t candidates;
-   bson_t eligible;
    bson_t suitable;
    bson_t latency;
    bson_t test_read_pref;
@@ -155,11 +152,8 @@ test_server_selection_logic_cb (bson_t *test)
       sd->type = server_type_from_test(bson_iter_utf8(&sd_iter, NULL));
 
       /* set description tags */
-      /* TODO FIX ONCE ARRAYS OF TAG SETS GO AWAY IN TESTS */
       assert(bson_iter_init_find(&sd_iter, &server, "tags"));
-      bson_iter_recurse(&sd_iter, &sd_child_iter);
-      bson_iter_next(&sd_child_iter);
-      bson_iter_bson (&sd_child_iter, &sd->tags);
+      bson_iter_bson (&sd_iter, &sd->tags);
 
       /* add new server to our topology description */
       mongoc_set_add(topology.servers, sd->id, sd);
@@ -174,21 +168,13 @@ test_server_selection_logic_cb (bson_t *test)
    ASSERT (read_mode != 0);
    read_prefs = mongoc_read_prefs_new (read_mode);
 
-   assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tags"));
+   assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tag_sets"));
    bson_iter_bson (&read_pref_iter, &test_tags);
    mongoc_read_prefs_set_tags(read_prefs, &test_tags);
 
    /* get optype */
    assert (bson_iter_init_find(&iter, test, "operation"));
    op = optype_from_test(bson_iter_utf8(&iter, NULL));
-
-   /* read in candidate servers */
-   assert (bson_iter_init_find(&iter, test, "candidate_servers"));
-   bson_iter_bson (&iter, &candidates);
-
-   /* read in eligible servers */
-   assert (bson_iter_init_find(&iter, test, "eligible_servers"));
-   bson_iter_bson (&iter, &eligible);
 
    /* read in suitable servers */
    assert (bson_iter_init_find(&iter, test, "suitable_servers"));
