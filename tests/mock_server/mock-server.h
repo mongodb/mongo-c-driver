@@ -168,4 +168,4 @@ void mock_server_reply_multi (request_t           *request,
 
 void mock_server_destroy (mock_server_t *server);
 
-#endif //MOCK_SERVER_H
+#endif  /* MOCK_SERVER_H */

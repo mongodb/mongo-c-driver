@@ -77,7 +77,7 @@ mongoc_sasl_mutex_free (void *mutex)
    bson_free (mutex);
 }
 
-#endif//MONGOC_ENABLE_SASL
+#endif  /* MONGOC_ENABLE_SASL */
 
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)

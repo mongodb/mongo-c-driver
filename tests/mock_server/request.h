@@ -98,4 +98,4 @@ uint16_t request_get_client_port (request_t *request);
 
 void request_destroy (request_t *request);
 
-#endif //REQUEST_H
+#endif  /* REQUEST_H */

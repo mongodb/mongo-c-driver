@@ -32,4 +32,4 @@ void *q_get_nowait (sync_queue_t *q);
 
 void q_destroy (sync_queue_t *q);
 
-#endif //SYNC_QUEUE_H
+#endif  /* SYNC_QUEUE_H */
