@@ -1388,6 +1388,10 @@ test_framework_skip_if_no_uds (void)
    char *path;
    int ret;
 
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
    path = test_framework_get_unix_domain_socket_path ();
    ret = access (path, R_OK|W_OK) == 0 ? 1 : 0;
 
