@@ -304,6 +304,29 @@ _mongoc_replica_set_read_suitable_cb (void *item,
    return true;
 }
 
+
+/* if any mongos are candidates, add them to the candidates array */
+static void
+_mongoc_try_mode_secondary (mongoc_array_t                *set, /* OUT */
+                            mongoc_topology_description_t *topology,
+                            const mongoc_read_prefs_t     *read_pref,
+                            size_t                         local_threshold_ms)
+{
+   mongoc_read_prefs_t *secondary;
+
+   secondary = mongoc_read_prefs_copy (read_pref);
+   mongoc_read_prefs_set_mode (secondary, MONGOC_READ_SECONDARY);
+
+   mongoc_topology_description_suitable_servers (set,
+                                                 MONGOC_SS_READ,
+                                                 topology,
+                                                 secondary,
+                                                 local_threshold_ms);
+
+   mongoc_read_prefs_destroy (secondary);
+}
+
+
 /* if any mongos are candidates, add them to the candidates array */
 static bool
 _mongoc_find_suitable_mongos_cb (void *item,
@@ -383,41 +406,52 @@ mongoc_topology_description_suitable_servers (
 
          mongoc_set_for_each(topology->servers, _mongoc_replica_set_read_suitable_cb, &data);
 
-         /* if we have a primary, it's a candidate, for some read modes we are done */
-         if (read_mode == MONGOC_READ_PRIMARY || read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+         if (read_mode == MONGOC_READ_PRIMARY) {
             if (data.primary) {
                _mongoc_array_append_val (set, data.primary);
-               goto DONE;
             }
+
+            goto DONE;
          }
 
-         if (! mongoc_server_description_filter_eligible (data.candidates, data.candidates_len, read_pref)) {
-            if (read_mode == MONGOC_READ_NEAREST) {
-               goto DONE;
-            } else {
-               data.has_secondary = false;
-            }
-         }
-
-         if (data.has_secondary &&
-             (read_mode == MONGOC_READ_SECONDARY || read_mode == MONGOC_READ_SECONDARY_PREFERRED)) {
-            /* secondary or secondary preferred and we have one. */
-
-            for (i = 0; i < data.candidates_len; i++) {
-               if (candidates[i] && candidates[i]->type == MONGOC_SERVER_RS_PRIMARY) {
-                  candidates[i] = NULL;
-               }
-            }
-         } else if (read_mode == MONGOC_READ_SECONDARY_PREFERRED && data.primary) {
-            /* secondary preferred, but only the one primary is a candidate */
+         if (read_mode == MONGOC_READ_PRIMARY_PREFERRED && data.primary) {
             _mongoc_array_append_val (set, data.primary);
             goto DONE;
          }
 
+         if (read_mode == MONGOC_READ_SECONDARY_PREFERRED) {
+            /* try read_mode SECONDARY */
+            _mongoc_try_mode_secondary (set,
+                                        topology,
+                                        read_pref,
+                                        local_threshold_ms);
+
+            /* otherwise fall back to primary */
+            if (!set->len && data.primary) {
+               _mongoc_array_append_val (set, data.primary);
+            }
+
+            goto DONE;
+         }
+
+         if (read_mode == MONGOC_READ_SECONDARY) {
+            for (i = 0; i < data.candidates_len; i++) {
+               if (candidates[i] &&
+                   candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+                  candidates[i] = NULL;
+               }
+            }
+         }
+
+         /* mode is SECONDARY or NEAREST, filter by tags */
+         mongoc_server_description_filter_eligible (data.candidates,
+                                                    data.candidates_len,
+                                                    read_pref);
       } else if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
          /* includes optype == MONGOC_SS_WRITE as the exclusion of the above if */
-         mongoc_set_for_each(topology->servers, _mongoc_topology_description_has_primary_cb,
-                             &data.primary);
+         mongoc_set_for_each (topology->servers,
+                              _mongoc_topology_description_has_primary_cb,
+                              &data.primary);
          if (data.primary) {
             _mongoc_array_append_val (set, data.primary);
             goto DONE;
