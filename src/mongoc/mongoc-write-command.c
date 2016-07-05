@@ -249,7 +249,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* I
 }
 
 
-/* takes uninitialized bson_t *doc and begins formatting a write command */
+/* takes initialized bson_t *doc and begins formatting a write command */
 static void
 _mongoc_write_command_init (bson_t                       *doc,
                             mongoc_write_command_t       *command,
@@ -259,8 +259,6 @@ _mongoc_write_command_init (bson_t                       *doc,
    bson_iter_t iter;
 
    ENTRY;
-
-   bson_init (doc);
 
    if (!command->n_documents ||
        !bson_iter_init (&iter, command->documents) ||
@@ -301,6 +299,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
       EXIT;
    }
 
+   bson_init (&doc);
    _mongoc_write_command_init (&doc, command, collection, write_concern);
 
    /* copy the whole documents buffer as e.g. "updates": [...] */
@@ -1202,6 +1201,8 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
+   bson_init (&cmd);
+
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_write_batch_size = mongoc_server_stream_max_write_batch_size (server_stream);
 
@@ -1314,12 +1315,12 @@ again:
       bson_destroy (&reply);
    }
 
-   bson_destroy (&cmd);
-
    if (has_more && (ret || !command->flags.ordered)) {
+      bson_reinit (&cmd);
       GOTO (again);
    }
 
+   bson_destroy (&cmd);
    EXIT;
 }
 
