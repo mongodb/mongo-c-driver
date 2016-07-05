@@ -1913,7 +1913,8 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
 {
    bson_iter_t iter;
    bson_t cmd = BSON_INITIALIZER;
-   bool ret;
+   bool ret = false;
+   bool reply_initialized = false;
 
    BSON_ASSERT (collection);
 
@@ -1924,7 +1925,7 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
                       MONGOC_ERROR_BSON,
                       MONGOC_ERROR_BSON_INVALID,
                       "'full' must be a boolean value.");
-      return false;
+      goto cleanup;
    }
 
    bson_append_utf8 (&cmd, "validate", 8,
@@ -1936,8 +1937,14 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
    }
 
    ret = mongoc_collection_command_simple (collection, &cmd, NULL, reply, error);
+   reply_initialized = true;
 
+cleanup:
    bson_destroy (&cmd);
+
+   if (reply && !reply_initialized) {
+      bson_init (reply);
+   }
 
    return ret;
 }
