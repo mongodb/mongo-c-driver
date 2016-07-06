@@ -89,8 +89,10 @@ ssl_test_server (void * ptr)
 
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_INIT;
-      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
-
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__,
+                    ERR_error_string (ERR_get_error(), NULL));
+#endif
       mongoc_stream_destroy (sock_stream);
       mongoc_socket_destroy (listen_sock);
 
