@@ -23,8 +23,8 @@ EOF
 fi
 
 if test x"${enable_automatic_init_and_cleanup}" != x"no"; then
-  automatic_init_deprecated="\n\
-    DEPRECATED: use --disable-automatic-init-and-cleanup"
+  automatic_init_deprecated="
+      DEPRECATED: use --disable-automatic-init-and-cleanup"
 fi
 
 echo "
