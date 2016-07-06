@@ -1312,6 +1312,8 @@ mongoc_client_command_simple_with_server_id (mongoc_client_t           *client,
       ret = _mongoc_client_command_with_stream (client, db_name, command,
                                                 server_stream, read_prefs,
                                                 reply, error);
+
+      mongoc_server_stream_cleanup (server_stream);
       RETURN (ret);
    } else {
       if (reply) {
