@@ -125,12 +125,6 @@ _mongoc_client_recv_gle (mongoc_client_t        *client,
                          bson_error_t           *error);
 
 void
-_mongoc_topology_background_thread_start (mongoc_topology_t *topology);
-
-void
-_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
-
-void
 _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          uint32_t         server_id,
                                          int64_t          cursor_id,
