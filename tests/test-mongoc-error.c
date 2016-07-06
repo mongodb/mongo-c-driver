@@ -28,6 +28,8 @@ test_set_error_api_single (void)
                            MONGOC_LOG_LEVEL_ERROR,
                            "Unsupported Error API Version");
    }
+
+   mongoc_client_destroy (client);
 }
 
 
@@ -55,6 +57,9 @@ test_set_error_api_pooled (void)
    ASSERT_CAPTURED_LOG ("mongoc_client_set_error_api",
                         MONGOC_LOG_LEVEL_ERROR,
                         "Cannot set Error API Version on a pooled client");
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
 }
 
 

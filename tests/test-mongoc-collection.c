@@ -1367,6 +1367,7 @@ test_index_2 ()
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
+   bson_destroy (&reply);
 }
 
 static void

@@ -705,6 +705,7 @@ test_cursor_new_invalid (void)
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Couldn't parse cursor document");
 
+   mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
 }
 
@@ -736,8 +737,11 @@ test_cursor_hint_errors (void)
 
    /* last set_hint had no effect */
    ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
-}
 
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
 
 
 static uint32_t
@@ -832,6 +836,7 @@ _test_cursor_hint (bool pooled,
    }
 
    mock_rs_destroy (rs);
+   bson_destroy (q);
 }
 
 static void

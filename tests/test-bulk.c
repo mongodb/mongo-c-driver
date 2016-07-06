@@ -2790,6 +2790,7 @@ _test_legacy_write_err (void *ctx)
    future_destroy (future);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
+   bson_destroy (&reply);
 
    if (err_test->pooled) {
       mongoc_client_pool_push (pool, client);
