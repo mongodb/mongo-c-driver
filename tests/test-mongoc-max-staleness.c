@@ -3,6 +3,7 @@
 #include "mongoc-client-private.h"
 
 #include "TestSuite.h"
+#include "json-test.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test-max-staleness"
@@ -36,9 +37,19 @@ test_mongoc_client_max_staleness (void)
 }
 
 
+static void
+test_all_spec_tests (TestSuite *suite)
+{
+   char resolved[PATH_MAX];
+
+   assert (realpath ("tests/json/max_staleness", resolved));
+   install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
+}
+
 void
 test_client_max_staleness_install (TestSuite *suite)
 {
+   test_all_spec_tests (suite);
    TestSuite_Add (suite, "/Client/max_staleness",
                   test_mongoc_client_max_staleness);
 }

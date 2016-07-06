@@ -1622,7 +1622,8 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
       &topology->description,
       MONGOC_SS_WRITE,
       read_prefs,
-      topology->local_threshold_msec);
+      topology->local_threshold_msec,
+      topology->heartbeat_msec);
 
    if (selected_server) {
       server_id = selected_server->id;

@@ -16,6 +16,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
 
 #include "utlist.h"
@@ -342,6 +343,49 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    topology->stale = false;
 }
 
+
+bool
+mongoc_topology_compatible (const mongoc_topology_description_t *td,
+                            const mongoc_read_prefs_t           *read_prefs,
+                            int64_t                              heartbeat_msec,
+                            bson_error_t                        *error)
+{
+   int32_t max_staleness;
+   int32_t max_wire_version;
+
+   if (!read_prefs) {
+      /* NULL means read preference Primary */
+      return true;
+   }
+
+   max_staleness = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
+
+   if (max_staleness) {
+      max_wire_version = mongoc_topology_description_lowest_max_wire_version (
+         td);
+
+      if (max_wire_version < WIRE_VERSION_MAX_STALENESS) {
+         bson_set_error (error, MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Not all servers support maxStalenessMS");
+         return false;
+      }
+
+      if ((td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+           td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+          max_staleness < 2 * heartbeat_msec) {
+         bson_set_error (error, MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "maxStalenessMS must be at least twice "
+                         "heartbeatFrequencyMS");
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
 static void
 _mongoc_server_selection_error (const char         *msg,
                                 const bson_error_t *scanner_error,
@@ -441,7 +485,9 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   "No suitable servers found: "
                   "`serverselectiontimeoutms` timed out",
                   &scanner_error, error);
-               goto FAIL;
+
+               topology->stale = true;
+               return NULL;
             }
 
             sleep_usec = scan_ready - loop_end;
@@ -455,10 +501,19 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             tried_once = true;
          }
 
-         selected_server = mongoc_topology_description_select(&topology->description,
-                                                              optype,
-                                                              read_prefs,
-                                                              local_threshold_ms);
+         if (!mongoc_topology_compatible (&topology->description,
+                                          read_prefs,
+                                          topology->heartbeat_msec,
+                                          error)) {
+            return NULL;
+         }
+
+         selected_server = mongoc_topology_description_select (
+            &topology->description,
+            optype,
+            read_prefs,
+            local_threshold_ms,
+            topology->heartbeat_msec);
 
          if (selected_server) {
             return mongoc_server_description_new_copy(selected_server);
@@ -472,7 +527,8 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   "No suitable servers found (`serverSelectionTryOnce` set)",
                   &scanner_error, error);
 
-               goto FAIL;
+               topology->stale = true;
+               return NULL;
             }
          } else {
             loop_end = bson_get_monotonic_time ();
@@ -482,7 +538,8 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                _mongoc_server_selection_error (timeout_msg,
                                                &scanner_error, error);
 
-               goto FAIL;
+               topology->stale = true;
+               return NULL;
             }
          }
       }
@@ -492,10 +549,21 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    /* we break out when we've found a server or timed out */
    for (;;) {
       mongoc_mutex_lock (&topology->mutex);
-      selected_server = mongoc_topology_description_select(&topology->description,
-                                                           optype,
-                                                           read_prefs,
-                                                           local_threshold_ms);
+
+      if (!mongoc_topology_compatible (&topology->description,
+                                       read_prefs,
+                                       topology->heartbeat_msec,
+                                       error)) {
+         mongoc_mutex_unlock (&topology->mutex);
+         return NULL;
+      }
+
+      selected_server = mongoc_topology_description_select (
+         &topology->description,
+         optype,
+         read_prefs,
+         local_threshold_ms,
+         topology->heartbeat_msec);
 
       if (! selected_server) {
          _mongoc_topology_request_scan (topology);
@@ -515,14 +583,14 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             _mongoc_server_selection_error (timeout_msg,
                                             &scanner_error, error);
 
-            goto FAIL;
+            return NULL;
          } else if (r) {
             bson_set_error(error,
                            MONGOC_ERROR_SERVER_SELECTION,
                            MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                            "Unknown error '%d' received while waiting on "
                            "thread condition", r);
-            goto FAIL;
+            return NULL;
          }
 
          loop_start = bson_get_monotonic_time ();
@@ -531,7 +599,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             _mongoc_server_selection_error (timeout_msg,
                                             &scanner_error, error);
 
-            goto FAIL;
+            return NULL;
          }
       } else {
          selected_server = mongoc_server_description_new_copy(selected_server);
@@ -539,11 +607,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          return selected_server;
       }
    }
-
-FAIL:
-   topology->stale = true;
-
-   return NULL;
 }
 
 /*

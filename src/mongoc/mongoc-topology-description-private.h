@@ -70,12 +70,17 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *description,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms);
+                                    int64_t                        local_threshold_ms,
+                                    int64_t                        heartbeat_frequency_ms);
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
                                           uint32_t                       id,
                                           bson_error_t                  *error);
+
+int32_t
+mongoc_topology_description_lowest_max_wire_version (
+   const mongoc_topology_description_t *td);
 
 void
 mongoc_topology_description_suitable_servers (
@@ -83,7 +88,8 @@ mongoc_topology_description_suitable_servers (
    mongoc_ss_optype_t             optype,
    mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t     *read_pref,
-   size_t                         local_threshold_ms);
+   size_t                         local_threshold_ms,
+   int64_t                        heartbeat_frequency_ms);
 
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,

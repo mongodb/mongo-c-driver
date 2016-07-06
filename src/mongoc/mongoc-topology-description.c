@@ -20,6 +20,7 @@
 #include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
+#include "mongoc-set-private.h"
 
 
 static void
@@ -280,13 +281,16 @@ _mongoc_replica_set_read_suitable_cb (void *item,
    mongoc_server_description_t *server = (mongoc_server_description_t *)item;
    mongoc_suitable_data_t *data = (mongoc_suitable_data_t *)ctx;
 
+   /* primary's used in staleness calculation, even with mode SECONDARY */
+   if (server->type == MONGOC_SERVER_RS_PRIMARY) {
+      data->primary = server;
+   }
+
    if (_mongoc_topology_description_server_is_candidate (server->type,
                                                          data->read_mode,
                                                          data->topology_type)) {
 
       if (server->type == MONGOC_SERVER_RS_PRIMARY) {
-         data->primary = server;
-
          if (data->read_mode == MONGOC_READ_PRIMARY ||
              data->read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
             /* we want a primary and we have one, done! */
@@ -310,7 +314,8 @@ static void
 _mongoc_try_mode_secondary (mongoc_array_t                *set, /* OUT */
                             mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t     *read_pref,
-                            size_t                         local_threshold_ms)
+                            size_t                         local_threshold_ms,
+                            int64_t                        heartbeat_frequency_ms)
 {
    mongoc_read_prefs_t *secondary;
 
@@ -321,7 +326,8 @@ _mongoc_try_mode_secondary (mongoc_array_t                *set, /* OUT */
                                                  MONGOC_SS_READ,
                                                  topology,
                                                  secondary,
-                                                 local_threshold_ms);
+                                                 local_threshold_ms,
+                                                 heartbeat_frequency_ms);
 
    mongoc_read_prefs_destroy (secondary);
 }
@@ -342,6 +348,45 @@ _mongoc_find_suitable_mongos_cb (void *item,
    }
    return true;
 }
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_lowest_max_wire_version --
+ *
+ *       The topology's max wire version.
+ *
+ *       NOTE: this method should only be called while holding the mutex on
+ *       the owning topology object.
+ *
+ * Returns:
+ *       The minimum of all known servers' max wire versions, or INT32_MAX
+ *       if there are no known servers.
+ *
+ * Side effects:
+ *       None.
+ *
+ *-------------------------------------------------------------------------
+ */
+int32_t
+mongoc_topology_description_lowest_max_wire_version (const mongoc_topology_description_t *td)
+{
+   int i;
+   int32_t ret = INT32_MAX;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; (size_t) i < td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+
+      if (sd->type != MONGOC_SERVER_UNKNOWN && sd->max_wire_version < ret) {
+         ret = sd->max_wire_version;
+      }
+   }
+
+   return ret;
+}
+
 
 /*
  *-------------------------------------------------------------------------
@@ -364,12 +409,12 @@ _mongoc_find_suitable_mongos_cb (void *item,
  */
 
 void
-mongoc_topology_description_suitable_servers (
-   mongoc_array_t                *set, /* OUT */
-   mongoc_ss_optype_t             optype,
-   mongoc_topology_description_t *topology,
-   const mongoc_read_prefs_t     *read_pref,
-   size_t                         local_threshold_ms)
+mongoc_topology_description_suitable_servers (mongoc_array_t                *set, /* OUT */
+                                              mongoc_ss_optype_t             optype,
+                                              mongoc_topology_description_t *topology,
+                                              const mongoc_read_prefs_t     *read_pref,
+                                              size_t                         local_threshold_ms,
+                                              int64_t                        heartbeat_frequency_ms)
 {
    mongoc_suitable_data_t data;
    mongoc_server_description_t **candidates;
@@ -424,7 +469,8 @@ mongoc_topology_description_suitable_servers (
             _mongoc_try_mode_secondary (set,
                                         topology,
                                         read_pref,
-                                        local_threshold_ms);
+                                        local_threshold_ms,
+                                        heartbeat_frequency_ms);
 
             /* otherwise fall back to primary */
             if (!set->len && data.primary) {
@@ -443,10 +489,16 @@ mongoc_topology_description_suitable_servers (
             }
          }
 
-         /* mode is SECONDARY or NEAREST, filter by tags */
-         mongoc_server_description_filter_eligible (data.candidates,
-                                                    data.candidates_len,
-                                                    read_pref);
+         /* mode is SECONDARY or NEAREST, filter by staleness and tags */
+         mongoc_server_description_filter_stale (data.candidates,
+                                                 data.candidates_len,
+                                                 data.primary,
+                                                 heartbeat_frequency_ms,
+                                                 read_pref);
+
+         mongoc_server_description_filter_tags (data.candidates,
+                                                data.candidates_len,
+                                                read_pref);
       } else if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
          /* includes optype == MONGOC_SS_WRITE as the exclusion of the above if */
          mongoc_set_for_each (topology->servers,
@@ -519,7 +571,8 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *topology,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms)
+                                    int64_t                        local_threshold_ms,
+                                    int64_t                        heartbeat_frequency_ms)
 {
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;
@@ -527,8 +580,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    ENTRY;
 
    if (!topology->compatible) {
-      /* TODO, should we return an error object here,
-         or just treat as a case where there are no suitable servers? */
+      /* TODO: check this in mongoc_topology_compatible (), CDRIVER-689 */
       RETURN(NULL);
    }
 
@@ -544,8 +596,10 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
    _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));
 
-   mongoc_topology_description_suitable_servers(&suitable_servers, optype,
-                                                 topology, read_pref, local_threshold_ms);
+   mongoc_topology_description_suitable_servers (&suitable_servers, optype,
+                                                 topology, read_pref,
+                                                 local_threshold_ms,
+                                                 heartbeat_frequency_ms);
    if (suitable_servers.len != 0) {
       sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*,
                                rand() % suitable_servers.len);

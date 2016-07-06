@@ -57,11 +57,13 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   sd->last_write_date_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
    bson_init (&sd->last_is_master);
    sd->has_is_master = false;
+   sd->last_update_time_usec = bson_get_monotonic_time ();
 }
 
 /*
@@ -543,6 +545,10 @@ mongoc_server_description_handle_ismaster (
          bson_init_static (&sd->tags, bytes, len);
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
+      } else if (strcmp ("lastWriteDate", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_DATE_TIME (&iter)) { goto failure; }
+
+         sd->last_write_date_ms = bson_iter_date_time (&iter);
       }
    }
 
@@ -624,27 +630,109 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    return copy;
 }
 
+
 /*
  *-------------------------------------------------------------------------
  *
- * mongoc_server_description_filter_eligible --
+ * mongoc_server_description_filter_stale --
  *
- *       Given a set of server descriptions, determine which are eligible
- *       as per the Server Selection spec. Determines the number of
- *       eligible servers, and sets any servers that are NOT eligible to
- *       NULL in the descriptions set.
- *
- * Returns:
- *       Number of eligible servers found.
+ *       Estimate servers' staleness according to the Server Selection Spec.
+ *       Determines the number of eligible servers, and sets any servers that
+ *       are too stale to NULL in the descriptions set.
  *
  *-------------------------------------------------------------------------
  */
 
-size_t
-mongoc_server_description_filter_eligible (
-   mongoc_server_description_t **descriptions,
-   size_t                        description_len,
-   const mongoc_read_prefs_t    *read_prefs)
+void
+mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
+                                        size_t                        sds_len,
+                                        mongoc_server_description_t  *primary,
+                                        int64_t                       heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t    *read_prefs)
+{
+   int64_t max_staleness_ms;
+   int64_t max_last_write_date_ms;
+   size_t i;
+
+   if (!read_prefs) {
+      /* NULL read_prefs is PRIMARY, no maxStalenessMS to filter by */
+      return;
+   }
+
+   max_staleness_ms = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
+   BSON_ASSERT (max_staleness_ms >= 0);
+
+   if (max_staleness_ms == 0) {
+      /* 0 means "no max staleness" */
+      return;
+   }
+
+   if (primary) {
+      int64_t staleness_usec;
+
+      for (i = 0; i < sds_len; i++) {
+         if (!sds[i] || sds[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+            continue;
+         }
+
+         /* See max-staleness.rst for explanation of these formulae. */
+         staleness_usec =
+            primary->last_write_date_ms * 1000 +
+            (sds[i]->last_update_time_usec - primary->last_update_time_usec) -
+            sds[i]->last_write_date_ms * 1000 +
+            heartbeat_frequency_ms * 1000;
+
+         if (staleness_usec > max_staleness_ms * 1000) {
+            sds[i] = NULL;
+         }
+      }
+   } else {
+      int64_t staleness_ms;
+
+      /* find max last_write_date */
+      max_last_write_date_ms = 0;
+      for (i = 0; i < sds_len; i++) {
+         if (sds[i] && sds[i]->type == MONGOC_SERVER_RS_SECONDARY &&
+             sds[i]->last_write_date_ms > max_last_write_date_ms) {
+            max_last_write_date_ms = sds[i]->last_write_date_ms;
+         }
+      }
+
+      /* use max last_write_date to estimate each secondary's staleness */
+      for (i = 0; i < sds_len; i++) {
+         if (!sds[i] || sds[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+            continue;
+         }
+
+         staleness_ms = max_last_write_date_ms -
+                        sds[i]->last_write_date_ms +
+                        heartbeat_frequency_ms;
+
+         if (staleness_ms > max_staleness_ms) {
+            sds[i] = NULL;
+         }
+      }
+   }
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_server_description_filter_tags --
+ *
+ *       Given a set of server descriptions, determine have the correct tags
+ *       as per the Server Selection spec. Determines the number of
+ *       eligible servers, and sets any servers that are NOT eligible to
+ *       NULL in the descriptions set.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
+                                       size_t                        description_len,
+                                       const mongoc_read_prefs_t    *read_prefs)
 {
    const bson_t *rp_tags;
    bson_iter_t rp_tagset_iter;
@@ -657,17 +745,17 @@ mongoc_server_description_filter_eligible (
    bool *sd_matched = NULL;
    size_t found;
    size_t i;
-   size_t rval = 0;
 
    if (!read_prefs) {
       /* NULL read_prefs is PRIMARY, no tags to filter by */
-      return description_len;
+      return;
    }
 
    rp_tags = mongoc_read_prefs_get_tags (read_prefs);
 
    if (bson_count_keys (rp_tags) == 0) {
-      return description_len;
+      /* no tags to filter by */
+      return;
    }
 
    sd_matched = (bool *) bson_malloc0 (sizeof(bool) * description_len);
@@ -679,6 +767,11 @@ mongoc_server_description_filter_eligible (
       found = description_len;
 
       for (i = 0; i < description_len; i++) {
+         if (!descriptions[i]) {
+            /* NULLed earlier in mongoc_topology_description_suitable_servers */
+            continue;
+         }
+
          sd_matched[i] = true;
 
          bson_iter_recurse (&rp_tagset_iter, &rp_iter);
@@ -712,7 +805,6 @@ mongoc_server_description_filter_eligible (
             }
          }
 
-         rval = found;
          goto CLEANUP;
       }
    }
@@ -725,6 +817,4 @@ mongoc_server_description_filter_eligible (
 
 CLEANUP:
    bson_free (sd_matched);
-
-   return rval;
 }

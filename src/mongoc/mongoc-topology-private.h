@@ -73,6 +73,12 @@ mongoc_topology_new (const mongoc_uri_t *uri,
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
+bool
+mongoc_topology_compatible (const mongoc_topology_description_t *td,
+                            const mongoc_read_prefs_t           *read_prefs,
+                            int64_t                              heartbeat_msec,
+                            bson_error_t                        *error);
+
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t         *topology,
                         mongoc_ss_optype_t         optype,

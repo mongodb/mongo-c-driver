@@ -25,6 +25,8 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 
+#include "test-conveniences.h"
+
 #define MAX_NUM_TESTS 100
 
 typedef void (* test_hook)(bson_t *test);
@@ -53,6 +55,9 @@ topology_type_from_test(const char *type);
 
 const char *
 topology_type_to_string(mongoc_topology_description_type_t type);
+
+void
+test_server_selection_logic_cb (bson_t *test);
 
 mongoc_server_description_type_t
 server_type_from_test(const char *type);
