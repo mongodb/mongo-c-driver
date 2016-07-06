@@ -27,9 +27,15 @@ c_driver_variables:
     - name: "compile"
 
   compile_unix_variants: &compile_unix_variants
-    - name: "compileunixtest-c89"
-    - name: "compileunixtest-c99"
     - name: "compileunixtest-c11"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
+
+  compile_most_unix_variants: &compile_most_unix_variants
+    - name: "compileunixtest-c99"
     - name: "compileunixtest-openssl-sasl"
     - name: "compileunixtest-openssl-nosasl"
     - name: "compileunixtest-nossl-sasl"
@@ -1554,24 +1560,6 @@ buildvariants:
   - archlinux-build
   tasks: *compile_unix_variants
 
-- name: compile-rhel55
-  display_name: "RHEL 5.5 (GCC)"
-  expansions:
-    CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_default
-  run_on:
-  - rhel55
-  tasks: *compile_unix_variants
-
-- name: compile-rhel62
-  display_name: "RHEL 6.2 (GCC)"
-  expansions:
-    CFLAGS: "-m64 -march=x86-64"
-    <<: *configure_flags_default
-  run_on:
-  - rhel62-build
-  tasks: *compile_unix_variants
-
 - name: compile-rhel70
   display_name: "RHEL 7.0 (GCC)"
   expansions:
@@ -1588,7 +1576,7 @@ buildvariants:
     <<: *configure_flags_default
   run_on:
   - ubuntu1204-build
-  tasks: *compile_unix_variants
+  tasks: *compile_most_unix_variants
 
 - name: compile-ubuntu1404
   display_name: "Ubuntu 14.04 (GCC)"
