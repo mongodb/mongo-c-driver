@@ -150,7 +150,7 @@ c_driver_variables:
 
   configure:
   standard: &configure_flags_default
-     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
+     configure_flags: "--enable-experimental-features --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
 
   ## Extra $PATH entries
   paths:
@@ -216,7 +216,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -224,7 +224,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -232,7 +232,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -240,7 +240,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -251,7 +251,7 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -259,7 +259,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -271,7 +271,7 @@ c_driver_variables:
           git submodule update --init
           cd src/libbson
           echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
-          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+          "$cmake" -G "$GENERATOR" "-DENABLE_EXPERIMENTAL_FEATURES=ON" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
@@ -703,7 +703,7 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+                ./autogen.sh --enable-experimental-features --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
                 ls -la
