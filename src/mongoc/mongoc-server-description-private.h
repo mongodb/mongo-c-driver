@@ -124,8 +124,8 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         const mongoc_read_prefs_t    *read_prefs);
 
 void
-   mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
-                                          size_t                        description_len,
-                                          const mongoc_read_prefs_t    *read_prefs);
+mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
+                                       size_t                        description_len,
+                                       const mongoc_read_prefs_t    *read_prefs);
 
 #endif
