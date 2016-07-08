@@ -253,7 +253,7 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
 
    success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
 
-   ASSERT (success);
+   ASSERT (!success);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
 
    bson_destroy (&reply);
