@@ -62,7 +62,9 @@ extern void test_read_prefs_install              (TestSuite *suite);
 extern void test_rpc_install                     (TestSuite *suite);
 extern void test_sdam_install                    (TestSuite *suite);
 extern void test_server_selection_install        (TestSuite *suite);
+#if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
+#endif
 extern void test_set_install                     (TestSuite *suite);
 extern void test_socket_install                  (TestSuite *suite);
 extern void test_stream_install                  (TestSuite *suite);
@@ -1806,7 +1808,9 @@ main (int   argc,
    test_topology_reconcile_install (&suite);
    test_sdam_install (&suite);
    test_server_selection_install (&suite);
+#if 0
    test_server_selection_errors_install (&suite);
+#endif
    test_set_install (&suite);
    test_stream_install (&suite);
    test_thread_install (&suite);

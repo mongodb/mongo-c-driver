@@ -1,7 +1,6 @@
 {
     "name": "mongod",
     "procParams": {
-        "logpath": "/tmp/orchestration-home/mongod.log",
         "ipv6": true,
         "logappend": true,
         "journal": true,

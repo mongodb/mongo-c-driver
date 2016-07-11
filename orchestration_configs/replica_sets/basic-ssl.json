@@ -49,5 +49,12 @@
         "arbiterOnly": true
       }
     }
-  ]
+  ],
+  "sslParams": {
+      "sslMode": "requireSSL",
+      "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
+      "sslCAFile": "/tmp/orchestration-home/ca.pem",
+      "sslAllowInvalidCertificates": true,
+      "sslWeakCertificateValidation" : true
+  }
 }

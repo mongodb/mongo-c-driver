@@ -5,8 +5,7 @@
       "id": "sh01",
       "shardParams": {
         "procParams": {
-          "port": 27217,
-          "logpath": "/tmp/orchestration-home/27217.log"
+          "port": 27217
         }
       }
     },
@@ -14,20 +13,17 @@
       "id": "sh02",
       "shardParams": {
         "procParams": {
-          "port": 27218,
-          "logpath": "/tmp/orchestration-home/27218.log"
+          "port": 27218
         }
       }
     }
   ],
   "routers": [
     {
-      "port": 27017,
-      "logpath": "/tmp/orchestration-home/27017.log"
+      "port": 27017
     },
     {
-      "port": 27018,
-      "logpath": "/tmp/orchestration-home/27018.log"
+      "port": 27018
     }
   ]
 }
