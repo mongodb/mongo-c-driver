@@ -455,9 +455,9 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
    BSON_ASSERT (certbio);
    BSON_ASSERT (strbio);
 
-   BIO_read_filename (certbio, filename);
 
-   if ((cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
+   if (BIO_read_filename (certbio, filename) &&
+         (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
       if ((subject = X509_get_subject_name (cert))) {
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
