@@ -77,6 +77,9 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
 
    BSON_ASSERT (tls);
 
+   /* Attempt to be good TLS citizens and notify the other end we are shutting down */
+   BIO_ssl_shutdown (openssl->bio);
+
    BIO_free_all (openssl->bio);
    openssl->bio = NULL;
 
