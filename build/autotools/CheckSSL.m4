@@ -17,7 +17,7 @@ AS_IF([test "$enable_ssl" != "no"],[
    AS_IF([test "$enable_ssl" != "darwin"],[
       PKG_CHECK_MODULES(SSL, [openssl], [enable_openssl=auto], [
          AC_CHECK_LIB([ssl],[SSL_library_init],[have_ssl_lib=yes],[have_ssl_lib=no])
-         AC_CHECK_LIB([crypto],[CRYPTO_set_locking_callback],[have_crypto_lib=yes],[have_crypto_lib=no])
+         AC_CHECK_LIB([crypto],[EVP_DigestInit_ex],[have_crypto_lib=yes],[have_crypto_lib=no])
 
          if test "$have_ssl_lib" = "no" -o "$have_crypto_lib" = "no" ; then
             if test "$enable_ssl" = "openssl"; then

@@ -38,6 +38,79 @@
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl-bio"
 
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+/* Magic vtable to make our BIO shim */
+static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {
+   BIO_TYPE_FILTER,
+   "mongoc-stream-tls-glue",
+   mongoc_stream_tls_openssl_bio_write,
+   mongoc_stream_tls_openssl_bio_read,
+   mongoc_stream_tls_openssl_bio_puts,
+   mongoc_stream_tls_openssl_bio_gets,
+   mongoc_stream_tls_openssl_bio_ctrl,
+   mongoc_stream_tls_openssl_bio_create,
+   mongoc_stream_tls_openssl_bio_destroy,
+   NULL
+};
+
+static void
+BIO_set_data (BIO *b, void *ptr)
+{
+   b->ptr = ptr;
+}
+
+static void *
+BIO_get_data (BIO *b)
+{
+   return b->ptr;
+}
+
+static void
+BIO_set_init (BIO *b, int init)
+{
+   b->init = init;
+}
+
+BIO_METHOD *
+mongoc_stream_tls_openssl_bio_meth_new ()
+{
+   BIO_METHOD *meth = NULL;
+
+   meth = &gMongocStreamTlsOpenSslRawMethods;
+   return meth;
+}
+
+#else
+
+BIO_METHOD *
+mongoc_stream_tls_openssl_bio_meth_new ()
+{
+   BIO_METHOD *meth = NULL;
+
+   meth = BIO_meth_new (BIO_TYPE_FILTER, "mongoc-stream-tls-glue");
+   if (meth) {
+      BIO_meth_set_write (meth, mongoc_stream_tls_openssl_bio_write);
+      BIO_meth_set_read (meth, mongoc_stream_tls_openssl_bio_read);
+      BIO_meth_set_puts (meth, mongoc_stream_tls_openssl_bio_puts);
+      BIO_meth_set_gets (meth, mongoc_stream_tls_openssl_bio_gets);
+      BIO_meth_set_ctrl (meth, mongoc_stream_tls_openssl_bio_ctrl);
+      BIO_meth_set_create (meth, mongoc_stream_tls_openssl_bio_create);
+      BIO_meth_set_destroy (meth, mongoc_stream_tls_openssl_bio_destroy);
+   }
+
+   return meth;
+}
+
+#endif
+
+void
+mongoc_stream_tls_openssl_bio_set_data (BIO *b, void *ptr)
+{
+   BIO_set_data (b, ptr);
+}
+
+
 
 /*
  *--------------------------------------------------------------------------
@@ -60,10 +133,9 @@ mongoc_stream_tls_openssl_bio_create (BIO *b)
 {
    BSON_ASSERT (b);
 
-   b->init = 1;
-   b->num = 0;
-   b->ptr = NULL;
-   b->flags = 0;
+   BIO_set_init(b, 1);
+   BIO_set_data (b, NULL);
+   BIO_set_flags (b, 0);
 
    return 1;
 }
@@ -92,15 +164,15 @@ mongoc_stream_tls_openssl_bio_destroy (BIO *b)
 
    BSON_ASSERT (b);
 
-   tls = (mongoc_stream_tls_t *)b->ptr;
+   tls = (mongoc_stream_tls_t *)BIO_get_data (b);
 
    if (!tls) {
       return -1;
    }
 
-   b->ptr = NULL;
-   b->init = 0;
-   b->flags = 0;
+   BIO_set_data (b, NULL);
+   BIO_set_init (b, 0);
+   BIO_set_flags (b, 0);
 
    ((mongoc_stream_tls_openssl_t *) tls->ctx)->bio = NULL;
 
@@ -136,7 +208,7 @@ mongoc_stream_tls_openssl_bio_read (BIO  *b,
    BSON_ASSERT (buf);
    ENTRY;
 
-   tls = (mongoc_stream_tls_t *)b->ptr;
+   tls = (mongoc_stream_tls_t *)BIO_get_data (b);
 
    if (!tls) {
       RETURN (-1);
@@ -184,7 +256,7 @@ mongoc_stream_tls_openssl_bio_write (BIO        *b,
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
-   tls = (mongoc_stream_tls_t *)b->ptr;
+   tls = (mongoc_stream_tls_t *)BIO_get_data (b);
 
    if (!tls) {
       RETURN (-1);

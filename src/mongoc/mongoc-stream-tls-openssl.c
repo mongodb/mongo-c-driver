@@ -43,18 +43,13 @@
 
 #define MONGOC_STREAM_TLS_OPENSSL_BUFFER_SIZE 4096
 
-/* Magic vtable to make our BIO shim */
-static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {
-   BIO_TYPE_FILTER,
-   "mongoc-stream-tls-glue",
-   mongoc_stream_tls_openssl_bio_write,
-   mongoc_stream_tls_openssl_bio_read,
-   mongoc_stream_tls_openssl_bio_puts,
-   mongoc_stream_tls_openssl_bio_gets,
-   mongoc_stream_tls_openssl_bio_ctrl,
-   mongoc_stream_tls_openssl_bio_create,
-   mongoc_stream_tls_openssl_bio_destroy
-};
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static void
+BIO_meth_free(BIO_METHOD *meth)
+{
+/* Nothing to free pre OpenSSL 1.1.0 */
+}
+#endif
 
 
 /*
@@ -84,6 +79,9 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
 
    BIO_free_all (openssl->bio);
    openssl->bio = NULL;
+
+   BIO_meth_free (openssl->meth);
+   openssl->meth = NULL;
 
    mongoc_stream_destroy (tls->base_stream);
    tls->base_stream = NULL;
@@ -611,6 +609,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    SSL_CTX *ssl_ctx = NULL;
    BIO *bio_ssl = NULL;
    BIO *bio_mongoc_shim = NULL;
+   BIO_METHOD *meth;
 
    BSON_ASSERT(base_stream);
    BSON_ASSERT(opt);
@@ -638,11 +637,12 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
       SSL_CTX_free (ssl_ctx);
       RETURN(NULL);
    }
-
-   bio_mongoc_shim = BIO_new (&gMongocStreamTlsOpenSslRawMethods);
+   meth = mongoc_stream_tls_openssl_bio_meth_new ();
+   bio_mongoc_shim = BIO_new (meth);
    if (!bio_mongoc_shim) {
       BIO_free_all (bio_ssl);
-      RETURN(NULL);
+      BIO_meth_free (meth);
+      RETURN (NULL);
    }
 
 
@@ -650,6 +650,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
 
    openssl = (mongoc_stream_tls_openssl_t *)bson_malloc0 (sizeof *openssl);
    openssl->bio = bio_ssl;
+   openssl->meth = meth;
    openssl->ctx = ssl_ctx;
 
    tls = (mongoc_stream_tls_t *)bson_malloc0 (sizeof *tls);
@@ -668,7 +669,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    tls->ctx = (void *)openssl;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;
-   bio_mongoc_shim->ptr = tls;
+   mongoc_stream_tls_openssl_bio_set_data (bio_mongoc_shim, tls);
 
    mongoc_counter_streams_active_inc();
 

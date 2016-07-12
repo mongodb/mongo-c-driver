@@ -45,29 +45,40 @@ mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t     *crypto,
          NULL);
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+EVP_MD_CTX *EVP_MD_CTX_new(void)
+{
+    return bson_malloc0 (sizeof (EVP_MD_CTX));
+}
+
+void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
+{
+    EVP_MD_CTX_cleanup (ctx);
+    bson_free (ctx);
+}
+#endif
+
 bool
 mongoc_crypto_openssl_sha1 (mongoc_crypto_t     *crypto,
                             const unsigned char *input,
                             const size_t         input_len,
                             unsigned char       *output /* OUT */)
 {
-   EVP_MD_CTX digest_ctx;
+   EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new();
    bool rval = false;
 
-   EVP_MD_CTX_init (&digest_ctx);
-
-   if (1 != EVP_DigestInit_ex (&digest_ctx, EVP_sha1 (), NULL)) {
-      goto cleanup;
+   if (1 != EVP_DigestInit_ex (digest_ctxp, EVP_sha1 (), NULL)) {
+	   goto cleanup;
    }
 
-   if (1 != EVP_DigestUpdate (&digest_ctx, input, input_len)) {
-      goto cleanup;
+   if (1 != EVP_DigestUpdate (digest_ctxp, input, input_len)) {
+	   goto cleanup;
    }
 
-   rval = (1 == EVP_DigestFinal_ex (&digest_ctx, output, NULL));
+   rval = (1 == EVP_DigestFinal_ex (digest_ctxp, output, NULL));
 
 cleanup:
-   EVP_MD_CTX_cleanup (&digest_ctx);
+   EVP_MD_CTX_free (digest_ctxp);
 
    return rval;
 }

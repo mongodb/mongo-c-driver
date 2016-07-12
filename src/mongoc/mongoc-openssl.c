@@ -36,10 +36,12 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static mongoc_mutex_t * gMongocOpenSslThreadLocks;
 
 static void _mongoc_openssl_thread_startup(void);
 static void _mongoc_openssl_thread_cleanup(void);
+#endif
 
 /**
  * _mongoc_openssl_init:
@@ -58,7 +60,9 @@ _mongoc_openssl_init (void)
    SSL_load_error_strings ();
    ERR_load_BIO_strings ();
    OpenSSL_add_all_algorithms ();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
    _mongoc_openssl_thread_startup ();
+#endif
 
    /*
     * Ensure we also load the ciphers now from the primary thread
@@ -76,7 +80,9 @@ _mongoc_openssl_init (void)
 void
 _mongoc_openssl_cleanup (void)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
    _mongoc_openssl_thread_cleanup ();
+#endif
 }
 
 static int
@@ -478,6 +484,7 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
    return str;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 #ifdef _WIN32
 
 static unsigned long
@@ -547,5 +554,6 @@ _mongoc_openssl_thread_cleanup (void)
    }
    OPENSSL_free (gMongocOpenSslThreadLocks);
 }
+#endif
 
 #endif

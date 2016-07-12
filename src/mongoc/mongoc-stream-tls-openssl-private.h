@@ -35,6 +35,7 @@ BSON_BEGIN_DECLS
 typedef struct
 {
    BIO                *bio;
+   BIO_METHOD         *meth;
    SSL_CTX            *ctx;
 } mongoc_stream_tls_openssl_t;
 
