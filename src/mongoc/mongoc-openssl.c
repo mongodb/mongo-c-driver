@@ -377,6 +377,7 @@ SSL_CTX *
 _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
 {
    SSL_CTX *ctx = NULL;
+   int ssl_ctx_options = 0;
 
    /*
     * Ensure we are initialized. This is safe to call multiple times.
@@ -387,9 +388,22 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
 
    BSON_ASSERT (ctx);
 
-   /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's.
-    * SSL_OP_NO_SSLv2 - Disable SSL v2 support */
-   SSL_CTX_set_options (ctx, (SSL_OP_ALL | SSL_OP_NO_SSLv2));
+   /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's. */
+   ssl_ctx_options |= SSL_OP_ALL;
+
+   /* SSL_OP_NO_SSLv2 - Disable SSL v2 support */
+   ssl_ctx_options |= SSL_OP_NO_SSLv2;
+
+   /* Disable compression, if we can.
+    * OpenSSL 0.9.x added compression support which was always enabled when built against zlib
+    * OpenSSL 1.0.0 added the ability to disable it, while keeping it enabled by default
+    * OpenSSL 1.1.0 disabled it by default.
+    */
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+   ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
+#endif
+
+   SSL_CTX_set_options (ctx, ssl_ctx_options);
 
 /* only defined in special build, using:
  * --enable-system-crypto-profile (autotools)
