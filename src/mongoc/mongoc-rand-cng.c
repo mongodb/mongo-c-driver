@@ -52,11 +52,6 @@ int _mongoc_rand_bytes (uint8_t * buf, int num)
    return 0;
 }
 
-int _mongoc_pseudo_rand_bytes (uint8_t * buf, int num)
-{
-   return _mongoc_rand_bytes (buf, num);
-}
-
 void mongoc_rand_seed (const void* buf, int num)
 {
    /* N/A - OS Does not need entropy seed */

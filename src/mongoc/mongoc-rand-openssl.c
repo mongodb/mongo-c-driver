@@ -29,10 +29,6 @@ int _mongoc_rand_bytes(uint8_t * buf, int num) {
     return RAND_bytes(buf, num);
 }
 
-int _mongoc_pseudo_rand_bytes(uint8_t * buf, int num) {
-    return RAND_pseudo_bytes(buf, num);
-}
-
 void mongoc_rand_seed(const void* buf, int num) {
     RAND_seed(buf, num);
 }

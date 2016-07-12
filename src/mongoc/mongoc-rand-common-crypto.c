@@ -30,10 +30,6 @@ int _mongoc_rand_bytes(uint8_t *buf, int num) {
 	return !SecRandomCopyBytes(kSecRandomDefault, num, buf);
 }
 
-int _mongoc_pseudo_rand_bytes(uint8_t *buf, int num) {
-	return _mongoc_rand_bytes(buf, num);
-}
-
 void mongoc_rand_seed(const void* buf, int num) {
 	/* No such thing in Common Crypto */
 }
