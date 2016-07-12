@@ -236,6 +236,24 @@ c_driver_variables:
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      unix_openssl11: &compile_unix_openssl11
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          prefix=`pwd`/openssl
+          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
+          tar zxvf openssl.tar.gz
+          cd openssl-1.1.0-pre5
+          ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
+          make && make install
+          cd ..
+          export LDFLAGS="-L$prefix/lib -lssl -lcrypto"
+          export SSL_LIBS="-L$prefix/lib -lssl -lcrypto"
+          export SSL_CFLAGS="-I$prefix/include"
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       unix: &compile_unix
         compile_script: |
           set -o errexit
@@ -324,6 +342,26 @@ c_driver_variables:
           sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongo-c-driver/./g' test-libmongoc
           make TEST_ARGS="-d -F test-results.json" test
 
+      unix_openssl11: &run_integration_tests_unix_openssl11
+        run_integration_tests: |
+          prefix=`pwd`/openssl
+          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
+          tar zxvf openssl.tar.gz
+          cd openssl-1.1.0-pre5
+          ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
+          make && make install
+          cd ..
+          LD_EXTRA=":$prefix/lib"
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export LD_LIBRARY_PATH=".libs:src/libbson/.libs$LD_EXTRA"
+
+          # This libtool wrapper script was built in a unique dir like
+          # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongo-c-driver",
+          # replace its absolute path with "." so it can run in the CWD.
+          sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongo-c-driver/./g' test-libmongoc
+          make TEST_ARGS="-d -F test-results.json" test
+
       osx: &run_integration_tests_osx
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -332,6 +370,13 @@ c_driver_variables:
           make TEST_ARGS="-d -F test-results.json" test
 
 ## Other OS-specific attributes, grouped by OS
+  unix_common_openssl11: &unix_common_openssl11
+    <<: *compile_unix_openssl11
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix_openssl11
+    <<: *start_topology_command
+    <<: *unix_path
+
   unix_common: &unix_common
     <<: *compile_unix
     <<: *mongo_orchestration_unix
@@ -1325,6 +1370,18 @@ buildvariants:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1404
     <<: *unix_common
+    <<: *ssl
+  run_on:
+  - ubuntu1404-test
+  tasks: *ssl_tests
+
+
+- name: ubuntu-1404-64-openssl1.1
+  display_name: "Ubu 14 gcc-4.8.4 64 OpenSSL 1.1"
+  expansions:
+    <<: *cflags_64_no_werror
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common_openssl11
     <<: *ssl
   run_on:
   - ubuntu1404-test
