@@ -194,10 +194,13 @@ c_driver_variables:
         start_mongo_orchestration: |
           echo "Starting Mongo Orchestration..."
           export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
+          set +o errexit
           if [ -f /tmp/orchestration-home/server.pid ]; then
             echo "Prior Mongo Orchestration?"
             kill `cat /tmp/orchestration-home/server.pid`
           fi
+          killall mongod mongos
+          set -o errexit
           mkdir -p $MONGO_ORCHESTRATION_HOME
           rm -f $MONGO_ORCHESTRATION_HOME/server.pid
           echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
