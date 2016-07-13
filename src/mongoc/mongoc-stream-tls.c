@@ -164,10 +164,13 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_new --
+ * mongoc_stream_tls_new_with_hostname --
  *
  *       Creates a new mongoc_stream_tls_t to communicate with a remote
  *       server using a TLS stream.
+ *
+ *       @host the hostname we are connected to and to verify the
+ *       server certificate against
  *
  *       @base_stream should be a stream that will become owned by the
  *       resulting tls stream. It will be used for raw I/O.
@@ -185,21 +188,36 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
  */
 
 mongoc_stream_t *
+mongoc_stream_tls_new_with_hostname (mongoc_stream_t  *base_stream,
+                                     const char       *host,
+                                     mongoc_ssl_opt_t *opt,
+                                     int               client)
+{
+   BSON_ASSERT (base_stream);
+
+   /* !client is only used for testing,
+    * when the streams are pretending to be the server */
+   if (!client || opt->weak_cert_validation) {
+      opt->allow_invalid_hostname = true;
+   }
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   return mongoc_stream_tls_secure_channel_new (base_stream, host, opt, client);
+#else
+#error "Don't know how to create TLS stream"
+#endif
+}
+
+mongoc_stream_t *
 mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
                        mongoc_ssl_opt_t *opt,
                        int               client)
 {
-   BSON_ASSERT (base_stream);
-
-#if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   return mongoc_stream_tls_openssl_new (base_stream, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   return mongoc_stream_tls_secure_transport_new (base_stream, opt, client);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-   return mongoc_stream_tls_secure_channel_new (base_stream, opt, client);
-#else
-#error "Don't know how to create TLS stream"
-#endif
+   return mongoc_stream_tls_new_with_hostname (base_stream, NULL, opt, client);
 }
 
 #endif

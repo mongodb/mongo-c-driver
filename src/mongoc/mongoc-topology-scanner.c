@@ -481,7 +481,9 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
 #ifdef MONGOC_ENABLE_SSL
       if (sock_stream && node->ts->ssl_opts) {
-         sock_stream = mongoc_stream_tls_new (sock_stream, node->ts->ssl_opts, 1);
+         sock_stream = mongoc_stream_tls_new_with_hostname (sock_stream,
+                                                            node->host.host,
+                                                            node->ts->ssl_opts, 1);
       }
 #endif
    }

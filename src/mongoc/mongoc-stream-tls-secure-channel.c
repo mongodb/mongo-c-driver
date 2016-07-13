@@ -917,6 +917,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
 
 mongoc_stream_t *
 mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
+                                      const char       *host,
                                       mongoc_ssl_opt_t *opt,
                                       int               client)
 {
@@ -965,7 +966,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
       TRACE ("disabled server certificate checks");
-      opt->allow_invalid_hostname = true;
    } else {
       schannel_cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION |
                               SCH_CRED_REVOCATION_CHECK_CHAIN;

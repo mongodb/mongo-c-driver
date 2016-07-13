@@ -331,8 +331,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
       if (client->use_ssl ||
           (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
-         base_stream = mongoc_stream_tls_new (base_stream, &client->ssl_opts,
-                                              true);
+         base_stream = mongoc_stream_tls_new_with_hostname (base_stream, host->host,
+                                                            &client->ssl_opts, true);
 
          if (!base_stream) {
             bson_set_error (error,

@@ -110,7 +110,7 @@ test_ismaster_impl (bool with_ssl)
          copt.ca_file = CERT_CA;
          copt.weak_cert_validation = 1;
 
-         sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
+         sock_streams[i] = mongoc_stream_tls_new_with_hostname (sock_streams[i], NULL, &copt, 1);
          setup = mongoc_async_cmd_tls_setup;
          setup_ctx = (void *)"127.0.0.1";
       }

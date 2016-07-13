@@ -346,6 +346,7 @@ LIBMONGOC_1.4 {
         mongoc_server_description_round_trip_time;
         mongoc_server_description_type;
         mongoc_server_descriptions_destroy_all;
+        mongoc_stream_tls_new_with_hostname;
         mongoc_uri_get_option_as_bool;
         mongoc_uri_get_option_as_int32;
         mongoc_uri_get_option_as_utf8;

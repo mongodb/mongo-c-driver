@@ -398,13 +398,6 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
    ENTRY;
    BSON_ASSERT (secure_transport);
 
-   if (!tls->ssl_opts.allow_invalid_hostname) {
-      /* Silly check for Unix Domain Sockets */
-      if (host[0] != '/' || access (host, F_OK) == -1) {
-         TRACE("Verifying hostname against: %s", host);
-         SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
-      }
-   }
    ret = SSLHandshake (secure_transport->ssl_ctx_ref);
    /* Weak certificate validation requested, eg: none */
 
@@ -431,6 +424,7 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
 
 mongoc_stream_t *
 mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
+                                        const char       *host,
                                         mongoc_ssl_opt_t *opt,
                                         int               client)
 {
@@ -486,6 +480,14 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
       SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, opt->weak_cert_validation);
    } else {
       SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref, kTryAuthenticate);
+   }
+
+   if (!opt->allow_invalid_hostname) {
+      /* Silly check for Unix Domain Sockets */
+      if (host[0] != '/' || access (host, F_OK) == -1) {
+         TRACE("Verifying hostname against: %s", host);
+         SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
+      }
    }
    SSLSetConnection (secure_transport->ssl_ctx_ref, tls);
 

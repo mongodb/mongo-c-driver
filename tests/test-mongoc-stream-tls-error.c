@@ -72,7 +72,7 @@ ssl_error_server (void *ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new (sock_stream, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->server, 0);
    assert (ssl_stream);
 
    switch (data->behavior) {
@@ -148,7 +148,7 @@ ssl_hangup_client (void *ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new (sock_stream, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->client, 1);
    assert (ssl_stream);
 
    r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);

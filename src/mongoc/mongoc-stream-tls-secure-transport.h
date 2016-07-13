@@ -28,6 +28,7 @@ BSON_BEGIN_DECLS
 
 mongoc_stream_t *
 mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
+                                        const char       *host,
                                         mongoc_ssl_opt_t *opt,
                                         int               client);
 

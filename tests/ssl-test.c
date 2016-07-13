@@ -78,7 +78,7 @@ ssl_test_server (void * ptr)
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
-   ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname(sock_stream, NULL, data->server, 0);
    if (!ssl_stream) {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();
@@ -202,7 +202,7 @@ ssl_test_client (void * ptr)
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert(sock_stream);
-   ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname(sock_stream, data->host, data->client, 1);
    if (! ssl_stream) {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();

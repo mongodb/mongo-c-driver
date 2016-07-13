@@ -604,6 +604,7 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 
 mongoc_stream_t *
 mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
+                               const char       *host,
                                mongoc_ssl_opt_t *opt,
                                int               client)
 {
@@ -624,15 +625,28 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
       RETURN(NULL);
    }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+   if (!opt->allow_invalid_hostname && host) {
+      struct in_addr addr;
+      X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
+
+#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
+      X509_VERIFY_PARAM_set_hostflags (param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+#endif
+      if (inet_pton (AF_INET, host, &addr)) {
+         X509_VERIFY_PARAM_set1_ip_asc (param, host);
+      } else {
+         X509_VERIFY_PARAM_set1_host (param, host, 0);
+      }
+      SSL_CTX_set1_param (ssl_ctx, param);
+      X509_VERIFY_PARAM_free (param);
+   }
+#endif
+
    if (opt->weak_cert_validation) {
       SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
-      opt->allow_invalid_hostname = true;
    } else {
       SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
-   }
-
-   if (!client) {
-      opt->allow_invalid_hostname = true;
    }
 
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
