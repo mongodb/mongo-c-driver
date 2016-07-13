@@ -1,5 +1,12 @@
 AC_OUTPUT
 
+if test "$enable_experimental_features" = "yes"; then
+enable_experimental_text="
+  Experimental future BSON and MongoDB features    : yes"
+else
+enable_experimental_text=""
+fi
+
 if test -n "$MONGOC_PRERELEASE_VERSION"; then
 cat << EOF
  *** IMPORTANT *** 
@@ -42,7 +49,7 @@ Build configuration:
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
-  Libbson                                          : ${with_libbson}
+  Libbson                                          : ${with_libbson}${enable_experimental_text}
 
 Documentation:
   man                                              : ${enable_man_pages}

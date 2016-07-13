@@ -14,6 +14,9 @@ option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
+option(ENABLE_EXPERIMENTAL_FEATURES
+        "Experimental future BSON and MongoDB features."
+        OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -344,11 +347,22 @@ if (MONGOC_ENABLE_SASL)
 endif()
 
 if (MSVC)
+   # Export the functions listed in a definitions file.
    if (MONGOC_ENABLE_SSL)
-      set(MONGOC_SHARED_SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
+      if (ENABLE_EXPERIMENTAL_FEATURES)
+         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl-experimental.def)
+      else ()
+         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
+      endif ()
    else ()
-      set(MONGOC_SHARED_SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
-   endif()
+      if (ENABLE_EXPERIMENTAL_FEATURES)
+         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-experimental.def)
+      else ()
+         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
+      endif ()
+   endif ()
+
+   set(MONGOC_SHARED_SOURCES ${SOURCES} ${MONGOC_DEF_FILE})
 else()
    set(MONGOC_SHARED_SOURCES ${SOURCES})
 endif()

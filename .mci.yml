@@ -293,7 +293,7 @@ c_driver_variables:
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
-          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
+          "$cmake" -G "$GENERATOR" "-DENABLE_EXPERIMENTAL_FEATURES=ON" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$MSBUILD" /m INSTALL.vcxproj
           (cd src/libbson && ./Debug/test-libbson.exe --no-fork -d)
