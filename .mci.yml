@@ -181,7 +181,7 @@ c_driver_variables:
           . Scripts/activate
           git clone https://github.com/10gen/mongo-orchestration.git
           cd mongo-orchestration
-          python setup.py install
+          pip install .
           cd ../..
 
           mkdir -p /cygdrive/c/tmp/orchestration-home
