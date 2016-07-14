@@ -455,6 +455,7 @@ test_max_wire_version_race_condition (void *ctx)
 }
 
 
+#if !defined(__sun) /* CDRIVER-1305 */
 static void
 test_cooldown_standalone (void *ctx)
 {
@@ -618,6 +619,7 @@ test_cooldown_rs (void *ctx)
    bson_free (uri_str);
    mock_server_destroy (servers[0]);
 }
+#endif /* CDRIVER-1305 */
 
 
 static void
@@ -774,7 +776,7 @@ _test_connect_timeout (bool pooled, bool try_once)
 }
 
 
-#if !defined(__sun) // CDRIVER-1305
+#if !defined(__sun) /* CDRIVER-1305 */
 static void
 test_connect_timeout_pooled (void *ctx)
 {
@@ -959,12 +961,16 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
+
+#if !defined(__sun) /* CDRIVER-1305 */
    TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
                       test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/Topology/cooldown/rs",
                       test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
+#endif
+
 #ifndef _WIN32
-#if !defined(__sun) // CDRIVER-1305
+#if !defined(__sun) /* CDRIVER-1305 */
    TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
                       test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
 #endif
