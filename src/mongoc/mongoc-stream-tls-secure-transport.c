@@ -483,11 +483,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    }
 
    if (!opt->allow_invalid_hostname) {
-      /* Silly check for Unix Domain Sockets */
-      if (host[0] != '/' || access (host, F_OK) == -1) {
-         TRACE("Verifying hostname against: %s", host);
-         SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
-      }
+      SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
    }
    SSLSetConnection (secure_transport->ssl_ctx_ref, tls);
 

@@ -972,7 +972,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
 
    if (opt->allow_invalid_hostname) {
       schannel_cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK | SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
-      TRACE ("Ignoring hostname verification");
    }
 
    if (opt->ca_file) {

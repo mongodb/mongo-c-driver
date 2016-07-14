@@ -201,6 +201,13 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t  *base_stream,
       opt->allow_invalid_hostname = true;
    }
 
+#ifndef _WIN32
+   /* Silly check for Unix Domain Sockets */
+   if (!host || (host[0] == '/' && !access (host, F_OK))) {
+      opt->allow_invalid_hostname = true;
+   }
+#endif
+
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
