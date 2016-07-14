@@ -226,15 +226,9 @@ _mongoc_secure_transport_extract_subject (const char *filename, const char *pass
    SecExternalItemType type = kSecItemTypeCertificate;
 
 
-   if (!filename) {
-      MONGOC_INFO ("No private key provided, the server won't be able to verify us");
-      return false;
-   }
-
    success = _mongoc_secure_transport_import_pem (filename, passphrase, &items, &type);
 
    if (!success) {
-      MONGOC_ERROR ("Can't find certificate in '%s'", filename);
       return NULL;
    }
 
