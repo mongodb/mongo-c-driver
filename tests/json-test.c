@@ -275,12 +275,14 @@ test_server_selection_logic_cb (bson_t *test)
       }
    }
 
+#ifdef BSON_EXPERIMENTAL_FEATURES
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
                             "maxStalenessMS")) {
       mongoc_read_prefs_set_max_staleness_ms (
          read_prefs,
          (int32_t) bson_iter_as_int64 (&read_pref_iter));
    }
+#endif
 
    /* get operation type */
    op = MONGOC_SS_READ;

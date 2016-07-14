@@ -650,6 +650,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         int64_t                       heartbeat_frequency_ms,
                                         const mongoc_read_prefs_t    *read_prefs)
 {
+#ifdef BSON_EXPERIMENTAL_FEATURES
    int64_t max_staleness_ms;
    int64_t max_last_write_date_ms;
    size_t i;
@@ -713,6 +714,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
          }
       }
    }
+#endif
 }
 
 

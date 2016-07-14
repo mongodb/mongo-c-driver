@@ -39,7 +39,9 @@ extern void test_async_install                   (TestSuite *suite);
 extern void test_buffer_install                  (TestSuite *suite);
 extern void test_bulk_install                    (TestSuite *suite);
 extern void test_client_install                  (TestSuite *suite);
+#ifdef BSON_EXPERIMENTAL_FEATURES
 extern void test_client_max_staleness_install    (TestSuite *suite);
+#endif
 extern void test_client_pool_install             (TestSuite *suite);
 extern void test_cluster_install                 (TestSuite *suite);
 extern void test_collection_install              (TestSuite *suite);
@@ -1638,7 +1640,9 @@ main (int   argc,
    test_async_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
+#ifdef BSON_EXPERIMENTAL_FEATURES
    test_client_max_staleness_install (&suite);
+#endif
    test_client_pool_install (&suite);
    test_write_command_install (&suite);
    test_bulk_install (&suite);

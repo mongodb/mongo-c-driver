@@ -496,6 +496,12 @@ if (MONGOC_ENABLE_SASL)
    )
 endif ()
 
+if (ENABLE_EXPERIMENTAL_FEATURES)
+   set(test-libmongoc-sources ${test-libmongoc-sources}
+      ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
+   )
+endif ()
+
 mongoc_add_test(test-load FALSE
    ${SOURCE_DIR}/tests/test-load.c
    ${SOURCE_DIR}/tests/mongoc-tests.c)
