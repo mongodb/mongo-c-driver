@@ -65,9 +65,9 @@ mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
    }
 
 #ifdef _WIN32
-   if (!_access (filename, 0)) {
+   if (_access (filename, 0) != 0) {
 #else
-   if (!access (filename, R_OK)) {
+   if (access (filename, R_OK) != 0) {
 #endif
       MONGOC_ERROR ("Can't extract subject from unreadable file: '%s'", filename);
       return NULL;
