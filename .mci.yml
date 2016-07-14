@@ -443,6 +443,11 @@ c_driver_variables:
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
       cmake_defs: "-DENABLE_SSL=WINDOWS"
+    msvc2015: &with_msvc2015_openssl
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=OPENSSL"
 
   ## all windows buildvariants have these attributes in common
   windows_common: &windows_common
@@ -1522,6 +1527,17 @@ buildvariants:
     <<: *msvc_common
     <<: *mongo_url_windows64ssl
     <<: *with_msvc2015_nativessl
+    <<: *ssl
+  run_on:
+  - windows-64-vs2015-compile
+  tasks: *ssl_tests
+
+- name: windows-64-vs2015-openssl
+  display_name: "Win VS2015 64 OpenSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64ssl
+    <<: *with_msvc2015_openssl
     <<: *ssl
   run_on:
   - windows-64-vs2015-compile
