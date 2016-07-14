@@ -956,8 +956,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
    memset (&schannel_cred, 0, sizeof (schannel_cred));
    schannel_cred.dwVersion = SCHANNEL_CRED_VERSION;
 
-   //opt->weak_cert_validation = true;  /* FIXME: REMOVE ME !*/
-
    /* SCHANNEL_CRED:
     *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
    schannel_cred.dwFlags = SCH_USE_STRONG_CRYPTO;
@@ -972,7 +970,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
       TRACE ("enabled server certificate checks");
    }
 
-   //opt->allow_invalid_hostname = true; /* FIXME: REMOVE ME ! */
    if (opt->allow_invalid_hostname) {
       schannel_cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK | SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
       TRACE ("Ignoring hostname verification");
