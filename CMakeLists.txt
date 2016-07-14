@@ -319,6 +319,9 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       )
       set (LIBS ${LIBS} ${OPENSSL_LIBRARIES})
       include_directories (${OPENSSL_INCLUDE_DIR})
+      if(WIN32)
+         set(LIBS ${LIBS} crypt32.lib)
+      endif()
    elseif (SECURE_TRANSPORT)
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c

@@ -36,6 +36,10 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
 
+#ifdef _WIN32
+#include <wincrypt.h>
+#endif
+
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static mongoc_mutex_t * gMongocOpenSslThreadLocks;
 
@@ -102,6 +106,58 @@ _mongoc_openssl_password_cb (char *buf,
    return pass_len;
 }
 
+#ifdef _WIN32
+bool
+_mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE* openssl_store)
+{
+   PCCERT_CONTEXT cert = NULL;
+   HCERTSTORE cert_store;
+
+   cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                       /* provider */
+                               X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,      /* certificate encoding */
+                               0,                                            /* unused */
+                               dwFlags,                                      /* dwFlags */
+                               store_name);                                  /* system store name. "My" or "Root" */
+
+   if (cert_store == NULL) {
+      MONGOC_WARNING ("error opening system CA store");
+      return false;
+   }
+
+   while ((cert = CertEnumCertificatesInStore (cert_store, cert)) != NULL) {
+      X509* x509Obj = d2i_X509 (NULL, &cert->pbCertEncoded, cert->cbCertEncoded);
+
+      if (x509Obj == NULL) {
+         MONGOC_WARNING ("Error parsing X509 object from Windows certificate store");
+         continue;
+      }
+
+      X509_STORE_add_cert (openssl_store, x509Obj);
+      X509_free (x509Obj);
+   }
+
+   CertCloseStore(cert_store, 0);
+   return true;
+}
+
+bool
+_mongoc_openssl_import_cert_stores (SSL_CTX *context)
+{
+    bool retval;
+    X509_STORE *store = SSL_CTX_get_cert_store (context);
+
+    if (!store) {
+       MONGOC_WARNING ("no X509 store found for SSL context while loading system certificates");
+       return false;
+    }
+
+    retval = _mongoc_openssl_import_cert_store (L"root", CERT_SYSTEM_STORE_CURRENT_USER, store);
+    if (retval) {
+       return retval;
+    }
+    return _mongoc_openssl_import_cert_store (L"CA", CERT_SYSTEM_STORE_CURRENT_USER, store);
+}
+#endif
 
 /** mongoc_openssl_hostcheck
  *
@@ -436,7 +492,11 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
       }
    } else {
       /* If the server certificate is issued by known CA we trust it by default */
+#ifdef _WIN32
+      _mongoc_openssl_import_cert_stores (ctx);
+#else
       SSL_CTX_set_default_verify_paths (ctx);
+#endif
    }
 
    /* Load my revocation list, to verify the server against */
