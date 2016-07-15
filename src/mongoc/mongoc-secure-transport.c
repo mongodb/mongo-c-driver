@@ -106,8 +106,17 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
 
    retval = bson_string_new ("");;
 
-   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCommonName);
-   _bson_append_cftyperef (retval, "CN=", value);
+   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCountryName);
+   _bson_append_cftyperef (retval, ",C=", value);
+
+   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDStateProvinceName);
+   _bson_append_cftyperef (retval, ",ST=", value);
+
+   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDLocalityName);
+   _bson_append_cftyperef (retval, ",L=", value);
+
+   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDOrganizationName);
+   _bson_append_cftyperef (retval, ",O=", value);
 
    value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDOrganizationalUnitName);
    if (value) {
@@ -129,19 +138,9 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
       }
    }
 
-   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDOrganizationName);
-   _bson_append_cftyperef (retval, ",O=", value);
+   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCommonName);
+   _bson_append_cftyperef (retval, "CN=", value);
 
-   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDLocalityName);
-   _bson_append_cftyperef (retval, ",L=", value);
-
-   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDStateProvinceName);
-   _bson_append_cftyperef (retval, ",ST=", value);
-
-   value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCountryName);
-   _bson_append_cftyperef (retval, ",C=", value);
-
-   /* This seems rarely used */
    value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDStreetAddress);
    _bson_append_cftyperef (retval, ",STREET", value);
 
