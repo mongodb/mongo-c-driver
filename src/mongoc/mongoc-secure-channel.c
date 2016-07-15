@@ -33,16 +33,8 @@
 #define MONGOC_LOG_DOMAIN "stream-secure-channel"
 
 
-char *
-_mongoc_secure_channel_extract_subject (const char *filename,
-                                        const char *passphrase)
-{
-   return NULL;
-}
-
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                         mongoc_ssl_opt_t                   *opt)
+mongoc_secure_channel_setup_certificate_from_file (const char *filename)
 {
    char *pem;
    FILE *file;
@@ -63,9 +55,9 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    LPBYTE encrypted_private = NULL;
 
 
-   file = fopen (opt->pem_file, "rb");
+   file = fopen (filename, "rb");
    if (!file) {
-      MONGOC_WARNING ("Couldn't open file '%s'", opt->pem_file);
+      MONGOC_ERROR ("Couldn't open file '%s'", filename);
       return false;
    }
 
@@ -73,7 +65,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    pem_length = ftell (file);
    fseek (file, 0, SEEK_SET);
    if (pem_length < 1) {
-      MONGOC_WARNING ("Couldn't determine file size of '%s'", opt->pem_file);
+      MONGOC_ERROR ("Couldn't determine file size of '%s'", filename);
       return false;
    }
 
@@ -85,7 +77,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    pem_private = strstr (pem, "-----BEGIN ENCRYPTED PRIVATE KEY-----");
 
    if (pem_private) {
-      MONGOC_WARNING ("Detected unsupported encrypted private key");
+      MONGOC_ERROR ("Detected unsupported encrypted private key");
       goto fail;
    }
 
@@ -95,7 +87,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    }
 
    if (!pem_private) {
-      MONGOC_WARNING ("Can't find private key in '%s'", opt->pem_file);
+      MONGOC_ERROR ("Can't find private key in '%s'", filename);
       goto fail;
    }
 
@@ -117,7 +109,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
    );
 
    if (!cert) {
-      MONGOC_WARNING ("Failed to extract public key from '%s'. Error 0x%.8X", opt->pem_file, GetLastError());
+      MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X", filename, GetLastError());
       goto fail;
    }
 
@@ -130,7 +122,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                                    NULL,                        /* pdwSkip */
                                    NULL);                       /* pdwFlags */
    if (!success) {
-      MONGOC_WARNING ("Failed to convert base64 private key. Error 0x%.8X", GetLastError());
+      MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -143,7 +135,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                                    NULL,
                                    NULL);
    if (!success) {
-      MONGOC_WARNING("Failed to convert base64 private key. Error 0x%.8X", GetLastError());
+      MONGOC_ERROR("Failed to convert base64 private key. Error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -157,7 +149,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                                   NULL,                                    /* pvStructInfo */
                                   &blob_private_len);                      /* pcbStructInfo */
    if (!success) {
-      MONGOC_WARNING("Failed to parse private key. Error 0x%.8X", GetLastError());
+      MONGOC_ERROR("Failed to parse private key. Error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -171,7 +163,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                                   blob_private,
                                   &blob_private_len);
    if (!success) {
-      MONGOC_WARNING("Failed to parse private key. Error 0x%.8X", GetLastError());
+      MONGOC_ERROR("Failed to parse private key. Error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -182,7 +174,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                                   PROV_RSA_FULL,                            /* dwProvType */
                                   CRYPT_VERIFYCONTEXT);                     /* dwFlags */
    if (!success) {
-      MONGOC_WARNING("CryptAcquireContext failed with error 0x%.8X", GetLastError());
+      MONGOC_ERROR("CryptAcquireContext failed with error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -194,7 +186,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
                              0,                                              /* dwFlags */
                              &hKey);                                         /* phKey, OUT */
    if (!success) {
-      MONGOC_WARNING ("CryptImportKey for private key failed with error 0x%.8X", GetLastError());
+      MONGOC_ERROR ("CryptImportKey for private key failed with error 0x%.8X", GetLastError());
       goto fail;
    }
 
@@ -208,7 +200,7 @@ mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *sec
       return cert;
    }
 
-   MONGOC_WARNING ("Can't associate private key with public key: 0x%.8X", GetLastError());
+   MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X", GetLastError());
 
 fail:
    SecureZeroMemory (pem, pem_length);
@@ -223,7 +215,50 @@ fail:
       bson_free (blob_private);
    }
 
-   return false;
+   return NULL;
+}
+
+PCCERT_CONTEXT
+mongoc_secure_channel_setup_certificate (mongoc_stream_tls_secure_channel_t *secure_channel,
+                                         mongoc_ssl_opt_t                   *opt)
+{
+   return mongoc_secure_channel_setup_certificate_from_file (opt->pem_file);
+}
+
+void
+_bson_append_szoid (bson_string_t *retval, PCCERT_CONTEXT cert, const char *label, void *oid)
+{
+   DWORD oid_len = CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, NULL, 0); 
+
+   if (oid_len > 1) {
+      char *tmp = bson_malloc0 (oid_len);
+
+      CertGetNameString (cert, CERT_NAME_ATTR_TYPE, 0, oid, tmp, oid_len); 
+      bson_string_append_printf (retval, "%s%s", label, tmp);
+      bson_free (tmp);
+   }
+}
+char *
+_mongoc_secure_channel_extract_subject (const char *filename, const char *passphrase)
+{
+   bson_string_t *retval;
+   PCCERT_CONTEXT cert;
+
+   cert = mongoc_secure_channel_setup_certificate_from_file (filename);
+   if (!cert) {
+      return NULL;
+   }
+
+   retval = bson_string_new ("");;
+   _bson_append_szoid (retval, cert, "C=",       szOID_COUNTRY_NAME);
+   _bson_append_szoid (retval, cert, ",ST=",     szOID_STATE_OR_PROVINCE_NAME);
+   _bson_append_szoid (retval, cert, ",L=",      szOID_LOCALITY_NAME);
+   _bson_append_szoid (retval, cert, ",O=",      szOID_ORGANIZATION_NAME);
+   _bson_append_szoid (retval, cert, ",OU=",     szOID_ORGANIZATIONAL_UNIT_NAME);
+   _bson_append_szoid (retval, cert, ",CN=",     szOID_COMMON_NAME);
+   _bson_append_szoid (retval, cert, ",STREET=", szOID_STREET_ADDRESS);
+
+   return bson_string_free (retval, false);
 }
 
 bool
