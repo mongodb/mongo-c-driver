@@ -20,6 +20,93 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
 
+
+/*
+ * test_client_cmd_write_concern:
+ *
+ * This test ensures that there is a lack of special
+ * handling for write concerns and write concern
+ * errors in generic functions that support commands
+ * that write.
+ *
+ */
+
+static void
+test_client_cmd_write_concern (void)
+{
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   mock_server_t *server;
+   char *cmd;
+
+   /* set up client and wire protocol version */
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* command with invalid writeConcern */
+   cmd = "{'foo' : 1, "
+         "'writeConcern' : {'w' : 99 }}";
+   future = future_client_command_simple (client, "test",
+                                          tmp_bson (cmd),
+                                          NULL,
+                                          &reply, &error);
+   request = mock_server_receives_command (
+           server, "test",
+           MONGOC_QUERY_SLAVE_OK,
+           cmd);
+   assert (request);
+
+   mock_server_replies_ok_and_destroys (request);
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+
+   /* standalone response */
+   future = future_client_command_simple (client, "test",
+                                          tmp_bson (cmd),
+                                          NULL,
+                                          &reply, &error);
+   request = mock_server_receives_command (
+           server, "test",
+           MONGOC_QUERY_SLAVE_OK,
+           cmd);
+   assert (request);
+
+   mock_server_replies_simple (
+           request,
+           "{ 'ok' : 0, 'errmsg' : 'cannot use w > 1 when a "
+           "host is not replicated', 'code' : 2 }");
+
+   assert (!future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+
+   /* replicaset response */
+   future = future_client_command_simple (client, "test",
+                                          tmp_bson (cmd),
+                                          NULL,
+                                          &reply, &error);
+   request = mock_server_receives_command (
+           server, "test",
+           MONGOC_QUERY_SLAVE_OK,
+           cmd);
+   mock_server_replies_simple (
+           request,
+           "{ 'ok' : 1, 'n': 1, "
+           "'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   mock_server_destroy (server);
+   mongoc_client_destroy (client);
+   request_destroy (request);
+}
+
+
 static char *
 gen_test_user (void)
 {
@@ -1715,6 +1802,8 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_no_auth);
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_Add (suite, "/Client/cmd_w_write_concern",
+                  test_client_cmd_write_concern);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);
    TestSuite_Add (suite, "/Client/command/read_prefs/single", test_command_read_prefs_single);
