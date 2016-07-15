@@ -101,3 +101,4 @@ x64
 *.sln
 install_manifest.txt
 .vs
+doc/installing.page
