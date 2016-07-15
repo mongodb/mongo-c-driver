@@ -112,6 +112,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
 	tests/test-mongoc-max-staleness.c \
+	tests/test-mongoc-metadata.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \

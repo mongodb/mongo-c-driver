@@ -129,3 +129,9 @@ _mongoc_bson_destroy_if_set (bson_t *bson)
       bson_destroy (bson);
    }
 }
+
+size_t
+_mongoc_strlen_or_zero (const char *s)
+{
+   return s ? strlen (s) : 0;
+}
