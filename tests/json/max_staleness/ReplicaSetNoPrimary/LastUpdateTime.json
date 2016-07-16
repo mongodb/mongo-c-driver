@@ -5,7 +5,7 @@
             "address": "a:27017",
             "avg_rtt_ms": 5,
             "lastUpdateTime": 1,
-            "lastWriteDate": 25001,
+            "lastWriteDate": 25002,
             "maxWireVersion": 5,
             "type": "RSSecondary"
         }
@@ -19,14 +19,14 @@
             "address": "a:27017",
             "avg_rtt_ms": 5,
             "lastUpdateTime": 1,
-            "lastWriteDate": 25001,
+            "lastWriteDate": 25002,
             "maxWireVersion": 5,
             "type": "RSSecondary"
         },
         {
             "address": "b:27017",
             "avg_rtt_ms": 50,
-            "lastUpdateTime": 25001,
+            "lastUpdateTime": 25002,
             "lastWriteDate": 1,
             "maxWireVersion": 5,
             "type": "RSSecondary"
@@ -38,14 +38,14 @@
                 "address": "a:27017",
                 "avg_rtt_ms": 5,
                 "lastUpdateTime": 1,
-                "lastWriteDate": 25001,
+                "lastWriteDate": 25002,
                 "maxWireVersion": 5,
                 "type": "RSSecondary"
             },
             {
                 "address": "b:27017",
                 "avg_rtt_ms": 50,
-                "lastUpdateTime": 25001,
+                "lastUpdateTime": 25002,
                 "lastWriteDate": 1,
                 "maxWireVersion": 5,
                 "type": "RSSecondary"
@@ -54,7 +54,7 @@
                 "address": "c:27017",
                 "avg_rtt_ms": 5,
                 "lastUpdateTime": 25001,
-                "lastWriteDate": 0,
+                "lastWriteDate": 1,
                 "maxWireVersion": 5,
                 "type": "RSSecondary"
             }
