@@ -375,6 +375,14 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
          return false;
       }
 
+      /* shouldn't happen if we've properly enforced wire version */
+      if (!mongoc_topology_description_all_sds_have_write_date (td)) {
+         bson_set_error (error, MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Not all servers have lastWriteDate");
+         return false;
+      }
+
       if ((td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
            td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
           max_staleness < 2 * heartbeat_msec) {

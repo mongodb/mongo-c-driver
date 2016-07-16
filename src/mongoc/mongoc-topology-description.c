@@ -391,6 +391,39 @@ mongoc_topology_description_lowest_max_wire_version (const mongoc_topology_descr
 /*
  *-------------------------------------------------------------------------
  *
+ * mongoc_topology_description_all_sds_have_write_date --
+ *
+ *       Whether the primary and all secondaries' server descriptions have
+ *       last_write_date_ms.
+ *
+ * Side effects:
+ *       None.
+ *
+ *-------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_description_all_sds_have_write_date (const mongoc_topology_description_t *td)
+{
+   int i;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; (size_t) i < td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+
+      if (sd->last_write_date_ms <= 0 &&
+          (sd->type == MONGOC_SERVER_RS_PRIMARY ||
+           sd->type == MONGOC_SERVER_RS_SECONDARY)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * mongoc_topology_description_suitable_servers --
  *
  *       Return an array of suitable server descriptions for this

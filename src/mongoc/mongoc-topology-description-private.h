@@ -82,6 +82,10 @@ int32_t
 mongoc_topology_description_lowest_max_wire_version (
    const mongoc_topology_description_t *td);
 
+bool
+mongoc_topology_description_all_sds_have_write_date (
+   const mongoc_topology_description_t *td);
+
 void
 mongoc_topology_description_suitable_servers (
    mongoc_array_t                *set, /* OUT */
