@@ -453,6 +453,7 @@ mongoc_server_description_handle_ismaster (
    bson_error_t                  *error)
 {
    bson_iter_t iter;
+   bson_iter_t child;
    bool is_master = false;
    bool is_shard = false;
    bool is_secondary = false;
@@ -545,10 +546,15 @@ mongoc_server_description_handle_ismaster (
          bson_init_static (&sd->tags, bytes, len);
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
-      } else if (strcmp ("lastWriteDate", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_DATE_TIME (&iter)) { goto failure; }
+      } else if (strcmp ("lastWrite", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
+             !bson_iter_recurse (&iter, &child) ||
+             !bson_iter_find (&child, "lastWriteDate") ||
+             !BSON_ITER_HOLDS_DATE_TIME (&child)) {
+            goto failure;
+         }
 
-         sd->last_write_date_ms = bson_iter_date_time (&iter);
+         sd->last_write_date_ms = bson_iter_date_time (&child);
       }
    }
 
