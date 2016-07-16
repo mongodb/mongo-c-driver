@@ -6,6 +6,8 @@
 #include "TestSuite.h"
 #include "json-test.h"
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future-functions.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test-max-staleness"
@@ -37,6 +39,62 @@ test_mongoc_client_max_staleness (void)
    ASSERT_CMPINT32 (1, ==, max_staleness_ms);
    mongoc_client_destroy (client);
 }
+
+
+static void
+test_mongos_max_staleness_read_pref (void)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (5 /* maxWireVersion */);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* count command with mode "secondary", no maxStalenessMS */
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_collection_set_read_prefs (collection, prefs);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE,
+                                     NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$readPreference': {'mode': 'secondary', "
+      "                     'maxStalenessMS': {'$exists': false}}}");
+
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* count command with mode "secondary", maxStalenessMS = 120 seconds */
+   mongoc_read_prefs_set_max_staleness_ms (prefs, 120000);
+   mongoc_collection_set_read_prefs (collection, prefs);
+
+   mongoc_collection_set_read_prefs (collection, prefs);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE,
+                                     NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$readPreference': {'mode': 'secondary', 'maxStalenessMS': 120000}}");
+
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 
 static void
 _test_last_write_date (bool pooled)
@@ -157,6 +215,7 @@ test_last_write_date_absent_pooled (void *ctx)
    _test_last_write_date_absent (true);
 }
 
+
 static void
 test_all_spec_tests (TestSuite *suite)
 {
@@ -172,6 +231,8 @@ test_client_max_staleness_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_Add (suite, "/Client/max_staleness",
                   test_mongoc_client_max_staleness);
+   TestSuite_Add (suite, "/Client/max_staleness/mongos",
+                  test_mongos_max_staleness_read_pref);
    TestSuite_AddFull (suite, "/Client/last_write_date",
                       test_last_write_date, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_5);
