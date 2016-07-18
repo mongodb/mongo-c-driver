@@ -101,7 +101,7 @@ test_mongoc_metadata_too_big (void)
    mongoc_uri_t *uri;
    future_t *future;
    request_t *request;
-   bson_t *ismaster_doc;
+   const bson_t *ismaster_doc;
    bson_iter_t iter;
 
    enum { BUFFER_SIZE = METADATA_MAX_SIZE };
@@ -110,7 +110,6 @@ test_mongoc_metadata_too_big (void)
    const uint8_t *dummy;
 
    server = mock_server_new ();
-   mock_server_auto_ismaster (server, "{'ok': 1, 'ismaster': true}");
    mock_server_run (server);
 
    _reset_metadata ();
@@ -131,23 +130,34 @@ test_mongoc_metadata_too_big (void)
                                           NULL,
                                           NULL,
                                           NULL);
-   request = mock_server_receives_command (server, "admin",
-                                           MONGOC_QUERY_SLAVE_OK,
-                                           "{'ping': 1}");
-   mock_server_replies_simple (request, "{'ok': 1}");
+   request = mock_server_receives_ismaster (server);
 
-   ASSERT (future_get_bool (future));
+   /* Make sure the isMaster request has a metadata field, and it's not huge */
+   ASSERT (request);
+   ismaster_doc = request_get_doc (request, 0);
+   ASSERT (ismaster_doc);
+   ASSERT (bson_has_field (ismaster_doc, "isMaster"));
+   ASSERT (bson_has_field (ismaster_doc, METADATA_FIELD));
 
-   /* Make sure the client's isMaster with metadata isn't too big */
-   ismaster_doc = &client->topology->scanner->ismaster_cmd_with_metadata,
+   /* isMaster with metadata isn't too big */
    bson_iter_init_find (&iter,
                         ismaster_doc,
                         METADATA_FIELD);
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
    bson_iter_document (&iter, &len, &dummy);
 
-   /* Should truncate the platform field so we fit exactly */
+   /* Should have truncated the platform field so it fits exactly */
    ASSERT (len == METADATA_MAX_SIZE);
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   request_destroy (request);
+
+   request = mock_server_receives_command (server, "admin",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{'ping': 1}");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
