@@ -111,7 +111,6 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-log.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
-	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-metadata.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
@@ -135,6 +134,12 @@ test_libmongoc_SOURCES = \
 	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
+
+if ENABLE_EXPERIMENTAL_FEATURES
+test_libmongoc_SOURCES += \
+	tests/test-mongoc-max-staleness.c
+endif
+
 if ENABLE_SSL
 test_libmongoc_SOURCES += \
 	tests/test-x509.c \
@@ -143,6 +148,7 @@ test_libmongoc_SOURCES += \
 	tests/ssl-test.c \
 	tests/ssl-test.h
 endif
+
 if ENABLE_SASL
 test_libmongoc_SOURCES += \
 	tests/test-sasl.c
