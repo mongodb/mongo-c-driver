@@ -31,6 +31,7 @@ page to a groff styled man page.
 import os
 import re
 import sys
+import time
 
 import codecs
 from datetime import datetime
@@ -171,7 +172,10 @@ class Convert(object):
         self._write('\n')
 
     def _generateHeader(self):
-        year = datetime.utcnow().year
+        # For Debian reproducible builds:
+        # https://reproducible-builds.org/specs/source-date-epoch/
+        source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        year = datetime.utcfromtimestamp(int(source_date_epoch or time.time())).year
         self._writeComment('This manpage is Copyright (C) %s %s' % (year, COPYRIGHT_HOLDER))
         self._writeComment('')
         self._writeComment(
@@ -183,7 +187,9 @@ class Convert(object):
     "Free Documentation License\".")
         self._writeComment('')
 
-        date = datetime.fromtimestamp(int(os.stat(self.inFile).st_mtime)).strftime('%Y-%m-%d')
+        mtime = int(source_date_epoch or os.stat(self.inFile).st_mtime)
+        date = datetime.utcfromtimestamp(mtime).strftime('%Y-%m-%d')
+
         title = self.title.replace('()','').upper()
         self._write('.TH "%s" "%s" "%s" "%s"\n' % (title, self.section, date, GROUP))
         self._write('.SH NAME\n')
