@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+#include "mongoc-config.h"
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 #include "mongoc-metadata.h"
 #include "mongoc-metadata-private.h"
+#endif
+
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-client-private.h"
@@ -328,7 +333,10 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    mongoc_topology_scanner_t *scanner;
 
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED;
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    _mongoc_metadata_freeze ();
+#endif
 
    scanner = topology->scanner;
    mongoc_topology_scanner_start (scanner,
@@ -353,7 +361,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             int64_t                              heartbeat_msec,
                             bson_error_t                        *error)
 {
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    int32_t max_staleness;
    int32_t max_wire_version;
 
@@ -882,7 +890,10 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
    mongoc_mutex_lock (&topology->mutex);
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
       topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
       _mongoc_metadata_freeze ();
+#endif
 
       mongoc_thread_create (&topology->thread, _mongoc_topology_run_background,
                             topology);
@@ -941,6 +952,7 @@ _mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
    }
 }
 
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology,
                               const char *appname)
@@ -955,3 +967,4 @@ _mongoc_topology_set_appname (mongoc_topology_t *topology,
    mongoc_mutex_unlock (&topology->mutex);
    return ret;
 }
+#endif

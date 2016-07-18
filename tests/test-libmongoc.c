@@ -39,7 +39,7 @@ extern void test_async_install                   (TestSuite *suite);
 extern void test_buffer_install                  (TestSuite *suite);
 extern void test_bulk_install                    (TestSuite *suite);
 extern void test_client_install                  (TestSuite *suite);
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 extern void test_client_max_staleness_install    (TestSuite *suite);
 #endif
 extern void test_client_pool_install             (TestSuite *suite);
@@ -57,7 +57,9 @@ extern void test_gridfs_install                  (TestSuite *suite);
 extern void test_list_install                    (TestSuite *suite);
 extern void test_log_install                     (TestSuite *suite);
 extern void test_matcher_install                 (TestSuite *suite);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 extern void test_metadata_install                (TestSuite *suite);
+#endif
 extern void test_queue_install                   (TestSuite *suite);
 extern void test_read_prefs_install              (TestSuite *suite);
 extern void test_rpc_install                     (TestSuite *suite);
@@ -1656,7 +1658,7 @@ main (int   argc,
    test_async_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    test_client_max_staleness_install (&suite);
 #endif
    test_client_pool_install (&suite);
@@ -1676,7 +1678,9 @@ main (int   argc,
    test_list_install (&suite);
    test_log_install (&suite);
    test_matcher_install (&suite);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    test_metadata_install (&suite);
+#endif
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);

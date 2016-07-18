@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-config.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
@@ -275,7 +276,7 @@ test_server_selection_logic_cb (bson_t *test)
       }
    }
 
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
                             "maxStalenessMS")) {
       mongoc_read_prefs_set_max_staleness_ms (

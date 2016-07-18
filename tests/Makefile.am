@@ -111,7 +111,6 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-log.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
-	tests/test-mongoc-metadata.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
@@ -137,7 +136,8 @@ test_libmongoc_SOURCES = \
 
 if ENABLE_EXPERIMENTAL_FEATURES
 test_libmongoc_SOURCES += \
-	tests/test-mongoc-max-staleness.c
+	tests/test-mongoc-max-staleness.c \
+	tests/test-mongoc-metadata.c
 endif
 
 if ENABLE_SSL

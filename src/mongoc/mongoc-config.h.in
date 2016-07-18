@@ -163,4 +163,13 @@
 #  undef MONGOC_NO_AUTOMATIC_GLOBALS
 #endif
 
+/*
+ * Define to support experimental future mongoc features
+ */
+#define MONGOC_EXPERIMENTAL_FEATURES @MONGOC_EXPERIMENTAL_FEATURES@
+
+#if MONGOC_EXPERIMENTAL_FEATURES != 1
+#  undef MONGOC_EXPERIMENTAL_FEATURES
+#endif
+
 #endif /* MONGOC_CONFIG_H */

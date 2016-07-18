@@ -1911,6 +1911,7 @@ mongoc_client_set_error_api (mongoc_client_t *client,
    return true;
 }
 
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool
 mongoc_client_set_appname (mongoc_client_t *client,
                            const char      *appname)
@@ -1922,3 +1923,4 @@ mongoc_client_set_appname (mongoc_client_t *client,
    return _mongoc_topology_set_appname (client->topology,
                                         appname);
 }
+#endif
