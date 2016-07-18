@@ -43,21 +43,94 @@ _reset_metadata (void)
 static void
 test_mongoc_metadata_append_success (void)
 {
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   request_t *request;
+   const bson_t *request_doc;
+   bson_iter_t iter;
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *val;
+
+   const char *driver_name = "php driver";
+   const char *driver_version = "version abc";
+   const char *platform = "./configure -nottoomanyflags";
+
    char big_string [METADATA_MAX_SIZE];
 
    memset (big_string, 'a', METADATA_MAX_SIZE - 1);
    big_string [METADATA_MAX_SIZE - 1] = '\0';
 
    _reset_metadata ();
-
    /* Make sure setting the metadata works */
-   ASSERT (mongoc_metadata_append ("php driver", "version abc",
-                                   "./configure -nottoomanyflags"));
+   ASSERT (mongoc_metadata_append (driver_name, driver_version, platform));
 
-   _reset_metadata ();
-   /* Set each field to some really long string, which should
-    * get truncated. We shouldn't fail or crash */
-   ASSERT (mongoc_metadata_append (big_string, big_string, big_string));
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   pool = mongoc_client_pool_new (uri);
+
+   /* Force topology scanner to start */
+   client = mongoc_client_pool_pop (pool);
+
+   request = mock_server_receives_ismaster (server);
+   ASSERT (request);
+   request_doc = request_get_doc (request, 0);
+   ASSERT (request_doc);
+   ASSERT (bson_has_field (request_doc, "isMaster"));
+   ASSERT (bson_has_field (request_doc, METADATA_FIELD));
+
+   ASSERT (bson_iter_init_find (&iter, request_doc, METADATA_FIELD));
+   ASSERT (bson_iter_recurse (&iter, &md_iter));
+
+   /* Make sure driver.name and driver.version and platform are all right */
+   ASSERT (bson_iter_find (&md_iter, "driver"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strstr (val, driver_name) != NULL);
+
+   ASSERT (bson_iter_find (&inner_iter, "version"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strstr (val, driver_version));
+
+   /* Check os type not empty */
+   ASSERT (bson_iter_find (&md_iter, "os"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+
+   ASSERT (bson_iter_find (&inner_iter, "type"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strlen (val) > 0);
+
+   /* Not checking os_name, as the spec says it can be NULL. */
+
+   /* Check platform field ok */
+   ASSERT (bson_iter_find (&md_iter, "platform"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
+   val = bson_iter_utf8 (&md_iter, NULL);
+   ASSERT (val);
+   ASSERT (strstr (val, platform) != NULL);
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1, 'ismaster': true}");
+   request_destroy (request);
+
+   /* Cleanup */
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
 
    _reset_metadata ();
 }

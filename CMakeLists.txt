@@ -230,7 +230,6 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
@@ -281,8 +280,6 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
@@ -357,6 +354,17 @@ if (MONGOC_ENABLE_SASL)
    set(LIBS ${LIBS} ${SASL2_LIBRARY})
    include_directories(${SASL2_INCLUDE_DIR})
 endif()
+
+if (ENABLE_EXPERIMENTAL_FEATURES)
+   set(HEADERS ${HEADERS}
+        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
+   )
+   set(SOURCES ${SOURCES}
+        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
+   )
+endif ()
 
 if (MSVC)
    # Export the functions listed in a definitions file.
@@ -460,7 +468,6 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-   ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
@@ -505,6 +512,7 @@ endif ()
 if (ENABLE_EXPERIMENTAL_FEATURES)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
+      ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    )
 endif ()
 
