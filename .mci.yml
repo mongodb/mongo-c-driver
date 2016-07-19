@@ -46,15 +46,19 @@ c_driver_variables:
     - name: "integration-test-2.4"
     - name: "integration-test-2.4-replica-set"
     - name: "integration-test-2.4-sharded"
+    - name: "integration-test-2.4-shard-multi"
     - name: "integration-test-2.6"
     - name: "integration-test-2.6-replica-set"
     - name: "integration-test-2.6-sharded"
+    - name: "integration-test-2.6-shard-multi"
     - name: "integration-test-3.0"
     - name: "integration-test-3.0-replica-set"
     - name: "integration-test-3.0-sharded"
+    - name: "integration-test-3.0-shard-multi"
     - name: "integration-test-latest"
     - name: "integration-test-latest-replica-set"
     - name: "integration-test-latest-sharded"
+    - name: "integration-test-latest-shard-multi"
 
   topology_test_no_auth_list: &topology_tests_no_auth
     - name: "compile"
@@ -78,6 +82,7 @@ c_driver_variables:
     - name: "integration-test-latest-replica-set"
     - name: "integration-test-latest-replica-set-no-auth"
     - name: "integration-test-latest-sharded"
+    - name: "integration-test-latest-shard-multi"
     - name: "integration-test-latest-sharded-no-auth"
 
   ssl_tests_test_list: &ssl_tests_latest
@@ -590,6 +595,13 @@ functions:
         - key: "topology_type"
           value: "sharded_cluster"
 
+  "connect to two mongos servers" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongoc_test_uri"
+          value: "mongodb://localhost:27017,localhost:27018"
+
   "set topology standalone ssl no auth" :
     command: expansions.update
     params:
@@ -728,6 +740,9 @@ functions:
         ${start_mongo_orchestration}
         ${start_topology}
         set +o errexit
+
+        # Use multi-mongos URI, or empty for default.
+        export MONGOC_TEST_URI="${mongoc_test_uri}"
         ${run_integration_tests}
 
         mongo-orchestration stop
@@ -920,6 +935,21 @@ tasks:
             use_auth: true
         - func: "report results"
 
+    - name: "integration-test-2.4-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
     - name: "integration-test-2.6"
       depends_on:
         - name: "compile"
@@ -957,6 +987,21 @@ tasks:
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-2.6-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
         - func: "run integration tests"
           vars:
             use_auth: true
@@ -1004,6 +1049,21 @@ tasks:
             use_auth: true
         - func: "report results"
 
+    - name: "integration-test-3.0-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
     - name: "integration-test-latest"
       depends_on:
         - name: "compile"
@@ -1041,6 +1101,21 @@ tasks:
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-latest-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
         - func: "run integration tests"
           vars:
             use_auth: true

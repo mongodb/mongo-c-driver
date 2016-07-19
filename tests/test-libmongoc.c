@@ -450,6 +450,27 @@ test_framework_get_unix_domain_socket_path_escaped (void)
    return bson_string_free (escaped, false /* free_segment */);
 }
 
+static char *
+_uri_str_from_env (void)
+{
+   return test_framework_getenv ("MONGOC_TEST_URI");
+}
+
+static mongoc_uri_t *
+_uri_from_env (void)
+{
+   char *env_uri_str;
+   mongoc_uri_t *uri;
+
+   env_uri_str = _uri_str_from_env ();
+   if (env_uri_str) {
+      uri = mongoc_uri_new (env_uri_str);
+      bson_free (env_uri_str);
+      return uri;
+   }
+
+   return NULL;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -469,7 +490,21 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 char *
 test_framework_get_host (void)
 {
-   char *host = test_framework_getenv ("MONGOC_TEST_HOST");
+   mongoc_uri_t *env_uri;
+   const mongoc_host_list_t *hosts;
+   char *host;
+
+   /* MONGOC_TEST_URI takes precedence */
+   env_uri = _uri_from_env ();
+   if (env_uri) {
+      /* choose first host */
+      hosts = mongoc_uri_get_hosts (env_uri);
+      host = bson_strdup (hosts->host);
+      mongoc_uri_destroy (env_uri);
+      return host;
+   }
+
+   host = test_framework_getenv ("MONGOC_TEST_HOST");
 
    return host ? host : bson_strdup ("localhost");
 }
@@ -492,18 +527,30 @@ test_framework_get_host (void)
 uint16_t
 test_framework_get_port (void)
 {
-   char *port_str = test_framework_getenv ("MONGOC_TEST_PORT");
+   mongoc_uri_t *env_uri;
+   const mongoc_host_list_t *hosts;
+   char *port_str;
    unsigned long port = MONGOC_DEFAULT_PORT;
 
-   if (port_str && strlen (port_str)) {
-      port = strtoul (port_str, NULL, 10);
-      if (port == 0 || port > UINT16_MAX) {
-         /* parse err or port out of range -- mongod prohibits port 0 */
-         port = MONGOC_DEFAULT_PORT;
+   /* MONGOC_TEST_URI takes precedence */
+   env_uri = _uri_from_env ();
+   if (env_uri) {
+      /* choose first port */
+      hosts = mongoc_uri_get_hosts (env_uri);
+      port = hosts->port;
+      mongoc_uri_destroy (env_uri);
+   } else {
+      port_str = test_framework_getenv ("MONGOC_TEST_PORT");
+      if (port_str && strlen (port_str)) {
+         port = strtoul (port_str, NULL, 10);
+         if (port == 0 || port > UINT16_MAX) {
+            /* parse err or port out of range -- mongod prohibits port 0 */
+            port = MONGOC_DEFAULT_PORT;
+         }
       }
-   }
 
-   bson_free (port_str);
+      bson_free (port_str);
+   }
 
    return (uint16_t) port;
 }
@@ -885,6 +932,7 @@ set_name (bson_t *ismaster_response)
 char *
 test_framework_get_uri_str_no_auth (const char *database_name)
 {
+   char *env_uri_str;
    bson_t ismaster_response;
    bson_string_t *uri_string;
    char *name;
@@ -893,57 +941,66 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    bool first;
    char *host;
    uint16_t port;
+   
+   env_uri_str = _uri_str_from_env ();
+   if (env_uri_str) {
+      uri_string = bson_string_new (env_uri_str);
+      bson_free (env_uri_str);
+   } else {
+      /* construct a direct connection or replica set connection URI */
+      call_ismaster (&ismaster_response);
+      uri_string = bson_string_new ("mongodb://");
 
-   call_ismaster (&ismaster_response);
-   uri_string = bson_string_new ("mongodb://");
+      if ((name = set_name (&ismaster_response))) {
+         /* make a replica set URI */
+         bson_iter_init_find (&iter, &ismaster_response, "hosts");
+         bson_iter_recurse (&iter, &hosts_iter);
+         first = true;
 
-   if ((name = set_name (&ismaster_response))) {
-      /* make a replica set URI */
-      bson_iter_init_find (&iter, &ismaster_response, "hosts");
-      bson_iter_recurse (&iter, &hosts_iter);
-      first = true;
+         /* append "host1,host2,host3" */
+         while (bson_iter_next (&hosts_iter)) {
+            assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
+            if (!first) {
+               bson_string_append (uri_string, ",");
+            }
 
-      /* append "host1,host2,host3" */
-      while (bson_iter_next (&hosts_iter)) {
-         assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
-         if (!first) {
-            bson_string_append (uri_string, ",");
+            bson_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
+            first = false;
          }
 
-         bson_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
-         first = false;
-      }
+         bson_string_append (uri_string, "/");
+         if (database_name) {
+            bson_string_append (uri_string, database_name);
+         }
 
-      bson_string_append (uri_string, "/");
-      if (database_name) {
-         bson_string_append (uri_string, database_name);
-      }
-
-      bson_string_append_printf (uri_string, "?replicaSet=%s", name);
-      bson_free (name);
-   } else {
-      host = test_framework_get_host ();
-      port = test_framework_get_port ();
-      bson_string_append_printf (uri_string, "%s:%hu", host, port);
-      bson_string_append (uri_string, "/");
-      if (database_name) {
-         bson_string_append (uri_string, database_name);
-      }
-
-      bson_free (host);
-   }
-
-   if (test_framework_get_ssl ()) {
-      if (name) {
-         /* string ends with "?replicaSet=name" */
-         bson_string_append (uri_string, "&ssl=true");
+         bson_string_append_printf (uri_string, "?replicaSet=%s", name);
+         bson_free (name);
       } else {
-         /* string ends with "/" or "/dbname" */
-         bson_string_append (uri_string, "?ssl=true");
+         host = test_framework_get_host ();
+         port = test_framework_get_port ();
+         bson_string_append_printf (uri_string, "%s:%hu", host, port);
+         bson_string_append (uri_string, "/");
+         if (database_name) {
+            bson_string_append (uri_string, database_name);
+         }
+
+         bson_free (host);
       }
+
+      if (test_framework_get_ssl ()) {
+         if (strchr (uri_string->str, '?')) {
+            /* string ends with "?replicaSet=name" */
+            bson_string_append (uri_string, "&ssl=true");
+         } else {
+            /* string ends with "/" or "/dbname" */
+            bson_string_append (uri_string, "?ssl=true");
+         }
+      }
+
+      bson_destroy (&ismaster_response);
    }
 
-   bson_destroy (&ismaster_response);
+
 
    return bson_string_free (uri_string, false);
 }
