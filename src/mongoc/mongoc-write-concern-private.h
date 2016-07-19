@@ -41,11 +41,17 @@ struct _mongoc_write_concern_t
    bool      frozen;
    bson_t    compiled;
    bson_t    compiled_gle;
+   bool      is_default;
 };
 
 
 const bson_t *_mongoc_write_concern_get_gle   (mongoc_write_concern_t       *write_concern);
 const bson_t *_mongoc_write_concern_get_bson  (mongoc_write_concern_t       *write_concern);
+bool _mongoc_write_concern_is_default         (mongoc_write_concern_t       *write_concern);
+bool _mongoc_write_concern_validate           (const mongoc_write_concern_t *write_concern,
+                                               bson_error_t                 *error);
+bool _mongoc_parse_wc_err                     (const bson_t                 *doc,
+                                               bson_error_t                 *error);
 
 BSON_END_DECLS
 

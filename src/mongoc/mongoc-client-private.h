@@ -62,6 +62,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_READ_CONCERN 4
 /* first version to support maxStalenessMS */
 #define WIRE_VERSION_MAX_STALENESS 5
+/* first version to support writeConcern */
+#define WIRE_VERSION_CMD_WRITE_CONCERN 5
 
 
 struct _mongoc_client_t
