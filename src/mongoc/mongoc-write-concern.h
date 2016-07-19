@@ -63,7 +63,8 @@ void                    mongoc_write_concern_set_wmajority   (mongoc_write_conce
                                                               int32_t                       wtimeout_msec);
 bool                    mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concern);
 bool                    mongoc_write_concern_is_valid        (const mongoc_write_concern_t *write_concern);
-
+bool                    mongoc_write_concern_append          (mongoc_write_concern_t       *write_concern,
+                                                              bson_t                       *doc);
 
 BSON_END_DECLS
 

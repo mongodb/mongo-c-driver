@@ -366,4 +366,5 @@ LIBMONGOC_1.4 {
         mongoc_uri_set_read_prefs_t;
         mongoc_uri_set_username;
         mongoc_uri_set_write_concern;
+        mongoc_write_concern_append;
 } LIBMONGOC_1.3;
