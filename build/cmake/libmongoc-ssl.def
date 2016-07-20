@@ -78,13 +78,11 @@ mongoc_client_pool_new
 mongoc_client_pool_pop
 mongoc_client_pool_push
 mongoc_client_pool_set_apm_callbacks
-mongoc_client_pool_set_appname
 mongoc_client_pool_set_error_api
 mongoc_client_pool_set_ssl_opts
 mongoc_client_pool_try_pop
 mongoc_client_select_server
 mongoc_client_set_apm_callbacks
-mongoc_client_set_appname
 mongoc_client_set_error_api
 mongoc_client_set_read_concern
 mongoc_client_set_read_prefs
@@ -229,7 +227,6 @@ mongoc_log_trace_enable
 mongoc_matcher_destroy
 mongoc_matcher_match
 mongoc_matcher_new
-mongoc_metadata_append
 mongoc_rand_add
 mongoc_rand_seed
 mongoc_rand_status

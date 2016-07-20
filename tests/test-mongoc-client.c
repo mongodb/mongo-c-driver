@@ -4,8 +4,11 @@
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-metadata-private.h"
 #include "mongoc-util-private.h"
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+#include "mongoc-metadata-private.h"
+#endif
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -1780,6 +1783,7 @@ test_ssl_reconnect_pooled (void)
 
 #endif
 
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 static void
 test_mongoc_client_application_metadata (void)
 {
@@ -1975,6 +1979,7 @@ test_client_sends_metadata_pooled (void)
 {
    _test_client_sends_metadata (true);
 }
+#endif
 
 void
 test_client_install (TestSuite *suite)
@@ -2024,11 +2029,14 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    TestSuite_Add (suite, "/Client/application_metadata", test_mongoc_client_application_metadata);
    TestSuite_Add (suite, "/Client/sends_metadata_single",
                   test_client_sends_metadata_single);
    TestSuite_Add (suite, "/Client/sends_metadata_pooled",
                   test_client_sends_metadata_pooled);
+#endif
 
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);

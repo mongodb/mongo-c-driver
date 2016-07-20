@@ -175,8 +175,10 @@ mongoc_server_description_t   *mongoc_client_select_server                 (mong
                                                                             bson_error_t                 *error);
 bool                           mongoc_client_set_error_api                 (mongoc_client_t              *client,
                                                                             int32_t                       version);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool                           mongoc_client_set_appname                   (mongoc_client_t              *client,
                                                                             const char                   *appname);
+#endif
 BSON_END_DECLS
 
 

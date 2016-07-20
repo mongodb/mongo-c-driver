@@ -57,8 +57,10 @@ bool                  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t
                                                             void                   *context);
 bool                  mongoc_client_pool_set_error_api     (mongoc_client_pool_t   *pool,
                                                             int32_t                 version);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool                  mongoc_client_pool_set_appname       (mongoc_client_pool_t   *pool,
                                                             const char             *appname);
+#endif
 BSON_END_DECLS
 
 

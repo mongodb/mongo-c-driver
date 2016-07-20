@@ -965,7 +965,7 @@ test_regex (void)
 }
 
 
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
 static void
 test_decimal128 (void *ctx)
 {
@@ -3453,7 +3453,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);
    TestSuite_AddLive (suite, "/Collection/regex", test_regex);
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
    TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
 #endif
    TestSuite_AddLive (suite, "/Collection/update", test_update);

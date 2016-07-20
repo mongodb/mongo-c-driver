@@ -349,6 +349,7 @@ mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool,
    return true;
 }
 
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool
 mongoc_client_pool_set_appname (mongoc_client_pool_t *pool,
                                 const char           *appname)
@@ -362,3 +363,4 @@ mongoc_client_pool_set_appname (mongoc_client_pool_t *pool,
 
    return ret;
 }
+#endif

@@ -126,6 +126,12 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
+if (ENABLE_EXPERIMENTAL_FEATURES)
+   set (MONGOC_EXPERIMENTAL_FEATURES 1)
+else ()
+   set (MONGOC_EXPERIMENTAL_FEATURES 0)
+endif ()
+
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 

@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-config.h"
 
 BSON_BEGIN_DECLS
 
@@ -51,7 +52,7 @@ void                 mongoc_read_prefs_set_tags             (mongoc_read_prefs_t
                                                              const bson_t              *tags);
 void                 mongoc_read_prefs_add_tag              (mongoc_read_prefs_t       *read_prefs,
                                                              const bson_t              *tag);
-#ifdef BSON_EXPERIMENTAL_FEATURES
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
 int32_t              mongoc_read_prefs_get_max_staleness_ms (const mongoc_read_prefs_t *read_prefs);
 void                 mongoc_read_prefs_set_max_staleness_ms (mongoc_read_prefs_t       *read_prefs,
                                                              int32_t                    max_staleness_ms);
