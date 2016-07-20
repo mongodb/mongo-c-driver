@@ -510,7 +510,7 @@ derive (match_ctx_t *ctx,
 
 /*--------------------------------------------------------------------------
  *
- * match_bson --
+ * match_bson_with_ctx --
  *
  *       Does "doc" match "pattern"?
  *
