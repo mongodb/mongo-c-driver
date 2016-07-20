@@ -329,7 +329,7 @@
     <thead>
       <tr>
         <td>
-          <p>Error Type</p>
+          <p>Error Source</p>
         </td>
         <td>
           <p>API Version 1</p>
