@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
@@ -51,6 +52,7 @@ mongoc_write_concern_new (void)
    write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
    write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+   write_concern->is_default = true;
 
    return write_concern;
 }
@@ -120,6 +122,7 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->fsync_ = !!fsync_;
+      write_concern->is_default = false;
    }
 }
 
@@ -157,6 +160,7 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->journal = !!journal;
+      write_concern->is_default = false;
    }
 }
 
@@ -189,6 +193,9 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = w;
+      if (w != MONGOC_WRITE_CONCERN_W_DEFAULT) {
+         write_concern->is_default = false;
+      }
    }
 }
 
@@ -224,6 +231,7 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->wtimeout = wtimeout_msec;
+      write_concern->is_default = false;
    }
 }
 
@@ -256,6 +264,7 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
+      write_concern->is_default = false;
 
       if (wtimeout_msec >= 0) {
          write_concern->wtimeout = wtimeout_msec;
@@ -287,6 +296,7 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
       bson_free (write_concern->wtag);
       write_concern->wtag = bson_strdup (wtag);
       write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
+      write_concern->is_default = false;
    }
 }
 
@@ -335,6 +345,22 @@ _mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern) {
 
    return &write_concern->compiled_gle;
 }
+
+
+/**
+ * _mongoc_write_concern_is_default:
+ * @write_concern: A mongoc_write_concern_t.
+ *
+ * This is an internal function.
+ *
+ * Returns is_default, which is true when write_concern has not been modified.
+ *
+ */
+bool
+_mongoc_write_concern_is_default (mongoc_write_concern_t *write_concern) {
+   return write_concern->is_default;
+}
+
 
 /**
  * mongoc_write_concern_freeze:
@@ -443,4 +469,53 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
    }
 
    return true;
+}
+
+
+bool
+_mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern,
+                                bson_error_t                 *error)
+{
+   if (write_concern && !mongoc_write_concern_is_valid (write_concern)) {
+      bson_set_error (error, MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid mongoc_write_concern_t");
+      return false;
+   }
+   return true;
+}
+
+
+/**
+ * _mongoc_parse_wc_err:
+ * @doc: (in): A bson document.
+ * @error: (out): A bson_error_t.
+ *
+ * Parses a document, usually a server reply,
+ * looking for a writeConcernError. Returns true if
+ * there is a writeConcernError, false otherwise.
+ */
+bool
+_mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error) {
+   bson_iter_t iter;
+   bson_iter_t inner;
+
+   if (bson_iter_init_find(&iter, doc, "writeConcernError") &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter))
+   {
+      const char *errmsg = NULL;
+      int32_t code = 0;
+      bson_iter_recurse(&iter, &inner);
+      while (bson_iter_next(&inner)) {
+         if (BSON_ITER_IS_KEY (&inner, "code")) {
+            code = bson_iter_int32 (&inner);
+         } else if (BSON_ITER_IS_KEY (&inner, "errmsg")) {
+            errmsg = bson_iter_utf8 (&inner, NULL);
+         }
+      }
+      bson_set_error(error, MONGOC_ERROR_WRITE_CONCERN, code,
+                     "Write Concern error: %s", errmsg);
+      return true;
+   }
+   return false;
 }
