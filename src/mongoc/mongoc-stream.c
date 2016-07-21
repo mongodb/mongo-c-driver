@@ -28,6 +28,7 @@
 #include "mongoc-stream.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
 
