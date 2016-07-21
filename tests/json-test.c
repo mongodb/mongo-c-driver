@@ -162,6 +162,7 @@ test_server_selection_logic_cb (bson_t *test)
    bson_iter_t sd_iter;
    bson_iter_t read_pref_iter;
    bson_iter_t tag_sets_iter;
+   bson_iter_t last_write_iter;
    bson_iter_t expected_servers_iter;
    bson_t first_tag_set;
    bson_t test_topology;
@@ -235,8 +236,12 @@ test_server_selection_logic_cb (bson_t *test)
          sd->last_update_time_usec = bson_iter_as_int64 (&sd_iter) * 1000;
       }
 
-      if (bson_iter_init_find (&sd_iter, &server, "lastWriteDate")) {
-         sd->last_write_date_ms = bson_iter_as_int64 (&sd_iter);
+      if (bson_iter_init_find (&sd_iter, &server, "lastWrite")) {
+         assert (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) &&
+                 bson_iter_recurse (&sd_iter, &last_write_iter) &&
+                 bson_iter_find (&last_write_iter, "lastWriteDate") &&
+                 BSON_ITER_HOLDS_INT64 (&last_write_iter));
+         sd->last_write_date_ms = bson_iter_as_int64 (&last_write_iter);
       }
 
       if (bson_iter_init_find (&sd_iter, &server, "tags")) {

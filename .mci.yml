@@ -206,6 +206,7 @@ c_driver_variables:
           fi
           killall mongod mongos
           set -o errexit
+          mkdir -p /data/db
           mkdir -p $MONGO_ORCHESTRATION_HOME
           rm -f $MONGO_ORCHESTRATION_HOME/server.pid
           echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
