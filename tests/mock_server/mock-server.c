@@ -105,7 +105,7 @@ mock_server_new ()
 {
    mock_server_t *server = (mock_server_t *)bson_malloc0 (sizeof (mock_server_t));
 
-   server->request_timeout_msec = 10 * 1000;
+   server->request_timeout_msec = get_future_timeout_ms ();
    _mongoc_array_init (&server->autoresponders,
                        sizeof (autoresponder_handle_t));
    _mongoc_array_init (&server->worker_threads,
