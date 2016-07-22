@@ -839,6 +839,10 @@ _mongoc_stream_tls_secure_channel_check_closed (mongoc_stream_t *stream) /* IN *
 
    ENTRY;
    BSON_ASSERT (secure_channel);
+   if (secure_channel->recv_connection_closed) {
+      RETURN (true);
+   }
+
    RETURN (mongoc_stream_check_closed (tls->base_stream));
 }
 

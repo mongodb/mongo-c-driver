@@ -379,9 +379,15 @@ _mongoc_stream_tls_secure_transport_check_closed (mongoc_stream_t *stream) /* IN
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   SSLSessionState state;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
+   SSLGetSessionState (secure_transport->ssl_ctx_ref, &state);
+   if (state == kSSLClosed || state == kSSLAborted) {
+      RETURN (true);
+   }
+
    RETURN (mongoc_stream_check_closed (tls->base_stream));
 }
 

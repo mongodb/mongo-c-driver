@@ -250,8 +250,6 @@ _test_cluster_command_timeout (bool pooled)
                           MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
                           "Failed to send \"foo\" command with database \"db\"");
 
-   /* late response */
-   mock_server_replies_simple (request, "{'ok': 1, 'bar': 1}");
    request_destroy (request);
    future_destroy (future);
 
