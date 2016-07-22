@@ -15,15 +15,17 @@
  */
 
 
-#ifndef MONGOC_TRACE_PRIVATE_H
-#define MONGOC_TRACE_PRIVATE_H
+#ifndef MONGOC_TRACE_H
+#define MONGOC_TRACE_H
 
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+# error "Only <mongoc.h> can be included directly."
+#endif
 
 #include <bson.h>
 #include <ctype.h>
 
 #include "mongoc-log.h"
-#include "mongoc-log-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -36,26 +38,16 @@ BSON_BEGIN_DECLS
 #define EXIT        do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, __LINE__); return; } while (0)
 #define RETURN(ret) do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", BSON_FUNC, __LINE__); return ret; } while (0)
 #define GOTO(label) do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " GOTO: %s():%d %s", BSON_FUNC, __LINE__, #label); goto label; } while (0)
-#define DUMP_BYTES(_n, _b, _l) do { \
-   mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "TRACE: %s():%d %s = %p [%d]", BSON_FUNC, __LINE__, #_n, _b, (int)_l); \
-   mongoc_log_trace_bytes(MONGOC_LOG_DOMAIN, _b, _l); \
-} while (0)
-#define DUMP_IOVEC(_n, _iov, _iovcnt) do { \
-   mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "TRACE: %s():%d %s = %p [%d]", BSON_FUNC, __LINE__, #_n, _iov, (int)_iovcnt); \
-   mongoc_log_trace_iovec(MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
-} while (0)
 #else
 #define TRACE(msg,...)
 #define ENTRY
 #define EXIT        return
 #define RETURN(ret) return ret
 #define GOTO(label) goto label
-#define DUMP_BYTES(_n, _b, _l)
-#define DUMP_IOVEC(_n, _iov, _iovcnt)
 #endif
 
 
 BSON_END_DECLS
 
 
-#endif /* MONGOC_TRACE_PRIVATE_H */
+#endif /* MONGOC_TRACE_H */
