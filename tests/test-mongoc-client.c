@@ -1592,7 +1592,7 @@ test_mongoc_client_select_server_error_pooled (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static bool
 _cmd (mock_server_t   *server,
       mongoc_client_t *client,
@@ -1694,7 +1694,6 @@ test_ssl_client_pooled_copies_args (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 _test_ssl_reconnect (bool pooled)
 {
@@ -1783,9 +1782,8 @@ test_ssl_reconnect_pooled (void)
 {
    _test_ssl_reconnect (true);
 }
-#endif
+#endif  /* OpenSSL or Secure Transport */
 
-#endif
 
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
 static void
@@ -2050,19 +2048,18 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (suite, "/Client/ssl_opts/copies_single",
                   test_ssl_client_single_copies_args);
    TestSuite_Add (suite, "/Client/ssl_opts/copies_pooled",
                   test_ssl_client_pooled_copies_args);
-
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/Client/ssl/reconnect/single",
                   test_ssl_reconnect_single);
    TestSuite_Add (suite, "/Client/ssl/reconnect/pooled",
                   test_ssl_reconnect_pooled);
-#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #endif
 #else
+   /* No SSL support at all */
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
 

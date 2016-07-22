@@ -484,8 +484,9 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
 
    if (client) {
       SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, opt->weak_cert_validation);
-   } else {
-      SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref, kTryAuthenticate);
+   } else if (!opt->allow_invalid_hostname) {
+      /* used only in mock_server_t tests */
+      SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref, kAlwaysAuthenticate);
    }
 
    if (!opt->allow_invalid_hostname) {

@@ -181,7 +181,7 @@ test_ismaster_pooled (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static void
 test_ismaster_ssl (void)
 {
@@ -204,7 +204,7 @@ test_async_install (TestSuite *suite)
    TestSuite_Add (suite, "/Async/ismaster/pooled",
                   test_ismaster_pooled);
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
    TestSuite_Add (suite, "/Async/ismaster_ssl/pooled",
                   test_ismaster_ssl_pooled);
