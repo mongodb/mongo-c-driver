@@ -1519,6 +1519,7 @@ _test_mongoc_client_select_server_error (bool pooled)
    mongoc_server_description_t *sd;
    bson_error_t error;
    mongoc_read_prefs_t *prefs;
+   mongoc_topology_description_type_t tdtype;
    const char *server_type;
 
    if (pooled) {
@@ -1552,7 +1553,8 @@ _test_mongoc_client_select_server_error (bool pooled)
 
    /* Server Selection Spec: "With topology type Single, the single server is
     * always suitable for reads if it is available." */
-   if (client->topology->description.type == MONGOC_TOPOLOGY_SINGLE) {
+   tdtype = client->topology->description.type;
+   if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
       ASSERT (!strcmp (server_type, "Standalone") ||
