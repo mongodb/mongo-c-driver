@@ -467,7 +467,6 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-list.c
    ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
-   ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
