@@ -2,7 +2,34 @@
 #include <mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
+#include "test-libmongoc.h"
 
+
+static void
+test_write_concern_append (void)
+{
+   mongoc_write_concern_t *wc;
+   bson_t *cmd;
+
+   cmd = tmp_bson ("{'foo': 1}");
+   capture_logs (true);
+
+   /* cannot append invalid writeConcern */
+   wc = NULL;
+   assert (!mongoc_write_concern_append (wc, cmd));
+
+   /* append valid writeConcern */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   assert (mongoc_write_concern_append (wc, cmd));
+
+   ASSERT (match_bson (cmd,
+                       tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"),
+                       true));
+
+   mongoc_write_concern_destroy (wc);
+}
 
 static void
 test_write_concern_basic (void)
@@ -260,6 +287,7 @@ test_write_concern_wtimeout_validity (void)
 void
 test_write_concern_install (TestSuite *suite)
 {
+   TestSuite_Add (suite, "/WriteConcern/append", test_write_concern_append);
    TestSuite_Add (suite, "/WriteConcern/basic", test_write_concern_basic);
    TestSuite_Add (suite, "/WriteConcern/bson_omits_defaults", test_write_concern_bson_omits_defaults);
    TestSuite_Add (suite, "/WriteConcern/bson_includes_false_fsync_and_journal", test_write_concern_bson_includes_false_fsync_and_journal);

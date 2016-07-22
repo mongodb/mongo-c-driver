@@ -519,3 +519,32 @@ _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error) {
    }
    return false;
 }
+
+
+/**
+ * mongoc_write_concern_append:
+ * @write_concern: (in): A mongoc_write_concern_t.
+ * @command: (out): A pointer to a bson document.
+ *
+ * Appends a write_concern document to a command, to send to
+ * a server.
+ *
+ * Returns true on success, false on failure.
+ *
+ */
+bool
+mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
+                             bson_t                 *command)
+{
+   if (!mongoc_write_concern_is_valid (write_concern)) {
+      MONGOC_ERROR ("Invalid writeConcern passed into "
+                    "mongoc_write_concern_append.");
+      return false;
+   }
+   if (!bson_append_document (command, "writeConcern", 12,
+                              _mongoc_write_concern_get_bson (write_concern))) {
+      MONGOC_ERROR ("Could not append writeConcern to command.");
+      return false;
+   }
+   return true;
+}

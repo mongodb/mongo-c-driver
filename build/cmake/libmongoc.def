@@ -319,6 +319,7 @@ mongoc_uri_set_read_prefs_t
 mongoc_uri_set_username
 mongoc_uri_set_write_concern
 mongoc_uri_unescape
+mongoc_write_concern_append
 mongoc_write_concern_copy
 mongoc_write_concern_destroy
 mongoc_write_concern_get_fsync
