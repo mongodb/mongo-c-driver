@@ -110,6 +110,7 @@ INST_H_FILES = \
 if ENABLE_EXPERIMENTAL_FEATURES
 INST_H_FILES += \
 	src/mongoc/mongoc-metadata.h \
+	src/mongoc/mongoc-metadata-os-private.h \
 	src/mongoc/mongoc-metadata-private.h
 endif
 
