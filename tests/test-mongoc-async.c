@@ -9,6 +9,7 @@
 #define MONGOC_LOG_DOMAIN "async-test"
 
 #define NSERVERS 10
+#define SPECIAL_SERVER 5
 
 
 static mongoc_uri_t *
@@ -126,8 +127,8 @@ _test_ismaster (bool with_ssl,
       request = mock_server_receives_ismaster (servers[i]);
       assert (request);
 
-      /* only 5th server in list is a suitable secondary */
-      if (i == 5) {
+      /* only one server in the list is a suitable secondary */
+      if (i == SPECIAL_SERVER) {
          mock_server_replies_simple (request, secondary_reply);
          request_destroy (request);
       } else {
@@ -138,13 +139,13 @@ _test_ismaster (bool with_ssl,
 
    if (pooled) {
       /* client opens new connection and calls isMaster on it */
-      request = mock_server_receives_ismaster (servers[5]);
+      request = mock_server_receives_ismaster (servers[SPECIAL_SERVER]);
       mock_server_replies_simple (request, secondary_reply);
       request_destroy (request);
    }
 
    request = mock_server_receives_command (
-      servers[5], "test", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      servers[SPECIAL_SERVER], "test", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
