@@ -2149,6 +2149,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    bson_iter_t inner;
    const char *name;
    bson_t reply_local;
+   bson_t *reply_ptr;
    bool ret;
    bson_t command = BSON_INITIALIZER;
 
@@ -2157,6 +2158,8 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
+   reply_ptr = reply ? reply : &reply_local;
+   bson_init (reply_ptr);
    cluster = &collection->client->cluster;
    server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    if (!server_stream) {
@@ -2230,9 +2233,9 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    ret = mongoc_cluster_run_command_monitored (cluster, server_stream,
                                                MONGOC_QUERY_NONE,
                                                collection->db, &command,
-                                               &reply_local, error);
+                                               reply_ptr, error);
 
-   if (bson_iter_init_find (&iter, &reply_local, "writeConcernError") &&
+   if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
       int32_t code = 0;
@@ -2248,11 +2251,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
       bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
       ret = false; 
    }
-   if (reply) {
-      bson_copy_to (&reply_local, reply);
+   if (reply_ptr == &reply_local) {
+      bson_destroy (reply_ptr);
    }
 
-   bson_destroy (&reply_local);
    bson_destroy (&command);
    mongoc_server_stream_cleanup (server_stream);
 
