@@ -558,7 +558,7 @@ functions:
       script: |
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
-          MONGOC_TEST_SKIP_LIVE=on MONGOC_TEST_SKIP_SLOW=on make test
+          MONGOC_TEST_SKIP_LIVE=on MONGOC_TEST_SKIP_SLOW=on make TEST_ARGS="-d -F test-results.json" test
 
   "set topology standalone" :
     command: expansions.update
