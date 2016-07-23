@@ -619,7 +619,6 @@ test_cooldown_rs (void *ctx)
    bson_free (uri_str);
    mock_server_destroy (servers[0]);
 }
-#endif /* CDRIVER-1305 */
 
 
 static void
@@ -776,13 +775,11 @@ _test_connect_timeout (bool pooled, bool try_once)
 }
 
 
-#if !defined(__sun) /* CDRIVER-1305 */
 static void
 test_connect_timeout_pooled (void *ctx)
 {
    _test_connect_timeout (true, false);
 }
-#endif
 
 static void
 test_connect_timeout_single(void *ctx)
@@ -926,6 +923,7 @@ test_multiple_selection_errors (void *context)
 
    mongoc_client_destroy (client);
 }
+#endif
 
 
 static void
