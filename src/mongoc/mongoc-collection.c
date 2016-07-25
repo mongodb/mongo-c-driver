@@ -1209,6 +1209,9 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
             error->code = 0;
             error->domain = 0;
             cursor = _mongoc_collection_find_indexes_legacy (collection, error);
+         } else {
+            /* other error, to be handled by caller */
+            cursor = NULL;
          }
       }
    }
