@@ -145,6 +145,7 @@ mongoc_database_command
 mongoc_database_command_simple
 mongoc_database_copy
 mongoc_database_create_collection
+mongoc_database_create_collection_with_write_concern
 mongoc_database_destroy
 mongoc_database_drop
 mongoc_database_find_collections

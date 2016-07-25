@@ -966,6 +966,19 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                    const bson_t      *options,
                                    bson_error_t      *error)
 {
+   return mongoc_database_create_collection_with_write_concern (
+      database, name, options, NULL, error);
+}
+
+
+mongoc_collection_t *
+mongoc_database_create_collection_with_write_concern (
+        mongoc_database_t      *database,
+        const char             *name,
+        const bson_t           *options,
+        mongoc_write_concern_t *write_concern,
+        bson_error_t           *error)
+{
    mongoc_collection_t *collection = NULL;
    bson_iter_t iter;
    bson_t cmd;
@@ -1103,6 +1116,15 @@ mongoc_database_create_collection (mongoc_database_t *database,
             return NULL;
          }
       }
+   }
+
+   if (write_concern &&
+       !mongoc_write_concern_append (write_concern, &cmd)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid mongoc_write_concern_t");
+      return NULL;
    }
 
    if (mongoc_database_command_simple (database, &cmd, NULL, NULL, error)) {

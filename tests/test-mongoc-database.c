@@ -13,6 +13,46 @@
 
 
 static void
+test_create_with_write_concern (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   mongoc_write_concern_t *bad_wc;
+
+   char *dbname;
+   char *name;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+   dbname = gen_collection_name ("dbtest");
+   database = mongoc_client_get_database (client, dbname);
+   assert (database);
+   bson_free (dbname);
+
+   name = gen_collection_name ("create_collection");
+
+   /* writeConcern that will not pass mongoc_write_concern_is_valid */
+   bad_wc = mongoc_write_concern_new ();
+   bad_wc->wtimeout = -10;
+
+   collection = mongoc_database_create_collection_with_write_concern (
+      database, name, NULL, bad_wc, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   ASSERT (!collection);
+
+   bson_free (name);
+   mongoc_write_concern_destroy (bad_wc);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_copy (void)
 {
    mongoc_database_t *database;
@@ -646,6 +686,8 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
+   TestSuite_AddLive (suite, "/Database/create_with_write_concern",
+                      test_create_with_write_concern);
    TestSuite_AddLive (suite, "/Database/copy", test_copy);
    TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
    TestSuite_AddLive (suite, "/Database/command", test_command);
