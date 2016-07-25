@@ -719,6 +719,7 @@ functions:
         export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
 
         # Run this function on exit.
+        result=1
         done=false
         finish () {
            set +o errexit
@@ -733,6 +734,8 @@ functions:
               fi
               echo "  END OF ORCHESTRATION LOG"
            fi
+
+           exit $result
         }
 
         trap finish EXIT
@@ -745,6 +748,7 @@ functions:
         # Use multi-mongos URI, or empty for default.
         export MONGOC_TEST_URI="${mongoc_test_uri}"
         ${run_integration_tests}
+        result=$?
 
         mongo-orchestration stop
         done=true
