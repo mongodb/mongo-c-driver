@@ -67,6 +67,8 @@ struct _mongoc_cursor_t
    mongoc_read_concern_t     *read_concern;
    mongoc_read_prefs_t       *read_prefs;
 
+   mongoc_write_concern_t    *write_concern;
+
    mongoc_query_flags_t       flags;
    uint32_t                   skip;
    int64_t                    limit;
