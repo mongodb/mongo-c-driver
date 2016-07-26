@@ -147,7 +147,8 @@ c_driver_variables:
     standard_no_werror: &cflags_64_no_werror
       cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
-      cflags: "-m32 -march=i386 -Werror"
+      # Until CDRIVER-1417, omit "-Werror"
+      cflags: "-m32 -march=i386"
     osx_1010: &cflags_osx_1010
       cflags: "-m64 -march=x86-64"
     solaris_64: &cflags_solaris_64
@@ -271,6 +272,14 @@ c_driver_variables:
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      unix32: &compile_unix_32
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          # No, SSL, SASL, or ABI check.
+          ./autogen.sh --build=i386-pc-linux-gnu --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-ssl=no --enable-maintainer-flags=no --enable-debug --with-libbson=bundled
+          make -j8
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris64: &compile_solaris64
         compile_script: |
           set -o errexit
@@ -383,6 +392,13 @@ c_driver_variables:
     <<: *compile_unix_openssl11
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_unix_openssl11
+    <<: *start_topology_command
+    <<: *unix_path
+
+  unix_common_32: &unix_common_32
+    <<: *compile_unix_32
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
     <<: *start_topology_command
     <<: *unix_path
 
@@ -1439,6 +1455,16 @@ buildvariants:
   tasks: *ssl_tests_latest
 
 ## Ubuntu 1404
+
+- name: ubuntu-1404-32
+  display_name: "Ubu 14 gcc-4.8.4 32"
+  expansions:
+    <<: *cflags_32
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common_32
+  run_on:
+  - ubuntu1404-test
+  tasks: *topology_tests_no_auth
 
 - name: ubuntu-1404-64
   display_name: "Ubu 14 gcc-4.8.4 64"
