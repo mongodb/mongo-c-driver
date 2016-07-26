@@ -13,6 +13,7 @@
 #include "mock_server/mock-server.h"
 
 
+#ifdef FIXME_CDRIVER_1415
 static void
 test_aggregate_w_write_concern (void) {
    mongoc_cursor_t *cursor;
@@ -97,6 +98,7 @@ test_aggregate_w_write_concern (void) {
    mongoc_client_destroy (client);
    bson_free (json);
 }
+#endif
 
 
 static void
@@ -3498,8 +3500,10 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
+#ifdef FIXME_CDRIVER_1415
    TestSuite_AddLive (suite, "/Collection/aggregate_w_write_concern",
                       test_aggregate_w_write_concern);
+#endif
    TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid", 
                       test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
