@@ -25,6 +25,7 @@ test_aggregate_w_write_concern (void) {
    char *json;
    bool wire_version_5;
    const bson_t *doc;
+   bson_error_t error;
 
    /* set up */
    good_wc = mongoc_write_concern_new ();
@@ -52,7 +53,7 @@ test_aggregate_w_write_concern (void) {
    ASSERT (cursor);
    mongoc_cursor_next (cursor, &doc);
 
-   ASSERT_CMPINT (cursor->error.code, ==, 0);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    mongoc_cursor_destroy (cursor);
 
    /* writeConcern that will not pass mongoc_write_concern_is_valid */
@@ -81,13 +82,13 @@ test_aggregate_w_write_concern (void) {
 
       if (wire_version_5) {
          if (test_framework_is_replset ()) { /* replica set */
-            ASSERT (!cursor->error.code);
+            ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
          } else { /* standalone */
             ASSERT_CMPINT (cursor->error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (cursor->error.code, ==, 2);
          }
       } else { /* if server wire version <= 4, no error */
-         ASSERT (!cursor->error.code);
+         ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       }
    }
 
@@ -3501,7 +3502,7 @@ test_collection_install (TestSuite *suite)
    test_aggregate_install (suite);
 
 #ifdef FIXME_CDRIVER_1415
-   TestSuite_AddLive (suite, "/Collection/aggregate_w_write_concern",
+   TestSuite_AddLive (suite, "/Collection/aggregate/write_concern",
                       test_aggregate_w_write_concern);
 #endif
    TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid", 
