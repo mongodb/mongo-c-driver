@@ -947,6 +947,12 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
       uri_string = bson_string_new (env_uri_str);
+      if (database_name) {
+         if (uri_string->str[uri_string->len-1] != '/') {
+            bson_string_append (uri_string, "/");
+         }
+         bson_string_append (uri_string, database_name);
+      }
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
