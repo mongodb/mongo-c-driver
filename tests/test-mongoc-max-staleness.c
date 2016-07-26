@@ -113,9 +113,11 @@ _test_last_write_date (bool pooled)
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
    }
 
    collection = get_test_collection (client, "test_last_write_date");
