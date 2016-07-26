@@ -3,6 +3,7 @@
 #include <mongoc-client-private.h>
 #include <mongoc-cursor-private.h>
 #include <mongoc-collection-private.h>
+#include <mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
 
@@ -10,6 +11,92 @@
 #include "test-conveniences.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+
+
+static void
+test_aggregate_w_write_concern (void) {
+   mongoc_cursor_t *cursor;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *good_wc;
+   mongoc_write_concern_t *bad_wc;
+   bson_t *pipeline;
+   char *json;
+   bool wire_version_5;
+   const bson_t *doc;
+
+   /* set up */
+   good_wc = mongoc_write_concern_new ();
+   bad_wc = mongoc_write_concern_new ();
+
+   client = test_framework_client_new ();
+   assert (client);
+   ASSERT (mongoc_client_set_error_api (client, 2));
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   /* determine server config */
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
+
+   /* pipeline that writes to collection */
+   json = bson_strdup_printf ("[{'$out': '%s'}]",
+                              collection->collection);
+   pipeline = tmp_bson (json);
+
+   /* collection aggregate with valid writeConcern: no error */
+   mongoc_write_concern_set_w (good_wc, 1);
+   cursor = mongoc_collection_aggregate_with_write_concern (
+           collection, MONGOC_QUERY_NONE,
+           pipeline, NULL, NULL, good_wc);
+   ASSERT (cursor);
+   mongoc_cursor_next (cursor, &doc);
+
+   ASSERT_CMPINT (cursor->error.code, ==, 0);
+   mongoc_cursor_destroy (cursor);
+
+   /* writeConcern that will not pass mongoc_write_concern_is_valid */
+   bad_wc->wtimeout = -10;
+   cursor = mongoc_collection_aggregate_with_write_concern (
+           collection, MONGOC_QUERY_NONE,
+           pipeline, NULL, NULL, bad_wc);
+   ASSERT (cursor);
+   ASSERT_ERROR_CONTAINS (
+           cursor->error, MONGOC_ERROR_COMMAND,
+           MONGOC_ERROR_COMMAND_INVALID_ARG,
+           "Invalid mongoc_write_concern_t");
+   bad_wc->wtimeout = 0;
+
+   /* collection aggregate with invalid writeConcern: skip mongos */
+   if (!test_framework_is_mongos ()) {
+      mongoc_cursor_destroy (cursor);
+
+      mongoc_write_concern_set_w (bad_wc, 99);
+      cursor = mongoc_collection_aggregate_with_write_concern (
+              collection, MONGOC_QUERY_NONE,
+              pipeline, NULL, NULL, bad_wc);
+      ASSERT (cursor);
+
+      mongoc_cursor_next (cursor, &doc);
+
+      if (wire_version_5) {
+         if (test_framework_is_replset ()) { /* replica set */
+            ASSERT (!cursor->error.code);
+         } else { /* standalone */
+            ASSERT_CMPINT (cursor->error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (cursor->error.code, ==, 2);
+         }
+      } else { /* if server wire version <= 4, no error */
+         ASSERT (!cursor->error.code);
+      }
+   }
+
+   mongoc_write_concern_destroy (good_wc);
+   mongoc_write_concern_destroy (bad_wc);
+   mongoc_collection_destroy (collection);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   bson_free (json);
+}
 
 
 static void
@@ -3411,6 +3498,8 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
+   TestSuite_AddLive (suite, "/Collection/aggregate_w_write_concern",
+                      test_aggregate_w_write_concern);
    TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid", 
                       test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);

@@ -295,12 +295,28 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *--------------------------------------------------------------------------
  */
 
+
 mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              mongoc_query_flags_t       flags,      /* IN */
                              const bson_t              *pipeline,   /* IN */
                              const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
+{
+   return mongoc_collection_aggregate_with_write_concern (collection, flags,
+                                                          pipeline, options,
+                                                          read_prefs, NULL);
+}
+
+
+mongoc_cursor_t *
+mongoc_collection_aggregate_with_write_concern (
+        mongoc_collection_t       *collection, /* IN */
+        mongoc_query_flags_t       flags,      /* IN */
+        const bson_t              *pipeline,   /* IN */
+        const bson_t              *options,    /* IN */
+        const mongoc_read_prefs_t *read_prefs,
+        mongoc_write_concern_t    *write_concern) /* IN */
 {
    mongoc_server_description_t *selected_server = NULL;
    mongoc_cursor_t *cursor;
@@ -325,6 +341,10 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
       GOTO (done); 
+   }
+
+   if (!_mongoc_write_concern_validate (write_concern, &cursor->error)) {
+      GOTO (done);
    }
 
    selected_server = mongoc_topology_select(collection->client->topology,
@@ -405,6 +425,13 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
       read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
       BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
+   }
+
+   if (write_concern &&
+       !_mongoc_write_concern_is_default (write_concern) &&
+       selected_server->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+      bson_append_document (&command, "writeConcern", 12,
+                            _mongoc_write_concern_get_bson (write_concern));
    }
 
    if (use_cursor) {
