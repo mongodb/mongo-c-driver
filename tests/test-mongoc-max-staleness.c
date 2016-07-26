@@ -96,6 +96,7 @@ test_mongos_max_staleness_read_pref (void)
 }
 
 
+#ifdef FIXME_CDRIVER_1416
 static void
 _test_last_write_date (bool pooled)
 {
@@ -168,6 +169,7 @@ test_last_write_date_pooled (void *ctx)
 {
    _test_last_write_date (true);
 }
+#endif
 
 
 /* run only if wire version is older than 5 */
@@ -235,12 +237,14 @@ test_client_max_staleness_install (TestSuite *suite)
                   test_mongoc_client_max_staleness);
    TestSuite_Add (suite, "/Client/max_staleness/mongos",
                   test_mongos_max_staleness_read_pref);
+#ifdef FIXME_CDRIVER_1416
    TestSuite_AddFull (suite, "/Client/last_write_date",
                       test_last_write_date, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_5);
    TestSuite_AddFull (suite, "/Client/last_write_date/pooled",
                       test_last_write_date_pooled, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_5);
+#endif
    TestSuite_AddFull (suite, "/Client/last_write_date_absent",
                       test_last_write_date_absent, NULL, NULL,
                       test_framework_skip_if_max_version_version_more_than_4);
