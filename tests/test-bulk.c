@@ -2816,6 +2816,8 @@ test_bulk_write_concern_over_1000(void)
    uint32_t success;
    int i;
    char *str;
+   bson_t reply;
+   bson_iter_t iter;
    bson_t *query;
    const bson_t *result;
    bool r;
@@ -2846,6 +2848,18 @@ test_bulk_write_concern_over_1000(void)
 
    success = mongoc_bulk_operation_execute(bulk, NULL, &error);
    ASSERT_OR_PRINT (success, error);
+
+   /* wait for bulk insert to complete on this connection */
+   r = mongoc_client_command_simple (client, "test",
+                                     tmp_bson ("{'getlasterror': 1}"),
+                                     NULL, &reply, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   if (bson_iter_init_find (&iter, &reply, "err") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      MONGOC_ERROR ("%s\n", bson_iter_utf8 (&iter, NULL));
+      abort ();
+   }
 
    collection = mongoc_client_get_collection (client, "test", str);
    bson_free (str);
