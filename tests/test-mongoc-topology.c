@@ -455,7 +455,6 @@ test_max_wire_version_race_condition (void *ctx)
 }
 
 
-#if !defined(__sun) /* CDRIVER-1305 */
 static void
 test_cooldown_standalone (void *ctx)
 {
@@ -925,7 +924,6 @@ test_multiple_selection_errors (void *context)
 
    mongoc_client_destroy (client);
 }
-#endif
 
 
 static void
@@ -946,6 +944,8 @@ test_invalid_server_id (void)
 void
 test_topology_install (TestSuite *suite)
 {
+   bool windows;
+
    TestSuite_AddLive (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_AddLive (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option",
@@ -962,25 +962,38 @@ test_topology_install (TestSuite *suite)
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
 
-#if !defined(__sun) /* CDRIVER-1305 */
-   TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
-                      test_cooldown_standalone, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/cooldown/rs",
-                      test_cooldown_rs, NULL, NULL, test_framework_skip_if_slow);
+   /* CDRIVER-1305: disable tests that hang on 32-bit Unix */
+#ifdef _MSC_VER
+   windows = true;
+#else
+   windows = false;
 #endif
 
-#if !defined(__sun) /* CDRIVER-1305 */
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
-                      test_connect_timeout_pooled, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
-                      test_connect_timeout_single, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false",
-                      test_connect_timeout_try_once_false, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
-                      test_multiple_selection_errors,
-                      NULL, NULL, test_framework_skip_if_offline);
-   TestSuite_Add (suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
-   TestSuite_Add (suite, "/Topology/try_once/succeed", test_select_after_try_once);
-#endif
+   if (sizeof (int *) == 4 && !windows) {
+      TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
+                         test_cooldown_standalone, NULL, NULL,
+                         test_framework_skip_if_slow);
+      TestSuite_AddFull (suite, "/Topology/cooldown/rs",
+                         test_cooldown_rs, NULL, NULL,
+                         test_framework_skip_if_slow);
+      TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
+                         test_connect_timeout_pooled, NULL, NULL,
+                         test_framework_skip_if_slow);
+      TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
+                         test_connect_timeout_single, NULL, NULL,
+                         test_framework_skip_if_slow);
+      TestSuite_AddFull (suite,
+                         "/Topology/connect_timeout/single/try_once_false",
+                         test_connect_timeout_try_once_false, NULL, NULL,
+                         test_framework_skip_if_slow);
+      TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
+                         test_multiple_selection_errors,
+                         NULL, NULL, test_framework_skip_if_offline);
+      TestSuite_Add (suite, "/Topology/connect_timeout/succeed",
+                     test_select_after_timeout);
+      TestSuite_Add (suite, "/Topology/try_once/succeed",
+                     test_select_after_try_once);
+   }
+
    TestSuite_AddLive (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }
