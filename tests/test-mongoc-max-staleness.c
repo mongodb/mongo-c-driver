@@ -96,7 +96,6 @@ test_mongos_max_staleness_read_pref (void)
 }
 
 
-#ifdef FIXME_CDRIVER_1416
 static void
 _test_last_write_date (bool pooled)
 {
@@ -137,6 +136,7 @@ _test_last_write_date (bool pooled)
    _mongoc_usleep (1000 * 1000);
    s1 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
+   ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
 
    /* lastWriteDate increased by roughly one second - be lenient, just check
     * it increased by less than 10 seconds */
@@ -169,7 +169,6 @@ test_last_write_date_pooled (void *ctx)
 {
    _test_last_write_date (true);
 }
-#endif
 
 
 /* run only if wire version is older than 5 */
@@ -237,18 +236,16 @@ test_client_max_staleness_install (TestSuite *suite)
                   test_mongoc_client_max_staleness);
    TestSuite_Add (suite, "/Client/max_staleness/mongos",
                   test_mongos_max_staleness_read_pref);
-#ifdef FIXME_CDRIVER_1416
    TestSuite_AddFull (suite, "/Client/last_write_date",
                       test_last_write_date, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_5);
+                      test_framework_skip_if_not_rs_version_5);
    TestSuite_AddFull (suite, "/Client/last_write_date/pooled",
                       test_last_write_date_pooled, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_5);
-#endif
+                      test_framework_skip_if_not_rs_version_5);
    TestSuite_AddFull (suite, "/Client/last_write_date_absent",
                       test_last_write_date_absent, NULL, NULL,
-                      test_framework_skip_if_max_version_version_more_than_4);
+                      test_framework_skip_if_rs_version_5);
    TestSuite_AddFull (suite, "/Client/last_write_date_absent/pooled",
                       test_last_write_date_absent_pooled, NULL, NULL,
-                      test_framework_skip_if_max_version_version_more_than_4);
+                      test_framework_skip_if_rs_version_5);
 }

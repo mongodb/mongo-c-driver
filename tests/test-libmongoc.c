@@ -1690,6 +1690,24 @@ int test_framework_skip_if_max_version_version_less_than_5 (void)
    return test_framework_max_wire_version_at_least (5);
 }
 
+int test_framework_skip_if_not_rs_version_5 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ()) ? 1 : 0;
+}
+
+int test_framework_skip_if_rs_version_5 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ()) ? 0 : 1;
+}
+
 static char MONGOC_TEST_UNIQUE [32];
 
 int
