@@ -157,6 +157,8 @@ c_driver_variables:
   configure:
   standard: &configure_flags_default
      configure_flags: "--enable-experimental-features --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
+  no_experimental: &configure_flags_no_experimental
+     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
 
   ## Extra $PATH entries
   paths:
@@ -307,11 +309,11 @@ c_driver_variables:
           git submodule update --init
           cd src/libbson
           echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
-          "$cmake" -G "$GENERATOR" "-DENABLE_EXPERIMENTAL_FEATURES=ON" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
-          "$cmake" -G "$GENERATOR" "-DENABLE_EXPERIMENTAL_FEATURES=ON" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$MSBUILD" /m INSTALL.vcxproj
           (cd src/libbson && ./Debug/test-libbson.exe --no-fork -d)
@@ -431,7 +433,7 @@ c_driver_variables:
     msvc2010_32bit: &with_msvc2010_32bit
       generator: Visual Studio 10 2010
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
       generator: Visual Studio 10 2010 Win64
@@ -440,7 +442,7 @@ c_driver_variables:
     msvc2013_32bit: &with_msvc2013_32bit
       generator: Visual Studio 12 2013
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
       generator: Visual Studio 12 2013 Win64
@@ -450,11 +452,11 @@ c_driver_variables:
       generator: Visual Studio 12 2013 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=WINDOWS"
+      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
     msvc2015_32bit: &with_msvc2015_32bit
       generator: Visual Studio 14 2015
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
     msvc2015: &with_msvc2015
       generator: Visual Studio 14 2015 Win64
@@ -464,12 +466,17 @@ c_driver_variables:
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=WINDOWS"
+      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
     msvc2015: &with_msvc2015_openssl
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=OPENSSL"
+      cmake_defs: "-DENABLE_SSL=OPENSSL -DENABLE_EXPERIMENTAL_FEATURES=ON"
+    msvc2015: &with_msvc2015_no_experimental
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=OPENSSL"  # Omit "ENABLE_EXPERIMENTAL_FEATURES"
 
   ## all windows buildvariants have these attributes in common
   windows_common: &windows_common
@@ -1627,6 +1634,17 @@ buildvariants:
   - windows-64-vs2015-compile
   tasks: *topology_tests
 
+- name: windows-64-vs2015-no-experimental
+  display_name: "Win VS2015 64 No-Experimental"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2015_no_experimental
+  run_on:
+  - windows-64-vs2015-compile
+  tasks:
+  - compile
+
 - name: windows-64-vs2015-nativessl
   display_name: "Win VS2015 64 NativeSSL"
   expansions:
@@ -1769,3 +1787,11 @@ buildvariants:
   - ubuntu1404-build
   tasks: *compile_unix_variants
 
+- name: compile-ubuntu1404-no-experimental
+  display_name: "Ubuntu 14.04 No-Experimental"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1404-build
+  tasks: *compile_most_unix_variants
