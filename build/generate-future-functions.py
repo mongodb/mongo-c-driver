@@ -171,6 +171,11 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("mongoc_cursor_ptr",
+                    "mongoc_collection_find_indexes",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("bool",
                     "mongoc_collection_stats",
                     [param("mongoc_collection_ptr", "collection"),

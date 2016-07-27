@@ -3177,6 +3177,37 @@ test_get_index_info (void)
 
 
 static void
+test_find_indexes_err (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_error_api (client, 2);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   future = future_collection_find_indexes (collection, &error);
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
+                                           "{'listIndexes': 'collection'}");
+
+   mock_server_replies_simple (request, "{'ok': 0, 'code': 1234567}");
+   assert (NULL == future_get_mongoc_cursor_ptr (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_aggregate_install (TestSuite *suite) {
    static test_aggregate_context_t test_aggregate_contexts[2][2][2];
 
@@ -3575,4 +3606,5 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
    TestSuite_AddFull (suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
+   TestSuite_Add (suite, "/Collection/find_indexes/error", test_find_indexes_err);
 }
