@@ -15,7 +15,7 @@ main (int   argc,
    mongoc_cursor_t *cursor;
    bson_error_t error;
    const bson_t *doc;
-   const char *uristr = "mongodb://127.0.0.1/";
+   const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
    const char *collection_name = "test";
    bson_t query;
    char *str;

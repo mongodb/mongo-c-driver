@@ -32,7 +32,7 @@ int main (int argc, char *argv[])
    iov.iov_len = sizeof buf;
 
    /* connect to localhost client */
-   client = mongoc_client_new ("mongodb://127.0.0.1:27017");
+   client = mongoc_client_new ("mongodb://127.0.0.1:27017?appname=gridfs-example");
    assert(client);
 
    /* grab a gridfs handle in test prefixed by fs */

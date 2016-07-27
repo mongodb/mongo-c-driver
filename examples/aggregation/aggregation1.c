@@ -40,7 +40,7 @@ main (int argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost:27017");
+   client = mongoc_client_new ("mongodb://localhost:27017?appname=aggregation-example");
    collection = mongoc_client_get_collection (client, "test", "zipcodes");
 
    print_pipeline (collection);

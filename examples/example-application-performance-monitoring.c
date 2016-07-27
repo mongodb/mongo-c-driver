@@ -69,7 +69,7 @@ main (int   argc,
    mongoc_apm_callbacks_t *callbacks;
    stats_t stats = { 0 }; 
    mongoc_collection_t *collection;
-   const char *uristr = "mongodb://127.0.0.1/";
+   const char *uristr = "mongodb://127.0.0.1/?appname=perf-monitoring-example";
    const char *collection_name = "test";
    bson_t doc;
 
