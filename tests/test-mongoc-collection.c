@@ -2823,7 +2823,7 @@ test_large_return (void *ctx)
    assert (cursor);
    bson_destroy (&query);
 
-   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), error);
+   ASSERT_CURSOR_NEXT (cursor, &doc);
    assert (doc);
 
    r = mongoc_cursor_next (cursor, &doc);

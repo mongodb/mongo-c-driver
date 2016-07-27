@@ -68,6 +68,45 @@ extern "C" {
       } \
    } while (0)
 
+#define ASSERT_CURSOR_NEXT(_cursor, _doc) \
+   do { \
+      bson_error_t _err; \
+      if (! mongoc_cursor_next ((_cursor), (_doc))) { \
+         if (mongoc_cursor_error ((_cursor), &_err)) { \
+            fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
+                            __FILE__, __LINE__, BSON_FUNC, \
+                            _err.message); \
+          } else { \
+             fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
+                            __FILE__, __LINE__, BSON_FUNC, \
+                            "empty cursor"); \
+          } \
+          fflush(stderr); \
+          abort(); \
+      } \
+   } while (0)
+
+
+#define ASSERT_CURSOR_DONE(_cursor) \
+   do { \
+      bson_error_t _err; \
+      const bson_t *_doc; \
+      if (mongoc_cursor_next ((_cursor), &_doc)) { \
+         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
+                         __FILE__, __LINE__, BSON_FUNC, \
+                         "non-empty cursor"); \
+         fflush(stderr); \
+         abort(); \
+      } \
+      if (mongoc_cursor_error ((_cursor), &_err)) { \
+         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
+                         __FILE__, __LINE__, BSON_FUNC, \
+                         _err.message); \
+         fflush(stderr); \
+         abort(); \
+      } \
+   } while (0)
+
 
 #define ASSERT_CMPINT_HELPER(a, eq, b, fmt) \
    do { \
