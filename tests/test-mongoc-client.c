@@ -1694,6 +1694,7 @@ test_ssl_client_pooled_copies_args (void)
 }
 
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 _test_ssl_reconnect (bool pooled)
 {
@@ -1782,6 +1783,7 @@ test_ssl_reconnect_pooled (void)
 {
    _test_ssl_reconnect (true);
 }
+#endif
 
 #endif
 

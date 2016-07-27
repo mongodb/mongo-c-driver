@@ -72,6 +72,8 @@ int test_framework_skip_if_max_version_version_less_than_2 (void);
 int test_framework_skip_if_max_version_version_less_than_4 (void);
 int test_framework_skip_if_max_version_version_more_than_4 (void);
 int test_framework_skip_if_max_version_version_less_than_5 (void);
+int test_framework_skip_if_not_rs_version_5 (void);
+int test_framework_skip_if_rs_version_5 (void);
 int test_framework_skip_if_mongos  (void);
 int test_framework_skip_if_replset (void);
 int test_framework_skip_if_single  (void);

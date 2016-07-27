@@ -947,6 +947,12 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
       uri_string = bson_string_new (env_uri_str);
+      if (database_name) {
+         if (uri_string->str[uri_string->len-1] != '/') {
+            bson_string_append (uri_string, "/");
+         }
+         bson_string_append (uri_string, database_name);
+      }
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
@@ -1682,6 +1688,24 @@ int test_framework_skip_if_max_version_version_less_than_5 (void)
       return 0;
    }
    return test_framework_max_wire_version_at_least (5);
+}
+
+int test_framework_skip_if_not_rs_version_5 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ()) ? 1 : 0;
+}
+
+int test_framework_skip_if_rs_version_5 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ()) ? 0 : 1;
 }
 
 static char MONGOC_TEST_UNIQUE [32];

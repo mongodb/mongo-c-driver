@@ -927,7 +927,9 @@ mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
    int32_t max_staleness_ms;
+#endif
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);

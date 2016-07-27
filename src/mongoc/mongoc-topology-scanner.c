@@ -78,23 +78,22 @@ _get_ismaster_doc (mongoc_topology_scanner_t      *ts,
                    mongoc_topology_scanner_node_t *node)
 {
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
-   bool ismaster_with_metadata_ok = true;
-
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
       return &ts->ismaster_cmd;
    }
 
    /* If this is the first time using the node or if it's the first time
-    * using it after a failure, resend metadata */
+    * using it after a failure, build metadata doc */
    if (bson_empty (&ts->ismaster_cmd_with_metadata)) {
-      ismaster_with_metadata_ok = _build_ismaster_with_metadata (ts);
+      ts->metadata_ok_to_send = _build_ismaster_with_metadata (ts);
+      if (!ts->metadata_ok_to_send) {
+         MONGOC_WARNING ("Metadata doc too big, not including in isMaster");
+      }
    }
 
-   /* If the doc turned out to be too big, and we couldn't prevent it */
-   if (!ismaster_with_metadata_ok ||
-       ts->ismaster_cmd_with_metadata.len > METADATA_MAX_SIZE) {
-      MONGOC_WARNING ("Metadata doc too big, not including in isMaster");
+   /* If the doc turned out to be too big */
+   if (!ts->metadata_ok_to_send) {
       return &ts->ismaster_cmd;
    }
 
@@ -137,6 +136,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
+   ts->metadata_ok_to_send = false;
 
    return ts;
 }

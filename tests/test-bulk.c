@@ -2854,9 +2854,8 @@ test_bulk_write_concern_over_1000(void)
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 
    r = mongoc_cursor_next (cursor, &result);
-   if (!r) {
-      mongoc_cursor_error(cursor, &error);
-      fprintf(stderr, "%s", error.message);
+   if (!r && mongoc_cursor_error(cursor, &error)) {
+      fprintf(stderr, "%s\n", error.message);
    }
    assert(r);
 

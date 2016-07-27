@@ -109,6 +109,14 @@ future_collection_find_and_modify (
 
 
 future_t *
+future_collection_find_indexes (
+
+   mongoc_collection_ptr collection,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_stats (
 
    mongoc_collection_ptr collection,
