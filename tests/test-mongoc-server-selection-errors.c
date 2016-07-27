@@ -22,11 +22,6 @@ server_selection_error_dns (const char *uri_str,
    uri = mongoc_uri_new (uri_str);
    ASSERT (uri);
 
-   if (!assert_as) {
-      /* since we expect to fail, fail fast */
-      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
-   }
-
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
