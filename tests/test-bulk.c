@@ -919,6 +919,7 @@ test_upsert_large (void *ctx)
 }
 
 
+#if defined (_MSC_VER) && defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
 static void
 test_upsert_huge (void *ctx)
 {
@@ -985,6 +986,7 @@ test_upsert_huge (void *ctx)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
+#endif /* CDRIVER-1423 */
 
 
 static void
@@ -3096,8 +3098,10 @@ test_bulk_install (TestSuite *suite)
                        test_upsert_unordered);
    TestSuite_AddFull (suite, "/BulkOperation/upsert_large",
                       test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
+#if defined (_MSC_VER) && defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
    TestSuite_AddFull (suite, "/BulkOperation/upsert_huge",
                       test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
+#endif
    TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_ordered",
                        test_upserted_index_ordered);
    TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_unordered",
