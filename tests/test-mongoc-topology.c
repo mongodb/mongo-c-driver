@@ -701,6 +701,7 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    /* server 1 is a secondary */
    request = mock_server_receives_ismaster (servers[1]);
+   assert (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
@@ -718,6 +719,7 @@ _test_connect_timeout (bool pooled, bool try_once)
       while (expected_duration_usec / 1000 + min_heartbeat_ms
              < server_selection_timeout_ms) {
          request = mock_server_receives_ismaster (servers[1]);
+         assert (request);
          mock_server_replies_simple (request, secondary_response);
          request_destroy (request);
 
