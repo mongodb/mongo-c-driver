@@ -764,11 +764,12 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char                *appname)
 {
    if (!_mongoc_metadata_appname_is_valid (appname)) {
+      MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
       return false;
    }
 
    if (ts->appname != NULL) {
-      /* We've already set it */
+      MONGOC_ERROR ("Cannot set appname more than once");
       return false;
    }
 

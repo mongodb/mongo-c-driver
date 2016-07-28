@@ -1928,6 +1928,7 @@ mongoc_client_set_appname (mongoc_client_t *client,
                            const char      *appname)
 {
    if (!client->topology->single_threaded) {
+      MONGOC_ERROR ("Cannot call set_appname on a client from a pool");
       return false;
    }
 

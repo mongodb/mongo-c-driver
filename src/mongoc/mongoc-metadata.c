@@ -287,6 +287,7 @@ mongoc_handshake_data_append (const char *driver_name,
    int max_size = 0;
 
    if (gMongocMetadata.frozen) {
+      MONGOC_ERROR ("Cannot set metadata more than once");
       return false;
    }
 
