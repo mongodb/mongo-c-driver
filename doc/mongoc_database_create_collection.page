@@ -33,14 +33,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
     </table>
   </section>
 
-  <section id="errors">
-    <title>Errors</title>
-    <p>Errors are propagated via the <code>error</code> parameter.</p>
+  <section id="description">
+    <title>Description</title> 
+    <p>For more information, see <code xref="mongoc_database_create_collection_with_write_concern">mongoc_database_create_collection_with_write_concern()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter.</p>
   </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>This function returns a newly allocated <code xref="mongoc_collection_t">mongoc_collection_t</code> upon success, <code>NULL</code> upon failure and <code>error</code> is set.</p>
-  </section>
-
 </page>
