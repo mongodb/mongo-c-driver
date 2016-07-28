@@ -18,7 +18,7 @@ mongoc_client_set_appname (mongoc_client_t *client,
 ]]></code></synopsis>
     <p>Sets the application name for this client. This string, along with other metadata, is sent to the server as part of the initial connection handshake (<link href="https://docs.mongodb.org/manual/reference/command/isMaster/">"isMaster"</link>).</p>
     <p><code>appname</code> is copied, and doesn't have to remain valid after the call to <code>mongoc_client_set_appname()</code>.</p>
-    <p>This function will return false in the following cases:</p>
+    <p>This function will log an error and return false in the following cases:</p>
     <list>
       <item><p><code>appname</code> is longer than <code>MONGOC_METADATA_APPNAME_MAX</code></p></item>
       <item><p><code>client</code> has already initiated a handshake</p></item>

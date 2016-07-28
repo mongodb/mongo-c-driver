@@ -48,6 +48,7 @@ test_mongoc_metadata_appname_in_uri (void)
    const char *good_uri = "mongodb://host/?appname=mongodump";
    mongoc_uri_t *uri;
    const char *appname = "mongodump";
+   const char *value;
 
    memset (long_string, 'a', MONGOC_METADATA_APPNAME_MAX + 1);
    long_string[MONGOC_METADATA_APPNAME_MAX + 1] = '\0';
@@ -56,22 +57,25 @@ test_mongoc_metadata_appname_in_uri (void)
    capture_logs (true);
    uri_str = bson_strdup_printf ("mongodb://a/?appname=%s", long_string);
    ASSERT (!mongoc_client_new (uri_str));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "is invalid");
    capture_logs (false);
 
    uri = mongoc_uri_new (good_uri);
    ASSERT (uri);
-   appname = mongoc_uri_get_appname (uri);
-   ASSERT (appname);
-   ASSERT (!strcmp (appname, appname));
+   value = mongoc_uri_get_appname (uri);
+   ASSERT (value);
+   ASSERT_CMPSTR (appname, value);
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (NULL);
    ASSERT (uri);
    ASSERT (!mongoc_uri_set_appname (uri, long_string));
    ASSERT (mongoc_uri_set_appname (uri, appname));
-   appname = mongoc_uri_get_appname (uri);
-   ASSERT (appname);
-   ASSERT (!strcmp (appname, appname));
+   value = mongoc_uri_get_appname (uri);
+   ASSERT (value);
+   ASSERT_CMPSTR (appname, value);
    mongoc_uri_destroy (uri);
 
    bson_free (uri_str);
@@ -86,7 +90,12 @@ test_mongoc_metadata_appname_frozen_single (void)
    client = mongoc_client_new (good_uri);
 
    /* Shouldn't be able to set appname again */
+   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname more than once");
+   capture_logs (false);
 
    mongoc_client_destroy (client);
 }
@@ -101,7 +110,12 @@ test_mongoc_metadata_appname_frozen_pooled (void)
    uri = mongoc_uri_new (good_uri);
 
    pool = mongoc_client_pool_new (uri);
+   capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "test"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname more than once");
+   capture_logs (false);
 
    mongoc_client_pool_destroy (pool);
    mongoc_uri_destroy (uri);
@@ -160,7 +174,7 @@ test_mongoc_metadata_append_success (void)
    ASSERT (bson_iter_find (&inner_iter, "name"));
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
-   ASSERT (!strcmp (val, "testapp"));
+   ASSERT_CMPSTR (val, "testapp");
 
    /* Make sure driver.name and driver.version and platform are all right */
    ASSERT (bson_iter_find (&md_iter, "driver"));
@@ -228,7 +242,12 @@ test_mongoc_metadata_append_after_cmd (void)
 
    client = mongoc_client_pool_pop (pool);
 
+   capture_logs (true);
    ASSERT (!mongoc_metadata_append ("a", "a", "a"));
+   ASSERT_CAPTURED_LOG ("mongoc_metadata_append",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set metadata more than once");
+   capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
 

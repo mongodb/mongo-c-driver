@@ -224,7 +224,13 @@ test_mongoc_client_pool_metadata (void)
 
    ASSERT (mongoc_client_pool_set_appname (pool, "some application"));
    /* Be sure we can't set it twice */
+   capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname more than once");
+   capture_logs (false);
+
    mongoc_client_pool_destroy (pool);
 
    /* Make sure that after we pop a client we can't set metadata anymore */
@@ -233,13 +239,23 @@ test_mongoc_client_pool_metadata (void)
    client = mongoc_client_pool_pop (pool);
 
    /* Be sure a client can't set it now that we've popped them */
+   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot call set_appname on a client from a pool");
+   capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
 
    /* even now that we pushed the client back we shouldn't be able to set
-      the metadata */
+    * the metadata */
+   capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname after handshake initiated");
+   capture_logs (false);
 
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);

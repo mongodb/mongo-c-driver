@@ -1805,13 +1805,22 @@ test_mongoc_client_application_metadata (void)
    big_string[BUFFER_SIZE - 1] = '\0';
 
    /* Check that setting too long a name causes failure */
+   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, big_string));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "is invalid");
+   clear_captured_logs ();
 
    /* Success case */
    ASSERT (mongoc_client_set_appname (client, short_string));
 
    /* Make sure we can't set it twice */
    ASSERT (!mongoc_client_set_appname (client, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname more than once");
+   capture_logs (false);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
