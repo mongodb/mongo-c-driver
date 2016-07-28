@@ -763,14 +763,40 @@ bool
 mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
                         bson_error_t        *error)      /* OUT */
 {
+   return mongoc_collection_drop_with_write_concern (collection,
+                                                     NULL,
+                                                     error);
+}
+
+
+bool
+mongoc_collection_drop_with_write_concern (mongoc_collection_t    *collection,
+                                           mongoc_write_concern_t *write_concern,
+                                           bson_error_t           *error)
+{
    bool ret;
    bson_t cmd;
 
    BSON_ASSERT (collection);
 
-   bson_init(&cmd);
-   bson_append_utf8(&cmd, "drop", 4, collection->collection,
-                    collection->collectionlen);
+   if (!_mongoc_write_concern_validate (write_concern, error)) {
+      return false;
+   }
+
+   bson_init (&cmd);
+   bson_append_utf8 (&cmd, "drop", 4, collection->collection,
+                     collection->collectionlen);
+
+   if (write_concern &&
+       !mongoc_write_concern_append (write_concern, &cmd)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not append writeConcern to command.");
+      bson_destroy (&cmd);
+      return false;
+   }
+
    ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 

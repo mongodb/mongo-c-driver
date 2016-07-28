@@ -2013,6 +2013,7 @@ test_drop (void)
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
    bson_error_t error;
    bson_t *doc;
 
@@ -2028,11 +2029,30 @@ test_drop (void)
    doc = BCON_NEW("hello", "world");
    ASSERT_OR_PRINT (mongoc_collection_insert(collection,  MONGOC_INSERT_NONE,
                                              doc, NULL, &error), error);
-   bson_destroy (doc);
 
    ASSERT_OR_PRINT (mongoc_collection_drop(collection, &error), error);
    ASSERT (!mongoc_collection_drop(collection, &error));
 
+   /* invalid writeConcern */
+   wc = mongoc_write_concern_new ();
+   wc->wtimeout = -10;
+   ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                              doc, NULL, &error),
+                    error);
+   ASSERT (!mongoc_collection_drop_with_write_concern (collection,
+                                                       wc,
+                                                       &error));
+   wc->wtimeout = 0;
+
+   /* valid writeConcern */
+   mongoc_write_concern_set_w (wc, 1);
+   ASSERT_OR_PRINT (mongoc_collection_drop_with_write_concern (collection,
+                                                               wc,
+                                                               &error),
+                    error);
+
+   bson_destroy (doc);
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
