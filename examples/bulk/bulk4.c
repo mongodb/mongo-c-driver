@@ -53,7 +53,7 @@ main (int argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost/");
+   client = mongoc_client_new ("mongodb://localhost/?appname=bulk4-example");
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk4 (collection);

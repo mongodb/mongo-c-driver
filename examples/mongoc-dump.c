@@ -239,7 +239,7 @@ main (int argc,
       }
    }
 
-   uri = bson_strdup_printf ("mongodb://%s:%hu/%s?ssl=%s",
+   uri = bson_strdup_printf ("mongodb://%s:%hu/%s?appname=dump-example&ssl=%s",
                              host,
                              port,
                              database ? database : "",

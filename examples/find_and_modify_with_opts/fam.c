@@ -18,7 +18,7 @@ int main(void)
    bson_t *options;
 
    mongoc_init();
-   client = mongoc_client_new ("mongodb://localhost:27017/admin");
+   client = mongoc_client_new ("mongodb://localhost:27017/admin?appname=find-and-modify-opts-example");
    database = mongoc_client_get_database (client, "databaseName");
 
    options = BCON_NEW ("validator", "{",

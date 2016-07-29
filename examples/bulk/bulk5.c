@@ -92,7 +92,7 @@ main (int argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost/");
+   client = mongoc_client_new ("mongodb://localhost/?appname=bulk5-example");
    database = mongoc_client_get_database (client, "testasdf");
 
    /* Create schema validator */
