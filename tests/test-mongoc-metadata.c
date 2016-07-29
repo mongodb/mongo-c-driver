@@ -41,6 +41,73 @@ _reset_metadata (void)
 }
 
 static void
+test_mongoc_metadata_appname_in_uri (void)
+{
+   char long_string[MONGOC_METADATA_APPNAME_MAX + 2];
+   char *uri_str;
+   const char *good_uri = "mongodb://host/?appname=mongodump";
+   mongoc_uri_t *uri;
+   const char *appname = "mongodump";
+
+   memset (long_string, 'a', MONGOC_METADATA_APPNAME_MAX + 1);
+   long_string[MONGOC_METADATA_APPNAME_MAX + 1] = '\0';
+
+   /* Shouldn't be able to set with appname really long */
+   capture_logs (true);
+   uri_str = bson_strdup_printf ("mongodb://a/?appname=%s", long_string);
+   ASSERT (!mongoc_client_new (uri_str));
+   capture_logs (false);
+
+   uri = mongoc_uri_new (good_uri);
+   ASSERT (uri);
+   appname = mongoc_uri_get_appname (uri);
+   ASSERT (appname);
+   ASSERT (!strcmp (appname, appname));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new (NULL);
+   ASSERT (uri);
+   ASSERT (!mongoc_uri_set_appname (uri, long_string));
+   ASSERT (mongoc_uri_set_appname (uri, appname));
+   appname = mongoc_uri_get_appname (uri);
+   ASSERT (appname);
+   ASSERT (!strcmp (appname, appname));
+   mongoc_uri_destroy (uri);
+
+   bson_free (uri_str);
+}
+
+static void
+test_mongoc_metadata_appname_frozen_single (void)
+{
+   mongoc_client_t *client;
+   const char *good_uri = "mongodb://host/?appname=mongodump";
+
+   client = mongoc_client_new (good_uri);
+
+   /* Shouldn't be able to set appname again */
+   ASSERT (!mongoc_client_set_appname (client, "a"));
+
+   mongoc_client_destroy (client);
+}
+
+static void
+test_mongoc_metadata_appname_frozen_pooled (void)
+{
+   mongoc_client_pool_t *pool;
+   const char *good_uri = "mongodb://host/?appname=mongodump";
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new (good_uri);
+
+   pool = mongoc_client_pool_new (uri);
+   ASSERT (!mongoc_client_pool_set_appname (pool, "test"));
+
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+}
+
+static void
 test_mongoc_metadata_append_success (void)
 {
    mock_server_t *server;
@@ -71,6 +138,7 @@ test_mongoc_metadata_append_success (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
    pool = mongoc_client_pool_new (uri);
 
    /* Force topology scanner to start */
@@ -85,6 +153,14 @@ test_mongoc_metadata_append_success (void)
 
    ASSERT (bson_iter_init_find (&iter, request_doc, METADATA_FIELD));
    ASSERT (bson_iter_recurse (&iter, &md_iter));
+
+   ASSERT (bson_iter_find (&md_iter, "application"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (!strcmp (val, "testapp"));
 
    /* Make sure driver.name and driver.version and platform are all right */
    ASSERT (bson_iter_find (&md_iter, "driver"));
@@ -321,6 +397,13 @@ test_mongoc_metadata_cannot_send (void)
 void
 test_metadata_install (TestSuite *suite)
 {
+   TestSuite_Add (suite, "/ClientMetadata/appname_in_uri",
+                  test_mongoc_metadata_appname_in_uri);
+   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_single",
+                  test_mongoc_metadata_appname_frozen_single);
+   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_pooled",
+                  test_mongoc_metadata_appname_frozen_pooled);
+
    TestSuite_Add (suite, "/ClientMetadata/success",
                   test_mongoc_metadata_append_success);
    TestSuite_Add (suite, "/ClientMetadata/failure",

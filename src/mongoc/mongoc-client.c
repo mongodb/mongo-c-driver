@@ -723,6 +723,9 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    const mongoc_read_prefs_t *read_prefs;
    const mongoc_read_concern_t *read_concern;
    const mongoc_write_concern_t *write_concern;
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   const char *appname;
+#endif
 
    BSON_ASSERT (uri);
 
@@ -749,6 +752,14 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 
    read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
    client->read_prefs = mongoc_read_prefs_copy (read_prefs);
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   appname = mongoc_uri_get_option_as_utf8 (client->uri, "appname", NULL);
+   if (appname && client->topology->single_threaded) {
+      /* the appname should have already been validated */
+      BSON_ASSERT (mongoc_client_set_appname (client, appname));
+   }
+#endif
 
    mongoc_cluster_init (&client->cluster, client->uri, client);
 

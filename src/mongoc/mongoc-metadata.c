@@ -314,3 +314,9 @@ _mongoc_metadata_get (void)
 {
    return &gMongocMetadata;
 }
+
+bool
+_mongoc_metadata_appname_is_valid (const char *appname)
+{
+   return strlen (appname) <= MONGOC_METADATA_APPNAME_MAX;
+}
