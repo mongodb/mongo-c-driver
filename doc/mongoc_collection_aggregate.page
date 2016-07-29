@@ -38,71 +38,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
 
   <section id="description">
     <title>Description</title>
+    <p>For more information, see <code xref="mongoc_collection_aggregate_with_write_concern">mongoc_collection_aggregate_with_write_concern()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter.</p>
 
-    <p>This function shall execute an aggregation query on the underlying 'collection'. The bson 'pipeline' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
-
-    <p>In the case of older server versions, &lt; v2.5, the returned cursor is a synthetic iterator over the result set. This provides a limitation insofar as returned documents can be no larger than 16MB. When connecting to newer servers this limitation doesn't exist. The specific test is for wire_version &gt; 0.</p>
-
-    <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
-    <note style="info"><p>The <code>pipeline</code> parameter should contain a field named <code>pipeline</code> containing a BSON array of pipeline stages.</p></note>
-    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>This function returns a newly allocated <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use. <code>NULL</code> may be returned if parameters are invalid.</p>
-    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
-  </section>
-
-  <section id="example">
-    <title>Example</title>
-    <listing>
-      <title>Aggregation Example</title>
-      <code mime="text/x-csrc"><![CDATA[
-#include <bcon.h>
-#include <mongoc.h>
-
-static mongoc_cursor_t *
-pipeline_query (mongoc_collection_t *collection)
-{
-   mongoc_cursor_t *cursor;
-   bson_t *pipeline;
-
-   pipeline = BCON_NEW ("pipeline", "[",
-                           "{", "$match", "{", "foo", BCON_UTF8 ("A"), "}", "}",
-                           "{", "$match", "{", "bar", BCON_BOOL (false), "}", "}",
-                        "]");
-
-   cursor = mongoc_collection_aggregate (collection,
-                                         MONGOC_QUERY_NONE,
-                                         pipeline,
-                                         NULL,
-                                         NULL);
-
-   bson_destroy (pipeline);
-
-   return cursor;
-}]]></code>
-    </listing>
-  </section>
-
-  <section id="options">
-    <title>Other Parameters</title>
-    <p>Pass any parameters to the <code>aggregate</code> command, besides <code>pipeline</code>, as fields in <code>options</code>:</p>
-    <listing>
-      <code mime="text/x-csrc"><![CDATA[
-pipeline = BCON_NEW ("pipeline", "[",
-                        "{", "$out", BCON_UTF8 ("collection2"), "}",
-                     "]");
-
-options = BCON_NEW ("bypassDocumentValidation", BCON_BOOL (true));
-cursor = mongoc_collection_aggregate (collection1,
-                                      MONGOC_QUERY_NONE,
-                                      pipeline,
-                                      options,
-                                      NULL);
-]]></code>
-    </listing>
-  </section>
-
 </page>
