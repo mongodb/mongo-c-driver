@@ -1347,6 +1347,7 @@ test_index (void)
    mongoc_index_opt_t opt;
    bson_error_t error;
    bson_t keys;
+   mongoc_write_concern_t *wc;
 
    mongoc_index_opt_init(&opt);
 
@@ -1370,10 +1371,38 @@ test_index (void)
    ASSERT_OR_PRINT (mongoc_collection_drop_index(collection, "hello_1", &error),
                     error);
 
+   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys,
+                                                    &opt, &error), error);
+
+   /* invalid writeConcern */
+   wc = mongoc_write_concern_new ();
+   wc->wtimeout = -10;
+   ASSERT (!mongoc_collection_drop_index_with_write_concern (collection,
+                                                             "hello_1",
+                                                             wc,
+                                                             &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern */
+   mongoc_write_concern_set_w (wc, 1);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index_with_write_concern (collection,
+                                                                     "hello_1",
+                                                                     wc,
+                                                                     &error),
+                    error);
+   assert (!error.code);
+   assert (!error.domain);
+
    bson_destroy(&keys);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);

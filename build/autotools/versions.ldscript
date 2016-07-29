@@ -336,6 +336,7 @@ LIBMONGOC_1.4 {
         mongoc_client_set_appname;
         mongoc_client_set_error_api;
         mongoc_collection_aggregate_with_write_concern;
+        mongoc_collection_drop_index_with_write_concern;
         mongoc_collection_drop_with_write_concern;
         mongoc_cursor_get_limit;
         mongoc_cursor_new_from_command_reply;

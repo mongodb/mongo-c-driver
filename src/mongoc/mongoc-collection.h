@@ -89,6 +89,11 @@ bool                          mongoc_collection_drop_with_write_concern
 bool                          mongoc_collection_drop_index           (mongoc_collection_t           *collection,
                                                                       const char                    *index_name,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_drop_index_with_write_concern
+                                                                     (mongoc_collection_t           *collection,
+                                                                      const char                    *index_name,
+                                                                      mongoc_write_concern_t        *write_concern,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_create_index         (mongoc_collection_t           *collection,
                                                                       const bson_t                  *keys,
                                                                       const mongoc_index_opt_t      *opt,

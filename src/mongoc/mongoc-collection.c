@@ -825,16 +825,38 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
                               const char          *index_name, /* IN */
                               bson_error_t        *error)      /* OUT */
 {
+   return mongoc_collection_drop_index_with_write_concern (
+      collection, index_name, NULL, error);
+}
+
+
+bool
+mongoc_collection_drop_index_with_write_concern (mongoc_collection_t    *collection,
+                                                 const char             *index_name,
+                                                 mongoc_write_concern_t *write_concern,
+                                                 bson_error_t           *error)
+{
    bool ret;
    bson_t cmd;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (index_name);
 
+   if (!_mongoc_write_concern_validate (write_concern, error)) {
+      return false;
+   }
+
    bson_init(&cmd);
    bson_append_utf8(&cmd, "dropIndexes", -1, collection->collection,
                     collection->collectionlen);
    bson_append_utf8(&cmd, "index", -1, index_name, -1);
+
+   if (write_concern &&
+       !_mongoc_write_concern_is_default (write_concern)) {
+      bson_append_document (&cmd, "writeConcern", 12,
+                            _mongoc_write_concern_get_bson (write_concern));
+   }
+
    ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 
