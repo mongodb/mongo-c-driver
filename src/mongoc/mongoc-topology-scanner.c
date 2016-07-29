@@ -763,7 +763,7 @@ bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char                *appname)
 {
-   if (strlen (appname) > MONGOC_METADATA_APPNAME_MAX) {
+   if (!_mongoc_metadata_appname_is_valid (appname)) {
       return false;
    }
 
