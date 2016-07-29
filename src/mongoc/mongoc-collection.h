@@ -82,6 +82,10 @@ int64_t                       mongoc_collection_count_with_opts      (mongoc_col
                                                                       bson_error_t                  *error);
 bool                          mongoc_collection_drop                 (mongoc_collection_t           *collection,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_drop_with_write_concern
+                                                                     (mongoc_collection_t           *collection,
+                                                                      mongoc_write_concern_t        *write_concern,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_drop_index           (mongoc_collection_t           *collection,
                                                                       const char                    *index_name,
                                                                       bson_error_t                  *error);

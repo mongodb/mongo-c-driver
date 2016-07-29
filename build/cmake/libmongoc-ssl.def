@@ -102,6 +102,7 @@ mongoc_collection_delete
 mongoc_collection_destroy
 mongoc_collection_drop
 mongoc_collection_drop_index
+mongoc_collection_drop_with_write_concern
 mongoc_collection_ensure_index
 mongoc_collection_find
 mongoc_collection_find_and_modify
