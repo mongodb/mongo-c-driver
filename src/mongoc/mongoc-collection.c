@@ -428,10 +428,8 @@ mongoc_collection_aggregate_with_write_concern (
    }
 
    if (write_concern &&
-       !_mongoc_write_concern_is_default (write_concern) &&
-       selected_server->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
-      bson_append_document (&command, "writeConcern", 12,
-                            _mongoc_write_concern_get_bson (write_concern));
+       !_mongoc_write_concern_is_default (write_concern)) {
+      cursor->write_concern = mongoc_write_concern_copy (write_concern);
    }
 
    if (use_cursor) {

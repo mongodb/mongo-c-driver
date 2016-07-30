@@ -25,6 +25,7 @@
 #include "mongoc-cursor-cursorid-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-write-concern-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -314,6 +315,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    _mongoc_buffer_destroy(&cursor->buffer);
    mongoc_read_prefs_destroy(cursor->read_prefs);
    mongoc_read_concern_destroy(cursor->read_concern);
+   mongoc_write_concern_destroy (cursor->write_concern);
 
    bson_free(cursor);
 
@@ -751,6 +753,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
    apply_read_preferences (cursor->read_prefs, server_stream,
                            command, cursor->flags, &read_prefs_result);
+
+   if (cursor->write_concern &&
+       !_mongoc_write_concern_is_default (cursor->write_concern) &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+      mongoc_write_concern_append (cursor->write_concern,
+                                   read_prefs_result.query_with_read_prefs);
+   }
 
    ret = mongoc_cluster_run_command_monitored (
       cluster,
