@@ -140,7 +140,7 @@ test_exhaust_cursor (bool pooled)
    }
 
    /* ensure even a 1 ms-resolution clock advances significantly */
-   _mongoc_usleep (10 * 1000);
+   _mongoc_usleep (1000 * 1000);
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
