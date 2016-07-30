@@ -1779,12 +1779,12 @@ mock_server_reply_multi (request_t           *request,
 
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
+   mongoc_mutex_lock (&server->mutex);
    if (!(request->opcode == MONGOC_OPCODE_QUERY &&
          request_rpc->query.flags & MONGOC_QUERY_EXHAUST)) {
       server->last_response_id++;
    }
 
-   mongoc_mutex_lock (&server->mutex);
    r.reply.request_id = server->last_response_id;
    mongoc_mutex_unlock (&server->mutex);
    r.reply.msg_len = 0;
