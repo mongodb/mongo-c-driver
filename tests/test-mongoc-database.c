@@ -307,18 +307,46 @@ test_drop (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    char *dbname;
+   mongoc_write_concern_t *wc;
 
    client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("db_drop_test");
    database = mongoc_client_get_database (client, dbname);
-   bson_free (dbname);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    assert (!error.domain);
    assert (!error.code);
 
+   mongoc_database_destroy (database);
+
+   /* invalid writeConcern */
+   wc = mongoc_write_concern_new ();
+   wc->wtimeout = -10;
+   database = mongoc_client_get_database (client, dbname);
+
+   ASSERT (!mongoc_database_drop_with_write_concern (database,
+                                                     wc,
+                                                     &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern */
+   mongoc_write_concern_set_w (wc, 1);
+
+   ASSERT_OR_PRINT (mongoc_database_drop_with_write_concern (database,
+                                                             wc,
+                                                             &error),
+                    error);
+   assert (!error.code);
+   assert (!error.domain);
+
+   bson_free (dbname);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 }

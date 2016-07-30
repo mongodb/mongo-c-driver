@@ -65,6 +65,10 @@ bool                          mongoc_database_command_simple       (mongoc_datab
                                                                     bson_error_t                 *error);
 bool                          mongoc_database_drop                 (mongoc_database_t            *database,
                                                                     bson_error_t                 *error);
+bool                          mongoc_database_drop_with_write_concern
+                                                                   (mongoc_database_t            *database,
+                                                                    mongoc_write_concern_t       *write_concern,
+                                                                    bson_error_t                 *error);
 bool                          mongoc_database_has_collection       (mongoc_database_t            *database,
                                                                     const char                   *name,
                                                                     bson_error_t                 *error);

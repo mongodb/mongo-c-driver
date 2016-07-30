@@ -29,6 +29,7 @@
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
+#include "mongoc-write-concern-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -226,13 +227,34 @@ bool
 mongoc_database_drop (mongoc_database_t *database,
                       bson_error_t      *error)
 {
+   return mongoc_database_drop_with_write_concern (
+      database, NULL, error);
+}
+
+
+bool
+mongoc_database_drop_with_write_concern (mongoc_database_t      *database,
+                                         mongoc_write_concern_t *write_concern,
+                                         bson_error_t           *error)
+{
    bool ret;
    bson_t cmd;
 
    BSON_ASSERT (database);
 
+   if (!_mongoc_write_concern_validate (write_concern, error)) {
+      return false;
+   }
+
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
+
+   if (write_concern &&
+       !_mongoc_write_concern_is_default (write_concern)) {
+      bson_append_document (&cmd, "writeConcern", 12,
+                            _mongoc_write_concern_get_bson (write_concern));
+   }
+
    ret = mongoc_database_command_simple(database, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 

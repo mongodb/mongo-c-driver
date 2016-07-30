@@ -342,6 +342,7 @@ LIBMONGOC_1.4 {
         mongoc_cursor_set_hint;
         mongoc_cursor_set_limit;
         mongoc_database_create_collection_with_write_concern;
+        mongoc_database_drop_with_write_concern;
         mongoc_find_and_modify_opts_set_max_time_ms;
         mongoc_find_and_modify_opts_append;
         mongoc_gridfs_file_set_id; 
