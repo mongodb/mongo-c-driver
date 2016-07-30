@@ -156,7 +156,7 @@ test_exhaust_cursor (bool pooled)
       }
       assert (r);
       assert (doc);
-      assert (timestamp1 < get_timestamp (client, cursor2));
+      ASSERT_CMPINT64 (timestamp1, <, get_timestamp (client, cursor2));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
@@ -178,8 +178,8 @@ test_exhaust_cursor (bool pooled)
       assert (!doc);
 
       mongoc_cursor_error(cursor2, &error);
-      assert (error.domain == MONGOC_ERROR_CLIENT);
-      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
+      ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
 
       mongoc_cursor_destroy (cursor2);
    }
@@ -192,8 +192,8 @@ test_exhaust_cursor (bool pooled)
       END_IGNORE_DEPRECATIONS;
 
       assert (!r);
-      assert (error.domain == MONGOC_ERROR_CLIENT);
-      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
+      ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
    }
 
    /* we're still in exhaust.
