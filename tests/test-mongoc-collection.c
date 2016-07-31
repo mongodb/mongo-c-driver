@@ -13,6 +13,7 @@
 #include "mock_server/mock-server.h"
 
 
+#ifdef TODO_CDRIVER_1322
 static void
 test_aggregate_w_write_concern (void *context) {
    mongoc_cursor_t *cursor;
@@ -98,6 +99,7 @@ test_aggregate_w_write_concern (void *context) {
    mongoc_client_destroy (client);
    bson_free (json);
 }
+#endif  /* TODO_CDRIVER_1322 */
 
 
 static void
@@ -3552,9 +3554,11 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
+#ifdef TODO_CDRIVER_1322
    TestSuite_AddFull (suite, "/Collection/aggregate/write_concern",
                       test_aggregate_w_write_concern, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_2);
+#endif
    TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid",
                       test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
