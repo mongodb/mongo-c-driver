@@ -2701,12 +2701,14 @@ _test_legacy_write_err (void *ctx)
 
    if (err_test->pooled) {
       pool = mongoc_client_pool_new (mock_server_get_uri (server));
-      assert (mongoc_client_pool_set_error_api (pool,
-                                                err_test->err_api_version));
+      BSON_ASSERT (
+         mongoc_client_pool_set_error_api (pool, err_test->err_api_version));
+
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-      assert (mongoc_client_set_error_api (client, err_test->err_api_version));
+      BSON_ASSERT (
+         mongoc_client_set_error_api (client, err_test->err_api_version));
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -2756,8 +2758,11 @@ _test_legacy_write_err (void *ctx)
       abort ();
    }
 
+   BSON_ASSERT (request);
    request_destroy (request);
+
    request = mock_server_receives_gle (server, "test");
+   BSON_ASSERT (request);
 
    if (err_test->err_type == HANGUP) {
       capture_logs (true);
@@ -2771,7 +2776,7 @@ _test_legacy_write_err (void *ctx)
    request_destroy (request);
 
    /* bulk operation fails */
-   assert (!future_get_uint32_t (future));
+   BSON_ASSERT (!future_get_uint32_t (future));
 
    if (err_test->err_type == HANGUP) {
       ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
