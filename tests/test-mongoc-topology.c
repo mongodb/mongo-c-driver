@@ -623,8 +623,8 @@ test_cooldown_rs (void *ctx)
 static void
 _test_connect_timeout (bool pooled, bool try_once)
 {
-   const int32_t connect_timeout_ms = 200;
-   const int32_t server_selection_timeout_ms = 10 * 1000;  /* 10 seconds */
+   const int64_t connect_timeout_ms = 200;
+   const int64_t server_selection_timeout_ms = 10 * 1000;  /* 10 seconds */
    const int64_t min_heartbeat_ms = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
 
    mock_server_t *servers[2];
@@ -661,8 +661,8 @@ _test_connect_timeout (bool pooled, bool try_once)
          "?replicaSet=rs&connectTimeoutMS=%d&serverSelectionTimeoutMS=%d",
       mock_server_get_port (servers[0]),
       mock_server_get_port (servers[1]),
-      connect_timeout_ms,
-      server_selection_timeout_ms);
+      (int32_t) connect_timeout_ms,
+      (int32_t) server_selection_timeout_ms);
 
    uri = mongoc_uri_new (uri_str);
    assert (uri);
