@@ -434,17 +434,19 @@ _test_getmore_fail (bool has_primary,
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
                                      0, 0, "{'a': 1}", NULL);
+   BSON_ASSERT (request);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
    ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));
 
    future_destroy (future);
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
+   BSON_ASSERT (request);
    mock_rs_hangs_up (request);
-   assert (! future_get_bool (future));
+   BSON_ASSERT (! future_get_bool (future));
    request_destroy (request);
 
    future_destroy (future);
@@ -452,7 +454,7 @@ _test_getmore_fail (bool has_primary,
 
    /* driver does not reconnect just to send killcursors */
    mock_rs_set_request_timeout_msec (rs, 100);
-   assert (! mock_rs_receives_kill_cursors (rs, 123));
+   BSON_ASSERT (! mock_rs_receives_kill_cursors (rs, 123));
 
    future_wait (future);
    future_destroy (future);
