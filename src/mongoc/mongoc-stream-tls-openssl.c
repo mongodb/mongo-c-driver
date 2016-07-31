@@ -49,12 +49,6 @@ BIO_meth_free(BIO_METHOD *meth)
 {
 /* Nothing to free pre OpenSSL 1.1.0 */
 }
-
-static int
-BIO_get_shutdown (BIO *bio)
-{
-   return bio->shutdown;
-}
 #endif
 
 
@@ -527,20 +521,9 @@ _mongoc_stream_tls_openssl_get_base_stream (mongoc_stream_t *stream)
 static bool
 _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_tls_t *tls;
-   mongoc_stream_tls_openssl_t *openssl;
-
-   ENTRY;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    BSON_ASSERT (stream);
-
-   tls = (mongoc_stream_tls_t *) stream;
-   openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
-
-   if (BIO_get_shutdown (openssl->bio)) {
-      RETURN (true);
-   }
-
-   RETURN (mongoc_stream_check_closed (tls->base_stream));
+   return mongoc_stream_check_closed (tls->base_stream);
 }
 
 
