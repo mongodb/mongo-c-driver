@@ -770,6 +770,18 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       reply,
       &cursor->error);
 
+   /* Read and Write Concern Spec: "Drivers SHOULD parse server replies for a
+    * "writeConcernError" field and report the error only in command-specific
+    * helper methods that take a separate write concern parameter or an options
+    * parameter that may contain a write concern option.
+    *
+    * Only command helpers with names like "_with_write_concern" can create
+    * cursors with a non-NULL write_concern field.
+    */
+   if (ret && cursor->write_concern) {
+      ret = !_mongoc_parse_wc_err (reply, &cursor->error);
+   }
+
 done:
    apply_read_prefs_result_cleanup (&read_prefs_result);
    mongoc_server_stream_cleanup (server_stream);

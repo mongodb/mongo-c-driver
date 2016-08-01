@@ -71,6 +71,7 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
       ret->wtimeout = write_concern->wtimeout;
       ret->frozen = false;
       ret->wtag = bson_strdup (write_concern->wtag);
+      ret->is_default = write_concern->is_default;
    }
 
    return ret;
