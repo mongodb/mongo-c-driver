@@ -24,6 +24,8 @@ test_create_with_write_concern (void)
    char *dbname;
    char *name;
 
+   capture_logs (true);
+
    client = test_framework_client_new ();
    assert (client);
 
