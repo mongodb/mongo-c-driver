@@ -759,8 +759,6 @@ test_seed_list (bool rs,
    mongoc_topology_description_t *td;
    mongoc_read_prefs_t *primary_pref;
    uint32_t discovered_nodes_len;
-   int64_t start;
-   int64_t duration_usec;
    bson_t reply;
    bson_error_t error;
    uint32_t id;
@@ -824,17 +822,11 @@ test_seed_list (bool rs,
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    if (connection_option == CONNECT || connection_option == RECONNECT) {
-      start = bson_get_monotonic_time ();
-
       /* only localhost:port responds to initial discovery. the other seeds are
        * discarded from replica set topology, but remain for sharded. */
       ASSERT_OR_PRINT (mongoc_client_command_simple (
          client, "test", tmp_bson("{'foo': 1}"),
          primary_pref, &reply, &error), error);
-
-      /* discovery should be quick despite down servers, say < 100ms */
-      duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000), 100);
 
       bson_destroy (&reply);
 
@@ -867,12 +859,6 @@ test_seed_list (bool rs,
       ASSERT_OR_PRINT (mongoc_client_command_simple (
          client, "test", tmp_bson("{'foo': 1}"),
          primary_pref, &reply, &error), error);
-
-      /* client waited for min heartbeat to pass before reconnecting, then
-       * reconnected quickly despite down servers, say < 100ms later */
-      duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000),
-                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
 
       bson_destroy (&reply);
 
