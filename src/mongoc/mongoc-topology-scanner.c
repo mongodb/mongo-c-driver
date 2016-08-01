@@ -272,8 +272,6 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
  *
  *      Return the scanner node with the given id.
  *
- *      NOTE: only use this method when single-threaded!
- *
  *--------------------------------------------------------------------------
  */
 mongoc_topology_scanner_node_t *
