@@ -101,6 +101,8 @@ c_driver_variables:
   mongo_download_url_prefixes:
     linuxppc64le: &mongo_url_linuxppc64le
       mongo_url_prefix: "http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-"
+    linuxzseries: &mongo_url_linuxzseries
+      mongo_url_prefix: "http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-"
     linux64: &mongo_url_linux64
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-"
     ubuntu1204: &mongo_url_ubuntu1204
@@ -117,6 +119,9 @@ c_driver_variables:
       mongo_url_platform: ""
     windows32: &mongo_url_windows32
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
+    rhel72_zseries: &mongo_url_rhel72_zseries
+      mongo_url_platform: "rhel72-"
+      <<: *mongo_url_linuxzseries
     rhel70: &mongo_url_rhel70
       mongo_url_platform: "rhel70-"
       <<: *mongo_url_linux64
@@ -1434,10 +1439,11 @@ buildvariants:
 - name: rhel-72-zseries
   display_name: "RHEL 7.2 zSeries"
   expansions:
+    <<: *mongo_url_rhel72_zseries
     <<: *unix_common
   run_on:
      - rhel72-zseries-build
-  tasks: *just_compile
+  tasks: *topology_tests_latest
 
 - name: rhel-71-power8
   display_name: "RHEL 7.1 Power8"
