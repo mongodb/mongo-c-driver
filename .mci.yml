@@ -147,8 +147,7 @@ c_driver_variables:
     standard_no_werror: &cflags_64_no_werror
       cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
-      # Until CDRIVER-1417, omit "-Werror"
-      cflags: "-m32 -march=i386"
+      cflags: "-m32 -march=i386 -Werror"
     osx_1010: &cflags_osx_1010
       cflags: "-m64 -march=x86-64"
     solaris_64: &cflags_solaris_64
