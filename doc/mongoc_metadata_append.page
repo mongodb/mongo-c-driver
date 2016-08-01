@@ -41,7 +41,7 @@ mongoc_metadata_append (const char *driver_name,
 
   <section id="return">
     <title>Returns</title>
-    <p>true if the given fields are set successfully. Otherwise, false.</p>
+    <p>true if the given fields are set successfully. Otherwise, it returns false and logs an error.</p>
   </section>
 
   <section id="availability">

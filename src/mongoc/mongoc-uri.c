@@ -640,7 +640,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
    } else if (!strcasecmp (key, "appname")) {
       if (!mongoc_uri_set_appname (uri, value)) {
-         MONGOC_WARNING ("appname is invalid [appname=%s]", value);
+         MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
          goto CLEANUP;
       }
 #endif
