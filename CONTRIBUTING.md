@@ -206,7 +206,11 @@ Set this environment variable to `on` if MongoDB has enabled majority read conce
 Some tests require Internet access, e.g. to check the error message when failing
 to open a MongoDB connection to example.com. Skip them with:
 
-* `MONGOC_TEST_OFFLINE`
+* `MONGOC_TEST_OFFLINE=on`
+
+For quick checks during development, disable long-running tests:
+
+* `MONGOC_TEST_SKIP_SLOW=on`
 
 All tests should pass before submitting a patch.
 
