@@ -838,7 +838,6 @@ void * _mongoc_topology_run_background (void *data)
       }
 
       topology->scan_requested = false;
-      topology->scanning = true;
 
       /* scanning locks and unlocks the mutex itself until the scan is done */
       mongoc_mutex_unlock (&topology->mutex);
@@ -852,7 +851,6 @@ void * _mongoc_topology_run_background (void *data)
       mongoc_topology_scanner_reset (topology->scanner);
 
       topology->last_scan = bson_get_monotonic_time ();
-      topology->scanning = false;
       mongoc_mutex_unlock (&topology->mutex);
 
       last_scan = bson_get_monotonic_time();

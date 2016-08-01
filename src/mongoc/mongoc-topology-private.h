@@ -59,8 +59,6 @@ typedef struct _mongoc_topology_t
 
    mongoc_topology_scanner_state_t    scanner_state;
    bool                               scan_requested;
-   bool                               scanning;
-   bool                               got_ismaster;
    bool                               shutdown_requested;
    bool                               single_threaded;
    bool                               stale;
