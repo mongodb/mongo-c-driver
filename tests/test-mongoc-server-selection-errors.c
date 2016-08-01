@@ -65,7 +65,7 @@ test_server_selection_error_dns_direct_single (void)
 }
 
 static void
-test_server_selection_error_dns_direct_pooled (void)
+test_server_selection_error_dns_direct_pooled (void *ctx)
 {
    server_selection_error_dns (
       "mongodb://example-localhost:27017/",
@@ -89,7 +89,7 @@ test_server_selection_error_dns_multi_fail_single (void)
 }
 
 static void
-test_server_selection_error_dns_multi_fail_pooled (void)
+test_server_selection_error_dns_multi_fail_pooled (void *ctx)
 {
    server_selection_error_dns (
       "mongodb://example-localhost:27017,other-example-localhost:27017/",
@@ -257,12 +257,14 @@ test_server_selection_errors_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/server_selection/errors/dns/direct/single",
                   test_server_selection_error_dns_direct_single);
-   TestSuite_Add (suite, "/server_selection/errors/dns/direct/pooled",
-                  test_server_selection_error_dns_direct_pooled);
+   TestSuite_AddFull (suite, "/server_selection/errors/dns/direct/pooled",
+                      test_server_selection_error_dns_direct_pooled, NULL,
+                      NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail/single",
                   test_server_selection_error_dns_multi_fail_single);
-   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail/pooled",
-                  test_server_selection_error_dns_multi_fail_pooled);
+   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/fail/pooled",
+                      test_server_selection_error_dns_multi_fail_pooled, NULL,
+                      NULL, test_framework_skip_if_slow);
    TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success/single",
                       test_server_selection_error_dns_multi_success_single, NULL, NULL,
                       test_framework_skip_if_single);
