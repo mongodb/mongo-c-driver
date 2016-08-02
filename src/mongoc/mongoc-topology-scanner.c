@@ -621,7 +621,6 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       return;
    }
 
-   memset (&ts->error, 0, sizeof (bson_error_t));
 
    if (obey_cooldown) {
       /* when current cooldown period began */
@@ -658,7 +657,7 @@ mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    bson_error_t *error = &ts->error;
    bson_string_t *msg;
 
-   BSON_ASSERT (!error->code);  /* cleared by scanner_start */
+   memset (&ts->error, 0, sizeof (bson_error_t));
 
    msg = bson_string_new (NULL);
 
