@@ -33,6 +33,17 @@ AS_IF([test "$enable_sasl" != "no"],[
   ])
 ])
 
+if test "$enable_sasl" = "auto" -a "$sasl_mode" != "no"; then
+  AC_CHECK_HEADERS([sasl/sasl.h],
+     [have_sasl_headers=yes],
+     [have_sasl_headers=no])
+  if test "$have_sasl_headers" = "no"; then
+     SASL_LIBS=""
+     enable_sasl=no
+     sasl_mode=no
+  fi
+fi
+
 AM_CONDITIONAL([ENABLE_SASL], [test "$sasl_mode" != "no"])
 AC_SUBST(SASL_CFLAGS)
 AC_SUBST(SASL_LIBS)

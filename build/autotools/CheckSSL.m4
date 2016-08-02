@@ -44,6 +44,7 @@ AS_IF([test "$enable_ssl" != "no"],[
       elif test "$enable_ssl" = "openssl"; then
          AC_MSG_ERROR([You must install the OpenSSL development headers to enable OpenSSL support.])
       else
+         SSL_LIBS=""
          enable_ssl=auto
       fi
    ])
