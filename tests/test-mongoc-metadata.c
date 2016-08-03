@@ -353,6 +353,7 @@ test_mongoc_metadata_cannot_send (void)
    mongoc_metadata_t *md;
 
    _reset_metadata ();
+   capture_logs (true);
 
    /* Mess with our global metadata struct so the metadata doc will be
     * way too big */
