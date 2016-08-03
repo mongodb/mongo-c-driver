@@ -160,6 +160,8 @@ Additional environment variables:
   like "mongodb://server1,server2".
 * `MONGOC_TEST_SERVER_VERBOSE`: set to `on` for wire protocol logging from
   tests that use `mock_server_t`. 
+* `MONGOC_TEST_MONITORING_VERBOSE`: set to `on` for verbose output from
+  Application Performance Monitoring tests.
 
 If you start `mongod` with SSL, set these variables to configure how
 `make test` connects to it:
