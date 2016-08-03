@@ -745,21 +745,34 @@ functions:
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
         export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
 
+        result=-1  # Negative one.
+
         # Run this function on exit.
-        result=1
         done=false
         finish () {
            set +o errexit
            if [ "$done" = false ]; then
               # There was an error.
-              mongo-orchestration stop
-              echo "ORCHESTRATION LOG"
               if [ ${windows|false} = true ]; then
-                cat /cygdrive/c/tmp/orchestration-home/server.log
+                 mongo-orchestration stop
+                 echo "ORCHESTRATION LOG"
+                 cat /cygdrive/c/tmp/orchestration-home/server.log
+                 echo "  END OF ORCHESTRATION LOG"
+              elif [ `uname` = "SunOS" ]; then
+                 # "killall" acts differently on Linux and Solaris, use pkill.
+                 pkill -9 mongod
+                 pkill -9 mongos
+                 pkill -9 python
+                 pkill -9 mongo-orchestration
+                 echo "ORCHESTRATION LOG"
+                 cat /tmp/orchestration-home/server.log
+                 echo "  END OF ORCHESTRATION LOG"
               else
-                cat /tmp/orchestration-home/server.log
+                 killall -9 mongod mongos python mongo-orchestration
+                 echo "ORCHESTRATION LOG"
+                 cat /tmp/orchestration-home/server.log
+                 echo "  END OF ORCHESTRATION LOG"
               fi
-              echo "  END OF ORCHESTRATION LOG"
            fi
 
            exit $result
@@ -777,8 +790,27 @@ functions:
         ${run_integration_tests}
         result=$?
 
-        mongo-orchestration stop
+        set +o errexit
+        if [ ${windows|false} = true ]; then
+           mongo-orchestration stop
+        elif [ `uname` = "SunOS" ]; then
+           # "killall" acts differently on Linux and Solaris, use pkill.
+           pkill -9 mongod
+           pkill -9 mongos
+           pkill -9 python
+           pkill -9 mongo-orchestration
+           echo "ORCHESTRATION LOG"
+           cat /tmp/orchestration-home/server.log
+           echo "  END OF ORCHESTRATION LOG"
+        else
+           killall -9 mongod mongos python mongo-orchestration
+           echo "ORCHESTRATION LOG"
+           cat /tmp/orchestration-home/server.log
+           echo "  END OF ORCHESTRATION LOG"
+        fi
+
         done=true
+        exit $result
 
   "report results" :
     command: attach.results
