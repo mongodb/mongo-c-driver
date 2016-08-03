@@ -782,6 +782,7 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
       for (i = 0; i < description_len; i++) {
          if (!descriptions[i]) {
             /* NULLed earlier in mongoc_topology_description_suitable_servers */
+            found--;
             continue;
          }
 
