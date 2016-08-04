@@ -127,16 +127,58 @@ _get_os_architecture (void)
    return NULL;
 }
 
+static char *
+_get_os_version (void)
+{
+   char *ret = bson_malloc (METADATA_OS_VERSION_MAX);
+   bool found = false;
+
+#ifdef _WIN32
+   OSVERSIONINFO osvi;
+   ZeroMemory (&osvi, sizeof (OSVERSIONINFO));
+   osvi.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+
+   if (GetVersionEx (&osvi)) {
+      bson_snprintf (ret,
+                     METADATA_OS_VERSION_MAX,
+                     "%d.%d (%d)",
+                     osvi.dwMajorVersion,
+                     osvi.dwMinorVersion,
+                     osvi.dwBuildNumber);
+      found = true;
+   } else {
+      MONGOC_WARNING ("Error with GetVersionEx(): %d",
+                      GetLastError ());
+   }
+
+#elif defined (_POSIX_VERSION)
+   struct utsname system_info;
+
+   if (uname (&system_info) >= 0) {
+      bson_strncpy (ret, system_info.release,
+                    METADATA_OS_VERSION_MAX);
+      found = true;
+   } else {
+      MONGOC_WARNING ("Error with uname(): %d", errno);
+   }
+
+#endif
+
+   if (!found) {
+      bson_free (ret);
+      ret = NULL;
+   }
+
+   return ret;
+}
+
 static void
 _get_system_info (mongoc_metadata_t *metadata)
 {
-   /* Dummy function to be filled in later */
    metadata->os_type = _get_os_type ();
    metadata->os_name = _get_os_name ();
-   metadata->os_version = NULL;
    metadata->os_architecture = _get_os_architecture ();
-   /* General idea of what these are supposed to be: */
-   /* metadata->os_version = bson_strndup ("123", METADATA_OS_VERSION_MAX); */
+   metadata->os_version = _get_os_version ();
 }
 
 static void
