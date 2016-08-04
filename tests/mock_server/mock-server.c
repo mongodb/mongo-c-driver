@@ -1248,14 +1248,14 @@ mock_server_replies (request_t *request,
    if (docs_json) {
       quotes_replaced = single_quotes_to_double (docs_json);
       r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
-      if (!r) {
-         MONGOC_WARNING ("%s", error.message);
-         return;
-      }
-
       bson_free (quotes_replaced);
    } else {
       r = bson_init_from_json (&doc, "{}", -1, &error);
+   }
+
+   if (!r) {
+      MONGOC_WARNING ("%s", error.message);
+      return;
    }
 
    mock_server_reply_multi (request,

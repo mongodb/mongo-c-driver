@@ -731,7 +731,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    const char *key;
    bson_iter_t iter;
 
-   const uint8_t *data;
+   const uint8_t *data = NULL;
    uint32_t len;
 
    ENTRY;
@@ -831,6 +831,15 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       if (file->n != file->pos / file->chunk_size) {
          return 0;
       }
+   }
+
+   if (!data) {
+      bson_set_error (&file->error,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                      "corrupt chunk number %" PRId32,
+                      file->n);
+      RETURN (0);
    }
 
    file->page = _mongoc_gridfs_file_page_new (data, len, file->chunk_size);

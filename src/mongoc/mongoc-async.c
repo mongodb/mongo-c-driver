@@ -20,6 +20,7 @@
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "utlist.h"
+#include "mongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
@@ -72,6 +73,11 @@ mongoc_async_run (mongoc_async_t *async,
    int64_t expire_at = 0;
 
    size_t poll_size = 0;
+
+   if (!async->cmds) {
+      MONGOC_ERROR ("No async commands to run!\n");
+      return 0;
+   }
 
    for (;;) {
       now = bson_get_monotonic_time ();
@@ -157,5 +163,5 @@ mongoc_async_run (mongoc_async_t *async,
       bson_free (poller);
    }
 
-   return async->ncmds;
+   return async->ncmds > 0;
 }

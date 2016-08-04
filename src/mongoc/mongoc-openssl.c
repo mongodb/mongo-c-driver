@@ -316,7 +316,6 @@ _mongoc_openssl_check_cert (SSL        *ssl,
          subject_name = X509_get_subject_name (peer);
 
          if (subject_name) {
-            idx = -1;
             i = -1;
 
             /* skip to the last common name */

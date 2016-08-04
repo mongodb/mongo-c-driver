@@ -235,7 +235,6 @@ test_mongoc_metadata_append_after_cmd (void)
    _reset_metadata ();
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
-   pool = mongoc_client_pool_new (uri);
 
    /* Make sure that after we pop a client we can't set global metadata */
    pool = mongoc_client_pool_new (uri);
