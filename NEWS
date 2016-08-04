@@ -160,6 +160,7 @@ Deprecated functions:
 Notable Bug Fixes
 -----------------
 
+  * Logic bugs using tag sets to select replica set members with complex configs
   * mongoc_client_get_database_names no longer filters out a replica set
     member's "local" database.
   * mongoc_client_get_gridfs now ensures the proper indexes on the files and
