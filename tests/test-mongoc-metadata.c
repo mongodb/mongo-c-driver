@@ -15,6 +15,10 @@
  */
 
 #include <mongoc.h>
+#ifdef _POSIX_VERSION
+#include <sys/utsname.h>
+#endif
+
 #include "mongoc-client-private.h"
 #include "mongoc-metadata.h"
 #include "mongoc-metadata-private.h"
@@ -122,6 +126,18 @@ test_mongoc_metadata_appname_frozen_pooled (void)
 }
 
 static void
+_check_arch_string_valid (const char *arch)
+{
+#ifdef _POSIX_VERSION
+   struct utsname system_info;
+
+   ASSERT (uname (&system_info) >= 0);
+   ASSERT_CMPSTR (system_info.machine, arch);
+#endif
+   ASSERT (strlen (arch) > 0);
+}
+
+static void
 test_mongoc_metadata_append_success (void)
 {
    mock_server_t *server;
@@ -202,6 +218,13 @@ test_mongoc_metadata_append_success (void)
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
    ASSERT (strlen (val) > 0);
+
+   /* Check os arch is valid */
+   ASSERT (bson_iter_find (&inner_iter, "architecture"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   _check_arch_string_valid (val);
 
    /* Not checking os_name, as the spec says it can be NULL. */
 
