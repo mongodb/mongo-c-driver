@@ -253,9 +253,9 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           prefix=`pwd`/openssl
-          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
+          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
           tar zxvf openssl.tar.gz
-          cd openssl-1.1.0-pre5
+          cd openssl-1.1.0-pre6
           ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
           make && make install
           cd ..
@@ -365,9 +365,9 @@ c_driver_variables:
       unix_openssl11: &run_integration_tests_unix_openssl11
         run_integration_tests: |
           prefix=`pwd`/openssl
-          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
+          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
           tar zxvf openssl.tar.gz
-          cd openssl-1.1.0-pre5
+          cd openssl-1.1.0-pre6
           ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
           make && make install
           cd ..
