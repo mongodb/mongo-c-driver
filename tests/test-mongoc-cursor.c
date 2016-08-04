@@ -441,6 +441,7 @@ _test_getmore_fail (bool has_primary,
    ASSERT_MATCH (doc, "{'b': 1}");
    ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));
 
+   request_destroy (request);
    future_destroy (future);
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
