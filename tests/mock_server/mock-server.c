@@ -336,9 +336,10 @@ mock_server_run (mock_server_t *server)
    server->uri = mongoc_uri_new (server->uri_str);
 
    mongoc_thread_create (&server->main_thread, main_thread, (void *) server);
+   while (!server->running) {
+      mongoc_cond_wait (&server->cond, &server->mutex);
+   }
 
-   /* wait for main thread to start */
-   mongoc_cond_wait (&server->cond, &server->mutex);
    mongoc_mutex_unlock (&server->mutex);
 
    if (mock_server_get_verbose (server)) {
