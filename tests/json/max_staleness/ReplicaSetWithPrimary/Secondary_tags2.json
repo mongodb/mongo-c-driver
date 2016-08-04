@@ -19,7 +19,7 @@
     ],
     "read_preference": {
         "maxStalenessMS": 50000,
-        "mode": "SecondaryPreferred",
+        "mode": "Secondary",
         "tag_sets": [
             {
                 "data_center": "nyc"

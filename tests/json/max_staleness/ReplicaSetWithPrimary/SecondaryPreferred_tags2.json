@@ -2,16 +2,19 @@
     "heartbeatFrequencyMS": 25000,
     "in_latency_window": [
         {
-            "address": "a:27017",
+            "address": "b:27017",
             "avg_rtt_ms": 5,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "2"
                 }
             },
             "maxWireVersion": 5,
-            "type": "RSPrimary"
+            "tags": {
+                "data_center": "tokyo"
+            },
+            "type": "RSSecondary"
         }
     ],
     "read_preference": {
@@ -28,16 +31,19 @@
     },
     "suitable_servers": [
         {
-            "address": "a:27017",
+            "address": "b:27017",
             "avg_rtt_ms": 5,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "2"
                 }
             },
             "maxWireVersion": 5,
-            "type": "RSPrimary"
+            "tags": {
+                "data_center": "tokyo"
+            },
+            "type": "RSSecondary"
         }
     ],
     "topology_description": {
@@ -56,6 +62,21 @@
             },
             {
                 "address": "b:27017",
+                "avg_rtt_ms": 5,
+                "lastUpdateTime": 0,
+                "lastWrite": {
+                    "lastWriteDate": {
+                        "$numberLong": "2"
+                    }
+                },
+                "maxWireVersion": 5,
+                "tags": {
+                    "data_center": "tokyo"
+                },
+                "type": "RSSecondary"
+            },
+            {
+                "address": "c:27017",
                 "avg_rtt_ms": 5,
                 "lastUpdateTime": 0,
                 "lastWrite": {
