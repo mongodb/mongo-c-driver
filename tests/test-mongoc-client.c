@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
+#include <mongoc-write-concern-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
@@ -23,6 +24,90 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
+
+
+static void
+test_client_cmd_w_write_concern (void *context)
+{
+   mongoc_write_concern_t *good_wc;
+   mongoc_write_concern_t *bad_wc;
+   mongoc_client_t *client;
+   bson_t *command = tmp_bson ("{'insert' : 'test', "
+                               "'documents' : [{'hello' : 'world'}]}");
+   bson_t reply;
+   bson_error_t error;
+   bool wire_version_5;
+
+   good_wc = mongoc_write_concern_new ();
+   bad_wc = mongoc_write_concern_new ();
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   mongoc_client_set_error_api (client, 2);
+
+   /* determine server config */
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
+
+   /* valid writeConcern on all server configs */
+   mongoc_write_concern_set_w (good_wc, 1);
+   ASSERT_OR_PRINT (_mongoc_client_command_with_write_concern (client,
+                                                               "test",
+                                                               command,
+                                                               NULL,
+                                                               good_wc,
+                                                               &reply,
+                                                               &error),
+                    error);
+
+   /* writeConcern that will not pass mongoc_write_concern_is_valid */
+   bad_wc->wtimeout = -10;
+   ASSERT (!_mongoc_client_command_with_write_concern (client,
+                                                       "test",
+                                                       command,
+                                                       NULL,
+                                                       bad_wc,
+                                                       &reply,
+                                                       &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   bad_wc->wtimeout = 0;
+   bson_destroy (&reply);
+   error.code = 0;
+   error.domain = 0;
+
+   if (!test_framework_is_mongos ()) {
+      if (wire_version_5) {
+         mongoc_write_concern_set_w (bad_wc, 99);
+         ASSERT (!_mongoc_client_command_with_write_concern (client,
+                                                             "test",
+                                                             command,
+                                                             NULL,
+                                                             bad_wc,
+                                                             &reply,
+                                                             &error));
+         if (test_framework_is_replset ()) { /* replset */
+            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100,
+                                   "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
+      } else { /* if wire version <= 4, no error */
+         ASSERT_OR_PRINT (_mongoc_client_command_with_write_concern (client,
+                                                                     "test",
+                                                                     command,
+                                                                     NULL,
+                                                                     bad_wc,
+                                                                     &reply,
+                                                                     &error),
+                          error);
+         ASSERT (!error.domain);
+         ASSERT (!error.code);
+      }
+   }
+}
 
 
 /*
@@ -2087,7 +2172,10 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_no_auth);
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
-   TestSuite_Add (suite, "/Client/cmd_w_write_concern",
+   TestSuite_AddFull (suite, "/Client/command_w_write_concern",
+                      test_client_cmd_w_write_concern, NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_2);
+   TestSuite_Add (suite, "/Client/command/write_concern",
                   test_client_cmd_write_concern);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);

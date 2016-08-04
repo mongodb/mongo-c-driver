@@ -135,6 +135,14 @@ _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          int64_t          operation_id,
                                          const char      *db,
                                          const char      *collection);
+bool
+_mongoc_client_command_with_write_concern (mongoc_client_t            *client,
+                                           const char                 *db_name,
+                                           const bson_t               *command,
+                                           const mongoc_read_prefs_t  *read_prefs,
+                                           mongoc_write_concern_t     *write_concern,
+                                           bson_t                     *reply,
+                                           bson_error_t               *error);
 
 BSON_END_DECLS
 
