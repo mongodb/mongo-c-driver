@@ -67,6 +67,7 @@ main (int   argc,
       goto cleanup;
    }
 
+   mongoc_client_set_error_api (client, 2);
    database = mongoc_client_get_database (client, "test");
    collection = mongoc_database_get_collection (database, COLLECTION_NAME);
 

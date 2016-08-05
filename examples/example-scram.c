@@ -49,6 +49,8 @@ main (int   argc,
       goto CLEANUP;
    }
 
+   mongoc_client_set_error_api (client, 2);
+
    database = mongoc_client_get_database (client, "test");
 
    BCON_APPEND (&roles,
@@ -60,7 +62,6 @@ main (int   argc,
    database = NULL;
 
    mongoc_client_destroy (client);
-   client = NULL;
 
    client = mongoc_client_new (authuristr);
 
@@ -68,6 +69,8 @@ main (int   argc,
       fprintf (stderr, "failed to parse SCRAM uri\n");
       goto CLEANUP;
    }
+
+   mongoc_client_set_error_api (client, 2);
 
    collection = mongoc_client_get_collection (client, "test", "test");
 

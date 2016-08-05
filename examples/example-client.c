@@ -37,6 +37,8 @@ main (int   argc,
       return EXIT_FAILURE;
    }
 
+   mongoc_client_set_error_api (client, 2);
+
    bson_init (&query);
 
 #if 0
