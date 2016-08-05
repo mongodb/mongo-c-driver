@@ -909,6 +909,21 @@ set_name (bson_t *ismaster_response)
 }
 
 
+static void
+add_option_to_uri_str (bson_string_t *uri_string,
+                       const char    *option,
+                       const char    *value)
+{
+   if (strchr (uri_string->str, '?')) {
+      bson_string_append_c (uri_string, '&');
+   } else {
+      bson_string_append_c (uri_string, '?');
+   }
+
+   bson_string_append_printf (uri_string, "%s=%s", option, value);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -981,7 +996,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
             bson_string_append (uri_string, database_name);
          }
 
-         bson_string_append_printf (uri_string, "?replicaSet=%s", name);
+         add_option_to_uri_str (uri_string, "replicaSet", name);
          bson_free (name);
       } else {
          host = test_framework_get_host ();
@@ -996,19 +1011,14 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       }
 
       if (test_framework_get_ssl ()) {
-         if (strchr (uri_string->str, '?')) {
-            /* string ends with "?replicaSet=name" */
-            bson_string_append (uri_string, "&ssl=true");
-         } else {
-            /* string ends with "/" or "/dbname" */
-            bson_string_append (uri_string, "?ssl=true");
-         }
+         add_option_to_uri_str (uri_string, "ssl", "true");
       }
 
       bson_destroy (&ismaster_response);
    }
 
-
+   /* make tests a little more resilient to transient errors */
+   add_option_to_uri_str (uri_string, "serverSelectionTryOnce", "false");
 
    return bson_string_free (uri_string, false);
 }
