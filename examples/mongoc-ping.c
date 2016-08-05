@@ -55,6 +55,8 @@ main (int   argc,
       return 2;
    }
 
+   mongoc_client_set_error_api (client, 2);
+
    bson_init(&ping);
    bson_append_int32(&ping, "ping", 4, 1);
    database = mongoc_client_get_database(client, "test");

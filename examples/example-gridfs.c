@@ -34,6 +34,7 @@ int main (int argc, char *argv[])
    /* connect to localhost client */
    client = mongoc_client_new ("mongodb://127.0.0.1:27017?appname=gridfs-example");
    assert(client);
+   mongoc_client_set_error_api (client, 2);
 
    /* grab a gridfs handle in test prefixed by fs */
    gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
