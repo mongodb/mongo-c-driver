@@ -40,6 +40,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-log.h"
+#include "mongoc-write-concern-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -1287,6 +1288,82 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    }
 
    mongoc_server_stream_cleanup (server_stream);
+
+   RETURN (ret);
+}
+
+
+bool
+_mongoc_client_command_with_write_concern (
+   mongoc_client_t           *client,
+   const char                *db_name,
+   const bson_t              *command,
+   const mongoc_read_prefs_t *read_prefs,
+   mongoc_write_concern_t    *write_concern,
+   bson_t                    *reply,
+   bson_error_t              *error)
+{
+   mongoc_cluster_t *cluster;
+   mongoc_server_stream_t *server_stream = NULL;
+   bson_t *command_w_write_concern = NULL;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (db_name);
+   BSON_ASSERT (command);
+
+   if (!_mongoc_read_prefs_validate (read_prefs, error)) {
+      RETURN (false);
+   }
+
+   if (!_mongoc_write_concern_validate (write_concern, error)) {
+      RETURN (false);
+   }
+
+   cluster = &client->cluster;
+
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+   server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
+
+   if (write_concern && server_stream &&
+       server_stream->sd->max_wire_version
+       >= WIRE_VERSION_CMD_WRITE_CONCERN &&
+       !_mongoc_write_concern_is_default (write_concern)) {
+      command_w_write_concern = bson_copy (command);
+      bson_append_document (command_w_write_concern, "writeConcern", 12,
+                            _mongoc_write_concern_get_bson (write_concern));
+   }
+
+   if (server_stream) {
+      ret = _mongoc_client_command_with_stream (client, db_name,
+                                                command_w_write_concern ?
+                                                command_w_write_concern :
+                                                command, server_stream,
+                                                read_prefs, reply, error);
+   } else {
+      if (reply) {
+         bson_init (reply);
+      }
+
+      ret = false;
+   }
+
+   if (ret && write_concern) {
+      ret = !_mongoc_parse_wc_err (reply, error);
+   }
+
+   mongoc_server_stream_cleanup (server_stream);
+
+   if (command_w_write_concern) {
+      bson_destroy (command_w_write_concern);
+   }
 
    RETURN (ret);
 }
