@@ -4,6 +4,7 @@
 #include "mock_server/future-functions.h"
 #include "test-conveniences.h"
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
@@ -183,14 +184,14 @@ test_ismaster_pooled (void)
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
-test_ismaster_ssl (void)
+test_ismaster_ssl (void *ctx)
 {
    _test_ismaster (true, false);
 }
 
 
 static void
-test_ismaster_ssl_pooled (void)
+test_ismaster_ssl_pooled (void *ctx)
 {
    _test_ismaster (true, true);
 }
@@ -205,8 +206,9 @@ test_async_install (TestSuite *suite)
                   test_ismaster_pooled);
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
-   TestSuite_Add (suite, "/Async/ismaster_ssl/pooled",
-                  test_ismaster_ssl_pooled);
+   TestSuite_AddFull (suite, "/Async/ismaster_ssl", test_ismaster_ssl,
+		              NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Async/ismaster_ssl/pooled",
+                      test_ismaster_ssl_pooled, NULL, NULL, test_framework_skip_if_slow);
 #endif
 }
