@@ -75,7 +75,6 @@ mongoc_async_run (mongoc_async_t *async,
    size_t poll_size = 0;
 
    if (!async->cmds) {
-      MONGOC_ERROR ("No async commands to run!\n");
       return 0;
    }
 
