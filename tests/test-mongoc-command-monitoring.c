@@ -171,12 +171,12 @@ check_expectations (const bson_t *events,
 
    if (bson_count_keys (expectations) != bson_count_keys (events) ||
        !match_bson_with_ctx (events, expectations, false, &ctx)) {
-      MONGOC_ERROR ("command monitoring test failed expectations:\n\n"
-                    "%s\n\n"
-                    "events:\n%s\n\n%s\n",
-                    bson_as_json (expectations, NULL),
-                    bson_as_json (events, NULL),
-                    errmsg);
+      test_error ("command monitoring test failed expectations:\n\n"
+                  "%s\n\n"
+                  "events:\n%s\n\n%s\n",
+                  bson_as_json (expectations, NULL),
+                  bson_as_json (events, NULL),
+                  errmsg);
 
       abort ();
    }
@@ -485,7 +485,7 @@ one_bulk_op (mongoc_bulk_operation_t *bulk,
       mongoc_bulk_operation_update_one (bulk, &filter, &update,
                                         false /* upsert */);
    } else {
-      MONGOC_ERROR ("unrecognized request name %s\n", request_name);
+      test_error ("unrecognized request name %s\n", request_name);
       abort ();
    }
 }
@@ -765,7 +765,7 @@ one_test (mongoc_collection_t *collection,
    } else if (!strcmp (op_name, "updateOne")) {
       test_update_one (collection, &arguments);
    } else {
-      MONGOC_ERROR ("unrecognized operation name %s\n", op_name);
+      test_error ("unrecognized operation name %s\n", op_name);
       abort ();
    }
 

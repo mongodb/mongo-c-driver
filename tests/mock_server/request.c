@@ -126,9 +126,9 @@ request_matches_flags (const request_t *request,
    rpc = &request->request_rpc;
 
    if (rpc->query.flags != flags) {
-      MONGOC_ERROR ("request's query flags are %s, expected %s",
-                    query_flags_str (rpc->query.flags),
-                    query_flags_str (flags));
+      test_error ("request's query flags are %s, expected %s",
+                  query_flags_str (rpc->query.flags),
+                  query_flags_str (flags));
       return false;
    }
 
@@ -156,22 +156,22 @@ request_matches_query (const request_t *request,
    assert (request->docs.len <= 2);
 
    if (request->is_command && !is_command) {
-      MONGOC_ERROR ("expected query, got command");
+      test_error ("expected query, got command");
       return false;
    }
 
    if (!request->is_command && is_command) {
-      MONGOC_ERROR ("expected command, got query");
+      test_error ("expected command, got query");
       return false;
    }
 
    if (request->opcode != MONGOC_OPCODE_QUERY) {
-      MONGOC_ERROR ("request's opcode does not match QUERY");
+      test_error ("request's opcode does not match QUERY");
       return false;
    }
 
    if (strcmp (rpc->query.collection, ns)) {
-      MONGOC_ERROR ("request's namespace is '%s', expected '%s'",
+      test_error ("request's namespace is '%s', expected '%s'",
                     request->request_rpc.query.collection, ns);
       return false;
    }
@@ -181,7 +181,7 @@ request_matches_query (const request_t *request,
    }
 
    if (rpc->query.skip != skip) {
-      MONGOC_ERROR ("requests's skip = %d, expected %d",
+      test_error ("requests's skip = %d, expected %d",
                     rpc->query.skip, skip);
       return false;
    }
@@ -196,8 +196,8 @@ request_matches_query (const request_t *request,
    }
 
    if (! n_return_equal) {
-      MONGOC_ERROR ("requests's n_return = %d, expected %d",
-                    rpc->query.n_return, n_return);
+      test_error ("requests's n_return = %d, expected %d",
+                  rpc->query.n_return, n_return);
       return false;
    }
 
@@ -243,20 +243,20 @@ request_matches_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      MONGOC_ERROR ("request's opcode does not match INSERT");
+      test_error ("request's opcode does not match INSERT");
       return false;
    }
 
    if (strcmp (rpc->insert.collection, ns)) {
-      MONGOC_ERROR ("insert's namespace is '%s', expected '%s'",
-                    request->request_rpc.get_more.collection, ns);
+      test_error ("insert's namespace is '%s', expected '%s'",
+                  request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags are %s, expected %s",
-                    insert_flags_str (rpc->insert.flags),
-                    insert_flags_str (flags));
+      test_error ("request's insert flags are %s, expected %s",
+                  insert_flags_str (rpc->insert.flags),
+                  insert_flags_str (flags));
       return false;
    }
 
@@ -283,26 +283,26 @@ request_matches_bulk_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      MONGOC_ERROR ("request's opcode does not match INSERT");
+      test_error ("request's opcode does not match INSERT");
       return false;
    }
 
    if (strcmp (rpc->insert.collection, ns)) {
-      MONGOC_ERROR ("insert's namespace is '%s', expected '%s'",
-                    request->request_rpc.get_more.collection, ns);
+      test_error ("insert's namespace is '%s', expected '%s'",
+                  request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags are %s, expected %s",
-                    insert_flags_str (rpc->insert.flags),
-                    insert_flags_str (flags));
+      test_error ("request's insert flags are %s, expected %s",
+                  insert_flags_str (rpc->insert.flags),
+                  insert_flags_str (flags));
       return false;
    }
 
    if ((int)request->docs.len != n) {
-      MONGOC_ERROR ("expected %d docs inserted, got %d",
-                    n, (int)request->docs.len);
+      test_error ("expected %d docs inserted, got %d",
+                  n, (int)request->docs.len);
       return false;
    }
 
@@ -325,20 +325,20 @@ request_matches_update (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_UPDATE) {
-      MONGOC_ERROR ("request's opcode does not match UPDATE");
+      test_error ("request's opcode does not match UPDATE");
       return false;
    }
 
    if (strcmp (rpc->update.collection, ns)) {
-      MONGOC_ERROR ("update's namespace is '%s', expected '%s'",
-                    request->request_rpc.update.collection, ns);
+      test_error ("update's namespace is '%s', expected '%s'",
+                  request->request_rpc.update.collection, ns);
       return false;
    }
 
    if (rpc->update.flags != flags) {
-      MONGOC_ERROR ("request's update flags are %s, expected %s",
-                    update_flags_str (rpc->update.flags),
-                    update_flags_str (flags));
+      test_error ("request's update flags are %s, expected %s",
+                  update_flags_str (rpc->update.flags),
+                  update_flags_str (flags));
       return false;
    }
 
@@ -371,20 +371,20 @@ request_matches_delete (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_DELETE) {
-      MONGOC_ERROR ("request's opcode does not match DELETE");
+      test_error ("request's opcode does not match DELETE");
       return false;
    }
 
    if (strcmp (rpc->delete_.collection, ns)) {
-      MONGOC_ERROR ("delete's namespace is '%s', expected '%s'",
-                    request->request_rpc.delete_.collection, ns);
+      test_error ("delete's namespace is '%s', expected '%s'",
+                  request->request_rpc.delete_.collection, ns);
       return false;
    }
 
    if (rpc->delete_.flags != flags) {
-      MONGOC_ERROR ("request's delete flags are %s, expected %s",
-                    delete_flags_str (rpc->delete_.flags),
-                    delete_flags_str (flags));
+      test_error ("request's delete flags are %s, expected %s",
+                  delete_flags_str (rpc->delete_.flags),
+                  delete_flags_str (flags));
       return false;
    }
 
@@ -411,25 +411,25 @@ request_matches_getmore (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_GET_MORE) {
-      MONGOC_ERROR ("request's opcode does not match GET_MORE");
+      test_error ("request's opcode does not match GET_MORE");
       return false;
    }
 
    if (strcmp (rpc->get_more.collection, ns)) {
-      MONGOC_ERROR ("request's namespace is '%s', expected '%s'",
-                    request->request_rpc.get_more.collection, ns);
+      test_error ("request's namespace is '%s', expected '%s'",
+                  request->request_rpc.get_more.collection, ns);
       return false;
    }
 
    if (rpc->get_more.n_return != n_return) {
-      MONGOC_ERROR ("requests's n_return = %d, expected %d",
-                    rpc->query.n_return, n_return);
+      test_error ("requests's n_return = %d, expected %d",
+                  rpc->query.n_return, n_return);
       return false;
    }
 
    if (rpc->get_more.cursor_id != cursor_id) {
-      MONGOC_ERROR ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
-                    rpc->get_more.cursor_id, cursor_id);
+      test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
+                  rpc->get_more.cursor_id, cursor_id);
       return false;
    }
 
@@ -448,19 +448,19 @@ request_matches_kill_cursors (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
-      MONGOC_ERROR ("request's opcode does not match KILL_CURSORS");
+      test_error ("request's opcode does not match KILL_CURSORS");
       return false;
    }
 
    if (rpc->kill_cursors.n_cursors != 1) {
-      MONGOC_ERROR ("request's n_cursors is %d, expected 1",
-                    rpc->kill_cursors.n_cursors);
+      test_error ("request's n_cursors is %d, expected 1",
+                  rpc->kill_cursors.n_cursors);
       return false;
    }
 
    if (rpc->kill_cursors.cursors[0] != cursor_id) {
-      MONGOC_ERROR ("request's cursor_id %" PRId64 ", expected %" PRId64,
-                    rpc->kill_cursors.cursors[0], cursor_id);
+      test_error ("request's cursor_id %" PRId64 ", expected %" PRId64,
+                  rpc->kill_cursors.cursors[0], cursor_id);
       return false;
    }
 

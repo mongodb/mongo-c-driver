@@ -2854,7 +2854,7 @@ test_bulk_write_concern_over_1000(void)
    ASSERT_OR_PRINT (r, error);
    if (bson_iter_init_find (&iter, &reply, "err") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      MONGOC_ERROR ("%s\n", bson_iter_utf8 (&iter, NULL));
+      test_error ("%s\n", bson_iter_utf8 (&iter, NULL));
       abort ();
    }
 

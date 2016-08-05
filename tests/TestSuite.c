@@ -97,21 +97,21 @@ snprintf (char *str,
 #endif
 
 
-void
-_Print_StdOut (const char *format,
-               ...)
+static void
+test_msg (const char *format,
+          ...)
 {
    va_list ap;
 
    va_start (ap, format);
    vprintf (format, ap);
-   fflush (stdout);   
+   fflush (stdout);
    va_end (ap);
 }
 
 
 void
-_Print_StdErr (const char *format,
+test_error (const char *format,
                ...)
 {
    va_list ap;
@@ -227,12 +227,12 @@ TestSuite_Init (TestSuite *suite,
 #ifdef MONGOC_TRACE
          suite->flags |= TEST_TRACE;
 #else
-         _Print_StdErr ("-t requires mongoc compiled with --enable-tracing.\n");
+         test_error ("-t requires mongoc compiled with --enable-tracing.\n");
          exit (EXIT_FAILURE);
 #endif
       } else if (0 == strcmp ("-F", argv [i])) {
          if (argc - 1 == i) {
-            _Print_StdErr ("-F requires a filename argument.\n");
+            test_error ("-F requires a filename argument.\n");
             exit (EXIT_FAILURE);
          }
          filename = argv [++i];
@@ -245,7 +245,7 @@ TestSuite_Init (TestSuite *suite,
             suite->outfile = fopen (filename, "w");
 #endif
             if (!suite->outfile) {
-               _Print_StdErr ("Failed to open log file: %s\n", filename);
+               test_error ("Failed to open log file: %s\n", filename);
             }
          }
       } else if ((0 == strcmp ("-h", argv [i])) ||
@@ -256,7 +256,7 @@ TestSuite_Init (TestSuite *suite,
          suite->silent = true;
       } else if ((0 == strcmp ("-l", argv [i]))) {
          if (argc - 1 == i) {
-            _Print_StdErr ("-l requires an argument.\n");
+            test_error ("-l requires an argument.\n");
             exit (EXIT_FAILURE);
          }
          suite->testname = strdup (argv [++i]);
@@ -269,7 +269,7 @@ TestSuite_Init (TestSuite *suite,
 
    if (suite->silent) {
       if (suite->outfile) {
-         _Print_StdErr ("Cannot combine -F with --silent\n");
+         test_error ("Cannot combine -F with --silent\n");
          abort ();
       }
 
@@ -378,7 +378,7 @@ _print_getlasterror_win (const char *msg)
       0,
       NULL);
 
-   _Print_StdErr ("%s: %s\n", msg, err_msg);
+   test_error ("%s: %s\n", msg, err_msg);
 
    LocalFree (err_msg);
 }
@@ -410,7 +410,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                        NULL,    /* Use parent's starting directory */
                        &si,
                        &pi)) {
-      _Print_StdErr ("CreateProcess failed (%d).\n", GetLastError ());
+      test_error ("CreateProcess failed (%d).\n", GetLastError ());
       bson_free (cmdline);
 
       return -1;
@@ -495,7 +495,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
       if (suite->flags & TEST_DEBUGOUTPUT) {
-         _Print_StdOut ("Begin %s\n", name);
+         test_msg ("Begin %s\n", name);
       }
 
       if ((suite->flags & TEST_NOFORK)) {
@@ -542,7 +542,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                (unsigned)ts3.tv_nsec,
                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = 0;
-      _Print_StdOut ("%s", buf);
+      test_msg ("%s", buf);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
@@ -554,7 +554,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                 test->name,
                 ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = '\0';
-      _Print_StdOut ("%s", buf);
+      test_msg ("%s", buf);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);

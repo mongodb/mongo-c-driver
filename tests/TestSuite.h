@@ -47,6 +47,8 @@ extern "C" {
 #define CERT_PASSWORD_PROTECTED  CERT_TEST_DIR "/password_protected.pem"
 
 
+void test_error (const char *format, ...) BSON_GNUC_PRINTF(1, 2);
+
 #ifdef ASSERT
 # undef ASSERT
 #endif

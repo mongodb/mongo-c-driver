@@ -34,7 +34,7 @@ test_get_host (void)
                                false, &q, NULL, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r && mongoc_cursor_error(cursor, &error)) {
-      MONGOC_ERROR("%s", error.message);
+      test_error ("%s", error.message);
       abort();
    }
 
@@ -57,8 +57,8 @@ test_get_host (void)
    }
 
    if (!hosts) {
-      MONGOC_ERROR ("cursor using host %s not in seeds: %s",
-                    host.host_and_port, uri_str);
+      test_error ("cursor using host %s not in seeds: %s",
+                  host.host_and_port, uri_str);
       abort ();
    }
 
@@ -101,7 +101,7 @@ test_clone (void)
 
    r = mongoc_cursor_next(cursor, &doc);
    if (!r || mongoc_cursor_error(cursor, &error)) {
-      MONGOC_ERROR("%s", error.message);
+      test_error ("%s", error.message);
       abort();
    }
    ASSERT (doc);
@@ -111,7 +111,7 @@ test_clone (void)
 
    r = mongoc_cursor_next(clone, &doc);
    if (!r || mongoc_cursor_error(clone, &error)) {
-      MONGOC_ERROR("%s", error.message);
+      test_error ("%s", error.message);
       abort();
    }
    ASSERT (doc);

@@ -224,7 +224,7 @@ test_server_selection_logic_cb (bson_t *test)
       if (bson_iter_init_find (&sd_iter, &server, "avg_rtt_ms")) {
          sd->round_trip_time = bson_iter_int32 (&sd_iter);
       } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         MONGOC_ERROR ("%s has no avg_rtt_ms", sd->host.host_and_port);
+         test_error ("%s has no avg_rtt_ms", sd->host.host_and_port);
          abort ();
       }
 
@@ -346,8 +346,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       if (!found) {
-         MONGOC_ERROR ("Should have been selected but wasn't: %s",
-                       bson_iter_utf8 (&host, NULL));
+         test_error ("Should have been selected but wasn't: %s",
+                     bson_iter_utf8 (&host, NULL));
          abort ();
       }
 
@@ -360,8 +360,8 @@ test_server_selection_logic_cb (bson_t *test)
          sd = _mongoc_array_index (&selected_servers,
                                    mongoc_server_description_t *, i);
 
-         MONGOC_ERROR ("Shouldn't have been selected but was: %s",
-                       sd->host.host_and_port);
+         test_error ("Shouldn't have been selected but was: %s",
+                     sd->host.host_and_port);
          abort ();
       }
    }

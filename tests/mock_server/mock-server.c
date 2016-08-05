@@ -27,6 +27,7 @@
 #include "mock-server.h"
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
+#include "../TestSuite.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -1350,12 +1351,12 @@ mock_server_replies_to_find (request_t           *request,
 
    /* minimal validation, we're not testing query / find cmd here */
    if (request->is_command && !is_command) {
-      MONGOC_ERROR ("expected query, got command");
+      test_error ("expected query, got command");
       abort ();
    }
 
    if (!request->is_command && is_command) {
-      MONGOC_ERROR ("expected command, got query");
+      test_error ("expected command, got query");
       abort ();
    }
 
@@ -1612,7 +1613,7 @@ worker_thread (void *data)
 
    if (ssl) {
       if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
-         MONGOC_ERROR("Blocking TLS handshake failed: %s", error.message);
+         test_error ("Blocking TLS handshake failed: %s", error.message);
          mongoc_stream_close (client_stream);
          mongoc_stream_destroy (client_stream);
          RETURN (NULL);
