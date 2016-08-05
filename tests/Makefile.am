@@ -27,6 +27,7 @@ TEST_CFLAGS += \
 	-I$(top_builddir)/src/mongoc
 
 TEST_LIBS = \
+        $(COVERAGE_LDFLAGS) \
 	libmongoc-priv.la \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \

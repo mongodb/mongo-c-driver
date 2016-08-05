@@ -3,7 +3,7 @@ COVERAGE_LDFLAGS=""
 
 if test "$enable_coverage" = "yes"; then
     COVERAGE_CFLAGS="--coverage -g"
-    COVERAGE_LDFLAGS="-lgcov"
+    COVERAGE_LDFLAGS="--coverage"
 fi
 
 AC_SUBST(COVERAGE_CFLAGS)
