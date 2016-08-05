@@ -3,6 +3,7 @@
   "members": [
     {
       "procParams": {
+        "logpath": "/tmp/orchestration-home/27017.log",
         "ipv6": true,
         "nohttpinterface": true,
         "journal": true,
@@ -20,6 +21,7 @@
     },
     {
       "procParams": {
+        "logpath": "/tmp/orchestration-home/27018.log",
         "ipv6": true,
         "nohttpinterface": true,
         "journal": true,
@@ -37,6 +39,7 @@
     },
     {
       "procParams": {
+        "logpath": "/tmp/orchestration-home/27019.log",
         "ipv6": true,
         "nohttpinterface": true,
         "journal": true,

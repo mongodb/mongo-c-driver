@@ -4,6 +4,7 @@
     "login": "bob",
     "password": "pwd123",
     "procParams": {
+        "logpath": "/tmp/orchestration-home/mongod.log",
         "ipv6": true,
         "logappend": true,
         "journal": true,

@@ -755,23 +755,26 @@ functions:
               # There was an error.
               if [ ${windows|false} = true ]; then
                  mongo-orchestration stop
-                 echo "ORCHESTRATION LOG"
-                 cat /cygdrive/c/tmp/orchestration-home/server.log
-                 echo "  END OF ORCHESTRATION LOG"
+
+                 for i in /cygdrive/c/tmp/orchestration-home/*.log; do
+                    echo $i; echo; cat $i; echo; echo
+                 done
               elif [ `uname` = "SunOS" ]; then
                  # "killall" acts differently on Linux and Solaris, use pkill.
                  pkill -9 mongod
                  pkill -9 mongos
                  pkill -9 python
                  pkill -9 mongo-orchestration
-                 echo "ORCHESTRATION LOG"
-                 cat /tmp/orchestration-home/server.log
-                 echo "  END OF ORCHESTRATION LOG"
+
+                 for i in /tmp/orchestration-home/*.log; do
+                    echo $i; echo; cat $i; echo; echo
+                 done
               else
                  killall -9 mongod mongos python mongo-orchestration
-                 echo "ORCHESTRATION LOG"
-                 cat /tmp/orchestration-home/server.log
-                 echo "  END OF ORCHESTRATION LOG"
+
+                 for i in /tmp/orchestration-home/*.log; do
+                    echo $i; echo; cat $i; echo; echo
+                 done
               fi
            fi
 
