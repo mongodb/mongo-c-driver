@@ -201,6 +201,13 @@ again:
    if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
+
+         /* for tests */
+         mongoc_client_set_stream_initiator (
+            client,
+            pool->topology->scanner->initiator,
+            pool->topology->scanner->initiator_context);
+
          client->error_api_version = pool->error_api_version;
          _mongoc_client_set_apm_callbacks_private (client,
                                                    &pool->apm_callbacks,
@@ -283,6 +290,18 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    EXIT;
 }
 
+/* for tests */
+void
+_mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t      *pool,
+                                          mongoc_stream_initiator_t  si,
+                                          void                      *context)
+{
+   mongoc_topology_scanner_set_stream_initiator (pool->topology->scanner,
+                                                 si,
+                                                 context);
+}
+
+/* for tests */
 size_t
 mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
 {

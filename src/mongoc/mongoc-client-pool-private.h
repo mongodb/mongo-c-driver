@@ -27,7 +27,13 @@
 
 BSON_BEGIN_DECLS
 
-size_t 				  mongoc_client_pool_get_size(mongoc_client_pool_t *pool);
+/* for tests */
+void
+_mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t      *pool,
+                                          mongoc_stream_initiator_t  si,
+                                          void                      *user_data);
+size_t
+mongoc_client_pool_get_size              (mongoc_client_pool_t      *pool);
 
 BSON_END_DECLS
 

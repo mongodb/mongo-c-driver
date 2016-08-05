@@ -1,13 +1,31 @@
 #include <mongoc.h>
 
+#include "mongoc-client-pool-private.h"
+
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
+
+static mongoc_stream_t *
+cannot_resolve (const mongoc_uri_t       *uri,
+                const mongoc_host_list_t *host,
+                void                     *user_data,
+                bson_error_t             *error)
+{
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                   "Fake error for '%s'", host->host);
+
+   return NULL;
+}
+
+
 static void
 server_selection_error_dns (const char *uri_str,
                             const char *errmsg,
-                            bool        assert_as,
+                            bool        expect_success,
                             bool        pooled)
 {
    mongoc_uri_t *uri;
@@ -22,11 +40,20 @@ server_selection_error_dns (const char *uri_str,
    uri = mongoc_uri_new (uri_str);
    ASSERT (uri);
 
-   if (pooled) {
+   if (pooled && expect_success) {
       pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else if (pooled) {
+      /* we expect selection to fail; let the test finish faster */
+      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 2000);
+      pool = mongoc_client_pool_new (uri);
+      _mongoc_client_pool_set_stream_initiator (pool, cannot_resolve, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
+      if (!expect_success) {
+         mongoc_client_set_stream_initiator (client, cannot_resolve, NULL);
+      }
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -34,7 +61,7 @@ server_selection_error_dns (const char *uri_str,
    command = tmp_bson("{'ping': 1}");
    success = mongoc_collection_command_simple (collection, command, NULL,
                                                &reply, &error);
-   ASSERT_OR_PRINT(success == assert_as, error);
+   ASSERT_OR_PRINT(success == expect_success, error);
 
    if (!success && errmsg) {
       ASSERT_CMPSTR(error.message, errmsg);
@@ -59,7 +86,7 @@ test_server_selection_error_dns_direct_single (void)
    server_selection_error_dns (
       "mongodb://example-localhost:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set): "
-      "[Failed to resolve 'example-localhost']",
+      "[Fake error for 'example-localhost']",
       false, false
    );
 }
@@ -70,7 +97,7 @@ test_server_selection_error_dns_direct_pooled (void *ctx)
    server_selection_error_dns (
       "mongodb://example-localhost:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired: "
-      "[Failed to resolve 'example-localhost']",
+      "[Fake error for 'example-localhost']",
       false, true
    );
 }
@@ -81,8 +108,8 @@ test_server_selection_error_dns_multi_fail_single (void)
    server_selection_error_dns (
       "mongodb://example-localhost:27017,other-example-localhost:27017/",
       "No suitable servers found (`serverSelectionTryOnce` set):"
-      " [Failed to resolve 'example-localhost']"
-      " [Failed to resolve 'other-example-localhost']",
+      " [Fake error for 'example-localhost']"
+      " [Fake error for 'other-example-localhost']",
       false, false
    );
 
@@ -94,8 +121,8 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
    server_selection_error_dns (
       "mongodb://example-localhost:27017,other-example-localhost:27017/",
       "No suitable servers found: `serverSelectionTimeoutMS` expired:"
-      " [Failed to resolve 'example-localhost']"
-      " [Failed to resolve 'other-example-localhost']",
+      " [Fake error for 'example-localhost']"
+      " [Fake error for 'other-example-localhost']",
       false, true
    );
 
