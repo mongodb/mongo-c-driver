@@ -1603,8 +1603,6 @@ worker_thread (void *data)
 
    ENTRY;
 
-   BSON_ASSERT(closure);
-
 #ifdef MONGOC_ENABLE_SSL
    mongoc_mutex_lock (&server->mutex);
    ssl = server->ssl;
