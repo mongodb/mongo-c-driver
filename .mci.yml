@@ -222,7 +222,7 @@ c_driver_variables:
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
-          curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
+          curl --max-time 120 -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.adminCommand({getCmdLineOpts:1}))' admin
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
