@@ -1694,7 +1694,8 @@ _cmd (mock_server_t   *server,
    return r;
 }
 
-static void test_client_set_ssl_copies_args (bool pooled)
+static void
+test_client_set_ssl_copies_args (bool pooled)
 {
    mongoc_uri_t *uri;
    mock_server_t *server;
@@ -1737,7 +1738,6 @@ static void test_client_set_ssl_copies_args (bool pooled)
 
    ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
                     error);
-
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
