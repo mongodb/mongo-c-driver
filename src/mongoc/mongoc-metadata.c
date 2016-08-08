@@ -20,6 +20,10 @@
 #include <sys/utsname.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "mongoc-metadata.h"
 #include "mongoc-metadata-os-private.h"
 #include "mongoc-metadata-private.h"
@@ -75,6 +79,54 @@ _get_os_name (void)
    return NULL;
 }
 
+static char *
+_get_os_architecture (void)
+{
+   const char *ret = NULL;
+
+#ifdef _WIN32
+   SYSTEM_INFO system_info;
+   DWORD arch;
+   GetSystemInfo (&system_info);
+
+   arch = system_info.wProcessorArchitecture;
+
+   switch (arch) {
+   case PROCESSOR_ARCHITECTURE_AMD64:
+      ret = "x86_64";
+      break;
+   case PROCESSOR_ARCHITECTURE_ARM:
+      ret = "ARM";
+      break;
+   case PROCESSOR_ARCHITECTURE_IA64:
+      ret = "IA64";
+      break;
+   case PROCESSOR_ARCHITECTURE_INTEL:
+      ret = "x86";
+      break;
+   case PROCESSOR_ARCHITECTURE_UNKNOWN:
+      ret = "Unknown";
+      break;
+   default:
+      ret = "Other";
+      break;
+   }
+
+#elif defined (_POSIX_VERSION)
+   struct utsname system_info;
+
+   if (uname (&system_info) >= 0) {
+      ret = system_info.machine;
+   }
+#endif
+
+   if (ret) {
+      return bson_strndup (ret, METADATA_OS_ARCHITECTURE_MAX);
+   }
+
+   return NULL;
+}
+
 static void
 _get_system_info (mongoc_metadata_t *metadata)
 {
@@ -82,11 +134,9 @@ _get_system_info (mongoc_metadata_t *metadata)
    metadata->os_type = _get_os_type ();
    metadata->os_name = _get_os_name ();
    metadata->os_version = NULL;
-   metadata->os_architecture = NULL;
+   metadata->os_architecture = _get_os_architecture ();
    /* General idea of what these are supposed to be: */
    /* metadata->os_version = bson_strndup ("123", METADATA_OS_VERSION_MAX); */
-   /* metadata->os_architecture = bson_strndup ("ARM", */
-   /*                                           METADATA_OS_ARCHITECTURE_MAX); */
 }
 
 static void
