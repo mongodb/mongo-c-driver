@@ -1382,21 +1382,29 @@ test_index (void)
 }
 
 static void
-test_index_2 ()
+test_index_w_write_concern ()
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
    mongoc_index_opt_t opt;
+   mongoc_write_concern_t *good_wc;
+   mongoc_write_concern_t *bad_wc;
    bson_error_t error;
    bson_t keys;
    bson_t reply;
    bool result;
+   bool wire_version_5;
 
    mongoc_index_opt_init (&opt);
 
    client = test_framework_client_new ();
    ASSERT (client);
+
+   good_wc = mongoc_write_concern_new ();
+   bad_wc = mongoc_write_concern_new ();
+
+   mongoc_client_set_error_api (client, 2);
 
    database = get_test_database (client);
    ASSERT (database);
@@ -1404,28 +1412,97 @@ test_index_2 ()
    collection = get_test_collection (client, "test_index");
    ASSERT (collection);
 
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
+
    bson_init (&keys);
    bson_append_int32 (&keys, "hello", -1, 1);
-   ASSERT_OR_PRINT (mongoc_collection_create_index_2 (collection, &keys,
-                                                      &opt, &reply, &error),
-                    error);
+
+   /* writeConcern that will not pass validation */
+   bad_wc->wtimeout = -10;
+   ASSERT (!mongoc_collection_create_index_with_write_concern (collection,
+                                                               &keys,
+                                                               &opt,
+                                                               bad_wc,
+                                                               &reply,
+                                                               &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern on all server configs */
+   mongoc_write_concern_set_w (good_wc, 1);
+   result = mongoc_collection_create_index_with_write_concern (collection,
+                                                               &keys,
+                                                               &opt,
+                                                               good_wc,
+                                                               &reply,
+                                                               &error);
+   ASSERT_OR_PRINT (result, error);
+   ASSERT (!error.code);
 
    /* Be sure the reply is valid */
    ASSERT (bson_validate (&reply, 0, NULL));
+   result = mongoc_collection_drop_index (collection,
+                                          "hello_1",
+                                          &error);
+   ASSERT_OR_PRINT (result, error);
+
+   /* writeConcern that will result in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+
+   ASSERT (!error.code);
+
+   /* skip this part of the test if sharded cluster */
+   if (!test_framework_is_mongos ()) {
+      if (wire_version_5) {
+         ASSERT (!mongoc_collection_create_index_with_write_concern (collection,
+                                                                     &keys,
+                                                                     &opt,
+                                                                     bad_wc,
+                                                                     &reply,
+                                                                     &error));
+         if (test_framework_is_replset ()) { /* replica set */
+            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
+                                   100, "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
+      } else { /* if wire version <= 4, no error */
+         result = mongoc_collection_create_index_with_write_concern (collection,
+                                                                     &keys,
+                                                                     &opt,
+                                                                     bad_wc,
+                                                                     &reply,
+                                                                     &error);
+         ASSERT_OR_PRINT (result, error);
+         ASSERT (!error.code);
+         ASSERT (!error.domain);
+      }
+   }
 
    if (!test_framework_max_wire_version_at_least (2)) {
-      /* On very old versions of the server, create_index_2 will give an
-         empty reply even if the call succeeds */
+      /* On very old versions of the server, create_index_with_write_concern
+       * will give an empty reply even if the call succeeds */
       ASSERT (bson_empty (&reply));
    } else {
       ASSERT (!bson_empty (&reply));
    }
    bson_destroy (&reply);
 
-   /* Make sure it doesn't crash with a NULL reply */
-   ASSERT_OR_PRINT (mongoc_collection_create_index_2 (collection, &keys,
-                                                      &opt, NULL, &error),
-                    error);
+   /* Make sure it doesn't crash with a NULL reply or writeConcern */
+   result = mongoc_collection_create_index_with_write_concern (collection,
+                                                               &keys,
+                                                               &opt,
+                                                               NULL,
+                                                               NULL,
+                                                               &error);
+   ASSERT_OR_PRINT (result, error);
+
    ASSERT_OR_PRINT (mongoc_collection_drop_index (collection, "hello_1",
                                                   &error),
                     error);
@@ -1439,16 +1516,24 @@ test_index_2 ()
       This fails both on legacy and modern versions of the server
    */
    BSON_APPEND_UTF8 (&keys, "abc", "hallo thar");
-   result = mongoc_collection_create_index_2 (collection, &keys,
-                                              &opt, &reply, &error);
+   result = mongoc_collection_create_index_with_write_concern (collection,
+                                                               &keys,
+                                                               &opt,
+                                                               NULL,
+                                                               &reply,
+                                                               &error);
 
    ASSERT (!result);
    ASSERT (strlen (error.message) > 0);
    memset (&error, 0, sizeof (error));
 
    /* Try again but with reply NULL. Shouldn't crash */
-   result = mongoc_collection_create_index_2 (collection, &keys,
-                                              &opt, NULL, &error);
+   result = mongoc_collection_create_index_with_write_concern (collection,
+                                                               &keys,
+                                                               &opt,
+                                                               NULL,
+                                                               NULL,
+                                                               &error);
    ASSERT (!result);
    ASSERT (strlen (error.message) > 0);
 
@@ -1459,6 +1544,8 @@ test_index_2 ()
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
+   mongoc_write_concern_destroy (bad_wc);
+   mongoc_write_concern_destroy (good_wc);
    bson_destroy (&reply);
 }
 
@@ -3594,7 +3681,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
    TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
    TestSuite_AddLive (suite, "/Collection/index", test_index);
-   TestSuite_AddLive (suite, "/Collection/index_2", test_index_2);
+   TestSuite_AddLive (suite, "/Collection/index_w_write_concern",
+                      test_index_w_write_concern);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);

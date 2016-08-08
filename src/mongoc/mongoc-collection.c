@@ -1010,19 +1010,21 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    bson_t reply;
    bool ret;
 
-   ret = mongoc_collection_create_index_2 (collection, keys, opt,
-                                           &reply, error);
+   ret = mongoc_collection_create_index_with_write_concern (
+      collection, keys, opt, NULL, &reply, error);
 
    bson_destroy (&reply);
    return ret;
 }
 
 bool
-mongoc_collection_create_index_2 (mongoc_collection_t      *collection,
-                                  const bson_t             *keys,
-                                  const mongoc_index_opt_t *opt,
-                                  bson_t                   *reply,
-                                  bson_error_t             *error)
+mongoc_collection_create_index_with_write_concern (
+   mongoc_collection_t      *collection,
+   const bson_t             *keys,
+   const mongoc_index_opt_t *opt,
+   mongoc_write_concern_t   *write_concern,
+   bson_t                   *reply,
+   bson_error_t             *error)
 {
    const mongoc_index_opt_t *def_opt;
    const mongoc_index_opt_geo_t *def_geo;
@@ -1144,8 +1146,14 @@ mongoc_collection_create_index_2 (mongoc_collection_t      *collection,
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   ret = mongoc_collection_command_simple (collection, &cmd, NULL, reply,
-                                           &local_error);
+   ret = _mongoc_client_command_with_write_concern (collection->client,
+                                                    collection->db,
+                                                    &cmd,
+                                                    NULL,
+                                                    write_concern,
+                                                    reply,
+                                                    &local_error);
+
    reply_initialized = true;
 
    /*
