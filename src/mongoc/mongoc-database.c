@@ -242,20 +242,16 @@ mongoc_database_drop_with_write_concern (mongoc_database_t      *database,
 
    BSON_ASSERT (database);
 
-   if (!_mongoc_write_concern_validate (write_concern, error)) {
-      return false;
-   }
-
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
 
-   if (write_concern &&
-       !_mongoc_write_concern_is_default (write_concern)) {
-      bson_append_document (&cmd, "writeConcern", 12,
-                            _mongoc_write_concern_get_bson (write_concern));
-   }
-
-   ret = mongoc_database_command_simple(database, &cmd, NULL, NULL, error);
+   ret = _mongoc_client_command_with_write_concern (database->client,
+                                                    database->name,
+                                                    &cmd,
+                                                    NULL,
+                                                    write_concern,
+                                                    NULL,
+                                                    error);
    bson_destroy(&cmd);
 
    return ret;
