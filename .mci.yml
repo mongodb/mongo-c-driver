@@ -343,11 +343,13 @@ c_driver_variables:
           export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export MONGOC_TEST_SERVER_VERBOSE=on
           ./Debug/test-libmongoc.exe -d -F test-results.json
       solaris: &run_integration_tests_solaris
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export MONGOC_TEST_SERVER_VERBOSE=on
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
@@ -358,6 +360,7 @@ c_driver_variables:
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export MONGOC_TEST_SERVER_VERBOSE=on
           export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
 
           # This libtool wrapper script was built in a unique dir like
@@ -378,6 +381,7 @@ c_driver_variables:
           LD_EXTRA=":$prefix/lib"
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export MONGOC_TEST_SERVER_VERBOSE=on
           export LD_LIBRARY_PATH=".libs:src/libbson/.libs$LD_EXTRA"
 
           # This libtool wrapper script was built in a unique dir like
@@ -390,6 +394,7 @@ c_driver_variables:
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export MONGOC_TEST_SERVER_VERBOSE=on
           export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
           make TEST_ARGS="-d -F test-results.json" test
 
