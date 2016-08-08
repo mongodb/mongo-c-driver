@@ -1306,6 +1306,8 @@ _mongoc_client_command_with_write_concern (
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream = NULL;
    bson_t *command_w_write_concern = NULL;
+   bson_t *reply_ptr;
+   bson_t reply_local;
    bool ret;
 
    ENTRY;
@@ -1313,6 +1315,8 @@ _mongoc_client_command_with_write_concern (
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
+
+   reply_ptr = reply ? reply : &reply_local;
 
    if (!_mongoc_read_prefs_validate (read_prefs, error)) {
       RETURN (false);
@@ -1346,7 +1350,7 @@ _mongoc_client_command_with_write_concern (
                                                 command_w_write_concern ?
                                                 command_w_write_concern :
                                                 command, server_stream,
-                                                read_prefs, reply, error);
+                                                read_prefs, reply_ptr, error);
    } else {
       if (reply) {
          bson_init (reply);
@@ -1356,13 +1360,17 @@ _mongoc_client_command_with_write_concern (
    }
 
    if (ret && write_concern) {
-      ret = !_mongoc_parse_wc_err (reply, error);
+      ret = !_mongoc_parse_wc_err (reply_ptr, error);
    }
 
    mongoc_server_stream_cleanup (server_stream);
 
    if (command_w_write_concern) {
       bson_destroy (command_w_write_concern);
+   }
+
+   if (reply_ptr == &reply_local) {
+      bson_destroy (reply_ptr);
    }
 
    RETURN (ret);
