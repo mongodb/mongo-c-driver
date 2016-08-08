@@ -2153,9 +2153,6 @@ test_client_appname_pooled_no_uri (void)
 void
 test_client_install (TestSuite *suite)
 {
-#ifdef TODO_CDRIVER_689
-   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
-#endif
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
