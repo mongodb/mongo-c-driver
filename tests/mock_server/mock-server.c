@@ -1610,7 +1610,6 @@ worker_thread (void *data)
 
    if (ssl) {
       if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
-         test_error ("Mock server: Blocking TLS handshake failed: %s", error.message);
          mongoc_stream_close (client_stream);
          mongoc_stream_destroy (client_stream);
          RETURN (NULL);
