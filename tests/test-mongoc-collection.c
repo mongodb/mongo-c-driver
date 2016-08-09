@@ -2920,7 +2920,6 @@ test_find_and_modify (void)
 }
 
 
-#if !defined (_MSC_VER) || !defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
 static void
 test_large_return (void *ctx)
 {
@@ -2976,7 +2975,6 @@ test_large_return (void *ctx)
    mongoc_client_destroy (client);
    bson_free (str);
 }
-#endif /* CDRIVER-1423 */
 
 
 static void
@@ -3741,9 +3739,7 @@ test_collection_install (TestSuite *suite)
                   test_find_and_modify_write_concern_wire_32);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern_pre_32",
                   test_find_and_modify_write_concern_wire_pre_32);
-#if !defined (_MSC_VER) || !defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
    TestSuite_AddFull (suite, "/Collection/large_return", test_large_return, NULL, NULL, test_framework_skip_if_slow);
-#endif
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
    TestSuite_Add (suite, "/Collection/limit", test_find_limit);
    TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
