@@ -280,9 +280,9 @@ _append_and_truncate (char       **s,
  * All arguments are optional.
  */
 bool
-mongoc_metadata_append (const char *driver_name,
-                        const char *driver_version,
-                        const char *platform)
+mongoc_handshake_data_append (const char *driver_name,
+                              const char *driver_version,
+                              const char *platform)
 {
    int max_size = 0;
 

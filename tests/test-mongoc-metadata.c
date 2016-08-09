@@ -27,7 +27,7 @@
 #include "mock_server/mock-server.h"
 
 /*
- * Call this before any test which uses mongoc_metadata_append, to
+ * Call this before any test which uses mongoc_handshake_data_append, to
  * reset the global state and unfreeze the metadata struct. Call it
  * after a test so later tests don't have a weird metadata document
  *
@@ -108,7 +108,7 @@ test_mongoc_metadata_appname_frozen_pooled (void)
 }
 
 static void
-test_mongoc_metadata_append_success (void)
+test_mongoc_handshake_data_append_success (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -132,7 +132,7 @@ test_mongoc_metadata_append_success (void)
 
    _reset_metadata ();
    /* Make sure setting the metadata works */
-   ASSERT (mongoc_metadata_append (driver_name, driver_version, platform));
+   ASSERT (mongoc_handshake_data_append (driver_name, driver_version, platform));
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -212,7 +212,7 @@ test_mongoc_metadata_append_success (void)
 }
 
 static void
-test_mongoc_metadata_append_after_cmd (void)
+test_mongoc_handshake_data_append_after_cmd (void)
 {
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
@@ -228,7 +228,12 @@ test_mongoc_metadata_append_after_cmd (void)
 
    client = mongoc_client_pool_pop (pool);
 
-   ASSERT (!mongoc_metadata_append ("a", "a", "a"));
+   capture_logs (true);
+   ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
+   ASSERT_CAPTURED_LOG ("mongoc_handshake_data_append",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set metadata more than once");
+   capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
 
@@ -265,7 +270,7 @@ test_mongoc_metadata_too_big (void)
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
-   ASSERT (mongoc_metadata_append (NULL, NULL, big_string));
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    client = mongoc_client_new_from_uri (uri);
@@ -405,9 +410,9 @@ test_metadata_install (TestSuite *suite)
                   test_mongoc_metadata_appname_frozen_pooled);
 
    TestSuite_Add (suite, "/ClientMetadata/success",
-                  test_mongoc_metadata_append_success);
+                  test_mongoc_handshake_data_append_success);
    TestSuite_Add (suite, "/ClientMetadata/failure",
-                  test_mongoc_metadata_append_after_cmd);
+                  test_mongoc_handshake_data_append_after_cmd);
    TestSuite_Add (suite, "/ClientMetadata/too_big",
                   test_mongoc_metadata_too_big);
    TestSuite_Add (suite, "/ClientMetadata/cannot_send",
