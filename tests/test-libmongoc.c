@@ -598,7 +598,23 @@ test_framework_get_host_list (mongoc_host_list_t *host_list)
 char *
 test_framework_get_admin_user (void)
 {
-   return test_framework_getenv ("MONGOC_TEST_USER");
+   char *retval = NULL;
+   mongoc_uri_t *env_uri = _uri_from_env ();
+
+   /* MONGOC_TEST_URI takes precedence */
+   if (env_uri) {
+      const char *tmp = mongoc_uri_get_username (env_uri);
+
+      if (tmp) {
+         retval = bson_strdup (tmp);
+      }
+      mongoc_uri_destroy (env_uri);
+   }
+   if (!retval) {
+      retval = test_framework_getenv ("MONGOC_TEST_USER");
+   }
+
+   return retval;
 }
 
 /*
@@ -619,7 +635,23 @@ test_framework_get_admin_user (void)
 char *
 test_framework_get_admin_password (void)
 {
-   return test_framework_getenv ("MONGOC_TEST_PASSWORD");
+   char *retval = NULL;
+   mongoc_uri_t *env_uri = _uri_from_env ();
+
+   /* MONGOC_TEST_URI takes precedence */
+   if (env_uri) {
+      const char *tmp = mongoc_uri_get_password (env_uri);
+
+      if (tmp) {
+         retval = bson_strdup (tmp);
+      }
+      mongoc_uri_destroy (env_uri);
+   }
+   if (!retval) {
+      retval = test_framework_getenv ("MONGOC_TEST_PASSWORD");
+   }
+
+   return retval;
 }
 
 
