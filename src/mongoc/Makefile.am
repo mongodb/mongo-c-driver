@@ -109,6 +109,7 @@ INST_H_FILES = \
 
 if ENABLE_EXPERIMENTAL_FEATURES
 INST_H_FILES += \
+	src/mongoc/mongoc-linux-distro-scanner-private.h \
 	src/mongoc/mongoc-metadata.h \
 	src/mongoc/mongoc-metadata-os-private.h \
 	src/mongoc/mongoc-metadata-private.h
@@ -216,6 +217,7 @@ endif
 
 if ENABLE_EXPERIMENTAL_FEATURES
 MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-linux-distro-scanner.c \
 	src/mongoc/mongoc-metadata.c
 endif
 
