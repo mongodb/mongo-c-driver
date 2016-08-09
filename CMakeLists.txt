@@ -161,6 +161,10 @@ include (CPack)
 
 set (MONGOC_HAVE_WEAK_SYMBOLS 0)
 
+set (MONGOC_CC ${CMAKE_C_COMPILER})
+set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
+set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
+
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -361,6 +365,7 @@ if (ENABLE_EXPERIMENTAL_FEATURES)
    set(HEADERS ${HEADERS}
         ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
+        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-compiler-private.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
    )

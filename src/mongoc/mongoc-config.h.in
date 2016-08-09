@@ -18,6 +18,14 @@
 #ifndef MONGOC_CONFIG_H
 #define MONGOC_CONFIG_H
 
+/* MONGOC_USER_SET_CFLAGS is set from config based on what compiler flags were
+ * used to compile mongoc */
+#define MONGOC_USER_SET_CFLAGS "@MONGOC_USER_SET_CFLAGS@"
+
+#define MONGOC_USER_SET_LDFLAGS "@MONGOC_USER_SET_LDFLAGS@"
+
+/* MONGOC_CC is used to determine what C compiler was used to compile mongoc */
+#define MONGOC_CC "@MONGOC_CC@"
 
 /*
  * MONGOC_ENABLE_SSL_SECURE_CHANNEL is set from configure to determine if we are
@@ -171,5 +179,15 @@
 #if MONGOC_EXPERIMENTAL_FEATURES != 1
 #  undef MONGOC_EXPERIMENTAL_FEATURES
 #endif
+
+
+/*
+ * NOTICE:
+ * If you're about to update this file and add a config flag, make sure to
+ * update:
+ * o The bitfield in mongoc-metadata-private.h
+ * o _get_config_bitfield() in mongoc-metadata.c
+ * o metadata_script.py
+ */
 
 #endif /* MONGOC_CONFIG_H */

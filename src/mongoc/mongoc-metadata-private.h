@@ -39,6 +39,26 @@ BSON_BEGIN_DECLS
 /* platform has no fixed max size. It can just occupy the remaining
  * available space in the document. */
 
+/* When adding a new field to mongoc-config.h.in, update this! */
+typedef enum
+{
+   MONGOC_MD_FLAG_ENABLE_CRYPTO                = 1 << 0,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_CNG            = 1 << 1,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO  = 1 << 2,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO      = 1 << 3,
+   MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE = 1 << 4,
+   MONGOC_MD_FLAG_ENABLE_SASL                  = 1 << 5,
+   MONGOC_MD_FLAG_ENABLE_SSL                   = 1 << 6,
+   MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL           = 1 << 7,
+   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_CHANNEL    = 1 << 8,
+   MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT  = 1 << 9,
+   MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES        = 1 << 10,
+   MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE        = 1 << 11,
+   MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS            = 1 << 12,
+   MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS         = 1 << 13
+} mongoc_metadata_config_flags_t;
+
+
 typedef struct _mongoc_metadata_t
 {
    char *os_type;

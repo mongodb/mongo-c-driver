@@ -26,6 +26,7 @@
 
 #include "mongoc-linux-distro-scanner-private.h"
 #include "mongoc-metadata.h"
+#include "mongoc-metadata-compiler-private.h"
 #include "mongoc-metadata-os-private.h"
 #include "mongoc-metadata-private.h"
 #include "mongoc-client.h"
@@ -42,6 +43,70 @@
  */
 static mongoc_metadata_t gMongocMetadata;
 
+
+static uint32_t
+_get_config_bitfield (void)
+{
+   uint32_t bf = 0;
+
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+   bf |= MONGOC_MD_FLAG_ENABLE_SSL_SECURE_CHANNEL;
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_CNG
+   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_CNG;
+#endif
+
+#ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+   bf |= MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT;
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
+   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO;
+#endif
+
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   bf |= MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL;
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
+   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO;
+#endif
+
+#ifdef MONGOC_ENABLE_SSL
+   bf |= MONGOC_MD_FLAG_ENABLE_SSL;
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO
+   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO;
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
+   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE;
+#endif
+
+#ifdef MONGOC_ENABLE_SASL
+   bf |= MONGOC_MD_FLAG_ENABLE_SASL;
+#endif
+
+#ifdef MONGOC_HAVE_SASL_CLIENT_DONE
+   bf |= MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE;
+#endif
+
+#ifdef MONGOC_HAVE_WEAK_SYMBOLS
+   bf |= MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS;
+#endif
+
+#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
+   bf |= MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS;
+#endif
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   bf |= MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES;
+#endif
+
+   return bf;
+}
 
 static char *
 _get_os_type (void)
@@ -207,7 +272,35 @@ _free_driver_info (mongoc_metadata_t *metadata)
 static void
 _set_platform_string (mongoc_metadata_t *metadata)
 {
-   metadata->platform = NULL;
+   bson_string_t *str;
+   str = bson_string_new ("");
+
+   bson_string_append_printf (str, "cfg=0x%x",
+                              _get_config_bitfield ());
+
+#ifdef _POSIX_VERSION
+   bson_string_append_printf (str, " posix=%ld", _POSIX_VERSION);
+#endif
+
+#ifdef __STDC_VERSION__
+   bson_string_append_printf (str, " stdc=%ld", __STDC_VERSION__);
+#endif
+
+   bson_string_append_printf (str, " CC=%s", MONGOC_COMPILER);
+
+#ifdef MONGOC_COMPILER_VERSION
+   bson_string_append_printf (str, " %s", MONGOC_COMPILER_VERSION);
+#endif
+
+   if (strlen (MONGOC_USER_SET_CFLAGS) > 0) {
+      bson_string_append_printf (str, " CFLAGS=%s", MONGOC_USER_SET_CFLAGS);
+   }
+
+   if (strlen (MONGOC_USER_SET_LDFLAGS) > 0) {
+      bson_string_append_printf (str, " LDFLAGS=%s", MONGOC_USER_SET_LDFLAGS);
+   }
+
+   metadata->platform = bson_string_free (str, false);
 }
 
 static void
