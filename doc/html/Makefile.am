@@ -1,13 +1,10 @@
-BUILT_HTML_FILES = $(patsubst doc/%.page,doc/html/%.html,$(wildcard doc/*.page))
 CLEANFILES += $(wildcard doc/html/*.html)
 CLEANFILES += $(wildcard doc/html/*.css)
 CLEANFILES += $(wildcard doc/html/*.js)
 CLEANFILES += $(wildcard doc/html/*.png)
 
-%.html: ../%.page
+html:
 	$(AM_V_GEN)$(YELP_BUILD) html -x build/libbson.xsl -o doc/html/ doc
-
-html: $(BUILT_HTML_FILES)
 
 YELP_HTML_FILES = \
 	doc/html/C.css \
