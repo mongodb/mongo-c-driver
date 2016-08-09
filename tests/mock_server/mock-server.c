@@ -1635,10 +1635,6 @@ again:
    }
 
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, 100, &error) == -1) {
-      if (mongoc_stream_check_closed (client_stream)) {
-         GOTO (failure);
-      }
-
       GOTO (again);
    }
 
