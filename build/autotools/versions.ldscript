@@ -378,6 +378,5 @@ LIBMONGOC_1.5 {
         mongoc_collection_drop_with_write_concern;
         mongoc_database_create_collection_with_write_concern;
         mongoc_database_drop_with_write_concern;
-        mongoc_metadata_append;
-        mongoc_metadata_append;
+        mongoc_handshake_data_append;
 } LIBMONGOC_1.4;
