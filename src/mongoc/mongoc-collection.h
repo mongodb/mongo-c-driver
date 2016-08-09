@@ -89,11 +89,6 @@ bool                          mongoc_collection_create_index         (mongoc_col
                                                                       const bson_t                  *keys,
                                                                       const mongoc_index_opt_t      *opt,
                                                                       bson_error_t                  *error);
-bool                          mongoc_collection_create_index_2       (mongoc_collection_t           *collection,
-                                                                      const bson_t                  *keys,
-                                                                      const mongoc_index_opt_t      *opt,
-                                                                      bson_t                        *reply,
-                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_ensure_index         (mongoc_collection_t           *collection,
                                                                       const bson_t                  *keys,
                                                                       const mongoc_index_opt_t      *opt,
