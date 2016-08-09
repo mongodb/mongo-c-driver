@@ -701,6 +701,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"verbose\": { \"monitoring\": %s, \"server\": %s },\n"
             "    \"futureTimeoutMS\": %"PRIu64",\n"
             "    \"majorityReadConcern\": %s,\n"
+            "    \"skipLiveTests\": %s,\n"
             "    \"IPv6\": %s\n"
             "  },\n"
             "  \"options\": {\n"
@@ -723,6 +724,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             getenv ("MONGOC_TEST_SERVER_VERBOSE") ? "true" : "false",
             get_future_timeout_ms (),
             test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
             (suite->flags & TEST_TRACE) ? "true" : "false"
