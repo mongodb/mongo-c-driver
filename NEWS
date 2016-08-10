@@ -1,7 +1,7 @@
-mongo-c-driver 1.4.0-beta1
-==========================
+mongo-c-driver 1.4.0
+====================
 
-It is my pleasure to announce the beta release of mongo-c-driver 1.4.0.
+It is my pleasure to announce mongo-c-driver 1.4.0.
 
 TLS
 ---
@@ -29,6 +29,8 @@ fields, including "pem_file", are supported by all implementations.
 A new field, "allow_invalid_hostname", has been added to mongoc_ssl_opt_t and is
 preferred over the existing "allow_invalid_certificate" to disable hostname
 verification.
+
+See the documentation for mongoc_ssl_opt_t for details.
 
 The driver now supports the latest OpenSSL 1.1 in addition to past versions.
 
@@ -132,7 +134,7 @@ Other Features
 --------------
 
   * New connection string option "localThresholdMS".
-  * zSeries and POWER8 platform support.
+  * zSeries, POWER8, and ARM 64-bit platform support.
   * Performance enhancements, reduce allocation and copying in command code.
   * All man page names now begin with "mongoc_" to avoid install conflicts.
   * New function mongoc_gridfs_file_set_id.
@@ -192,12 +194,12 @@ Thanks to everyone who contributed to the development of this release.
   * Fiona Rowan
   * Jeremy Mikola
   * Christoph Schwarz
-  * Mike Lloyd
   * Remi Collet
-  * Jean-Bernard Jansen
-  * David Hatch
   * Derick Rethans
+  * Mike Lloyd
+  * David Hatch
   * Brian Samek
+  * Jean-Bernard Jansen
 
 Peace,
 
