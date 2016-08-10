@@ -91,10 +91,12 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  * @read_concern: A mongoc_read_concern_t.
  * @level: The read concern level
  *
- * Sets the read concern level. Any string is supported for future compatability
+ * Sets the read concern level. Any string is supported for future compatibility
  * but MongoDB 3.2 only accepts "local" and "majority", aka:
  *  - MONGOC_READ_CONCERN_LEVEL_LOCAL
  *  - MONGOC_READ_CONCERN_LEVEL_MAJORITY
+ * MongoDB 3.4 added
+ *  - MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE
  *
  *  If the @read_concern has already been frozen, calling this function will not
  *  alter the read concern level.

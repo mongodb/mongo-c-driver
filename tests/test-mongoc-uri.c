@@ -788,6 +788,11 @@ test_mongoc_uri_read_concern (void)
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
    mongoc_uri_destroy (uri);
 
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "linearizable");
+   mongoc_uri_destroy (uri);
+
 
    uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=local");
    rc = mongoc_uri_get_read_concern (uri);
