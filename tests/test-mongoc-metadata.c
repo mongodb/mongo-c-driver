@@ -138,6 +138,24 @@ _check_arch_string_valid (const char *arch)
 }
 
 static void
+_check_os_version_valid (const char *os_version)
+{
+#if defined (__linux__) || defined (_WIN32)
+   /* On linux we search the filesystem for os version or use uname.
+    * On windows we call GetSystemInfo(). */
+   ASSERT (os_version);
+   ASSERT (strlen (os_version) > 0);
+#elif defined(_POSIX_VERSION)
+   /* On a non linux posix systems, we just call uname() */
+   struct utsname system_info;
+
+   ASSERT (uname (&system_info) >= 0);
+   ASSERT (os_version);
+   ASSERT_CMPSTR (system_info.release, os_version);
+#endif
+}
+
+static void
 test_mongoc_handshake_data_append_success (void)
 {
    mock_server_t *server;
@@ -218,6 +236,12 @@ test_mongoc_handshake_data_append_success (void)
    val = bson_iter_utf8 (&inner_iter, NULL);
    ASSERT (val);
    ASSERT (strlen (val) > 0);
+
+   /* Check os version valid */
+   ASSERT (bson_iter_find (&inner_iter, "version"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   _check_os_version_valid (val);
 
    /* Check os arch is valid */
    ASSERT (bson_iter_find (&inner_iter, "architecture"));
