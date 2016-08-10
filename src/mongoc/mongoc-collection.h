@@ -155,6 +155,13 @@ bool                          mongoc_collection_rename               (mongoc_col
                                                                       const char                    *new_name,
                                                                       bool                           drop_target_before_rename,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_rename_with_write_concern
+                                                                     (mongoc_collection_t           *collection,
+                                                                      const char                    *new_db,
+                                                                      const char                    *new_name,
+                                                                      mongoc_write_concern_t        *write_concern,
+                                                                      bool                           drop_target_before_rename,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                 *collection,
                                                                            const bson_t                        *query,
                                                                            const mongoc_find_and_modify_opts_t *opts,

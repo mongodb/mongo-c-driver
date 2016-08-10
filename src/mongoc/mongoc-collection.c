@@ -2055,6 +2055,21 @@ mongoc_collection_rename (mongoc_collection_t *collection,
                           bool                 drop_target_before_rename,
                           bson_error_t        *error)
 {
+   return mongoc_collection_rename_with_write_concern (
+      collection, new_db, new_name, NULL,
+      drop_target_before_rename, error);
+}
+
+
+bool
+mongoc_collection_rename_with_write_concern (
+   mongoc_collection_t    *collection,
+   const char             *new_db,
+   const char             *new_name,
+   mongoc_write_concern_t *write_concern,
+   bool                    drop_target_before_rename,
+   bson_error_t           *error)
+{
    bson_t cmd = BSON_INITIALIZER;
    char newns [MONGOC_NAMESPACE_MAX + 1];
    bool ret;
@@ -2082,8 +2097,13 @@ mongoc_collection_rename (mongoc_collection_t *collection,
       BSON_APPEND_BOOL (&cmd, "dropTarget", true);
    }
 
-   ret = mongoc_client_command_simple (collection->client, "admin",
-                                       &cmd, NULL, NULL, error);
+   ret = _mongoc_client_command_with_write_concern (collection->client,
+                                                    "admin",
+                                                    &cmd,
+                                                    NULL,
+                                                    write_concern,
+                                                    NULL,
+                                                    error);
 
    if (ret) {
       if (new_db) {

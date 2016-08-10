@@ -2693,6 +2693,10 @@ test_rename (void)
    mongoc_client_t *client;
    mongoc_database_t *database;
    mongoc_collection_t *collection;
+   mongoc_write_concern_t *bad_wc;
+   mongoc_write_concern_t *good_wc;
+   bool wire_version_5;
+   bool r;
    bson_error_t error;
    char *dbname;
    bson_t doc = BSON_INITIALIZER;
@@ -2702,6 +2706,12 @@ test_rename (void)
 
    client = test_framework_client_new ();
    ASSERT (client);
+   mongoc_client_set_error_api (client, 2);
+
+   bad_wc = mongoc_write_concern_new ();
+   good_wc = mongoc_write_concern_new ();
+
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
@@ -2726,12 +2736,79 @@ test_rename (void)
 
    ASSERT (found);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
-   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   /* invalid writeConcern */
+   bad_wc->wtimeout = -10;
+   ASSERT (!mongoc_collection_rename_with_write_concern (collection,
+                                                         dbname,
+                                                         "test_rename.3",
+                                                         bad_wc,
+                                                         false,
+                                                         &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid mongoc_write_concern_t");
+   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
+
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
+
+   /* valid writeConcern on all configs */
+   mongoc_write_concern_set_w (good_wc, 1);
+   r = mongoc_collection_rename_with_write_concern (collection,
+                                                    dbname,
+                                                    "test_rename.3",
+                                                    good_wc,
+                                                    false,
+                                                    &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
+
+   ASSERT (!error.code);
+   ASSERT (!error.domain);
+
+   /* writeConcern that results in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+
+   if (!test_framework_is_mongos ()) {
+      r = mongoc_collection_rename_with_write_concern (collection,
+                                                       dbname,
+                                                       "test_rename.4",
+                                                       bad_wc,
+                                                       false,
+                                                       &error);
+      if (wire_version_5) {
+         ASSERT (!r);
+
+         /* check that collection name has not changed */
+         ASSERT_CMPSTR (mongoc_collection_get_name (collection), 
+                        "test_rename.3");
+         if (test_framework_is_replset ()) { /* replica set */
+            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
+                                   100, "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
+      } else { /* if wire version <= 4, no error */
+         ASSERT_OR_PRINT (r, error);
+
+         /* check that collection has been renamed */
+         ASSERT_CMPSTR (mongoc_collection_get_name (collection), 
+                        "test_rename.4");
+         ASSERT (!error.code);
+         ASSERT (!error.domain);
+      }
+   }
+   
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
    bson_free (names);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
+   mongoc_write_concern_destroy (good_wc);
+   mongoc_write_concern_destroy (bad_wc);
    mongoc_client_destroy (client);
    bson_free (dbname);
    bson_destroy (&doc);
