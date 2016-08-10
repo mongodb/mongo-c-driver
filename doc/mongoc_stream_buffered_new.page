@@ -9,7 +9,7 @@
 
 
   <info>
-    <link type="guide" xref="" group="function"/>
+    <link type="guide" xref="mongoc_stream_t" group="function"/>
   </info>
   <title>mongoc_stream_buffered_new()</title>
 
