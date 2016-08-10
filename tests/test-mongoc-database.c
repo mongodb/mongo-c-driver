@@ -20,6 +20,8 @@ test_create_with_write_concern (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    mongoc_write_concern_t *bad_wc;
+   mongoc_write_concern_t *good_wc;
+   bool wire_version_5;
 
    char *dbname;
    char *name;
@@ -28,28 +30,71 @@ test_create_with_write_concern (void)
 
    client = test_framework_client_new ();
    assert (client);
+   mongoc_client_set_error_api (client, 2);
+
+   bad_wc = mongoc_write_concern_new ();
+   good_wc = mongoc_write_concern_new ();
+
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
    assert (database);
-   bson_free (dbname);
 
    name = gen_collection_name ("create_collection");
 
    /* writeConcern that will not pass mongoc_write_concern_is_valid */
-   bad_wc = mongoc_write_concern_new ();
    bad_wc->wtimeout = -10;
-
    collection = mongoc_database_create_collection_with_write_concern (
       database, name, NULL, bad_wc, &error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Invalid mongoc_write_concern_t");
    ASSERT (!collection);
+   bad_wc->wtimeout = 0;
+   error.code = 0;
+   error.domain = 0;
 
-   bson_free (name);
-   mongoc_write_concern_destroy (bad_wc);
+   /* valid writeConcern on all configs */
+   mongoc_write_concern_set_w (good_wc, 1);
+   collection = mongoc_database_create_collection_with_write_concern (
+      database, name, NULL, good_wc, &error);
+   ASSERT_OR_PRINT (collection, error);
+   ASSERT (!error.code);
+   ASSERT (!error.domain);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error),
+                    error);
+
+   /* writeConcern that results in writeConcernError */
+   mongoc_write_concern_set_w (bad_wc, 99);
+   if (!test_framework_is_mongos ()) { /* skip if sharded */
+      collection = mongoc_database_create_collection_with_write_concern (
+         database, name, NULL, bad_wc, &error);
+
+      if (wire_version_5) {
+         ASSERT (!collection);
+         if (test_framework_is_replset ()) { /* replica set */
+            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
+                                   100, "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
+      } else { /* if wire_version <= 4, no error */
+         ASSERT_OR_PRINT (collection, error);
+         ASSERT (!error.code);
+         ASSERT (!error.domain);
+         ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error),
+                          error);
+      }
+   }
+
    mongoc_database_destroy (database);
+   bson_free (name);
+   bson_free (dbname);
+   mongoc_write_concern_destroy (good_wc);
+   mongoc_write_concern_destroy (bad_wc);
    mongoc_client_destroy (client);
 }
 

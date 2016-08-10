@@ -1140,16 +1140,11 @@ mongoc_database_create_collection_with_write_concern (
       }
    }
 
-   if (write_concern &&
-       !mongoc_write_concern_append (write_concern, &cmd)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Invalid mongoc_write_concern_t");
-      return NULL;
-   }
-
-   if (mongoc_database_command_simple (database, &cmd, NULL, NULL, error)) {
+   if (_mongoc_client_command_with_write_concern (database->client,
+                                                  database->name,
+                                                  &cmd, NULL,
+                                                  write_concern,
+                                                  NULL, error)) {
       collection = _mongoc_collection_new (database->client,
                                            database->name,
                                            name,
