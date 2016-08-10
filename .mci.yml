@@ -542,6 +542,43 @@ functions:
             cp -r mongodb /cygdrive/c/mongodb
         fi
 
+  "upload docs" :
+    - command: shell.exec
+      params:
+        working_dir: "mongo-c-driver"
+        script: |
+           # Since we cannot conditionally define evergreen expansions, but we can
+           # load expansions from external file, we dynamically generate a file
+           # containing the exact folder name we'd like to upload the docs to,
+           # depending on if its a patch build or regular evergreen build
+           if [ "${is_patch}" = "true" ]; then
+              VERSION=$(git describe)-patch-${version_id}
+           else
+              VERSION=latest
+           fi
+           echo "docspath: $VERSION" > expansion.yml
+    - command: expansions.update
+      params:
+        file: mongo-c-driver/expansion.yml
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongo-c-driver"
+        script: |
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           aws s3 cp doc/html s3://mciuploads/${project}/docs/${docspath} --recursive --acl public-read --region us-east-1
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  ${project}/doc/html/index.html
+        remote_file: ${project}/docs/${docspath}/index.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "Rendered docs"
+
   "create working directory" :
     command: shell.exec
     params:
@@ -843,10 +880,12 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
+                sudo apt-get install -y awscli
                 ./autogen.sh --enable-experimental-features --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
                 ls -la
+        - func: "upload docs"
         - command: s3.put
           params:
             aws_key: ${aws_key}
@@ -1442,6 +1481,7 @@ buildvariants:
     <<: *unix_common
   run_on:
      - ubuntu1404-test
+     - ubuntu1404-build
   tasks: *release_archive_builder
 
 ## Ubuntu 1204
