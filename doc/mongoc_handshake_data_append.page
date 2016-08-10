@@ -6,7 +6,7 @@
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_handshake_data_append">
   <info>
-    <link type="guide" xref="mongoc_handshake_data_append" group="function"/>
+    <link type="guide" xref="" group="function"/>
   </info>
   <title>mongoc_handshake_data_append()</title>
 
