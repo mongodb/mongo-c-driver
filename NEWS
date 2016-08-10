@@ -178,6 +178,8 @@ Notable Bug Fixes
   * The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now
     properly parsed from the URI, see the "Authentication" doc for details.
   * Comprehensive compatibility with various C standards and compilers.
+  * mongoc_bulk_operation_execute didn't initialize "reply" if it was passed
+    invalid arguments.
 
 Acknowledgments
 ---------------
