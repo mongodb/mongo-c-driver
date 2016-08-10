@@ -228,12 +228,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    client = mongoc_client_pool_pop (pool);
 
-   capture_logs (true);
    ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
-   ASSERT_CAPTURED_LOG ("mongoc_handshake_data_append",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set metadata more than once");
-   capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
 
