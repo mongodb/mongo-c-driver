@@ -43,13 +43,6 @@ mongoc_cursor_t               *mongoc_collection_aggregate           (mongoc_col
                                                                       const bson_t                  *pipeline,
                                                                       const bson_t                  *options,
                                                                       const mongoc_read_prefs_t     *read_prefs) BSON_GNUC_WARN_UNUSED_RESULT;
-mongoc_cursor_t               *mongoc_collection_aggregate_with_write_concern
-                                                                     (mongoc_collection_t           *collection,
-                                                                      mongoc_query_flags_t           flags,
-                                                                      const bson_t                  *pipeline,
-                                                                      const bson_t                  *options,
-                                                                      const mongoc_read_prefs_t     *read_prefs,
-                                                                      mongoc_write_concern_t        *write_concern) BSON_GNUC_WARN_UNUSED_RESULT;
 void                          mongoc_collection_destroy              (mongoc_collection_t           *collection);
 mongoc_collection_t          *mongoc_collection_copy                 (mongoc_collection_t           *collection);
 mongoc_cursor_t              *mongoc_collection_command              (mongoc_collection_t           *collection,
