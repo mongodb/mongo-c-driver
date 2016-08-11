@@ -12,6 +12,7 @@ future_get_void (future_t *future)
 {
    if (!future_wait (future)) {
       fprintf (stderr, "%s timed out\n", BSON_FUNC);
+      fflush (stderr);
       abort ();
    }
 }
@@ -25,6 +26,7 @@ future_get_{{ T }} (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 {% endfor %}

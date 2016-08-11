@@ -18,6 +18,7 @@ future_get_void (future_t *future)
 {
    if (!future_wait (future)) {
       fprintf (stderr, "%s timed out\n", BSON_FUNC);
+      fflush (stderr);
       abort ();
    }
 }
@@ -31,6 +32,7 @@ future_get_bool (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -42,6 +44,7 @@ future_get_char_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -53,6 +56,7 @@ future_get_char_ptr_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -64,6 +68,7 @@ future_get_int (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -75,6 +80,7 @@ future_get_int64_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -86,6 +92,7 @@ future_get_size_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -97,6 +104,7 @@ future_get_ssize_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -108,6 +116,7 @@ future_get_uint32_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -119,6 +128,7 @@ future_get_const_char_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -130,6 +140,7 @@ future_get_bson_error_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -141,6 +152,7 @@ future_get_bson_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -152,6 +164,7 @@ future_get_const_bson_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -163,6 +176,7 @@ future_get_const_bson_ptr_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -174,6 +188,7 @@ future_get_mongoc_bulk_operation_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -185,6 +200,7 @@ future_get_mongoc_client_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -196,6 +212,7 @@ future_get_mongoc_collection_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -207,6 +224,7 @@ future_get_mongoc_cursor_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -218,6 +236,7 @@ future_get_mongoc_database_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -229,6 +248,7 @@ future_get_mongoc_gridfs_file_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -240,6 +260,7 @@ future_get_mongoc_gridfs_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -251,6 +272,7 @@ future_get_mongoc_insert_flags_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -262,6 +284,7 @@ future_get_mongoc_iovec_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -273,6 +296,7 @@ future_get_mongoc_query_flags_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -284,6 +308,7 @@ future_get_mongoc_server_description_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -295,6 +320,7 @@ future_get_mongoc_ss_optype_t (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -306,6 +332,7 @@ future_get_mongoc_topology_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -317,6 +344,7 @@ future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -328,6 +356,7 @@ future_get_const_mongoc_read_prefs_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
@@ -339,6 +368,7 @@ future_get_const_mongoc_write_concern_ptr (future_t *future)
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
    abort ();
 }
 
