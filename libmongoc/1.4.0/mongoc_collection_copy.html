@@ -29,7 +29,7 @@ mongoc_collection_copy (mongoc_collection_t *collection);</pre></div></div></div
 <div class="hgroup"><h2 class="title"><span class="title">Description</span></h2></div>
 <div class="region"><div class="contents">
 <p class="p">Performs a deep copy of the <span class="code">collection</span> struct and its configuration. Useful if you intend to call <span class="code"><a href="mongoc_collection_set_write_concern.html" title="mongoc_collection_set_write_concern()">mongoc_collection_set_write_concern</a></span>, <span class="code"><a href="mongoc_collection_set_read_prefs.html" title="mongoc_collection_set_read_prefs()">mongoc_collection_set_read_prefs</a></span>, or <span class="code"><a href="mongoc_collection_set_read_concern.html" title="mongoc_collection_set_read_concern()">mongoc_collection_set_read_concern</a></span>, and want to preserve an unaltered copy of the struct.</p>
-<p class="p">This function does <span class="em">not</span> copy the contents of the collection on the MongoDB server; use the <span class="link"><a href="common-task-examples.html#clone-collection" title="common-task-examples#clone-collection"><span class="code">cloneCollection</span> command</a></span> for that purpose.</p>
+<p class="p">This function does <span class="em">not</span> copy the contents of the collection on the MongoDB server; use the <span class="link"><a href="mongoc-common-task-examples.html#clone-collection" title="common-task-examples#clone-collection"><span class="code">cloneCollection</span> command</a></span> for that purpose.</p>
 </div></div>
 </div></div>
 <div id="return" class="sect"><div class="inner">
