@@ -50,7 +50,7 @@ mongoc_collection_validate (mongoc_collection_t *collection,
   <section id="return">
     <title>Returns</title>
     <p>true if successful, otherwise false and error is set.</p>
-    <p><code>reply</code> is always initialized if it's not <code>NULL</code> and must be destroyed with <code xref="bson:bson_destroy()">bson_destroy()</code>.</p>
+    <p><code>reply</code> is always initialized if it's not <code>NULL</code> and must be destroyed with <code xref="bson:bson_destroy">bson_destroy()</code>.</p>
   </section>
 
 </page>

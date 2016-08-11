@@ -28,7 +28,7 @@ mongoc_collection_copy (mongoc_collection_t *collection);
   <section id="description">
     <title>Description</title>
     <p>Performs a deep copy of the <code>collection</code> struct and its configuration. Useful if you intend to call <code xref="mongoc_collection_set_write_concern">mongoc_collection_set_write_concern</code>, <code xref="mongoc_collection_set_read_prefs">mongoc_collection_set_read_prefs</code>, or <code xref="mongoc_collection_set_read_concern">mongoc_collection_set_read_concern</code>, and want to preserve an unaltered copy of the struct.</p>
-    <p>This function does <em>not</em> copy the contents of the collection on the MongoDB server; use the <link xref="common-task-examples#clone-collection"><code>cloneCollection</code> command</link> for that purpose.</p>
+    <p>This function does <em>not</em> copy the contents of the collection on the MongoDB server; use the <link xref="mongoc-common-task-examples#clone-collection"><code>cloneCollection</code> command</link> for that purpose.</p>
   </section>
 
   <section id="return">
