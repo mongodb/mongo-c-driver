@@ -1,0 +1,137 @@
+mongoc_index_opt_get_default(3)
+===============================
+
+
+NAME
+----
+mongoc_index_opt_get_default - return a pointer to the default mongoc index
+options.
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+typedef struct
+{
+   bool   background;
+   bool   unique;
+   const char   *name;
+   bool   drop_dups;
+   bool   sparse;
+   bson_int32_t  expire_after_seconds;
+   bson_int32_t  v;
+   const bson_t *weights;
+   const char   *default_language;
+   const char   *language_override;
+   void         *padding[8];
+} mongoc_index_opt_t;
+
+const mongoc_index_opt_t *
+mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
+
+void
+mongoc_index_opt_init (mongoc_index_opt_t *opt);
+-----------------------
+
+
+
+DESCRIPTION
+-----------
+The _mongoc_index_opt_get_default()_ function shall return a _const_ pointer to
+the default index creation options.
+
+The _mongoc_index_opt_init()_ function is an initializer that sets 'opt' to the
+default index options.
+
+The recommended work flow is to stack allocate a _mongoc_index_opt_t_,
+initialize it with _mongoc_index_opt_init()_ and then set what fields are
+interesting or necessary.
+
+RETURN VALUE
+------------
+The _mongoc_index_opt_get_default()_ function returns a _const_ pointer to the
+default index creation options.
+
+_mongoc_index_opt_init()_ has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+INDEX OPTIONS
+-------------
+
+background::
+   Optional. Builds the index in the background so that building an index does
+   not block other database activities. Specify true to build in the
+   background. The default value is false.
+
+unique::
+   Optional. Creates a unique index so that the collection will not accept
+   insertion of documents where the index key or keys match an existing value
+   in the index. Specify true to create a unique index. The default value is
+   false. This option applies only to ascending/descending indexes.
+
+name::
+   Optional. The name of the index. If unspecified, MongoDB generates an index
+   name by concatenating the names of the indexed fields and the sort order.
+
+dropDups::
+   Optional. Creates a unique index on a field that may have duplicates.
+   MongoDB indexes only the first occurrence of a key and removes all documents
+   from the collection that contain subsequent occurrences of that key. Specify
+   true to create unique index. The default value is false. This option applies
+   only to scalar indexes.
+
+sparse::
+   Optional. If true, the index only references documents with the specified
+   field. These indexes use less space but behave differently in some
+   situations (particularly sorts). The default value is false. This applies
+   only to ascending/descending indexes.
+
+expireAfterSeconds::
+   Optional. Specifies a value, in seconds, as a TTL to control how long
+   MongoDB retains documents in this collection. See Expire Data from
+   Collections by Setting TTL for more information on this functionality. This
+   applies only to TTL indexes.
+
+v::
+   version  Optional. The index version number. The default index version
+   depends on the version of mongod running when creating the index. Before
+   version 2.0, the this value was 0; versions 2.0 and later use version 1,
+   which provides a smaller and faster index format. Specify a different index
+   version only in unusual situations.
+
+weights::
+   Optional. For text indexes, the significance of the field relative to the
+   other indexed fields. The document contains field and weight pairs. The
+   weight is a number ranging from 1 to 99,999 and denotes the significance of
+   the field relative to the other indexed fields in terms of the score. You
+   can specify weights for some or all the indexed fields. See Control Search
+   Results with Weights to adjust the scores. The default value is 1. This
+   applies to text indexes only.
+
+default_language::
+   Optional. For a text index, the language that determines the list of stop
+   words and the rules for the stemmer and tokenizer. See Text Search Languages
+   for the available languages and Specify a Language for Text Index for more
+      information and examples. The default value is english. This applies to
+      text indexes only.
+
+language_override::
+   Optional. For a text index, specify the name of the field in the document
+   that contains, for that document, the language to override the default
+   language. The default value is language.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection[7]
+http://docs.mongodb.org/manual/reference/method/db.collection.ensureIndex/
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

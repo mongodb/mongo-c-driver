@@ -1,0 +1,17 @@
+linkmongoc:mongoc[7] +
+linkmongoc:mongoc_client[7] +
+linkmongoc:mongoc_client_pool[7] +
+linkmongoc:mongoc_collection[7] +
+linkmongoc:mongoc_cursor[7] +
+linkmongoc:mongoc_database[7] +
+linkmongoc:mongoc_gridfs[7] +
+linkmongoc:mongoc_gridfs_file[7] +
+linkmongoc:mongoc_gridfs_file_list[7] +
+linkmongoc:mongoc_read_prefs[7] +
+linkmongoc:mongoc_ssl[7] +
+linkmongoc:mongoc_stream[7] +
+linkmongoc:mongoc_stream_file[7] +
+linkmongoc:mongoc_stream_socket[7] +
+linkmongoc:mongoc_socket[7] +
+linkmongoc:mongoc_uri[7] +
+linkmongoc:mongoc_write_concern[7] +

@@ -1,0 +1,43 @@
+mongoc_cursor_more(3)
+=====================
+
+
+NAME
+----
+mongoc_cursor_more - if there is more data to be read from a cursor
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_cursor_more (mongoc_cursor_t *cursor);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_cursor_more()_ function shall indicate if the 'cursor' has more
+data to be read.
+
+
+RETURN VALUE
+------------
+The _mongoc_cursor_more()_ function returns true if there is more data to be
+read from the cursor.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_cursor[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

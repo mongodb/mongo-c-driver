@@ -1,0 +1,44 @@
+mongoc_collection_rename(3)
+===========================
+
+
+NAME
+----
+mongoc_collection_rename - rename a MongoDB collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool mongoc_collection_rename (mongoc_collection_t *collection,
+                               const char          *new_db,
+                               const char          *new_name,
+                               bool                 drop_target_before_rename,
+                               bson_error_t        *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+
+The _mongoc_collection_rename()_ function is a helper to rename an
+existing collection on the MongoDB server.
+
+_new_db_ is the name of the new database to place the collection within.
+
+_new_name_ is the name of the new collection within _new_db_.
+
+If _drop_target_before_rename_ is true, than any collection matching
+_new_name_ will be dropped before renaming the collection.
+
+
+RETURN VALUE
+------------
+true if the command executed successfully.
+false if the command failed and _error_ is set.
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.

@@ -1,0 +1,48 @@
+mongoc_gridfs_drop(3)
+=====================
+
+
+NAME
+----
+mongoc_gridfs_drop - Drop a gridfs
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
+                    bson_error_t    *error);
+
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_drop()_ function requests that a 'gridfs' be dropped,
+including all files associated with the 'gridfs'.
+
+Make sure this is really what you want!
+
+error:: an optional error pointer to store any error data
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_drop()_ function returns true if the gridfs was successfully
+dropped.  In the event of an error it returns false an 'error' is set.
+
+ERRORS
+------
+Errors are returned through 'error' and may vary based on the server version.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

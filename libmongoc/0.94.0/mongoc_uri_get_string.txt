@@ -1,0 +1,56 @@
+mongoc_uri_get_hosts(3)
+=======================
+
+
+NAME
+----
+mongoc_uri_get_hosts, mongoc_uri_get_database, mongoc_uri_get_options,
+mongoc_uri_get_password, mongoc_uri_get_read_prefs,
+mongoc_uri_get_replica_set, mongoc_uri_get_string, mongoc_uri_get_username,
+mongoc_uri_get_auth_source, mongoc_uri_get_auth_mechanism,
+mongoc_uri_get_replica_set, mongoc_uri_get_ssl - access various elements of the uri
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+const mongoc_host_list_t *mongoc_uri_get_hosts          (const mongoc_uri_t *);
+const char               *mongoc_uri_get_database       (const mongoc_uri_t *);
+const bson_t             *mongoc_uri_get_options        (const mongoc_uri_t *);
+const char               *mongoc_uri_get_password       (const mongoc_uri_t *);
+const bson_t             *mongoc_uri_get_read_prefs     (const mongoc_uri_t *);
+const char               *mongoc_uri_get_replica_set    (const mongoc_uri_t *);
+const char               *mongoc_uri_get_string         (const mongoc_uri_t *);
+const char               *mongoc_uri_get_username       (const mongoc_uri_t *);
+const char               *mongoc_uri_get_auth_source    (const mongoc_uri_t *);
+const char               *mongoc_uri_get_auth_mechanism (const mongoc_uri_t *);
+const char               *mongoc_uri_get_replica_set    (const mongoc_uri_t *);
+bool                      mongoc_uri_get_ssl            (const mongoc_uri_t *);
+const mongoc_write_concern_t *
+                          mongoc_uri_get_write_concern  (const mongoc_uri_t *);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_uri_get_*()_ functions shall return values from the uri.
+
+RETURN VALUE
+------------
+The _mongoc_uri_get_*()_ functions returns appropriate read only types.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_uri[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

@@ -1,0 +1,71 @@
+mongoc_gridfs_create_file(3)
+============================
+
+
+NAME
+----
+mongoc_gridfs_create_file, mongoc_gridfs_create_file_from_stream - create a new gridfs file
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+typedef struct _mongoc_gridfs_file_opt
+{
+   const char   *md5;
+   const char   *filename;
+   const char   *content_type;
+   const bson_t *aliases;
+   const bson_t *metadata;
+   bson_uint32_t chunk_size;
+} mongoc_gridfs_file_opt_t;
+
+mongoc_gridfs_file_t *
+mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
+                                       mongoc_stream_t          *stream,
+                                       mongoc_gridfs_file_opt_t *opt);
+
+mongoc_gridfs_file_t *
+mongoc_gridfs_create_file (mongoc_gridfs_t          *gridfs,
+                           mongoc_gridfs_file_opt_t *opt);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_create_file()_ function shall create a new
+linkmongoc:mongoc_gridfs_file[7].
+
+The _mongoc_gridfs_create_file_from_stream()_ function shall create a new
+linkmongoc:mongoc_gridfs_file[7] and fill it with the contents of 'stream'.
+Note that this function will read from 'stream' until end of file, making it
+best suited for file backed streams.
+
+The 'opt' parameter allows for the setting of optional fields.
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_create_file*()_ functions return a new
+linkmongoc:mongoc_gridfs_file[7].
+
+In the event of an error, NULL is returned.
+
+ERRORS
+------
+No errors are defined for _mongoc_gridfs_create_file()_.
+
+If _mongoc_gridfs_create_file_from_stream()_ errors, the error will be
+available in _errno_ and will describe the IO error in the underlying stream.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs[7]
+linkmongoc:mongoc_gridfs_file[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

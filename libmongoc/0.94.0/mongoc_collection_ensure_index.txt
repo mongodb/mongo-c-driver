@@ -1,0 +1,77 @@
+mongoc_collection_ensure_index(3)
+=================================
+
+
+NAME
+----
+mongoc_collection_create_index, mongoc_collection_ensure_index - Vivify an index on a collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_collection_create_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error);
+
+bool
+mongoc_collection_ensure_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+
+mongoc_collection_create_index
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The _mongoc_collection_create_index()_ function will request the creation of
+a new index.
+
+This function will use the _createIndexes_ command if available on the
+MongoDB server. If not, it will fallback to inserting into system.indexes
+for compatibility with MongoDB <= 2.4.
+
+See linkmongoc:mongoc_index_opt[7] for options on creating indexes.
+
+
+mongoc_collection_ensure_index
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This function is deprecated and should not be used in new code. Use
+_mongoc_collection_create_index()_ instead.
+
+The _mongoc_collection_ensure_index()_ function requests that an index on
+'collection' be created if one does not already exist.
+
+If an index with the same 'keys', or 'name' if provided, already exists, this
+function does nothing.
+
+error:: an optional error pointer to store any error data
+
+RETURN VALUE
+------------
+The _mongoc_collection_ensure_index()_ function returns true if the index was
+successfully ensured.  In the event of an error it returns false an 'error' is
+set.
+
+ERRORS
+------
+Errors are returned through 'error' and may vary based on the server version.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

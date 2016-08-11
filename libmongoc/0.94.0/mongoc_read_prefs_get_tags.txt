@@ -1,0 +1,51 @@
+mongoc_read_prefs_get_mode(3)
+=============================
+
+
+NAME
+----
+mongoc_read_prefs_get_mode - access various elements of the read_prefs
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_read_mode_t   mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs);
+void                 mongoc_read_prefs_set_mode (mongoc_read_prefs_t       *read_prefs,
+                                                 mongoc_read_mode_t         mode);
+const bson_t        *mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs);
+void                 mongoc_read_prefs_set_tags (mongoc_read_prefs_t       *read_prefs,
+                                                 const bson_t              *tags);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_read_prefs_get()_ functions shall return values from the read_prefs.
+
+The _mongoc_read_prefs_set()_ functions set attributes from the read_prefs.
+
+'mongoc_read_prefs_*et_tags()' sets and gets a bson array of tags (I.e.
+keyed from 0..n).
+
+RETURN VALUE
+------------
+The _mongoc_read_prefs_get()_ functions returns appropriate read only types.
+
+The _mongoc_read_prefs_set()_ functions set their attribute.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_prefs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

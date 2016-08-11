@@ -1,0 +1,52 @@
+mongoc_stream_tls_do_handshake(3)
+=================================
+
+
+NAME
+----
+mongoc_stream_tls_do_handshake - Execute an ssl handshake
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
+                                int32_t          timeout_msec);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_tls_do_handshake()_ function shall execute an SSL handshake.
+
+timeout_msec::
+   The timeout, in milliseconds, for the handshake
+
+RETURN VALUE
+------------
+The _mongoc_stream_tls_do_handshake()_ function returns true if the handshake
+was successful.  If false, errno or openssl errors may be set.
+
+ERRORS
+------
+
+ETIMEDOUT::
+   The handshake timedout
+
+SSL errors are accessed through OpenSSL's API.  See
+linkmongoc:SSL_get_error[3].
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_ssl[7]
+linkmongoc:SSL_get_error[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

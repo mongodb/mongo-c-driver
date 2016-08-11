@@ -1,0 +1,54 @@
+mongoc_database_has_collection(3)
+=================================
+
+
+NAME
+----
+mongoc_database_has_collection - Checks if a collection exists in a database
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_database_has_collection (mongoc_database_t *database,
+                                const char        *name,
+                                bson_error_t      *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_database_has_collection()_ function checks if a collection exists
+with the given 'database'.
+
+name:: the name of the collection to check
+
+error:: an optional error pointer to store any error data
+
+
+RETURN VALUE
+------------
+The _mongoc_database_has_collection()_ function returns true if the
+'collection' exists within the given 'database'.  It returns false if either
+the collection does not exist, or their was an error communicating with the
+server.
+
+
+ERRORS
+------
+Errors are returned through 'error' and may vary based on the server version.
+Error must be checked to differentiate between errors and the lack of
+collection presence.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_database[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

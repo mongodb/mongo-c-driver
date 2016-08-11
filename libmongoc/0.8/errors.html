@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Error Reporting &mdash; MongoDB C Driver 0.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MongoDB C Driver 0.8 documentation" href="index.html" />
+    <link rel="prev" title="Write Concern" href="write_concern.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="write_concern.html" title="Write Concern"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver 0.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="error-reporting">
+<h1>Error Reporting<a class="headerlink" href="#error-reporting" title="Permalink to this headline">¶</a></h1>
+<p>The MongoDB C driver reports errors from three sources:</p>
+<ul class="simple">
+<li>The operating system</li>
+<li>The MongoDB server</li>
+<li>The driver itself &#8211; typically user input errors</li>
+</ul>
+<p>The driver&#8217;s API is structured such that nearly all functions
+return either <cite>MONGO_OK</cite> or <cite>MONGO_ERROR</cite>. When a function returns
+<cite>MONGO_ERROR</cite>, you may examine the <cite>mongo</cite> object to see why the
+error has occurred.</p>
+<div class="section" id="operating-system-errors">
+<h2>Operating system errors<a class="headerlink" href="#operating-system-errors" title="Permalink to this headline">¶</a></h2>
+<p>A good example of an operating system error is a connection failure.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">mongo</span> <span class="n">conn</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+<span class="k">if</span> <span class="p">(</span> <span class="n">mongo_client</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="s">&quot;foo.example.com&quot;</span><span class="p">,</span> <span class="mi">27017</span> <span class="p">)</span> <span class="o">==</span> <span class="n">MONGO_ERROR</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span> <span class="s">&quot;mongo_error_t: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">err</span> <span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span> <span class="s">&quot;errno (or WSAGetLastError() on Windows: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">errcode</span> <span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span> <span class="s">&quot;Error string: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">errstr</span> <span class="p">);</span>
+    <span class="n">exit</span><span class="p">(</span> <span class="mi">1</span> <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>First, we print the <cite>mongo_error_t</cite> to get the general error type. Consult the <a class="reference external" href="api/mongo_8h.html#a5e6f76bd796c89973ffb463e676237bb">mongo_error_t
+definition</a> to interpret this.</p>
+<p>Next, we print the OS-level error code. On POSIX-compliant systems, this will be the value of
+<a class="reference external" href="http://pubs.opengroup.org/onlinepubs/009695399/functions/errno.html">errno</a>;
+on Windows, it&#8217;s the value of <a class="reference external" href="http://msdn.microsoft.com/en-us/library/ms898741.aspx">WSAGetLastError()</a>.</p>
+<p>Finally, we print the error string, which gives is a few more details. This string may be
+the OS-level translation of the error code (e.g., POSIX&#8217;s
+<a class="reference external" href="http://pubs.opengroup.org/onlinepubs/009604499/functions/strerror.html">strerror()</a>), or it may be
+a string generated by the driver itself which better describes the failure.</p>
+</div>
+<div class="section" id="mongodb-errors">
+<h2>MongoDB errors<a class="headerlink" href="#mongodb-errors" title="Permalink to this headline">¶</a></h2>
+<p>MongoDB itself produces errors that may be returned to the client after any query
+or call to the <cite>getlasterror</cite> command. The code and strings for these errors
+are stored in the <cite>mongo</cite> object&#8217;s <cite>lasterrcode</cite> and <cite>lasterrstring</cite>, respectively.
+We can force this sort of error by trying to run an invalid command:</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">mongo</span> <span class="n">conn</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="kt">int</span> <span class="n">res</span><span class="p">;</span>
+
+<span class="k">if</span><span class="p">(</span> <span class="n">mongo_client</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="s">&quot;foo.example.com&quot;</span><span class="p">,</span> <span class="mi">27017</span> <span class="p">)</span> <span class="o">==</span> <span class="n">MONGO_ERROR</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="n">exit</span><span class="p">(</span> <span class="mi">1</span> <span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">if</span><span class="p">(</span> <span class="n">mongo_simple_int_command</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="s">&quot;admin&quot;</span><span class="p">,</span> <span class="s">&quot;badCommand&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">out</span> <span class="p">)</span> <span class="o">==</span> <span class="n">MONGO_ERROR</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Last error code: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">lasterrcode</span> <span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Last error string: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">lasterrstr</span> <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="clearing-errors">
+<h2>Clearing errors<a class="headerlink" href="#clearing-errors" title="Permalink to this headline">¶</a></h2>
+<p>To reset errors on the <cite>mongo</cite> object, run the <cite>mongo_clear_errors</cite> function:</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">mongo_clear_errors</span><span class="p">(</span> <span class="n">conn</span> <span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Error Reporting</a><ul>
+<li><a class="reference internal" href="#operating-system-errors">Operating system errors</a></li>
+<li><a class="reference internal" href="#mongodb-errors">MongoDB errors</a></li>
+<li><a class="reference internal" href="#clearing-errors">Clearing errors</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="write_concern.html"
+                        title="previous chapter">Write Concern</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/errors.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="write_concern.html" title="Write Concern"
+             >previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver 0.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, 10gen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1-xgen1-.
+    </div>
+  </body>
+</html>

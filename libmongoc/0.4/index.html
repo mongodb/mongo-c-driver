@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>MongoDB C Driver Documentation &mdash; MongoDB C Driver v0.4 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MongoDB C Driver v0.4 documentation" href="#" />
+    <link rel="next" title="MongoDB C Driver Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tutorial.html" title="MongoDB C Driver Tutorial"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">MongoDB C Driver v0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mongodb-c-driver-documentation">
+<h1>MongoDB C Driver Documentation<a class="headerlink" href="#mongodb-c-driver-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver is a 10gen-supported driver for MongoDB.
+It&#8217;s written in pure C. The goal is to be super strict for ultimate
+portability, no dependencies, and generic embeddability.</p>
+<p>The driver is still considered alpha but is undergoing active
+development. Support for replica sets was just added in v0.3.1.
+The API was completely revamped in v0.4.</p>
+<dl class="docutils">
+<dt><a class="reference internal" href="tutorial.html"><em>MongoDB C Driver Tutorial</em></a></dt>
+<dd>An overview of the driver&#8217;s API.</dd>
+<dt><a class="reference internal" href="building.html"><em>Building the MongoDB C Driver</em></a></dt>
+<dd>How to build the driver from source.</dd>
+<dt><a class="reference internal" href="bson.html"><em>BSON</em></a></dt>
+<dd>How to work with BSON objects.</dd>
+<dt><a class="reference internal" href="connections.html"><em>Connections</em></a></dt>
+<dd>How connect to single nodes and to replica sets.</dd>
+<dt><a class="reference external" href="api/index.html">API Docs</a></dt>
+<dd>Doxygen-generated API docs.</dd>
+<dt><a class="reference external" href="http://github.com/mongodb/mongo-c-driver">Source code</a></dt>
+<dd>The source code is hosted on GitHub.</dd>
+</dl>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">MongoDB C Driver Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#c-api">C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#connecting">Connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#building-the-sample-program">Building the sample program</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#connecting-to-a-replica-set">Connecting to a replica set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#bson">BSON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#inserting-a-single-document">Inserting a single document</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#inserting-a-batch-of-documents">Inserting a batch of documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#simple-queries">Simple Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#complex-queries">Complex Queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#updating-documents">Updating documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#indexing">Indexing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#further-reading">Further Reading</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building the MongoDB C Driver</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="building.html#building-with-scons">Building with SCons:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html#platform-specific-features">Platform-specific features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html#compile-options-with-custom-defines">Compile options with custom defines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="building.html#test-suite">Test suite</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bson.html">BSON</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#libraries">Libraries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#using-bson-objects">Using BSON objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#error-handling">Error handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#reading-bson-objects">Reading BSON objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#reading-sub-objects-and-arrays">Reading sub-objects and arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bson.html#getting-a-raw-bson-pointer">Getting a Raw BSON Pointer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="connections.html">Connections</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="connections.html#basic-connections">Basic connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connections.html#replica-set-connections">Replica set connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connections.html#timeouts">Timeouts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="connections.html#io-errors-and-reconnecting">IO Errors and Reconnecting</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">MongoDB C Driver Documentation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="next chapter">MongoDB C Driver Tutorial</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tutorial.html" title="MongoDB C Driver Tutorial"
+             >next</a> |</li>
+        <li><a href="#">MongoDB C Driver v0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, 10gen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

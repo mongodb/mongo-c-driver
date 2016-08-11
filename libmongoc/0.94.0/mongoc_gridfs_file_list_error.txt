@@ -1,0 +1,43 @@
+mongoc_gridfs_file_list_error(3)
+================================
+
+
+NAME
+----
+mongoc_gridfs_file_list_error - get errors on a mongoc gridfs file list
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
+                               bson_error_t              *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_file_list_error()_ function shall set 'error' with the value
+of the last error on the 'list'.
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_file_list_error()_ function returns true if there is an
+error on the gridfs file list.  In the absence of an error, it returns false.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs_file_list[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

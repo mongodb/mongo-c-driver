@@ -1,0 +1,68 @@
+mongoc_client_get_collection(3)
+===============================
+
+
+NAME
+----
+mongoc_client_get_collection, mongoc_client_get_database, mongoc_client_get_gridfs - get handles on high level mongoc client objects
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_database_t * mongoc_client_get_database (
+   mongoc_client_t *client,
+   const char      *name);
+
+mongoc_gridfs_t * mongoc_client_get_gridfs (
+   mongoc_client_t *client,
+   const char      *db,
+   const char      *prefix,
+   bson_error_t    *error);
+
+mongoc_collection_t * mongoc_client_get_collection (
+   mongoc_client_t *client,
+   const char      *db,
+   const char      *collection);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_client_get_database()_ function shall create a new
+linkmongoc:mongoc_database[7].  'name' is the string name of the database.
+
+The _mongoc_client_get_collection()_ function shall create a new
+linkmongoc:mongoc_collection[7].  Note that the 'db' and 'collection'
+parameters are both string names rather than objects.
+
+The _mongoc_client_get_gridfs()_ function shall create a new
+linkmongoc:mongoc_gridfs[7].  The 'db' parameter is the name of the database
+which the gridfs instance should exist in.  The 'prefix' parameter corresponds
+to the gridfs collection namespacing.
+
+RETURN VALUE
+------------
+The _mongoc_client_get_*()_ functions return a pointer to their respective
+objects.  In the case of an error, they return NULL.
+
+ERRORS
+------
+get_database and get_collection are both lazy, and as such do not return any
+errors.  get_gridfs ensures relevant indexes, and as such returns errors as
+linkmongoc:mongoc_collection_ensure_index[3].
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_collection[7]
+linkmongoc:mongoc_database[7]
+linkmongoc:mongoc_gridfs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

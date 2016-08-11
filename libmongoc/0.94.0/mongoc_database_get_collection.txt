@@ -1,0 +1,33 @@
+mongoc_database_get_collection(3)
+=================================
+
+
+NAME
+----
+
+mongoc_database_get_collection - Fetch a collection within a database
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_collection_t *
+mongoc_database_get_collection (mongoc_database_t *database,
+                                const char        *name);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_database_get_collection()_ function shall return a newly
+allocated mongoc_collection_t for the collection named by _name_.
+
+RETURN VALUE
+------------
+A _mongoc_collection_t_ that should be freed with mongoc_collection_destroy().
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.

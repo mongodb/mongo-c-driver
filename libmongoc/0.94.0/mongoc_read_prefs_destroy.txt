@@ -1,0 +1,40 @@
+mongoc_read_prefs_destroy(3)
+============================
+
+
+NAME
+----
+mongoc_read_prefs_destroy - destroy a mongoc read_prefs
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_read_prefs_destroy()_ function shall destroy a linkmongoc:mongoc_read_prefs[7].
+
+RETURN VALUE
+------------
+The _mongoc_read_prefs_destroy()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_prefs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

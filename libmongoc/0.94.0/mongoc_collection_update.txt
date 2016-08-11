@@ -1,0 +1,63 @@
+mongoc_collection_update(3)
+===========================
+
+
+NAME
+----
+mongoc_collection_update - Update documents in a collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_collection_update (mongoc_collection_t          *collection,
+                          mongoc_update_flags_t         flags,
+                          const bson_t                 *selector,
+                          const bson_t                 *update,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_update()_ function shall update documents in a
+'collection' that match 'selector'.
+
+By default, updates only update one document.  Set _MONGOC_UPDATE_MULTI_UPDATE_
+to change all matching documents.
+
+FLAGS
+~~~~~
+
+MONGOC_UPDATE_NONE::
+   No update flags specified.
+
+MONGOC_UPDATE_UPSERT::
+   Perform an upsert.
+
+MONGOC_UPDATE_MULTI_UPDATE::
+   Continue updating after first match.
+
+RETURN VALUE
+------------
+The _mongoc_collection_update()_ function returns a true if successful.
+
+ERRORS
+------
+errors are returned through 'error'
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_write_concern[7]
+http://docs.mongodb.org/manual/reference/operator/query/
+http://docs.mongodb.org/manual/reference/operator/update/
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

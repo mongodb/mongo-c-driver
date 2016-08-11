@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Building the MongoDB C Driver &mdash; MongoDB C Driver v0.4 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MongoDB C Driver v0.4 documentation" href="index.html" />
+    <link rel="next" title="BSON" href="bson.html" />
+    <link rel="prev" title="MongoDB C Driver Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="bson.html" title="BSON"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="MongoDB C Driver Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver v0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="building-the-mongodb-c-driver">
+<h1>Building the MongoDB C Driver<a class="headerlink" href="#building-the-mongodb-c-driver" title="Permalink to this headline">¶</a></h1>
+<p>First checkout the version you want to build. <em>Always build from a particular tag, since HEAD may be
+a work in progress.</em> For example, to build version 0.3, run:</p>
+<div class="highlight-bash"><div class="highlight"><pre>git checkout v0.4
+</pre></div>
+</div>
+<p>Then follow the build steps below.</p>
+<div class="section" id="building-with-scons">
+<h2>Building with SCons:<a class="headerlink" href="#building-with-scons" title="Permalink to this headline">¶</a></h2>
+<p>This driver builds using the Python build utility, <a class="reference external" href="http://www.scons.org/">SCons</a>.
+Make sure you&#8217;ve installed SCons, and then from the project root, enter:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons
+</pre></div>
+</div>
+<p>This will build static and dynamic libraries for both <tt class="docutils literal"><span class="pre">BSON</span></tt> and for the
+the driver as a complete package. It&#8217;s recommended that you build in C99 mode
+with optimizations enabled:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons --c99
+</pre></div>
+</div>
+<p>Once you&#8217;re built the libraries, you can compile a program with <tt class="docutils literal"><span class="pre">gcc</span></tt> like so:</p>
+<div class="highlight-bash"><div class="highlight"><pre>gcc --std<span class="o">=</span>c99 -Isrc src/*.c example.c
+</pre></div>
+</div>
+</div>
+<div class="section" id="platform-specific-features">
+<h2>Platform-specific features<a class="headerlink" href="#platform-specific-features" title="Permalink to this headline">¶</a></h2>
+<p>Certain behaviors, such as timeouts, have platform-specific implementations. All
+that interacts with the OS and platform is located in <tt class="docutils literal"><span class="pre">platform/net.c</span></tt>.
+The default <tt class="docutils literal"><span class="pre">net.c</span></tt> is written to be as platform-generic as possible; it lacks
+support for timeouts, for example.
+However, the file <tt class="docutils literal"><span class="pre">platform/linux/net.c</span></tt> does implement timeouts
+for Linux-based systems. You can compile the driver with this implementation like so:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons --use-platform<span class="o">=</span>LINUX
+</pre></div>
+</div>
+<p>You can write your own <tt class="docutils literal"><span class="pre">net.c</span></tt> to support platform-specific features by implementing
+the interface defined in <tt class="docutils literal"><span class="pre">net.h</span></tt>. Then name the files <tt class="docutils literal"><span class="pre">platform/custom/net.h</span></tt> and
+<tt class="docutils literal"><span class="pre">platform/custom.net.c</span></tt> and compile thusly:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons --use-platform<span class="o">=</span>CUSTOM
+</pre></div>
+</div>
+</div>
+<div class="section" id="compile-options-with-custom-defines">
+<h2>Compile options with custom defines<a class="headerlink" href="#compile-options-with-custom-defines" title="Permalink to this headline">¶</a></h2>
+<p>You can take advantage of special compile options by defining the following
+constants at compile time:</p>
+<p>For big-endian support, define:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">MONGO_BIG_ENDIAN</span></tt></li>
+</ul>
+<p>If your compiler has a plain <tt class="docutils literal"><span class="pre">bool</span></tt> type, define:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">MONGO_HAVE_BOOL</span></tt></li>
+</ul>
+<p>Alternatively, if you must include <tt class="docutils literal"><span class="pre">stdbool.h</span></tt> to get <tt class="docutils literal"><span class="pre">bool</span></tt>, define:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">MONGO_HAVE_STDBOOL</span></tt></li>
+</ul>
+<p>If you&#8217;re not using C99, then you must choose your 64-bit integer type by
+defining one of these:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">MONGO_HAVE_STDINT</span></tt> - Define this if you have <tt class="docutils literal"><span class="pre">&lt;stdint.h&gt;</span></tt> for int64_t.</li>
+<li><tt class="docutils literal"><span class="pre">MONGO_HAVE_UNISTD</span></tt> - Define this if you have <tt class="docutils literal"><span class="pre">&lt;unistd.h&gt;</span></tt> for int64_t.</li>
+<li><tt class="docutils literal"><span class="pre">MONGO_USE__INT64</span></tt>  - Define this if <tt class="docutils literal"><span class="pre">__int64</span></tt> is your compiler&#8217;s 64bit type (MSVC).</li>
+<li><tt class="docutils literal"><span class="pre">MONGO_USE_LONG_LONG_INT</span></tt> - Define this if <tt class="docutils literal"><span class="pre">long</span> <span class="pre">long</span> <span class="pre">int</span></tt> is your compiler&#8217;s 64-bit type.</li>
+</ul>
+</div>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>The driver itself has no dependencies, but one of the tests shows how to create a JSON-to-BSON
+converter. For that test to run, you&#8217;ll need <a class="reference external" href="http://oss.metaparadigm.com/json-c/">JSON-C</a>.</p>
+</div>
+<div class="section" id="test-suite">
+<h2>Test suite<a class="headerlink" href="#test-suite" title="Permalink to this headline">¶</a></h2>
+<p>Make sure that you&#8217;re running mongod on 127.0.0.1 on the default port (27017). The replica set
+test assumes a replica set with at least three nodes running at 127.0.0.1 and starting at port
+30000. Note that the driver does not recognize &#8216;localhost&#8217; as a valid host name.</p>
+<p>To compile and run the tests:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons <span class="nb">test</span>
+</pre></div>
+</div>
+<p>You may optionally specify a remote server:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons <span class="nb">test</span> --test-server<span class="o">=</span>123.4.5.67
+</pre></div>
+</div>
+<p>You may also specify an alternate starting port for the replica set members:</p>
+<div class="highlight-bash"><div class="highlight"><pre>scons <span class="nb">test</span> --test-server<span class="o">=</span>123.4.5.67 --seed-start-port<span class="o">=</span>40000
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Building the MongoDB C Driver</a><ul>
+<li><a class="reference internal" href="#building-with-scons">Building with SCons:</a></li>
+<li><a class="reference internal" href="#platform-specific-features">Platform-specific features</a></li>
+<li><a class="reference internal" href="#compile-options-with-custom-defines">Compile options with custom defines</a></li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#test-suite">Test suite</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tutorial.html"
+                        title="previous chapter">MongoDB C Driver Tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="bson.html"
+                        title="next chapter">BSON</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/building.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="bson.html" title="BSON"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="MongoDB C Driver Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver v0.4 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, 10gen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+mongoc_gridfs_file_list_destroy(3)
+==================================
+
+
+NAME
+----
+mongoc_gridfs_file_list_destroy - destroy a gridfs file list object
+
+
+SYNOPSIS
+--------
+[source,c]
+------------------------
+void
+mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
+------------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_file_list_destroy()_ function shall destroy the gridfs file
+list referenced by the 'list' argument and any resources associated with the
+gridfs file list.
+
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_file_list_destroy()_ function has no return value.
+
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs_file_list[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

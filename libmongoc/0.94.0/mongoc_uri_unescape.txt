@@ -1,0 +1,41 @@
+mongoc_uri_unescape(3)
+======================
+
+
+NAME
+----
+mongoc_uri_unescape - Escape an UTF-8 encoded string
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+char * mongoc_uri_unescape (const char *escaped_string);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_uri_unescape()_ function shall escape an UTF-8 encoded string
+containing URI escaped segments such as %20.  It is a programming error to call
+this function with a string that is not UTF-8 encoded.
+
+RETURN VALUE
+------------
+A newly allocated string that should be freed with bson_free().
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_uri[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

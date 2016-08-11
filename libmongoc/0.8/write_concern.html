@@ -1,0 +1,224 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Write Concern &mdash; MongoDB C Driver 0.8 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.8',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="MongoDB C Driver 0.8 documentation" href="index.html" />
+    <link rel="next" title="Error Reporting" href="errors.html" />
+    <link rel="prev" title="Connections" href="connections.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="errors.html" title="Error Reporting"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="connections.html" title="Connections"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver 0.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="write-concern">
+<h1>Write Concern<a class="headerlink" href="#write-concern" title="Permalink to this headline">¶</a></h1>
+<p>The <tt class="docutils literal"><span class="pre">mongo_client</span></tt> and <tt class="docutils literal"><span class="pre">mongo_replica_set_client</span></tt> functions set a default write concern
+at the top level specifying acknowledged writes.</p>
+<p>In addition to reporting write errors, write concern also allows you to ensure
+that your write are replicated to a particular number of servers to a set
+of servers tagged with a given value.</p>
+<p>Or for very-high write performance, write concern can specify writes without acknowledgment.
+This is recommended only for cases that can tolerate the potential loss of a few writes
+such as logging, analytics, etc.</p>
+<p>The old <tt class="docutils literal"><span class="pre">mongo_connect</span></tt> and <tt class="docutils literal"><span class="pre">mongo_replica_set_connect</span></tt> functions have a default write concern
+where writes are unacknowledged.
+They are deprecated and temporarily available for backward compatibility to smooth transition to
+the <tt class="docutils literal"><span class="pre">mongo_client</span></tt> and <tt class="docutils literal"><span class="pre">mongo_replica_set_client</span></tt> functions.</p>
+<div class="section" id="implementation-and-api">
+<h2>Implementation and API<a class="headerlink" href="#implementation-and-api" title="Permalink to this headline">¶</a></h2>
+<p>Write concern is implemented by appending a call to the <tt class="docutils literal"><span class="pre">getlasterror</span></tt>
+command after each write.  You can certainly do this manually, but nearly all of the drivers
+provide a write concern API for simplicty. To read about the options for <tt class="docutils literal"><span class="pre">getlasterror</span></tt>,
+and hence the options for write concern,
+<a class="reference external" href="http://www.mongodb.org/display/DOCS/getLastError+Command">see the MongoDB getlasterror docs</a>.</p>
+<p>The MongoDB C driver supports write concern on two levels. You can set the write
+concern on a <tt class="docutils literal"><span class="pre">mongo</span></tt> connection object, in which case that write concern level will
+be used for every write. You can also specify a write concern for any individual
+write operation (<tt class="docutils literal"><span class="pre">mongo_insert()</span></tt>, <tt class="docutils literal"><span class="pre">mongo_insert_batch()</span></tt>, <tt class="docutils literal"><span class="pre">mongo_update()</span></tt>,
+or <tt class="docutils literal"><span class="pre">mongo_remove</span></tt>). This will override any default write concern set on the
+connection level.</p>
+<p>Here are specific parameters, values, and meanings:</p>
+<blockquote>
+<div>w = -1           : errors ignored
+w = 0            : unacknowledged
+w = 1            : acknowledged
+w = 2            : replica acknowledged
+j = 1 (true)     : journaled
+fsync = 1 (true) : fsynced</div></blockquote>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><pre> #include &lt;mongo.h&gt;
+ #include &lt;stdio.h&gt;
+
+ #define ASSERT(x) \
+  do{ \
+      if(!(x)){ \
+          printf("\nFailed ASSERT [%s] (%d):\n     %s\n\n", __FILE__,  __LINE__,  #x); \
+          exit(1); \
+      }\
+  }while(0)
+
+ int main() {
+     mongo conn[1];
+     mongo_write_concern write_concern[1];
+     bson b[1];
+
+     if( mongo_client( conn, "127.0.0.1", 27017 ) == MONGO_ERROR ) {
+         printf( "Failed to connect!\n" );
+         exit(1);
+     }
+
+     mongo_cmd_drop_collection( conn, "test", "foo", NULL );
+
+     /* Initialize the write concern object.*/
+     mongo_write_concern_init( write_concern );
+     write_concern-&gt;w = 1;
+     mongo_write_concern_finish( write_concern );
+
+     bson_init( b );
+     bson_append_new_oid( b );
+     bson_finish( b );
+
+     ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_OK );
+
+     /* If we try to insert the same document again,
+        we'll get an error due to the unique index on _id.*/
+     ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_ERROR );
+     ASSERT( conn-&gt;err == MONGO_WRITE_ERROR );
+     printf( "Error message: %s\n", conn-&gt;lasterrstr );
+
+     /* Clear any stored errors.*/
+     mongo_clear_errors( conn );
+
+     /* We'll get the same error if we set a default write concern
+        on the connection object but don't set it on insert.*/
+     mongo_set_write_concern( conn, write_concern );
+     ASSERT( mongo_insert( conn, "test.foo", b, 0 ) == MONGO_ERROR );
+     ASSERT( conn-&gt;err == MONGO_WRITE_ERROR );
+     printf( "Error message: %s\n", conn-&gt;lasterrstr );
+
+     mongo_write_concern_destroy( write_concern );
+     bson_destroy( b );
+     mongo_destroy( conn );
+
+     return 0;
+}</pre>
+</div>
+</div>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>As you&#8217;ll see in the code sample, the process for creating a write concern object
+is to initialize it, manually set any write concern values (e.g., <tt class="docutils literal"><span class="pre">w</span></tt>, <tt class="docutils literal"><span class="pre">wtimeout</span></tt>
+for values of <tt class="docutils literal"><span class="pre">w</span></tt> greater than 1, <tt class="docutils literal"><span class="pre">j</span></tt>, etc.), and then call <tt class="docutils literal"><span class="pre">mongo_write_concern_finish()</span></tt>
+on it. This will effectively create the equivalent <tt class="docutils literal"><span class="pre">getlasterror</span></tt> command. Note you must call
+<tt class="docutils literal"><span class="pre">mongo_write_concern_destroy()</span></tt> when you&#8217;re finished with the write concern object.</p>
+<p>And for a longer example, see the
+<a class="reference external" href="https://github.com/mongodb/mongo-c-driver/blob/master/test/write_concern_test.c">C driver&#8217;s write concern tests</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Write Concern</a><ul>
+<li><a class="reference internal" href="#implementation-and-api">Implementation and API</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="connections.html"
+                        title="previous chapter">Connections</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="errors.html"
+                        title="next chapter">Error Reporting</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/write_concern.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="errors.html" title="Error Reporting"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="connections.html" title="Connections"
+             >previous</a> |</li>
+        <li><a href="index.html">MongoDB C Driver 0.8 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, 10gen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1-xgen1-.
+    </div>
+  </body>
+</html>

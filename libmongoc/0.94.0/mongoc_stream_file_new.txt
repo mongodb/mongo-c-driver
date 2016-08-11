@@ -1,0 +1,58 @@
+mongoc_stream_file_new(3)
+=========================
+
+
+NAME
+----
+mongoc_stream_file_new, mongoc_stream_file_new_for_path - create a new mongoc file stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_stream_t *mongoc_stream_file_new          (int              fd);
+mongoc_stream_t *mongoc_stream_file_new_for_path (const char      *path,
+                                                  int              flags,
+                                                  int              mode);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_file_new()_ function shall create a new 
+linkmongoc:mongoc_stream[7], taking ownership of the file-descriptor _fd_.
+
+fd::
+   The file descriptor to take ownership of.
+   fd will be closed when the stream is disposed.
+
+
+The _mongoc_stream_file_new_for_path()_ function shall create a new 
+linkmongoc:mongoc_stream[7], using the path, flags and mode provided.
+This calls _open()_ and the semantics are the same.
+
+
+RETURN VALUE
+------------
+The _mongoc_stream_file_new()_ and _mongoc_stream_file_new_for_path()_
+functions return a new linkmongoc:mongoc_stream[7].
+
+If there was a failure to open the file, NULL is returned and errno
+is set.
+
+
+ERRORS
+------
+errno is set if NULL is returned.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_stream_file[7]
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.

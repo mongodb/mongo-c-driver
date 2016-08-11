@@ -1,0 +1,78 @@
+mongoc_database(7)
+==================
+
+
+NAME
+----
+mongoc_database - MongoDB database abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+{
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+
+   client = mongoc_client_new (uri_string);
+   database = mongoc_client_get_database (client, "db_name");
+}
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_database_ provides access to a MongoDB database.  This handle is useful
+for actions against a particular database object.  It isn't a container for
+linkmongoc:mongoc_collection[7] structures.
+
+
+READ PREFERENCES & WRITE CONCERNS
+---------------------------------
+
+Read preferences and write concerns are inherited from the parent client.  They
+can be overridden by set_* commands if so desired.
+
+LIFECYCLE
+---------
+
+It is an error to call linkmongoc:mongoc_database_destroy[3] on a database that
+has operations pending. It is required that you release
+linkmongoc:mongoc_cursor[7] structures before calling
+linkmongoc:mongoc_database_destroy[3].
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_database_add_user[3]
+linkmongoc:mongoc_database_destroy[3]
+linkmongoc:mongoc_database_command[3]
+linkmongoc:mongoc_database_command_simple[3]
+linkmongoc:mongoc_database_drop[3]
+linkmongoc:mongoc_database_has_collection[3]
+linkmongoc:mongoc_database_get_collection[3]
+linkmongoc:mongoc_database_get_name[3]
+linkmongoc:mongoc_database_get_read_prefs[3]
+linkmongoc:mongoc_database_set_read_prefs[3]
+linkmongoc:mongoc_database_get_write_concern[3]
+linkmongoc:mongoc_database_set_write_concern[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_collection[7]
+linkmongoc:mongoc_database[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

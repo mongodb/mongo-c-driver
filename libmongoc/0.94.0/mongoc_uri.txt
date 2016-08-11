@@ -1,0 +1,224 @@
+mongoc_uri(7)
+=============
+
+
+NAME
+----
+mongoc_uri - MongoDB uri abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+mongoc_uri_t * uri;
+
+uri = mongoc_uri_new(uri_string);
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_uri_ provides an abstraction on top of the MongoDB connection uri
+format.  It provides standardized parsing as well as convenience methods for
+extracting useful information such as replica hosts or authorization
+information.
+
+
+CONNECTION STRING FORMAT
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+--------------------------
+mongodb://                                   <1>
+   [username:password@]                      <2>
+   host1                                     <3>
+   [:port1]                                  <4>
+   [,host2[:port2],...[,hostN[:portN]]]      <5>
+   [/[database]                              <6>
+   [?options]]                               <7>
+--------------------------
+
+<1> mongodb is the specifier of the MongoDB protocol
+<2> An optional username and password
+<3> The only required part of the uri.  This specifies either a hostname, IP
+    address or UNIX domain socket
+<4> An optional port number.  Defaults to :27017
+<5> Extra optional hosts and ports.  You would specify multiple hosts, for
+    example, for connections to replica sets
+<6> The name of the database to authenticate if the connection string includes
+    authentication credentials.  If /database is not specified and the
+    connection string includes credentials, defaults to the 'admin' database
+<7> Connection specific options.  See <<options, Connection String Options>>
+    for more detail.  If /database was not passed, you must specfiy a slash
+    between the last host and the question mark that begins the string of
+    options.
+
+.Basic Replica Set URI
+=========================
+To describe a connection to a replica set named 'test.  with the following
+mongod hosts:
+
+* db1.example.net on port 27017 and
+* db2.example.net on port 2500
+
+You would use a connection string that resembles the following:
+--------------------------
+mongodb://db1.example.net,db2.example.net:2500/?replicaSet=test
+--------------------------
+=========================
+
+CONNECTION STRING OPTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~
+[[options]]
+
+REPLICA SET OPTIONS
+^^^^^^^^^^^^^^^^^^^
+
+replicaSet::
+   Specifies the name of the replica set, if the mongod is a member of a
+   replica set.  When connecting to a replica set it is important to give a
+   seed list of at least two mongod instances. If you only provide the
+   connection point of a single mongod instance, and omit the replicaSet, the
+   client will create a standalone connection.
+
+CONNECTION OPTIONS
+^^^^^^^^^^^^^^^^^^
+
+ssl::
+   The default value is false
+   true;; Initiate the connection with SSL
+   false;; Initiate the connection without SSL
+
+connectTimeoutMS::
+   The time in milliseconds to attempt a connection before timing out. The
+   default is never to timeout
+
+socketTimeoutMS::
+   The time in milliseconds to attempt a send or receive on a socket before the
+   attempt times out. The default is never to timeout
+
+CONNECTION POOL OPTIONS
+^^^^^^^^^^^^^^^^^^^^^^^
+
+maxPoolSize::
+   The maximum number of connections in the connection pool. The default value
+   is 100
+
+minPoolSize::
+   The minimum number of connections in the connection pool. The default value
+   is 0
+
+maxIdleTimeMS::
+   UNIMPLEMENTED - The maximum number of milliseconds that a connection can
+   remain idle in the pool before being removed and closed
+
+waitQueueMultiple::
+   UNIMPLEMENTED - A number that the driver multiples the maxPoolSize value to,
+   to provide the maximum number of threads allowed to wait for a connection to
+   become available from the pool.
+
+uri.waitQueueTimeoutMS::
+   UNIMPLEMENTED - The maximum time in milliseconds that a thread can wait for
+   a connection to become available. For default values, see the MongoDB
+   Drivers and Client Libraries documentation.
+
+WRITE CONCERN OPTIONS
+^^^^^^^^^^^^^^^^^^^^^
+
+w::
+   -1;;
+      The driver will not acknowledge write operations and will suppress all
+      network or socket errors.
+   0;;
+      The driver will not acknowledge write operations but will pass or handle
+      any network and socket errors that it receives to the client. If you
+      disable write concern but enable the getLastError command’s w option, w
+      overrides the w option.
+   1;;
+      Provides basic acknowledgment of write operations. By specifying 1, you
+      require that a standalone mongod instance, or the primary for replica
+      sets, acknowledge all write operations. For drivers released after the
+      default write concern change, this is the default write concern setting.
+   "majority";;
+      For replica sets, if you specify the special majority value to w option,
+      write operations will only return successfully after a majority of the
+      configured replica set members have acknowledged the write operation.
+   n;;
+      For replica sets, if you specify a number n greater than 1, operations
+      with this write concern return only after n members of the set have
+      acknowledged the write. If you set n to a number that is greater than the
+      number of available set members or members that hold data, MongoDB will
+      wait, potentially indefinitely, for these members to become available.
+   "tags";;
+      For replica sets, you can specify a tag set to require that all members
+      of the set that have these tags configured return confirmation of the
+      write operation.
+
+wtimeoutMS::
+   The time in milliseconds to wait for replication to succeed, as specified in
+   the w option, before timing out. When wtimeoutMS is 0, write operations will
+   never time out.
+
+journal::
+   Controls whether write operations will wait until the mongod acknowledges
+   the write operations and commits the data to the on disk journal.
+   true;;
+      Enables journal commit acknowledgment write concern. Equivalent to
+      specifying the getLastError command with the j option enabled.
+   false;;
+      Does not require that mongod commit write operations to the journal
+      before acknowledging the write operation. This is the default option for
+      the journal parameter.
+
+READ PREFERENCE OPTIONS
+^^^^^^^^^^^^^^^^^^^^^^^
+
+readPreference::
+   Specifies the replica set read preference for this connection. This setting
+   overrides any slaveOk value. The read preference values are the following:
+
+   * primary
+   * primaryPreferred
+   * secondary
+   * secondaryPreferred
+   * nearest
+
+readPreferenceTags::
+   Specifies a tag set as a comma-separated list of colon-separated key-value
+   pairs
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_uri_copy[3]
+linkmongoc:mongoc_uri_destroy[3]
+linkmongoc:mongoc_uri_new[3]
+linkmongoc:mongoc_uri_new_for_host_port[3]
+linkmongoc:mongoc_uri_get_hosts[3]
+linkmongoc:mongoc_uri_get_database[3]
+linkmongoc:mongoc_uri_get_options[3]
+linkmongoc:mongoc_uri_get_password[3]
+linkmongoc:mongoc_uri_get_read_prefs[3]
+linkmongoc:mongoc_uri_get_replica_set[3]
+linkmongoc:mongoc_uri_get_string[3]
+linkmongoc:mongoc_uri_get_username[3]
+linkmongoc:mongoc_uri_get_auth_source[3]
+linkmongoc:mongoc_uri_unescape[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_client[7]
+http://docs.mongodb.org/manual/reference/connection-string/
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

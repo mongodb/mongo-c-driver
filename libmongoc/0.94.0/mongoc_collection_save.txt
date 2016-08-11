@@ -1,0 +1,45 @@
+mongoc_collection_save(3)
+=========================
+
+
+NAME
+----
+mongoc_collection_save - Save a document into a collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool
+mongoc_collection_save (mongoc_collection_t          *collection,
+                        const bson_t                 *document,
+                        const mongoc_write_concern_t *write_concern,
+                        bson_error_t                 *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_save()_ function shall save a document into a
+'collection'.  If the document has an '_id' field it will be updated.
+Otherwise it will inserted.
+
+RETURN VALUE
+------------
+The _mongoc_collection_save()_ function returns a true if successful.
+
+ERRORS
+------
+errors are returned through 'error'
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_write_concern[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

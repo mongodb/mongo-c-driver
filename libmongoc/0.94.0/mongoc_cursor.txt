@@ -1,0 +1,101 @@
+mongoc_cursor(7)
+================
+
+
+NAME
+----
+mongoc_cursor - MongoDB cursor connection abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+const bson_t *doc;
+mongoc_cursor_t * cursor;
+
+cursor = mongoc_collection_find (collection,
+                                 MONGOC_QUERY_NONE,
+                                 0,
+                                 0,
+                                 &query,
+                                 NULL,  /* Fields, NULL for all. */
+                                 NULL); /* Read Prefs, NULL for default */
+
+while (mongoc_cursor_next (cursor, &doc)) {
+   do_something(doc);
+}
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_cursor_ provides access to a MongoDB query cursor.  It wraps up the
+wire protocol negotation required to initiate a query and retreive an unknown
+number of documents.
+
+Cursors are lazy, meaning that no network traffic occurs until the first
+linkmongoc:mongoc_cursor_next[3].
+
+At that point we can:
+
+* Determine which host we've connected to with
+  linkmongoc:mongoc_cursor_get_host[3].
+* Retreive more records with repeated calls to linkmongoc:mongoc_cursor_next[3]
+* Test for more records with linkmongoc:mongoc_cursor_more[3]
+* Clone a query to repeat execution at a later point with
+  linkmongoc:mongoc_cursor_clone[3]
+* Test for errors with linkmongoc:mongoc_cursor_error[3]
+
+
+THREAD SAFETY
+-------------
+
+_mongoc_cursor_ is *NOT* thread-safe and should only be used from one thread at
+a time. 
+
+LIFECYCLE
+---------
+
+The bson objects set in linkmongoc:mongoc_cursor_next[3] are ephemeral and good
+until the next call.  linkmongoc:mongoc_cursor_destroy[3] must be called to
+clean up, even in the case of exhausted cursors.
+
+EXAMPLE
+-------
+
+The following example connects to a single MongoDB instance and performs a
+simple query against it. The resulting documents are printed as 'JSON' to
+standard output.
+
+[source,c]
+---------------
+include::{examples}/example-client.c[]
+---------------
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_cursor_clone[3]
+linkmongoc:mongoc_cursor_destroy[3]
+linkmongoc:mongoc_cursor_error[3]
+linkmongoc:mongoc_cursor_get_host[3]
+linkmongoc:mongoc_cursor_more[3]
+linkmongoc:mongoc_cursor_next[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_collection[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

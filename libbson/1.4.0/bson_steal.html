@@ -1,0 +1,102 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>bson_steal()</title>
+<link rel="stylesheet" type="text/css" href="C.css">
+<script type="text/javascript" src="jquery.js"></script><script type="text/javascript" src="jquery.syntax.js"></script><script type="text/javascript" src="yelp.js"></script>
+</head>
+<body><div class="page" role="main">
+<div class="header"><div class="trails" role="navigation"><div class="trail">
+<a class="trail" href="index.html" title="Libbson">Libbson</a> › <a class="trail" href="index.html#api-reference" title="API Reference">API Reference</a> » <a class="trail" href="bson_t.html" title="bson_t">bson_t</a> » </div></div></div>
+<div class="body">
+<div class="hgroup"><h1 class="title"><span class="title">bson_steal()</span></h1></div>
+<div class="region">
+<div class="contents"></div>
+<div id="synopsis" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Synopsis</span></h2></div>
+<div class="region"><div class="contents"><div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">bool
+bson_steal (bson_t *dst,
+            bson_t *src);</pre></div></div></div></div></div></div></div>
+</div></div>
+<div id="parameters" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Parameters</span></h2></div>
+<div class="region"><div class="contents"><div class="table"><div class="inner"><div class="region"><table class="table">
+<tr>
+<td><p class="p">dst</p></td>
+<td><p class="p">An uninitialized <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span>.</p></td>
+</tr>
+<tr>
+<td><p class="p">src</p></td>
+<td><p class="p">A <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span>.</p></td>
+</tr>
+</table></div></div></div></div></div>
+</div></div>
+<div id="description" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Description</span></h2></div>
+<div class="region"><div class="contents">
+<p class="p">Efficiently transfer the contents of <span class="code">src</span> to <span class="code">dst</span> and destroy <span class="code">src</span>.</p>
+<p class="p">Before calling this function, <span class="code">src</span> must be initialized and <span class="code">dst</span> must be uninitialized. After this function returns successfully, <span class="code">src</span> is destroyed, and <span class="code">dst</span> is initialized and must be freed with <span class="code"><a href="bson_destroy.html" title="bson_destroy()">bson_destroy</a></span>.</p>
+<p class="p">For example, if you have a higher-level structure that wraps a <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span>, use <span class="code">bson_steal</span> to transfer BSON data into it:</p>
+<div class="code"><pre class="contents syntax brush-clang">typedef struct {
+   bson_t bson;
+} bson_wrapper_t;
+
+
+bson_wrapper_t *
+wrap_bson (bson_t *b)
+{
+   bson_wrapper_t *wrapper = bson_malloc (sizeof (bson_wrapper_t));
+
+   if (bson_steal (&amp;wrapper-&gt;bson, b)) {
+      return wrapper;
+   }
+
+   bson_free (wrapper);
+   return NULL;
+}
+
+
+void
+bson_wrapper_destroy (bson_wrapper_t *wrapper)
+{
+   bson_destroy (&amp;wrapper-&gt;bson);
+   bson_free (wrapper);
+}
+
+
+int
+main (int   argc,
+      char *argv[])
+{
+   bson_t bson = BSON_INITIALIZER;
+   bson_wrapper_t *wrapper;
+
+   BSON_APPEND_UTF8 (&amp;bson, "key", "value");
+
+   /* now "bson" is destroyed */
+   wrapper = wrap_bson (&amp;bson);
+
+   /* clean up */
+   bson_wrapper_destroy (wrapper);
+}</pre></div>
+<p class="p">See also <span class="code"><a href="bson_destroy_with_steal.html" title="bson_destroy_with_steal()">bson_destroy_with_steal</a></span>, a lower-level function that returns the raw contents of a <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span>.</p>
+</div></div>
+</div></div>
+<div id="return" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Returns</span></h2></div>
+<div class="region"><div class="contents"><p class="p">Returns true if <span class="code">src</span> is valid and successfully moved to <span class="code">dst</span>, false otherwise.</p></div></div>
+</div></div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h2><span class="title">More Information</span></h2></div>
+<div class="region"><ul><li class="links "><a href="bson_t.html" title="bson_t">bson_t</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+<div class="clear"></div>
+</div>
+<div class="footer"></div>
+</div></body>
+</html>

@@ -1,0 +1,67 @@
+mongoc_bulk_operation(7)
+========================
+
+
+NAME
+----
+mongoc_bulk_operation - MongoDB bulk operation abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+{
+   mongoc_bulk_operation_t *bulk;
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);
+   /* ... */
+   mongoc_bulk_operation_destroy (bulk);
+}
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_bulk_operation_ provides a convenient API to submit a series of write
+operations to MongoDB and look at the result as a cohesive set. If the bulk
+operations are performed in _ordered_ mode, then any failure will prevent
+future operations from executing. If unordered, they may be performed in
+parallel.
+
+
+LIFECYCLE
+---------
+
+It is an error to call linkmongoc:mongoc_bulk_operation_destroy[3] while it has
+operations pending.
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_bulk_operation_destroy[3]
+linkmongoc:mongoc_bulk_operation_execute[3]
+linkmongoc:mongoc_bulk_operation_delete[3]
+linkmongoc:mongoc_bulk_operation_delete_one[3]
+linkmongoc:mongoc_bulk_operation_insert[3]
+linkmongoc:mongoc_bulk_operation_replace_one[3]
+linkmongoc:mongoc_bulk_operation_update[3]
+linkmongoc:mongoc_bulk_operation_update_one[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_collection_create_bulk_operation[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB, Inc.

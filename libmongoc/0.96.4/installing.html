@@ -1,0 +1,164 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Installing the MongoDB C Driver</title>
+<link rel="stylesheet" type="text/css" href="C.css">
+<script type="text/javascript" src="jquery.js"></script><script type="text/javascript" src="jquery.syntax.js"></script><script type="text/javascript" src="yelp.js"></script>
+</head>
+<body><div class="page" role="main">
+<div class="header"></div>
+<div class="body">
+<div class="hgroup"><h1 class="title"><span class="title">Installing the MongoDB C Driver</span></h1></div>
+<div class="region">
+<div class="contents"><p class="p">The following guide will step you through the process of downloading, building, and installing the current release of the MongoDB C Driver.</p></div>
+<div id="supported-platforms" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Supported Platforms</span></h2></div>
+<div class="region">
+<div class="contents">
+<p class="p">The MongoDB C Driver currently supports the following operating systems and CPU architectures.</p>
+<div class="table"><div class="inner"><div class="region"><table class="table">
+<tr>
+<td><div class="title title-td"><h3><span class="title">Operating Systems</span></h3></div></td>
+<td><div class="title title-td"><h3><span class="title">CPU Architectures</span></h3></div></td>
+<td><div class="title title-td"><h3><span class="title">Compiler Toolchain</span></h3></div></td>
+</tr>
+<tr>
+<td><div class="list"><div class="inner"><div class="region"><ul class="list">
+<li class="list"><p class="p">GNU/Linux</p></li>
+<li class="list"><p class="p">Solaris 10 and 11</p></li>
+<li class="list"><p class="p">Mac OS X 10.6 and newer</p></li>
+<li class="list"><p class="p">Windows Vista, 7, and 8</p></li>
+<li class="list"><p class="p">FreeBSD</p></li>
+<li class="list"><p class="p">OpenBSD 5.4</p></li>
+<li class="list"><p class="p">Dragonfly BSD</p></li>
+</ul></div></div></div></td>
+<td><div class="list"><div class="inner"><div class="region"><ul class="list">
+<li class="list"><p class="p">x86 and x86_64</p></li>
+<li class="list"><p class="p">ARM</p></li>
+<li class="list"><p class="p">PPC</p></li>
+<li class="list"><p class="p">SPARC</p></li>
+</ul></div></div></div></td>
+<td><div class="list"><div class="inner"><div class="region"><ul class="list">
+<li class="list"><p class="p">GCC 4.1 and newer</p></li>
+<li class="list"><p class="p">Clang 3.3 and newer</p></li>
+<li class="list"><p class="p"><span class="link"><a href="http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_4" title="http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_4">Microsoft Visual Studio 2010 Express</a></span></p></li>
+<li class="list"><p class="p"><span class="link"><a href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html" title="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html">Oracle Solaris Studio 12</a></span></p></li>
+<li class="list"><p class="p">MinGW</p></li>
+</ul></div></div></div></td>
+</tr>
+</table></div></div></div>
+</div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h3><span class="title">More Information</span></h3></div>
+<div class="region"><ul><li class="links "><a href="index.html#installation" title="Installation">Installation</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+</div></div>
+<div id="build-yourself" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Installing from Source</span></h2></div>
+<div class="region">
+<div class="contents">
+<p class="p">The following instructions are for UNIX-like systems such as GNU/Linux, FreeBSD, and Solaris. To build on Windows, see the instructions for <span class="link"><a href="installing.html#building-windows" title="Building on Windows">Building on Windows</a></span>.</p>
+<p class="p">The most recent release of the mongo-c-driver is 0.96.4 and can be <span class="link"><a href="https://github.com/mongodb/mongo-c-driver/releases/download/0.96.4/mongo-c-driver-0.96.4.tar.gz" title="https://github.com/mongodb/mongo-c-driver/releases/download/0.96.4/mongo-c-driver-0.96.4.tar.gz">downloaded here</a></span>. The following snippet will download and extract the current release of the driver.</p>
+<div class="screen"><pre class="contents "><span class="prompt output">$ </span><span class="input">wget https://github.com/mongodb/mongo-c-driver/releases/download/0.96.4/mongo-c-driver-0.96.4.tar.gz</span>
+<span class="prompt output">$ </span><span class="input">tar -xzf mongo-c-driver-0.96.4.tar.gz</span>
+<span class="prompt output">$ </span><span class="input">cd mongo-c-driver-0.96.4/</span></pre></div>
+<p class="p">Minimal dependencies are needed to build the MongoDB C driver. Optionally, if you want Kerberos (GSSAPI) or SSL support, you need to install <span class="code">libsasl2</span> and <span class="code">OpenSSL</span> libraries and development headers respectively.</p>
+<p class="p">Make sure you have access to a <span class="link"><a href="installing.html#supported-platforms" title="Supported Platforms">supported toolchain</a></span> such as GCC, Clang, SolarisStudio, or MinGW. Optionally, <span class="code">pkg-config</span> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
+<p class="p">The following will configure for a typical 64-bit Linux system such as RedHat Enterprise Linux 6 or CentOS 6. Note that not all systems place 64-bit libraries in <span class="code">/usr/lib64</span>. Check your system to see what the convention is if you are building 64-bit versions of the library.</p>
+<div class="screen"><pre class="contents ">./configure --prefix=/usr --libdir=/usr/lib64</pre></div>
+<div class="note note-advanced" title="Advanced"><div class="inner"><div class="region"><div class="contents"><p class="p">If you require <span class="code">SSL</span> add <span class="code">--enable-ssl</span> to the above configuration. This will require the <span class="code">openssl-devel</span> on RedHat Entrprise Linux. Other Linux-based operating systems may have another name for this package such as <span class="code">libssl-dev</span> on Debian.</p></div></div></div></div>
+<div class="note note-advanced" title="Advanced"><div class="inner"><div class="region"><div class="contents"><p class="p">If you require <span class="code">Kerberos</span> add <span class="code">--enable-sasl</span> to the above configuration. This will require the <span class="code">cyris-sasl-devel</span> on RedHat Entrprise Linux. Other Linux-based operating systems may have another name for this package.</p></div></div></div></div>
+<p class="p">If <span class="code">configure</span> completed successfully, you'll see something like the following describing your build configuration.</p>
+<div class="screen"><pre class="contents ">libmongoc was configured with the following options:
+
+Build configuration:
+Enable debugging (slow)                          : no
+Compile with debug symbols (slow)                : no
+Enable GCC build optimization                    : yes
+Enable automatic binary hardening                : yes
+Code coverage support                            : no
+Cross Compiling                                  : no
+Fast counters                                    : no
+SASL                                             : sasl2
+SSL                                              : yes
+Libbson                                          : bundled
+
+Documentation:
+Generate man pages                               : yes
+Install man pages                                : yes
+
+Bindings:
+Python (experimental)                            : no</pre></div>
+<p class="p">We can now build the driver with the venerable <span class="code">make</span> program.</p>
+<div class="screen"><pre class="contents "><span class="prompt output">$ </span><span class="input">make</span></pre></div>
+<div class="note" title="Note"><div class="inner"><div class="region"><div class="contents">
+<p class="p">You can optionally build code objects in parallel using the <span class="code">-j</span> option to GNU make. Some implementations of <span class="code">make</span> do not support this option, such as Sun's make on Solaris 10. To build in parallel on an 8 core machine, you might use:</p>
+<div class="screen"><pre class="contents "><span class="prompt output">$ </span><span class="input">gmake -j8</span></pre></div>
+</div></div></div></div>
+<p class="p">To install the driver, we use <span class="code">make</span> with the <span class="code">install</span> target.</p>
+<div class="screen"><pre class="contents "><span class="prompt output">$ </span><span class="input">sudo make install</span></pre></div>
+<div class="note" title="Note"><div class="inner"><div class="region"><div class="contents"><p class="p">On systems that do not support the <span class="code">sudo</span> command, we can use <span class="code">su -c 'make install'</span>.</p></div></div></div></div>
+</div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h3><span class="title">More Information</span></h3></div>
+<div class="region"><ul><li class="links "><a href="index.html#installation" title="Installation">Installation</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+</div></div>
+<div id="solaris" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Installing on Solaris 10</span></h2></div>
+<div class="region">
+<div class="contents">
+<p class="p">MongoDB provides two ways to install the MongoDB C driver on Solaris 10. You can either <span class="link"><a href="installing.html#build-yourself" title="Installing from Source">build the driver yourself</a></span> from a source code release, or install the precompiled binary driver as provided by MongoDB as follows.</p>
+<p class="p">Binary releases of the MongoDB C driver include support for both 32-bit and 64-bit architectures for both <span class="code">i386</span> and <span class="code">sparc</span>.</p>
+<div class="note note-warning" title="Warning"><div class="inner"><div class="region"><div class="contents"><p class="p">Solaris 11 packaging is not compatible with Solaris 10. For Solaris 11, please follow the directions to <span class="link"><a href="installing.html#build-yourself" title="Installing from Source">build the driver yourself</a></span>.</p></div></div></div></div>
+<p class="p">The following commands will download the most recent MongoDB binary release and install it using the <span class="code">pkgadd</span> command on Solaris 10.</p>
+<div class="screen"><pre class="contents "><span class="prompt output">$ </span><span class="input">bash</span>
+<span class="prompt output">bash-3.2$ </span><span class="input">export ARCH=`uname -m`</span>
+<span class="prompt output">bash-3.2$ </span><span class="input">/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/0.96.4/MONGOmongo-c-driver-0.96.4.${ARCH}.pkg.tar.gz"</span>
+<span class="prompt output">bash-3.2$ </span><span class="input">gunzip -c "MONGOmongo-c-driver-0.96.4.${ARCH}.pkg.tar.gz" | tar -xf -</span>
+<span class="prompt output">bash-3.2$ </span><span class="input">pkgadd -d . MONGOmongo-c-driver</span></pre></div>
+</div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h3><span class="title">More Information</span></h3></div>
+<div class="region"><ul><li class="links "><a href="index.html#installation" title="Installation">Installation</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+</div></div>
+<div id="building-windows" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Building on Windows</span></h2></div>
+<div class="region"><div class="contents">
+<p class="p">Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, <span class="code">cmake</span> is required to generate Visual Studio project files.</p>
+<p class="p">Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
+<div class="screen"><pre class="contents ">cd mongo-c-driver-0.96.4\src\libbson
+cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</pre></div>
+<p class="p">Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <span class="code">msbuild.exe</span></p>
+<div class="screen"><pre class="contents ">msbuild.exe ALL_BUILD.vcxproj</pre></div>
+<p class="p">Now that libbson is compiled, let's install it using msbuild. It will be installed to the path specified by <span class="code">CMAKE_INSTALL_PREFIX</span>.</p>
+<div class="screen"><pre class="contents ">msbuild.exe INSTALL.vcxproj</pre></div>
+<p class="p">You should now see libbson installed in <span class="code">C:\mongo-c-driver</span></p>
+<p class="p">Now let's do the same for the MongoDB C driver.</p>
+<div class="screen"><pre class="contents ">cd mongo-c-driver-0.96.4
+cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+msbuild.exe ALL_BUILD.vcxproj
+msbuild.exe INSTALL.vcxproj</pre></div>
+<p class="p">All of the MongoDB C Driver's components will now be found in <span class="code">C:\mongo-c-driver</span>.</p>
+</div></div>
+</div></div>
+</div>
+<div class="clear"></div>
+</div>
+<div class="footer"></div>
+</div></body>
+</html>

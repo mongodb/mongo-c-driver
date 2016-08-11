@@ -1,0 +1,38 @@
+mongoc_client_get_max_bson_size(3)
+==================================
+
+
+NAME
+----
+mongoc_client_get_max_bson_size, mongoc_client_get_max_message_size - get max sizes as related to the server
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int32_t mongoc_client_get_max_bson_size    (mongoc_client_t *client);
+int32_t mongoc_client_get_max_message_size (mongoc_client_t *client);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_client_get_max_bson_size()_ returns the maximum bson document size
+allowed by the cluster. Until a connection has been made, this will be the
+default of 16Mb.
+
+The _mongoc_client_get_max_document_size()_ returns the maximum wire protocol
+message size. Until a connection has been made, this will be the default of
+40Mb.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB, Inc.

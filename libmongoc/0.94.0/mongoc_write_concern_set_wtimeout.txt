@@ -1,0 +1,76 @@
+mongoc_write_concern_get_fysnc(3)
+=================================
+
+
+NAME
+----
+mongoc_write_concern_get_fsync - access various elements of the write_concern
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bool     mongoc_write_concern_get_fsync     (const mongoc_write_concern_t *write_concern);
+void     mongoc_write_concern_set_fsync     (mongoc_write_concern_t       *write_concern,
+                                             bool                          fsync_);
+bool     mongoc_write_concern_get_journal   (const mongoc_write_concern_t *write_concern);
+void     mongoc_write_concern_set_journal   (mongoc_write_concern_t       *write_concern,
+                                             bool                          journal);
+int32_t  mongoc_write_concern_get_w         (const mongoc_write_concern_t *write_concern);
+void     mongoc_write_concern_set_w         (mongoc_write_concern_t       *write_concern,
+                                             int32_t                       w);
+int32_t  mongoc_write_concern_get_wtimeout  (const mongoc_write_concern_t *write_concern);
+void     mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t       *write_concern,
+                                             int32_t                       wtimeout_msec);
+bool     mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern);
+void     mongoc_write_concern_set_wmajority (mongoc_write_concern_t       *write_concern,
+                                             int32_t                       wtimeout_msec);
+const char *mongoc_write_concern_get_wtag   (const mongoc_write_concern_t *write_concern);
+void        mongoc_write_concern_set_wtag   (mongoc_write_concern_t       *write_concern,
+                                             const char                   *tag);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_write_concern_get()_ functions shall return values from the write_concern.
+
+The _mongoc_write_concern_set()_ functions set attributes from the write_concern.
+
+For more on valid values for _w_, see linkmongoc:mongoc_write_concern[7].
+
+_wtimeout_msec_ is the timeout, in milliseconds, for write acknowledgments.
+
+
+FSYNC
+-----
+
+The _fsync_ attribute has special meaning to the MongoDB server.
+The _fysnc_ attribute is *deprecated*, but for those using it, please follow the following guidelines.
+
+ * _fsync_ is identical to _journal_ if MongoDB is running with a journal.
+ * _fsync_ requests that the write be fsync()'d to disk only if _mongod_ is not running with a journal.
+ * _fsync_ cannot be used simultaneously with the _journal_ flag.
+
+
+RETURN VALUE
+------------
+The _mongoc_write_concern_get()_ functions returns appropriate read only types.
+
+The _mongoc_write_concern_set()_ functions set their attribute.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_write_concern[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

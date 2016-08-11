@@ -1,0 +1,47 @@
+mongoc_stream_file(7)
+=====================
+
+
+NAME
+----
+mongoc_stream_file - MongoDB stream IO abstraction for local files
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+typedef struct _mongoc_stream_file_t mongoc_stream_file_t;
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_stream_file_t_ can be considered a subclass of _mongoc_stream_t_. It
+is used for local files using a UNIX style file-descriptor.
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_stream_file_new[3]
+linkmongoc:mongoc_stream_file_new_for_path[3]
+linkmongoc:mongoc_stream_file_new_get_fd[3]
+
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_client[7]
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.

@@ -1,0 +1,54 @@
+mongoc_cursor_get_host(3)
+=========================
+
+
+NAME
+----
+mongoc_cursor_get_host - get the host a mongoc cursor is connected to
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
+                        mongoc_host_list_t *host);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_cursor_get_host()_ function shall set 'host' with values from the
+host the 'cursor' is currently connected to.
+
+'host' is a shallow copy of the underlying cluster host and does not need any
+clean up.
+
+For more on the layout of the host see
+linkmongoc:mongoc_client_set_stream_initiator[3].
+
+It is a programming error to call this function on a cursor before calling
+linkmongoc:mongoc_cursor_next[3].  Cursors are lazily loaded, so early calls
+simply do nothing, as there is no host to pass back.
+
+
+RETURN VALUE
+------------
+The _mongoc_cursor_get_host()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client_set_stream_initiator[3].
+linkmongoc:mongoc_cursor[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

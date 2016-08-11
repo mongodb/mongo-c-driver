@@ -1,0 +1,40 @@
+mongoc_matcher_destroy(3)
+=========================
+
+
+NAME
+----
+mongoc_matcher_destroy - destroy a mongoc matcher
+
+
+SYNOPSIS
+--------
+[source,c]
+void mongoc_matcher_destroy (mongoc_matcher_t *matcher);
+
+
+DESCRIPTION
+-----------
+The _mongoc_matcher_destroy()_ function shall destroy the matcher referenced by
+the 'matcher' argument and any resources associated with the matcher.
+
+
+RETURN VALUE
+------------
+The _mongoc_matcher_destroy()_ function has no return value.
+
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_matcher[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

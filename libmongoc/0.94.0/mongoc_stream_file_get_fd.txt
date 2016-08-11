@@ -1,0 +1,37 @@
+mongoc_stream_file_get_fd(3)
+============================
+
+
+NAME
+----
+mongoc_stream_file_get_fd - Get underlying file descriptor for file stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int mongoc_stream_file_get_fd (mongoc_stream_t *stream);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_file_get_fd()_ function shall return the underlying
+file descriptor used by a _mongoc_stream_file_t_.
+
+
+RETURN VALUE
+------------
+A file descriptor or -1 if the file has been closed.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_stream_file[7]
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.

@@ -1,0 +1,81 @@
+mongoc_collection_command(3)
+============================
+
+
+NAME
+----
+mongoc_collection_command - Executes a command on collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_cursor_t *
+mongoc_collection_command (mongoc_collection_t       *collection,
+                           mongoc_query_flags_t       flags,
+                           uint32_t                   skip,
+                           uint32_t                   limit,
+                           uint32_t                   batch_size,
+                           const bson_t              *query,
+                           const bson_t              *fields,
+                           const mongoc_read_prefs_t *read_prefs);
+
+bool
+mongoc_collection_command_simple (mongoc_collection_t       *collection,
+                                  const bson_t              *command,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_t                    *reply,
+                                  bson_error_t              *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+
+mongoc_collection_command()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The _mongoc_collection_command()_ function shall execute a command on a
+collection.  This is performed lazily after calling mongoc_cursor_next() on the
+resulting cursor structure.
+
+command:: The command to execute
+
+For more on the meaning of the other parameters, see
+linkmongoc:mongoc_cursor[7].
+
+mongoc_collection_command_simple()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The _mongoc_collection_command_simple()_ provides a wrapper around
+_mongoc_collection_command()_ for simple commands that provide no response.
+
+error:: optional location for errors
+
+RETURN VALUE
+------------
+The _mongoc_collection_command()_ function returns a linkmongoc:mongoc_cursor[7].
+
+The _mongoc_collection_command_simple()_ function returns true if successful, if
+false it sets 'error'.
+
+ERRORS
+------
+mongoc_collection_command()::
+   errors are detected through active use of the linkmongoc:mongoc_cursor[7].
+
+mongoc_collection_command_simple()::
+   errors may vary based on the command run and the collection version.
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection[7]
+linkmongoc:mongoc_cursor[7]
+linkmongoc:mongoc_error[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

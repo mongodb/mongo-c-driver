@@ -1,0 +1,59 @@
+mongoc_gridfs_file_list_next(3)
+===============================
+
+
+NAME
+----
+mongoc_gridfs_file_list_next - Iterate the gridfs file list
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_gridfs_file_t *
+mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_file_list_next()_ function shall iterate the underlying
+gridfs file list, returning the next file each iteration.
+
+_mongoc_gridfs_file_list_next()_ is a blocking function.
+
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_file_list_next()_ function returns a
+linkmongoc:mongoc_gridfs_file[7] if one is available, or NULL if there are no
+more files to return or in the presence of an error.
+
+ERRORS
+------
+Errors in the read can be determined with the
+linkmongoc:mongoc_gridfs_file_list_error[3] function.
+
+LIFECYCLE
+---------
+
+The bson objects set in linkmongoc:mongoc_gridfs_file_list_next[3] are not
+ephemeral and are independent of the 'list'.  This means that you do not need
+to copy the returned bson if you wish to retain it beyond the lifetime of a
+single call to _mongoc_gridfs_file_list_next()_.
+
+This behavior departs from the contract in linkmongoc:mongoc_cursor_next[3].
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs[7]
+linkmongoc:mongoc_gridfs_file[7]
+linkmongoc:mongoc_gridfs_file_list_error[3]
+linkmongoc:mongoc_gridfs_file_list[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
