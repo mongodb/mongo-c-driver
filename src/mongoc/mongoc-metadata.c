@@ -24,6 +24,7 @@
 #include <windows.h>
 #endif
 
+#include "mongoc-linux-distro-scanner-private.h"
 #include "mongoc-metadata.h"
 #include "mongoc-metadata-os-private.h"
 #include "mongoc-metadata-private.h"
@@ -42,16 +43,6 @@
 static mongoc_metadata_t gMongocMetadata;
 
 
-#ifdef MONGOC_OS_IS_LINUX
-static char *
-_get_distro_name (void)
-{
-   /* TODO: FIXME: Will be part of a future CR */
-   /* This will likely have its own file at some point. */
-   return bson_strndup ("Linux", METADATA_OS_NAME_MAX);
-}
-#endif
-
 static char *
 _get_os_type (void)
 {
@@ -59,24 +50,6 @@ _get_os_type (void)
    return bson_strndup (MONGOC_OS_TYPE, METADATA_OS_TYPE_MAX);
 #endif
    return bson_strndup ("unknown", METADATA_OS_TYPE_MAX);
-}
-
-static char *
-_get_os_name (void)
-{
-#ifdef MONGOC_OS_NAME
-   return bson_strndup (MONGOC_OS_NAME, METADATA_OS_NAME_MAX);
-#elif defined (MONGOC_OS_IS_LINUX)
-   return _get_distro_name ();
-#elif defined (_POSIX_VERSION)
-   struct utsname system_info;
-
-   if (uname (&system_info) >= 0) {
-      return bson_strndup (system_info.sysname, METADATA_OS_NAME_MAX);
-   }
-#endif
-
-   return NULL;
 }
 
 static char *
@@ -127,6 +100,23 @@ _get_os_architecture (void)
    return NULL;
 }
 
+#ifndef MONGOC_OS_IS_LINUX
+static char *
+_get_os_name (void)
+{
+#ifdef MONGOC_OS_NAME
+   return bson_strndup (MONGOC_OS_NAME, METADATA_OS_NAME_MAX);
+#elif defined (_POSIX_VERSION)
+   struct utsname system_info;
+
+   if (uname (&system_info) >= 0) {
+      return bson_strndup (system_info.sysname, METADATA_OS_NAME_MAX);
+   }
+#endif
+
+   return NULL;
+}
+
 static char *
 _get_os_version (void)
 {
@@ -171,14 +161,22 @@ _get_os_version (void)
 
    return ret;
 }
+#endif
 
 static void
 _get_system_info (mongoc_metadata_t *metadata)
 {
    metadata->os_type = _get_os_type ();
+
+#ifdef MONGOC_OS_IS_LINUX
+   _mongoc_linux_distro_scanner_get_distro (&metadata->os_name,
+                                            &metadata->os_version);
+#else
    metadata->os_name = _get_os_name ();
-   metadata->os_architecture = _get_os_architecture ();
    metadata->os_version = _get_os_version ();
+#endif
+
+   metadata->os_architecture = _get_os_architecture ();
 }
 
 static void

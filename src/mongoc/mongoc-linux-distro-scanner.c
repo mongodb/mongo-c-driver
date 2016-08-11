@@ -425,6 +425,9 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
    bson_free (*name);
    bson_free (*version);
 
+   *name = NULL;
+   *version = NULL;
+
    RETURN (false);
 }
 
