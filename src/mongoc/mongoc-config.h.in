@@ -172,16 +172,6 @@
 #endif
 
 /*
- * Define to support experimental future mongoc features
- */
-#define MONGOC_EXPERIMENTAL_FEATURES @MONGOC_EXPERIMENTAL_FEATURES@
-
-#if MONGOC_EXPERIMENTAL_FEATURES != 1
-#  undef MONGOC_EXPERIMENTAL_FEATURES
-#endif
-
-
-/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:

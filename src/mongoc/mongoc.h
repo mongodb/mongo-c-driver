@@ -40,9 +40,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-init.h"
 #include "mongoc-matcher.h"
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 #include "mongoc-metadata.h"
-#endif
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"

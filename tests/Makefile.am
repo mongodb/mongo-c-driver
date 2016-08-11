@@ -110,8 +110,11 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-gridfs.c \
 	tests/test-mongoc-gridfs-file-page.c \
 	tests/test-mongoc-log.c \
+	tests/test-mongoc-linux-distro-scanner.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
+	tests/test-mongoc-max-staleness.c \
+	tests/test-mongoc-metadata.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
@@ -134,13 +137,6 @@ test_libmongoc_SOURCES = \
 	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
-
-if ENABLE_EXPERIMENTAL_FEATURES
-test_libmongoc_SOURCES += \
-	tests/test-mongoc-linux-distro-scanner.c \
-	tests/test-mongoc-max-staleness.c \
-	tests/test-mongoc-metadata.c
-endif
 
 if ENABLE_SSL
 test_libmongoc_SOURCES += \

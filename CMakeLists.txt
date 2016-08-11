@@ -14,9 +14,6 @@ option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
-option(ENABLE_EXPERIMENTAL_FEATURES
-        "Experimental future BSON and MongoDB features."
-        OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -126,12 +123,6 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set (MONGOC_EXPERIMENTAL_FEATURES 1)
-else ()
-   set (MONGOC_EXPERIMENTAL_FEATURES 0)
-endif ()
-
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 
@@ -230,10 +221,12 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
@@ -282,8 +275,13 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-init.h
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${SOURCE_DIR}/src/mongoc/mongoc-iovec.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-compiler-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
@@ -361,34 +359,12 @@ if (MONGOC_ENABLE_SASL)
    include_directories(${SASL2_INCLUDE_DIR})
 endif()
 
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set(HEADERS ${HEADERS}
-        ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-compiler-private.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
-   )
-   set(SOURCES ${SOURCES}
-        ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
-   )
-endif ()
-
 if (MSVC)
    # Export the functions listed in a definitions file.
    if (MONGOC_ENABLE_SSL)
-      if (ENABLE_EXPERIMENTAL_FEATURES)
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl-experimental.def)
-      else ()
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
-      endif ()
+      set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
    else ()
-      if (ENABLE_EXPERIMENTAL_FEATURES)
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-experimental.def)
-      else ()
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
-      endif ()
+      set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
    endif ()
 
    set(MONGOC_SHARED_SOURCES ${SOURCES} ${MONGOC_DEF_FILE})
@@ -473,9 +449,12 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
+   ${SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
    ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
+   ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
+   ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
@@ -514,14 +493,6 @@ endif()
 if (MONGOC_ENABLE_SASL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-sasl.c
-   )
-endif ()
-
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
-      ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-      ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    )
 endif ()
 

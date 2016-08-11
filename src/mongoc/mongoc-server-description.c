@@ -457,9 +457,7 @@ mongoc_server_description_handle_ismaster (
    bson_error_t                  *error)
 {
    bson_iter_t iter;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    bson_iter_t child;
-#endif
    bool is_master = false;
    bool is_shard = false;
    bool is_secondary = false;
@@ -552,7 +550,6 @@ mongoc_server_description_handle_ismaster (
          bson_init_static (&sd->tags, bytes, len);
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
       } else if (strcmp ("lastWrite", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
              !bson_iter_recurse (&iter, &child) ||
@@ -562,7 +559,6 @@ mongoc_server_description_handle_ismaster (
          }
 
          sd->last_write_date_ms = bson_iter_date_time (&child);
-#endif
       }
    }
 
@@ -664,7 +660,6 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         int64_t                       heartbeat_frequency_ms,
                                         const mongoc_read_prefs_t    *read_prefs)
 {
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    int64_t max_staleness_ms;
    int64_t max_last_write_date_ms;
    size_t i;
@@ -728,7 +723,6 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
          }
       }
    }
-#endif
 }
 
 

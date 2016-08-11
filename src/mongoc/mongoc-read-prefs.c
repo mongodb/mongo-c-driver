@@ -98,7 +98,6 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 }
 
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 int32_t
 mongoc_read_prefs_get_max_staleness_ms (const mongoc_read_prefs_t *read_prefs)
 {
@@ -116,7 +115,6 @@ mongoc_read_prefs_set_max_staleness_ms (mongoc_read_prefs_t *read_prefs,
 
    read_prefs->max_staleness_ms = max_staleness_ms;
 }
-#endif
 
 
 bool
@@ -198,9 +196,7 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
    const bson_t *tags = NULL;
    bson_t child;
    const char *mode_str;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    int64_t max_staleness_ms;
-#endif
 
    mode = mongoc_read_prefs_get_mode (read_prefs);
    if (read_prefs) {
@@ -256,12 +252,10 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
          bson_append_array (&child, "tags", 4, tags);
       }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
       max_staleness_ms = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
       if (max_staleness_ms > 0) {
          bson_append_int64 (&child, "maxStalenessMS", 14, max_staleness_ms);
       }
-#endif
 
       bson_append_document_end (result->query_with_read_prefs, &child);
    }

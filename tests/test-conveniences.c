@@ -825,9 +825,7 @@ bson_type_to_str (bson_type_t t)
    case BSON_TYPE_INT64: return "INT64";
    case BSON_TYPE_MAXKEY: return "MAXKEY";
    case BSON_TYPE_MINKEY: return "MINKEY";
-#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
    case BSON_TYPE_DECIMAL128: return "DECIMAL128";
-#endif
    default: return "Unknown";
    }
 }
@@ -1050,11 +1048,9 @@ match_bson_value (const bson_value_t *doc,
    case BSON_TYPE_DBPOINTER:
       test_error ("DBPointer comparison not implemented");
       abort ();
-#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
    case BSON_TYPE_DECIMAL128:
       test_error ("Decimal128 comparison not implemented");
       abort ();
-#endif
    default:
       test_error ("unexpected value type %d: %s",
                   doc->value_type, bson_type_to_str (doc->value_type));

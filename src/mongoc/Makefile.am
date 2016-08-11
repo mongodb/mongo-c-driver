@@ -62,6 +62,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-index.h \
 	src/mongoc/mongoc-init.h \
 	src/mongoc/mongoc-iovec.h \
+	src/mongoc/mongoc-linux-distro-scanner-private.h \
 	src/mongoc/mongoc-list-private.h \
 	src/mongoc/mongoc-log.h \
 	src/mongoc/mongoc-log-private.h \
@@ -69,6 +70,10 @@ INST_H_FILES = \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-memcmp-private.h \
+	src/mongoc/mongoc-metadata.h \
+	src/mongoc/mongoc-metadata-compiler-private.h \
+	src/mongoc/mongoc-metadata-os-private.h \
+	src/mongoc/mongoc-metadata-private.h \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-opcode-private.h \
 	src/mongoc/mongoc-queue-private.h \
@@ -106,15 +111,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-write-concern-private.h \
 	src/mongoc/mongoc-write-concern.h \
 	src/mongoc/utlist.h
-
-if ENABLE_EXPERIMENTAL_FEATURES
-INST_H_FILES += \
-	src/mongoc/mongoc-linux-distro-scanner-private.h \
-	src/mongoc/mongoc-metadata.h \
-	src/mongoc/mongoc-metadata-compiler-private.h \
-	src/mongoc/mongoc-metadata-os-private.h \
-	src/mongoc/mongoc-metadata-private.h
-endif
 
 if ENABLE_SSL
 INST_H_FILES += \
@@ -166,11 +162,13 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-gridfs-file-page.c \
 	src/mongoc/mongoc-gridfs-file-list.c \
 	src/mongoc/mongoc-index.c \
+	src/mongoc/mongoc-linux-distro-scanner.c \
 	src/mongoc/mongoc-list.c \
 	src/mongoc/mongoc-log.c \
 	src/mongoc/mongoc-matcher-op.c \
 	src/mongoc/mongoc-matcher.c \
 	src/mongoc/mongoc-memcmp.c \
+	src/mongoc/mongoc-metadata.c \
 	src/mongoc/mongoc-opcode.c \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-concern.c \
@@ -214,12 +212,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto-cng.c \
 	src/mongoc/mongoc-rand-cng.c
 endif
-endif
-
-if ENABLE_EXPERIMENTAL_FEATURES
-MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-linux-distro-scanner.c \
-	src/mongoc/mongoc-metadata.c
 endif
 
 if ENABLE_SSL

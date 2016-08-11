@@ -548,9 +548,7 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
        !strcasecmp(key, "minpoolsize") ||
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
        !strcasecmp(key, "maxstalenessms") ||
-#endif
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
@@ -637,13 +635,11 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
          goto CLEANUP;
       }
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    } else if (!strcasecmp (key, "appname")) {
       if (!mongoc_uri_set_appname (uri, value)) {
          MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
          goto CLEANUP;
       }
-#endif
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
    }
@@ -933,9 +929,7 @@ mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    int32_t max_staleness_ms;
-#endif
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
@@ -959,10 +953,8 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    max_staleness_ms = mongoc_uri_get_option_as_int32 (uri, "maxstalenessms", 0);
    mongoc_read_prefs_set_max_staleness_ms (uri->read_prefs, max_staleness_ms);
-#endif
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
@@ -1121,7 +1113,6 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 }
 
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 const char *
 mongoc_uri_get_appname (const mongoc_uri_t *uri)
 {
@@ -1149,7 +1140,6 @@ mongoc_uri_set_appname (mongoc_uri_t *uri,
 
    return true;
 }
-#endif
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)

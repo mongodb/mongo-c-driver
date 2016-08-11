@@ -160,8 +160,6 @@ c_driver_variables:
 
   configure:
   standard: &configure_flags_default
-     configure_flags: "--enable-experimental-features --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
-  no_experimental: &configure_flags_no_experimental
      configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
 
   ## Extra $PATH entries
@@ -232,7 +230,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -240,7 +238,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -248,7 +246,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -266,7 +264,7 @@ c_driver_variables:
           export LDFLAGS="-L$prefix/lib -lssl -lcrypto"
           export SSL_LIBS="-L$prefix/lib -lssl -lcrypto"
           export SSL_CFLAGS="-I$prefix/include"
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -274,7 +272,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -283,7 +281,7 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           # No, SSL, SASL, or ABI check.
-          ./autogen.sh --build=i386-pc-linux-gnu --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-ssl=no --enable-maintainer-flags=no --enable-debug --with-libbson=bundled
+          ./autogen.sh --build=i386-pc-linux-gnu --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-ssl=no --enable-maintainer-flags=no --enable-debug --with-libbson=bundled
           make -j8
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris64: &compile_solaris64
@@ -293,7 +291,7 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -301,7 +299,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -442,7 +440,7 @@ c_driver_variables:
     msvc2010_32bit: &with_msvc2010_32bit
       generator: Visual Studio 10 2010
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
       generator: Visual Studio 10 2010 Win64
@@ -451,7 +449,7 @@ c_driver_variables:
     msvc2013_32bit: &with_msvc2013_32bit
       generator: Visual Studio 12 2013
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
       generator: Visual Studio 12 2013 Win64
@@ -461,11 +459,11 @@ c_driver_variables:
       generator: Visual Studio 12 2013 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
+      cmake_defs: "-DENABLE_SSL=WINDOWS"
     msvc2015_32bit: &with_msvc2015_32bit
       generator: Visual Studio 14 2015
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
     msvc2015: &with_msvc2015
       generator: Visual Studio 14 2015 Win64
@@ -475,17 +473,12 @@ c_driver_variables:
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
+      cmake_defs: "-DENABLE_SSL=WINDOWS"
     msvc2015: &with_msvc2015_openssl
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=OPENSSL -DENABLE_EXPERIMENTAL_FEATURES=ON"
-    msvc2015: &with_msvc2015_no_experimental
-      generator: Visual Studio 14 2015 Win64
-      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
-      dllpath: "c:/openssl/bin,c:/sasl/bin"
-      cmake_defs: "-DENABLE_SSL=OPENSSL"  # Omit "ENABLE_EXPERIMENTAL_FEATURES"
+      cmake_defs: "-DENABLE_SSL=OPENSSL"
 
   ## all windows buildvariants have these attributes in common
   windows_common: &windows_common
@@ -881,7 +874,7 @@ tasks:
                 set -o errexit
                 set -o verbose
                 sudo apt-get install -y awscli
-                ./autogen.sh --enable-experimental-features --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+                ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
                 ls -la
@@ -1719,17 +1712,6 @@ buildvariants:
   - windows-64-vs2015-compile
   tasks: *topology_tests
 
-- name: windows-64-vs2015-no-experimental
-  display_name: "Win VS2015 64 No-Experimental"
-  expansions:
-    <<: *msvc_common
-    <<: *mongo_url_windows64
-    <<: *with_msvc2015_no_experimental
-  run_on:
-  - windows-64-vs2015-compile
-  tasks:
-  - compile
-
 - name: windows-64-vs2015-nativessl
   display_name: "Win VS2015 64 NativeSSL"
   expansions:
@@ -1871,12 +1853,3 @@ buildvariants:
   run_on:
   - ubuntu1404-build
   tasks: *compile_unix_variants
-
-- name: compile-ubuntu1404-no-experimental
-  display_name: "Ubuntu 14.04 No-Experimental"
-  expansions:
-    CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
-  run_on:
-  - ubuntu1404-build
-  tasks: *compile_most_unix_variants

@@ -23,10 +23,8 @@
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-stream-socket.h"
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 #include "mongoc-metadata.h"
 #include "mongoc-metadata-private.h"
-#endif
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -53,7 +51,6 @@ _add_ismaster (bson_t *cmd)
    BSON_APPEND_INT32 (cmd, "isMaster", 1);
 }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 static bool
 _build_ismaster_with_metadata (mongoc_topology_scanner_t *ts)
 {
@@ -71,13 +68,11 @@ _build_ismaster_with_metadata (mongoc_topology_scanner_t *ts)
    /* Return whether the meta doc fit the size limit */
    return res;
 }
-#endif
 
 static bson_t *
 _get_ismaster_doc (mongoc_topology_scanner_t      *ts,
                    mongoc_topology_scanner_node_t *node)
 {
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
       return &ts->ismaster_cmd;
@@ -98,9 +93,6 @@ _get_ismaster_doc (mongoc_topology_scanner_t      *ts,
    }
 
    return &ts->ismaster_cmd_with_metadata;
-#else
-   return &ts->ismaster_cmd;
-#endif
 }
 
 static void
@@ -753,7 +745,6 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
    }
 }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 /*
  * Set a field in the topology scanner.
  */
@@ -774,4 +765,3 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
    ts->appname = bson_strdup (appname);
    return true;
 }
-#endif

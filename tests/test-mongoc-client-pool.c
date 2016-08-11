@@ -210,7 +210,6 @@ test_mongoc_client_pool_ssl_disabled (void)
 }
 #endif
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 static void
 test_mongoc_client_pool_metadata (void)
 {
@@ -260,7 +259,6 @@ test_mongoc_client_pool_metadata (void)
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);
 }
-#endif
 
 void
 test_client_pool_install (TestSuite *suite)
@@ -272,9 +270,7 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
    TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    TestSuite_Add (suite, "/ClientPool/metadata", test_mongoc_client_pool_metadata);
-#endif
 
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
