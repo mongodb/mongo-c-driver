@@ -46,7 +46,7 @@ mongoc_socket_connect (mongoc_socket_t       *sock,
 <div class="hgroup"><h2 class="title"><span class="title">Description</span></h2></div>
 <div class="region"><div class="contents">
 <p class="p">This function is a wrapper around the BSD socket <span class="code">connect()</span> interface. It provides better portability between UNIX-like and Microsoft Windows platforms.</p>
-<p class="p">This function performs a socket connection but will fail if @expire_at has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to <span class="code"><a href="http://api.mongodb.org/libbson/current/clock.html" title="bson:clock">bson_get_monotonic_time()</a></span>.</p>
+<p class="p">This function performs a socket connection but will fail if @expire_at has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to <span class="code"><a href="/libbson/current/clock.html" title="bson:clock">bson_get_monotonic_time()</a></span>.</p>
 </div></div>
 </div></div>
 <div id="return" class="sect"><div class="inner">

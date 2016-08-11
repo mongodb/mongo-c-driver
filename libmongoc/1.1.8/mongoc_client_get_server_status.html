@@ -22,7 +22,7 @@ mongoc_client_get_server_status (mongoc_client_t     *client,
                                  bson_t              *reply,
                                  bson_error_t        *error);</pre></div></div></div></div></div>
 <p class="p">Queries the server for the current server status. The result is stored in <span class="code">reply</span>.</p>
-<div class="note note-warning" title="Warning"><div class="inner"><div class="region"><div class="contents"><p class="p"><span class="code">reply</span> is always initialized, even in the case of failure. Always call <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_destroy.html" title="bson:bson_destroy">bson_destroy()</a></span> to release it.</p></div></div></div></div>
+<div class="note note-warning" title="Warning"><div class="inner"><div class="region"><div class="contents"><p class="p"><span class="code">reply</span> is always initialized, even in the case of failure. Always call <span class="code"><a href="/libbson/current/bson_destroy.html" title="bson:bson_destroy">bson_destroy()</a></span> to release it.</p></div></div></div></div>
 </div></div>
 </div></div>
 <div id="parameters" class="sect"><div class="inner">
@@ -38,11 +38,11 @@ mongoc_client_get_server_status (mongoc_client_t     *client,
 </tr>
 <tr>
 <td><p class="p">reply</p></td>
-<td><p class="p">A location for the result <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span>.</p></td>
+<td><p class="p">A location for the result <span class="code"><a href="/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span>.</p></td>
 </tr>
 <tr>
 <td><p class="p">error</p></td>
-<td><p class="p">An optional location for a <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_error_t.html" title="bson:bson_error_t">bson_error_t</a></span> or <span class="code">NULL</span>.</p></td>
+<td><p class="p">An optional location for a <span class="code"><a href="/libbson/current/bson_error_t.html" title="bson:bson_error_t">bson_error_t</a></span> or <span class="code">NULL</span>.</p></td>
 </tr>
 </table></div></div></div></div></div>
 </div></div>

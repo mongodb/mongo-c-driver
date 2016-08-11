@@ -24,7 +24,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_t                    *reply,
                               bson_error_t              *error);</pre></div></div></div></div></div>
 <p class="p">This is a simplified interface to <span class="code"><a href="mongoc_client_command.html" title="mongoc_client_command()">mongoc_client_command()</a></span>. It returns the first document from the result cursor into <span class="code">reply</span>.</p>
-<div class="note note-warning" title="Warning"><div class="inner"><div class="region"><div class="contents"><p class="p"><span class="code">reply</span> is always set, and should be released with <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_destroy.html" title="bson:bson_destroy">bson_destroy()</a></span>.</p></div></div></div></div>
+<div class="note note-warning" title="Warning"><div class="inner"><div class="region"><div class="contents"><p class="p"><span class="code">reply</span> is always set, and should be released with <span class="code"><a href="/libbson/current/bson_destroy.html" title="bson:bson_destroy">bson_destroy()</a></span>.</p></div></div></div></div>
 </div></div>
 </div></div>
 <div id="parameters" class="sect"><div class="inner">
@@ -40,7 +40,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 </tr>
 <tr>
 <td><p class="p">command</p></td>
-<td><p class="p">A <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> containing the command specification.</p></td>
+<td><p class="p">A <span class="code"><a href="/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> containing the command specification.</p></td>
 </tr>
 <tr>
 <td><p class="p">read_prefs</p></td>
@@ -52,7 +52,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 </tr>
 <tr>
 <td><p class="p">error</p></td>
-<td><p class="p">An optional location for a <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_error_t.html" title="bson:bson_error_t">bson_error_t</a></span> or <span class="code">NULL</span>.</p></td>
+<td><p class="p">An optional location for a <span class="code"><a href="/libbson/current/bson_error_t.html" title="bson:bson_error_t">bson_error_t</a></span> or <span class="code">NULL</span>.</p></td>
 </tr>
 </table></div></div></div></div></div>
 </div></div>

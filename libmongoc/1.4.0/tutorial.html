@@ -169,11 +169,11 @@ C:\&gt; connect
 <div id="creating-bson-documents" class="sect"><div class="inner">
 <div class="hgroup"><h2 class="title"><span class="title">3. Creating BSON Documents</span></h2></div>
 <div class="region">
-<div class="contents"><p class="p">Documents are stored in MongoDB's data format, BSON. The C driver uses <span class="link"><a href="http://api.mongodb.org/libbson/current/index.html" title="bson:index">libbson</a></span> to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.</p></div>
+<div class="contents"><p class="p">Documents are stored in MongoDB's data format, BSON. The C driver uses <span class="link"><a href="/libbson/current/index.html" title="bson:index">libbson</a></span> to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.</p></div>
 <div id="appending" class="sect"><div class="inner">
 <div class="hgroup"><h3 class="title"><span class="title">Appending BSON</span></h3></div>
 <div class="region"><div class="contents">
-<p class="p">A BSON document, represented as a <span class="link"><a href="http://api.mongodb.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> in code, can be constructed one field at a time using libbson's append functions.</p>
+<p class="p">A BSON document, represented as a <span class="link"><a href="/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> in code, can be constructed one field at a time using libbson's append functions.</p>
 <p class="p">For example, to create a document like this:</p>
 <div class="screen"><pre class="contents "><span class="code">{
    born : ISODate("1906-12-09"),
@@ -274,7 +274,7 @@ main (int   argc,
    bson_destroy (document);
    return 0;
 }</span></pre></div>
-<p class="p">See the <span class="link"><a href="http://api.mongodb.org/libbson/current/bson_t.html" title="bson:bson_t">libbson documentation</a></span> for all of the types that can be appended to a <span class="code"><a href="http://api.mongodb.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span>.</p>
+<p class="p">See the <span class="link"><a href="/libbson/current/bson_t.html" title="bson:bson_t">libbson documentation</a></span> for all of the types that can be appended to a <span class="code"><a href="/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span>.</p>
 </div></div>
 </div></div>
 <div id="bcon" class="sect"><div class="inner">
@@ -336,7 +336,7 @@ main (int   argc,
 <div id="bson-from-json" class="sect"><div class="inner">
 <div class="hgroup"><h3 class="title"><span class="title">Creating BSON from JSON</span></h3></div>
 <div class="region"><div class="contents">
-<p class="p">For <span class="em">single</span> documents, BSON can be created from JSON strings via <span class="link"><a href="http://api.mongodb.org/libbson/current/bson_new_from_json.html" title="bson:bson_new_from_json">bson_new_from_json</a></span>.</p>
+<p class="p">For <span class="em">single</span> documents, BSON can be created from JSON strings via <span class="link"><a href="/libbson/current/bson_new_from_json.html" title="bson:bson_new_from_json">bson_new_from_json</a></span>.</p>
 <div class="screen"><pre class="contents "><span class="code">#include &lt;bson.h&gt;
 
 int
@@ -362,7 +362,7 @@ main (int   argc,
    return 0;
 }
 </span></pre></div>
-<p class="p">To initialize BSON from a sequence of JSON documents, use <span class="link"><a href="http://api.mongodb.org/libbson/current/bson_json_reader_t.html" title="bson:bson_json_reader_t">bson_json_reader_t</a></span>.</p>
+<p class="p">To initialize BSON from a sequence of JSON documents, use <span class="link"><a href="/libbson/current/bson_json_reader_t.html" title="bson:bson_json_reader_t">bson_json_reader_t</a></span>.</p>
 </div></div>
 </div></div>
 <div class="sect sect-links" role="navigation">
