@@ -832,22 +832,15 @@ mongoc_collection_drop_index_with_write_concern (mongoc_collection_t    *collect
    BSON_ASSERT (collection);
    BSON_ASSERT (index_name);
 
-   if (!_mongoc_write_concern_validate (write_concern, error)) {
-      return false;
-   }
-
    bson_init(&cmd);
    bson_append_utf8(&cmd, "dropIndexes", -1, collection->collection,
                     collection->collectionlen);
    bson_append_utf8(&cmd, "index", -1, index_name, -1);
 
-   if (write_concern &&
-       !_mongoc_write_concern_is_default (write_concern)) {
-      bson_append_document (&cmd, "writeConcern", 12,
-                            _mongoc_write_concern_get_bson (write_concern));
-   }
-
-   ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
+   ret = _mongoc_client_command_with_write_concern (collection->client,
+                                                    collection->db, &cmd,
+                                                    NULL, write_concern,
+                                                    NULL, error);
    bson_destroy(&cmd);
 
    return ret;
