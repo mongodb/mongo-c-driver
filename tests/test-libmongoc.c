@@ -254,7 +254,7 @@ gen_collection_name (const char *str)
 {
    return bson_strdup_printf ("%s_%u_%u",
                               str,
-                              (unsigned)time(NULL),
+                              (unsigned)bson_get_monotonic_time(),
                               (unsigned)gettestpid());
 
 }
