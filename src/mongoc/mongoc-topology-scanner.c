@@ -642,8 +642,8 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
  *--------------------------------------------------------------------------
  */
 
-static void
-mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
+void
+_mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
    bson_error_t *error = &ts->error;
@@ -696,7 +696,6 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 
    if (! r) {
       ts->in_progress = false;
-      mongoc_topology_scanner_finish (ts);
    }
 
    return r;

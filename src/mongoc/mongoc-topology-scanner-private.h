@@ -128,6 +128,9 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
                               int32_t                    timeout_msec);
 
 void
+_mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts);
+
+void
 mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,
                                    bson_error_t              *error);
 

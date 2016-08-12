@@ -343,12 +343,15 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    while (_mongoc_topology_run_scanner (topology,
                                         topology->connect_timeout_msec)) {}
 
+   mongoc_mutex_lock (&topology->mutex);
+   _mongoc_topology_scanner_finish (scanner);
    mongoc_topology_scanner_get_error (scanner, error);
 
    /* "retired" nodes can be checked again in the next scan */
    mongoc_topology_scanner_reset (scanner);
    topology->last_scan = bson_get_monotonic_time ();
    topology->stale = false;
+   mongoc_mutex_unlock (&topology->mutex);
 }
 
 
@@ -842,6 +845,7 @@ void * _mongoc_topology_run_background (void *data)
 
       mongoc_mutex_lock (&topology->mutex);
 
+      _mongoc_topology_scanner_finish (topology->scanner);
       /* "retired" nodes can be checked again in the next scan */
       mongoc_topology_scanner_reset (topology->scanner);
 
