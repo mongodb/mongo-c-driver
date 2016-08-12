@@ -30,6 +30,7 @@
 #include "mongoc-thread-private.h"
 
 
+static mongoc_once_t      once = MONGOC_ONCE_INIT;
 static mongoc_mutex_t     gLogMutex;
 static mongoc_log_func_t  gLogFunc = mongoc_log_default_handler;
 #ifdef MONGOC_TRACE
@@ -48,7 +49,6 @@ void
 mongoc_log_set_handler (mongoc_log_func_t  log_func,
                         void              *user_data)
 {
-   static mongoc_once_t once = MONGOC_ONCE_INIT;
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
 
    mongoc_mutex_lock(&gLogMutex);
@@ -76,7 +76,6 @@ mongoc_log (mongoc_log_level_t  log_level,
 {
    va_list args;
    char *message;
-   static mongoc_once_t once = MONGOC_ONCE_INIT;
    int stop_logging;
 
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
