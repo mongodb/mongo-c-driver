@@ -82,10 +82,9 @@ void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
 static uint16_t get_port (mongoc_socket_t *sock);
 
-static void
-_verbose_print (mock_server_t *server,
-                const char    *msg,
-                ...);
+static void _verbose_print (mock_server_t *server,
+                            const char    *msg,
+                            ...);
 
 /*--------------------------------------------------------------------------
  *
