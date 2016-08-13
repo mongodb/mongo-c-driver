@@ -15,7 +15,7 @@
         <xsl:if test="starts-with($xref, 'bson:')">
             <xsl:variable name="ref"
                           select="substring-after($xref, 'bson:')"/>
-            <xsl:text>http://api.mongodb.org/libbson/current/</xsl:text>
+            <xsl:text>http://mongoc.org/libbson/current/</xsl:text>
             <xsl:value-of select="$ref"/>
             <xsl:text>.html</xsl:text>
         </xsl:if>
