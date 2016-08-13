@@ -18,7 +18,6 @@
 #include "mongoc.h"
 
 #include "mongoc-buffer-private.h"
-#include "mongoc-rpc-private.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
@@ -74,9 +73,26 @@ struct _autoresponder_handle_t
 };
 
 
+typedef struct
+{
+   mongoc_reply_flags_t flags;
+   bson_t              *docs;
+   int                  n_docs;
+   int64_t              cursor_id;
+   uint16_t             client_port;
+   mongoc_opcode_t      request_opcode;
+   mongoc_query_flags_t query_flags;
+   int32_t              response_to;
+} reply_t;
+
+
 static void *main_thread (void *data);
 
 static void *worker_thread (void *data);
+
+static void _mock_server_reply_with_stream (mock_server_t *server,
+                                            reply_t *reply,
+                                            mongoc_stream_t *client);
 
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
@@ -1443,7 +1459,6 @@ mock_server_destroy (mock_server_t *server)
    _mongoc_array_destroy (&server->autoresponders);
 
    mongoc_cond_destroy (&server->cond);
-   mongoc_mutex_unlock (&server->mutex);
    mongoc_mutex_destroy (&server->mutex);
    mongoc_socket_destroy (server->sock);
    bson_free (server->uri_str);
@@ -1475,6 +1490,19 @@ get_port (mongoc_socket_t *sock)
 }
 
 
+static bool
+_mock_server_stopping (mock_server_t *server)
+{
+   bool stopped;
+
+   mongoc_mutex_lock (&server->mutex);
+   stopped = server->stopped;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return stopped;
+}
+
+
 typedef struct worker_closure_t
 {
    mock_server_t *server;
@@ -1488,7 +1516,6 @@ main_thread (void *data)
 {
    mock_server_t *server = (mock_server_t *)data;
    mongoc_socket_t *client_sock;
-   bool stopped;
    uint16_t port;
    mongoc_stream_t *client_stream;
    worker_closure_t *closure;
@@ -1507,11 +1534,7 @@ main_thread (void *data)
             bson_get_monotonic_time () + 100 * 1000,
             &port);
 
-      mongoc_mutex_lock (&server->mutex);
-      stopped = server->stopped;
-      mongoc_mutex_unlock (&server->mutex);
-
-      if (stopped) {
+      if (_mock_server_stopping (server)) {
          break;
       }
 
@@ -1541,9 +1564,8 @@ main_thread (void *data)
          closure->client_stream = client_stream;
          closure->port = port;
 
-         mongoc_thread_create (&thread, worker_thread, closure);
-
          mongoc_mutex_lock (&server->mutex);
+         mongoc_thread_create (&thread, worker_thread, closure);
          _mongoc_array_append_val (&server->worker_threads, thread);
          mongoc_mutex_unlock (&server->mutex);
       }
@@ -1570,6 +1592,19 @@ main_thread (void *data)
 }
 
 
+static void
+_reply_destroy (reply_t *reply)
+{
+   int i;
+
+   for (i = 0; i < reply->n_docs; i++) {
+      bson_destroy (&reply->docs[i]);
+   }
+
+   bson_free (reply);
+}
+
+
 static void *
 worker_thread (void *data)
 {
@@ -1581,12 +1616,13 @@ worker_thread (void *data)
    bool handled;
    bson_error_t error;
    int32_t msg_len;
-   bool stopped;
-   sync_queue_t *q;
+   sync_queue_t *requests;
+   sync_queue_t *replies;
    request_t *request;
    mongoc_array_t autoresponders;
    ssize_t i;
    autoresponder_handle_t handle;
+   reply_t *reply;
 
 #ifdef MONGOC_ENABLE_SSL
    bool ssl;
@@ -1594,13 +1630,17 @@ worker_thread (void *data)
 
    ENTRY;
 
+   /* queue of client replies sent over this worker's connection */
+   replies = q_new ();
+
 #ifdef MONGOC_ENABLE_SSL
    mongoc_mutex_lock (&server->mutex);
    ssl = server->ssl;
    mongoc_mutex_unlock (&server->mutex);
 
    if (ssl) {
-      if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
+      if (!mongoc_stream_tls_handshake_block (client_stream, "localhost",
+                                              TIMEOUT, &error)) {
          mongoc_stream_close (client_stream);
          mongoc_stream_destroy (client_stream);
          RETURN (NULL);
@@ -1612,75 +1652,82 @@ worker_thread (void *data)
    _mongoc_array_init (&autoresponders, sizeof (autoresponder_handle_t));
 
 again:
+   /* loop, checking for requests to receive or replies to send */
    bson_free (rpc);
    rpc = NULL;
-   handled = false;
 
-   mongoc_mutex_lock (&server->mutex);
-   stopped = server->stopped;
-   mongoc_mutex_unlock (&server->mutex);
+   if (_mongoc_buffer_fill (&buffer, client_stream, 4, 10, &error) > 0) {
+      assert (buffer.len >= 4);
 
-   if (stopped) {
-      GOTO(failure);
-   }
+      memcpy (&msg_len, buffer.data + buffer.off, 4);
+      msg_len = BSON_UINT32_FROM_LE (msg_len);
 
-   if (_mongoc_buffer_fill (&buffer, client_stream, 4, 100, &error) == -1) {
-      GOTO (again);
-   }
+      if (msg_len < 16) {
+         MONGOC_WARNING ("No data");
+         GOTO (failure);
+      }
 
-   assert (buffer.len >= 4);
+      if (_mongoc_buffer_fill (&buffer, client_stream, (size_t) msg_len, -1,
+                               &error) == -1) {
+         MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, error.message);
+         GOTO (failure);
+      }
 
-   memcpy (&msg_len, buffer.data + buffer.off, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
+      assert (buffer.len >= (unsigned) msg_len);
 
-   if (msg_len < 16) {
-      MONGOC_WARNING ("No data");
-      GOTO (failure);
-   }
+      /* copies message from buffer */
+      request = request_new (&buffer, msg_len, server, client_stream,
+                             closure->port, replies);
 
-   if (_mongoc_buffer_fill (&buffer, client_stream, (size_t) msg_len, -1,
-                            &error) == -1) {
-      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, error.message);
-      GOTO (failure);
-   }
+      memmove (buffer.data, buffer.data + buffer.off + msg_len,
+               buffer.len - msg_len);
+      buffer.off = 0;
+      buffer.len -= msg_len;
 
-   assert (buffer.len >= (unsigned) msg_len);
+      mongoc_mutex_lock (&server->mutex);
+      _mongoc_array_copy (&autoresponders, &server->autoresponders);
+      mongoc_mutex_unlock (&server->mutex);
 
-   /* copies message from buffer */
-   request = request_new (&buffer, msg_len, server, client_stream,
-                          closure->port);
+      _verbose_print (server, "%5.2f  %hu -> %hu %s\n",
+                      mock_server_get_uptime_sec (server),
+                      closure->port, server->port, request->as_str);
 
-   mongoc_mutex_lock (&server->mutex);
-   _mongoc_array_copy (&autoresponders, &server->autoresponders);
-   mongoc_mutex_unlock (&server->mutex);
+      /* run responders most-recently-added-first */
+      handled = false;
 
-   _verbose_print (server, "%5.2f  %hu -> %hu %s\n",
-                   mock_server_get_uptime_sec (server),
-                   closure->port, server->port, request->as_str);
+      for (i = server->autoresponders.len - 1; i >= 0; i--) {
+         handle = _mongoc_array_index (&server->autoresponders,
+                                       autoresponder_handle_t,
+                                       i);
 
-   /* run responders most-recently-added-first */
-   for (i = server->autoresponders.len - 1; i >= 0; i--) {
-      handle = _mongoc_array_index (&server->autoresponders,
-                                    autoresponder_handle_t,
-                                    i);
-      if (handle.responder (request, handle.data)) {
-         handled = true;
-         /* responder should destroy the request */
-         request = NULL;
-         break;
+         if (handle.responder (request, handle.data)) {
+            /* responder destroyed request and enqueued a reply in "replies" */
+            handled = true;
+            request = NULL;
+            break;
+         }
+      }
+
+      if (!handled) {
+         /* pass to the main thread via the queue */
+         requests = mock_server_get_queue (server);
+         q_put (requests, (void *) request);
       }
    }
 
-   if (!handled) {
-      q = mock_server_get_queue (server);
-      q_put (q, (void *) request);
-      request = NULL;
+   if (_mock_server_stopping (server)) {
+      GOTO (failure);
    }
 
-   memmove (buffer.data, buffer.data + buffer.off + msg_len,
-            buffer.len - msg_len);
-   buffer.off = 0;
-   buffer.len -= msg_len;
+   reply = q_get (replies, 10);
+   if (reply) {
+      _mock_server_reply_with_stream (server, reply, client_stream);
+      _reply_destroy (reply);
+   }
+
+   if (_mock_server_stopping (server)) {
+      GOTO (failure);
+   }
 
    GOTO (again);
 
@@ -1694,9 +1741,17 @@ failure:
    bson_free (closure);
    _mongoc_buffer_destroy (&buffer);
 
+   while ((reply = q_get_nowait (replies))) {
+      _reply_destroy (reply);
+   }
+
+   q_destroy (replies);
+
    RETURN (NULL);
 }
 
+
+/* enqueue server reply for this connection's worker thread to send to client */
 void
 mock_server_reply_multi (request_t           *request,
                          mongoc_reply_flags_t flags,
@@ -1704,9 +1759,37 @@ mock_server_reply_multi (request_t           *request,
                          int                  n_docs,
                          int64_t              cursor_id)
 {
-   const mongoc_rpc_t *request_rpc;
-   mock_server_t *server;
-   mongoc_stream_t *client;
+   reply_t *reply;
+   int i;
+
+   BSON_ASSERT (request);
+   BSON_ASSERT (docs);
+
+   reply = bson_malloc0 (sizeof (reply_t));
+
+   reply->flags = flags;
+   reply->n_docs = n_docs;
+   reply->docs = bson_malloc0 (n_docs * sizeof (bson_t));
+
+   for (i = 0; i < n_docs; i++) {
+      bson_copy_to (&docs[i], &reply->docs[i]);
+   }
+
+   reply->cursor_id = cursor_id;
+   reply->client_port = request_get_client_port (request);
+   reply->request_opcode = (mongoc_opcode_t) request->request_rpc.header.opcode;
+   reply->query_flags = (mongoc_query_flags_t) request->request_rpc.query.flags;
+   reply->response_to = request->request_rpc.header.request_id;
+
+   q_put (request->replies, reply);
+}
+
+
+static void
+_mock_server_reply_with_stream (mock_server_t   *server,
+                                reply_t         *reply,
+                                mongoc_stream_t *client)
+{
    char *doc_json;
    bson_string_t *docs_json;
    mongoc_iovec_t *iov;
@@ -1720,12 +1803,10 @@ mock_server_reply_multi (request_t           *request,
    uint8_t *ptr;
    size_t len;
 
-   BSON_ASSERT (request);
-   BSON_ASSERT (docs);
-
-   request_rpc = &request->request_rpc;
-   server = request->server;
-   client = request->client;
+   mongoc_reply_flags_t flags = reply->flags;
+   const bson_t *docs = reply->docs;
+   int n_docs = reply->n_docs;
+   int64_t cursor_id = reply->cursor_id;
 
    docs_json = bson_string_new ("");
    for (i = 0; i < n_docs; i++) {
@@ -1737,10 +1818,10 @@ mock_server_reply_multi (request_t           *request,
       }
    }
 
-   _verbose_print (request->server, "%5.2f  %hu <- %hu \t%s\n",
-                   mock_server_get_uptime_sec (request->server),
-                   request->client_port,
-                   mock_server_get_port (request->server),
+   _verbose_print (server, "%5.2f  %hu <- %hu \t%s\n",
+                   mock_server_get_uptime_sec (server),
+                   reply->client_port,
+                   mock_server_get_port (server),
                    docs_json->str);
 
    len = 0;
@@ -1759,15 +1840,16 @@ mock_server_reply_multi (request_t           *request,
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
    mongoc_mutex_lock (&server->mutex);
-   if (!(request->opcode == MONGOC_OPCODE_QUERY &&
-         request_rpc->query.flags & MONGOC_QUERY_EXHAUST)) {
+
+   if (!(reply->request_opcode == MONGOC_OPCODE_QUERY &&
+         reply->query_flags & MONGOC_QUERY_EXHAUST)) {
       server->last_response_id++;
    }
 
    r.reply.request_id = server->last_response_id;
    mongoc_mutex_unlock (&server->mutex);
    r.reply.msg_len = 0;
-   r.reply.response_to = request_rpc->header.request_id;
+   r.reply.response_to = reply->response_to;
    r.reply.opcode = MONGOC_OPCODE_REPLY;
    r.reply.flags = flags;
    r.reply.cursor_id = cursor_id;

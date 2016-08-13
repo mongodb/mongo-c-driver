@@ -23,6 +23,7 @@
 #include "mongoc.h"
 
 #include "mongoc-rpc-private.h"
+#include "sync-queue.h"
 
 struct _mock_server_t;  /* forward declaration */
 
@@ -39,6 +40,7 @@ typedef struct _request_t
    char *command_name;
    char *as_str;
    mongoc_array_t docs;  /* array of bson_t pointers */
+   sync_queue_t *replies;
 } request_t;
 
 
@@ -46,7 +48,8 @@ request_t *request_new (const mongoc_buffer_t *buffer,
                         int32_t msg_len,
                         struct _mock_server_t *server,
                         mongoc_stream_t *client,
-                        uint16_t client_port);
+                        uint16_t client_port,
+                        sync_queue_t *replies);
 
 const bson_t * request_get_doc (const request_t *request,
                                 int n);

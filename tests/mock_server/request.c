@@ -47,7 +47,8 @@ request_new (const mongoc_buffer_t *buffer,
              int32_t msg_len,
              mock_server_t *server,
              mongoc_stream_t *client,
-             uint16_t client_port)
+             uint16_t client_port,
+             sync_queue_t *replies)
 {
    request_t *request = (request_t *)bson_malloc0 (sizeof *request);
    uint8_t *data;
@@ -56,6 +57,7 @@ request_new (const mongoc_buffer_t *buffer,
    memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
    request->data = data;
    request->data_len = (size_t) msg_len;
+   request->replies = replies;
 
    if (!_mongoc_rpc_scatter (&request->request_rpc, data,
                              (size_t) msg_len)) {

@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <mongoc-util-private.h>
 
 #include "mongoc-client-private.h"
 #include "utlist.h"
@@ -285,6 +286,9 @@ _test_topology_reconcile_sharded (bool pooled)
       "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
 
    request_destroy (request);
+
+   /* make sure the mongos response is processed first */
+   _mongoc_usleep (1000 * 1000);
 
    /* replica set secondary - topology removes it */
    request = mock_server_receives_ismaster (secondary);
