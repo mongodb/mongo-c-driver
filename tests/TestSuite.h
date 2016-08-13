@@ -212,19 +212,6 @@ void test_error (const char *format, ...) BSON_GNUC_PRINTF(1, 2);
       } \
    } while (0)
 
-#define AWAIT(_condition) \
-   do { \
-      int64_t _start = bson_get_monotonic_time (); \
-      while (! (_condition)) { \
-         if (bson_get_monotonic_time() - _start > 1000 * 1000) { \
-            fprintf (stderr, \
-                     "%s:%d %s(): \"%s\" still false after 1 second\n", \
-                     __FILE__, __LINE__, BSON_FUNC, #_condition); \
-            abort (); \
-         } \
-      }  \
-   } while (0)
-
 #define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
    do { \
       ASSERT_CMPINT (error.domain, ==, _domain); \

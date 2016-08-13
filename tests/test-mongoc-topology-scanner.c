@@ -138,7 +138,6 @@ test_topology_scanner_discovery ()
    char *primary_response;
    char *secondary_response;
    mongoc_client_t *client;
-   mongoc_topology_scanner_t *scanner;
    char *uri_str;
    mongoc_read_prefs_t *secondary_pref;
    bson_error_t error;
@@ -171,14 +170,12 @@ test_topology_scanner_discovery ()
    uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
                                  mock_server_get_host_and_port (primary));
    client = mongoc_client_new (uri_str);
-   scanner = client->topology->scanner;
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
-   AWAIT (scanner->async->ncmds == 1);
    request = mock_server_receives_ismaster (primary);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
@@ -187,12 +184,10 @@ test_topology_scanner_discovery ()
    _mongoc_usleep (250 * 1000);
 
    /* a check of the secondary is scheduled in this scan */
-   AWAIT (scanner->async->ncmds == 1);
-
    request = mock_server_receives_ismaster (secondary);
    mock_server_replies_simple (request, secondary_response);
+
    /* scan completes */
-   AWAIT (scanner->async->ncmds == 0);
    ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)),
                     error);
 
@@ -267,14 +262,12 @@ test_topology_scanner_oscillate ()
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
-   AWAIT (scanner->async->ncmds == 1);
 
    request = mock_server_receives_ismaster (server1);
    mock_server_replies_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
    _mongoc_usleep (250 * 1000);
-   AWAIT (scanner->async->ncmds == 0);
 
    assert (!future_get_mongoc_server_description_ptr (future));
    assert (scanner->async->ncmds == 0);
