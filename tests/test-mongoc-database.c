@@ -350,8 +350,9 @@ test_db_command_read_prefs_pooled (void)
 static void
 test_drop (void)
 {
-   mongoc_database_t *database;
    mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
    bson_error_t error = { 0 };
    char *dbname;
    mongoc_write_concern_t *good_wc;
@@ -369,6 +370,14 @@ test_drop (void)
 
    dbname = gen_collection_name ("db_drop_test");
    database = mongoc_client_get_database (client, dbname);
+
+   /* MongoDB 3.2+ must create at least one replicated database before
+    * dropDatabase will check writeConcern, see SERVER-25601 */
+   collection = mongoc_database_get_collection (database, "collection");
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, tmp_bson ("{}"),
+                                 NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    assert (!error.domain);
@@ -427,6 +436,7 @@ test_drop (void)
    }
 
    bson_free (dbname);
+   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mongoc_write_concern_destroy (good_wc);
    mongoc_write_concern_destroy (bad_wc);
