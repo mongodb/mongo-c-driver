@@ -844,7 +844,7 @@ call_ismaster_with_host_and_port (char *host,
    assert (uri);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
-   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", true);
+   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
 
    client = mongoc_client_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
