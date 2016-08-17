@@ -80,7 +80,7 @@
         <p>On Debian / Ubuntu:</p>
         <screen>$ sudo apt-get install pkg-config libssl-dev libsasl2-dev</screen>
         <p>On FreeBSD:</p>
-        <screen>$ su -c 'pkg install pkgconf openssl cyrus-sasl2'</screen>
+        <screen>$ su -c 'pkg install pkgconf openssl cyrus-sasl'</screen>
     </section>
     <section id="unix-build">
       <title>Building from a release tarball</title>
