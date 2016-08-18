@@ -87,6 +87,8 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init();
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   tls_init ();
 #endif
 
 #ifdef MONGOC_ENABLE_SSL

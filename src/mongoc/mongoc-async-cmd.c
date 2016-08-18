@@ -25,6 +25,7 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-server-description-private.h"
+#include "mongoc-log.h"
 #include "utlist.h"
 
 #ifdef MONGOC_ENABLE_SSL

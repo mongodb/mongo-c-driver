@@ -36,6 +36,10 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       include (FindOpenSSL)
    endif ()
 
+   if (ENABLE_SSL STREQUAL LIBRESSL)
+      set (LIBRESSL 1)
+   endif ()
+
    if (ENABLE_SSL STREQUAL DARWIN)
       if (APPLE)
          set (SECURE_TRANSPORT 1)
@@ -60,7 +64,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       set (SECURE_CHANNEL 1)
    endif ()
 
-   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL)
+   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL AND NOT LIBRESSL)
       if (ENABLE_SSL STREQUAL AUTO)
          set (ENABLE_SSL OFF)
       else ()
@@ -72,6 +76,7 @@ endif ()
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_SSL_OPENSSL 0)
+set (MONGOC_ENABLE_SSL_LIBRESSL 0)
 set (MONGOC_ENABLE_SSL_SECURE_TRANSPORT 0)
 set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 0)
 
@@ -97,6 +102,11 @@ elseif (SECURE_CHANNEL)
    set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
    set (MONGOC_ENABLE_CRYPTO_CNG 1)
+elseif (LIBRESSL)
+   set (MONGOC_ENABLE_SSL 1)
+   set (MONGOC_ENABLE_SSL_LIBRESSL 1)
+   set (MONGOC_ENABLE_CRYPTO 1)
+   set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 1)
 endif ()
 
 if (ENABLE_CRYPTO_SYSTEM_PROFILE)
@@ -289,6 +299,8 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -348,6 +360,14 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
       )
       set(LIBS ${LIBS} secur32.lib crypt32.lib Bcrypt.lib)
+   elseif (LIBRESSL)
+      set (SOURCES ${SOURCES}
+              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
+      )
+      set(LIBS ${LIBS} "-ltls -lcrypto")
    endif ()
 endif () # ENABLE_SSL
 
