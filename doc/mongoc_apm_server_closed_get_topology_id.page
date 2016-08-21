@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_apm_server_closed_get_topology_id">
+
+  <info>
+    <link type="guide" xref="mongoc_apm_server_closed_t" group="function"/>
+  </info>
+  <title>mongoc_apm_server_closed_get_topology_id()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
+mongoc_apm_server_closed_get_topology_id (const mongoc_apm_server_closed_t *event,
+                                          bson_oid_t                       *topology_id);
+]]></code></synopsis>
+    <p>Returns this event's topology id.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>event</p></td><td><p>A <code xref="mongoc_apm_server_closed_t">mongoc_apm_server_closed_t</code>.</p></td></tr>
+      <tr><td><p>topology_id</p></td><td><p>A <code xref="bson:bson_oid_t">bson_oid_t</code> to receive the event's topology_id.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>The event's topology id.</p>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
+  </section>
+
+</page>
