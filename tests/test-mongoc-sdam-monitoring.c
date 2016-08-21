@@ -6,6 +6,9 @@
 
 #include "mongoc-client-private.h"
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -254,24 +257,49 @@ topology_closed (const mongoc_apm_topology_closed_t *event)
                                   "}"));
 }
 
+/* no standard tests in the specs repo for heartbeat events, so invent some */
 static void
 server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 {
+   context_t *ctx;
+   const mongoc_host_list_t *host;
+
+   ctx = (context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
+   host = mongoc_apm_server_heartbeat_started_get_host (event);
+   context_append (ctx, BCON_NEW ("heartbeat_started_event", "{",
+                                  "host", BCON_UTF8 (host->host_and_port),
+                                  "}"));
 }
 
 static void
 server_heartbeat_succeeded (
    const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
+   context_t *ctx;
+   const mongoc_host_list_t *host;
+
+   ctx = (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   host = mongoc_apm_server_heartbeat_succeeded_get_host (event);
+   context_append (ctx, BCON_NEW ("heartbeat_succeeded_event", "{",
+                                  "host", BCON_UTF8 (host->host_and_port),
+                                  "}"));
 }
 
 static void
 server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 {
+   context_t *ctx;
+   const mongoc_host_list_t *host;
+
+   ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   host = mongoc_apm_server_heartbeat_failed_get_host (event);
+   context_append (ctx, BCON_NEW ("heartbeat_failed_event", "{",
+                                  "host", BCON_UTF8 (host->host_and_port),
+                                  "}"));
 }
 
 static mongoc_apm_callbacks_t *
-get_sdam_monitoring_cbs (void)
+topology_event_callbacks (void)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -282,6 +310,38 @@ get_sdam_monitoring_cbs (void)
    mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
    mongoc_apm_set_topology_opening_cb (callbacks, topology_opening);
    mongoc_apm_set_topology_closed_cb (callbacks, topology_closed);
+
+   return callbacks;
+}
+
+static void
+client_set_topology_event_callbacks (mongoc_client_t *client,
+                                context_t       *context)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = topology_event_callbacks ();
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) context);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+static void
+pool_set_topology_event_callbacks (mongoc_client_pool_t *pool,
+                              context_t            *context)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = topology_event_callbacks ();
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) context);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+static mongoc_apm_callbacks_t *
+heartbeat_event_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_server_heartbeat_started_cb (callbacks,
                                                server_heartbeat_started);
    mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
@@ -293,23 +353,23 @@ get_sdam_monitoring_cbs (void)
 }
 
 static void
-client_set_sdam_monitoring_cbs (mongoc_client_t *client,
-                                context_t       *context)
+client_set_heartbeat_event_callbacks (mongoc_client_t *client,
+                                     context_t       *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
-   callbacks = get_sdam_monitoring_cbs ();
+   callbacks = heartbeat_event_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) context);
    mongoc_apm_callbacks_destroy (callbacks);
 }
 
 static void
-pool_set_sdam_monitoring_cbs (mongoc_client_pool_t *pool,
-                              context_t            *context)
+pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool,
+                                   context_t            *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
-   callbacks = get_sdam_monitoring_cbs ();
+   callbacks = heartbeat_event_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, (void *) context);
    mongoc_apm_callbacks_destroy (callbacks);
 }
@@ -341,7 +401,7 @@ test_sdam_monitoring_cb (bson_t *test)
    client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
    topology = client->topology;
    context_init (&context);
-   client_set_sdam_monitoring_cbs (client, &context);
+   client_set_topology_event_callbacks (client, &context);
 
    /* for each phase, parse and validate */
    assert (bson_iter_init_find (&iter, test, "phases"));
@@ -412,11 +472,11 @@ _test_topology_events (bool pooled)
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
-      pool_set_sdam_monitoring_cbs (pool, &context);
+      pool_set_topology_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new ();
-      client_set_sdam_monitoring_cbs (client, &context);
+      client_set_topology_event_callbacks (client, &context);
    }
 
    r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"),
@@ -462,6 +522,135 @@ test_topology_events_pooled (void)
    _test_topology_events (true);
 }
 
+static bool
+responder (request_t *request,
+           void      *data)
+{
+   if (!strcmp (request->command_name, "foo")) {
+      mock_server_replies_simple (request, "{'ok': 1}");
+      request_destroy (request);
+      return true;
+   }
+
+   return false;
+}
+
+static void
+_test_heartbeat_events (bool pooled,
+                        bool succeeded)
+{
+   context_t context;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   future_t *future;
+   request_t *request;
+   char *expected_json;
+   bson_error_t error;
+
+   context_init (&context);
+
+   /* auto-respond to "foo" command */
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_autoresponds (server, responder, NULL, NULL);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 400);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      pool_set_heartbeat_event_callbacks (pool, &context);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      client_set_heartbeat_event_callbacks (client, &context);
+   }
+
+   /* trigger "ismaster" handshake */
+   future = future_client_command_simple (client, "admin",
+                                          tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error);
+
+   /* topology scanner calls ismaster once */
+   request = mock_server_receives_ismaster (server);
+
+   if (succeeded) {
+      mock_server_replies_ok_and_destroys (request);
+   } else {
+      mock_server_hangs_up (request);
+      request_destroy (request);
+   }
+
+   /* pooled client opens new socket, handshakes it by calling ismaster again */
+   if (pooled && succeeded) {
+      request = mock_server_receives_ismaster (server);
+      mock_server_replies_ok_and_destroys (request);
+   }
+
+   if (succeeded) {
+      /* "foo" command succeeds */
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+   } else {
+      ASSERT (!future_get_bool (future));
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   /* even if pooled, only topology scanner sends events, so we get one pair */
+   if (succeeded) {
+      expected_json = bson_strdup_printf (
+         "{'0': {'heartbeat_started_event': {'host': '%s'}},"
+         " '1': {'heartbeat_succeeded_event': {'host': '%s'}}}",
+         mock_server_get_host_and_port (server),
+         mock_server_get_host_and_port (server));
+   } else {
+      expected_json = bson_strdup_printf (
+         "{'0': {'heartbeat_started_event': {'host': '%s'}},"
+         " '1': {'heartbeat_failed_event': {'host': '%s'}}}",
+         mock_server_get_host_and_port (server),
+         mock_server_get_host_and_port (server));
+   }
+
+   check_json_apm_events (&context.events, tmp_bson (expected_json));
+
+   future_destroy (future);
+   bson_free (expected_json);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+   context_destroy (&context);
+}
+
+static void
+test_heartbeat_events_single_succeeded (void)
+{
+   _test_heartbeat_events (false, true);
+}
+
+static void
+test_heartbeat_events_pooled_succeeded (void)
+{
+   _test_heartbeat_events (true, true);
+}
+
+
+static void
+test_heartbeat_events_single_failed (void)
+{
+   _test_heartbeat_events (false, false);
+}
+
+static void
+test_heartbeat_events_pooled_failed (void)
+{
+   _test_heartbeat_events (true, false);
+}
+
 
 void
 test_sdam_monitoring_install (TestSuite *suite)
@@ -469,10 +658,26 @@ test_sdam_monitoring_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_AddLive (
       suite,
-      "/server_discovery_and_monitoring/monitoring/topology_events/single",
+      "/server_discovery_and_monitoring/monitoring/topology/single",
       test_topology_events_single);
    TestSuite_AddLive (
       suite,
-      "/server_discovery_and_monitoring/monitoring/topology_events/pooled",
+      "/server_discovery_and_monitoring/monitoring/topology/pooled",
       test_topology_events_pooled);
+   TestSuite_Add (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
+      test_heartbeat_events_single_succeeded);
+   TestSuite_Add (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
+      test_heartbeat_events_single_failed);
+   TestSuite_Add (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
+      test_heartbeat_events_pooled_succeeded);
+   TestSuite_Add (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
+      test_heartbeat_events_pooled_failed);
 }

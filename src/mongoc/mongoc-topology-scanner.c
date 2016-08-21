@@ -38,12 +38,25 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
 
+/* forward declarations */
 static void
 mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
                                           const bson_t             *ismaster_response,
                                           int64_t                   rtt_msec,
                                           void                     *data,
                                           bson_error_t             *error);
+
+static void
+_mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts,
+                                                    const mongoc_host_list_t        *host);
+
+static void
+_mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
+                                                      const mongoc_host_list_t        *host);
+
+static void
+_mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
+                                                   const mongoc_host_list_t        *host);
 
 static void
 _add_ismaster (bson_t *cmd)
@@ -329,12 +342,14 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                                           bson_error_t             *error)
 {
    mongoc_topology_scanner_node_t *node;
+   mongoc_topology_scanner_t *ts;
    int64_t now;
    const char *message;
 
    BSON_ASSERT (data);
 
-   node = (mongoc_topology_scanner_node_t *)data;
+   node = (mongoc_topology_scanner_node_t *) data;
+   ts = node->ts;
    node->cmd = NULL;
 
    if (node->retired) {
@@ -363,14 +378,15 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                       "%s calling ismaster on \'%s\'",
                       message,
                       node->host.host_and_port);
+      
+      _mongoc_topology_scanner_monitor_heartbeat_failed (ts, &node->host);
    } else {
       node->last_failed = -1;
+      _mongoc_topology_scanner_monitor_heartbeat_succeeded (ts, &node->host);
    }
 
    node->last_used = now;
-
-   node->ts->cb (node->id, ismaster_response, rtt_msec,
-                 node->ts->cb_data, error);
+   ts->cb (node->id, ismaster_response, rtt_msec, ts->cb_data, error);
 }
 
 /*
@@ -545,6 +561,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    BSON_ASSERT (!node->retired);
 
+   _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
+
    if (node->ts->initiator) {
       sock_stream = node->ts->initiator (node->ts->uri, &node->host,
                                          node->ts->initiator_context, error);
@@ -565,6 +583,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    }
 
    if (!sock_stream) {
+      _mongoc_topology_scanner_monitor_heartbeat_failed (node->ts, &node->host);
+
       /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
       node->ts->cb (node->id, NULL, -1, node->ts->cb_data, error);
       return false;
@@ -764,4 +784,43 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
 
    ts->appname = bson_strdup (appname);
    return true;
+}
+
+/* SDAM Monitoring Spec: send HeartbeatStartedEvent */
+static void
+_mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts,
+                                                    const mongoc_host_list_t        *host)
+{
+   if (ts->apm_callbacks.server_heartbeat_started) {
+      mongoc_apm_server_heartbeat_started_t event;
+      event.host = host;
+      event.context = ts->apm_context;
+      ts->apm_callbacks.server_heartbeat_started (&event);
+   }
+}
+
+/* SDAM Monitoring Spec: send HeartbeatSucceededEvent */
+static void
+_mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
+                                                      const mongoc_host_list_t        *host)
+{
+   if (ts->apm_callbacks.server_heartbeat_succeeded) {
+      mongoc_apm_server_heartbeat_succeeded_t event;
+      event.host = host;
+      event.context = ts->apm_context;
+      ts->apm_callbacks.server_heartbeat_succeeded (&event);
+   }
+}
+
+/* SDAM Monitoring Spec: send HeartbeatFailedEvent */
+static void
+_mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
+                                                   const mongoc_host_list_t        *host)
+{
+   if (ts->apm_callbacks.server_heartbeat_failed) {
+      mongoc_apm_server_heartbeat_failed_t event;
+      event.host = host;
+      event.context = ts->apm_context;
+      ts->apm_callbacks.server_heartbeat_failed (&event);
+   }
 }
