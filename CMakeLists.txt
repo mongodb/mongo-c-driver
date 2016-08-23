@@ -315,15 +315,14 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h
 )
 
 if (NOT ENABLE_SSL STREQUAL OFF)
-   set (HEADERS ${HEADERS}
-        ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h
-   )
    set (SOURCES ${SOURCES}
         ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
         ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
@@ -373,7 +372,6 @@ endif () # ENABLE_SSL
 
 
 if (MONGOC_ENABLE_SASL)
-   set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
    set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
    set(LIBS ${LIBS} ${SASL2_LIBRARY})
    include_directories(${SASL2_INCLUDE_DIR})
