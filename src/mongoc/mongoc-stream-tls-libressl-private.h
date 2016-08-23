@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#ifndef MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H
+#define MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H
 
-#ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
-
-#include "mongoc-rand.h"
-#include "mongoc-rand-private.h"
-
-#include "mongoc.h"
-
-#include <openssl/rand.h>
-
-int _mongoc_rand_bytes(uint8_t * buf, int num) {
-    return RAND_bytes(buf, num);
-}
-
-void mongoc_rand_seed(const void* buf, int num) {
-    RAND_seed(buf, num);
-}
-
-void mongoc_rand_add(const void* buf, int num, double entropy) {
-    RAND_add(buf, num, entropy);
-}
-
-int mongoc_rand_status(void) {
-    return RAND_status();
-}
-
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+# error "Only <mongoc.h> can be included directly."
 #endif
+
+#ifdef MONGOC_ENABLE_SSL_LIBRESSL
+#include <bson.h>
+
+#include <tls.h>
+
+BSON_BEGIN_DECLS
+
+
+/**
+ * mongoc_stream_tls_libressl_t:
+ *
+ * Private storage for LibreSSL Streams
+ */
+typedef struct
+{
+    struct tls        *ctx;
+    struct tls_config *config;
+} mongoc_stream_tls_libressl_t;
+
+
+BSON_END_DECLS
+
+#endif /* MONGOC_ENABLE_SSL_LIBRESSL */
+#endif /* MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H */
+

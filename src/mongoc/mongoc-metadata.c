@@ -105,6 +105,10 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES;
 #endif
 
+#ifdef MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL
+   bf |= MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL;
+#endif
+
    return bf;
 }
 

@@ -117,6 +117,7 @@ INST_H_FILES += \
 	src/mongoc/mongoc-crypto-cng-private.h \
 	src/mongoc/mongoc-crypto-common-crypto-private.h \
 	src/mongoc/mongoc-crypto-openssl-private.h \
+	src/mongoc/mongoc-libressl-private.h \
 	src/mongoc/mongoc-openssl-private.h \
 	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \
@@ -125,6 +126,8 @@ INST_H_FILES += \
 	src/mongoc/mongoc-ssl.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-tls.h \
+	src/mongoc/mongoc-stream-tls-libressl.h \
+	src/mongoc/mongoc-stream-tls-libressl-private.h \
 	src/mongoc/mongoc-stream-tls-openssl-bio-private.h \
 	src/mongoc/mongoc-stream-tls-openssl.h \
 	src/mongoc/mongoc-stream-tls-openssl-private.h \
@@ -219,6 +222,11 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
 
+if ENABLE_SSL_LIBRESSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-libressl.c \
+	src/mongoc/mongoc-stream-tls-libressl.c
+endif
 if ENABLE_SSL_OPENSSL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-openssl.c \
