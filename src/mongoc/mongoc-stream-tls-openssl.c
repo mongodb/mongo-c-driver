@@ -535,15 +535,21 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
+   SSL *ssl;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (host);
    ENTRY;
 
-   if (BIO_do_handshake (openssl->bio) == 1) {
-      SSL *ssl;
+   BIO_get_ssl (openssl->bio, &ssl);
 
-      BIO_get_ssl (openssl->bio, &ssl);
+   /* Set the SNI hostname we are expecting certificate for */
+   if (!tls->ssl_opts.allow_invalid_hostname) {
+      SSL_set_tlsext_host_name (ssl, host);
+   }
+
+   if (BIO_do_handshake (openssl->bio) == 1) {
+
       if (_mongoc_openssl_check_cert (ssl, host, tls->ssl_opts.allow_invalid_hostname)) {
          RETURN (true);
       }
