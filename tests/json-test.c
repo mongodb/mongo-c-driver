@@ -198,9 +198,11 @@ test_server_selection_logic_cb (bson_t *test)
    type = bson_iter_utf8 (&topology_iter, NULL);
 
    if (strcmp (type, "Single") == 0) {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_SINGLE);
+      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_SINGLE,
+                                        heartbeat_msec);
    } else {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_UNKNOWN);
+      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_UNKNOWN,
+                                        heartbeat_msec);
       topology.type =
          topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
    }
@@ -297,19 +299,13 @@ test_server_selection_logic_cb (bson_t *test)
 
    if (expected_error) {
       assert (!mongoc_read_prefs_is_valid (read_prefs) ||
-              !mongoc_topology_compatible (&topology,
-                                           read_prefs,
-                                           heartbeat_msec,
-                                           &error));
+              !mongoc_topology_compatible (&topology, read_prefs, &error));
       goto DONE;
    }
 
    /* no expected error */
    assert (mongoc_read_prefs_is_valid (read_prefs));
-   assert (mongoc_topology_compatible (&topology,
-                                       read_prefs,
-                                       heartbeat_msec,
-                                       &error));
+   assert (mongoc_topology_compatible (&topology, read_prefs, &error));
 
    /* read in latency window servers */
    assert (bson_iter_init_find (&iter, test, "in_latency_window"));
@@ -319,8 +315,7 @@ test_server_selection_logic_cb (bson_t *test)
                                                  op,
                                                  &topology,
                                                  read_prefs,
-                                                 15,
-                                                 heartbeat_msec);
+                                                 15);
 
    /* check each server in expected_servers is in selected_servers */
    memset (matched_servers, 0, sizeof (matched_servers));

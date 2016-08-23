@@ -150,6 +150,8 @@ mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri,
                      bool                single_threaded)
 {
+   int64_t heartbeat_default;
+   int64_t heartbeat;
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
    uint32_t id;
@@ -177,7 +179,16 @@ mongoc_topology_new (const mongoc_uri_t *uri,
       }
    }
 
-   mongoc_topology_description_init(&topology->description, init_type);
+   heartbeat_default = single_threaded ?
+                       MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
+                       MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
+
+   heartbeat = mongoc_uri_get_option_as_int32 (uri, "heartbeatfrequencyms",
+                                               heartbeat_default);
+
+   mongoc_topology_description_init (&topology->description, init_type,
+                                     heartbeat);
+
    topology->description.set_name = bson_strdup(mongoc_uri_get_replica_set(uri));
 
    topology->uri = mongoc_uri_copy (uri);
@@ -222,12 +233,6 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    topology->connect_timeout_msec = mongoc_uri_get_option_as_int32(
       topology->uri, "connecttimeoutms",
       MONGOC_DEFAULT_CONNECTTIMEOUTMS);
-
-   topology->heartbeat_msec = mongoc_uri_get_option_as_int32(
-      topology->uri, "heartbeatfrequencyms",
-      (single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
-            MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED)
-   );
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);
@@ -358,7 +363,6 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t           *read_prefs,
-                            int64_t                              heartbeat_msec,
                             bson_error_t                        *error)
 {
    int32_t max_staleness;
@@ -392,7 +396,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
 
       if ((td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
            td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-          max_staleness < 2 * heartbeat_msec) {
+          max_staleness < 2 * td->heartbeat_msec) {
          bson_set_error (error, MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "maxStalenessMS must be at least twice "
@@ -467,6 +471,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    int64_t sleep_usec;
    bool tried_once;
    bson_error_t scanner_error = { 0 };
+   int64_t heartbeat_msec;
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -477,6 +482,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
    BSON_ASSERT (topology);
 
+   heartbeat_msec = topology->description.heartbeat_msec;
    local_threshold_ms = topology->local_threshold_msec;
    try_once = topology->server_selection_try_once;
    loop_start = loop_end = bson_get_monotonic_time ();
@@ -485,7 +491,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
    if (topology->single_threaded) {
       tried_once = false;
-      next_update = topology->last_scan + topology->heartbeat_msec * 1000;
+      next_update = topology->last_scan + heartbeat_msec * 1000;
       if (next_update < loop_start) {
          /* we must scan now */
          topology->stale = true;
@@ -520,9 +526,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             tried_once = true;
          }
 
-         if (!mongoc_topology_compatible (&topology->description,
-                                          read_prefs,
-                                          topology->heartbeat_msec,
+         if (!mongoc_topology_compatible (&topology->description, read_prefs,
                                           error)) {
             return NULL;
          }
@@ -531,8 +535,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             &topology->description,
             optype,
             read_prefs,
-            local_threshold_ms,
-            topology->heartbeat_msec);
+            local_threshold_ms);
 
          if (selected_server) {
             return mongoc_server_description_new_copy(selected_server);
@@ -569,9 +572,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    for (;;) {
       mongoc_mutex_lock (&topology->mutex);
 
-      if (!mongoc_topology_compatible (&topology->description,
-                                       read_prefs,
-                                       topology->heartbeat_msec,
+      if (!mongoc_topology_compatible (&topology->description, read_prefs,
                                        error)) {
          mongoc_mutex_unlock (&topology->mutex);
          return NULL;
@@ -581,8 +582,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          &topology->description,
          optype,
          read_prefs,
-         local_threshold_ms,
-         topology->heartbeat_msec);
+         local_threshold_ms);
 
       if (! selected_server) {
          _mongoc_topology_request_scan (topology);
@@ -775,12 +775,15 @@ void * _mongoc_topology_run_background (void *data)
    int64_t last_scan;
    int64_t timeout;
    int64_t force_timeout;
+   int64_t heartbeat_msec;
    int r;
 
    BSON_ASSERT (data);
 
    last_scan = 0;
    topology = (mongoc_topology_t *)data;
+   heartbeat_msec = topology->description.heartbeat_msec;
+
    /* we exit this loop when shutdown_requested, or on error */
    for (;;) {
       /* unlocked after starting a scan or after breaking out of the loop */
@@ -795,10 +798,10 @@ void * _mongoc_topology_run_background (void *data)
          if (last_scan == 0) {
             /* set up the "last scan" as exactly long enough to force an
              * immediate scan on the first pass */
-            last_scan = now - (topology->heartbeat_msec * 1000);
+            last_scan = now - (heartbeat_msec * 1000);
          }
 
-         timeout = topology->heartbeat_msec - ((now - last_scan) / 1000);
+         timeout = heartbeat_msec - ((now - last_scan) / 1000);
 
          /* if someone's specifically asked for a scan, use a shorter interval */
          if (topology->scan_requested) {

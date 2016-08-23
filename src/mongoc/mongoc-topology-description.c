@@ -46,8 +46,9 @@ _mongoc_topology_server_dtor (void *server_,
  *--------------------------------------------------------------------------
  */
 void
-mongoc_topology_description_init (mongoc_topology_description_t     *description,
-                                  mongoc_topology_description_type_t type)
+mongoc_topology_description_init (mongoc_topology_description_t      *description,
+                                  mongoc_topology_description_type_t  type,
+                                  int64_t                             heartbeat_msec)
 {
    ENTRY;
 
@@ -59,6 +60,7 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
    memset (description, 0, sizeof (*description));
 
    description->type = type;
+   description->heartbeat_msec = heartbeat_msec;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
    description->max_set_version = MONGOC_NO_SET_VERSION;
@@ -314,8 +316,7 @@ static void
 _mongoc_try_mode_secondary (mongoc_array_t                *set, /* OUT */
                             mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t     *read_pref,
-                            size_t                         local_threshold_ms,
-                            int64_t                        heartbeat_frequency_ms)
+                            size_t                         local_threshold_ms)
 {
    mongoc_read_prefs_t *secondary;
 
@@ -326,8 +327,7 @@ _mongoc_try_mode_secondary (mongoc_array_t                *set, /* OUT */
                                                  MONGOC_SS_READ,
                                                  topology,
                                                  secondary,
-                                                 local_threshold_ms,
-                                                 heartbeat_frequency_ms);
+                                                 local_threshold_ms);
 
    mongoc_read_prefs_destroy (secondary);
 }
@@ -446,8 +446,7 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
                                               mongoc_ss_optype_t             optype,
                                               mongoc_topology_description_t *topology,
                                               const mongoc_read_prefs_t     *read_pref,
-                                              size_t                         local_threshold_ms,
-                                              int64_t                        heartbeat_frequency_ms)
+                                              size_t                         local_threshold_ms)
 {
    mongoc_suitable_data_t data;
    mongoc_server_description_t **candidates;
@@ -502,8 +501,7 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
             _mongoc_try_mode_secondary (set,
                                         topology,
                                         read_pref,
-                                        local_threshold_ms,
-                                        heartbeat_frequency_ms);
+                                        local_threshold_ms);
 
             /* otherwise fall back to primary */
             if (!set->len && data.primary) {
@@ -526,7 +524,7 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
          mongoc_server_description_filter_stale (data.candidates,
                                                  data.candidates_len,
                                                  data.primary,
-                                                 heartbeat_frequency_ms,
+                                                 topology->heartbeat_msec,
                                                  read_pref);
 
          mongoc_server_description_filter_tags (data.candidates,
@@ -604,8 +602,7 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *topology,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms,
-                                    int64_t                        heartbeat_frequency_ms)
+                                    int64_t                        local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;
@@ -631,8 +628,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
    mongoc_topology_description_suitable_servers (&suitable_servers, optype,
                                                  topology, read_pref,
-                                                 local_threshold_ms,
-                                                 heartbeat_frequency_ms);
+                                                 local_threshold_ms);
    if (suitable_servers.len != 0) {
       sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*,
                                rand() % suitable_servers.len);

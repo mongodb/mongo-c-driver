@@ -50,7 +50,6 @@ typedef struct _mongoc_topology_t
    int64_t                            local_threshold_msec;
    int64_t                            connect_timeout_msec;
    int64_t                            server_selection_timeout_msec;
-   int64_t                            heartbeat_msec;
 
    mongoc_mutex_t                     mutex;
    mongoc_cond_t                      cond_client;
@@ -74,7 +73,6 @@ mongoc_topology_destroy (mongoc_topology_t *topology);
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t           *read_prefs,
-                            int64_t                              heartbeat_msec,
                             bson_error_t                        *error);
 
 mongoc_server_description_t *

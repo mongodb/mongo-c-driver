@@ -35,6 +35,7 @@ typedef enum
 typedef struct _mongoc_topology_description_t
 {
    mongoc_topology_description_type_t type;
+   int64_t                            heartbeat_msec;
    mongoc_set_t                      *servers;
    char                              *set_name;
    int64_t                            max_set_version;
@@ -52,8 +53,9 @@ typedef enum
    } mongoc_ss_optype_t;
 
 void
-mongoc_topology_description_init (mongoc_topology_description_t     *description,
-                                  mongoc_topology_description_type_t type);
+mongoc_topology_description_init (mongoc_topology_description_t      *description,
+                                  mongoc_topology_description_type_t  type,
+                                  int64_t                             heartbeat_msec);
 
 void
 mongoc_topology_description_destroy (mongoc_topology_description_t *description);
@@ -70,8 +72,7 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *description,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms,
-                                    int64_t                        heartbeat_frequency_ms);
+                                    int64_t                        local_threshold_ms);
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
@@ -92,8 +93,7 @@ mongoc_topology_description_suitable_servers (
    mongoc_ss_optype_t             optype,
    mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t     *read_pref,
-   size_t                         local_threshold_ms,
-   int64_t                        heartbeat_frequency_ms);
+   size_t                         local_threshold_ms);
 
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
