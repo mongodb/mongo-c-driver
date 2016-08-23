@@ -8,6 +8,9 @@ New features and bug fixes:
     * MaxStalenessMS
     * MongoDB Handshake
     * Most command helpers take Write Concern
+  * Improved TLS support
+    * Fixed LibreSSL (libssl) support
+    * Added LibreSSL (libtls) support
 
 
 Thanks to everyone who contributed to the development of this release.
