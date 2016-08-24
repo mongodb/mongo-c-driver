@@ -240,7 +240,8 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    long verify_status;
 
    size_t addrlen = 0;
-   struct in_addr addr;
+   unsigned char addr4[sizeof(struct in_addr)];
+   unsigned char addr6[sizeof(struct in6_addr)];
    int i;
    int n_sans = -1;
    int target = GEN_DNS;
@@ -256,9 +257,12 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
    /** if the host looks like an IP address, match that, otherwise we assume we
     * have a DNS name */
-   if (inet_pton (AF_INET, host, &addr)) {
+   if (inet_pton (AF_INET, host, &addr4)) {
       target = GEN_IPADD;
-      addrlen = sizeof (struct in_addr);
+      addrlen = sizeof addr4;
+   } else if (inet_pton (AF_INET6, host, &addr6)) {
+      target = GEN_IPADD;
+      addrlen = sizeof addr6;
    }
 
    peer = SSL_get_peer_certificate (ssl);
@@ -299,9 +303,12 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
                   break;
                case GEN_IPADD:
-
-                  if ((length == addrlen) && !memcmp (check, &addr, length)) {
-                     r = 1;
+                  if (length == addrlen) {
+                      if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
+                         r = 1;
+                      } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
+                         r = 1;
+                      }
                   }
 
                   break;

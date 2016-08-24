@@ -636,7 +636,8 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
 #ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
       X509_VERIFY_PARAM_set_hostflags (param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
 #endif
-      if (inet_pton (AF_INET, host, &addr)) {
+      if (inet_pton (AF_INET, host, &addr) ||
+          inet_pton (AF_INET6, host, &addr)) {
          X509_VERIFY_PARAM_set1_ip_asc (param, host);
       } else {
          X509_VERIFY_PARAM_set1_host (param, host, 0);
