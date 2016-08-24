@@ -20,7 +20,6 @@
 #include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
-#include "mongoc-set-private.h"
 
 
 static void
@@ -1567,4 +1566,50 @@ mongoc_topology_description_handle_ismaster (
    } else {
       TRACE("No transition entry to %s for %s", _mongoc_topology_description_type (topology), mongoc_server_description_type (sd));
    }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_has_readable_server --
+ *
+ *      SDAM Monitoring Spec:
+ *      "Determines if the topology has a readable server available."
+ *
+ *      NOTE: this method should only be called by user code in an SDAM
+ *      Monitoring callback, while the monitoring framework holds the mutex
+ *      on the owning topology object.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_description_has_readable_server (
+   mongoc_topology_description_t *td,
+   const mongoc_read_prefs_t     *prefs)
+{
+   /* local threshold argument doesn't matter */
+   return mongoc_topology_description_select (td, MONGOC_SS_READ,
+                                              prefs, 0) != NULL;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_has_writable_server --
+ *
+ *      SDAM Monitoring Spec:
+ *      "Determines if the topology has a writable server available."
+ *
+ *      NOTE: this method should only be called by user code in an SDAM
+ *      Monitoring callback, while the monitoring framework holds the mutex
+ *      on the owning topology object.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_description_has_writable_server (
+   mongoc_topology_description_t *td)
+{
+   return mongoc_topology_description_select (td, MONGOC_SS_WRITE,
+                                              NULL, 0) != NULL;
 }

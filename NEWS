@@ -11,7 +11,9 @@ New features and bug fixes:
   * Improved TLS support
     * Fixed LibreSSL (libssl) support
     * Added LibreSSL (libtls) support
-
+  * Additional features for Application Performance Monitoring:
+    * mongoc_topology_description_has_writable_server
+    * mongoc_topology_description_has_readable_server
 
 Thanks to everyone who contributed to the development of this release.
 

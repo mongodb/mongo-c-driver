@@ -312,6 +312,14 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
    RETURN (size);
 }
 
+
+mongoc_topology_description_t *
+_mongoc_client_pool_get_topology_description (mongoc_client_pool_t *pool)
+{
+   return &pool->topology->description;
+}
+
+
 void
 mongoc_client_pool_max_size(mongoc_client_pool_t *pool,
                             uint32_t              max_pool_size)

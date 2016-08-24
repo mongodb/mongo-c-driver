@@ -20,19 +20,20 @@
 #include "mongoc-set-private.h"
 #include "mongoc-server-description.h"
 #include "mongoc-array-private.h"
+#include "mongoc-topology-description.h"
 
 
 typedef enum
-   {
-      MONGOC_TOPOLOGY_UNKNOWN,
-      MONGOC_TOPOLOGY_SHARDED,
-      MONGOC_TOPOLOGY_RS_NO_PRIMARY,
-      MONGOC_TOPOLOGY_RS_WITH_PRIMARY,
-      MONGOC_TOPOLOGY_SINGLE,
-      MONGOC_TOPOLOGY_DESCRIPTION_TYPES
-   } mongoc_topology_description_type_t;
+{
+   MONGOC_TOPOLOGY_UNKNOWN,
+   MONGOC_TOPOLOGY_SHARDED,
+   MONGOC_TOPOLOGY_RS_NO_PRIMARY,
+   MONGOC_TOPOLOGY_RS_WITH_PRIMARY,
+   MONGOC_TOPOLOGY_SINGLE,
+   MONGOC_TOPOLOGY_DESCRIPTION_TYPES
+} mongoc_topology_description_type_t;
 
-typedef struct _mongoc_topology_description_t
+struct _mongoc_topology_description_t
 {
    mongoc_topology_description_type_t type;
    int64_t                            heartbeat_msec;
@@ -44,13 +45,13 @@ typedef struct _mongoc_topology_description_t
    char                              *compatibility_error;
    uint32_t                           max_server_id;
    bool                               stale;
-} mongoc_topology_description_t;
+};
 
 typedef enum
-   {
-      MONGOC_SS_READ,
-      MONGOC_SS_WRITE
-   } mongoc_ss_optype_t;
+{
+   MONGOC_SS_READ,
+   MONGOC_SS_WRITE
+} mongoc_ss_optype_t;
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t      *description,

@@ -305,6 +305,8 @@ mongoc_stream_tls_new
 mongoc_stream_tls_new_with_hostname
 mongoc_stream_write
 mongoc_stream_writev
+mongoc_topology_description_has_readable_server
+mongoc_topology_description_has_writable_server
 mongoc_uri_copy
 mongoc_uri_destroy
 mongoc_uri_get_auth_mechanism
