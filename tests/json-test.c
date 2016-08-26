@@ -19,6 +19,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -29,6 +30,10 @@
 #include <io.h>
 #else
 #include <dirent.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
 #endif
 
 
@@ -132,6 +137,98 @@ optype_from_test (const char *op)
    }
 
    return MONGOC_SS_READ;
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * server_description_by_hostname --
+ *
+ *      Return a reference to a mongoc_server_description_t or NULL.
+ *
+ *-----------------------------------------------------------------------
+ */
+mongoc_server_description_t *
+server_description_by_hostname (mongoc_topology_description_t *topology,
+                                const char                    *address)
+{
+   mongoc_set_t *set = topology->servers;
+   mongoc_server_description_t *server_iter;
+   int i;
+
+   for (i = 0; i < set->items_len; i++) {
+      server_iter = (mongoc_server_description_t *) mongoc_set_get_item (
+         topology->servers, i);
+
+      if (strcasecmp (address, server_iter->connection_address) == 0) {
+         return server_iter;
+      }
+   }
+
+   return NULL;
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * process_sdam_test_ismaster_responses --
+ *
+ *      Update a topology description with the ismaster responses in a "phase"
+ *      from an SDAM or SDAM Monitoring test, like:
+ *
+ *      [
+ *          [
+ *              "a:27017",
+ *              {
+ *                  "ok": 1,
+ *                  "ismaster": false
+ *              }
+ *          ]
+ *      ]
+ *
+ * See:
+ * https://github.com/mongodb/specifications/tree/master/source/server-discovery-and-monitoring/tests
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+process_sdam_test_ismaster_responses (bson_t                        *phase,
+                                      mongoc_topology_description_t *td)
+{
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   bson_t ismasters;
+   bson_t ismaster;
+   bson_t response;
+   bson_iter_t phase_field_iter;
+   bson_iter_t ismaster_iter;
+   bson_iter_t ismaster_field_iter;
+   const char *hostname;
+
+   /* grab ismaster responses out and feed them to topology */
+   assert (bson_iter_init_find (&phase_field_iter, phase, "responses"));
+   bson_iter_bson (&phase_field_iter, &ismasters);
+   bson_iter_init (&ismaster_iter, &ismasters);
+
+   while (bson_iter_next (&ismaster_iter)) {
+      bson_iter_bson (&ismaster_iter, &ismaster);
+
+      bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
+      hostname = bson_iter_utf8 (&ismaster_field_iter, NULL);
+      sd = server_description_by_hostname (td, hostname);
+
+      /* if server has been removed from topology, skip */
+      if (!sd) { continue; }
+
+      bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
+      bson_iter_bson (&ismaster_field_iter, &response);
+
+      /* send ismaster through the topology description's handler */
+      mongoc_topology_description_handle_ismaster (td, sd, &response, 1,
+                                                   &error);
+   }
 }
 
 
