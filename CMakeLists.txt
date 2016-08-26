@@ -475,6 +475,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c

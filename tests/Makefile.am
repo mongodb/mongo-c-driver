@@ -120,6 +120,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sdam.c \
+	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
