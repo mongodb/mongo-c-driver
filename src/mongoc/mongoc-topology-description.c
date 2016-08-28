@@ -17,7 +17,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-error.h"
 #include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
+#include "mongoc-topology-description-apm-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
@@ -75,6 +75,64 @@ mongoc_topology_description_init (mongoc_topology_description_t      *descriptio
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_copy_to --
+ *
+ *       Deep-copy @src to an uninitialized topology description @dst.
+ *       @dst must not already point to any allocated resources. Clean
+ *       up with mongoc_topology_description_destroy.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+_mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
+                                      mongoc_topology_description_t *dst)
+{
+   size_t nitems;
+   size_t i;
+   mongoc_server_description_t *sd;
+   uint32_t id;
+
+   ENTRY;
+
+   BSON_ASSERT (src);
+   BSON_ASSERT (dst);
+
+   bson_oid_copy (&src->topology_id, &dst->topology_id);
+   dst->opened = src->opened;
+   dst->type = src->type;
+   dst->heartbeat_msec = src->heartbeat_msec;
+
+   nitems = bson_next_power_of_two (src->servers->items_len);
+   dst->servers = mongoc_set_new (nitems, _mongoc_topology_server_dtor, NULL);
+   for (i = 0; i < src->servers->items_len; i++) {
+      sd = mongoc_set_get_item_and_id (src->servers, (int) i, &id);
+      mongoc_set_add (dst->servers, id,
+                      mongoc_server_description_new_copy (sd));
+   }
+
+   dst->set_name = bson_strdup (src->set_name);
+   dst->max_set_version = src->max_set_version;
+   dst->compatible = src->compatible;
+   dst->compatibility_error = bson_strdup (src->compatibility_error);
+   dst->max_server_id = src->max_server_id;
+   dst->stale = src->stale;
+   memcpy (&dst->apm_callbacks, &src->apm_callbacks,
+           sizeof (mongoc_apm_callbacks_t));
+
+   dst->apm_context = src->apm_context;
+
+   EXIT;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_description_destroy --
  *
  *       Destroy allocated resources within @description
@@ -93,6 +151,8 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
    ENTRY;
 
    BSON_ASSERT(description);
+
+   _mongoc_topology_description_monitor_closed (description);
 
    mongoc_set_destroy(description->servers);
 
@@ -705,6 +765,7 @@ _mongoc_topology_description_remove_server (mongoc_topology_description_t *descr
    BSON_ASSERT (description);
    BSON_ASSERT (server);
 
+   _mongoc_topology_description_monitor_server_closed (description, server);
    mongoc_set_rm(description->servers, server->id);
 }
 
@@ -973,6 +1034,11 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       mongoc_server_description_init(description, server, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
+
+      /* if we're in topology_new then no callbacks are registered and this is
+       * a no-op. later, if we discover a new RS member this sends an event. */
+      _mongoc_topology_description_monitor_server_opening (topology,
+                                                           description);
    }
 
    if (id) {
@@ -1549,6 +1615,9 @@ mongoc_topology_description_handle_ismaster (
    int64_t                        rtt_msec,
    bson_error_t                  *error)
 {
+   mongoc_topology_description_t *prev_td = NULL;
+   mongoc_server_description_t *prev_sd = NULL;
+
    BSON_ASSERT (topology);
    BSON_ASSERT (sd);
 
@@ -1559,14 +1628,36 @@ mongoc_topology_description_handle_ismaster (
       return;
    }
 
+   if (topology->apm_callbacks.topology_changed) {
+      prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
+      _mongoc_topology_description_copy_to (topology, prev_td);
+   }
+
+   if (topology->apm_callbacks.server_changed) {
+      prev_sd = mongoc_server_description_new_copy (sd);
+   }
+
    mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec,
                                               error);
+
+   _mongoc_topology_description_monitor_server_changed (topology, prev_sd, sd);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       TRACE("Transitioning to %s for %s", _mongoc_topology_description_type (topology), mongoc_server_description_type (sd));
       gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
    } else {
       TRACE("No transition entry to %s for %s", _mongoc_topology_description_type (topology), mongoc_server_description_type (sd));
+   }
+
+   _mongoc_topology_description_monitor_changed (prev_td, topology);
+
+   if (prev_td) {
+      mongoc_topology_description_destroy (prev_td);
+      bson_free (prev_td);
+   }
+
+   if (prev_sd) {
+      mongoc_server_description_destroy (prev_sd);
    }
 }
 

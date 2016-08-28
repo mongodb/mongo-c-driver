@@ -65,6 +65,10 @@ mongoc_topology_description_init (mongoc_topology_description_t      *descriptio
                                   int64_t                             heartbeat_msec);
 
 void
+_mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
+                                      mongoc_topology_description_t *dst);
+
+void
 mongoc_topology_description_destroy (mongoc_topology_description_t *description);
 
 void

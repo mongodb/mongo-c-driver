@@ -128,6 +128,21 @@ mongoc_set_get_item (mongoc_set_t *set,
 }
 
 
+void *
+mongoc_set_get_item_and_id (mongoc_set_t *set,
+                            int           idx,
+                            uint32_t     *id /* OUT */)
+{
+   BSON_ASSERT (set);
+   BSON_ASSERT (id);
+   BSON_ASSERT (idx < set->items_len);
+
+   *id = set->items[idx].id;
+
+   return set->items[idx].item;
+}
+
+
 void
 mongoc_set_destroy (mongoc_set_t *set)
 {

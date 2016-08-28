@@ -23,7 +23,6 @@
 
 #include <bson.h>
 #include "mongoc-apm.h"
-#include "mongoc-topology-description-private.h"
 
 BSON_BEGIN_DECLS
 

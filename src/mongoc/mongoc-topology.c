@@ -22,6 +22,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-topology-description-apm-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
 
@@ -490,6 +491,8 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                + ((int64_t) topology->server_selection_timeout_msec * 1000);
 
    if (topology->single_threaded) {
+      _mongoc_topology_description_monitor_opening (&topology->description);
+
       tried_once = false;
       next_update = topology->last_scan + heartbeat_msec * 1000;
       if (next_update < loop_start) {
@@ -892,6 +895,7 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
       topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
       _mongoc_handshake_freeze ();
+      _mongoc_topology_description_monitor_opening (&topology->description);
 
       mongoc_thread_create (&topology->thread, _mongoc_topology_run_background,
                             topology);

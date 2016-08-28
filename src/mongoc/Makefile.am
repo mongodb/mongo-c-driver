@@ -98,6 +98,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-thread-private.h \
 	src/mongoc/mongoc-topology-description.h \
+	src/mongoc/mongoc-topology-description-apm-private.h \
 	src/mongoc/mongoc-topology-description-private.h \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
@@ -188,6 +189,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-socket.c \
 	src/mongoc/mongoc-topology.c \
 	src/mongoc/mongoc-topology-description.c \
+	src/mongoc/mongoc-topology-description-apm.c \
 	src/mongoc/mongoc-topology-scanner.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
