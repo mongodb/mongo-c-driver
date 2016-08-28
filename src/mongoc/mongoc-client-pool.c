@@ -370,6 +370,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
               sizeof (mongoc_apm_callbacks_t));
    }
 
+   mongoc_topology_set_apm_callbacks (topology, callbacks, context);
    topology->description.apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;

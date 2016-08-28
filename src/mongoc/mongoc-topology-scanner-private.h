@@ -27,6 +27,7 @@
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-host-list.h"
+#include "mongoc-apm-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
@@ -86,6 +87,9 @@ typedef struct mongoc_topology_scanner
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
 #endif
+
+   mongoc_apm_callbacks_t          apm_callbacks;
+   void                           *apm_context;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *

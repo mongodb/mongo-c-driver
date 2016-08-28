@@ -248,6 +248,30 @@ mongoc_topology_new (const mongoc_uri_t *uri,
 
    return topology;
 }
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_set_apm_callbacks --
+ *
+ *       Set Application Performance Monitoring callbacks.
+ *
+ *-------------------------------------------------------------------------
+ */
+void
+mongoc_topology_set_apm_callbacks (mongoc_topology_t      *topology,
+                                   mongoc_apm_callbacks_t *callbacks,
+                                   void                   *context)
+{
+   if (callbacks) {
+      memcpy (&topology->description.apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
+      memcpy (&topology->scanner->apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
+   }
+
+   topology->description.apm_context = context;
+   topology->scanner->apm_context = context;
+}
 
 /*
  *-------------------------------------------------------------------------

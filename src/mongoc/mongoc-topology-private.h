@@ -68,6 +68,11 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                      bool                single_threaded);
 
 void
+mongoc_topology_set_apm_callbacks (mongoc_topology_t      *topology,
+                                   mongoc_apm_callbacks_t *callbacks,
+                                   void                   *context);
+
+void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 bool

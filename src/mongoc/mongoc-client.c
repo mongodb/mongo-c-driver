@@ -1868,13 +1868,11 @@ _mongoc_client_set_apm_callbacks_private (mongoc_client_t        *client,
 
    if (callbacks) {
       memcpy (&client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
-      memcpy (&client->topology->description.apm_callbacks, callbacks,
-              sizeof (mongoc_apm_callbacks_t));
    }
 
    client->apm_context = context;
-   client->topology->description.apm_context = context;
    client->apm_callbacks_set = true;
+   mongoc_topology_set_apm_callbacks (client->topology, callbacks, context);
 
    return true;
 }
