@@ -44,6 +44,7 @@ struct _mongoc_client_pool_t
    bool                    ssl_opts_set;
    mongoc_ssl_opt_t        ssl_opts;
 #endif
+   bool                    apm_callbacks_set;
    mongoc_apm_callbacks_t  apm_callbacks;
    void                   *apm_context;
    int32_t                 error_api_version;
@@ -352,10 +353,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                       void                   *context)
 {
 
-   if (pool->apm_callbacks.started ||
-       pool->apm_callbacks.succeeded ||
-       pool->apm_callbacks.failed ||
-       pool->apm_context) {
+   if (pool->apm_callbacks_set) {
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
@@ -365,6 +363,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
    }
 
    pool->apm_context = context;
+   pool->apm_callbacks_set = true;
 
    return true;
 }
