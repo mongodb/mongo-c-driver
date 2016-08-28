@@ -21,6 +21,7 @@
 #include "mongoc-server-description.h"
 #include "mongoc-array-private.h"
 #include "mongoc-topology-description.h"
+#include "mongoc-apm-private.h"
 
 
 typedef enum
@@ -35,6 +36,8 @@ typedef enum
 
 struct _mongoc_topology_description_t
 {
+   bson_oid_t                         topology_id;
+   bool                               opened;
    mongoc_topology_description_type_t type;
    int64_t                            heartbeat_msec;
    mongoc_set_t                      *servers;
@@ -45,6 +48,9 @@ struct _mongoc_topology_description_t
    char                              *compatibility_error;
    uint32_t                           max_server_id;
    bool                               stale;
+
+   mongoc_apm_callbacks_t             apm_callbacks;
+   void                              *apm_context;
 };
 
 typedef enum

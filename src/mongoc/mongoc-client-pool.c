@@ -352,18 +352,29 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                       mongoc_apm_callbacks_t *callbacks,
                                       void                   *context)
 {
+   mongoc_topology_t *topology;
+
+   topology = pool->topology;
 
    if (pool->apm_callbacks_set) {
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
 
+   mongoc_mutex_lock (&topology->mutex);
+
    if (callbacks) {
-      memcpy (&pool->apm_callbacks, callbacks, sizeof pool->apm_callbacks);
+      memcpy (&topology->description.apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
+      memcpy (&pool->apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
    }
 
+   topology->description.apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
+
+   mongoc_mutex_unlock (&topology->mutex);
 
    return true;
 }

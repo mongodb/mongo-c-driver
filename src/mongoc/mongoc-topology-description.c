@@ -58,6 +58,8 @@ mongoc_topology_description_init (mongoc_topology_description_t      *descriptio
 
    memset (description, 0, sizeof (*description));
 
+   bson_oid_init (&description->topology_id, NULL);
+   description->opened = false;
    description->type = type;
    description->heartbeat_msec = heartbeat_msec;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
