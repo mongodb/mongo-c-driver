@@ -112,4 +112,4 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                         const char                    *server,
                                         uint32_t                      *id /* OUT */);
 
-#endif /* MONGOC_TOPOLOGY_DESCRIPTION_H */
+#endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */
