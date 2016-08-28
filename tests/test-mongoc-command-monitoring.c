@@ -5,7 +5,6 @@
 #include <mongoc-cursor-private.h>
 
 #include "json-test.h"
-#include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
@@ -153,33 +152,6 @@ insert_data (mongoc_collection_t *collection,
    ASSERT_OR_PRINT (r, error);
 
    mongoc_bulk_operation_destroy (bulk);
-}
-
-
-static void
-check_expectations (const bson_t *events,
-                    const bson_t *expectations)
-{
-   char errmsg[1000];
-   match_ctx_t ctx = { 0 };
-
-   /* Old mongod returns a double for "count", newer returns int32.
-    * Ignore this and other insignificant type differences. */
-   ctx.strict_numeric_types = false;
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
-
-   if (bson_count_keys (expectations) != bson_count_keys (events) ||
-       !match_bson_with_ctx (events, expectations, false, &ctx)) {
-      test_error ("command monitoring test failed expectations:\n\n"
-                  "%s\n\n"
-                  "events:\n%s\n\n%s\n",
-                  bson_as_json (expectations, NULL),
-                  bson_as_json (events, NULL),
-                  errmsg);
-
-      abort ();
-   }
 }
 
 
@@ -770,7 +742,7 @@ one_test (mongoc_collection_t *collection,
    }
 
    bson_lookup_doc (test, "expectations", &expectations);
-   check_expectations (&context.events, &expectations);
+   check_json_apm_events (&context.events, &expectations);
 
 done:
    mongoc_apm_callbacks_destroy (callbacks);

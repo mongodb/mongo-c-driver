@@ -235,6 +235,58 @@ process_sdam_test_ismaster_responses (bson_t                        *phase,
 /*
  *-----------------------------------------------------------------------
  *
+ * check_json_apm_events --
+ *
+ *      Compare actual APM events with expected sequence. The two docs
+ *      are like:
+ *
+ * [
+ *   {
+ *     "command_started_event": {
+ *       "command": { ... },
+ *       "command_name": "count",
+ *       "database_name": "command-monitoring-tests"
+ *     }
+ *   },
+ *   {
+ *     "command_failed_event": {
+ *       "command_name": "count"
+ *     }
+ *   }
+ * ]
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+check_json_apm_events (const bson_t *events,
+                       const bson_t *expectations)
+{
+   char errmsg[1000] = { 0 };
+   match_ctx_t ctx = { 0 };
+
+   /* Old mongod returns a double for "count", newer returns int32.
+    * Ignore this and other insignificant type differences. */
+   ctx.strict_numeric_types = false;
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof errmsg;
+
+   if (bson_count_keys (expectations) != bson_count_keys (events) ||
+       !match_bson_with_ctx (events, expectations, false, &ctx)) {
+      test_error ("command monitoring test failed expectations:\n\n"
+                     "%s\n\n"
+                     "events:\n%s\n\n%s\n",
+                  bson_as_json (expectations, NULL),
+                  bson_as_json (events, NULL),
+                  errmsg);
+
+      abort ();
+   }
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
  * test_server_selection_logic_cb --
  *
  *      Runs the JSON tests for server selection logic that are

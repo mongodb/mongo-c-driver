@@ -65,6 +65,10 @@ process_sdam_test_ismaster_responses (bson_t                        *phase,
                                       mongoc_topology_description_t *td);
 
 void
+check_json_apm_events (const bson_t *events,
+                       const bson_t *expectations);
+
+void
 test_server_selection_logic_cb (bson_t *test);
 
 mongoc_server_description_type_t
