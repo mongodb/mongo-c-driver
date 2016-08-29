@@ -7,7 +7,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-util-private.h"
 
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -1855,9 +1855,9 @@ test_ssl_reconnect_pooled (void)
 
 
 static void
-test_mongoc_client_application_metadata (void)
+test_mongoc_client_application_handshake (void)
 {
-   enum { BUFFER_SIZE = METADATA_MAX_SIZE };
+   enum { BUFFER_SIZE = HANDSHAKE_MAX_SIZE };
    char big_string[BUFFER_SIZE];
    const char *short_string = "hallo thar";
    mongoc_client_t *client;
@@ -1905,7 +1905,7 @@ _assert_ismaster_valid (request_t *request,
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
    ASSERT (bson_has_field (request_doc, "isMaster"));
-   ASSERT (bson_has_field (request_doc, METADATA_FIELD) == needs_meta);
+   ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD) == needs_meta);
 }
 
 /* For single threaded clients, to cause an isMaster to be sent, we must wait
@@ -1952,7 +1952,7 @@ _respond_to_ping (future_t      *future,
 }
 
 static void
-_test_client_sends_metadata (bool pooled)
+_test_client_sends_handshake (bool pooled)
 {
    mock_server_t *server;
    request_t *request;
@@ -2048,15 +2048,15 @@ _test_client_sends_metadata (bool pooled)
 }
 
 static void
-test_client_sends_metadata_single (void)
+test_client_sends_handshake_single (void)
 {
-   _test_client_sends_metadata (false);
+   _test_client_sends_handshake (false);
 }
 
 static void
-test_client_sends_metadata_pooled (void)
+test_client_sends_handshake_pooled (void)
 {
-   _test_client_sends_metadata (true);
+   _test_client_sends_handshake (true);
 }
 
 static void
@@ -2195,11 +2195,11 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
-   TestSuite_Add (suite, "/Client/application_metadata", test_mongoc_client_application_metadata);
-   TestSuite_Add (suite, "/Client/sends_metadata_single",
-                  test_client_sends_metadata_single);
-   TestSuite_Add (suite, "/Client/sends_metadata_pooled",
-                  test_client_sends_metadata_pooled);
+   TestSuite_Add (suite, "/Client/application_handshake", test_mongoc_client_application_handshake);
+   TestSuite_Add (suite, "/Client/sends_handshake_single",
+                  test_client_sends_handshake_single);
+   TestSuite_Add (suite, "/Client/sends_handshake_pooled",
+                  test_client_sends_handshake_pooled);
    TestSuite_Add (suite, "/Client/appname_single_uri",
                   test_client_appname_single_uri);
    TestSuite_Add (suite, "/Client/appname_single_no_uri",

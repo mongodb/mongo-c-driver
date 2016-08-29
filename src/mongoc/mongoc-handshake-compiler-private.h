@@ -13,8 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef MONGOC_METADATA_COMPILER_PRIVATE_H
-#define MONGOC_METADATA_COMPILER_PRIVATE_H
+#ifndef MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
+#define MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 
 #include "mongoc-config.h"
 

@@ -15,8 +15,8 @@
  */
 
 
-#ifndef MONGOC_METADATA_H
-#define MONGOC_METADATA_H
+#ifndef MONGOC_HANDSHAKE_H
+#define MONGOC_HANDSHAKE_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
@@ -26,11 +26,12 @@
 
 BSON_BEGIN_DECLS
 
-#define MONGOC_METADATA_APPNAME_MAX 128
+#define MONGOC_HANDSHAKE_APPNAME_MAX 128
 
-bool mongoc_handshake_data_append (const char *driver_name,
-                                   const char *driver_version,
-                                   const char *platform);
+bool
+mongoc_handshake_data_append (const char *driver_name,
+                              const char *driver_version,
+                              const char *platform);
 
 BSON_END_DECLS
 

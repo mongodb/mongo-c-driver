@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-metadata-os-private.h"
+#include "mongoc-handshake-os-private.h"
 
 #ifdef MONGOC_OS_IS_LINUX
 
@@ -24,7 +24,7 @@
 #include "mongoc-error.h"
 #include "mongoc-linux-distro-scanner-private.h"
 #include "mongoc-log.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
 #include "mongoc-version.h"
@@ -36,9 +36,9 @@
  * Return 0 on failure or EOF.
  */
 static size_t
-_fgets_wrapper (char   *buffer,
-                size_t  buffer_size,
-                FILE   *f)
+_fgets_wrapper (char  *buffer,
+                size_t buffer_size,
+                FILE  *f)
 {
    char *fgets_res;
    size_t len;
@@ -402,7 +402,8 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
                                                      "DISTRIB_RELEASE", -1,
                                                      &new_version);
 
-   if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
+   if (_set_name_and_version_if_needed (name, version, new_name,
+                                        new_version)) {
       RETURN (true);
    }
 
@@ -410,7 +411,8 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
    _mongoc_linux_distro_scanner_read_generic_release_file (
       generic_release_paths, &new_name, &new_version);
 
-   if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
+   if (_set_name_and_version_if_needed (name, version, new_name,
+                                        new_version)) {
       RETURN (true);
    }
 

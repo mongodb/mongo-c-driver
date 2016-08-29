@@ -25,10 +25,10 @@
 #endif
 
 #include "mongoc-linux-distro-scanner-private.h"
-#include "mongoc-metadata.h"
-#include "mongoc-metadata-compiler-private.h"
-#include "mongoc-metadata-os-private.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake.h"
+#include "mongoc-handshake-compiler-private.h"
+#include "mongoc-handshake-os-private.h"
+#include "mongoc-handshake-private.h"
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
@@ -37,11 +37,11 @@
 #include "mongoc-util-private.h"
 
 /*
- * Global metadata instance. Initialized at startup from mongoc_init ()
+ * Global handshake data instance. Initialized at startup from mongoc_init ()
  *
- * Can be modified by calls to mongoc_set_metadata ()
+ * Can be modified by calls to mongoc_handshake_data_append ()
  */
-static mongoc_metadata_t gMongocMetadata;
+static mongoc_handshake_t gMongocHandshake;
 
 
 static uint32_t
@@ -116,9 +116,9 @@ static char *
 _get_os_type (void)
 {
 #ifdef MONGOC_OS_TYPE
-   return bson_strndup (MONGOC_OS_TYPE, METADATA_OS_TYPE_MAX);
+   return bson_strndup (MONGOC_OS_TYPE, HANDSHAKE_OS_TYPE_MAX);
 #endif
-   return bson_strndup ("unknown", METADATA_OS_TYPE_MAX);
+   return bson_strndup ("unknown", HANDSHAKE_OS_TYPE_MAX);
 }
 
 static char *
@@ -160,10 +160,11 @@ _get_os_architecture (void)
    if (uname (&system_info) >= 0) {
       ret = system_info.machine;
    }
+
 #endif
 
    if (ret) {
-      return bson_strndup (ret, METADATA_OS_ARCHITECTURE_MAX);
+      return bson_strndup (ret, HANDSHAKE_OS_ARCHITECTURE_MAX);
    }
 
    return NULL;
@@ -174,13 +175,14 @@ static char *
 _get_os_name (void)
 {
 #ifdef MONGOC_OS_NAME
-   return bson_strndup (MONGOC_OS_NAME, METADATA_OS_NAME_MAX);
+   return bson_strndup (MONGOC_OS_NAME, HANDSHAKE_OS_NAME_MAX);
 #elif defined (_POSIX_VERSION)
    struct utsname system_info;
 
    if (uname (&system_info) >= 0) {
-      return bson_strndup (system_info.sysname, METADATA_OS_NAME_MAX);
+      return bson_strndup (system_info.sysname, HANDSHAKE_OS_NAME_MAX);
    }
+
 #endif
 
    return NULL;
@@ -189,7 +191,7 @@ _get_os_name (void)
 static char *
 _get_os_version (void)
 {
-   char *ret = bson_malloc (METADATA_OS_VERSION_MAX);
+   char *ret = bson_malloc (HANDSHAKE_OS_VERSION_MAX);
    bool found = false;
 
 #ifdef _WIN32
@@ -199,7 +201,7 @@ _get_os_version (void)
 
    if (GetVersionEx (&osvi)) {
       bson_snprintf (ret,
-                     METADATA_OS_VERSION_MAX,
+                     HANDSHAKE_OS_VERSION_MAX,
                      "%d.%d (%d)",
                      osvi.dwMajorVersion,
                      osvi.dwMinorVersion,
@@ -215,7 +217,7 @@ _get_os_version (void)
 
    if (uname (&system_info) >= 0) {
       bson_strncpy (ret, system_info.release,
-                    METADATA_OS_VERSION_MAX);
+                    HANDSHAKE_OS_VERSION_MAX);
       found = true;
    } else {
       MONGOC_WARNING ("Error with uname(): %d", errno);
@@ -233,50 +235,51 @@ _get_os_version (void)
 #endif
 
 static void
-_get_system_info (mongoc_metadata_t *metadata)
+_get_system_info (mongoc_handshake_t *handshake)
 {
-   metadata->os_type = _get_os_type ();
+   handshake->os_type = _get_os_type ();
 
 #ifdef MONGOC_OS_IS_LINUX
-   _mongoc_linux_distro_scanner_get_distro (&metadata->os_name,
-                                            &metadata->os_version);
+   _mongoc_linux_distro_scanner_get_distro (&handshake->os_name,
+                                            &handshake->os_version);
 #else
-   metadata->os_name = _get_os_name ();
-   metadata->os_version = _get_os_version ();
+   handshake->os_name = _get_os_name ();
+   handshake->os_version = _get_os_version ();
 #endif
 
-   metadata->os_architecture = _get_os_architecture ();
+   handshake->os_architecture = _get_os_architecture ();
 }
 
 static void
-_free_system_info (mongoc_metadata_t *meta)
+_free_system_info (mongoc_handshake_t *handshake)
 {
-   bson_free (meta->os_type);
-   bson_free (meta->os_name);
-   bson_free (meta->os_version);
-   bson_free (meta->os_architecture);
+   bson_free (handshake->os_type);
+   bson_free (handshake->os_name);
+   bson_free (handshake->os_version);
+   bson_free (handshake->os_architecture);
 }
 
 static void
-_get_driver_info (mongoc_metadata_t *metadata)
+_get_driver_info (mongoc_handshake_t *handshake)
 {
-   metadata->driver_name = bson_strndup ("mongoc",
-                                         METADATA_DRIVER_NAME_MAX);
-   metadata->driver_version = bson_strndup (MONGOC_VERSION_S,
-                                            METADATA_DRIVER_VERSION_MAX);
+   handshake->driver_name = bson_strndup ("mongoc",
+                                          HANDSHAKE_DRIVER_NAME_MAX);
+   handshake->driver_version = bson_strndup (MONGOC_VERSION_S,
+                                             HANDSHAKE_DRIVER_VERSION_MAX);
 }
 
 static void
-_free_driver_info (mongoc_metadata_t *metadata)
+_free_driver_info (mongoc_handshake_t *handshake)
 {
-   bson_free (metadata->driver_name);
-   bson_free (metadata->driver_version);
+   bson_free (handshake->driver_name);
+   bson_free (handshake->driver_version);
 }
 
 static void
-_set_platform_string (mongoc_metadata_t *metadata)
+_set_platform_string (mongoc_handshake_t *handshake)
 {
    bson_string_t *str;
+
    str = bson_string_new ("");
 
    bson_string_append_printf (str, "cfg=0x%x",
@@ -304,31 +307,31 @@ _set_platform_string (mongoc_metadata_t *metadata)
       bson_string_append_printf (str, " LDFLAGS=%s", MONGOC_USER_SET_LDFLAGS);
    }
 
-   metadata->platform = bson_string_free (str, false);
+   handshake->platform = bson_string_free (str, false);
 }
 
 static void
-_free_platform_string (mongoc_metadata_t *metadata)
+_free_platform_string (mongoc_handshake_t *handshake)
 {
-   bson_free (metadata->platform);
+   bson_free (handshake->platform);
 }
 
 void
-_mongoc_metadata_init (void)
+_mongoc_handshake_init (void)
 {
-   _get_system_info (&gMongocMetadata);
-   _get_driver_info (&gMongocMetadata);
-   _set_platform_string (&gMongocMetadata);
+   _get_system_info (&gMongocHandshake);
+   _get_driver_info (&gMongocHandshake);
+   _set_platform_string (&gMongocHandshake);
 
-   gMongocMetadata.frozen = false;
+   gMongocHandshake.frozen = false;
 }
 
 void
-_mongoc_metadata_cleanup (void)
+_mongoc_handshake_cleanup (void)
 {
-   _free_system_info (&gMongocMetadata);
-   _free_driver_info (&gMongocMetadata);
-   _free_platform_string (&gMongocMetadata);
+   _free_system_info (&gMongocHandshake);
+   _free_driver_info (&gMongocHandshake);
+   _free_platform_string (&gMongocHandshake);
 }
 
 static bool
@@ -338,13 +341,13 @@ _append_platform_field (bson_t     *doc,
    int max_platform_str_size;
 
    /* Compute space left for platform field */
-   max_platform_str_size = METADATA_MAX_SIZE -
+   max_platform_str_size = HANDSHAKE_MAX_SIZE -
                            (doc->len +
                             /* 1 byte for utf8 tag */
                             1 +
 
                             /* key size */
-                            strlen (METADATA_PLATFORM_FIELD) + 1 +
+                            strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
                             /* 4 bytes for length of string */
                             4);
@@ -355,10 +358,10 @@ _append_platform_field (bson_t     *doc,
 
    max_platform_str_size = BSON_MIN (max_platform_str_size,
                                      strlen (platform) + 1);
-   bson_append_utf8 (doc, METADATA_PLATFORM_FIELD, -1,
+   bson_append_utf8 (doc, HANDSHAKE_PLATFORM_FIELD, -1,
                      platform, max_platform_str_size - 1);
 
-   BSON_ASSERT (doc->len <= METADATA_MAX_SIZE);
+   BSON_ASSERT (doc->len <= HANDSHAKE_MAX_SIZE);
    return true;
 }
 
@@ -368,10 +371,10 @@ _append_platform_field (bson_t     *doc,
  * case, the caller shouldn't include it with isMaster
  */
 bool
-_mongoc_metadata_build_doc_with_application (bson_t     *doc,
-                                             const char *appname)
+_mongoc_handshake_build_doc_with_application (bson_t     *doc,
+                                              const char *appname)
 {
-   const mongoc_metadata_t *md = &gMongocMetadata;
+   const mongoc_handshake_t *md = &gMongocHandshake;
    bson_t child;
 
    if (appname) {
@@ -404,7 +407,7 @@ _mongoc_metadata_build_doc_with_application (bson_t     *doc,
 
    bson_append_document_end (doc, &child);
 
-   if (doc->len > METADATA_MAX_SIZE) {
+   if (doc->len > HANDSHAKE_MAX_SIZE) {
       /* We've done all we can possibly do to ensure the current
        * document is below the maxsize, so if it overflows there is
        * nothing else we can do, so we fail */
@@ -419,9 +422,9 @@ _mongoc_metadata_build_doc_with_application (bson_t     *doc,
 }
 
 void
-_mongoc_metadata_freeze (void)
+_mongoc_handshake_freeze (void)
 {
-   gMongocMetadata.frozen = true;
+   gMongocHandshake.frozen = true;
 }
 
 /*
@@ -430,9 +433,9 @@ _mongoc_metadata_freeze (void)
  * If suffix is NULL, nothing happens.
  */
 static void
-_append_and_truncate (char       **s,
-                      const char  *suffix,
-                      int          max_len)
+_append_and_truncate (char      **s,
+                      const char *suffix,
+                      int         max_len)
 {
    char *old_str = *s;
    char *prefix;
@@ -458,7 +461,7 @@ _append_and_truncate (char       **s,
 
 
 /*
- * Set some values in our global metadata struct. These values will be sent
+ * Set some values in our global handshake struct. These values will be sent
  * to the server as part of the initial connection handshake (isMaster).
  * If this function is called more than once, or after we've connected to a
  * mongod, then it will do nothing and return false. It will return true if it
@@ -473,38 +476,38 @@ mongoc_handshake_data_append (const char *driver_name,
 {
    int max_size = 0;
 
-   if (gMongocMetadata.frozen) {
-      MONGOC_ERROR ("Cannot set metadata more than once");
+   if (gMongocHandshake.frozen) {
+      MONGOC_ERROR ("Cannot set handshake more than once");
       return false;
    }
 
-   _append_and_truncate (&gMongocMetadata.driver_name, driver_name,
-                         METADATA_DRIVER_NAME_MAX);
+   _append_and_truncate (&gMongocHandshake.driver_name, driver_name,
+                         HANDSHAKE_DRIVER_NAME_MAX);
 
-   _append_and_truncate (&gMongocMetadata.driver_version, driver_version,
-                         METADATA_DRIVER_VERSION_MAX);
+   _append_and_truncate (&gMongocHandshake.driver_version, driver_version,
+                         HANDSHAKE_DRIVER_VERSION_MAX);
 
-   max_size = METADATA_MAX_SIZE -
-      - _mongoc_strlen_or_zero (gMongocMetadata.os_type)
-      - _mongoc_strlen_or_zero (gMongocMetadata.os_name)
-      - _mongoc_strlen_or_zero (gMongocMetadata.os_version)
-      - _mongoc_strlen_or_zero (gMongocMetadata.os_architecture)
-      - _mongoc_strlen_or_zero (gMongocMetadata.driver_name)
-      - _mongoc_strlen_or_zero (gMongocMetadata.driver_version);
-   _append_and_truncate (&gMongocMetadata.platform, platform, max_size);
+   max_size = HANDSHAKE_MAX_SIZE -
+              -_mongoc_strlen_or_zero (gMongocHandshake.os_type)
+              - _mongoc_strlen_or_zero (gMongocHandshake.os_name)
+              - _mongoc_strlen_or_zero (gMongocHandshake.os_version)
+              - _mongoc_strlen_or_zero (gMongocHandshake.os_architecture)
+              - _mongoc_strlen_or_zero (gMongocHandshake.driver_name)
+              - _mongoc_strlen_or_zero (gMongocHandshake.driver_version);
+   _append_and_truncate (&gMongocHandshake.platform, platform, max_size);
 
-   _mongoc_metadata_freeze ();
+   _mongoc_handshake_freeze ();
    return true;
 }
 
-mongoc_metadata_t *
-_mongoc_metadata_get (void)
+mongoc_handshake_t *
+_mongoc_handshake_get (void)
 {
-   return &gMongocMetadata;
+   return &gMongocHandshake;
 }
 
 bool
-_mongoc_metadata_appname_is_valid (const char *appname)
+_mongoc_handshake_appname_is_valid (const char *appname)
 {
-   return strlen (appname) <= MONGOC_METADATA_APPNAME_MAX;
+   return strlen (appname) <= MONGOC_HANDSHAKE_APPNAME_MAX;
 }

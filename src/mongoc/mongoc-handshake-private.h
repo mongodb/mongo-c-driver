@@ -15,8 +15,8 @@
  */
 
 
-#ifndef MONGOC_METADATA_PRIVATE_H
-#define MONGOC_METADATA_PRIVATE_H
+#ifndef MONGOC_HANDSHAKE_PRIVATE_H
+#define MONGOC_HANDSHAKE_PRIVATE_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
@@ -25,17 +25,17 @@
 
 BSON_BEGIN_DECLS
 
-#define METADATA_FIELD "client"
-#define METADATA_PLATFORM_FIELD "platform"
+#define HANDSHAKE_FIELD "client"
+#define HANDSHAKE_PLATFORM_FIELD "platform"
 
-#define METADATA_MAX_SIZE 512
+#define HANDSHAKE_MAX_SIZE 512
 
-#define METADATA_OS_TYPE_MAX 32
-#define METADATA_OS_NAME_MAX 32
-#define METADATA_OS_VERSION_MAX 32
-#define METADATA_OS_ARCHITECTURE_MAX 32
-#define METADATA_DRIVER_NAME_MAX 64
-#define METADATA_DRIVER_VERSION_MAX 32
+#define HANDSHAKE_OS_TYPE_MAX 32
+#define HANDSHAKE_OS_NAME_MAX 32
+#define HANDSHAKE_OS_VERSION_MAX 32
+#define HANDSHAKE_OS_ARCHITECTURE_MAX 32
+#define HANDSHAKE_DRIVER_NAME_MAX 64
+#define HANDSHAKE_DRIVER_VERSION_MAX 32
 /* platform has no fixed max size. It can just occupy the remaining
  * available space in the document. */
 
@@ -57,10 +57,10 @@ typedef enum
    MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS            = 1 << 12,
    MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS         = 1 << 13,
    MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL          = 1 << 14
-} mongoc_metadata_config_flags_t;
+} mongoc_handshake_config_flags_t;
 
 
-typedef struct _mongoc_metadata_t
+typedef struct _mongoc_handshake_t
 {
    char *os_type;
    char *os_name;
@@ -71,17 +71,28 @@ typedef struct _mongoc_metadata_t
    char *driver_version;
    char *platform;
 
-   bool  frozen;
-} mongoc_metadata_t;
+   bool frozen;
+} mongoc_handshake_t;
 
-void               _mongoc_metadata_init                       (void);
-void               _mongoc_metadata_cleanup                    (void);
+void
+_mongoc_handshake_init                       (void);
 
-bool               _mongoc_metadata_build_doc_with_application (bson_t     *doc,
-                                                                const char *application);
-void               _mongoc_metadata_freeze                     (void);
-mongoc_metadata_t *_mongoc_metadata_get                        (void);
-bool               _mongoc_metadata_appname_is_valid           (const char *appname);
+void
+_mongoc_handshake_cleanup                    (void);
+
+bool
+_mongoc_handshake_build_doc_with_application (bson_t     *doc,
+                                              const char *application);
+
+void
+_mongoc_handshake_freeze                     (void);
+
+mongoc_handshake_t *
+_mongoc_handshake_get                        (void);
+
+bool
+_mongoc_handshake_appname_is_valid           (const char *appname);
+
 BSON_END_DECLS
 
 #endif

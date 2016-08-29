@@ -57,6 +57,10 @@ INST_H_FILES = \
 	src/mongoc/mongoc-gridfs-file.h \
 	src/mongoc/mongoc-gridfs-private.h \
 	src/mongoc/mongoc-gridfs.h \
+	src/mongoc/mongoc-handshake.h \
+	src/mongoc/mongoc-handshake-compiler-private.h \
+	src/mongoc/mongoc-handshake-os-private.h \
+	src/mongoc/mongoc-handshake-private.h \
 	src/mongoc/mongoc-host-list-private.h \
 	src/mongoc/mongoc-host-list.h \
 	src/mongoc/mongoc-index.h \
@@ -70,10 +74,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-memcmp-private.h \
-	src/mongoc/mongoc-metadata.h \
-	src/mongoc/mongoc-metadata-compiler-private.h \
-	src/mongoc/mongoc-metadata-os-private.h \
-	src/mongoc/mongoc-metadata-private.h \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-opcode-private.h \
 	src/mongoc/mongoc-queue-private.h \
@@ -164,6 +164,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-gridfs-file.c \
 	src/mongoc/mongoc-gridfs-file-page.c \
 	src/mongoc/mongoc-gridfs-file-list.c \
+	src/mongoc/mongoc-handshake.c \
 	src/mongoc/mongoc-index.c \
 	src/mongoc/mongoc-linux-distro-scanner.c \
 	src/mongoc/mongoc-list.c \
@@ -171,7 +172,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-matcher-op.c \
 	src/mongoc/mongoc-matcher.c \
 	src/mongoc/mongoc-memcmp.c \
-	src/mongoc/mongoc-metadata.c \
 	src/mongoc/mongoc-opcode.c \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-concern.c \

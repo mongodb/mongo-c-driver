@@ -28,7 +28,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
@@ -1132,7 +1132,7 @@ mongoc_uri_set_appname (mongoc_uri_t *uri,
       return false;
    }
 
-   if (!_mongoc_metadata_appname_is_valid (value)) {
+   if (!_mongoc_handshake_appname_is_valid (value)) {
       return false;
    }
 

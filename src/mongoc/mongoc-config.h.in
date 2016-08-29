@@ -186,9 +186,9 @@
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:
- * o The bitfield in mongoc-metadata-private.h
- * o _get_config_bitfield() in mongoc-metadata.c
- * o metadata_script.py
+ * o The bitfield in mongoc-handshake-private.h
+ * o _get_config_bitfield() in mongoc-handshake.c
+ * o examples/parse_handshake_cfg.py
  */
 
 #endif /* MONGOC_CONFIG_H */

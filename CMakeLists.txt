@@ -227,6 +227,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake.c
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
@@ -236,7 +237,6 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
@@ -281,6 +281,10 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-compiler-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-os-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${SOURCE_DIR}/src/mongoc/mongoc-init.h
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
@@ -288,10 +292,6 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-compiler-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
@@ -467,12 +467,12 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
+   ${SOURCE_DIR}/tests/test-mongoc-handshake.c
    ${SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
    ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-   ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c

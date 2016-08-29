@@ -21,7 +21,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
 
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 # include "mongoc-scram-private.h"
@@ -86,13 +86,13 @@ mongoc_sasl_mutex_free (void *mutex)
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   _mongoc_openssl_init();
+   _mongoc_openssl_init ();
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
    tls_init ();
 #endif
 
 #ifdef MONGOC_ENABLE_SSL
-   _mongoc_scram_startup();
+   _mongoc_scram_startup ();
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
@@ -107,7 +107,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
    sasl_client_init (NULL);
 #endif
 
-   _mongoc_counters_init();
+   _mongoc_counters_init ();
 
 #ifdef _WIN32
    {
@@ -125,7 +125,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
    }
 #endif
 
-   _mongoc_metadata_init ();
+   _mongoc_handshake_init ();
 
    MONGOC_ONCE_RETURN;
 }
@@ -140,7 +140,7 @@ mongoc_init (void)
 static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 {
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   _mongoc_openssl_cleanup();
+   _mongoc_openssl_cleanup ();
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
@@ -158,7 +158,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 
    _mongoc_counters_cleanup ();
 
-   _mongoc_metadata_cleanup ();
+   _mongoc_handshake_cleanup ();
 
    MONGOC_ONCE_RETURN;
 }

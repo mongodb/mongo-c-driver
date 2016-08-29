@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_METADATA_OS_PRIVATE
-#define MONGOC_METADATA_OS_PRIVATE
+#ifndef MONGOC_HANDSHAKE_OS_PRIVATE
+#define MONGOC_HANDSHAKE_OS_PRIVATE
 
 /* Based on tables from
  * http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system

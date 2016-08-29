@@ -1,6 +1,6 @@
 import sys
 
-# Should be in EXACT same order as from mongoc-metadata-private.h.
+# Should be in EXACT same order as from mongoc-handshake-private.h.
 # The values are implicit (so we assume 1st entry is 1 << 0,
 # second entry is 1 << 1 and so on).
 MD_FLAGS = [
@@ -26,7 +26,7 @@ def main():
 
     if len(sys.argv) < 2:
         print "Usage: python {0} config-bitfield".format(sys.argv[0])
-        print "Example: python metadata_script.py 0x3e65"
+        print "Example: python parse_handshake_cfg.py 0x3e65"
         return
 
     config_bitfield_string = sys.argv[1]

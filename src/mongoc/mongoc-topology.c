@@ -16,8 +16,8 @@
 
 #include "mongoc-config.h"
 
-#include "mongoc-metadata.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake.h"
+#include "mongoc-handshake-private.h"
 
 #include "mongoc-error.h"
 #include "mongoc-log.h"
@@ -338,7 +338,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED;
 
-   _mongoc_metadata_freeze ();
+   _mongoc_handshake_freeze ();
 
    scanner = topology->scanner;
    mongoc_topology_scanner_start (scanner,
@@ -891,7 +891,7 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
       topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
-      _mongoc_metadata_freeze ();
+      _mongoc_handshake_freeze ();
 
       mongoc_thread_create (&topology->thread, _mongoc_topology_run_background,
                             topology);

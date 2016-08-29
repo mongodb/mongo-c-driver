@@ -23,8 +23,8 @@
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-stream-socket.h"
 
-#include "mongoc-metadata.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake.h"
+#include "mongoc-handshake-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -52,20 +52,20 @@ _add_ismaster (bson_t *cmd)
 }
 
 static bool
-_build_ismaster_with_metadata (mongoc_topology_scanner_t *ts)
+_build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
 {
-   bson_t *doc = &ts->ismaster_cmd_with_metadata;
-   bson_t metadata_doc;
+   bson_t *doc = &ts->ismaster_cmd_with_handshake;
+   bson_t handshake_doc;
    bool res;
 
    _add_ismaster (doc);
 
-   BSON_APPEND_DOCUMENT_BEGIN (doc, METADATA_FIELD, &metadata_doc);
-   res = _mongoc_metadata_build_doc_with_application (&metadata_doc,
-                                                      ts->appname);
-   bson_append_document_end (doc, &metadata_doc);
+   BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &handshake_doc);
+   res = _mongoc_handshake_build_doc_with_application (&handshake_doc,
+                                                       ts->appname);
+   bson_append_document_end (doc, &handshake_doc);
 
-   /* Return whether the meta doc fit the size limit */
+   /* Return whether the handshake doc fit the size limit */
    return res;
 }
 
@@ -79,20 +79,20 @@ _get_ismaster_doc (mongoc_topology_scanner_t      *ts,
    }
 
    /* If this is the first time using the node or if it's the first time
-    * using it after a failure, build metadata doc */
-   if (bson_empty (&ts->ismaster_cmd_with_metadata)) {
-      ts->metadata_ok_to_send = _build_ismaster_with_metadata (ts);
-      if (!ts->metadata_ok_to_send) {
-         MONGOC_WARNING ("Metadata doc too big, not including in isMaster");
+    * using it after a failure, build handshake doc */
+   if (bson_empty (&ts->ismaster_cmd_with_handshake)) {
+      ts->handshake_ok_to_send = _build_ismaster_with_handshake (ts);
+      if (!ts->handshake_ok_to_send) {
+         MONGOC_WARNING ("Handshake doc too big, not including in isMaster");
       }
    }
 
    /* If the doc turned out to be too big */
-   if (!ts->metadata_ok_to_send) {
+   if (!ts->handshake_ok_to_send) {
       return &ts->ismaster_cmd;
    }
 
-   return &ts->ismaster_cmd_with_metadata;
+   return &ts->ismaster_cmd_with_handshake;
 }
 
 static void
@@ -122,13 +122,13 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
 
    bson_init (&ts->ismaster_cmd);
    _add_ismaster (&ts->ismaster_cmd);
-   bson_init (&ts->ismaster_cmd_with_metadata);
+   bson_init (&ts->ismaster_cmd_with_handshake);
 
    ts->cb = cb;
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
-   ts->metadata_ok_to_send = false;
+   ts->handshake_ok_to_send = false;
 
    return ts;
 }
@@ -164,7 +164,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->ismaster_cmd);
-   bson_destroy (&ts->ismaster_cmd_with_metadata);
+   bson_destroy (&ts->ismaster_cmd_with_handshake);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -752,7 +752,7 @@ bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char                *appname)
 {
-   if (!_mongoc_metadata_appname_is_valid (appname)) {
+   if (!_mongoc_handshake_appname_is_valid (appname)) {
       MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
       return false;
    }

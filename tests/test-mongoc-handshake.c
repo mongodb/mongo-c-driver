@@ -20,8 +20,8 @@
 #endif
 
 #include "mongoc-client-private.h"
-#include "mongoc-metadata.h"
-#include "mongoc-metadata-private.h"
+#include "mongoc-handshake.h"
+#include "mongoc-handshake-private.h"
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -32,30 +32,30 @@
 
 /*
  * Call this before any test which uses mongoc_handshake_data_append, to
- * reset the global state and unfreeze the metadata struct. Call it
- * after a test so later tests don't have a weird metadata document
+ * reset the global state and unfreeze the handshake struct. Call it
+ * after a test so later tests don't have a weird handshake document
  *
  * This is not safe to call while we have any clients or client pools running!
  */
 static void
-_reset_metadata (void)
+_reset_handshake (void)
 {
-   _mongoc_metadata_cleanup ();
-   _mongoc_metadata_init ();
+   _mongoc_handshake_cleanup ();
+   _mongoc_handshake_init ();
 }
 
 static void
-test_mongoc_metadata_appname_in_uri (void)
+test_mongoc_handshake_appname_in_uri (void)
 {
-   char long_string[MONGOC_METADATA_APPNAME_MAX + 2];
+   char long_string[MONGOC_HANDSHAKE_APPNAME_MAX + 2];
    char *uri_str;
    const char *good_uri = "mongodb://host/?appname=mongodump";
    mongoc_uri_t *uri;
    const char *appname = "mongodump";
    const char *value;
 
-   memset (long_string, 'a', MONGOC_METADATA_APPNAME_MAX + 1);
-   long_string[MONGOC_METADATA_APPNAME_MAX + 1] = '\0';
+   memset (long_string, 'a', MONGOC_HANDSHAKE_APPNAME_MAX + 1);
+   long_string[MONGOC_HANDSHAKE_APPNAME_MAX + 1] = '\0';
 
    /* Shouldn't be able to set with appname really long */
    capture_logs (true);
@@ -86,7 +86,7 @@ test_mongoc_metadata_appname_in_uri (void)
 }
 
 static void
-test_mongoc_metadata_appname_frozen_single (void)
+test_mongoc_handshake_appname_frozen_single (void)
 {
    mongoc_client_t *client;
    const char *good_uri = "mongodb://host/?appname=mongodump";
@@ -105,7 +105,7 @@ test_mongoc_metadata_appname_frozen_single (void)
 }
 
 static void
-test_mongoc_metadata_appname_frozen_pooled (void)
+test_mongoc_handshake_appname_frozen_pooled (void)
 {
    mongoc_client_pool_t *pool;
    const char *good_uri = "mongodb://host/?appname=mongodump";
@@ -173,13 +173,13 @@ test_mongoc_handshake_data_append_success (void)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-   char big_string [METADATA_MAX_SIZE];
+   char big_string [HANDSHAKE_MAX_SIZE];
 
-   memset (big_string, 'a', METADATA_MAX_SIZE - 1);
-   big_string [METADATA_MAX_SIZE - 1] = '\0';
+   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
+   big_string [HANDSHAKE_MAX_SIZE - 1] = '\0';
 
-   _reset_metadata ();
-   /* Make sure setting the metadata works */
+   _reset_handshake ();
+   /* Make sure setting the handshake works */
    ASSERT (mongoc_handshake_data_append (driver_name, driver_version, platform));
 
    server = mock_server_new ();
@@ -197,9 +197,9 @@ test_mongoc_handshake_data_append_success (void)
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
    ASSERT (bson_has_field (request_doc, "isMaster"));
-   ASSERT (bson_has_field (request_doc, METADATA_FIELD));
+   ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD));
 
-   ASSERT (bson_iter_init_find (&iter, request_doc, METADATA_FIELD));
+   ASSERT (bson_iter_init_find (&iter, request_doc, HANDSHAKE_FIELD));
    ASSERT (bson_iter_recurse (&iter, &md_iter));
 
    ASSERT (bson_iter_find (&md_iter, "application"));
@@ -269,7 +269,7 @@ test_mongoc_handshake_data_append_success (void)
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 
-   _reset_metadata ();
+   _reset_handshake ();
 }
 
 static void
@@ -279,11 +279,11 @@ test_mongoc_handshake_data_append_after_cmd (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   _reset_metadata ();
+   _reset_handshake ();
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
 
-   /* Make sure that after we pop a client we can't set global metadata */
+   /* Make sure that after we pop a client we can't set global handshake */
    pool = mongoc_client_pool_new (uri);
 
    client = mongoc_client_pool_pop (pool);
@@ -292,7 +292,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
    ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
    ASSERT_CAPTURED_LOG ("mongoc_handshake_data_append",
                         MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set metadata more than once");
+                        "Cannot set handshake more than once");
    capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
@@ -300,7 +300,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
    mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
 
-   _reset_metadata ();
+   _reset_handshake ();
 }
 
 /*
@@ -308,7 +308,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
  * Make sure that it gets truncated
  */
 static void
-test_mongoc_metadata_too_big (void)
+test_mongoc_handshake_too_big (void)
 {
    mongoc_client_t *client;
    mock_server_t *server;
@@ -318,7 +318,7 @@ test_mongoc_metadata_too_big (void)
    const bson_t *ismaster_doc;
    bson_iter_t iter;
 
-   enum { BUFFER_SIZE = METADATA_MAX_SIZE };
+   enum { BUFFER_SIZE = HANDSHAKE_MAX_SIZE };
    char big_string[BUFFER_SIZE];
    uint32_t len;
    const uint8_t *dummy;
@@ -326,7 +326,7 @@ test_mongoc_metadata_too_big (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   _reset_metadata ();
+   _reset_handshake ();
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
@@ -346,22 +346,22 @@ test_mongoc_metadata_too_big (void)
                                           NULL);
    request = mock_server_receives_ismaster (server);
 
-   /* Make sure the isMaster request has a metadata field, and it's not huge */
+   /* Make sure the isMaster request has a handshake field, and it's not huge */
    ASSERT (request);
    ismaster_doc = request_get_doc (request, 0);
    ASSERT (ismaster_doc);
    ASSERT (bson_has_field (ismaster_doc, "isMaster"));
-   ASSERT (bson_has_field (ismaster_doc, METADATA_FIELD));
+   ASSERT (bson_has_field (ismaster_doc, HANDSHAKE_FIELD));
 
-   /* isMaster with metadata isn't too big */
+   /* isMaster with handshake isn't too big */
    bson_iter_init_find (&iter,
                         ismaster_doc,
-                        METADATA_FIELD);
+                        HANDSHAKE_FIELD);
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
    bson_iter_document (&iter, &len, &dummy);
 
    /* Should have truncated the platform field so it fits exactly */
-   ASSERT (len == METADATA_MAX_SIZE);
+   ASSERT (len == HANDSHAKE_MAX_SIZE);
 
    mock_server_replies_simple (request, "{'ok': 1}");
    request_destroy (request);
@@ -380,13 +380,13 @@ test_mongoc_metadata_too_big (void)
    mock_server_destroy (server);
 
    /* So later tests don't have "aaaaa..." as the md platform string */
-   _reset_metadata ();
+   _reset_handshake ();
 }
 
-/* Test the case where we can't prevent the metadata doc being too big
+/* Test the case where we can't prevent the handshake doc being too big
  * and so we just don't send it */
 static void
-test_mongoc_metadata_cannot_send (void)
+test_mongoc_handshake_cannot_send (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -395,18 +395,18 @@ test_mongoc_metadata_cannot_send (void)
    request_t *request;
    const char *const server_reply = "{'ok': 1, 'ismaster': true}";
    const bson_t *request_doc;
-   char big_string[METADATA_MAX_SIZE];
-   mongoc_metadata_t *md;
+   char big_string[HANDSHAKE_MAX_SIZE];
+   mongoc_handshake_t *md;
 
-   _reset_metadata ();
+   _reset_handshake ();
    capture_logs (true);
 
-   /* Mess with our global metadata struct so the metadata doc will be
+   /* Mess with our global handshake struct so the handshake doc will be
     * way too big */
-   memset (big_string, 'a', METADATA_MAX_SIZE - 1);
-   big_string[METADATA_MAX_SIZE - 1] = '\0';
+   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
+   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
-   md = _mongoc_metadata_get ();
+   md = _mongoc_handshake_get ();
    bson_free (md->os_name);
    md->os_name = bson_strdup (big_string);
 
@@ -420,12 +420,12 @@ test_mongoc_metadata_cannot_send (void)
    client = mongoc_client_pool_pop (pool);
    request = mock_server_receives_ismaster (server);
 
-   /* Make sure the isMaster request DOESN'T have a metadata field: */
+   /* Make sure the isMaster request DOESN'T have a handshake field: */
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
    ASSERT (bson_has_field (request_doc, "isMaster"));
-   ASSERT (!bson_has_field (request_doc, METADATA_FIELD));
+   ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
@@ -436,14 +436,14 @@ test_mongoc_metadata_cannot_send (void)
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Make sure the isMaster request still DOESN'T have a metadata field
+   /* Make sure the isMaster request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
    request = mock_server_receives_ismaster (server);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
    ASSERT (bson_has_field (request_doc, "isMaster"));
-   ASSERT (!bson_has_field (request_doc, METADATA_FIELD));
+   ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
@@ -455,27 +455,27 @@ test_mongoc_metadata_cannot_send (void)
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 
-   /* Reset again so the next tests don't have a metadata doc which
+   /* Reset again so the next tests don't have a handshake doc which
     * is too big */
-   _reset_metadata ();
+   _reset_handshake ();
 }
 
 void
-test_metadata_install (TestSuite *suite)
+test_handshake_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ClientMetadata/appname_in_uri",
-                  test_mongoc_metadata_appname_in_uri);
-   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_single",
-                  test_mongoc_metadata_appname_frozen_single);
-   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_pooled",
-                  test_mongoc_metadata_appname_frozen_pooled);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_in_uri",
+                  test_mongoc_handshake_appname_in_uri);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_single",
+                  test_mongoc_handshake_appname_frozen_single);
+   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_pooled",
+                  test_mongoc_handshake_appname_frozen_pooled);
 
-   TestSuite_Add (suite, "/ClientMetadata/success",
+   TestSuite_Add (suite, "/MongoDB/handshake/success",
                   test_mongoc_handshake_data_append_success);
-   TestSuite_Add (suite, "/ClientMetadata/failure",
+   TestSuite_Add (suite, "/MongoDB/handshake/failure",
                   test_mongoc_handshake_data_append_after_cmd);
-   TestSuite_Add (suite, "/ClientMetadata/too_big",
-                  test_mongoc_metadata_too_big);
-   TestSuite_Add (suite, "/ClientMetadata/cannot_send",
-                  test_mongoc_metadata_cannot_send);
+   TestSuite_Add (suite, "/MongoDB/handshake/too_big",
+                  test_mongoc_handshake_too_big);
+   TestSuite_Add (suite, "/MongoDB/handshake/cannot_send",
+                  test_mongoc_handshake_cannot_send);
 }

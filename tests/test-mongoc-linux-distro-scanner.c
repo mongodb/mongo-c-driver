@@ -17,7 +17,7 @@
 #include <mongoc.h>
 #include "mongoc-client-private.h"
 #include "mongoc-linux-distro-scanner-private.h"
-#include "mongoc-metadata-os-private.h"
+#include "mongoc-handshake-os-private.h"
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

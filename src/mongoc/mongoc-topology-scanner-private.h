@@ -70,8 +70,8 @@ typedef struct mongoc_topology_scanner
    uint32_t                        seq;
    bson_t                          ismaster_cmd;
 
-   bson_t                          ismaster_cmd_with_metadata;
-   bool                            metadata_ok_to_send;
+   bson_t                          ismaster_cmd_with_handshake;
+   bool                            handshake_ok_to_send;
    const char                     *appname;
 
    mongoc_topology_scanner_cb_t    cb;
