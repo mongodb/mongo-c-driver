@@ -296,6 +296,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    }
 
    _mongoc_topology_background_thread_stop (topology);
+   _mongoc_topology_description_monitor_closed (&topology->description);
 
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy(&topology->description);

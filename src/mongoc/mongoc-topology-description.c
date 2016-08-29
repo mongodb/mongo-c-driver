@@ -152,8 +152,6 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 
    BSON_ASSERT(description);
 
-   _mongoc_topology_description_monitor_closed (description);
-
    mongoc_set_destroy(description->servers);
 
    if (description->set_name) {
