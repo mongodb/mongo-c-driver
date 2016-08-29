@@ -164,6 +164,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->ismaster_cmd);
+   bson_destroy (&ts->ismaster_cmd_with_metadata);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
