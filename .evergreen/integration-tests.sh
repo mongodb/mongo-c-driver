@@ -44,8 +44,6 @@ fi
 export ORCHESTRATION_FILE="orchestration_configs/${TOPOLOGY}s/${ORCHESTRATION_FILE}.json"
 export ORCHESTRATION_URL="http://localhost:8889/v1/${TOPOLOGY}s"
 
-cat $ORCHESTRATION_FILE
-
 export TMPDIR=$MONGO_ORCHESTRATION_HOME/db
 echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
 
@@ -75,13 +73,10 @@ case "$OS" in
 esac
 
 sleep 15
-cat $MONGO_ORCHESTRATION_HOME/server.log
 curl http://localhost:8889/ --silent --max-time 120 --fail
 
-cat $MONGO_ORCHESTRATION_HOME/server.log
 sleep 5
 
 pwd
 curl --silent --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --max-time 300 --fail
-cat $MONGO_ORCHESTRATION_HOME/server.log
 
