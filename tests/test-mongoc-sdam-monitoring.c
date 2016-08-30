@@ -257,27 +257,17 @@ topology_closed (const mongoc_apm_topology_closed_t *event)
 static void
 server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 {
-   context_t *ctx;
-
-   ctx = (context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
 }
 
 static void
 server_heartbeat_succeeded (
    const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
-   context_t *ctx;
-
-   ctx = (context_t *)
-         mongoc_apm_server_heartbeat_succeeded_get_context (event);
 }
 
 static void
 server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 {
-   context_t *ctx;
-
-   ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
 }
 
 static mongoc_apm_callbacks_t *
