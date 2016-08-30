@@ -379,6 +379,13 @@ mongoc_apm_server_changed_get_new_description (
 }
 
 
+void *
+mongoc_apm_server_changed_get_context (const mongoc_apm_server_changed_t *event)
+{
+   return event->context;
+}
+
+
 /* server-opening event fields */
 
 const mongoc_host_list_t *
@@ -397,6 +404,14 @@ mongoc_apm_server_opening_get_topology_id (
 }
 
 
+void *
+mongoc_apm_server_opening_get_context (
+   const mongoc_apm_server_opening_t *event)
+{
+   return event->context;
+}
+
+
 /* server-closed event fields */
 
 const mongoc_host_list_t *
@@ -412,6 +427,14 @@ mongoc_apm_server_closed_get_topology_id (
    bson_oid_t                       *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_server_closed_get_context (
+   const mongoc_apm_server_closed_t *event)
+{
+   return event->context;
 }
 
 
@@ -442,6 +465,14 @@ mongoc_apm_topology_changed_get_new_description (
 }
 
 
+void *
+mongoc_apm_topology_changed_get_context (
+   const mongoc_apm_topology_changed_t *event)
+{
+   return event->context;
+}
+
+
 /* topology-opening event field */
 
 void
@@ -450,6 +481,14 @@ mongoc_apm_topology_opening_get_topology_id (
    bson_oid_t                          *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_topology_opening_get_context (
+   const mongoc_apm_topology_opening_t *event)
+{
+   return event->context;
 }
 
 
@@ -464,6 +503,14 @@ mongoc_apm_topology_closed_get_topology_id (
 }
 
 
+void *
+mongoc_apm_topology_closed_get_context (
+   const mongoc_apm_topology_closed_t *event)
+{
+   return event->context;
+}
+
+
 /* heartbeat-started event field */
 
 const mongoc_host_list_t *
@@ -471,6 +518,14 @@ mongoc_apm_server_heartbeat_started_get_host (
    const mongoc_apm_server_heartbeat_started_t *event)
 {
    return event->host;
+}
+
+
+void *
+mongoc_apm_server_heartbeat_started_get_context (
+   const mongoc_apm_server_heartbeat_started_t *event)
+{
+   return event->context;
 }
 
 
@@ -500,6 +555,14 @@ mongoc_apm_server_heartbeat_succeeded_get_host (
 }
 
 
+void *
+mongoc_apm_server_heartbeat_succeeded_get_context (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->context;
+}
+
+
 /* heartbeat-failed event fields */
 
 int64_t
@@ -524,6 +587,14 @@ mongoc_apm_server_heartbeat_failed_get_host (
    const mongoc_apm_server_heartbeat_failed_t *event)
 {
    return event->host;
+}
+
+
+void *
+mongoc_apm_server_heartbeat_failed_get_context (
+   const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   return event->context;
 }
 
 

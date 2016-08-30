@@ -94,18 +94,21 @@ struct _mongoc_apm_server_changed_t
    bson_oid_t                         topology_id;
    const mongoc_server_description_t *previous_description;
    const mongoc_server_description_t *new_description;
+   void                              *context;
 };
 
 struct _mongoc_apm_server_opening_t
 {
    const mongoc_host_list_t *host;
    bson_oid_t                topology_id;
+   void                     *context;
 };
 
 struct _mongoc_apm_server_closed_t
 {
    const mongoc_host_list_t *host;
    bson_oid_t                topology_id;
+   void                     *context;
 };
 
 struct _mongoc_apm_topology_changed_t
@@ -113,21 +116,25 @@ struct _mongoc_apm_topology_changed_t
    bson_oid_t                           topology_id;
    const mongoc_topology_description_t *previous_description;
    const mongoc_topology_description_t *new_description;
+   void                                *context;
 };
 
 struct _mongoc_apm_topology_opening_t
 {
-   bson_oid_t topology_id;
+   bson_oid_t  topology_id;
+   void       *context;
 };
 
 struct _mongoc_apm_topology_closed_t
 {
-   bson_oid_t topology_id;
+   bson_oid_t  topology_id;
+   void       *context;
 };
 
 struct _mongoc_apm_server_heartbeat_started_t
 {
    const mongoc_host_list_t *host;
+   void                     *context;
 };
 
 struct _mongoc_apm_server_heartbeat_succeeded_t
@@ -135,6 +142,7 @@ struct _mongoc_apm_server_heartbeat_succeeded_t
    int64_t                   duration_usec;
    const bson_t             *reply;
    const mongoc_host_list_t *host;
+   void                     *context;
 };
 
 struct _mongoc_apm_server_heartbeat_failed_t
@@ -142,6 +150,7 @@ struct _mongoc_apm_server_heartbeat_failed_t
    int64_t                   duration_usec;
    bson_error_t             *error;
    const mongoc_host_list_t *host;
+   void                     *context;
 };
 
 void

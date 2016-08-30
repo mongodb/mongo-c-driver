@@ -144,6 +144,8 @@ const mongoc_server_description_t *
 mongoc_apm_server_changed_get_previous_description   (const mongoc_apm_server_changed_t             *event);
 const mongoc_server_description_t *
 mongoc_apm_server_changed_get_new_description        (const mongoc_apm_server_changed_t             *event);
+void *
+mongoc_apm_server_changed_get_context                (const mongoc_apm_server_changed_t             *event);
 
 /* server-opening event fields */
 
@@ -152,6 +154,8 @@ mongoc_apm_server_opening_get_host                   (const mongoc_apm_server_op
 void
 mongoc_apm_server_opening_get_topology_id            (const mongoc_apm_server_opening_t             *event,
                                                       bson_oid_t                                    *topology_id);
+void *
+mongoc_apm_server_opening_get_context                (const mongoc_apm_server_opening_t             *event);
 
 /* server-closed event fields */
 
@@ -160,6 +164,8 @@ mongoc_apm_server_closed_get_host                    (const mongoc_apm_server_cl
 void
 mongoc_apm_server_closed_get_topology_id             (const mongoc_apm_server_closed_t              *event,
                                                       bson_oid_t                                    *topology_id);
+void *
+mongoc_apm_server_closed_get_context                 (const mongoc_apm_server_closed_t              *event);
 
 /* topology-changed event fields */
 
@@ -170,23 +176,31 @@ const mongoc_topology_description_t *
 mongoc_apm_topology_changed_get_previous_description (const mongoc_apm_topology_changed_t           *event);
 const mongoc_topology_description_t *
 mongoc_apm_topology_changed_get_new_description      (const mongoc_apm_topology_changed_t           *event);
+void *
+mongoc_apm_topology_changed_get_context              (const mongoc_apm_topology_changed_t           *event);
 
 /* topology-opening event field */
 
 void
 mongoc_apm_topology_opening_get_topology_id          (const mongoc_apm_topology_opening_t           *event,
                                                       bson_oid_t                                    *topology_id);
+void *
+mongoc_apm_topology_opening_get_context              (const mongoc_apm_topology_opening_t           *event);
 
 /* topology-closed event field */
 
 void
 mongoc_apm_topology_closed_get_topology_id           (const mongoc_apm_topology_closed_t            *event,
                                                       bson_oid_t                                    *topology_id);
+void *
+mongoc_apm_topology_closed_get_context               (const mongoc_apm_topology_closed_t            *event);
 
 /* heartbeat-started event field */
 
 const mongoc_host_list_t *
 mongoc_apm_server_heartbeat_started_get_host         (const mongoc_apm_server_heartbeat_started_t   *event);
+void *
+mongoc_apm_server_heartbeat_started_get_context      (const mongoc_apm_server_heartbeat_started_t   *event);
 
 /* heartbeat-succeeded event fields */
 
@@ -196,6 +210,8 @@ const bson_t *
 mongoc_apm_server_heartbeat_succeeded_get_reply      (const mongoc_apm_server_heartbeat_succeeded_t *event);
 const mongoc_host_list_t *
 mongoc_apm_server_heartbeat_succeeded_get_host       (const mongoc_apm_server_heartbeat_succeeded_t *event);
+void *
+mongoc_apm_server_heartbeat_succeeded_get_context    (const mongoc_apm_server_heartbeat_succeeded_t *event);
 
 /* heartbeat-failed event fields */
 
@@ -206,6 +222,8 @@ mongoc_apm_server_heartbeat_failed_get_error         (const mongoc_apm_server_he
                                                       bson_error_t                                  *error);
 const mongoc_host_list_t *
 mongoc_apm_server_heartbeat_failed_get_host          (const mongoc_apm_server_heartbeat_failed_t    *event);
+void *
+mongoc_apm_server_heartbeat_failed_get_context       (const mongoc_apm_server_heartbeat_failed_t    *event);
 
 
 /*
