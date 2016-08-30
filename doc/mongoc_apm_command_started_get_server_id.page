@@ -5,19 +5,19 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_apm_command_started_get_database_name">
+      id="mongoc_apm_command_started_get_server_id">
 
   <info>
     <link type="guide" xref="mongoc_apm_command_started_t" group="function"/>
   </info>
-  <title>mongoc_apm_command_started_get_database_name()</title>
+  <title>mongoc_apm_command_started_get_server_id()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[const char *
-mongoc_apm_command_started_get_database_name (const mongoc_apm_command_started_t *event);
+    <synopsis><code mime="text/x-csrc"><![CDATA[uint32_t
+mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *event);
 ]]></code></synopsis>
-    <p>Returns this event's database name. The data is only valid in the scope of the callback that receives this event; copy it if it will be accessed after the callback returns.</p>
+    <p>Returns this event's server id.</p>
   </section>
 
   <section id="parameters">
@@ -29,8 +29,7 @@ mongoc_apm_command_started_get_database_name (const mongoc_apm_command_started_t
 
   <section id="return">
     <title>Returns</title>
-    <p>
-A string that should not be modified or freed.</p>
+    <p>The event's server id.</p>
   </section>
 
   <section id="seealso">

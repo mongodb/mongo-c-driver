@@ -9,7 +9,7 @@
     <link type="guide" xref="index#apm" />
   </info>
   <title>mongoc_apm_server_heartbeat_succeeded_t</title>
-  <subtitle>Application Performance Monitoring: heartbeat-succeeded event</subtitle>
+  <subtitle>Heartbeat-succeeded event</subtitle>
   <section id="description">
     <title>Synopsis</title>
     <p>An event notification sent when the driver completes an "isMaster" command to check the status of a server.</p>

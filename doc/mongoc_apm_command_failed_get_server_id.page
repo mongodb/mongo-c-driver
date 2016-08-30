@@ -5,31 +5,31 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_apm_command_succeeded_get_request_id">
+      id="mongoc_apm_command_failed_get_server_id">
 
   <info>
-    <link type="guide" xref="mongoc_apm_command_succeeded_t" group="function"/>
+    <link type="guide" xref="mongoc_apm_command_failed_t" group="function"/>
   </info>
-  <title>mongoc_apm_command_succeeded_get_request_id()</title>
+  <title>mongoc_apm_command_failed_get_server_id()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[int64_t
-mongoc_apm_command_succeeded_get_request_id (const mongoc_apm_command_succeeded_t *event);
+    <synopsis><code mime="text/x-csrc"><![CDATA[uint32_t
+mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *event);
 ]]></code></synopsis>
-    <p>Returns this event's wire-protocol request id. Use this number to correlate client-side events with server log messages.</p>
+    <p>Returns this event's server id.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>event</p></td><td><p>A <code xref="mongoc_apm_command_succeeded_t">mongoc_apm_command_succeeded_t</code>.</p></td></tr>
+      <tr><td><p>event</p></td><td><p>A <code xref="mongoc_apm_command_failed_t">mongoc_apm_command_failed_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>The event's request id.</p>
+    <p>The event's server id.</p>
   </section>
 
   <section id="seealso">

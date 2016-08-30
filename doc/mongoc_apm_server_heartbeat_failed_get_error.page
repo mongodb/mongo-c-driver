@@ -18,7 +18,7 @@
 mongoc_apm_server_heartbeat_failed_get_error (const mongoc_apm_server_heartbeat_failed_t *event,
                                               bson_error_t                               *error);
 ]]></code></synopsis>
-    <p>Returns this event's error info.</p>
+    <p>Copies this event's error info.</p>
   </section>
 
   <section id="parameters">
@@ -27,11 +27,6 @@ mongoc_apm_server_heartbeat_failed_get_error (const mongoc_apm_server_heartbeat_
       <tr><td><p>event</p></td><td><p>A <code xref="mongoc_apm_server_heartbeat_failed_t">mongoc_apm_server_heartbeat_failed_t</code>.</p></td></tr>
       <tr><td><p>error</p></td><td><p>A <code xref="bson:bson_error_t">bson_error_t</code> to receive the event's error info.</p></td></tr>
     </table>
-  </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>The event's error.</p>
   </section>
 
   <section id="seealso">

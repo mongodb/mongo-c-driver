@@ -9,7 +9,7 @@
     <link type="guide" xref="index#apm" />
   </info>
   <title>mongoc_apm_topology_closed_t</title>
-  <subtitle>Application Performance Monitoring: topology closed event</subtitle>
+  <subtitle>Topology-closed event</subtitle>
   <section id="description">
     <title>Synopsis</title>
     <p>An event notification sent when the driver stops monitoring a server topology and destroys its <code xref="mongoc_topology_description_t">mongoc_topology_description_t</code>.</p>

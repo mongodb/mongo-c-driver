@@ -7,7 +7,7 @@
       xmlns:ui="http://projectmallard.org/experimental/ui/">
   <info><link type="guide" xref="index#apm" /></info>
   <title>mongoc_apm_callbacks_t</title>
-  <subtitle>Application Performance Monitoring callbacks</subtitle>
+  <subtitle>Notification callbacks</subtitle>
   <section id="description">
     <title>Synopsis</title>
     <p>Used to receive notification of events, such as when a MongoDB command begins, succeeds, or fails.</p>

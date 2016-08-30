@@ -9,7 +9,7 @@
     <link type="guide" xref="index#apm" />
   </info>
   <title>mongoc_apm_server_opening_t</title>
-  <subtitle>Application Performance Monitoring: server opening event</subtitle>
+  <subtitle>Server-opening event</subtitle>
   <section id="description">
     <title>Synopsis</title>
     <p>An event notification sent when the driver adds a <code xref="mongoc_server_description_t">mongoc_server_description_t</code> for a new server it was not monitoring before.</p>
