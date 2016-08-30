@@ -310,8 +310,6 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-trace.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-trace-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h

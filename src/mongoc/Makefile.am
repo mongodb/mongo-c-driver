@@ -101,7 +101,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
 	src/mongoc/mongoc-trace.h \
-	src/mongoc/mongoc-trace-private.h \
 	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \

@@ -24,7 +24,6 @@
 #include "mongoc-host-list.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-trace.h"
-#include "mongoc-trace-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
