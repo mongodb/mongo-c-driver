@@ -18,7 +18,7 @@
 
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"

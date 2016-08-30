@@ -32,7 +32,7 @@
 #include "mongoc-socket.h"
 #include "mongoc-ssl.h"
 #include "mongoc-openssl-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
 

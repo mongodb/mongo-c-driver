@@ -32,7 +32,7 @@
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-gridfs-file-page-private.h"
 #include "mongoc-iovec.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-error.h"
 
 static bool

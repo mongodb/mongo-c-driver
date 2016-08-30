@@ -25,7 +25,7 @@
 #include "mongoc-gridfs-file-private.h"
 #include "mongoc-gridfs-file-list.h"
 #include "mongoc-gridfs-file-list-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

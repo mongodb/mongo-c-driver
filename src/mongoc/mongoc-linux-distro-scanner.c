@@ -25,7 +25,7 @@
 #include "mongoc-linux-distro-scanner-private.h"
 #include "mongoc-log.h"
 #include "mongoc-handshake-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-version.h"
 

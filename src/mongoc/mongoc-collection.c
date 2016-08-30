@@ -31,7 +31,7 @@
 #include "mongoc-error.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
 

@@ -27,7 +27,7 @@
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 

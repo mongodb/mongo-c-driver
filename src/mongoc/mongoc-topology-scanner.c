@@ -19,7 +19,7 @@
 
 #include "mongoc-config.h"
 #include "mongoc-error.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-stream-socket.h"
 

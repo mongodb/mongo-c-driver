@@ -21,7 +21,7 @@
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-gridfs-file-page-private.h"
 
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 /** create a new page from a buffer

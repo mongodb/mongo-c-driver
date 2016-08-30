@@ -31,7 +31,7 @@
 # endif
 #endif
 #include "mongoc-thread-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS

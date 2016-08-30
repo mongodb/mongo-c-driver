@@ -21,7 +21,7 @@
 #include <bson.h>
 
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-ssl.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-secure-transport-private.h"

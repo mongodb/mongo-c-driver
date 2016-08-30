@@ -24,7 +24,7 @@
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl-private.h"

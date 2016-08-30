@@ -20,7 +20,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-buffer-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

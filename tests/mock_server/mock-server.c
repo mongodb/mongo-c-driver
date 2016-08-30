@@ -22,6 +22,7 @@
 #include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-trace-private.h"
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"

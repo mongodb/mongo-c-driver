@@ -20,7 +20,7 @@
 
 #include <bson.h>
 
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"

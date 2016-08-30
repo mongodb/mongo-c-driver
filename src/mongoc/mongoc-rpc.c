@@ -19,7 +19,7 @@
 
 #include "mongoc.h"
 #include "mongoc-rpc-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #define RPC(_name, _code) \

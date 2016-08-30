@@ -35,7 +35,7 @@
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-socket.h"
 #include "mongoc-thread-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-set-private.h"

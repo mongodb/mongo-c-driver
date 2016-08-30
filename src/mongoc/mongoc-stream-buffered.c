@@ -22,7 +22,7 @@
 #include "mongoc-log.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

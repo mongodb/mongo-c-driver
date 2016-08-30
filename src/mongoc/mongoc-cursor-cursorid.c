@@ -19,7 +19,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-cursor-cursorid-private.h"
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"

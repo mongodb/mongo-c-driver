@@ -19,7 +19,7 @@
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-server-description-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-uri.h"
 #include "mongoc-util-private.h"
 

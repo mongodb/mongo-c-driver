@@ -31,7 +31,7 @@
 #include "mongoc-gridfs-file-list.h"
 #include "mongoc-gridfs-file-list-private.h"
 #include "mongoc-client.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 #define MONGOC_GRIDFS_STREAM_CHUNK 4096
 
