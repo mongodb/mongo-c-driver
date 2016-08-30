@@ -477,11 +477,11 @@ void
 test_sdam_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (
+   TestSuite_AddLive (
       suite,
       "/server_discovery_and_monitoring/monitoring/topology_events/single",
       test_topology_events_single);
-   TestSuite_Add (
+   TestSuite_AddLive (
       suite,
       "/server_discovery_and_monitoring/monitoring/topology_events/pooled",
       test_topology_events_pooled);
