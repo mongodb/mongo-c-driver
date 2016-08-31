@@ -2048,7 +2048,7 @@ _test_client_sends_handshake (bool pooled)
 }
 
 static void
-test_client_sends_handshake_single (void)
+test_client_sends_handshake_single (void *ctx)
 {
    _test_client_sends_handshake (false);
 }
@@ -2196,8 +2196,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
    TestSuite_Add (suite, "/Client/application_handshake", test_mongoc_client_application_handshake);
-   TestSuite_Add (suite, "/Client/sends_handshake_single",
-                  test_client_sends_handshake_single);
+   TestSuite_AddFull (suite, "/Client/sends_handshake_single",
+                      test_client_sends_handshake_single, NULL, NULL, test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Client/sends_handshake_pooled",
                   test_client_sends_handshake_pooled);
    TestSuite_Add (suite, "/Client/appname_single_uri",
