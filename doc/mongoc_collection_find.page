@@ -148,7 +148,7 @@ cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, 
       <p>The "find" command has new options like "singleBatch" not supported by OP_QUERY. Applications should use the new "find" syntax directly to take advantage of them:</p>
       <code mime="text/x-csrc"><![CDATA[/* MongoDB 3.2+ "find" command syntax */
 query = BCON_NEW ("filter", "{", "foo", BCON_INT32 (1), "}",
-                  "sort": "{", "bar", BCON_INT32 (-1), "}",
+                  "sort", "{", "bar", BCON_INT32 (-1), "}",
                   "singleBatch", BCON_BOOL (true));
 cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 ]]></code>
