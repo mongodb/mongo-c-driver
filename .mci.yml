@@ -5171,6 +5171,7 @@ buildvariants:
   expansions:
     CC: "gcc"
     MARCH: "x86_64"
+  batchtime: 1440 # 1 day
   run_on:
     - solaris
   tasks:
@@ -5187,6 +5188,7 @@ buildvariants:
   expansions:
     CC: "gcc"
     MARCH: "i386"
+  batchtime: 1440 # 1 day
   run_on:
     - solaris
   tasks:
@@ -5346,6 +5348,7 @@ buildvariants:
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - rhel71-power8-build
   - rhel71-power8-test
@@ -5364,6 +5367,7 @@ buildvariants:
   display_name: "Power8 (ppc64le) (Ubuntu 16.04)"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - ubuntu1604-power8-build
   - ubuntu1604-power8-test
@@ -5382,6 +5386,7 @@ buildvariants:
   display_name: "*ARM (aarch64) (Ubuntu 16.04)"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - ubuntu1604-arm64-large
   - ubuntu1604-arm64-small
@@ -5400,6 +5405,7 @@ buildvariants:
   display_name: "*zSeries (s390x) (RHEL 7.2)"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - rhel72-zseries-test
   - rhel72-zseries-build
@@ -5416,6 +5422,7 @@ buildvariants:
   display_name: "zSeries (s390x) (Ubuntu 16.04)"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - ubuntu1604-zseries-large
   - ubuntu1604-zseries-small
@@ -5433,6 +5440,7 @@ buildvariants:
   display_name: "zSeries (s390x) SUSE12"
   expansions:
     CC: "gcc"
+  batchtime: 1440 # 1 day
   run_on:
   - suse12-zseries-build
   - suse12-zseries-test
