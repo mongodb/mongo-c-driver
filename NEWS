@@ -14,6 +14,9 @@ New features and bug fixes:
   * Additional features for Application Performance Monitoring:
     * mongoc_topology_description_has_writable_server
     * mongoc_topology_description_has_readable_server
+  * connectTimeoutMS timer now begins after DNS resolution, and resets
+    for each interface attempted (e.g., if the driver first tries IPv6,
+    then IPv4).
 
 Thanks to everyone who contributed to the development of this release.
 
