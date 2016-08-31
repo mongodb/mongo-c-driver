@@ -85,10 +85,24 @@ Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></co
     <p>By default bulk operations are validated against the schema, if any is defined. In certain cases however it may be necessary to bypass the document validation.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk5.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
       <p>Running the above example will result in:</p>
-      <synopsis><code mime="text/x-csrc"><![CDATA[ { "nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : [ { "index" : 0, "code" : 121, "errmsg" : "Document failed validation" } ] }
+      <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 0,
+  "nMatched" : 0,
+  "nModified" : 0,
+  "nRemoved" : 0,
+  "nUpserted" : 0,
+  "writeErrors" : [
+    { "index" : 0,
+      "code" : 121,
+      "errmsg" : "Document failed validation" } ] }
+
 Error: Document failed validation
-{ "nInserted" : 2, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : [  ] }
-]]></code></synopsis>
+
+{ "nInserted" : 2,
+  "nMatched" : 0,
+  "nModified" : 0,
+  "nRemoved" : 0,
+  "nUpserted" : 0,
+  "writeErrors" : [] }]]></code></synopsis>
     <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code>.</p>
   </section>
 
