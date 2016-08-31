@@ -652,8 +652,7 @@ _test_select_succeed (bool try_once)
 
    uri_str = bson_strdup_printf (
       "mongodb://localhost:%hu,localhost:%hu/"
-         "?replicaSet=rs&connectTimeoutMS=%d"
-         "&serverSelectionTryOnce=false",
+         "?replicaSet=rs&connectTimeoutMS=%d",
       mock_server_get_port (primary),
       mock_server_get_port (secondary),
       connect_timeout_ms);
