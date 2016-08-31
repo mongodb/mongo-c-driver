@@ -751,7 +751,10 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
          case SEC_E_NO_CREDENTIALS:
          case SEC_E_TARGET_UNKNOWN:
          case SEC_E_UNSUPPORTED_FUNCTION:
+#ifdef SEC_E_APPLICATION_PROTOCOL_MISMATCH
+         /* Not available in VS2010 */
          case SEC_E_APPLICATION_PROTOCOL_MISMATCH:
+#endif
 
 
          default: {
