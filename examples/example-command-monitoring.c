@@ -1,7 +1,7 @@
-/* gcc example-application-performance-monitoring.c -o example-apm \
+/* gcc example-command-monitoring.c -o example-command-monitoring \
  *     $(pkg-config --cflags --libs libmongoc-1.0) */
 
-/* ./example-apm [CONNECTION_STRING] */
+/* ./example-command-monitoring [CONNECTION_STRING] */
 
 #include <mongoc.h>
 #include <stdio.h>
@@ -69,7 +69,7 @@ main (int   argc,
    mongoc_apm_callbacks_t *callbacks;
    stats_t stats = { 0 }; 
    mongoc_collection_t *collection;
-   const char *uristr = "mongodb://127.0.0.1/?appname=perf-monitoring-example";
+   const char *uristr = "mongodb://127.0.0.1/?appname=cmd-monitoring-example";
    const char *collection_name = "test";
    bson_t doc;
 
