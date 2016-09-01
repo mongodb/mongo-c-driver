@@ -224,7 +224,8 @@ EXTRA_DIST += \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
-	$(wildcard tests/json/server_selection/server_selection/*/*/*.json)
+	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \
+	$(wildcard tests/json/max_staleness/*/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --
