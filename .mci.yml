@@ -250,9 +250,19 @@ functions:
             mv $i.new $i
           done
 
+  "make files executable":
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+          for i in $(find .evergreen -name \*.sh); do
+            chmod +x $i
+          done
+
 pre:
   - func: "fetch source"
   - func: "windows fix"
+  - func: "make files executable"
 
 post:
   - func: "upload working dir"
