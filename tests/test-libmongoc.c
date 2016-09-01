@@ -1480,6 +1480,12 @@ test_framework_skip_if_slow (void)
 
 
 int
+test_framework_skip_if_slow_or_live (void)
+{
+   return test_framework_skip_if_slow () && TestSuite_CheckLive ();
+}
+
+int
 test_framework_skip_if_windows (void)
 {
 #ifdef _WIN32

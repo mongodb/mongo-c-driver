@@ -84,6 +84,7 @@ int test_framework_skip_if_not_replset (void);
 int test_framework_skip_if_not_single  (void);
 int test_framework_skip_if_offline  (void);
 int test_framework_skip_if_slow  (void);
+int test_framework_skip_if_slow_or_live  (void);
 
 typedef struct _debug_stream_stats_t {
    mongoc_client_t *client;

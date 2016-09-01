@@ -780,7 +780,7 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
    TestSuite_AddLive (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
    TestSuite_AddFull (suite, "/Topology/invalid_cluster_node",
-                      test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
+                      test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
