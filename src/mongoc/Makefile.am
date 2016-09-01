@@ -97,6 +97,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream-socket.h \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-thread-private.h \
+	src/mongoc/mongoc-topology-description.h \
 	src/mongoc/mongoc-topology-description-private.h \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
