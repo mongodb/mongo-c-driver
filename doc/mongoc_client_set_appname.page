@@ -39,8 +39,4 @@ mongoc_client_set_appname (mongoc_client_t *client,
     <p>true if the appname is set successfully. Otherwise, false.</p>
   </section>
 
-  <section id="availability">
-    <title>Availability</title>
-    <p>This feature is experimental and requires that the MongoDB C driver was compiled with <code>--enable-experimental-features=yes</code>.</p>
-  </section>
 </page>

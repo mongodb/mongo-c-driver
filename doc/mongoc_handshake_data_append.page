@@ -44,11 +44,6 @@ mongoc_handshake_data_append (const char *driver_name,
     <p>true if the given fields are set successfully. Otherwise, it returns false and logs an error.</p>
   </section>
 
-  <section id="availability">
-    <title>Availability</title>
-    <p>This feature is experimental and requires that the MongoDB C driver was compiled with <code>--enable-experimental-features=yes</code>.</p>
-  </section>
-
   <section id="example">
     <title>Example</title>
     <p>The default handshake data the driver sends with "isMaster" looks something like:</p>
