@@ -113,7 +113,8 @@ td_to_bson (const mongoc_topology_description_t *td,
    }
 
    bson_init (bson);
-   BSON_APPEND_UTF8 (bson, "topologyType", topology_type_to_string (td->type));
+   BSON_APPEND_UTF8 (bson, "topologyType",
+                     mongoc_topology_description_type (td));
 
    if (td->set_name) {
       BSON_APPEND_UTF8 (bson, "setName", td->set_name);

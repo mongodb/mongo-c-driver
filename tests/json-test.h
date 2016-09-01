@@ -53,9 +53,6 @@ install_json_test_suite(TestSuite  *suite,
 mongoc_topology_description_type_t
 topology_type_from_test(const char *type);
 
-const char *
-topology_type_to_string(mongoc_topology_description_type_t type);
-
 mongoc_server_description_t *
 server_description_by_hostname (mongoc_topology_description_t *topology,
                                 const char *address);

@@ -84,29 +84,6 @@ server_type_from_test(const char *type)
    return 0;
 }
 
-const char *
-topology_type_to_string(mongoc_topology_description_type_t type)
-{
-   switch(type) {
-   case MONGOC_TOPOLOGY_UNKNOWN:
-      return "Unknown";
-   case MONGOC_TOPOLOGY_SHARDED:
-      return "Sharded";
-   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
-      return "ReplicaSetNoPrimary";
-   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
-      return "ReplicaSetWithPrimary";
-   case MONGOC_TOPOLOGY_SINGLE:
-      return "Single";
-   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
-   default:
-      fprintf(stderr, "ERROR: Unknown topology state\n");
-      assert(0);
-   }
-
-   return NULL;
-}
-
 
 static mongoc_read_mode_t
 read_mode_from_test (const char *mode)

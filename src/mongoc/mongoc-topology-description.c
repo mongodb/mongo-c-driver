@@ -1704,3 +1704,89 @@ mongoc_topology_description_has_writable_server (
    return mongoc_topology_description_select (td, MONGOC_SS_WRITE,
                                               NULL, 0) != NULL;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_type --
+ *
+ *      Get this topology's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec.
+ *
+ *      NOTE: this method should only be called by user code in an SDAM
+ *      Monitoring callback, while the monitoring framework holds the mutex
+ *      on the owning topology object.
+ *
+ * Returns:
+ *      A string.
+ *
+ *--------------------------------------------------------------------------
+ */
+const char *
+mongoc_topology_description_type (
+   const mongoc_topology_description_t *td)
+{
+   switch (td->type) {
+   case MONGOC_TOPOLOGY_UNKNOWN:
+      return "Unknown";
+   case MONGOC_TOPOLOGY_SHARDED:
+      return "Sharded";
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+      return "ReplicaSetNoPrimary";
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      return "ReplicaSetWithPrimary";
+   case MONGOC_TOPOLOGY_SINGLE:
+      return "Single";
+   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
+   default:
+      fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);
+      assert (0);
+   }
+
+   return NULL;
+}
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_get_servers --
+ *
+ *      Fetch an array of server descriptions for all known servers in the
+ *      topology.
+ *
+ * Returns:
+ *      An array you must free with mongoc_server_descriptions_destroy_all.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_server_description_t **
+mongoc_topology_description_get_servers (
+   const mongoc_topology_description_t *td,
+   size_t                              *n /* OUT */)
+{
+   size_t i;
+   mongoc_set_t *set;
+   mongoc_server_description_t **sds;
+   mongoc_server_description_t *sd;
+
+   BSON_ASSERT (td);
+   BSON_ASSERT (n);
+
+   set = td->servers;
+
+   /* enough room for all descriptions, even if some are unknown  */
+   sds = (mongoc_server_description_t **) bson_malloc0 (
+      sizeof (mongoc_server_description_t *) * set->items_len);
+
+   *n = 0;
+
+   for (i = 0; i < set->items_len; ++i) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
+
+      if (sd->type != MONGOC_SERVER_UNKNOWN) {
+         sds[i] = mongoc_server_description_new_copy (sd);
+         ++(*n);
+      }
+   }
+
+   return sds;
+}

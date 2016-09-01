@@ -130,7 +130,7 @@ test_sdam_cb (bson_t *test)
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) == 0) {
             ASSERT_CMPSTR (
-               topology_type_to_string(client->topology->description.type),
+               mongoc_topology_description_type (&client->topology->description),
                bson_iter_utf8(&outcome_iter, NULL));
          } else {
             fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));

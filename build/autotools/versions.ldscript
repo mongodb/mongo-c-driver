@@ -400,6 +400,8 @@ LIBMONGOC_1.5 {
         mongoc_database_create_collection_with_write_concern;
         mongoc_database_drop_with_write_concern;
         mongoc_handshake_data_append;
+        mongoc_topology_description_get_servers;
         mongoc_topology_description_has_readable_server;
         mongoc_topology_description_has_writable_server;
+        mongoc_topology_description_type;
 } LIBMONGOC_1.4;

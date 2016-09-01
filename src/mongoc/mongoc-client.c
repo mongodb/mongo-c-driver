@@ -1908,10 +1908,7 @@ mongoc_client_get_server_descriptions (
    size_t                       *n /* OUT */)
 {
    mongoc_topology_t *topology;
-   size_t i;
-   mongoc_set_t *set;
    mongoc_server_description_t **sds;
-   mongoc_server_description_t *sd;
 
    BSON_ASSERT (client);
    BSON_ASSERT (n);
@@ -1921,20 +1918,7 @@ mongoc_client_get_server_descriptions (
    /* in case the client is pooled */
    mongoc_mutex_lock (&topology->mutex);
 
-   set = topology->description.servers;
-
-   /* enough room for all descriptions, even if some are unknown  */
-   sds = (mongoc_server_description_t **) bson_malloc0 (
-      sizeof (mongoc_server_description_t *) * set->items_len);
-
-   *n = 0;
-   for (i = 0; i < set->items_len; ++i) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
-      if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         sds[i] = mongoc_server_description_new_copy (sd);
-         ++(*n);
-      }
-   }
+   sds = mongoc_topology_description_get_servers (&topology->description, n);
 
    mongoc_mutex_unlock (&topology->mutex);
 
