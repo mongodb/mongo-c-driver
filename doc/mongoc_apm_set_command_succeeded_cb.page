@@ -21,7 +21,6 @@ mongoc_apm_set_command_succeeded_cb  (mongoc_apm_callbacks_t               *call
                                       mongoc_apm_command_succeeded_cb_t     cb);
 ]]></code></synopsis>
     <p>Receive an event notification whenever the driver completes a MongoDB operation.</p>
-    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
   </section>
 
   <section id="parameters">
@@ -32,4 +31,8 @@ mongoc_apm_set_command_succeeded_cb  (mongoc_apm_callbacks_t               *call
     </table>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
+  </section>
 </page>

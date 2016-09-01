@@ -18,7 +18,6 @@
 mongoc_apm_command_failed_get_hint (const mongoc_apm_command_failed_t *event);
 ]]></code></synopsis>
     <p>Returns this event's hint (its server identifier).</p>
-    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
   </section>
 
   <section id="parameters">
@@ -33,4 +32,8 @@ mongoc_apm_command_failed_get_hint (const mongoc_apm_command_failed_t *event);
     <p>The event's hint.</p>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
+  </section>
 </page>
