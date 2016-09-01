@@ -210,6 +210,10 @@ to open a MongoDB connection to example.com. Skip them with:
 
 * `MONGOC_TEST_OFFLINE=on`
 
+Some tests require a running MongoDB server. Skip them with:
+
+* `MONGOC_TEST_SKIP_LIVE=on`
+
 For quick checks during development, disable long-running tests:
 
 * `MONGOC_TEST_SKIP_SLOW=on`
