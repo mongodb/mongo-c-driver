@@ -263,6 +263,8 @@ check_json_apm_events (const bson_t *events,
 {
    char errmsg[1000] = { 0 };
    match_ctx_t ctx = { 0 };
+   uint32_t expected_keys;
+   uint32_t actual_keys;
 
    /* Old mongod returns a double for "count", newer returns int32.
     * Ignore this and other insignificant type differences. */
@@ -270,8 +272,22 @@ check_json_apm_events (const bson_t *events,
    ctx.errmsg = errmsg;
    ctx.errmsg_len = sizeof errmsg;
 
-   if (bson_count_keys (expectations) != bson_count_keys (events) ||
-       !match_bson_with_ctx (events, expectations, false, &ctx)) {
+   expected_keys = bson_count_keys (expectations);
+   actual_keys = bson_count_keys (events);
+
+   if (expected_keys != actual_keys) {
+      test_error ("command monitoring test failed expectations:\n\n"
+                     "%s\n\n"
+                     "events:\n%s\n\n"
+                     "expected %"PRIu32" events, got %"PRIu32"\n",
+                  bson_as_json (expectations, NULL),
+                  bson_as_json (events, NULL),
+                  expected_keys, actual_keys);
+
+      abort ();
+   }
+
+   if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
       test_error ("command monitoring test failed expectations:\n\n"
                      "%s\n\n"
                      "events:\n%s\n\n%s\n",
