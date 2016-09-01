@@ -141,6 +141,8 @@ functions:
         script: |
           if find scan -name \*.html | grep -q html; then
             (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
+          else
+            echo "No issues found" > scan.html
           fi
     - command: shell.exec
       params:
