@@ -35,6 +35,10 @@ case "$OS" in
       ;;
 
    sunos)
+      PATH="/opt/mongodbtoolchain/bin:$PATH"
+      if [ "$MARCH" = "x86_64" ]; then
+         sudo /opt/csw/bin/pkgutil -y -i sasl_dev
+      fi
       export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
       ;;
 
