@@ -771,12 +771,14 @@ test_multiple_selection_errors (void *context)
 
    /* Like:
     * "No suitable servers found (`serverselectiontryonce` set):
-    *  [Failed to resolve 'doesntexist'] [connection error]"
+    *  [Failed to resolve 'doesntexist']
+    *  [connection error calling ismaster on 'example.com:2']"
     */
    ASSERT_CONTAINS (error.message,
                     "No suitable servers found");
+   /* either "connection error" or "connection timeout" calling ismaster */
    ASSERT_CONTAINS (error.message,
-                    "[connection error calling ismaster on 'example.com:2']");
+                    "calling ismaster on 'example.com:2'");
    ASSERT_CONTAINS (error.message,
                     "[Failed to resolve 'doesntexist']");
 
