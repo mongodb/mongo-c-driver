@@ -52,11 +52,13 @@ _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanne
 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
-                                                      const mongoc_host_list_t        *host);
+                                                      const mongoc_host_list_t        *host,
+                                                      const bson_t                    *reply);
 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
-                                                   const mongoc_host_list_t        *host);
+                                                   const mongoc_host_list_t        *host,
+                                                   const bson_error_t              *error);
 
 static void
 _add_ismaster (bson_t *cmd)
@@ -379,10 +381,12 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                       message,
                       node->host.host_and_port);
       
-      _mongoc_topology_scanner_monitor_heartbeat_failed (ts, &node->host);
+      _mongoc_topology_scanner_monitor_heartbeat_failed (ts, &node->host,
+                                                         &node->last_error);
    } else {
       node->last_failed = -1;
-      _mongoc_topology_scanner_monitor_heartbeat_succeeded (ts, &node->host);
+      _mongoc_topology_scanner_monitor_heartbeat_succeeded (ts, &node->host,
+                                                            ismaster_response);
    }
 
    node->last_used = now;
@@ -583,7 +587,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    }
 
    if (!sock_stream) {
-      _mongoc_topology_scanner_monitor_heartbeat_failed (node->ts, &node->host);
+      _mongoc_topology_scanner_monitor_heartbeat_failed (node->ts, &node->host,
+                                                         error);
 
       /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
       node->ts->cb (node->id, NULL, -1, node->ts->cb_data, error);
@@ -802,12 +807,14 @@ _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanne
 /* SDAM Monitoring Spec: send HeartbeatSucceededEvent */
 static void
 _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
-                                                      const mongoc_host_list_t        *host)
+                                                      const mongoc_host_list_t        *host,
+                                                      const bson_t                    *reply)
 {
    if (ts->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
       event.host = host;
       event.context = ts->apm_context;
+      event.reply = reply;
       ts->apm_callbacks.server_heartbeat_succeeded (&event);
    }
 }
@@ -815,12 +822,14 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
 /* SDAM Monitoring Spec: send HeartbeatFailedEvent */
 static void
 _mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
-                                                   const mongoc_host_list_t        *host)
+                                                   const mongoc_host_list_t        *host,
+                                                   const bson_error_t              *error)
 {
    if (ts->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;
       event.host = host;
       event.context = ts->apm_context;
+      event.error = error;
       ts->apm_callbacks.server_heartbeat_failed (&event);
    }
 }

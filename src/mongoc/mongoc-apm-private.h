@@ -147,7 +147,7 @@ struct _mongoc_apm_server_heartbeat_succeeded_t
 struct _mongoc_apm_server_heartbeat_failed_t
 {
    int64_t                   duration_usec;
-   bson_error_t             *error;
+   const bson_error_t       *error;
    const mongoc_host_list_t *host;
    void                     *context;
 };
