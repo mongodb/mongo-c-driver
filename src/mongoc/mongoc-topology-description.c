@@ -983,13 +983,14 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
    mongoc_server_description_t *sd;
 
    sd = mongoc_topology_description_server_by_id (topology, id, NULL);
-   mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, NULL);
 
-   if (error) {
-      memcpy (&sd->error, error, sizeof *error);
+   /* if pooled, the topology scanner thread might've already removed the sd */
+   if (sd) {
+      mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, NULL);
+      if (error) {
+         memcpy (&sd->error, error, sizeof *error);
+      }
    }
-
-   return;
 }
 
 /*
