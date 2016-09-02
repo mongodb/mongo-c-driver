@@ -25,7 +25,6 @@
 
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
-#include "mongoc-stream-tls-private.h"
 
 
 BSON_BEGIN_DECLS

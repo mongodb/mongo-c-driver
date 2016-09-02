@@ -23,6 +23,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-tls.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-libressl-private.h"
 #include "mongoc-libressl-private.h"

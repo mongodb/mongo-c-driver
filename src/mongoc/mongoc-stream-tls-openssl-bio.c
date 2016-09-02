@@ -27,6 +27,7 @@
 #include "mongoc-errno-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-tls-openssl-bio-private.h"
 #include "mongoc-stream-tls-openssl-private.h"
 #include "mongoc-openssl-private.h"
