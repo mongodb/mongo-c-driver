@@ -6,7 +6,6 @@ LIBMONGOC_1.4
 LIBMONGOC_1.5
 mongoc_apm_callbacks_destroy
 mongoc_apm_callbacks_new
-mongoc_apm_callbacks_t
 mongoc_apm_command_failed_get_command_name
 mongoc_apm_command_failed_get_context
 mongoc_apm_command_failed_get_duration
