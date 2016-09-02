@@ -29,6 +29,7 @@ example-client
 example-scram
 example-gridfs
 example-matcher
+example-sdam-monitoring
 filter-bsondump
 find-and-modify
 fam
