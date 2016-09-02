@@ -371,25 +371,43 @@ LIBMONGOC_1.4 {
 
 LIBMONGOC_1.5 {
     global:
+        mongoc_apm_server_changed_get_context;
         mongoc_apm_server_changed_get_host;
         mongoc_apm_server_changed_get_new_description;
         mongoc_apm_server_changed_get_previous_description;
         mongoc_apm_server_changed_get_topology_id;
+        mongoc_apm_server_closed_get_context;
         mongoc_apm_server_closed_get_host;
         mongoc_apm_server_closed_get_topology_id;
+        mongoc_apm_server_heartbeat_failed_get_context;
         mongoc_apm_server_heartbeat_failed_get_duration;
         mongoc_apm_server_heartbeat_failed_get_error;
         mongoc_apm_server_heartbeat_failed_get_host;
+        mongoc_apm_server_heartbeat_started_get_context;
         mongoc_apm_server_heartbeat_started_get_host;
+        mongoc_apm_server_heartbeat_succeeded_get_context;
         mongoc_apm_server_heartbeat_succeeded_get_duration;
         mongoc_apm_server_heartbeat_succeeded_get_host;
         mongoc_apm_server_heartbeat_succeeded_get_reply;
+        mongoc_apm_server_opening_get_context;
         mongoc_apm_server_opening_get_host;
         mongoc_apm_server_opening_get_topology_id;
+        mongoc_apm_set_server_changed_cb;
+        mongoc_apm_set_server_closed_cb;
+        mongoc_apm_set_server_heartbeat_failed_cb;
+        mongoc_apm_set_server_heartbeat_started_cb;
+        mongoc_apm_set_server_heartbeat_succeeded_cb;
+        mongoc_apm_set_server_opening_cb;
+        mongoc_apm_set_topology_changed_cb;
+        mongoc_apm_set_topology_closed_cb;
+        mongoc_apm_set_topology_opening_cb;
+        mongoc_apm_topology_changed_get_context;
         mongoc_apm_topology_changed_get_new_description;
         mongoc_apm_topology_changed_get_previous_description;
         mongoc_apm_topology_changed_get_topology_id;
+        mongoc_apm_topology_closed_get_context;
         mongoc_apm_topology_closed_get_topology_id;
+        mongoc_apm_topology_opening_get_context;
         mongoc_apm_topology_opening_get_topology_id;
         mongoc_client_pool_set_appname;
         mongoc_client_set_appname;
