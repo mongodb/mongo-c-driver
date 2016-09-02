@@ -1980,7 +1980,13 @@ mongoc_client_set_error_api (mongoc_client_t *client,
       return false;
    }
 
+   if (client->error_api_set) {
+      MONGOC_ERROR ("Can only set Error API Version once");
+      return false;
+   }
+
    client->error_api_version = version;
+   client->error_api_set = true;
 
    return true;
 }

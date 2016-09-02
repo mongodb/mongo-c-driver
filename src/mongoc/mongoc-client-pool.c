@@ -48,6 +48,7 @@ struct _mongoc_client_pool_t
    mongoc_apm_callbacks_t  apm_callbacks;
    void                   *apm_context;
    int32_t                 error_api_version;
+   bool                    error_api_set;
 };
 
 
@@ -390,7 +391,13 @@ mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool,
       return false;
    }
 
+   if (pool->error_api_set) {
+      MONGOC_ERROR ("Can only set Error API Version once");
+      return false;
+   }
+
    pool->error_api_version = version;
+   pool->error_api_set = true;
 
    return true;
 }
