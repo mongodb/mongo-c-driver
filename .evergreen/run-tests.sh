@@ -7,6 +7,7 @@ AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
 URI=${URI:-}
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+[ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
 
 if [ "$AUTH" != "noauth" ]; then
