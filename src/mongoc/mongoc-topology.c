@@ -773,17 +773,6 @@ mongoc_topology_server_timestamp (mongoc_topology_t *topology,
    return timestamp;
 }
 
-
-bool
-_mongoc_topology_is_scanner_active (mongoc_topology_t* topology) {
-   bool ret;
-
-   mongoc_mutex_lock (&topology->mutex);
-   ret = topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_OFF;
-   mongoc_mutex_unlock (&topology->mutex);
-   return ret;
-}
-
 /*
  *--------------------------------------------------------------------------
  *
