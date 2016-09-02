@@ -684,10 +684,6 @@ _test_select_succeed (bool try_once)
    duration_usec = bson_get_monotonic_time () - start;
 
    if (!test_suite_valgrind ()) {
-      if (mock_server_get_verbose (primary)) {
-         printf ("expected duration %" PRId32 "ms, actual %" PRId64 "ms\n",
-                 connect_timeout_ms, duration_usec / 1000);
-      }
       ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
    }
 

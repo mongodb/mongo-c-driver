@@ -28,8 +28,6 @@ mock_rs_t *mock_rs_with_autoismaster (int32_t max_wire_version,
                                       int n_secondaries,
                                       int n_arbiters);
 
-void mock_rs_set_verbose (mock_rs_t *rs, bool verbose);
-
 int64_t mock_rs_get_request_timeout_msec (mock_rs_t *rs);
 
 void mock_rs_set_request_timeout_msec (mock_rs_t *rs,

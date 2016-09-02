@@ -326,6 +326,8 @@ struct _TestSuite
    FILE *outfile;
    int flags;
    int silent;
+   bson_string_t *mock_server_log_buf;
+   FILE *mock_server_log;
 };
 
 
@@ -356,6 +358,8 @@ void TestSuite_Destroy (TestSuite *suite);
 
 int test_suite_debug_output (void);
 int test_suite_valgrind (void);
+void test_suite_mock_server_log (const char *msg,
+                                 ...);
 
 #ifdef __cplusplus
 }

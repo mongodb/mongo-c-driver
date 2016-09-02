@@ -69,11 +69,6 @@ const char *mock_server_get_host_and_port (mock_server_t *server);
 
 uint16_t mock_server_get_port (mock_server_t *server);
 
-bool mock_server_get_verbose (mock_server_t *server);
-
-void mock_server_set_verbose (mock_server_t *server,
-                              bool verbose);
-
 int64_t mock_server_get_request_timeout_msec (mock_server_t *server);
 
 void mock_server_set_request_timeout_msec (mock_server_t *server,

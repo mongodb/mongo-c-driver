@@ -40,7 +40,6 @@ struct _mock_server_t
 {
    bool running;
    bool stopped;
-   bool verbose;
    bool rand_delay;
    int64_t request_timeout_msec;
    uint16_t port;
@@ -98,10 +97,6 @@ void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
 static uint16_t get_port (mongoc_socket_t *sock);
 
-static void _verbose_print (mock_server_t *server,
-                            const char    *msg,
-                            ...);
-
 /*--------------------------------------------------------------------------
  *
  * mock_server_new --
@@ -134,10 +129,6 @@ mock_server_new ()
    mongoc_mutex_init (&server->mutex);
    server->q = q_new ();
    server->start_time = bson_get_monotonic_time ();
-
-   if (test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE")) {
-      server->verbose = true;
-   }
 
    return server;
 }
@@ -361,7 +352,7 @@ mock_server_run (mock_server_t *server)
 
    mongoc_mutex_unlock (&server->mutex);
 
-   _verbose_print (server, "listening on port %hu\n", bound_port);
+   test_suite_mock_server_log ("listening on port %hu", bound_port);
 
    return (uint16_t) bound_port;
 }
@@ -599,45 +590,6 @@ uint16_t
 mock_server_get_port (mock_server_t *server)
 {
    return server->port;
-}
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_get_verbose --
- *
- *       Is the server set to log during normal operation?
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-mock_server_get_verbose (mock_server_t *server)
-{
-   bool verbose;
-
-   mongoc_mutex_lock (&server->mutex);
-   verbose = server->verbose;
-   mongoc_mutex_unlock (&server->mutex);
-
-   return verbose;
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_set_verbose --
- *
- *       Tell the server whether to log during normal operation.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_server_set_verbose (mock_server_t *server, bool verbose)
-{
-   mongoc_mutex_lock (&server->mutex);
-   server->verbose = verbose;
-   mongoc_mutex_unlock (&server->mutex);
 }
 
 
@@ -1179,10 +1131,10 @@ request_t *mock_server_receives_kill_cursors (mock_server_t *server,
 void
 mock_server_hangs_up (request_t *request)
 {
-   _verbose_print (request->server, "%5.2f  %hu <- %hu \thang up!\n",
-                   mock_server_get_uptime_sec (request->server),
-                   request->client_port,
-                   request_get_server_port (request));
+   test_suite_mock_server_log ("%5.2f  %hu <- %hu \thang up!",
+                               mock_server_get_uptime_sec (request->server),
+                               request->client_port,
+                               request_get_server_port (request));
 
    mongoc_stream_close (request->client);
 }
@@ -1210,10 +1162,10 @@ mock_server_resets (request_t *request)
    no_linger.l_onoff = 1;
    no_linger.l_linger = 0;
 
-   _verbose_print (request->server, "%5.2f  %hu <- %hu \treset!\n",
-                   mock_server_get_uptime_sec (request->server),
-                   request->client_port,
-                   request_get_server_port (request));
+   test_suite_mock_server_log ("%5.2f  %hu <- %hu \treset!",
+                               mock_server_get_uptime_sec (request->server),
+                               request->client_port,
+                               request_get_server_port (request));
 
    /* send RST packet to client */
    mongoc_stream_setsockopt (request->client,
@@ -1539,9 +1491,10 @@ main_thread (void *data)
       }
 
       if (client_sock) {
-         _verbose_print (server, "%5.2f  %hu -> server port %hu (connected)\n",
-                         mock_server_get_uptime_sec (server),
-                         port, server->port);
+         test_suite_mock_server_log (
+            "%5.2f  %hu -> server port %hu (connected)",
+            mock_server_get_uptime_sec (server),
+            port, server->port);
 
          client_stream = mongoc_stream_socket_new (client_sock);
 
@@ -1688,9 +1641,9 @@ again:
       _mongoc_array_copy (&autoresponders, &server->autoresponders);
       mongoc_mutex_unlock (&server->mutex);
 
-      _verbose_print (server, "%5.2f  %hu -> %hu %s\n",
-                      mock_server_get_uptime_sec (server),
-                      closure->port, server->port, request->as_str);
+      test_suite_mock_server_log ("%5.2f  %hu -> %hu %s",
+                                  mock_server_get_uptime_sec (server),
+                                  closure->port, server->port, request->as_str);
 
       /* run responders most-recently-added-first */
       handled = false;
@@ -1818,11 +1771,11 @@ _mock_server_reply_with_stream (mock_server_t   *server,
       }
    }
 
-   _verbose_print (server, "%5.2f  %hu <- %hu \t%s\n",
-                   mock_server_get_uptime_sec (server),
-                   reply->client_port,
-                   mock_server_get_port (server),
-                   docs_json->str);
+   test_suite_mock_server_log ("%5.2f  %hu <- %hu \t%s",
+                               mock_server_get_uptime_sec (server),
+                               reply->client_port,
+                               mock_server_get_port (server),
+                               docs_json->str);
 
    len = 0;
 
@@ -1884,23 +1837,4 @@ autoresponder_handle_destroy (autoresponder_handle_t *handle)
    if (handle->destructor) {
       handle->destructor (handle->data);
    }
-}
-
-
-static void
-_verbose_print (mock_server_t *server,
-                const char    *msg,
-                ...)
-{
-   va_list ap;
-
-   if (!mock_server_get_verbose (server)) {
-      return;
-   }
-
-   va_start (ap, msg);
-   vfprintf (stderr, msg, ap);
-   va_end (ap);
-
-   fflush (stderr);
 }

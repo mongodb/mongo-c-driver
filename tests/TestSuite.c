@@ -38,6 +38,8 @@
 # include <sys/wait.h>
 # include <unistd.h>
 # include <sys/time.h>
+#include <mongoc-thread-private.h>
+
 #else
 # include <windows.h>
 #endif
@@ -51,7 +53,9 @@
 #include "TestSuite.h"
 
 
-static int test_flags;
+static mongoc_once_t   once = MONGOC_ONCE_INIT;
+static mongoc_mutex_t  gTestMutex;
+static TestSuite      *gTestSuite;
 
 
 #define TEST_VERBOSE     (1 << 0)
@@ -198,6 +202,14 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
 }
 
 
+static MONGOC_ONCE_FUN(_test_suite_ensure_mutex_once)
+{
+   mongoc_mutex_init(&gTestMutex);
+
+   MONGOC_ONCE_RETURN;
+}
+
+
 void
 TestSuite_Init (TestSuite *suite,
                 const char *name,
@@ -206,6 +218,7 @@ TestSuite_Init (TestSuite *suite,
 {
    const char *filename;
    int i;
+   char *mock_server_log;
 
    memset (suite, 0, sizeof *suite);
 
@@ -267,6 +280,23 @@ TestSuite_Init (TestSuite *suite,
       suite->flags |= TEST_VALGRIND;
    }
 
+   mock_server_log = test_framework_getenv ("MONGOC_TEST_SERVER_LOG");
+   if (mock_server_log) {
+      if (!strcmp (mock_server_log, "stdout")) {
+         suite->mock_server_log = stdout;
+      } else if (!strcmp (mock_server_log, "stderr")) {
+         suite->mock_server_log = stderr;
+      } else if (!strcmp (mock_server_log, "json")) {
+         suite->mock_server_log_buf = bson_string_new (NULL);
+      } else {
+         test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s\n",
+                     mock_server_log);
+         abort ();
+      }
+
+      bson_free (mock_server_log);
+   }
+
    if (suite->silent) {
       if (suite->outfile) {
          test_error ("Cannot combine -F with --silent\n");
@@ -276,8 +306,10 @@ TestSuite_Init (TestSuite *suite,
       suite->flags &= ~(TEST_DEBUGOUTPUT | TEST_VERBOSE);
    }
 
-   /* HACK: copy flags to global var */
-   test_flags = suite->flags;
+   mongoc_once (&once, &_test_suite_ensure_mutex_once);
+   mongoc_mutex_lock (&gTestMutex);
+   gTestSuite = suite;
+   mongoc_mutex_unlock (&gTestMutex);
 }
 
 
@@ -441,9 +473,20 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    pid_t child;
    int exit_code = -1;
    int fd;
+   int pipefd[2];
+   const char *envp[] = { "MONGOC_TEST_SERVER_LOG=stdout", NULL };
+   char buf[4096];
+   ssize_t nread;
 
    if (suite->outfile) {
       fflush (suite->outfile);
+   }
+
+   if (suite->mock_server_log_buf) {
+      if (pipe (pipefd) == -1) {
+         perror ("pipe");
+         exit (-1);
+      }
    }
 
    if (-1 == (child = fork())) {
@@ -455,12 +498,33 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
          fclose (suite->outfile);
          suite->outfile = NULL;
       }
-      fd = open ("/dev/null", O_WRONLY);
-      dup2 (fd, STDOUT_FILENO);
-      close (fd);
-      execl (suite->prgname, suite->prgname, "--no-fork",
-             "-l", test->name, (char *) 0);
+
+      if (suite->mock_server_log_buf) {
+         /* tell mock server to log to stdout, and read its output */
+         dup2 (pipefd[1], STDOUT_FILENO);
+         close (pipefd[0]);
+         close (pipefd[1]);
+         execle (suite->prgname, suite->prgname, "--no-fork", "--silent", "-l",
+                 test->name, (char *) 0, envp);
+      } else {
+         /* suppress child output */
+         fd = open ("/dev/null", O_WRONLY);
+         dup2 (fd, STDOUT_FILENO);
+         close (fd);
+
+         execl (suite->prgname, suite->prgname, "--no-fork", "-l", test->name,
+                (char *) 0);
+      }
+
       exit (-1);
+   }
+
+   if (suite->mock_server_log_buf) {
+      close (pipefd[1]);
+      while ((nread = read (pipefd[0], buf, sizeof (buf) - 1)) > 0) {
+         buf[nread] = '\0';
+         bson_string_append (suite->mock_server_log_buf, buf);
+      }
    }
 
    if (-1 == waitpid (child, &exit_code, 0)) {
@@ -472,6 +536,29 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 #endif
 
 
+/* replace " with \", newline with \n, tab with four spaces */
+static void
+_append_json_escaped (bson_string_t *buf,
+                      const char    *s)
+{
+   while (*s) {
+      if (*s == '"') {
+         bson_string_append_c (buf, '\\');
+         bson_string_append_c (buf, '\"');
+      } else if (*s == '\n') {
+         bson_string_append_c (buf, '\\');
+         bson_string_append_c (buf, 'n');
+      } else if (*s == '\t') {
+         bson_string_append (buf, "    ");
+      } else {
+         bson_string_append_c (buf, *s);
+      }
+
+      s++;
+   }
+}
+
+
 static int
 TestSuite_RunTest (TestSuite *suite,       /* IN */
                    Test *test,             /* IN */
@@ -481,11 +568,14 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    struct timespec ts2;
    struct timespec ts3;
    char name[MAX_TEST_NAME_LENGTH];
-   char buf[MAX_TEST_NAME_LENGTH + 500];
+   bson_string_t *buf;
+   bson_string_t *mock_server_log_buf;
    int status = 0;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
    name [sizeof name - 1] = '\0';
+
+   buf = bson_string_new (NULL);
 
    if (!test->check || test->check ()) {
       _Clock_GetMonotonic (&ts1);
@@ -524,42 +614,61 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
 
-      snprintf (buf, sizeof buf,
-                "    { \"status\": \"%s\", "
-                      "\"test_file\": \"%s\", "
-                      "\"seed\": \"%u\", "
-                      "\"start\": %u.%09u, "
-                      "\"end\": %u.%09u, "
-                      "\"elapsed\": %u.%09u }%s\n",
-               (status == 0) ? "PASS" : "FAIL",
-               name,
-               test->seed,
-               (unsigned)ts1.tv_sec,
-               (unsigned)ts1.tv_nsec,
-               (unsigned)ts2.tv_sec,
-               (unsigned)ts2.tv_nsec,
-               (unsigned)ts3.tv_sec,
-               (unsigned)ts3.tv_nsec,
-               ((*count) == 1) ? "" : ",");
-      buf [sizeof buf - 1] = 0;
-      test_msg ("%s", buf);
+      bson_string_append_printf (buf,
+                                 "    { \"status\": \"%s\", "
+                                 "\"test_file\": \"%s\", "
+                                 "\"seed\": \"%u\", "
+                                 "\"start\": %u.%09u, "
+                                 "\"end\": %u.%09u, "
+                                 "\"elapsed\": %u.%09u ",
+                                 (status == 0) ? "PASS" : "FAIL",
+                                 name,
+                                 test->seed,
+                                 (unsigned) ts1.tv_sec,
+                                 (unsigned) ts1.tv_nsec,
+                                 (unsigned) ts2.tv_sec,
+                                 (unsigned) ts2.tv_nsec,
+                                 (unsigned) ts3.tv_sec,
+                                 (unsigned) ts3.tv_nsec);
+
+      mock_server_log_buf = suite->mock_server_log_buf;
+
+      if (mock_server_log_buf && mock_server_log_buf->len) {
+         bson_string_append (buf, ", \"log_raw\": \"");
+         _append_json_escaped (buf, mock_server_log_buf->str);
+         bson_string_append (buf, "\"");
+
+         bson_string_truncate (mock_server_log_buf, 0);
+      }
+
+      bson_string_append_printf (buf, " }");
+
+      if (*count > 1) {
+         bson_string_append_printf (buf, ",");
+      }
+
+      bson_string_append_c (buf, '\n');
+
+      test_msg ("%s", buf->str);
       if (suite->outfile) {
-         fprintf (suite->outfile, "%s", buf);
+         fprintf (suite->outfile, "%s", buf->str);
          fflush (suite->outfile);
       }
    } else if (!suite->silent) {
       status = 0;
-      snprintf (buf, sizeof buf,
-                "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
-                test->name,
-                ((*count) == 1) ? "" : ",");
-      buf [sizeof buf - 1] = '\0';
-      test_msg ("%s", buf);
+      bson_string_append_printf (
+         buf,
+         "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
+         test->name,
+         ((*count) == 1) ? "" : ",");
+      test_msg ("%s", buf->str);
       if (suite->outfile) {
-         fprintf (suite->outfile, "%s", buf);
+         fprintf (suite->outfile, "%s", buf->str);
          fflush (suite->outfile);
       }
    }
+
+   bson_string_free (buf, true);
 
    return status ? 1 : 0;
 }
@@ -698,7 +807,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"crl_file\": \"%s\"\n"
             "  },\n"
             "  \"framework\": {\n"
-            "    \"verbose\": { \"monitoring\": %s, \"server\": %s },\n"
+            "    \"monitoringVerbose\": %s,\n"
+            "    \"mockServerLog\": \"%s\",\n"
             "    \"futureTimeoutMS\": %"PRIu64",\n"
             "    \"majorityReadConcern\": %s,\n"
             "    \"skipLiveTests\": %s,\n"
@@ -721,7 +831,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             egetenv ("MONGOC_TEST_SSL_CA_DIR"),
             egetenv ("MONGOC_TEST_SSL_CRL_FILE"),
             getenv ("MONGOC_TEST_MONITORING_VERBOSE") ? "true" : "false",
-            getenv ("MONGOC_TEST_SERVER_VERBOSE") ? "true" : "false",
+            egetenv ("MONGOC_TEST_SERVER_LOG"),
             get_future_timeout_ms (),
             test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true" : "false",
@@ -857,6 +967,10 @@ TestSuite_Destroy (TestSuite *suite)
    Test *test;
    Test *tmp;
 
+   mongoc_mutex_lock (&gTestMutex);
+   gTestSuite = NULL;
+   mongoc_mutex_unlock (&gTestMutex);
+
    for (test = suite->tests; test; test = tmp) {
       tmp = test->next;
 
@@ -871,6 +985,10 @@ TestSuite_Destroy (TestSuite *suite)
       fclose (suite->outfile);
    }
 
+   if (suite->mock_server_log_buf) {
+      bson_string_free (suite->mock_server_log_buf, true);
+   }
+
    free (suite->name);
    free (suite->prgname);
    free (suite->testname);
@@ -880,12 +998,53 @@ TestSuite_Destroy (TestSuite *suite)
 int
 test_suite_debug_output (void)
 {
-   return 0 != (test_flags & TEST_DEBUGOUTPUT);
+   int ret;
+
+   mongoc_mutex_lock (&gTestMutex);
+   ret = gTestSuite->flags & TEST_DEBUGOUTPUT;
+   mongoc_mutex_unlock (&gTestMutex);
+
+   return ret;
 }
 
 
 int
 test_suite_valgrind (void)
 {
-   return 0 != (test_flags & TEST_VALGRIND);
+   int ret;
+
+   mongoc_mutex_lock (&gTestMutex);
+   ret = gTestSuite->flags & TEST_VALGRIND;
+   mongoc_mutex_unlock (&gTestMutex);
+
+   return ret;
+}
+
+
+void
+test_suite_mock_server_log (const char *msg,
+                            ...)
+{
+   va_list ap;
+   char *formatted_msg;
+
+   mongoc_mutex_lock (&gTestMutex);
+
+   if (gTestSuite->mock_server_log || gTestSuite->mock_server_log_buf) {
+      va_start (ap, msg);
+      formatted_msg = bson_strdupv_printf (msg, ap);
+      va_end (ap);
+
+      if (gTestSuite->mock_server_log_buf) {
+         bson_string_append_printf (gTestSuite->mock_server_log_buf,
+                                    "%s\n", formatted_msg);
+      } else {
+         fprintf (gTestSuite->mock_server_log, "%s\n", formatted_msg);
+         fflush (gTestSuite->mock_server_log);
+      }
+
+      bson_free (formatted_msg);
+   }
+
+   mongoc_mutex_unlock (&gTestMutex);
 }

@@ -24,6 +24,7 @@ fi
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"
+export MONGOC_TEST_SERVER_LOG="json"
 
 case "$OS" in
    cygwin*)

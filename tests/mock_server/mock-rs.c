@@ -30,7 +30,6 @@ struct _mock_rs_t {
    int n_arbiters;
    int32_t max_wire_version;
    int64_t request_timeout_msec;
-   bool verbose;
 
    mock_server_t *primary;
    mongoc_array_t secondaries;
@@ -135,34 +134,9 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->n_arbiters = n_arbiters;
    rs->request_timeout_msec = 10 * 1000;
    rs->q = q_new ();
-   rs->verbose = test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE");
 
    return rs;   
 }
-
-
-/*--------------------------------------------------------------------------
- *
- * mock_rs_set_verbose --
- *
- *       Tell the replica set whether to log during normal operation.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mock_rs_set_verbose (mock_rs_t *rs,
-                     bool verbose)
-{
-   int i;
-
-   rs->verbose = true;
-
-   for (i = 0; i < rs->servers.len; i++) {
-      mock_server_set_verbose (get_server (&rs->servers, i), verbose);
-   }
-}
-
 
 
 /*--------------------------------------------------------------------------
@@ -312,10 +286,6 @@ mock_rs_run (mock_rs_t *rs)
 
    for (i = 0; i < rs->n_arbiters; i++) {
       mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_json);
-   }
-
-   for (i = 0; i < rs->servers.len; i++) {
-      mock_server_set_verbose (get_server (&rs->servers, i), rs->verbose);
    }
 
    bson_free (ismaster_json);
