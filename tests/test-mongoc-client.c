@@ -1861,13 +1861,8 @@ test_mongoc_client_application_handshake (void)
    char big_string[BUFFER_SIZE];
    const char *short_string = "hallo thar";
    mongoc_client_t *client;
-   mock_server_t *server;
-   mongoc_uri_t *uri;
 
-   server = mock_server_new ();
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new ("mongodb://example");
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
@@ -1891,8 +1886,6 @@ test_mongoc_client_application_handshake (void)
    capture_logs (false);
 
    mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
 }
 
 static void
