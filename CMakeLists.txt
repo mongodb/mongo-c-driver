@@ -268,7 +268,6 @@ set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
    ${SOURCE_DIR}/src/mongoc/mongoc.h
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-apm-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
@@ -283,45 +282,31 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.h
    ${SOURCE_DIR}/src/mongoc/mongoc-handshake.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-compiler-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-os-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-handshake-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${SOURCE_DIR}/src/mongoc/mongoc-init.h
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${SOURCE_DIR}/src/mongoc/mongoc-iovec.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
    ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h
 )
 
 if (NOT ENABLE_SSL STREQUAL OFF)
