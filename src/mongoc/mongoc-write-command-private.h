@@ -54,7 +54,6 @@ struct _mongoc_bulk_write_flags_t
 typedef struct
 {
    int      type;
-   uint32_t server_id;
    bson_t  *documents;
    uint32_t n_documents;
    mongoc_bulk_write_flags_t flags;

@@ -453,7 +453,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                      bulk->write_concern, offset,
                                      &bulk->result);
 
-      bulk->server_id = command->server_id;
+      bulk->server_id = server_stream->sd->id;
 
       if (bulk->result.failed && bulk->flags.ordered) {
          GOTO (cleanup);

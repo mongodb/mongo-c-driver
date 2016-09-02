@@ -183,7 +183,6 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
    command->n_documents = 0;
    command->flags = flags;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
-   command->server_id = 0;
    command->operation_id = operation_id;
 
    /* must handle NULL document from mongoc_collection_insert_bulk */
@@ -212,7 +211,6 @@ _mongoc_write_command_init_delete (mongoc_write_command_t   *command,       /* I
    command->n_documents = 0;
    command->u.delete_.multi = (uint8_t)multi;
    command->flags = flags;
-   command->server_id = 0;
    command->operation_id = operation_id;
 
    _mongoc_write_command_delete_append (command, selector);
@@ -240,7 +238,6 @@ _mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* I
    command->documents = bson_new ();
    command->n_documents = 0;
    command->flags = flags;
-   command->server_id = 0;
    command->operation_id = operation_id;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
@@ -1355,12 +1352,6 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                       "The write concern is invalid.");
       result->failed = true;
       EXIT;
-   }
-
-   if (!command->server_id) {
-      command->server_id = server_stream->sd->id;
-   } else {
-      BSON_ASSERT (command->server_id == server_stream->sd->id);
    }
 
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
