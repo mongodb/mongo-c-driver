@@ -385,19 +385,6 @@ tasks:
               VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: debug-compile-sanitizer-address
-      tags: ["debug-compile", "special", "sanitizer", "clang"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='clang' MARCH='${MARCH}' CFLAGS='-fsanitize=address' sh .evergreen/compile.sh #LDFLAGS='-fsanitize'  ????
-        - func: "upload build"
-
     - name: debug-compile-coverage
       tags: ["debug-compile", "special", "coverage"]
       commands:
