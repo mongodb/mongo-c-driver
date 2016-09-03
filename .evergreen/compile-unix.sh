@@ -141,8 +141,8 @@ case "$OS" in
 
    sunos)
       PATH="/opt/mongodbtoolchain/bin:$PATH"
-      # SASL on 32bit Solaris isn't kosher
-      if [ "$MARCH" = "x86_64" ]; then
+      # 32-bit SASL isn't installed on our build hosts.
+      if [ "$MARCH" = "x86_64" ] && [ "$SASL" != "no" ]; then
          sudo /opt/csw/bin/pkgutil -y -i sasl_dev
          export SASL_CFLAGS="-I/opt/csw/include/"
          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
