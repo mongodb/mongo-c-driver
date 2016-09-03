@@ -103,9 +103,9 @@ fam_CFLAGS = $(EXAMPLE_CFLAGS)
 fam_LDADD = $(EXAMPLE_LDADD)
 
 EXTRA_DIST += \
-    examples/find_and_modify_with_opts/bypass.c \
-    examples/find_and_modify_with_opts/fields.c \
-    examples/find_and_modify_with_opts/flags.c \
-    examples/find_and_modify_with_opts/opts.c \
-    examples/find_and_modify_with_opts/sort.c \
-    examples/find_and_modify_with_opts/update.c
+	examples/find_and_modify_with_opts/bypass.c \
+	examples/find_and_modify_with_opts/fields.c \
+	examples/find_and_modify_with_opts/flags.c \
+	examples/find_and_modify_with_opts/opts.c \
+	examples/find_and_modify_with_opts/sort.c \
+	examples/find_and_modify_with_opts/update.c
