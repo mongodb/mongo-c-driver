@@ -59,10 +59,10 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
     <p>-1 on failure, otherwise the number of documents counted.</p>
   </section>
 
-  <section id="example">
-    <title>Example</title>
+  <section id="examples">
+    <title>Examples</title>
     <listing>
-      <title>Count Example</title>
+      <title>Basic counting</title>
       <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
 #include <bcon.h>
 #include <stdio.h>
@@ -81,6 +81,43 @@ print_query_count (mongoc_collection_t *collection,
    count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, query, 0, 0, &opts, NULL, &error);
 
    bson_destroy(&opts);
+
+   if (count < 0) {
+      fprintf (stderr, "Count failed: %s\n", error.message);
+   } else {
+      printf ("%"PRId64" documents counted.\n", count);
+   }
+}]]></code>
+    </listing>
+
+    <listing>
+      <title>Counting with collation</title>
+      <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+#include <bcon.h>
+#include <stdio.h>
+
+static void
+print_query_count (mongoc_collection_t *collection,
+                   bson_t              *query)
+{
+   bson_t *selector;
+   bson_t *opts;
+   bson_error_t error;
+   int64_t count;
+
+   selector = BCON_NEW ("_id", "{", "$gt", BCON_UTF8 ("one"), "}");
+
+   /* "One" normally sorts before "one"; make "one" come first */
+   opts = BCON_NEW ("collation", "{",
+                    "locale", BCON_UTF8 ("en_US"),
+                    "caseFirst", BCON_UTF8 ("lower"),
+                    "}");
+
+   count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE,
+                                              query, 0, 0, opts, NULL, &error);
+
+   bson_destroy (selector);
+   bson_destroy (opts);
 
    if (count < 0) {
       fprintf (stderr, "Count failed: %s\n", error.message);

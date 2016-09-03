@@ -127,6 +127,15 @@ Error: waiting for replication timed out]]></code></synopsis>
     <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_WRITE_CONCERN</code> if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied <em>yet</em>.</p>
   </section>
 
+  <section id="bulk-write-collation">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Setting Collation Order</title>
+    <note style="tip"><p>This feature is only available when using MongoDB 3.4 and later.</p></note>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk-collation.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+      <p>Running the above example will result in:</p>
+      <synopsis><code mime="text/x-csrc"><![CDATA[TODO SOMETHING]]></code></synopsis>
+  </section>
+
   <section id="bulk-unacknowledged">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Unacknowledged Bulk Writes</title>

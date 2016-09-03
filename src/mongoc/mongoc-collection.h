@@ -119,6 +119,10 @@ mongoc_cursor_t              *mongoc_collection_find                 (mongoc_col
                                                                       const bson_t                  *query,
                                                                       const bson_t                  *fields,
                                                                       const mongoc_read_prefs_t     *read_prefs) BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_cursor_t              *mongoc_collection_find_with_opts       (mongoc_collection_t           *collection,
+                                                                      const bson_t                  *filter,
+                                                                      const mongoc_read_prefs_t     *read_prefs,
+                                                                      const bson_t                  *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 bool                          mongoc_collection_insert               (mongoc_collection_t           *collection,
                                                                       mongoc_insert_flags_t          flags,
                                                                       const bson_t                  *document,
