@@ -21,8 +21,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
-#include "mongoc-log.h"
-#include "mongoc-log-private.h"
+#include "mongoc-thread-private.h"
 
 #if defined(__APPLE__)
 # include <mach/mach_time.h>
@@ -38,7 +37,6 @@
 # include <sys/wait.h>
 # include <unistd.h>
 # include <sys/time.h>
-#include <mongoc-thread-private.h>
 
 #else
 # include <windows.h>
