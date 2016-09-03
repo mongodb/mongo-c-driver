@@ -112,7 +112,7 @@ _test_topology_scanner(bool with_ssl)
 
 
 void
-test_topology_scanner ()
+test_topology_scanner (void)
 {
    _test_topology_scanner (false);
 }
@@ -120,7 +120,7 @@ test_topology_scanner ()
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 void
-test_topology_scanner_ssl ()
+test_topology_scanner_ssl (void)
 {
    _test_topology_scanner (true);
 }
@@ -131,7 +131,7 @@ test_topology_scanner_ssl ()
  * Servers discovered by a scan should be checked during that scan, CDRIVER-751. 
  */
 void
-test_topology_scanner_discovery ()
+test_topology_scanner_discovery (void)
 {
    mock_server_t *primary;
    mock_server_t *secondary;
@@ -209,7 +209,7 @@ test_topology_scanner_discovery ()
 
 /* scanner shouldn't spin if two primaries point at each other */
 void
-test_topology_scanner_oscillate ()
+test_topology_scanner_oscillate (void)
 {
    mock_server_t *server0;
    mock_server_t *server1;
