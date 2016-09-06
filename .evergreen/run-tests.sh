@@ -38,7 +38,6 @@ case "$OS" in
 
    sunos)
       PATH="/opt/mongodbtoolchain/bin:$PATH"
-      sudo /opt/csw/bin/pkgutil -y -i sasl_dev
       export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
       ;;
 

@@ -261,10 +261,19 @@ functions:
             chmod +x $i
           done
 
+  "install dependencies":
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+              sudo apt-get install -y awscli || true
+              sudo /opt/csw/bin/pkgutil -y -i sasl_dev || true
+
 pre:
   - func: "fetch source"
   - func: "windows fix"
   - func: "make files executable"
+  - func: "install dependencies"
 
 post:
   - func: "upload working dir"
@@ -314,7 +323,6 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              sudo apt-get install -y awscli
               ./autogen.sh --enable-html-docs --enable-man-pages && make dist
         - func: "upload docs"
         - func: "upload release"
