@@ -1203,9 +1203,6 @@ mongoc_client_command (mongoc_client_t           *client,
       client, db_name, flags, skip, limit, batch_size, true, query, fields,
       read_prefs ? read_prefs : local_prefs, NULL);
   
-   if (cursor->error.domain == 0) { 
-      _mongoc_read_prefs_validate (read_prefs, &cursor->error);    
-   }
    mongoc_read_prefs_destroy (local_prefs);  /* ok if NULL */
 
    return cursor;

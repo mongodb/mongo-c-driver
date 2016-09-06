@@ -506,7 +506,6 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_cursor_t *cursor;
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
@@ -516,14 +515,9 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
       read_prefs = collection->read_prefs;
    }
    
-   cursor = _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
-                                limit, batch_size, false, query, fields, 
-                                read_prefs, collection->read_concern);
-   if (cursor->error.domain == 0) {
-      _mongoc_read_prefs_validate (read_prefs, &cursor->error);
-   }
-   
-   return cursor;   
+   return _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
+                              limit, batch_size, false, query, fields,
+                              read_prefs, collection->read_concern);
 }
 
 

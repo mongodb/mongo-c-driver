@@ -255,6 +255,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL, NULL);
+   _mongoc_read_prefs_validate (read_prefs, &cursor->error);
 
 finish:
    mongoc_counter_cursors_active_inc();
