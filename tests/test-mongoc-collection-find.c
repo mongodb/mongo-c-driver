@@ -715,10 +715,10 @@ test_unrecognized_dollar_option (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
 
    test_data.query_input = "{'$query': {'a': 1}, '$dumb': 1}";
+   test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'a': 1}, '$dumb': 1}";
 
-   test_data.requires_wire_version_4 = true;
    test_data.do_live = false;
    _test_collection_find (&test_data);
 }
