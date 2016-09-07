@@ -21,7 +21,8 @@
 
 #include "mongoc.h"
 
-bson_t *tmp_bson (const char *json);
+bson_t *tmp_bson (const char *json,
+                  ...);
 
 void bson_iter_bson (const bson_iter_t *iter,
                      bson_t            *bson);

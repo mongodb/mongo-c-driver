@@ -64,16 +64,23 @@ test_conveniences_cleanup ()
 
 
 bson_t *
-tmp_bson (const char *json)
+tmp_bson (const char *json,
+          ...)
 {
+   va_list args;
    bson_error_t error;
+   char *formatted;
    char *double_quoted;
    bson_t *doc;
 
    test_conveniences_init ();
 
    if (json) {
-      double_quoted = single_quotes_to_double (json);
+      va_start (args, json);
+      formatted = bson_strdupv_printf (json, args);
+      va_end (args);
+
+      double_quoted = single_quotes_to_double (formatted);
       doc = bson_new_from_json ((const uint8_t *) double_quoted,
                                 -1, &error);
 
@@ -82,6 +89,7 @@ tmp_bson (const char *json)
          abort ();
       }
 
+      bson_free (formatted);
       bson_free (double_quoted);
 
    } else {
