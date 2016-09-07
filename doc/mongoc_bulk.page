@@ -9,7 +9,6 @@
   <section id="bulk-insert">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Bulk Insert</title>
-    <p><em>New in MongoDB C driver 0.94.2.</em></p>
     <p>First we need to fetch a bulk operation handle from the <code xref="mongoc_collection_t">mongoc_collection_t</code>. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.</p>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);]]></code></synopsis>
     <p>We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.</p>
@@ -30,7 +29,6 @@
   <section id="mixed-bulk-write">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Mixed Bulk Write Operations</title>
-    <p><em>New in MongoDB C driver 0.94.2</em></p>
     <p>MongoDB C driver also supports executing mixed bulk write operations. A batch of insert, update, and remove operations can be executed together using the bulk write operations API.</p>
     <note style="tip"><p>Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions &gt;= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk()</code> method.</p></note>
   </section>
