@@ -457,7 +457,7 @@ one_bulk_op (mongoc_bulk_operation_t *bulk,
       mongoc_bulk_operation_update_one (bulk, &filter, &update,
                                         false /* upsert */);
    } else {
-      test_error ("unrecognized request name %s\n", request_name);
+      test_error ("unrecognized request name %s", request_name);
       abort ();
    }
 }
@@ -737,7 +737,7 @@ one_test (mongoc_collection_t *collection,
    } else if (!strcmp (op_name, "updateOne")) {
       test_update_one (collection, &arguments);
    } else {
-      test_error ("unrecognized operation name %s\n", op_name);
+      test_error ("unrecognized operation name %s", op_name);
       abort ();
    }
 

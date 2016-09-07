@@ -1486,7 +1486,7 @@ test_mongoc_client_descriptions (void)
       _mongoc_usleep (1000);
       if (bson_get_monotonic_time() - start > 1000 * 1000) {
          test_error (
-            "still have %zu descriptions, not expected %zu, after 1 sec\n",
+            "still have %zu descriptions, not expected %zu, after 1 sec",
             n, expected_n);
          abort ();
       }

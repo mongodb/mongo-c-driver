@@ -256,7 +256,7 @@ check_json_apm_events (const bson_t *events,
       test_error ("command monitoring test failed expectations:\n\n"
                      "%s\n\n"
                      "events:\n%s\n\n"
-                     "expected %"PRIu32" events, got %"PRIu32"\n",
+                     "expected %"PRIu32" events, got %"PRIu32,
                   bson_as_json (expectations, NULL),
                   bson_as_json (events, NULL),
                   expected_keys, actual_keys);
@@ -267,7 +267,7 @@ check_json_apm_events (const bson_t *events,
    if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
       test_error ("command monitoring test failed expectations:\n\n"
                      "%s\n\n"
-                     "events:\n%s\n\n%s\n",
+                     "events:\n%s\n\n%s",
                   bson_as_json (expectations, NULL),
                   bson_as_json (events, NULL),
                   errmsg);

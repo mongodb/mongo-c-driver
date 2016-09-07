@@ -107,6 +107,7 @@ test_msg (const char *format,
 
    va_start (ap, format);
    vprintf (format, ap);
+   printf ("\n");
    fflush (stdout);
    va_end (ap);
 }
@@ -114,12 +115,13 @@ test_msg (const char *format,
 
 void
 test_error (const char *format,
-               ...)
+            ...)
 {
    va_list ap;
 
    va_start (ap, format);
    vfprintf (stderr, format, ap);
+   fprintf (stderr, "\n");
    fflush (stderr);
    va_end (ap);
 }
@@ -238,12 +240,12 @@ TestSuite_Init (TestSuite *suite,
 #ifdef MONGOC_TRACE
          suite->flags |= TEST_TRACE;
 #else
-         test_error ("-t requires mongoc compiled with --enable-tracing.\n");
+         test_error ("-t requires mongoc compiled with --enable-tracing.");
          exit (EXIT_FAILURE);
 #endif
       } else if (0 == strcmp ("-F", argv [i])) {
          if (argc - 1 == i) {
-            test_error ("-F requires a filename argument.\n");
+            test_error ("-F requires a filename argument.");
             exit (EXIT_FAILURE);
          }
          filename = argv [++i];
@@ -256,7 +258,7 @@ TestSuite_Init (TestSuite *suite,
             suite->outfile = fopen (filename, "w");
 #endif
             if (!suite->outfile) {
-               test_error ("Failed to open log file: %s\n", filename);
+               test_error ("Failed to open log file: %s", filename);
             }
          }
       } else if ((0 == strcmp ("-h", argv [i])) ||
@@ -267,7 +269,7 @@ TestSuite_Init (TestSuite *suite,
          suite->silent = true;
       } else if ((0 == strcmp ("-l", argv [i]))) {
          if (argc - 1 == i) {
-            test_error ("-l requires an argument.\n");
+            test_error ("-l requires an argument.");
             exit (EXIT_FAILURE);
          }
          suite->testname = strdup (argv [++i]);
@@ -287,7 +289,7 @@ TestSuite_Init (TestSuite *suite,
       } else if (!strcmp (mock_server_log, "json")) {
          suite->mock_server_log_buf = bson_string_new (NULL);
       } else {
-         test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s\n",
+         test_error ("Unrecognized option: MONGOC_TEST_SERVER_LOG=%s",
                      mock_server_log);
          abort ();
       }
@@ -297,7 +299,7 @@ TestSuite_Init (TestSuite *suite,
 
    if (suite->silent) {
       if (suite->outfile) {
-         test_error ("Cannot combine -F with --silent\n");
+         test_error ("Cannot combine -F with --silent");
          abort ();
       }
 
@@ -408,7 +410,7 @@ _print_getlasterror_win (const char *msg)
       0,
       NULL);
 
-   test_error ("%s: %s\n", msg, err_msg);
+   test_error ("%s: %s", msg, err_msg);
 
    LocalFree (err_msg);
 }
@@ -440,7 +442,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                        NULL,    /* Use parent's starting directory */
                        &si,
                        &pi)) {
-      test_error ("CreateProcess failed (%d).\n", GetLastError ());
+      test_error ("CreateProcess failed (%d).", GetLastError ());
       bson_free (cmdline);
 
       return -1;
@@ -583,7 +585,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
       if (suite->flags & TEST_DEBUGOUTPUT) {
-         test_msg ("Begin %s\n", name);
+         test_msg ("Begin %s", name);
       }
 
       if ((suite->flags & TEST_NOFORK)) {
@@ -645,8 +647,6 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
          bson_string_append_printf (buf, ",");
       }
 
-      bson_string_append_c (buf, '\n');
-
       test_msg ("%s", buf->str);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf->str);
@@ -656,7 +656,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       status = 0;
       bson_string_append_printf (
          buf,
-         "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
+         "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s",
          test->name,
          ((*count) == 1) ? "" : ",");
       test_msg ("%s", buf->str);
