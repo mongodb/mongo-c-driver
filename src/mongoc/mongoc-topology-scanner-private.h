@@ -68,7 +68,6 @@ typedef struct mongoc_topology_scanner
 {
    mongoc_async_t                 *async;
    mongoc_topology_scanner_node_t *nodes;
-   uint32_t                        seq;
    bson_t                          ismaster_cmd;
 
    bson_t                          ismaster_cmd_with_handshake;
