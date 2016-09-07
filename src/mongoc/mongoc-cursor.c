@@ -104,7 +104,7 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
    if (!BSON_ITER_HOLDS_##_type (&iter)) { \
       cursor = _mongoc_cursor_new (client, db_and_collection, \
                                    MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                   NULL, NULL, NULL); \
+                                   NULL, NULL, NULL, NULL, NULL); \
       bson_set_error (&cursor->error, \
                       MONGOC_ERROR_COMMAND, \
                       MONGOC_ERROR_COMMAND_INVALID_ARG, \
@@ -118,7 +118,7 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
 #define OPT_ERR(_msg) do { \
    cursor = _mongoc_cursor_new (client, db_and_collection, \
                                 MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                NULL, NULL, NULL); \
+                                NULL, NULL, NULL, NULL, NULL); \
    bson_set_error (&cursor->error, MONGOC_ERROR_COMMAND, \
                    MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
    goto done; \
@@ -128,7 +128,7 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
 #define OPT_BSON_ERR(_msg) do { \
    cursor = _mongoc_cursor_new (client, db_and_collection, \
                                 MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                NULL, NULL, NULL); \
+                                NULL, NULL, NULL, NULL, NULL); \
    bson_set_error (&cursor->error, MONGOC_ERROR_BSON, \
                    MONGOC_ERROR_BSON_INVALID, _msg); \
    goto done; \
@@ -291,8 +291,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
 
    cursor = _mongoc_cursor_new (client, db_and_collection, flags,
                                 (uint32_t) skip, (uint32_t) limit,
-                                (uint32_t) batch_size, is_command,
-                                query_ptr, has_fields ? &fields : NULL,
+                                (uint32_t) batch_size, is_command, query_ptr,
+                                has_fields ? &fields : NULL, filter, opts,
                                 read_prefs, read_concern);
 
 done:
@@ -309,16 +309,18 @@ done:
 
 
 mongoc_cursor_t *
-_mongoc_cursor_new (mongoc_client_t           *client,
-                    const char                *db_and_collection,
-                    mongoc_query_flags_t       qflags,
-                    uint32_t                   skip,
-                    int32_t                    limit,
-                    uint32_t                   batch_size,
-                    bool                       is_command,
-                    const bson_t              *query,
-                    const bson_t              *fields,
-                    const mongoc_read_prefs_t *read_prefs,
+_mongoc_cursor_new (mongoc_client_t             *client,
+                    const char                  *db_and_collection,
+                    mongoc_query_flags_t         qflags,
+                    uint32_t                     skip,
+                    int32_t                      limit,
+                    uint32_t                     batch_size,
+                    bool                         is_command,
+                    const bson_t                *query,
+                    const bson_t                *fields,
+                    const bson_t                *filter,
+                    const bson_t                *opts,
+                    const mongoc_read_prefs_t   *read_prefs,
                     const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
@@ -452,6 +454,18 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       bson_copy_to(fields, &cursor->fields);
    } else {
       bson_init(&cursor->fields);
+   }
+   
+   if (filter) {
+      bson_copy_to(filter, &cursor->filter);
+   } else {
+      bson_init(&cursor->filter);
+   }
+   
+   if (opts) {
+      bson_copy_to(opts, &cursor->opts);
+   } else {
+      bson_init(&cursor->opts);
    }
 
    if (read_prefs) {
@@ -1189,6 +1203,29 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 }
 
 
+static bool
+_mongoc_cursor_prepare_find_command_with_opts (mongoc_cursor_t *cursor,
+                                               bson_t          *command)
+{
+   const char *collection;
+   int collection_len;
+
+   _mongoc_cursor_collection (cursor, &collection, &collection_len);
+   bson_append_utf8 (command, "find", 4, collection, collection_len);
+   bson_append_document (command, "filter", 6, &cursor->filter);
+   bson_concat (command, &cursor->opts);
+
+   if (cursor->read_concern->level != NULL) {
+      const bson_t *read_concern_bson;
+
+      read_concern_bson = _mongoc_read_concern_get_bson (cursor->read_concern);
+      bson_append_document (command, "readConcern", 11, read_concern_bson);
+   }
+
+   return true;
+}
+
+
 static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor)
 {
@@ -1197,7 +1234,12 @@ _mongoc_cursor_find_command (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   if (!_mongoc_cursor_prepare_find_command (cursor, &command)) {
+   if (cursor->with_opts) {
+      /* created with mongoc_collection_find_with_opts */
+      if (!_mongoc_cursor_prepare_find_command_with_opts (cursor, &command)) {
+         RETURN (NULL);
+      }
+   } else if (!_mongoc_cursor_prepare_find_command (cursor, &command)) {
       RETURN (NULL);
    }
 
@@ -1694,6 +1736,9 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    bson_copy_to (&cursor->query, &_clone->query);
    bson_copy_to (&cursor->fields, &_clone->fields);
+   bson_copy_to (&cursor->filter, &_clone->filter);
+   bson_copy_to (&cursor->opts, &_clone->opts);
+   _clone->with_opts = cursor->with_opts;
 
    bson_strncpy (_clone->ns, cursor->ns, sizeof _clone->ns);
 
@@ -1872,8 +1917,8 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   cursor = _mongoc_cursor_new (client, NULL, MONGOC_QUERY_NONE,
-                                0, 0, 0, false, NULL, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new (client, NULL, MONGOC_QUERY_NONE, 0, 0, 0, false,
+                                NULL, NULL, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
    _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);

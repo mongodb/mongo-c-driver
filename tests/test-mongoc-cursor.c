@@ -30,8 +30,8 @@ test_get_host (void)
    hosts = mongoc_uri_get_hosts(uri);
 
    client = test_framework_client_new ();
-   cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                               false, &q, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
+                                false, &q, NULL, NULL, NULL, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r && mongoc_cursor_error(cursor, &error)) {
       test_error ("%s", error.message);
@@ -95,8 +95,8 @@ test_clone (void)
       mongoc_collection_destroy (col);
    }
 
-   cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                               false, &q, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
+                                false, &q, NULL, NULL, NULL, NULL, NULL);
    ASSERT(cursor);
 
    r = mongoc_cursor_next(cursor, &doc);
@@ -138,7 +138,7 @@ test_invalid_query (void)
    q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
 
    cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                                false, q, NULL, NULL, NULL);
+                                false, q, NULL, NULL, NULL, NULL, NULL);
    assert (!mongoc_cursor_is_alive (cursor));
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
@@ -257,9 +257,8 @@ test_kill_cursor_live (void)
    /* sends OP_KILLCURSORS or killCursors command to server */
    mongoc_cursor_destroy (cursor);
 
-   cursor = _mongoc_cursor_new (client, collection->ns, MONGOC_QUERY_NONE,
-                                0, 0, 0, false /* is_command */,
-                                b, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new (client, collection->ns, MONGOC_QUERY_NONE, 0, 0,
+                                0, false, b, NULL, NULL, NULL, NULL, NULL);
 
    cursor->rpc.reply.cursor_id = cursor_id;
    cursor->sent = true;
