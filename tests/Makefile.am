@@ -101,6 +101,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-cluster.c \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-collection-find.c \
+	tests/test-mongoc-collection-find-with-opts.c \
 	tests/test-mongoc-command-monitoring.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \

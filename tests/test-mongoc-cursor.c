@@ -197,6 +197,19 @@ test_limit (void)
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
 
       mongoc_cursor_destroy (cursor);
+
+      cursor = mongoc_collection_find_with_opts (
+         collection, tmp_bson (NULL), NULL,
+         tmp_bson ("{'limit': {'$numberLong': '%d'}}", limits[i]));
+
+      ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
+      n_docs = 0;
+      while (mongoc_cursor_next (cursor, &doc)) {
+         ++n_docs;
+      }
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_CMPINT (n_docs, ==, 5);
    }
 
    mongoc_bulk_operation_destroy (bulk);
@@ -900,6 +913,7 @@ test_tailable_alive (void)
 
    ASSERT_OR_PRINT (r, error);
 
+   /* test mongoc_collection_find and mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
       0, 0, 0, tmp_bson (NULL), NULL, NULL);
@@ -911,6 +925,19 @@ test_tailable_alive (void)
    ASSERT (mongoc_cursor_is_alive (cursor));
 
    mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), NULL,
+      tmp_bson ("{'tailable': true, 'awaitData': true}"));
+
+   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+
+   /* still alive */
+   ASSERT (mongoc_cursor_is_alive (cursor));
+
+   mongoc_cursor_destroy (cursor);
+
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    bson_free (collection_name);

@@ -70,11 +70,11 @@ struct _mongoc_cursor_t
    mongoc_write_concern_t    *write_concern;
 
    mongoc_query_flags_t       flags;
-   uint32_t                   skip;
+   int64_t                    skip;
    int64_t                    limit;
    uint32_t                   count;
-   uint32_t                   batch_size;
-   uint32_t                   max_await_time_ms;
+   int64_t                    batch_size;
+   int64_t                    max_await_time_ms;
 
    char                       ns [140];
    uint32_t                   nslen;
@@ -99,6 +99,13 @@ int32_t                   _mongoc_n_return            (mongoc_cursor_t          
 void                      _mongoc_set_cursor_ns       (mongoc_cursor_t              *cursor,
                                                        const char                   *ns,
                                                        uint32_t                      nslen);
+mongoc_cursor_t         *_mongoc_cursor_new_with_opts (mongoc_client_t              *client,
+                                                       const char                   *db_and_collection,
+                                                       bool                          is_command,
+                                                       const bson_t                 *filter,
+                                                       const mongoc_read_prefs_t    *read_prefs,
+                                                       const mongoc_read_concern_t  *read_concern,
+                                                       const bson_t                 *opts);
 mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t              *client,
                                                        const char                   *db_and_collection,
                                                        mongoc_query_flags_t          flags,

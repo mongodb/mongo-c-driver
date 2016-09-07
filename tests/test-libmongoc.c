@@ -34,59 +34,60 @@
 #include <strings.h>
 #endif
 
-extern void test_array_install                   (TestSuite *suite);
-extern void test_async_install                   (TestSuite *suite);
-extern void test_buffer_install                  (TestSuite *suite);
-extern void test_bulk_install                    (TestSuite *suite);
-extern void test_client_install                  (TestSuite *suite);
-extern void test_client_max_staleness_install    (TestSuite *suite);
-extern void test_client_pool_install             (TestSuite *suite);
-extern void test_cluster_install                 (TestSuite *suite);
-extern void test_collection_install              (TestSuite *suite);
-extern void test_collection_find_install         (TestSuite *suite);
-extern void test_command_monitoring_install      (TestSuite *suite);
-extern void test_cursor_install                  (TestSuite *suite);
-extern void test_database_install                (TestSuite *suite);
-extern void test_error_install                   (TestSuite *suite);
-extern void test_exhaust_install                 (TestSuite *suite);
-extern void test_find_and_modify_install         (TestSuite *suite);
-extern void test_gridfs_file_page_install        (TestSuite *suite);
-extern void test_gridfs_install                  (TestSuite *suite);
-extern void test_linux_distro_scanner_install    (TestSuite *suite);
-extern void test_list_install                    (TestSuite *suite);
-extern void test_log_install                     (TestSuite *suite);
-extern void test_matcher_install                 (TestSuite *suite);
-extern void test_handshake_install               (TestSuite *suite);
-extern void test_queue_install                   (TestSuite *suite);
-extern void test_read_prefs_install              (TestSuite *suite);
-extern void test_rpc_install                     (TestSuite *suite);
-extern void test_sdam_install                    (TestSuite *suite);
-extern void test_sdam_monitoring_install         (TestSuite *suite);
-extern void test_server_selection_install        (TestSuite *suite);
+extern void test_array_install                     (TestSuite *suite);
+extern void test_async_install                     (TestSuite *suite);
+extern void test_buffer_install                    (TestSuite *suite);
+extern void test_bulk_install                      (TestSuite *suite);
+extern void test_client_install                    (TestSuite *suite);
+extern void test_client_max_staleness_install      (TestSuite *suite);
+extern void test_client_pool_install               (TestSuite *suite);
+extern void test_cluster_install                   (TestSuite *suite);
+extern void test_collection_install                (TestSuite *suite);
+extern void test_collection_find_install           (TestSuite *suite);
+extern void test_collection_find_with_opts_install (TestSuite *suite);
+extern void test_command_monitoring_install        (TestSuite *suite);
+extern void test_cursor_install                    (TestSuite *suite);
+extern void test_database_install                  (TestSuite *suite);
+extern void test_error_install                     (TestSuite *suite);
+extern void test_exhaust_install                   (TestSuite *suite);
+extern void test_find_and_modify_install           (TestSuite *suite);
+extern void test_gridfs_file_page_install          (TestSuite *suite);
+extern void test_gridfs_install                    (TestSuite *suite);
+extern void test_linux_distro_scanner_install      (TestSuite *suite);
+extern void test_list_install                      (TestSuite *suite);
+extern void test_log_install                       (TestSuite *suite);
+extern void test_matcher_install                   (TestSuite *suite);
+extern void test_handshake_install                 (TestSuite *suite);
+extern void test_queue_install                     (TestSuite *suite);
+extern void test_read_prefs_install                (TestSuite *suite);
+extern void test_rpc_install                       (TestSuite *suite);
+extern void test_sdam_install                      (TestSuite *suite);
+extern void test_sdam_monitoring_install           (TestSuite *suite);
+extern void test_server_selection_install          (TestSuite *suite);
 #if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
 #endif
-extern void test_set_install                     (TestSuite *suite);
-extern void test_socket_install                  (TestSuite *suite);
-extern void test_stream_install                  (TestSuite *suite);
-extern void test_thread_install                  (TestSuite *suite);
-extern void test_topology_install                (TestSuite *suite);
-extern void test_topology_description_install    (TestSuite *suite);
-extern void test_topology_reconcile_install      (TestSuite *suite);
-extern void test_topology_scanner_install        (TestSuite *suite);
-extern void test_uri_install                     (TestSuite *suite);
-extern void test_usleep_install                  (TestSuite *suite);
-extern void test_util_install                    (TestSuite *suite);
-extern void test_version_install                 (TestSuite *suite);
-extern void test_write_command_install           (TestSuite *suite);
-extern void test_write_concern_install           (TestSuite *suite);
+extern void test_set_install                       (TestSuite *suite);
+extern void test_socket_install                    (TestSuite *suite);
+extern void test_stream_install                    (TestSuite *suite);
+extern void test_thread_install                    (TestSuite *suite);
+extern void test_topology_install                  (TestSuite *suite);
+extern void test_topology_description_install      (TestSuite *suite);
+extern void test_topology_reconcile_install        (TestSuite *suite);
+extern void test_topology_scanner_install          (TestSuite *suite);
+extern void test_uri_install                       (TestSuite *suite);
+extern void test_usleep_install                    (TestSuite *suite);
+extern void test_util_install                      (TestSuite *suite);
+extern void test_version_install                   (TestSuite *suite);
+extern void test_write_command_install             (TestSuite *suite);
+extern void test_write_concern_install             (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
-extern void test_stream_tls_install              (TestSuite *suite);
-extern void test_x509_install                    (TestSuite *suite);
-extern void test_stream_tls_error_install        (TestSuite *suite);
+extern void test_stream_tls_install                (TestSuite *suite);
+extern void test_x509_install                      (TestSuite *suite);
+extern void test_stream_tls_error_install          (TestSuite *suite);
 #endif
 #ifdef MONGOC_ENABLE_SASL
-extern void test_sasl_install                    (TestSuite *suite);
+extern void test_sasl_install                      (TestSuite *suite);
 #endif
 
 
@@ -1795,6 +1796,7 @@ main (int   argc,
    test_cluster_install (&suite);
    test_collection_install (&suite);
    test_collection_find_install (&suite);
+   test_collection_find_with_opts_install (&suite);
    test_command_monitoring_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);

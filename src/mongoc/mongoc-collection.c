@@ -524,6 +524,55 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_collection_find_with_opts --
+ *
+ *       Create a cursor with a query filter. All other options are
+ *       specified in a free-form BSON document.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @filter: The query to locate matching documents.
+ *       @read_prefs: Optional read preferences to choose cluster node.
+ *       @opts: Other options.
+ *
+ * Returns:
+ *       A newly allocated mongoc_cursor_t that should be freed with
+ *       mongoc_cursor_destroy().
+ *
+ *       The client used by mongoc_collection_t must be valid for the
+ *       lifetime of the resulting mongoc_cursor_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_cursor_t *
+mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
+                                  const bson_t              *filter,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  const bson_t              *opts)
+{
+   BSON_ASSERT (collection);
+   BSON_ASSERT (filter);
+
+   bson_clear (&collection->gle);
+
+   if (!read_prefs) {
+      read_prefs = collection->read_prefs;
+   }
+
+   return _mongoc_cursor_new_with_opts (collection->client, collection->ns,
+                                        false /* is_command */,
+                                        filter, read_prefs,
+                                        collection->read_concern, opts);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_collection_command --
  *
  *       Executes a command on a cluster node matching @read_prefs. If

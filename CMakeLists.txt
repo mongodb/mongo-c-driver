@@ -446,6 +446,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-collection-find.c
+   ${SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
    ${SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c

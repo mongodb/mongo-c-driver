@@ -162,6 +162,14 @@ test_read_prefs_is_valid (void) {
    ASSERT (mongoc_cursor_error (cursor, &error));
    mongoc_cursor_destroy (cursor);
  
+   /* mongoc_collection_find_with_opts */
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"),
+                                              read_prefs, NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   mongoc_cursor_destroy (cursor);
+
    /* if read prefs is valid */
    mongoc_read_prefs_destroy (read_prefs); 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -193,14 +201,22 @@ test_read_prefs_is_valid (void) {
                     &error)  != -1, error);   
  
    /* mongoc_collection_find */
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, 
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                     tmp_bson ("{}"), NULL, read_prefs); 
  
    ASSERT (cursor); 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    mongoc_cursor_destroy (cursor);
  
-   mongoc_read_prefs_destroy (read_prefs); 
+   /* mongoc_collection_find_with_opts */
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"),
+                                              read_prefs, NULL);
+
+   ASSERT (cursor);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
@@ -3223,6 +3239,8 @@ test_find_limit (void)
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
+
+   /* test mongoc_collection_find and mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find (collection,
                                     MONGOC_QUERY_NONE,
                                     0 /* skip */,
@@ -3231,6 +3249,26 @@ test_find_limit (void)
                                     tmp_bson ("{}"),
                                     NULL,
                                     NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (server,
+                                         "test.test",
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         0 /* skip */,
+                                         2 /* n_return */,
+                                         "{}",
+                                         NULL);
+
+   mock_server_replies_simple (request, "{}");
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL,
+      tmp_bson ("{'limit': {'$numberLong': '2'}}"));
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
@@ -3270,6 +3308,8 @@ test_find_batch_size (void)
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
+
+   /* test mongoc_collection_find and mongoc_collection_find_with_opts */
    cursor = mongoc_collection_find (collection,
                                     MONGOC_QUERY_NONE,
                                     0 /* skip */,
@@ -3278,6 +3318,26 @@ test_find_batch_size (void)
                                     tmp_bson ("{}"),
                                     NULL,
                                     NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (server,
+                                         "test.test",
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         0 /* skip */,
+                                         2 /* n_return */,
+                                         "{}",
+                                         NULL);
+
+   mock_server_replies_simple (request, "{}");
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL,
+      tmp_bson ("{'batchSize': {'$numberLong': '2'}}"));
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
@@ -3555,7 +3615,7 @@ test_find_read_concern (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   /* No read_concern set */
+   /* No read_concern set - test find and find_with_opts */
    cursor = mongoc_collection_find (collection,
                                     MONGOC_QUERY_SLAVE_OK,
                                     0 /* skip */,
