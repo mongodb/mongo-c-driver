@@ -93,7 +93,10 @@ mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
          bson_destroy (&write_concern->compiled_gle);
       }
 
-      bson_free (write_concern->wtag);
+      if (write_concern->wtag) {
+         bson_free (write_concern->wtag);
+      }
+
       bson_free (write_concern);
    }
 }
