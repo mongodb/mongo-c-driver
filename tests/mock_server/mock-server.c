@@ -852,7 +852,7 @@ mock_server_receives_query (mock_server_t *server,
                             const char *ns,
                             mongoc_query_flags_t flags,
                             uint32_t skip,
-                            uint32_t n_return,
+                            int32_t n_return,
                             const char *query_json,
                             const char *fields_json)
 {
@@ -1057,7 +1057,7 @@ mock_server_receives_delete (mock_server_t *server,
 request_t *
 mock_server_receives_getmore (mock_server_t *server,
                               const char    *ns,
-                              uint32_t       n_return,
+                              int32_t        n_return,
                               int64_t        cursor_id)
 {
    request_t *request;

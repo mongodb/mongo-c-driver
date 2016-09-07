@@ -61,7 +61,7 @@ bool request_matches_query (const request_t *request,
                             const char *ns,
                             mongoc_query_flags_t flags,
                             uint32_t skip,
-                            uint32_t n_return,
+                            int32_t n_return,
                             const char *query_json,
                             const char *fields_json,
                             bool is_command);
@@ -89,7 +89,7 @@ bool request_matches_delete (const request_t *request,
 
 bool request_matches_getmore (const request_t *request,
                               const char *ns,
-                              uint32_t n_return,
+                              int32_t n_return,
                               int64_t cursor_id);
 
 bool request_matches_kill_cursors (const request_t *request,

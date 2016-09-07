@@ -361,7 +361,7 @@ mock_rs_receives_query (mock_rs_t *rs,
                         const char *ns,
                         mongoc_query_flags_t flags,
                         uint32_t skip,
-                        uint32_t n_return,
+                        int32_t n_return,
                         const char *query_json,
                         const char *fields_json)
 {
@@ -540,7 +540,7 @@ mock_rs_receives_insert (mock_rs_t *rs,
 request_t *
 mock_rs_receives_getmore (mock_rs_t *rs,
                           const char *ns,
-                          uint32_t n_return,
+                          int32_t n_return,
                           int64_t cursor_id)
 {
    request_t *request;
