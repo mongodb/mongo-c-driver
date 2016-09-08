@@ -183,9 +183,30 @@ test_dollar_or (void)
    test_collection_find_with_opts_t test_data = { 0 };
 
    test_data.filter = "{'$or': [{'_id': 1}]}";
-   test_data.expected_op_query = "{'$query': {'$or': [{'_id': 1}]}}";
+   test_data.expected_op_query = " {'$or': [{'_id': 1}]}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'$or': [{'_id': 1}]}}";
+
+   _test_collection_find_with_opts (&test_data);
+}
+
+
+/* test '$or': [{'_id': 1}], 'snapshot': true
+ * we just use snapshot to prove that an option can be passed
+ * alongside '$or'
+ */
+static void
+test_snapshot_dollar_or (void)
+{
+   test_collection_find_with_opts_t test_data = { 0 };
+
+   test_data.filter = "{'$or': [{'_id': 1}]}";
+   test_data.opts = "{'snapshot': true}";
+   test_data.expected_op_query =
+      "{'$query': {'$or': [{'_id': 1}]}, '$snapshot': true}";
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {'$or': [{'_id': 1}]},"
+      " 'snapshot': true}";
 
    _test_collection_find_with_opts (&test_data);
 }
@@ -198,7 +219,7 @@ test_key_named_filter (void)
    test_collection_find_with_opts_t test_data = { 0 };
 
    test_data.filter = "{'filter': 2}";
-   test_data.expected_op_query = "{'$query': {'filter': 2}}";
+   test_data.expected_op_query = " {'filter': 2}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': 2}}";
    _test_collection_find_with_opts (&test_data);
@@ -212,15 +233,15 @@ test_op_query_subdoc_named_filter (void)
    test_collection_find_with_opts_t test_data = { 0 };
 
    test_data.filter = "{'filter': {'i': 2}}";
-   test_data.expected_op_query = "{'$query': {'filter': {'i': 2}}}";
+   test_data.expected_op_query = " {'filter': {'i': 2}}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
    _test_collection_find_with_opts (&test_data);
 }
 
 
-/* test 'filter': {'filter': {'i': 2}}, 'singleBatch': true
- * we just use singleBatch to prove that an option can be passed
+/* test 'filter': {'filter': {'i': 2}}, 'snapshot': true
+ * we just use snapshot to prove that an option can be passed
  * alongside 'filter'
  */
 static void
@@ -229,18 +250,17 @@ test_find_cmd_subdoc_named_filter_with_option (void)
    test_collection_find_with_opts_t test_data = { 0 };
 
    test_data.filter = "{'filter': {'i': 2}}";
-   test_data.opts = "{'singleBatch': true}";
-   test_data.expected_op_query = "{'$query': {'filter': {'i': 2}}}";
-   test_data.expected_n_return = -1;
+   test_data.opts = "{'snapshot': true}";
+   test_data.expected_op_query =
+      "{'$query': {'filter': {'i': 2}}, '$snapshot': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'filter': {'i': 2}}, "
-      " 'singleBatch': true}";
+      " 'snapshot': true}";
 
    _test_collection_find_with_opts (&test_data);
 }
 
 /* this can't work until later in CDRIVER-1522 implementation */
-#ifdef TODO_CDRIVER_1522
 /* test future-compatibility with a new server's find command options */
 static void
 test_newoption (void)
@@ -253,9 +273,8 @@ test_newoption (void)
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'_id': 1}, 'newOption': true}";
 
-   _test_collection_find (&test_data);
+   _test_collection_find_with_opts (&test_data);
 }
-#endif
 
 
 static void
@@ -453,15 +472,29 @@ test_limit (void)
 
 
 static void
-test_negative_limit (void)
+test_singlebatch (void)
 {
    test_collection_find_with_opts_t test_data = { 0 };
 
-   test_data.opts = "{'limit': {'$numberLong': '-2'}}";
+   test_data.opts = "{'limit': {'$numberLong': '2'}, 'singleBatch': true}";
    test_data.expected_n_return = -2;
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, "
       " 'singleBatch': true, 'limit': {'$numberLong': '2'}}";
+
+   _test_collection_find_with_opts (&test_data);
+}
+
+static void
+test_singlebatch_no_limit (void)
+{
+   test_collection_find_with_opts_t test_data = { 0 };
+
+   test_data.opts = "{'singleBatch': true}";
+   /* singleBatch doesn't affect OP_QUERY with limit 0, nToReturn is still 0 */
+   test_data.expected_n_return = 0;
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {}, 'singleBatch': true}";
 
    _test_collection_find_with_opts (&test_data);
 }
@@ -570,16 +603,15 @@ test_collection_find_with_opts_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Collection/find_with_opts/dollar_or",
                   test_dollar_or);
+   TestSuite_Add (suite, "/Collection/find_with_opts/snapshot_dollar_or",
+                  test_snapshot_dollar_or);
    TestSuite_Add (suite, "/Collection/find_with_opts/key_named_filter",
                   test_key_named_filter);
    TestSuite_Add (suite,
                   "/Collection/find_with_opts/query/subdoc_named_filter",
                   test_op_query_subdoc_named_filter);
-/* this can't work until later in CDRIVER-1522 implementation */
-#ifdef TODO_CDRIVER_1522
    TestSuite_Add (suite, "/Collection/find_with_opts/newoption",
                   test_newoption);
-#endif
    TestSuite_Add (suite, "/Collection/find_with_opts/cmd/subdoc_named_filter",
                   test_find_cmd_subdoc_named_filter_with_option);
    TestSuite_Add (suite, "/Collection/find_with_opts/orderby",
@@ -604,8 +636,10 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_batch_size);
    TestSuite_Add (suite, "/Collection/find_with_opts/limit",
                   test_limit);
-   TestSuite_Add (suite, "/Collection/find_with_opts/negative_limit",
-                  test_negative_limit);
+   TestSuite_Add (suite, "/Collection/find_with_opts/singlebatch",
+                  test_singlebatch);
+   TestSuite_Add (suite, "/Collection/find_with_opts/singlebatch/no_limit",
+                  test_singlebatch_no_limit);
    TestSuite_Add (suite, "/Collection/find_with_opts/unrecognized_dollar",
                   test_unrecognized_dollar_option);
    TestSuite_Add (suite, "/Collection/find_with_opts/flags",
