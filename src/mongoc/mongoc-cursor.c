@@ -38,6 +38,10 @@ static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream);
 
+static const bson_t *
+_mongoc_cursor_op_query_with_opts (mongoc_cursor_t        *cursor,
+                                   mongoc_server_stream_t *server_stream);
+
 static bool
 _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
                                      bson_t          *command);
@@ -156,59 +160,6 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
 }
 
 
-#define OPT_CHECK(_type) do { \
-   if (!BSON_ITER_HOLDS_##_type (&iter)) { \
-      cursor = _mongoc_cursor_new (client, db_and_collection, \
-                                   MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                   NULL, NULL, NULL, NULL, NULL); \
-      bson_set_error (&cursor->error, \
-                      MONGOC_ERROR_COMMAND, \
-                      MONGOC_ERROR_COMMAND_INVALID_ARG, \
-                      "invalid option %s, should be type %s", \
-                      bson_iter_key (&iter), #_type); \
-      goto done; \
-   } \
-} while (false)
-
-
-#define OPT_ERR(_msg) do { \
-   cursor = _mongoc_cursor_new (client, db_and_collection, \
-                                MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                NULL, NULL, NULL, NULL, NULL); \
-   bson_set_error (&cursor->error, MONGOC_ERROR_COMMAND, \
-                   MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
-   goto done; \
-} while (false)
-
-
-#define OPT_BSON_ERR(_msg) do { \
-   cursor = _mongoc_cursor_new (client, db_and_collection, \
-                                MONGOC_QUERY_NONE, 0, 0, 0, false, &empty, \
-                                NULL, NULL, NULL, NULL, NULL); \
-   bson_set_error (&cursor->error, MONGOC_ERROR_BSON, \
-                   MONGOC_ERROR_BSON_INVALID, _msg); \
-   goto done; \
-} while (false)
-
-
-#define OPT_FLAG(_flag) do { \
-   OPT_CHECK (BOOL); \
-   if (bson_iter_as_bool (&iter)) { \
-      flags |= _flag; \
-   } \
-} while (false)
-
-
-#define OPT_SUBDOCUMENT(_opt_name, _legacy_name) do { \
-   OPT_CHECK (DOCUMENT); \
-   bson_iter_document (&iter, &len, &data); \
-   if (!bson_init_static (&subdocument, data, (size_t) len)) { \
-      OPT_BSON_ERR ("Invalid '" #_opt_name "' subdocument in 'opts'."); \
-   } \
-   BSON_APPEND_DOCUMENT (&query, "$" #_legacy_name, &subdocument); \
-} while (false)
-
-
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
                               const char                  *db_and_collection,
@@ -218,149 +169,11 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
                               const mongoc_read_concern_t *read_concern,
                               const bson_t                *opts)
 {
-   mongoc_cursor_t *cursor = NULL;
-   const char *key;
-   bson_t empty = BSON_INITIALIZER;  /* used in error-checking macros */
-   bson_t query = BSON_INITIALIZER;
-   const bson_t *query_ptr;
-   bson_t fields;
-   bson_iter_t iter;
-   bool single_batch = false;
-   bool has_fields = false;
-   uint32_t len;
-   const uint8_t *data;
-   bson_t subdocument;
-   mongoc_query_flags_t flags = MONGOC_QUERY_NONE;
-   int64_t skip = 0;
-   int64_t limit = 0;
-   int64_t batch_size = 0;
-
    BSON_ASSERT (filter);
 
-   if (opts) {
-      BSON_APPEND_DOCUMENT (&query, "$query", filter);
-      query_ptr = &query;
-
-      if (!bson_iter_init (&iter, opts)) {
-         OPT_BSON_ERR ("Invalid 'opts' parameter.");
-      }
-
-      while (bson_iter_next (&iter)) {
-         key = bson_iter_key (&iter);
-
-         /* most common options first */
-         if (!strcmp (key, "projection")) {
-            OPT_CHECK (DOCUMENT);
-            bson_iter_document (&iter, &len, &data);
-            if (!bson_init_static (&subdocument, data, (size_t) len)) {
-               OPT_BSON_ERR ("Invalid 'projection' subdocument in 'opts'.");
-            }
-
-            bson_copy_to (&subdocument, &fields);
-            has_fields = true;
-         } else if (!strcmp (key, "sort")) {
-            OPT_SUBDOCUMENT (sort, orderby);
-         } else if (!strcmp (key, "skip")) {
-            OPT_CHECK (INT64);
-            skip = bson_iter_as_int64 (&iter);
-         } else if (!strcmp (key, "limit")) {
-            OPT_CHECK (INT64);
-            limit = bson_iter_as_int64 (&iter);
-         }
-         /* the rest of the options, alphabetically */
-         else if (!strcmp (key, "batchSize")) {
-            OPT_CHECK (INT64);
-            batch_size = bson_iter_as_int64 (&iter);
-         } else if (!strcmp (key, "allowPartialResults")) {
-             OPT_FLAG (MONGOC_QUERY_PARTIAL);
-         } else if (!strcmp (key, "awaitData")) {
-             OPT_FLAG (MONGOC_QUERY_AWAIT_DATA);
-         } else if (!strcmp (key, "comment")) {
-            OPT_CHECK (UTF8);
-            BSON_APPEND_UTF8 (&query, "$comment", bson_iter_utf8 (&iter, NULL));
-         } else if (!strcmp (key, "exhaust")) {
-            OPT_FLAG (MONGOC_QUERY_EXHAUST);
-         } else if (!strcmp (key, "hint")) {
-            if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-               BSON_APPEND_UTF8 (&query, "$hint", bson_iter_utf8 (&iter, NULL));
-            } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-               bson_iter_document (&iter, &len, &data);
-
-               if (!bson_init_static (&subdocument, data, (size_t) len)) {
-                  OPT_BSON_ERR ("Invalid 'hint' subdocument in 'opts'.");
-               }
-
-               BSON_APPEND_DOCUMENT (&query, "$hint", &subdocument);
-            } else {
-               OPT_ERR ("Wrong type for 'hint' field in 'opts'.");
-            }
-         } else if (!strcmp (key, "max")) {
-            OPT_SUBDOCUMENT (max, max);
-         } else if (!strcmp (key, "maxScan")) {
-            OPT_CHECK (INT64);
-            BSON_APPEND_INT64 (&query, "$maxScan", bson_iter_as_int64 (&iter));
-         } else if (!strcmp (key, "maxTimeMS")) {
-            OPT_CHECK (INT64);
-            BSON_APPEND_INT64 (&query, "$maxTimeMS",
-                               bson_iter_as_int64 (&iter));
-         } else if (!strcmp (key, "min")) {
-            OPT_SUBDOCUMENT (min, min);
-         } else if (!strcmp (key, "noCursorTimeout")) {
-             OPT_FLAG (MONGOC_QUERY_NO_CURSOR_TIMEOUT);
-         } else if (!strcmp (key, "oplogReplay")) {
-             OPT_FLAG (MONGOC_QUERY_OPLOG_REPLAY);
-         } else if (!strcmp (key, "readConcern")) {
-            OPT_ERR ("Set readConcern on client, database, or collection,"
-                     " not in a query.");
-         } else if (!strcmp (key, "returnKey")) {
-            OPT_CHECK (BOOL);
-            BSON_APPEND_BOOL (&query, "$returnKey", bson_iter_as_bool (&iter));
-         } else if (!strcmp (key, "showRecordId")) {
-            OPT_CHECK (BOOL);
-            BSON_APPEND_BOOL (&query, "$showDiskLoc",
-                              bson_iter_as_bool (&iter));
-         } else if (!strcmp (key, "singleBatch")) {
-            OPT_CHECK (BOOL);
-            single_batch = bson_iter_bool (&iter);
-         } else if (!strcmp (key, "snapshot")) {
-            OPT_CHECK (BOOL);
-            BSON_APPEND_BOOL (&query, "$snapshot", bson_iter_as_bool (&iter));
-         } else if (!strcmp (key, "tailable")) {
-             OPT_FLAG (MONGOC_QUERY_TAILABLE_CURSOR);
-         } else {
-            /* catch-all */
-            bson_append_iter (&query, key, -1, &iter);
-         }
-      }
-
-      if (single_batch) {
-         if (limit > 0) {
-            limit = -limit;
-         } else if (limit == 0) {
-            limit = -1;
-         }
-      }
-   } else {
-      /* opts is NULL */
-      query_ptr = filter;
-   }
-
-   cursor = _mongoc_cursor_new (client, db_and_collection, flags,
-                                (uint32_t) skip, (uint32_t) limit,
-                                (uint32_t) batch_size, is_command, query_ptr,
-                                has_fields ? &fields : NULL, filter, opts,
-                                read_prefs, read_concern);
-
-done:
-   if (opts) {
-      bson_destroy (&query);
-   }
-
-   if (has_fields) {
-      bson_destroy (&fields);
-   }
-
-   return cursor;
+   return _mongoc_cursor_new (client, db_and_collection, MONGOC_QUERY_NONE,
+                              0, 0, 0, is_command, NULL, NULL, filter, opts,
+                              read_prefs, read_concern);
 }
 
 
@@ -683,6 +496,8 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                          "The selected server does not support readConcern");
+      } else if (cursor->with_opts) {
+         b = _mongoc_cursor_op_query_with_opts (cursor, server_stream);
       } else {
          b = _mongoc_cursor_op_query (cursor, server_stream);
       }
@@ -1014,6 +829,337 @@ failure:
    apply_read_prefs_result_cleanup (&result);
 
    RETURN (false);
+}
+
+
+#define OPT_CHECK(_type) do { \
+      if (!BSON_ITER_HOLDS_##_type (&iter)) { \
+         bson_set_error (&cursor->error, \
+                         MONGOC_ERROR_COMMAND, \
+                         MONGOC_ERROR_COMMAND_INVALID_ARG, \
+                         "invalid option %s, should be type %s", \
+                         bson_iter_key (&iter), #_type); \
+      return NULL; \
+      } \
+} while (false)
+
+
+#define OPT_ERR(_msg) do { \
+      bson_set_error (&cursor->error, MONGOC_ERROR_COMMAND, \
+                      MONGOC_ERROR_COMMAND_INVALID_ARG, _msg); \
+      return NULL; \
+} while (false)
+
+
+#define OPT_BSON_ERR(_msg) do { \
+      bson_set_error (&cursor->error, MONGOC_ERROR_BSON, \
+                      MONGOC_ERROR_BSON_INVALID, _msg); \
+      return NULL; \
+} while (false)
+
+
+#define OPT_FLAG(_flag) do { \
+      OPT_CHECK (BOOL); \
+      if (bson_iter_as_bool (&iter)) { \
+         *flags |= _flag; \
+      } \
+} while (false)
+
+
+#define PUSH_DOLLAR_QUERY() do { \
+      if (!pushed_dollar_query) { \
+         pushed_dollar_query = true; \
+         bson_append_document (query, "$query", 6, &cursor->filter); \
+      } \
+} while (false)
+
+
+#define OPT_SUBDOCUMENT(_opt_name, _legacy_name) do { \
+      OPT_CHECK (DOCUMENT); \
+      bson_iter_document (&iter, &len, &data); \
+      if (!bson_init_static (&subdocument, data, (size_t) len)) { \
+         OPT_BSON_ERR ("Invalid '" #_opt_name "' subdocument in 'opts'."); \
+      } \
+      BSON_APPEND_DOCUMENT (query, "$" #_legacy_name, &subdocument); \
+} while (false)
+
+
+static bson_t *
+_mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
+                                        bson_t               *query /* OUT */,
+                                        bson_t               *fields /* OUT */,
+                                        mongoc_query_flags_t *flags /* OUT */,
+                                        int32_t              *skip /* OUT */)
+{
+   bool pushed_dollar_query;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+   bson_t subdocument;
+   const char *key;
+
+   *flags = MONGOC_QUERY_NONE;
+   *skip = 0;
+
+   /* assume we'll send filter straight to server, like "{a: 1}". if we find an
+    * opt we must add, like "sort", we push the query like "$query: {a: 1}",
+    * then add a query modifier for the option, in this example "$orderby".
+    */
+   pushed_dollar_query = false;
+
+   if (!bson_iter_init (&iter, &cursor->opts)) {
+      OPT_BSON_ERR ("Invalid 'opts' parameter.");
+   }
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+
+      /* most common options first */
+      if (!strcmp (key, "projection")) {
+         OPT_CHECK (DOCUMENT);
+         bson_iter_document (&iter, &len, &data);
+         if (!bson_init_static (&subdocument, data, (size_t) len)) {
+            OPT_BSON_ERR ("Invalid 'projection' subdocument in 'opts'.");
+         }
+
+         bson_copy_to (&subdocument, fields);
+      } else if (!strcmp (key, "sort")) {
+         PUSH_DOLLAR_QUERY ();
+         OPT_SUBDOCUMENT (sort, orderby);
+      } else if (!strcmp (key, "skip")) {
+         OPT_CHECK (INT64);
+         *skip = (int32_t) bson_iter_as_int64 (&iter);
+      }
+      /* the rest of the options, alphabetically */
+      else if (!strcmp (key, "allowPartialResults")) {
+         OPT_FLAG (MONGOC_QUERY_PARTIAL);
+      } else if (!strcmp (key, "awaitData")) {
+         OPT_FLAG (MONGOC_QUERY_AWAIT_DATA);
+      } else if (!strcmp (key, "comment")) {
+         OPT_CHECK (UTF8);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_UTF8 (query, "$comment", bson_iter_utf8 (&iter, NULL));
+      } else if (!strcmp (key, "exhaust")) {
+         OPT_FLAG (MONGOC_QUERY_EXHAUST);
+      } else if (!strcmp (key, "hint")) {
+         if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+            PUSH_DOLLAR_QUERY ();
+            BSON_APPEND_UTF8 (query, "$hint", bson_iter_utf8 (&iter, NULL));
+         } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            PUSH_DOLLAR_QUERY ();
+            OPT_SUBDOCUMENT (hint, hint);
+         } else {
+            OPT_ERR ("Wrong type for 'hint' field in 'opts'.");
+         }
+      } else if (!strcmp (key, "max")) {
+         PUSH_DOLLAR_QUERY ();
+         OPT_SUBDOCUMENT (max, max);
+      } else if (!strcmp (key, "maxScan")) {
+         OPT_CHECK (INT64);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_INT64 (query, "$maxScan", bson_iter_as_int64 (&iter));
+      } else if (!strcmp (key, "maxTimeMS")) {
+         OPT_CHECK (INT64);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_INT64 (query, "$maxTimeMS", bson_iter_as_int64 (&iter));
+      } else if (!strcmp (key, "min")) {
+         PUSH_DOLLAR_QUERY ();
+         OPT_SUBDOCUMENT (min, min);
+      } else if (!strcmp (key, "noCursorTimeout")) {
+         OPT_FLAG (MONGOC_QUERY_NO_CURSOR_TIMEOUT);
+      } else if (!strcmp (key, "oplogReplay")) {
+         OPT_FLAG (MONGOC_QUERY_OPLOG_REPLAY);
+      } else if (!strcmp (key, "readConcern")) {
+         OPT_ERR ("Set readConcern on client, database, or collection,"
+                  " not in a query.");
+      } else if (!strcmp (key, "returnKey")) {
+         OPT_CHECK (BOOL);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_BOOL (query, "$returnKey", bson_iter_as_bool (&iter));
+      } else if (!strcmp (key, "showRecordId")) {
+         OPT_CHECK (BOOL);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_BOOL (query, "$showDiskLoc", bson_iter_as_bool (&iter));
+      } else if (!strcmp (key, "snapshot")) {
+         OPT_CHECK (BOOL);
+         PUSH_DOLLAR_QUERY ();
+         BSON_APPEND_BOOL (query, "$snapshot", bson_iter_as_bool (&iter));
+      } else if (!strcmp (key, "tailable")) {
+         OPT_FLAG (MONGOC_QUERY_TAILABLE_CURSOR);
+      }
+      /* skip singleBatch, limit, batchSize: handled in _mongoc_n_return */
+      else if (strcmp (key, "singleBatch") &&
+               strcmp (key, "limit") &&
+               strcmp (key, "batchSize")) {
+         /* pass unrecognized options to server */
+         PUSH_DOLLAR_QUERY ();
+         bson_append_iter (query, key, -1, &iter);
+      }
+   }
+
+   return pushed_dollar_query ? query : &cursor->filter;
+}
+
+
+#undef OPT_CHECK
+#undef OPT_ERR
+#undef OPT_BSON_ERR
+#undef OPT_FLAG
+#undef OPT_SUBDOCUMENT
+
+
+static const bson_t *
+_mongoc_cursor_op_query_with_opts (mongoc_cursor_t        *cursor,
+                                   mongoc_server_stream_t *server_stream)
+{
+   int64_t started;
+   uint32_t request_id;
+   mongoc_rpc_t rpc;
+   const char *cmd_name; /* for command monitoring */
+   const bson_t *query_ptr;
+   bson_t query = BSON_INITIALIZER;
+   bson_t fields = BSON_INITIALIZER;
+   mongoc_query_flags_t flags;
+   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
+   const bson_t *ret = NULL;
+   bool succeeded = false;
+
+   ENTRY;
+
+   started = bson_get_monotonic_time ();
+
+   cursor->sent = true;
+   cursor->operation_id = ++cursor->client->cluster.operation_id;
+
+   request_id = ++cursor->client->cluster.request_id;
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = request_id;
+   rpc.query.response_to = 0;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_NONE;
+   rpc.query.collection = cursor->ns;
+   rpc.query.skip = 0;
+   rpc.query.n_return = 0;
+   rpc.query.fields = NULL;
+
+   if (cursor->is_command) {
+      /* "filter" isn't a query, it's like {commandName: ... }*/
+      cmd_name = _mongoc_get_command_name (&cursor->filter);
+      BSON_ASSERT (cmd_name);
+   } else {
+      cmd_name = "find";
+   }
+
+   query_ptr = _mongoc_cursor_parse_opts_for_op_query (cursor, 
+                                                       &query,
+                                                       &fields,
+                                                       &flags,
+                                                       &rpc.query.skip);
+
+   apply_read_preferences (cursor->read_prefs, server_stream,
+                           query_ptr, flags, &result);
+
+   rpc.query.query = bson_get_data (result.query_with_read_prefs);
+   rpc.query.flags = result.flags;
+   rpc.query.n_return = _mongoc_n_return (cursor);
+   if (!bson_empty (&fields)) {
+      rpc.query.fields = bson_get_data (&fields);
+   }
+
+   if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream, cmd_name)) {
+      GOTO (done);
+   }
+
+   if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
+                                        &rpc, 1, server_stream,
+                                        NULL, &cursor->error)) {
+      GOTO (done);
+   }
+
+   _mongoc_buffer_clear (&cursor->buffer, false);
+
+   if (!_mongoc_client_recv (cursor->client,
+                             &cursor->rpc,
+                             &cursor->buffer,
+                             server_stream,
+                             &cursor->error)) {
+      GOTO (done);
+   }
+
+   if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid opcode. Expected %d, got %d.",
+                      MONGOC_OPCODE_REPLY, cursor->rpc.header.opcode);
+      GOTO (done);
+   }
+
+   if (cursor->rpc.header.response_to != request_id) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid response_to for query. Expected %d, got %d.",
+                      request_id, cursor->rpc.header.response_to);
+      GOTO (done);
+   }
+
+   if (cursor->is_command) {
+      if (_mongoc_rpc_parse_command_error (&cursor->rpc,
+                                           cursor->client->error_api_version,
+                                           &cursor->error)) {
+         GOTO (done);
+      }
+   } else {
+      if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                         cursor->client->error_api_version,
+                                         &cursor->error)) {
+         GOTO (done);
+      }
+   }
+
+   if (cursor->reader) {
+      bson_reader_destroy (cursor->reader);
+   }
+
+   cursor->reader = bson_reader_new_from_data (
+      cursor->rpc.reply.documents,
+      (size_t) cursor->rpc.reply.documents_len);
+
+   if ((cursor->flags & MONGOC_QUERY_EXHAUST)) {
+      cursor->in_exhaust = true;
+      cursor->client->in_exhaust = true;
+   }
+
+   _mongoc_cursor_monitor_succeeded (cursor,
+                                     bson_get_monotonic_time () - started,
+                                     true, /* first_batch */
+                                     server_stream,
+                                     cmd_name);
+
+   cursor->done = false;
+   cursor->end_of_event = false;
+   succeeded = true;
+
+   _mongoc_read_from_buffer (cursor, &ret);
+
+done:
+   if (!succeeded) {
+      _mongoc_cursor_monitor_failed (cursor,
+                                     bson_get_monotonic_time () - started,
+                                     server_stream, cmd_name);
+   }
+
+   apply_read_prefs_result_cleanup (&result);
+   bson_destroy (&query);
+   bson_destroy (&fields);
+
+   if (!ret) {
+      cursor->done = true;
+   }
+
+   RETURN (ret);
 }
 
 
