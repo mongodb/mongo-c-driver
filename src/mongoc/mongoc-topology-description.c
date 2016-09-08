@@ -1784,7 +1784,7 @@ mongoc_topology_description_get_servers (
       sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
 
       if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         sds[i] = mongoc_server_description_new_copy (sd);
+         sds[*n] = mongoc_server_description_new_copy (sd);
          ++(*n);
       }
    }

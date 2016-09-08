@@ -1,4 +1,5 @@
 #include "mongoc.h"
+#include "mongoc-set-private.h"
 #include "mongoc-client-pool-private.h"
 #include "mongoc-client-private.h"
 
@@ -77,6 +78,68 @@ test_has_readable_writable_server_pooled (void)
 }
 
 
+static mongoc_server_description_t *
+_sd_for_host (mongoc_topology_description_t *td,
+              const char                    *host)
+{
+   int i;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; i < (int) td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+
+      if (!strcmp (sd->host.host, host)) {
+         return sd;
+      }
+   }
+
+   return NULL;
+}
+
+
+static void
+test_get_servers (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_t *topology;
+   mongoc_topology_description_t *td;
+   mongoc_server_description_t *sd_a;
+   mongoc_server_description_t *sd_c;
+   mongoc_server_description_t **sds;
+   size_t n;
+   bson_error_t error;
+
+   uri = mongoc_uri_new ("mongodb://a,b,c");
+   topology = mongoc_topology_new (uri, true /* single-threaded */);
+   td = &topology->description;
+
+   /* servers "a" and "c" are mongos, but "b" remains unknown */
+   sd_a = _sd_for_host (td, "a");
+   mongoc_topology_description_handle_ismaster (
+      td, sd_a, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, &error);
+
+   sd_c = _sd_for_host (td, "c");
+   mongoc_topology_description_handle_ismaster (
+      td, sd_c, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, &error);
+
+   sds = mongoc_topology_description_get_servers (td, &n);
+   ASSERT_CMPSIZE_T ((size_t) 2, ==, n);
+
+   /* we don't care which order the servers are returned */
+   if (sds[0]->id == sd_a->id) {
+      ASSERT_CMPSTR ("a", sds[0]->host.host);
+      ASSERT_CMPSTR ("c", sds[1]->host.host);
+   } else {
+      ASSERT_CMPSTR ("c", sds[0]->host.host);
+      ASSERT_CMPSTR ("a", sds[1]->host.host);
+   }
+
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mongoc_topology_destroy (topology);
+   mongoc_uri_destroy (uri);
+}
+
+
 void
 test_topology_description_install (TestSuite *suite)
 {
@@ -84,4 +147,6 @@ test_topology_description_install (TestSuite *suite)
                       test_has_readable_writable_server_single);
    TestSuite_AddLive (suite, "/TopologyDescription/readable_writable/pooled",
                       test_has_readable_writable_server_pooled);
+   TestSuite_Add (suite, "/TopologyDescription/get_servers",
+                  test_get_servers);
 }
