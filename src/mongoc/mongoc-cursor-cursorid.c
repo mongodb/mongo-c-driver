@@ -176,6 +176,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
 {
    const char *collection;
    int collection_len;
+   int64_t batch_size;
 
    ENTRY;
 
@@ -185,8 +186,12 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    bson_append_int64 (command, "getMore", 7, mongoc_cursor_get_id (cursor));
    bson_append_utf8 (command, "collection", 10, collection, collection_len);
 
-   if (cursor->batch_size) {
-      bson_append_int64 (command, "batchSize", 9, _mongoc_n_return (cursor));
+   batch_size = mongoc_cursor_get_batch_size (cursor);
+
+   /* See find, getMore, and killCursors Spec for batchSize rules */
+   if (batch_size) {
+      bson_append_int64 (command, "batchSize", 9,
+                         abs (_mongoc_n_return (cursor)));
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable

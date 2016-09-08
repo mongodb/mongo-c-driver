@@ -103,6 +103,8 @@ int32_t                   _mongoc_n_return            (mongoc_cursor_t          
 void                      _mongoc_set_cursor_ns       (mongoc_cursor_t              *cursor,
                                                        const char                   *ns,
                                                        uint32_t                      nslen);
+bool                      _mongoc_cursor_get_opt_bool (const mongoc_cursor_t        *cursor,
+                                                       const char                   *option);
 mongoc_cursor_t         *_mongoc_cursor_new_with_opts (mongoc_client_t              *client,
                                                        const char                   *db_and_collection,
                                                        bool                          is_command,

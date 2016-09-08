@@ -161,6 +161,7 @@ test_limit (void)
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    bson_t *b;
+   bson_t *opts;
    int i, n_docs;
    mongoc_cursor_t *cursor;
    bson_error_t error;
@@ -198,9 +199,16 @@ test_limit (void)
 
       mongoc_cursor_destroy (cursor);
 
-      cursor = mongoc_collection_find_with_opts (
-         collection, tmp_bson (NULL), NULL,
-         tmp_bson ("{'limit': {'$numberLong': '%d'}}", limits[i]));
+      if (limits[i] > 0) {
+         opts = tmp_bson ("{'limit': {'$numberLong': '%d'}}", limits[i]);
+      } else {
+         opts = tmp_bson (
+            "{'singleBatch': true, 'limit': {'$numberLong': '%d'}}",
+            -limits[i]);
+      }
+
+      cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
+                                                 NULL, opts);
 
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
       n_docs = 0;

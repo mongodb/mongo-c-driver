@@ -46,28 +46,84 @@ static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 
 
+static bool
+_mongoc_cursor_set_opt_int64 (mongoc_cursor_t *cursor,
+                              const char      *option,
+                              int64_t          value)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find (&iter, &cursor->opts, option)) {
+      if (!BSON_ITER_HOLDS_INT64 (&iter)) {
+         return false;
+      }
+
+      bson_iter_overwrite_int64 (&iter, value);
+      return true;
+   }
+
+   return BSON_APPEND_INT64 (&cursor->opts, option, value);
+}
+
+
+static int64_t
+_mongoc_cursor_get_opt_int64 (const mongoc_cursor_t *cursor,
+                              const char            *option,
+                              int64_t                default_value)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find (&iter, &cursor->opts, option)) {
+      return bson_iter_as_int64 (&iter);
+   }
+
+   return default_value;
+}
+
+
+bool
+_mongoc_cursor_get_opt_bool (const mongoc_cursor_t *cursor,
+                             const char            *option)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find (&iter, &cursor->opts, option)) {
+      return bson_iter_as_bool (&iter);
+   }
+
+   return false;
+}
+
+
 int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
+   int64_t limit;
+   int64_t batch_size;
    int64_t n_return;
 
    if (cursor->is_command) {
       /* commands always have n_return of 1 */
       return 1;
-   } else if (cursor->limit < 0) {
-      n_return = cursor->limit;
-   } else if (cursor->limit) {
-      int64_t remaining = cursor->limit - cursor->count;
+   }
+
+   limit = mongoc_cursor_get_limit (cursor);
+   batch_size = mongoc_cursor_get_batch_size (cursor);
+
+   if (limit < 0) {
+      n_return = limit;
+   } else if (limit) {
+      int64_t remaining = limit - cursor->count;
       BSON_ASSERT (remaining > 0);
 
-      if (cursor->batch_size) {
-         n_return = BSON_MIN (cursor->batch_size, remaining);
+      if (batch_size) {
+         n_return = BSON_MIN (batch_size, remaining);
       } else {
          /* batch_size 0 means accept the default */
          n_return = remaining;
       }
    } else {
-      n_return = cursor->batch_size;
+      n_return = batch_size;
    }
 
    if (n_return < INT32_MIN) {
@@ -458,6 +514,7 @@ _mongoc_cursor_new (mongoc_client_t             *client,
    
    if (filter) {
       bson_copy_to(filter, &cursor->filter);
+      cursor->with_opts = true;
    } else {
       bson_init(&cursor->filter);
    }
@@ -579,13 +636,21 @@ bool
 _use_find_command (const mongoc_cursor_t *cursor,
                    const mongoc_server_stream_t *server_stream)
 {
+   bool exhaust_option;
+
+   if (cursor->with_opts) {
+      exhaust_option = _mongoc_cursor_get_opt_bool (cursor, "exhaust");
+   } else {
+      exhaust_option = cursor->flags & MONGOC_QUERY_EXHAUST;
+   }
+
    /* Find, getMore And killCursors Commands Spec: "the find command cannot be
     * used to execute other commands" and "the find command does not support the
     * exhaust flag."
     */
    return server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
           !cursor->is_command &&
-          !(cursor->flags & MONGOC_QUERY_EXHAUST);
+          !exhaust_option;
 }
 
 
@@ -1137,6 +1202,7 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
    const char *command_field;
    int len;
    const bson_value_t *value;
+   int64_t limit;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command, "find", 4, collection, collection_len);
@@ -1178,12 +1244,14 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
       bson_append_int64 (command, "skip", 4, cursor->skip);
    }
 
-   if (cursor->limit) {
-      if (cursor->limit < 0) {
+   limit = mongoc_cursor_get_limit (cursor);
+
+   if (limit) {
+      if (limit < 0) {
          bson_append_bool (command, "singleBatch", 11, true);
       }
 
-      bson_append_int64 (command, "limit", 5, labs(cursor->limit));
+      bson_append_int64 (command, "limit", 5, labs (limit));
    }
 
    if (cursor->batch_size) {
@@ -1554,6 +1622,7 @@ bool
 _mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      const bson_t    **bson)
 {
+   int64_t limit;
    const bson_t *b = NULL;
 
    ENTRY;
@@ -1568,7 +1637,9 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * If we reached our limit, make sure we mark this as done and do not try to
     * make further progress.
     */
-   if (cursor->limit && cursor->count >= labs(cursor->limit)) {
+   limit = mongoc_cursor_get_limit (cursor);
+
+   if (limit && cursor->count >= labs (limit)) {
       cursor->done = true;
       RETURN (false);
    }
@@ -1791,6 +1862,13 @@ mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor,
                               uint32_t         batch_size)
 {
    BSON_ASSERT (cursor);
+
+   if (cursor->with_opts) {
+      _mongoc_cursor_set_opt_int64 (cursor,
+                                    "batchSize",
+                                    (int64_t) batch_size);
+   }
+
    cursor->batch_size = batch_size;
 }
 
@@ -1799,7 +1877,11 @@ mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
 {
    BSON_ASSERT (cursor);
 
-   return cursor->batch_size;
+   if (cursor->with_opts) {
+      return (uint32_t) _mongoc_cursor_get_opt_int64 (cursor, "batchSize", 0);
+   }
+
+   return (uint32_t) cursor->batch_size;
 }
 
 bool
@@ -1809,6 +1891,10 @@ mongoc_cursor_set_limit (mongoc_cursor_t *cursor,
    BSON_ASSERT (cursor);
 
    if (!cursor->sent) {
+      if (cursor->with_opts) {
+         return _mongoc_cursor_set_opt_int64 (cursor, "limit", limit);
+      }
+
       cursor->limit = limit;
       return true;
    } else {
@@ -1819,7 +1905,21 @@ mongoc_cursor_set_limit (mongoc_cursor_t *cursor,
 int64_t
 mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
 {
+   int64_t limit;
+   bool single_batch;
+
    BSON_ASSERT (cursor);
+
+   if (cursor->with_opts) {
+      limit = _mongoc_cursor_get_opt_int64 (cursor, "limit", 0);
+      single_batch = _mongoc_cursor_get_opt_bool (cursor, "singleBatch");
+
+      if (limit > 0 && single_batch) {
+         limit = -limit;
+      }
+
+      return limit;
+   }
 
    return cursor->limit;
 }
@@ -1871,6 +1971,12 @@ mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t *cursor,
    BSON_ASSERT (cursor);
 
    if (!cursor->sent) {
+      if (cursor->with_opts) {
+         _mongoc_cursor_set_opt_int64 (cursor,
+                                       "maxAwaitTimeMS",
+                                       (int64_t) max_await_time_ms);
+      }
+
       cursor->max_await_time_ms = max_await_time_ms;
    }
 }
@@ -1878,7 +1984,17 @@ mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t *cursor,
 uint32_t
 mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor)
 {
+   bson_iter_t iter;
+
    BSON_ASSERT (cursor);
+
+   if (cursor->with_opts) {
+      if (bson_iter_init_find (&iter, &cursor->opts, "maxAwaitTimeMS")) {
+         return (uint32_t) bson_iter_as_int64 (&iter);
+      }
+
+      return 0;
+   }
 
    return cursor->max_await_time_ms;
 }
