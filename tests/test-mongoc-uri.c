@@ -823,6 +823,53 @@ test_mongoc_uri_read_concern (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_mongoc_uri_long_hostname (void)
+{
+   char *host;
+   char *host_and_port;
+   size_t len = BSON_HOST_NAME_MAX;
+   char *uri_str;
+   mongoc_uri_t *uri;
+
+   /* hostname of exactly maximum length */
+   host = bson_malloc (len + 1);
+   memset (host, 'a', len);
+   host[len] = '\0';
+   host_and_port = bson_strdup_printf ("%s:12345", host);
+   uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
+   uri = mongoc_uri_new (uri_str);
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, host_and_port);
+
+   mongoc_uri_destroy (uri);
+   uri = mongoc_uri_new_for_host_port (host, 12345);
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, host_and_port);
+
+   mongoc_uri_destroy (uri);
+   bson_free (host_and_port);
+   bson_free (host);
+
+   /* hostname length exceeds maximum by one */
+   len++;
+   host = bson_malloc (len + 1);
+   memset (host, 'a', len);
+   host[len] = '\0';
+   host_and_port = bson_strdup_printf ("%s:12345", host);
+   uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
+
+   capture_logs (true);
+   ASSERT (!mongoc_uri_new (uri_str));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+
+   clear_captured_logs ();
+   ASSERT (!mongoc_uri_new_for_host_port (host, 12345));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+
+   bson_free (host_and_port);
+   bson_free (host);
+}
 
 void
 test_uri_install (TestSuite *suite)
@@ -836,4 +883,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add (suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
+   TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
 }

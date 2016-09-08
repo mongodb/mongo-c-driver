@@ -79,13 +79,19 @@ mongoc_uri_lowercase_hostname (const char *src,
    }
 }
 
-void
+bool
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
                         uint16_t       port)
 {
    mongoc_host_list_t *iter;
    mongoc_host_list_t *link_;
+
+   if (strlen (host) > BSON_HOST_NAME_MAX) {
+      MONGOC_ERROR ("Hostname provided in URI is too long, max is %d chars",
+                    BSON_HOST_NAME_MAX);
+      return false;
+   }
 
    link_ = (mongoc_host_list_t *)bson_malloc0(sizeof *link_);
    mongoc_uri_lowercase_hostname(host, link_->host, sizeof link_->host);
@@ -107,6 +113,8 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    } else {
       uri->hosts = link_;
    }
+
+   return true;
 }
 
 /*
@@ -234,6 +242,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    const char *portstr;
    const char *end_host;
    char *hostname;
+   bool r;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
       if (!mongoc_uri_parse_port(&port, portstr + 1)) {
@@ -248,10 +257,10 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
       return false;
    }
 
-   mongoc_uri_append_host (uri, hostname, port);
+   r = mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
-   return true;
+   return r;
 }
 
 
@@ -262,6 +271,7 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
    uint16_t port;
    const char *end_host;
    char *hostname;
+   bool r;
 
    if (*str == '[' && strchr (str, ']')) {
       return mongoc_uri_parse_host6 (uri, str);
@@ -285,10 +295,10 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
       return false;
    }
 
-   mongoc_uri_append_host(uri, hostname, port);
+   r = mongoc_uri_append_host (uri, hostname, port);
    bson_free(hostname);
 
-   return true;
+   return r;
 }
 
 
@@ -1192,7 +1202,10 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    copy->write_concern = mongoc_write_concern_copy (uri->write_concern);
 
    for (iter = uri->hosts; iter; iter = iter->next) {
-      mongoc_uri_append_host (copy, iter->host, iter->port);
+      if (!mongoc_uri_append_host (copy, iter->host, iter->port)) {
+         mongoc_uri_destroy (copy);
+         return NULL;
+      }
    }
 
    bson_copy_to (&uri->options, &copy->options);
