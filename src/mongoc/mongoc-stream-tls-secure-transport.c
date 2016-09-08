@@ -436,6 +436,17 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    BSON_ASSERT(base_stream);
    BSON_ASSERT(opt);
 
+   if (opt->ca_dir) {
+      MONGOC_ERROR("Setting mongoc_ssl_opt_t.ca_dir has no effect when built "
+                   "against Secure Transport");
+      RETURN (false);
+   }
+   if (opt->crl_file) {
+      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built "
+                   "against Secure Transport");
+      RETURN (false);
+   }
+
 
    secure_transport = (mongoc_stream_tls_secure_transport_t *)bson_malloc0 (sizeof *secure_transport);
 
@@ -467,15 +478,6 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
 
    mongoc_secure_transport_setup_certificate (secure_transport, opt);
    mongoc_secure_transport_setup_ca (secure_transport, opt);
-
-   if (opt->ca_dir) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
-            "Secure Transport");
-   }
-   if (opt->crl_file) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
-            "Secure Transport");
-   }
 
    if (client) {
       SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, opt->weak_cert_validation);

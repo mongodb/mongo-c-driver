@@ -52,6 +52,7 @@ mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
 
    if (tls_config_set_keypair_mem (libressl->config, file, file_len, file, file_len) == -1) {
       MONGOC_ERROR("%s", tls_config_error (libressl->config));
+      return false;
    }
 
    return true;

@@ -443,6 +443,11 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t  *base_stream,
    BSON_ASSERT(opt);
 
 
+   if (opt->crl_file) {
+      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built "
+                   "against libtls");
+      RETURN (false);
+   }
    libressl = (mongoc_stream_tls_libressl_t *)bson_malloc0 (sizeof *libressl);
 
    tls = (mongoc_stream_tls_t *)bson_malloc0 (sizeof *tls);
@@ -476,7 +481,6 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t  *base_stream,
 
    mongoc_libressl_setup_certificate (libressl, opt);
    mongoc_libressl_setup_ca (libressl, opt);
-   //mongoc_libressl_setup_crl (libressl, opt);
    {
       mongoc_stream_t *stream = base_stream;
 
