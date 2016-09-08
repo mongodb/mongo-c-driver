@@ -43,7 +43,6 @@ mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
   <section id="return">
     <title>Returns</title>
     <p>A newly allocated <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use. If invalid parameters are supplied, <code>NULL</code> may be returned.</p>
-    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
   </section>
 
   <section id="examples">
@@ -123,21 +122,23 @@ cursor = mongoc_collection_find_with_opts (collection, filter, read_prefs, opts)
       <tbody>
       <!-- common options at the top -->
        <tr><td><p><code>projection</code></p></td><td><p>document</p> <!-- downgraded to "fields" --> </td><td><p><code>max</code></p></td><td><p>document</p></td> </tr>
-       <tr><td><p><code>sort</code></p></td><td><p>document</p> <!-- downgraded to $orderby --> </td><td><p><code>maxScan</code></p></td><td><p>int64</p></td> </tr>
-       <tr><td><p><code>skip</code></p></td><td><p>int64</p></td><td><p><code>maxTimeMS</code></p></td><td><p>int64</p></td> </tr>
-       <tr><td><p><code>limit</code></p></td><td><p>int64</p></td><td><p><code>min</code></p></td><td><p>document</p></td> </tr>
+       <tr><td><p><code>sort</code></p></td><td><p>document</p> <!-- downgraded to $orderby --> </td><td><p><code>maxScan</code></p></td><td><p>non-negative int64</p></td> </tr>
+       <tr><td><p><code>skip</code></p></td><td><p>non-negative int64</p></td><td><p><code>maxTimeMS</code></p></td><td><p>non-negative int64</p></td> </tr>
+       <tr><td><p><code>limit</code></p></td><td><p>non-negative int64</p></td><td><p><code>min</code></p></td><td><p>document</p></td> </tr>
        <!-- less-used options alphabetically -->
-       <tr><td><p><code>batchSize</code></p></td><td><p>int64</p></td><td><p><code>noCursorTimeout</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>batchSize</code></p></td><td><p>non-negative int64</p></td><td><p><code>noCursorTimeout</code></p></td><td><p>bool</p></td> </tr>
        <tr><td><p><code>exhaust</code></p></td><td><p>bool</p></td><td><p><code>oplogReplay</code></p></td><td><p>bool</p></td> </tr>
        <tr><td><p><code>hint</code></p></td><td><p>string or document</p></td><td><p><code>returnKey</code></p></td><td><p>bool</p></td> </tr>
        <tr><td><p><code>allowPartialResults</code></p></td><td><p>bool</p></td><td><p><code>showRecordId</code></p></td><td><p>bool</p></td> <!-- downgraded to showDiskLoc --> </tr>
-       <tr><td><p><code>awaitData</code></p></td><td><p>bool</p></td><td><p><code>snapshot</code></p></td><td><p>bool</p></td> </tr>
-       <tr><td><p><code>collation</code></p></td><td><p>document</p></td><td><p><code>tailable</code></p></td><td><p>bool</p></td> </tr>
-       <tr><td><p><code>comment</code></p></td><td><p>string</p></td><td/><td/> </tr>
+       <tr><td><p><code>awaitData</code></p></td><td><p>bool</p></td><td><p><code>singleBatch</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>collation</code></p></td><td><p>document</p></td><td><p><code>snapshot</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>comment</code></p></td><td><p>string</p></td><td><p><code>tailable</code></p></td><td><p>bool</p></td> </tr>
       </tbody>
     </table>
-    <p>If <code>limit</code> is negative, the driver attempts to fetch all results in one batch.</p>
-    <p>For some options like "collation", the driver returns an error if the server version is too old to support the feature.</p>
+    <p>
+      For some options like "collation", the driver returns an error if the server version is too old to support the feature.
+      Any fields in <code>opts</code> that are not listed here are passed to the server unmodified.
+    </p>
   </section>
 
   <section id="seealso">
