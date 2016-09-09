@@ -37,7 +37,8 @@ bulk_collation (mongoc_collection_t *collection)
    mongoc_bulk_operation_update_one_with_opts (bulk,
                                                selector,
                                                update,
-                                               opts);
+                                               opts,
+                                               &error);
 
    ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
 

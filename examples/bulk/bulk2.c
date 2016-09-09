@@ -33,7 +33,7 @@ bulk2 (mongoc_collection_t *collection)
    /* {_id: 1} => {$set: {foo: "bar"}} */
    query = BCON_NEW ("_id", BCON_INT32 (1));
    doc = BCON_NEW ("$set", "{", "foo", BCON_UTF8 ("bar"), "}");
-   mongoc_bulk_operation_update_with_opts (bulk, query, doc, NULL);
+   mongoc_bulk_operation_update_with_opts (bulk, query, doc, NULL, &error);
    bson_destroy (query);
    bson_destroy (doc);
 
@@ -41,7 +41,7 @@ bulk2 (mongoc_collection_t *collection)
    opts = BCON_NEW ("upsert", BCON_BOOL (true));
    query = BCON_NEW ("_id", BCON_INT32 (4));
    doc = BCON_NEW ("$inc", "{", "j", BCON_INT32 (1), "}");
-   mongoc_bulk_operation_update_with_opts (bulk, query, doc, opts);
+   mongoc_bulk_operation_update_with_opts (bulk, query, doc, opts, &error);
    bson_destroy (query);
    bson_destroy (doc);
    bson_destroy (opts);
@@ -49,7 +49,7 @@ bulk2 (mongoc_collection_t *collection)
    /* replace {j:1} with {j:2} */
    query = BCON_NEW ("j", BCON_INT32 (1));
    doc = BCON_NEW ("j", BCON_INT32 (2));
-   mongoc_bulk_operation_replace_one_with_opts (bulk, query, doc, NULL);
+   mongoc_bulk_operation_replace_one_with_opts (bulk, query, doc, NULL, &error);
    bson_destroy (query);
    bson_destroy (doc);
 
