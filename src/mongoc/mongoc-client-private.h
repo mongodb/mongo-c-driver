@@ -64,6 +64,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_MAX_STALENESS 5
 /* first version to support writeConcern */
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5
+/* first version to support collation */
+#define WIRE_VERSION_COLLATION 5
 
 
 struct _mongoc_client_t

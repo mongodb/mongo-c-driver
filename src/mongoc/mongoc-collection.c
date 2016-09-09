@@ -1558,6 +1558,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
                | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
    int flags = uflags;
+   bson_t opts;
 
    ENTRY;
 
@@ -1586,14 +1587,18 @@ mongoc_collection_update (mongoc_collection_t          *collection,
       flags = (uint32_t)flags & ~MONGOC_UPDATE_NO_VALIDATE;
    }
 
+   bson_init (&opts);
+   BSON_APPEND_BOOL (&opts, "upsert", !!(flags & MONGOC_UPDATE_UPSERT));
+   BSON_APPEND_BOOL (&opts, "multi", !!(flags & MONGOC_UPDATE_MULTI_UPDATE));
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update (&command,
                                       selector,
                                       update,
-                                      !!(flags & MONGOC_UPDATE_UPSERT),
-                                      !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
+                                      &opts,
                                       write_flags,
                                       ++collection->client->cluster.operation_id);
+   bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (&command, collection,
                                              write_concern, &result);
@@ -1715,7 +1720,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bool multi;
+   bson_t opts;
    bool ret;
 
    ENTRY;
@@ -1729,11 +1734,12 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
       write_concern = collection->write_concern;
    }
 
-   multi = !(flags & MONGOC_REMOVE_SINGLE_REMOVE);
-
+   bson_init (&opts);
+   BSON_APPEND_INT32 (&opts, "limit", flags & MONGOC_REMOVE_SINGLE_REMOVE ? 1 : 0);
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_delete (&command, selector, multi, write_flags,
+   _mongoc_write_command_init_delete (&command, selector, &opts, write_flags,
                                       ++collection->client->cluster.operation_id);
+   bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (&command, collection,
                                              write_concern, &result);

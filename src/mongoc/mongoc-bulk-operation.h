@@ -23,7 +23,7 @@
 
 #include "mongoc-write-concern.h"
 
-#define MONGOC_BULK_WRITE_FLAGS_INIT { true, MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT }
+#define MONGOC_BULK_WRITE_FLAGS_INIT { true, MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT, 0 }
 
 BSON_BEGIN_DECLS
 
@@ -46,38 +46,43 @@ void mongoc_bulk_operation_insert                (mongoc_bulk_operation_t       
                                                   const bson_t                  *document);
 void mongoc_bulk_operation_remove                (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector);
+bool mongoc_bulk_operation_remove_with_opts      (mongoc_bulk_operation_t       *bulk,
+                                                  const bson_t                  *selector,
+                                                  const bson_t                  *opts,
+                                                  bson_error_t                  *error); /* OUT */
 void mongoc_bulk_operation_remove_one            (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector);
-void mongoc_bulk_operation_remove_with_opts      (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_remove_one_with_opts  (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
-                                                  const bson_t                  *opts);
-void mongoc_bulk_operation_remove_one_with_opts  (mongoc_bulk_operation_t       *bulk,
-                                                  const bson_t                  *selector,
-                                                  const bson_t                  *opts);
+                                                  const bson_t                  *opts,
+                                                  bson_error_t                  *error); /* OUT */
 void mongoc_bulk_operation_replace_one           (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
                                                   bool                           upsert);
-void mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
-                                                  const bson_t                  *opts);
+                                                  const bson_t                  *opts,
+                                                  bson_error_t                  *error); /* OUT */
 void mongoc_bulk_operation_update                (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
                                                   bool                           upsert);
-void mongoc_bulk_operation_update_with_opts      (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_update_with_opts      (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
-                                                  const bson_t                  *opts);
+                                                  const bson_t                  *opts,
+                                                  bson_error_t                  *error); /* OUT */
 void mongoc_bulk_operation_update_one            (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
                                                   bool                           upsert);
-void mongoc_bulk_operation_update_one_with_opts  (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_update_one_with_opts  (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
-                                                  const bson_t                  *opts);
+                                                  const bson_t                  *opts,
+                                                  bson_error_t                  *error); /* OUT */
 void mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t *bulk,
                                                            bool                     bypass);
 

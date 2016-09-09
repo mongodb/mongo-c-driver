@@ -106,8 +106,7 @@ void
 _mongoc_write_command_update_append (mongoc_write_command_t *command,
                                      const bson_t           *selector,
                                      const bson_t           *update,
-                                     bool                    upsert,
-                                     bool                    multi)
+                                     const bson_t           *opts)
 {
    const char *key;
    char keydata [16];
@@ -122,8 +121,10 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    bson_init (&doc);
    BSON_APPEND_DOCUMENT (&doc, "q", selector);
    BSON_APPEND_DOCUMENT (&doc, "u", update);
-   BSON_APPEND_BOOL (&doc, "upsert", upsert);
-   BSON_APPEND_BOOL (&doc, "multi", multi);
+   if (opts) {
+      bson_concat (&doc, opts);
+      command->flags.has_collation |= bson_has_field (opts, "collation");
+   }
 
    key = NULL;
    bson_uint32_to_string (command->n_documents, &key, keydata, sizeof keydata);
@@ -138,7 +139,8 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 
 void
 _mongoc_write_command_delete_append (mongoc_write_command_t *command,
-                                     const bson_t           *selector)
+                                     const bson_t           *selector,
+                                     const bson_t           *opts)
 {
    const char *key;
    char keydata [16];
@@ -154,7 +156,10 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 
    bson_init (&doc);
    BSON_APPEND_DOCUMENT (&doc, "q", selector);
-   BSON_APPEND_INT32 (&doc, "limit", command->u.delete_.multi ? 0 : 1);
+   if (opts) {
+      bson_concat (&doc, opts);
+      command->flags.has_collation |= bson_has_field (opts, "collation");
+   }
 
    key = NULL;
    bson_uint32_to_string (command->n_documents, &key, keydata, sizeof keydata);
@@ -197,7 +202,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
 void
 _mongoc_write_command_init_delete (mongoc_write_command_t   *command,       /* IN */
                                    const bson_t             *selector,      /* IN */
-                                   bool                      multi,         /* IN */
+                                   const bson_t             *opts,          /* IN */
                                    mongoc_bulk_write_flags_t flags,         /* IN */
                                    int64_t                   operation_id)  /* IN */
 {
@@ -209,11 +214,10 @@ _mongoc_write_command_init_delete (mongoc_write_command_t   *command,       /* I
    command->type = MONGOC_WRITE_COMMAND_DELETE;
    command->documents = bson_new ();
    command->n_documents = 0;
-   command->u.delete_.multi = (uint8_t)multi;
    command->flags = flags;
    command->operation_id = operation_id;
 
-   _mongoc_write_command_delete_append (command, selector);
+   _mongoc_write_command_delete_append (command, selector, opts);
 
    EXIT;
 }
@@ -223,8 +227,7 @@ void
 _mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* IN */
                                    const bson_t             *selector,      /* IN */
                                    const bson_t             *update,        /* IN */
-                                   bool                      upsert,        /* IN */
-                                   bool                      multi,         /* IN */
+                                   const bson_t             *opts,          /* IN */
                                    mongoc_bulk_write_flags_t flags,         /* IN */
                                    int64_t                   operation_id)  /* IN */
 {
@@ -240,7 +243,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* I
    command->flags = flags;
    command->operation_id = operation_id;
 
-   _mongoc_write_command_update_append (command, selector, update, upsert, multi);
+   _mongoc_write_command_update_append (command, selector, update, opts);
 
    EXIT;
 }
@@ -642,8 +645,13 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
       rpc.delete_.collection = ns;
-      rpc.delete_.flags = command->u.delete_.multi ? MONGOC_DELETE_NONE
-                         : MONGOC_DELETE_SINGLE_REMOVE;
+      if (bson_iter_find (&iter, "limit") && (BSON_ITER_HOLDS_INT32 (&iter) ||
+               BSON_ITER_HOLDS_INT64 (&iter))) {
+         rpc.delete_.flags = bson_iter_as_int64 (&iter) ? MONGOC_DELETE_SINGLE_REMOVE
+                                                        : MONGOC_DELETE_NONE;
+      } else {
+         rpc.delete_.flags = MONGOC_DELETE_NONE;
+      }
       rpc.delete_.selector = data;
 
       _mongoc_monitor_legacy_write (client, command, database, collection,
@@ -1219,9 +1227,24 @@ _mongoc_write_command(mongoc_write_command_t       *command,
                          "Cannot set bypassDocumentValidation for unacknowledged writes");
          EXIT;
       }
+      if (command->flags.has_collation) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set collation for unacknowledged writes");
+         EXIT;
+      }
       gLegacyWriteOps[command->type] (command, client, server_stream, database,
                                       collection, write_concern, offset,
                                       result, error);
+      EXIT;
+   }
+   if (command->flags.has_collation &&
+       server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Cannot set collation for unacknowledged writes");
       EXIT;
    }
 
@@ -1359,6 +1382,23 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                              collection, write_concern, offset,
                              result, &result->error);
    } else {
+      if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set bypassDocumentValidation for unacknowledged writes");
+         result->failed = true;
+         EXIT;
+      }
+      if (command->flags.has_collation &&
+          server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set collation for unacknowledged writes");
+         result->failed = true;
+         EXIT;
+      }
       gLegacyWriteOps[command->type] (command, client, server_stream, database,
                                       collection, write_concern, offset,
                                       result, &result->error);

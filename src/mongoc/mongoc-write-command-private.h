@@ -48,6 +48,7 @@ struct _mongoc_bulk_write_flags_t
 {
    bool ordered;
    mongoc_write_bypass_document_validation_t bypass_document_validation;
+   bool has_collation;
 };
 
 
@@ -59,9 +60,6 @@ typedef struct
    mongoc_bulk_write_flags_t flags;
    int64_t operation_id;
    union {
-      struct {
-         bool multi;
-      } delete_;
       struct {
          bool allow_bulk_op_insert;
       } insert;
@@ -99,14 +97,13 @@ void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
                                         const bson_t                  *selectors,
-                                        bool                           multi,
+                                        const bson_t                  *opts,
                                         mongoc_bulk_write_flags_t      flags,
                                         int64_t                        operation_id);
 void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         const bson_t                  *selector,
                                         const bson_t                  *update,
-                                        bool                           upsert,
-                                        bool                           multi,
+                                        const bson_t                  *opts,
                                         mongoc_bulk_write_flags_t      flags,
                                         int64_t                        operation_id);
 void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
@@ -114,11 +111,11 @@ void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
 void _mongoc_write_command_update_append (mongoc_write_command_t      *command,
                                           const bson_t                *selector,
                                           const bson_t                *update,
-                                          bool                         upsert,
-                                          bool                         multi);
+                                          const bson_t                *opts);
 
 void _mongoc_write_command_delete_append (mongoc_write_command_t *command,
-                                          const bson_t           *selector);
+                                          const bson_t           *selector,
+                                          const bson_t           *opts);
 
 void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,

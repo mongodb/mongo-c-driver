@@ -3058,6 +3058,263 @@ test_bulk_reply_w0 (void)
    mongoc_client_destroy (client);
 }
 
+typedef enum {
+   BULK_REMOVE,
+   BULK_REMOVE_ONE,
+   BULK_REPLACE_ONE,
+   BULK_UPDATE,
+   BULK_UPDATE_ONE
+} bulkop;
+
+static void
+_test_bulk_collation (int w, int wire_version, bulkop op)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   bson_t *opts;
+   const char *expect;
+
+   mock_server = mock_server_with_autoismaster (wire_version);
+   mock_server_run (mock_server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, w);
+   mongoc_write_concern_set_wtimeout (wc, 100);
+
+   opts = BCON_NEW ("collation", "{",
+         "locale", BCON_UTF8 ("en_US"),
+         "caseFirst", BCON_UTF8 ("lower"),
+   "}");
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   switch (op) {
+      case BULK_REMOVE:
+         mongoc_bulk_operation_remove_with_opts (bulk, tmp_bson ("{'_id': 1}"), opts, &error);
+         expect = "{'delete': 'test',"
+            " 'writeConcern': {'w': %d, 'wtimeout': 100},"
+            " 'ordered': true,"
+            " 'deletes': ["
+            "    {'q': {'_id': 1}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}";
+         break;
+      case BULK_REMOVE_ONE:
+         mongoc_bulk_operation_remove_one_with_opts (bulk, tmp_bson ("{'_id': 2}"), opts, &error);
+         expect = "{'delete': 'test',"
+            " 'writeConcern': {'w': %d, 'wtimeout': 100},"
+            " 'ordered': true,"
+            " 'deletes': ["
+            "    {'q': {'_id': 2}, 'limit': 1, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}";
+         break;
+      case BULK_REPLACE_ONE:
+         mongoc_bulk_operation_replace_one_with_opts (bulk, tmp_bson ("{'_id': 3}"), tmp_bson ("{'_id': 4}"), opts, &error);
+         expect = "{'update': 'test',"
+            " 'writeConcern': {'w': %d, 'wtimeout': 100},"
+            " 'ordered': true,"
+            " 'updates': ["
+            "    {'q': {'_id': 3}, 'u':  {'_id': 4}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}";
+         break;
+      case BULK_UPDATE:
+         mongoc_bulk_operation_update_with_opts (bulk, tmp_bson ("{'_id': 5}"), tmp_bson ("{'$set': {'_id': 6}}"), opts, &error);
+         expect = "{'update': 'test',"
+            " 'writeConcern': {'w': %d, 'wtimeout': 100},"
+            " 'ordered': true,"
+            " 'updates': ["
+            "    {'q': {'_id': 5}, 'u':  { '$set': {'_id': 6} }, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}";
+         break;
+      case BULK_UPDATE_ONE:
+         mongoc_bulk_operation_update_one_with_opts (bulk, tmp_bson ("{'_id': 7}"), tmp_bson ("{'$set': {'_id': 8}}"), opts, &error);
+         expect = "{'update': 'test',"
+            " 'writeConcern': {'w': %d, 'wtimeout': 100},"
+            " 'ordered': true,"
+            " 'updates': ["
+            "    {'q': {'_id': 7}, 'u':  { '$set': {'_id': 8} }, 'multi': false, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}";
+         break;
+      default:
+         BSON_ASSERT (false);
+   }
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (wire_version >= WIRE_VERSION_COLLATION && w) {
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         expect,
+         w
+      );
+
+      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      request_destroy (request);
+      ASSERT (future_get_uint32_t (future));
+      future_destroy (future);
+   } else {
+      ASSERT (!future_get_uint32_t (future));
+      future_destroy (future);
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set collation for unacknowledged writes");
+   }
+
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+static void
+_test_bulk_collation_multi (int w, int wire_version)
+{
+   mock_server_t *mock_server;
+   mongoc_write_concern_t *wc;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   bson_t *opts;
+
+   mock_server = mock_server_with_autoismaster (wire_version);
+   mock_server_run (mock_server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   opts = BCON_NEW ("collation", "{",
+         "locale", BCON_UTF8 ("en_US"),
+         "caseFirst", BCON_UTF8 ("lower"),
+   "}");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, w);
+   mongoc_write_concern_set_wtimeout (wc, 100);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   mongoc_bulk_operation_remove_with_opts (bulk, tmp_bson ("{'_id': 1}"), NULL, &error);
+   mongoc_bulk_operation_remove_with_opts (bulk, tmp_bson ("{'_id': 2}"), opts, &error);
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (wire_version >= WIRE_VERSION_COLLATION && w) {
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         "{'delete': 'test',"
+            " 'ordered': true,"
+            " 'deletes': ["
+            "    {'q': {'_id': 1}},"
+            "    {'q': {'_id': 2}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            " ]"
+         "}"
+      );
+      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      request_destroy (request);
+      ASSERT (future_get_uint32_t (future));
+      future_destroy (future);
+   } else {
+      ASSERT (!future_get_uint32_t (future));
+      future_destroy (future);
+      ASSERT_ERROR_CONTAINS(error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Cannot set collation for unacknowledged writes");
+   }
+
+
+
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_write_concern_destroy (wc);
+   mock_server_destroy (mock_server);
+}
+
+void
+test_bulk_collation_multi_w1_wire5 (void)
+{
+   _test_bulk_collation_multi (1, WIRE_VERSION_COLLATION);
+}
+
+void
+test_bulk_collation_multi_w0_wire5 (void)
+{
+   _test_bulk_collation_multi (0, WIRE_VERSION_COLLATION);
+}
+
+void
+test_bulk_collation_multi_w1_wire4 (void)
+{
+   _test_bulk_collation_multi (1, WIRE_VERSION_COLLATION-1);
+}
+
+void
+test_bulk_collation_multi_w0_wire4 (void)
+{
+   _test_bulk_collation_multi (0, WIRE_VERSION_COLLATION-1);
+}
+
+void
+test_bulk_collation_w1_wire5 (void) {
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REMOVE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REMOVE_ONE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_REPLACE_ONE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_UPDATE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION, BULK_UPDATE_ONE);
+}
+
+void
+test_bulk_collation_w0_wire5 (void) {
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REMOVE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REMOVE_ONE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_REPLACE_ONE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_UPDATE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION, BULK_UPDATE_ONE);
+}
+
+void
+test_bulk_collation_w1_wire4 (void) {
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION-1, BULK_REMOVE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION-1, BULK_REMOVE_ONE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION-1, BULK_REPLACE_ONE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION-1, BULK_UPDATE);
+   _test_bulk_collation (1, WIRE_VERSION_COLLATION-1, BULK_UPDATE_ONE);
+}
+
+void
+test_bulk_collation_w0_wire4 (void) {
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_REMOVE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_REMOVE_ONE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_REPLACE_ONE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_UPDATE);
+   _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_UPDATE_ONE);
+}
 
 void
 test_bulk_install (TestSuite *suite)
@@ -3217,4 +3474,12 @@ test_bulk_install (TestSuite *suite)
                   test_hint_pooled_command_primary);
    TestSuite_AddLive (suite, "/BulkOperation/reply_w0",
                       test_bulk_reply_w0);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/w0/wire5", test_bulk_collation_w0_wire5);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/w0/wire4", test_bulk_collation_w0_wire4);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/w1/wire5", test_bulk_collation_w1_wire5);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/w1/wire4", test_bulk_collation_w1_wire4);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire5", test_bulk_collation_multi_w0_wire5);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire5", test_bulk_collation_multi_w0_wire4);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire5);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire4);
 }
