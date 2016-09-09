@@ -177,6 +177,8 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    const char *collection;
    int collection_len;
    int64_t batch_size;
+   bool await_data;
+   int32_t max_await_time_ms;
 
    ENTRY;
 
@@ -201,10 +203,20 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       option maxAwaitTimeMS. If no maxAwaitTimeMS is specified, the driver
       SHOULD not set maxTimeMS on the getMore command."
     */
-   if (cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR &&
-       cursor->flags & MONGOC_QUERY_AWAIT_DATA &&
-       cursor->max_await_time_ms) {
-      bson_append_int32 (command, "maxTimeMS", 9, cursor->max_await_time_ms);
+   if (cursor->with_opts) {
+      await_data = _mongoc_cursor_get_opt_bool (cursor, "tailable") &&
+                   _mongoc_cursor_get_opt_bool (cursor, "awaitData");
+   } else {
+      await_data = cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR &&
+                   cursor->flags & MONGOC_QUERY_AWAIT_DATA;
+   }
+
+
+   if (await_data) {
+      max_await_time_ms = (int32_t) mongoc_cursor_get_max_await_time_ms (cursor);
+      if (max_await_time_ms) {
+         bson_append_int32 (command, "maxTimeMS", 9, max_await_time_ms);
+      }
    }
 
    RETURN (true);

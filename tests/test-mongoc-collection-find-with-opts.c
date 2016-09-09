@@ -598,6 +598,76 @@ test_exhaust (void)
 }
 
 
+static void
+test_getmore_cmd_await (void)
+{
+   bson_t *opts;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   opts = tmp_bson ("{'tailable': true,"
+                    " 'awaitData': true,"
+                    " 'maxAwaitTimeMS': {'$numberLong': '9999'}}");
+
+   /*
+    * "find" command
+    */
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
+                                              NULL, opts);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'find': 'collection', 'filter': {}}");
+
+   ASSERT (request);
+   mock_server_replies_simple (request, "{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '123'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{}]}}");
+
+   ASSERT (future_get_bool (future));
+   request_destroy (request);
+   future_destroy (future);
+
+   /*
+    * "getMore" command
+    */
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'getMore': {'$numberLong': '123'},"
+      " 'collection': 'collection',"
+      " 'maxTimeMS': {'$numberLong': '9999'}}}");
+
+   ASSERT (request);
+   mock_server_replies_simple (request, "{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '0'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'nextBatch': [{}]}}");
+
+   ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_collection_find_with_opts_install (TestSuite *suite)
 {
@@ -646,4 +716,6 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_query_flags);
    TestSuite_Add (suite, "/Collection/find_with_opts/exhaust",
                   test_exhaust);
+   TestSuite_Add (suite, "/Collection/find_with_opts/await/getmore_cmd",
+                  test_getmore_cmd_await);
 }
