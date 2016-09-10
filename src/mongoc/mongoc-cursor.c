@@ -852,7 +852,11 @@ _mongoc_cursor_flags (mongoc_cursor_t      *cursor,
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
 
-      if (!strcmp (key, "exhaust")) {
+      if (!strcmp (key, "allowPartialResults")) {
+         OPT_FLAG (MONGOC_QUERY_PARTIAL);
+      } else if (!strcmp (key, "awaitData")) {
+         OPT_FLAG (MONGOC_QUERY_AWAIT_DATA);
+      } else if (!strcmp (key, "exhaust")) {
          OPT_FLAG (MONGOC_QUERY_EXHAUST);
       } else if (!strcmp (key, "noCursorTimeout")) {
          OPT_FLAG (MONGOC_QUERY_NO_CURSOR_TIMEOUT);

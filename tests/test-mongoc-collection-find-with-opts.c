@@ -524,32 +524,48 @@ test_query_flags (void)
 
    typedef struct
    {
-      mongoc_query_flags_t flag;
-      const char          *name;
+      mongoc_query_flags_t  flag;
+      const char           *json_fragment;
    } flag_and_name_t;
 
-   /* slaveok is still in the wire protocol header, exhaust is not supported */
-   flag_and_name_t flags_and_names[] = {
-      { MONGOC_QUERY_TAILABLE_CURSOR,   "tailable"                      },
-      { MONGOC_QUERY_OPLOG_REPLAY,      "oplogReplay"                   },
-      { MONGOC_QUERY_NO_CURSOR_TIMEOUT, "noCursorTimeout"               },
-      { MONGOC_QUERY_AWAIT_DATA,        "awaitData"                     },
-      { MONGOC_QUERY_PARTIAL,           "allowPartialResults"           },
+   /* slaveok is not supported as an option, exhaust is tested separately */
+   flag_and_name_t flags_and_frags[] = {
+      {
+         MONGOC_QUERY_TAILABLE_CURSOR,
+         "'tailable': true"
+      },
+      {
+         MONGOC_QUERY_OPLOG_REPLAY,
+         "'oplogReplay': true"
+      },
+      {
+         MONGOC_QUERY_NO_CURSOR_TIMEOUT,
+         "'noCursorTimeout': true"
+      },
+      {
+         MONGOC_QUERY_PARTIAL,
+         "'allowPartialResults': true"
+      },
+      {
+         MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
+         "'tailable': true, 'awaitData': true"
+      },
    };
 
-   for (i = 0; i < (sizeof flags_and_names) / (sizeof (flag_and_name_t)); i++) {
-      opts = bson_strdup_printf ("{'%s': true}", flags_and_names[i].name);
+   for (i = 0; i < (sizeof flags_and_frags) / (sizeof (flag_and_name_t)); i++) {
+      opts = bson_strdup_printf ("{%s}", flags_and_frags[i].json_fragment);
       find_cmd = bson_strdup_printf (
-         "{'find': 'collection', 'filter': {}, '%s': true}",
-         flags_and_names[i].name);
+         "{'find': 'collection', 'filter': {}, %s}",
+         flags_and_frags[i].json_fragment);
 
       test_data.opts = opts;
-      test_data.expected_flags = flags_and_names[i].flag;
+      test_data.expected_flags = flags_and_frags[i].flag;
       test_data.expected_find_command = find_cmd;
 
       _test_collection_find_with_opts (&test_data);
 
       bson_free (find_cmd);
+      bson_free (opts);
    }
 }
 
