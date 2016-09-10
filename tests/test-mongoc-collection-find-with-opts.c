@@ -269,7 +269,7 @@ test_newoption (void)
 
    test_data.filter = "{'_id': 1}";
    test_data.opts = "{'newOption': true}";
-   test_data.expected_op_query = "{'$query': {'_id': 1}, 'newOption': true}";
+   test_data.expected_op_query = "{'$query': {'_id': 1}, '$newOption': true}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {'_id': 1}, 'newOption': true}";
 
@@ -505,10 +505,10 @@ test_unrecognized_dollar_option (void)
 {
    test_collection_find_with_opts_t test_data = { 0 };
 
-   test_data.opts = "{'$dumb': 1}";
+   test_data.opts = "{'dumb': 1}";
    test_data.expected_op_query = "{'$query': {}, '$dumb': 1}";
    test_data.expected_find_command =
-      "{'find': 'collection', 'filter': {}, '$dumb': 1}";
+      "{'find': 'collection', 'filter': {}, 'dumb': 1}";
 
    _test_collection_find_with_opts (&test_data);
 }

@@ -900,7 +900,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
    cursor = _mongoc_cursor_new (database->client, database->name,
                                 MONGOC_QUERY_SLAVE_OK, 0, 0, 0, true, NULL,
-                                NULL, NULL, NULL, NULL, NULL);
+                                NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 

@@ -390,7 +390,7 @@ test_dollar_query (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1}, {'_id': 2}]";
    test_data.query_input = "{'$query': {'_id': 1}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_op_query = "{'_id': 1}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'_id': 1}}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
@@ -420,7 +420,7 @@ test_key_named_filter (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1, 'filter': 1}, {'_id': 2, 'filter': 2}]";
    test_data.query_input = "{'$query': {'filter': 2}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_op_query = "{'filter': 2}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': 2}}";
    test_data.expected_result = "[{'_id': 2, 'filter': 2}]";
    _test_collection_find (&test_data);
@@ -433,7 +433,7 @@ test_op_query_subdoc_named_filter (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
    test_data.query_input = "{'$query': {'filter': {'i': 2}}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_op_query = "{'filter': {'i': 2}}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
    test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
    _test_collection_find (&test_data);
@@ -446,32 +446,10 @@ test_find_cmd_subdoc_named_filter (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
-   test_data.query_input = "{'filter': {'filter': {'i': 2}}}";
+   test_data.query_input = "{'filter': {'i': 2}}";
+   test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
    test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
-
-   /* this only works if you know you're talking wire version 4 */
-   test_data.requires_wire_version_4 = true;
-
-   _test_collection_find (&test_data);
-}
-
-
-/* test new-style 'filter': {'filter': {'i': 2}}, 'singleBatch': true
- * we just use singleBatch to prove that a new-style option can be passed
- * alongside 'filter'
- */
-static void
-test_find_cmd_subdoc_named_filter_with_option (void)
-{
-   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-   test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
-   test_data.query_input = "{'filter': {'filter': {'i': 2}}, 'singleBatch': true}";
-   test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}, 'singleBatch': true}";
-   test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
-
-   /* this only works if you know you're talking wire version 4 */
-   test_data.requires_wire_version_4 = true;
 
    _test_collection_find (&test_data);
 }
@@ -482,12 +460,12 @@ static void
 test_newoption (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-   test_data.query_input = "{'filter': {'_id': 1}, 'newOption': true}";
+   test_data.query_input = "{'$query': {'_id': 1}, '$newOption': true}";
+   test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'_id': 1}, 'newOption': true}";
 
    /* won't work today */
    test_data.do_live = false;
-   test_data.requires_wire_version_4 = true;
 
    _test_collection_find (&test_data);
 }
@@ -717,7 +695,7 @@ test_unrecognized_dollar_option (void)
    test_data.query_input = "{'$query': {'a': 1}, '$dumb': 1}";
    test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command =
-      "{'find': 'collection', 'filter': {'a': 1}, '$dumb': 1}";
+      "{'find': 'collection', 'filter': {'a': 1}, 'dumb': 1}";
 
    test_data.do_live = false;
    _test_collection_find (&test_data);
@@ -1104,8 +1082,6 @@ test_collection_find_install (TestSuite *suite)
                       test_op_query_subdoc_named_filter);
    TestSuite_AddLive  (suite, "/Collection/find/newoption",
                       test_newoption);
-   TestSuite_AddLive  (suite, "/Collection/find/cmd/subdoc_named_filter_with_option",
-                      test_find_cmd_subdoc_named_filter_with_option);
    TestSuite_AddLive  (suite, "/Collection/find/orderby",
                       test_orderby);
    TestSuite_AddLive  (suite, "/Collection/find/fields",
