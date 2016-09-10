@@ -843,6 +843,8 @@ _mongoc_cursor_flags (mongoc_cursor_t      *cursor,
    bson_iter_t iter;
    const char *key;
 
+   *flags = MONGOC_QUERY_NONE;
+
    if (!bson_iter_init (&iter, &cursor->opts)) {
       OPT_BSON_ERR ("Invalid 'opts' parameter.");
    }
@@ -859,6 +861,10 @@ _mongoc_cursor_flags (mongoc_cursor_t      *cursor,
       } else if (!strcmp (key, "tailable")) {
          OPT_FLAG (MONGOC_QUERY_TAILABLE_CURSOR);
       }
+   }
+
+   if (cursor->slave_ok) {
+      *flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    return true;
@@ -1047,10 +1053,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    if (!query_ptr) {
       /* invalid opts. cursor->error is set */
       GOTO (done);
-   }
-
-   if (cursor->slave_ok) {
-      flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    apply_read_preferences (cursor->read_prefs, server_stream,
