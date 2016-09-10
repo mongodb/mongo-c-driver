@@ -62,24 +62,15 @@ struct _mongoc_cursor_t
    unsigned                   has_fields      : 1;
    unsigned                   in_exhaust      : 1;
 
-   bson_t                     query;
-   bson_t                     fields;
-
    bson_t                     filter;
    bson_t                     opts;
-   bool                       with_opts;
 
    mongoc_read_concern_t     *read_concern;
    mongoc_read_prefs_t       *read_prefs;
 
    mongoc_write_concern_t    *write_concern;
 
-   mongoc_query_flags_t       flags;
-   int64_t                    skip;
-   int64_t                    limit;
    uint32_t                   count;
-   int64_t                    batch_size;
-   int64_t                    max_await_time_ms;
 
    char                       ns [140];
    uint32_t                   nslen;

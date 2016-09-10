@@ -166,7 +166,8 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 {
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
-   return _mongoc_cursor_cursorid_refresh_from_command (cursor, &cursor->query);
+   return _mongoc_cursor_cursorid_refresh_from_command (cursor,
+                                                        &cursor->filter);
 }
 
 
@@ -203,13 +204,8 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       option maxAwaitTimeMS. If no maxAwaitTimeMS is specified, the driver
       SHOULD not set maxTimeMS on the getMore command."
     */
-   if (cursor->with_opts) {
-      await_data = _mongoc_cursor_get_opt_bool (cursor, "tailable") &&
-                   _mongoc_cursor_get_opt_bool (cursor, "awaitData");
-   } else {
-      await_data = cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR &&
-                   cursor->flags & MONGOC_QUERY_AWAIT_DATA;
-   }
+   await_data = _mongoc_cursor_get_opt_bool (cursor, "tailable") &&
+                _mongoc_cursor_get_opt_bool (cursor, "awaitData");
 
 
    if (await_data) {
@@ -331,7 +327,7 @@ _mongoc_cursor_cursorid_clone (const mongoc_cursor_t *cursor)
    ENTRY;
 
    clone_ = _mongoc_cursor_clone (cursor);
-   _mongoc_cursor_cursorid_init (clone_, &cursor->query);
+   _mongoc_cursor_cursorid_init (clone_, &cursor->filter);
 
    RETURN (clone_);
 }
@@ -351,8 +347,8 @@ _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor,
 {
    ENTRY;
 
-   bson_destroy (&cursor->query);
-   bson_copy_to (command, &cursor->query);
+   bson_destroy (&cursor->filter);
+   bson_copy_to (command, &cursor->filter);
 
    cursor->iface_data = _mongoc_cursor_cursorid_new ();
 
