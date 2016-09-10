@@ -776,6 +776,34 @@ mongoc_topology_server_timestamp (mongoc_topology_t *topology,
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_get_type --
+ *
+ *      Return the topology's description's type.
+ *
+ *      NOTE: this method uses @topology's mutex.
+ *
+ * Returns:
+ *      The topology description type.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_topology_description_type_t
+_mongoc_topology_description_get_type (mongoc_topology_t *topology)
+{
+   mongoc_topology_description_type_t td_type;
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   td_type = topology->description.type;
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return td_type;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_run_background --
  *
  *       The background topology monitoring thread runs in this loop.

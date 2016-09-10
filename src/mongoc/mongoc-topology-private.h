@@ -100,6 +100,9 @@ int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology,
                                   uint32_t           id);
 
+mongoc_topology_description_type_t
+_mongoc_topology_description_get_type (mongoc_topology_t *topology);
+
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology);
 
