@@ -932,7 +932,8 @@ test_tailable_alive (void)
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
 
-   /* no next document, but still alive and could return more in the future */
+   /* no next document, but still alive and could return more in the future
+    * see CDRIVER-1530 */
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
