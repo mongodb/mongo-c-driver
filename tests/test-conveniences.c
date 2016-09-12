@@ -20,6 +20,8 @@
 #include "mongoc-array-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
+#include "mongoc-write-concern.h"
+#include "mongoc-write-concern-private.h"
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
@@ -1072,3 +1074,21 @@ match_bson_value (const bson_value_t *doc,
 
    return ret;
 }
+
+bool
+mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
+                                 bson_t                 *command)
+{
+   mongoc_write_concern_t *wc = mongoc_write_concern_copy (write_concern);
+
+   if (!bson_append_document (command, "writeConcern", 12,
+                              _mongoc_write_concern_get_bson (wc))) {
+      MONGOC_ERROR ("Could not append writeConcern to command.");
+      mongoc_write_concern_destroy (wc);
+      return false;
+   }
+
+   mongoc_write_concern_destroy (wc);
+   return true;
+}
+

@@ -1287,20 +1287,19 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 
 
 bool
-_mongoc_client_command_with_write_concern (
-   mongoc_client_t           *client,
-   const char                *db_name,
-   const bson_t              *command,
-   const mongoc_read_prefs_t *read_prefs,
-   mongoc_write_concern_t    *write_concern,
-   bson_t                    *reply,
-   bson_error_t              *error)
+_mongoc_client_command_with_opts (mongoc_client_t           *client,
+                                  const char                *db_name,
+                                  const bson_t              *command,
+                                  const bson_t              *opts,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_t                    *reply,
+                                  bson_error_t              *error)
 {
-   mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream = NULL;
-   bson_t *command_w_write_concern = NULL;
-   bson_t *reply_ptr;
+   bson_t *command_with_opts = NULL;
+   mongoc_cluster_t *cluster;
    bson_t reply_local;
+   bson_t *reply_ptr;
    bool ret;
 
    ENTRY;
@@ -1315,10 +1314,6 @@ _mongoc_client_command_with_write_concern (
       RETURN (false);
    }
 
-   if (!_mongoc_write_concern_validate (write_concern, error)) {
-      RETURN (false);
-   }
-
    cluster = &client->cluster;
 
    /* Server Selection Spec: "The generic command method has a default read
@@ -1329,21 +1324,41 @@ _mongoc_client_command_with_write_concern (
     */
    server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
 
-   if (write_concern && server_stream &&
-       server_stream->sd->max_wire_version
-       >= WIRE_VERSION_CMD_WRITE_CONCERN &&
-       !_mongoc_write_concern_is_default (write_concern)) {
-      command_w_write_concern = bson_copy (command);
-      bson_append_document (command_w_write_concern, "writeConcern", 12,
-                            _mongoc_write_concern_get_bson (write_concern));
-   }
-
    if (server_stream) {
-      ret = _mongoc_client_command_with_stream (client, db_name,
-                                                command_w_write_concern ?
-                                                command_w_write_concern :
-                                                command, server_stream,
-                                                read_prefs, reply_ptr, error);
+      bson_iter_t iter;
+
+      if (opts && bson_iter_init (&iter, opts)) {
+         command_with_opts = bson_copy (command);
+         while (bson_iter_next (&iter)) {
+            if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
+               if (!_mongoc_write_concern_iter_is_valid (&iter)) {
+                  bson_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                  "Invalid writeConcern");
+                  bson_destroy (command_with_opts);
+                  RETURN (false);
+               }
+
+               if (server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
+                  continue;
+               }
+
+            }
+            bson_append_iter (command_with_opts, bson_iter_key (&iter), -1, &iter);
+         }
+      }
+
+
+      ret = _mongoc_client_command_with_stream (client,
+                                                db_name,
+                                                command_with_opts ?
+                                                command_with_opts :
+                                                command,
+                                                server_stream,
+                                                read_prefs,
+                                                reply_ptr,
+                                                error);
    } else {
       if (reply) {
          bson_init (reply);
@@ -1352,14 +1367,14 @@ _mongoc_client_command_with_write_concern (
       ret = false;
    }
 
-   if (ret && write_concern) {
+   if (ret && command_with_opts) {
       ret = !_mongoc_parse_wc_err (reply_ptr, error);
    }
 
    mongoc_server_stream_cleanup (server_stream);
 
-   if (command_w_write_concern) {
-      bson_destroy (command_w_write_concern);
+   if (command_with_opts) {
+      bson_destroy (command_with_opts);
    }
 
    if (reply_ptr == &reply_local) {

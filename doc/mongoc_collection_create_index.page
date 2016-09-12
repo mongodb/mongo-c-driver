@@ -36,7 +36,7 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
 
   <section id="description">
     <title>Description</title>
-    <p>For more information, see <code xref="mongoc_collection_create_index_with_write_concern">mongoc_collection_create_index_with_write_concern()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter. This function also creates a local <code xref="bson:bson_t">bson_t</code> to pass in as <code>reply</code> parameter, destroying it afterward.</p>
+    <p>For more information, see <code xref="mongoc_collection_create_index_with_opts">mongoc_collection_create_index_with_opts()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter. This function also creates a local <code xref="bson:bson_t">bson_t</code> to pass in as <code>reply</code> parameter, destroying it afterward.</p>
   </section>
 
 </page>

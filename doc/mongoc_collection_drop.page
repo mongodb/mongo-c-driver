@@ -32,7 +32,7 @@ mongoc_collection_drop (mongoc_collection_t *collection,
 
   <section id="description">
     <title>Description</title>
-    <p>For more information, see <code xref="mongoc_collection_drop_with_write_concern">mongoc_collection_drop_with_write_concern()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter.</p>
+    <p>For more information, see <code xref="mongoc_collection_drop_with_opts">mongoc_collection_drop_with_opts()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="bson:bson_t">opts</code> parameter.</p>
   </section>
 
 </page>

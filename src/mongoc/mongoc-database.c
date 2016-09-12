@@ -227,15 +227,14 @@ bool
 mongoc_database_drop (mongoc_database_t *database,
                       bson_error_t      *error)
 {
-   return mongoc_database_drop_with_write_concern (
-      database, NULL, error);
+   return mongoc_database_drop_with_opts (database, NULL, error);
 }
 
 
 bool
-mongoc_database_drop_with_write_concern (mongoc_database_t      *database,
-                                         mongoc_write_concern_t *write_concern,
-                                         bson_error_t           *error)
+mongoc_database_drop_with_opts (mongoc_database_t      *database,
+                                const bson_t           *opts,
+                                bson_error_t           *error)
 {
    bool ret;
    bson_t cmd;
@@ -245,13 +244,13 @@ mongoc_database_drop_with_write_concern (mongoc_database_t      *database,
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
 
-   ret = _mongoc_client_command_with_write_concern (database->client,
-                                                    database->name,
-                                                    &cmd,
-                                                    NULL,
-                                                    write_concern,
-                                                    NULL,
-                                                    error);
+   ret = _mongoc_client_command_with_opts (database->client,
+                                           database->name,
+                                           &cmd,
+                                           opts,
+                                           NULL,
+                                           NULL,
+                                           error);
    bson_destroy(&cmd);
 
    return ret;
@@ -981,21 +980,8 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 mongoc_collection_t *
 mongoc_database_create_collection (mongoc_database_t *database,
                                    const char        *name,
-                                   const bson_t      *options,
+                                   const bson_t      *opts,
                                    bson_error_t      *error)
-{
-   return mongoc_database_create_collection_with_write_concern (
-      database, name, options, NULL, error);
-}
-
-
-mongoc_collection_t *
-mongoc_database_create_collection_with_write_concern (
-        mongoc_database_t      *database,
-        const char             *name,
-        const bson_t           *options,
-        mongoc_write_concern_t *write_concern,
-        bson_error_t           *error)
 {
    mongoc_collection_t *collection = NULL;
    bson_iter_t iter;
@@ -1014,8 +1000,8 @@ mongoc_database_create_collection_with_write_concern (
       return NULL;
    }
 
-   if (options) {
-      if (bson_iter_init_find (&iter, options, "capped")) {
+   if (opts) {
+      if (bson_iter_init_find (&iter, opts, "capped")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -1026,7 +1012,7 @@ mongoc_database_create_collection_with_write_concern (
          capped = bson_iter_bool (&iter);
       }
 
-      if (bson_iter_init_find (&iter, options, "autoIndexId") &&
+      if (bson_iter_init_find (&iter, opts, "autoIndexId") &&
           !BSON_ITER_HOLDS_BOOL (&iter)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1035,7 +1021,7 @@ mongoc_database_create_collection_with_write_concern (
          return NULL;
       }
 
-      if (bson_iter_init_find (&iter, options, "size")) {
+      if (bson_iter_init_find (&iter, opts, "size")) {
          if (!BSON_ITER_HOLDS_INT32 (&iter) &&
              !BSON_ITER_HOLDS_INT64 (&iter)) {
             bson_set_error (error,
@@ -1053,7 +1039,7 @@ mongoc_database_create_collection_with_write_concern (
          }
       }
 
-      if (bson_iter_init_find (&iter, options, "max")) {
+      if (bson_iter_init_find (&iter, opts, "max")) {
          if (!BSON_ITER_HOLDS_INT32 (&iter) &&
              !BSON_ITER_HOLDS_INT64 (&iter)) {
             bson_set_error (error,
@@ -1071,7 +1057,7 @@ mongoc_database_create_collection_with_write_concern (
          }
       }
 
-      if (bson_iter_init_find (&iter, options, "storage")) {
+      if (bson_iter_init_find (&iter, opts, "storage")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -1107,40 +1093,19 @@ mongoc_database_create_collection_with_write_concern (
             }
          }
       }
-
    }
 
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "create", name);
 
-   if (options) {
-      if (!bson_iter_init (&iter, options)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The argument \"options\" is corrupt or invalid.");
-         bson_destroy (&cmd);
-         return NULL;
-      }
-
-      while (bson_iter_next (&iter)) {
-         if (!bson_append_iter (&cmd, bson_iter_key (&iter), -1, &iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Failed to append \"options\" to create command.");
-            bson_destroy (&cmd);
-            return NULL;
-         }
-      }
-   }
-
-   if (_mongoc_client_command_with_write_concern (database->client,
-                                                  database->name,
-                                                  &cmd, NULL,
-                                                  write_concern,
-                                                  NULL, error)) {
+   if (_mongoc_client_command_with_opts (database->client,
+                                         database->name,
+                                         &cmd,
+                                         opts,
+                                         NULL,
+                                         NULL,
+                                         error)) {
       collection = _mongoc_collection_new (database->client,
                                            database->name,
                                            name,

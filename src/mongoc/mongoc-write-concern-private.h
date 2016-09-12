@@ -45,6 +45,8 @@ struct _mongoc_write_concern_t
 };
 
 
+mongoc_write_concern_t *_mongoc_write_concern_new_from_iter (bson_iter_t     *iter);
+bool _mongoc_write_concern_iter_is_valid      (bson_iter_t *iter);
 const bson_t *_mongoc_write_concern_get_gle   (mongoc_write_concern_t       *write_concern);
 const bson_t *_mongoc_write_concern_get_bson  (mongoc_write_concern_t       *write_concern);
 bool _mongoc_write_concern_is_default         (mongoc_write_concern_t       *write_concern);

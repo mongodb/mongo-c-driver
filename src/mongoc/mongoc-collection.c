@@ -300,23 +300,8 @@ mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              mongoc_query_flags_t       flags,      /* IN */
                              const bson_t              *pipeline,   /* IN */
-                             const bson_t              *options,    /* IN */
+                             const bson_t              *opts,       /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
-{
-   return mongoc_collection_aggregate_with_write_concern (collection, flags,
-                                                          pipeline, options,
-                                                          read_prefs, NULL);
-}
-
-
-mongoc_cursor_t *
-mongoc_collection_aggregate_with_write_concern (
-        mongoc_collection_t       *collection, /* IN */
-        mongoc_query_flags_t       flags,      /* IN */
-        const bson_t              *pipeline,   /* IN */
-        const bson_t              *options,    /* IN */
-        const mongoc_read_prefs_t *read_prefs,
-        mongoc_write_concern_t    *write_concern) /* IN */
 {
    mongoc_server_description_t *selected_server = NULL;
    mongoc_cursor_t *cursor;
@@ -341,10 +326,6 @@ mongoc_collection_aggregate_with_write_concern (
 
    if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
       GOTO (done); 
-   }
-
-   if (!_mongoc_write_concern_validate (write_concern, &cursor->error)) {
-      GOTO (done);
    }
 
    selected_server = mongoc_topology_select(collection->client->topology,
@@ -383,7 +364,7 @@ mongoc_collection_aggregate_with_write_concern (
    if (use_cursor) {
       bson_append_document_begin (&command, "cursor", 6, &child);
 
-      if (options && bson_iter_init (&iter, options)) {
+      if (opts && bson_iter_init (&iter, opts)) {
          while (bson_iter_next (&iter)) {
             if (BSON_ITER_IS_KEY (&iter, "batchSize") &&
                 (BSON_ITER_HOLDS_INT32 (&iter) ||
@@ -398,9 +379,11 @@ mongoc_collection_aggregate_with_write_concern (
       bson_append_document_end (&command, &child);
    }
 
-   if (options && bson_iter_init (&iter, options)) {
+   if (opts && bson_iter_init (&iter, opts)) {
       while (bson_iter_next (&iter)) {
-         if (! (BSON_ITER_IS_KEY (&iter, "batchSize") || BSON_ITER_IS_KEY (&iter, "cursor"))) {
+         if (!(BSON_ITER_IS_KEY (&iter, "batchSize") ||
+               BSON_ITER_IS_KEY (&iter, "cursor") ||
+               BSON_ITER_IS_KEY (&iter, "writeConcern"))) {
             if (!bson_append_iter (&command, bson_iter_key (&iter), -1, &iter)) {
                bson_set_error (&cursor->error,
                      MONGOC_ERROR_COMMAND,
@@ -427,9 +410,19 @@ mongoc_collection_aggregate_with_write_concern (
       BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
    }
 
-   if (write_concern &&
-       !_mongoc_write_concern_is_default (write_concern)) {
-      cursor->write_concern = mongoc_write_concern_copy (write_concern);
+   if (opts && bson_iter_init_find (&iter, opts, "writeConcern")
+         && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (!_mongoc_write_concern_iter_is_valid (&iter)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid writeConcern");
+         GOTO (done);
+      }
+
+      if (selected_server->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+         cursor->write_concern = _mongoc_write_concern_new_from_iter (&iter);
+      }
    }
 
    if (use_cursor) {
@@ -804,16 +797,16 @@ bool
 mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
                         bson_error_t        *error)      /* OUT */
 {
-   return mongoc_collection_drop_with_write_concern (collection,
-                                                     NULL,
-                                                     error);
+   return mongoc_collection_drop_with_opts (collection,
+                                            NULL,
+                                            error);
 }
 
 
 bool
-mongoc_collection_drop_with_write_concern (mongoc_collection_t    *collection,
-                                           mongoc_write_concern_t *write_concern,
-                                           bson_error_t           *error)
+mongoc_collection_drop_with_opts (mongoc_collection_t    *collection,
+                                  const bson_t           *opts,
+                                  bson_error_t           *error)
 {
    bool ret;
    bson_t cmd;
@@ -824,13 +817,13 @@ mongoc_collection_drop_with_write_concern (mongoc_collection_t    *collection,
    bson_append_utf8 (&cmd, "drop", 4, collection->collection,
                      collection->collectionlen);
 
-   ret = _mongoc_client_command_with_write_concern (collection->client,
-                                                    collection->db,
-                                                    &cmd,
-                                                    NULL,
-                                                    write_concern,
-                                                    NULL,
-                                                    error);
+   ret = _mongoc_client_command_with_opts (collection->client,
+                                           collection->db,
+                                           &cmd,
+                                           opts,
+                                           NULL,
+                                           NULL,
+                                           error);
    bson_destroy (&cmd);
 
    return ret;
@@ -858,16 +851,16 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
                               const char          *index_name, /* IN */
                               bson_error_t        *error)      /* OUT */
 {
-   return mongoc_collection_drop_index_with_write_concern (
+   return mongoc_collection_drop_index_with_opts (
       collection, index_name, NULL, error);
 }
 
 
 bool
-mongoc_collection_drop_index_with_write_concern (mongoc_collection_t    *collection,
-                                                 const char             *index_name,
-                                                 mongoc_write_concern_t *write_concern,
-                                                 bson_error_t           *error)
+mongoc_collection_drop_index_with_opts (mongoc_collection_t    *collection,
+                                        const char             *index_name,
+                                        const bson_t           *opts,
+                                        bson_error_t           *error)
 {
    bool ret;
    bson_t cmd;
@@ -880,10 +873,13 @@ mongoc_collection_drop_index_with_write_concern (mongoc_collection_t    *collect
                     collection->collectionlen);
    bson_append_utf8(&cmd, "index", -1, index_name, -1);
 
-   ret = _mongoc_client_command_with_write_concern (collection->client,
-                                                    collection->db, &cmd,
-                                                    NULL, write_concern,
-                                                    NULL, error);
+   ret = _mongoc_client_command_with_opts (collection->client,
+                                           collection->db,
+                                           &cmd,
+                                           opts,
+                                           NULL,
+                                           NULL,
+                                           error);
    bson_destroy(&cmd);
 
    return ret;
@@ -1060,7 +1056,7 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    bson_t reply;
    bool ret;
 
-   ret = mongoc_collection_create_index_with_write_concern (
+   ret = mongoc_collection_create_index_with_opts (
       collection, keys, opt, NULL, &reply, error);
 
    bson_destroy (&reply);
@@ -1068,11 +1064,11 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
 }
 
 bool
-mongoc_collection_create_index_with_write_concern (
+mongoc_collection_create_index_with_opts (
    mongoc_collection_t      *collection,
    const bson_t             *keys,
    const mongoc_index_opt_t *opt,
-   mongoc_write_concern_t   *write_concern,
+   const bson_t             *opts,
    bson_t                   *reply,
    bson_error_t             *error)
 {
@@ -1196,13 +1192,13 @@ mongoc_collection_create_index_with_write_concern (
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   ret = _mongoc_client_command_with_write_concern (collection->client,
-                                                    collection->db,
-                                                    &cmd,
-                                                    NULL,
-                                                    write_concern,
-                                                    reply,
-                                                    &local_error);
+   ret = _mongoc_client_command_with_opts (collection->client,
+                                           collection->db,
+                                           &cmd,
+                                           opts,
+                                           NULL,
+                                           reply,
+                                           &local_error);
 
    reply_initialized = true;
 
@@ -2097,19 +2093,22 @@ mongoc_collection_rename (mongoc_collection_t *collection,
                           bool                 drop_target_before_rename,
                           bson_error_t        *error)
 {
-   return mongoc_collection_rename_with_write_concern (
-      collection, new_db, new_name, NULL,
-      drop_target_before_rename, error);
+   return mongoc_collection_rename_with_opts (collection,
+                                              new_db,
+                                              new_name,
+                                              drop_target_before_rename,
+                                              NULL,
+                                              error);
 }
 
 
 bool
-mongoc_collection_rename_with_write_concern (
+mongoc_collection_rename_with_opts (
    mongoc_collection_t    *collection,
    const char             *new_db,
    const char             *new_name,
-   mongoc_write_concern_t *write_concern,
    bool                    drop_target_before_rename,
+   const bson_t           *opts,
    bson_error_t           *error)
 {
    bson_t cmd = BSON_INITIALIZER;
@@ -2139,13 +2138,13 @@ mongoc_collection_rename_with_write_concern (
       BSON_APPEND_BOOL (&cmd, "dropTarget", true);
    }
 
-   ret = _mongoc_client_command_with_write_concern (collection->client,
-                                                    "admin",
-                                                    &cmd,
-                                                    NULL,
-                                                    write_concern,
-                                                    NULL,
-                                                    error);
+   ret = _mongoc_client_command_with_opts (collection->client,
+                                           "admin",
+                                           &cmd,
+                                           opts,
+                                           NULL,
+                                           NULL,
+                                           error);
 
    if (ret) {
       if (new_db) {

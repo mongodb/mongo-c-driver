@@ -65,9 +65,8 @@ bool                          mongoc_database_command_simple       (mongoc_datab
                                                                     bson_error_t                 *error);
 bool                          mongoc_database_drop                 (mongoc_database_t            *database,
                                                                     bson_error_t                 *error);
-bool                          mongoc_database_drop_with_write_concern
-                                                                   (mongoc_database_t            *database,
-                                                                    mongoc_write_concern_t       *write_concern,
+bool                          mongoc_database_drop_with_opts       (mongoc_database_t            *database,
+                                                                    const bson_t                 *opts,
                                                                     bson_error_t                 *error);
 bool                          mongoc_database_has_collection       (mongoc_database_t            *database,
                                                                     const char                   *name,
@@ -75,12 +74,6 @@ bool                          mongoc_database_has_collection       (mongoc_datab
 mongoc_collection_t          *mongoc_database_create_collection    (mongoc_database_t            *database,
                                                                     const char                   *name,
                                                                     const bson_t                 *options,
-                                                                    bson_error_t                 *error);
-mongoc_collection_t          *mongoc_database_create_collection_with_write_concern
-                                                                   (mongoc_database_t            *database,
-                                                                    const char                   *name,
-                                                                    const bson_t                 *options,
-                                                                    mongoc_write_concern_t       *write_concern,
                                                                     bson_error_t                 *error);
 const mongoc_read_prefs_t    *mongoc_database_get_read_prefs       (const mongoc_database_t      *database);
 void                          mongoc_database_set_read_prefs       (mongoc_database_t            *database,

@@ -21,23 +21,21 @@ test_aggregate_w_write_concern (void *context) {
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
    bson_t *pipeline;
+   bson_t *opts = NULL;
    char *json;
-   bool wire_version_5;
    const bson_t *doc;
    bson_error_t error;
 
    /* set up */
    good_wc = mongoc_write_concern_new ();
    bad_wc = mongoc_write_concern_new ();
+   opts = bson_new ();
 
    client = test_framework_client_new ();
    assert (client);
    ASSERT (mongoc_client_set_error_api (client, 2));
 
    collection = mongoc_client_get_collection (client, "test", "test");
-
-   /* determine server config */
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    /* pipeline that writes to collection */
    json = bson_strdup_printf ("[{'$out': '%s'}]",
@@ -46,9 +44,11 @@ test_aggregate_w_write_concern (void *context) {
 
    /* collection aggregate with valid writeConcern: no error */
    mongoc_write_concern_set_w (good_wc, 1);
-   cursor = mongoc_collection_aggregate_with_write_concern (
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   cursor = mongoc_collection_aggregate (
            collection, MONGOC_QUERY_NONE,
-           pipeline, NULL, NULL, good_wc);
+           pipeline, opts, NULL);
    ASSERT (cursor);
    mongoc_cursor_next (cursor, &doc);
 
@@ -57,47 +57,24 @@ test_aggregate_w_write_concern (void *context) {
 
    /* writeConcern that will not pass mongoc_write_concern_is_valid */
    bad_wc->wtimeout = -10;
-   cursor = mongoc_collection_aggregate_with_write_concern (
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   cursor = mongoc_collection_aggregate (
            collection, MONGOC_QUERY_NONE,
-           pipeline, NULL, NULL, bad_wc);
+           pipeline, opts, NULL);
    ASSERT (cursor);
    ASSERT_ERROR_CONTAINS (
            cursor->error, MONGOC_ERROR_COMMAND,
            MONGOC_ERROR_COMMAND_INVALID_ARG,
-           "Invalid mongoc_write_concern_t");
+           "Invalid writeConcern");
    bad_wc->wtimeout = 0;
-
-   /* collection aggregate with invalid writeConcern: skip mongos */
-   if (!test_framework_is_mongos ()) {
-      mongoc_cursor_destroy (cursor);
-
-      mongoc_write_concern_set_w (bad_wc, 99);
-      cursor = mongoc_collection_aggregate_with_write_concern (
-              collection, MONGOC_QUERY_NONE,
-              pipeline, NULL, NULL, bad_wc);
-      ASSERT (cursor);
-
-      mongoc_cursor_next (cursor, &doc);
-
-      if (wire_version_5) {
-         if (test_framework_is_replset ()) { /* replica set */
-            ASSERT_OR_PRINT (mongoc_cursor_error (cursor, &error), error);
-            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
-                                   100, "Write Concern error:");
-         } else { /* standalone */
-            ASSERT_CMPINT (cursor->error.domain, ==, MONGOC_ERROR_SERVER);
-            ASSERT_CMPINT (cursor->error.code, ==, 2);
-         }
-      } else { /* if server wire version <= 4, no error */
-         ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-      }
-   }
 
    mongoc_write_concern_destroy (good_wc);
    mongoc_write_concern_destroy (bad_wc);
    mongoc_collection_destroy (collection);
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
+   bson_destroy (opts);
    bson_free (json);
 }
 
@@ -1363,12 +1340,14 @@ test_index (void)
    mongoc_index_opt_t opt;
    bson_error_t error;
    bson_t keys;
+   bson_t *opts = NULL;
    mongoc_write_concern_t *bad_wc;
    mongoc_write_concern_t *good_wc;
    bool wire_version_5;
    bool r;
 
    mongoc_index_opt_init(&opt);
+   opts = bson_new ();
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1401,23 +1380,27 @@ test_index (void)
 
    /* invalid writeConcern */
    bad_wc->wtimeout = -10;
-   ASSERT (!mongoc_collection_drop_index_with_write_concern (collection,
-                                                             "hello_1",
-                                                             bad_wc,
-                                                             &error));
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_drop_index_with_opts (collection,
+                                                    "hello_1",
+                                                    opts,
+                                                    &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid mongoc_write_concern_t");
+                          "Invalid writeConcern");
    bad_wc->wtimeout = 0;
    error.code = 0;
    error.domain = 0;
 
    /* valid writeConcern on all configs*/
    mongoc_write_concern_set_w (good_wc, 1);
-   ASSERT_OR_PRINT (mongoc_collection_drop_index_with_write_concern (collection,
-                                                                     "hello_1",
-                                                                     good_wc,
-                                                                     &error),
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (collection,
+                                                            "hello_1",
+                                                            opts,
+                                                            &error),
                     error);
    ASSERT (!error.code);
    ASSERT (!error.domain);
@@ -1431,10 +1414,12 @@ test_index (void)
                                                        &opt,
                                                        &error),
                        error);
-      r = mongoc_collection_drop_index_with_write_concern (collection,
-                                                           "hello_1",
-                                                           bad_wc,
-                                                           &error);
+      bson_reinit (opts);
+      mongoc_write_concern_append_bad (bad_wc, opts);
+      r = mongoc_collection_drop_index_with_opts (collection,
+                                                  "hello_1",
+                                                  opts,
+                                                  &error);
       if (wire_version_5) {
          ASSERT (!r);
 
@@ -1456,6 +1441,7 @@ test_index (void)
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    bson_destroy (&keys);
+   bson_destroy (opts);
    mongoc_write_concern_destroy (bad_wc);
    mongoc_write_concern_destroy (good_wc);
    mongoc_collection_destroy(collection);
@@ -1475,10 +1461,12 @@ test_index_w_write_concern ()
    bson_error_t error;
    bson_t keys;
    bson_t reply;
+   bson_t *opts = NULL;
    bool result;
    bool wire_version_5;
 
    mongoc_index_opt_init (&opt);
+   opts = bson_new ();
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1501,28 +1489,32 @@ test_index_w_write_concern ()
 
    /* writeConcern that will not pass validation */
    bad_wc->wtimeout = -10;
-   ASSERT (!mongoc_collection_create_index_with_write_concern (collection,
-                                                               &keys,
-                                                               &opt,
-                                                               bad_wc,
-                                                               &reply,
-                                                               &error));
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_create_index_with_opts (collection,
+                                                      &keys,
+                                                      &opt,
+                                                      opts,
+                                                      &reply,
+                                                      &error));
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid mongoc_write_concern_t");
+                          "Invalid writeConcern");
    bad_wc->wtimeout = 0;
    error.code = 0;
    error.domain = 0;
 
    /* valid writeConcern on all server configs */
    mongoc_write_concern_set_w (good_wc, 1);
-   result = mongoc_collection_create_index_with_write_concern (collection,
-                                                               &keys,
-                                                               &opt,
-                                                               good_wc,
-                                                               &reply,
-                                                               &error);
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   result = mongoc_collection_create_index_with_opts (collection,
+                                                      &keys,
+                                                      &opt,
+                                                      opts,
+                                                      &reply,
+                                                      &error);
    ASSERT_OR_PRINT (result, error);
    ASSERT (!error.code);
 
@@ -1538,13 +1530,15 @@ test_index_w_write_concern ()
 
    ASSERT (!error.code);
 
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
    if (!test_framework_is_mongos ()) {
       if (wire_version_5) {
-         ASSERT (!mongoc_collection_create_index_with_write_concern (collection,
+         ASSERT (!mongoc_collection_create_index_with_opts (collection,
                                                                      &keys,
                                                                      &opt,
-                                                                     bad_wc,
+                                                                     opts,
                                                                      &reply,
                                                                      &error));
          if (test_framework_is_replset ()) { /* replica set */
@@ -1555,10 +1549,10 @@ test_index_w_write_concern ()
             ASSERT_CMPINT (error.code, ==, 2);
          }
       } else { /* if wire version <= 4, no error */
-         result = mongoc_collection_create_index_with_write_concern (collection,
+         result = mongoc_collection_create_index_with_opts (collection,
                                                                      &keys,
                                                                      &opt,
-                                                                     bad_wc,
+                                                                     opts,
                                                                      &reply,
                                                                      &error);
          ASSERT_OR_PRINT (result, error);
@@ -1577,7 +1571,7 @@ test_index_w_write_concern ()
    bson_destroy (&reply);
 
    /* Make sure it doesn't crash with a NULL reply or writeConcern */
-   result = mongoc_collection_create_index_with_write_concern (collection,
+   result = mongoc_collection_create_index_with_opts (collection,
                                                                &keys,
                                                                &opt,
                                                                NULL,
@@ -1598,7 +1592,7 @@ test_index_w_write_concern ()
       This fails both on legacy and modern versions of the server
    */
    BSON_APPEND_UTF8 (&keys, "abc", "hallo thar");
-   result = mongoc_collection_create_index_with_write_concern (collection,
+   result = mongoc_collection_create_index_with_opts (collection,
                                                                &keys,
                                                                &opt,
                                                                NULL,
@@ -1610,7 +1604,7 @@ test_index_w_write_concern ()
    memset (&error, 0, sizeof (error));
 
    /* Try again but with reply NULL. Shouldn't crash */
-   result = mongoc_collection_create_index_with_write_concern (collection,
+   result = mongoc_collection_create_index_with_opts (collection,
                                                                &keys,
                                                                &opt,
                                                                NULL,
@@ -1629,6 +1623,7 @@ test_index_w_write_concern ()
    mongoc_write_concern_destroy (bad_wc);
    mongoc_write_concern_destroy (good_wc);
    bson_destroy (&reply);
+   bson_destroy (opts);
 }
 
 static void
@@ -2190,7 +2185,9 @@ test_drop (void)
    bool r;
    bson_error_t error;
    bson_t *doc;
+   bson_t *opts = NULL;
 
+   opts = bson_new ();
    client = test_framework_client_new ();
    ASSERT (client);
    mongoc_client_set_error_api (client, 2);
@@ -2218,21 +2215,25 @@ test_drop (void)
    ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
                                               doc, NULL, &error),
                     error);
-   ASSERT (!mongoc_collection_drop_with_write_concern (collection,
-                                                       bad_wc,
-                                                       &error));
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_drop_with_opts (collection,
+                                              opts,
+                                              &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid mongoc_write_concern_t");
+                          "Invalid writeConcern");
    bad_wc->wtimeout = 0;
    error.code = 0;
    error.domain = 0;
 
    /* valid writeConcern */
    mongoc_write_concern_set_w (good_wc, 1);
-   ASSERT_OR_PRINT (mongoc_collection_drop_with_write_concern (collection,
-                                                               good_wc,
-                                                               &error),
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_collection_drop_with_opts (collection,
+                                                      opts,
+                                                      &error),
                     error);
    ASSERT (!error.code);
    ASSERT (!error.domain);
@@ -2244,9 +2245,11 @@ test_drop (void)
       ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
                                                  doc, NULL, &error),
                        error);
-      r = mongoc_collection_drop_with_write_concern (collection,
-                                                     bad_wc,
-                                                     &error);
+      bson_reinit (opts);
+      mongoc_write_concern_append_bad (bad_wc, opts);
+      r = mongoc_collection_drop_with_opts (collection,
+                                            opts,
+                                            &error);
       if (wire_version_5) {
          ASSERT (!r);
          if (test_framework_is_replset ()) { /* replica set */
@@ -2264,6 +2267,7 @@ test_drop (void)
    }
 
    bson_destroy (doc);
+   bson_destroy (opts);
    mongoc_write_concern_destroy (good_wc);
    mongoc_write_concern_destroy (bad_wc);
    mongoc_collection_destroy(collection);
@@ -2295,6 +2299,7 @@ test_aggregate_bypass (void *context)
    client = test_framework_client_new ();
    assert (client);
 
+   return;
    dbname = gen_collection_name ("dbtest");
    collname = gen_collection_name ("data");
    database = mongoc_client_get_database (client, dbname);
@@ -2753,6 +2758,7 @@ test_rename (void)
    bson_error_t error;
    char *dbname;
    bson_t doc = BSON_INITIALIZER;
+   bson_t *opts = NULL;
    char **name;
    char **names;
    bool found;
@@ -2760,6 +2766,7 @@ test_rename (void)
    client = test_framework_client_new ();
    ASSERT (client);
    mongoc_client_set_error_api (client, 2);
+   opts = bson_new ();
 
    bad_wc = mongoc_write_concern_new ();
    good_wc = mongoc_write_concern_new ();
@@ -2792,15 +2799,17 @@ test_rename (void)
 
    /* invalid writeConcern */
    bad_wc->wtimeout = -10;
-   ASSERT (!mongoc_collection_rename_with_write_concern (collection,
-                                                         dbname,
-                                                         "test_rename.3",
-                                                         bad_wc,
-                                                         false,
-                                                         &error));
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_collection_rename_with_opts (collection,
+                                                dbname,
+                                                "test_rename.3",
+                                                false,
+                                                opts,
+                                                &error));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid mongoc_write_concern_t");
+                          "Invalid writeConcern");
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
 
    bad_wc->wtimeout = 0;
@@ -2809,12 +2818,14 @@ test_rename (void)
 
    /* valid writeConcern on all configs */
    mongoc_write_concern_set_w (good_wc, 1);
-   r = mongoc_collection_rename_with_write_concern (collection,
-                                                    dbname,
-                                                    "test_rename.3",
-                                                    good_wc,
-                                                    false,
-                                                    &error);
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   r = mongoc_collection_rename_with_opts (collection,
+                                           dbname,
+                                           "test_rename.3",
+                                           false,
+                                           opts,
+                                           &error);
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
 
@@ -2825,12 +2836,14 @@ test_rename (void)
    mongoc_write_concern_set_w (bad_wc, 99);
 
    if (!test_framework_is_mongos ()) {
-      r = mongoc_collection_rename_with_write_concern (collection,
-                                                       dbname,
-                                                       "test_rename.4",
-                                                       bad_wc,
-                                                       false,
-                                                       &error);
+      bson_reinit (opts);
+      mongoc_write_concern_append_bad (bad_wc, opts);
+      r = mongoc_collection_rename_with_opts (collection,
+                                              dbname,
+                                              "test_rename.4",
+                                              false,
+                                              opts,
+                                              &error);
       if (wire_version_5) {
          ASSERT (!r);
 
@@ -2865,6 +2878,7 @@ test_rename (void)
    mongoc_client_destroy (client);
    bson_free (dbname);
    bson_destroy (&doc);
+   bson_destroy (opts);
 }
 
 

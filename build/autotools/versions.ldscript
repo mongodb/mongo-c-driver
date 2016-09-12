@@ -332,7 +332,6 @@ LIBMONGOC_1.4 {
         mongoc_client_select_server;
         mongoc_client_set_apm_callbacks;
         mongoc_client_set_error_api;
-        mongoc_collection_aggregate_with_write_concern;
         mongoc_cursor_get_limit;
         mongoc_cursor_new_from_command_reply;
         mongoc_cursor_set_hint;
@@ -416,13 +415,12 @@ LIBMONGOC_1.5 {
         mongoc_bulk_operation_update_one_with_opts;
         mongoc_client_pool_set_appname;
         mongoc_client_set_appname;
-        mongoc_collection_create_index_with_write_concern;
-        mongoc_collection_drop_index_with_write_concern;
-        mongoc_collection_drop_with_write_concern;
+        mongoc_collection_create_index_with_opts;
+        mongoc_collection_drop_index_with_opts;
+        mongoc_collection_drop_with_opts;
         mongoc_collection_find_with_opts;
-        mongoc_collection_rename_with_write_concern;
-        mongoc_database_create_collection_with_write_concern;
-        mongoc_database_drop_with_write_concern;
+        mongoc_collection_rename_with_opts;
+        mongoc_database_drop_with_opts;
         mongoc_handshake_data_append;
         mongoc_topology_description_get_servers;
         mongoc_topology_description_has_readable_server;

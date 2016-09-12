@@ -83,6 +83,9 @@ bool match_json (const bson_t *doc,
                  const char   *json_pattern,
                  ...);
 
+bool mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
+                                      bson_t                 *command);
+
 #define ASSERT_MATCH(doc, ...) \
    do { \
       assert (match_json (doc, false, \

@@ -33,9 +33,11 @@ test_client_cmd_w_write_concern (void *context)
    bson_t *command = tmp_bson ("{'insert' : 'test', "
                                "'documents' : [{'hello' : 'world'}]}");
    bson_t reply;
+   bson_t *opts = NULL;
    bson_error_t error;
    bool wire_version_5;
 
+   opts = bson_new ();
    good_wc = mongoc_write_concern_new ();
    bad_wc = mongoc_write_concern_new ();
    client = test_framework_client_new ();
@@ -48,28 +50,32 @@ test_client_cmd_w_write_concern (void *context)
 
    /* valid writeConcern on all server configs */
    mongoc_write_concern_set_w (good_wc, 1);
-   ASSERT_OR_PRINT (_mongoc_client_command_with_write_concern (client,
-                                                               "test",
-                                                               command,
-                                                               NULL,
-                                                               good_wc,
-                                                               &reply,
-                                                               &error),
+   bson_reinit (opts);
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (_mongoc_client_command_with_opts (client,
+                                                      "test",
+                                                      command,
+                                                      opts,
+                                                      NULL,
+                                                      &reply,
+                                                      &error),
                     error);
 
    /* writeConcern that will not pass mongoc_write_concern_is_valid */
    bad_wc->wtimeout = -10;
-   ASSERT (!_mongoc_client_command_with_write_concern (client,
-                                                       "test",
-                                                       command,
-                                                       NULL,
-                                                       bad_wc,
-                                                       &reply,
-                                                       &error));
+   bson_reinit (opts);
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!_mongoc_client_command_with_opts (client,
+                                              "test",
+                                              command,
+                                              opts,
+                                              NULL,
+                                              &reply,
+                                              &error));
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid mongoc_write_concern_t");
+                          "Invalid writeConcern");
    bad_wc->wtimeout = 0;
    bson_destroy (&reply);
    error.code = 0;
@@ -78,13 +84,15 @@ test_client_cmd_w_write_concern (void *context)
    if (!test_framework_is_mongos ()) {
       if (wire_version_5) {
          mongoc_write_concern_set_w (bad_wc, 99);
-         ASSERT (!_mongoc_client_command_with_write_concern (client,
-                                                             "test",
-                                                             command,
-                                                             NULL,
-                                                             bad_wc,
-                                                             &reply,
-                                                             &error));
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+         ASSERT (!_mongoc_client_command_with_opts (client,
+                                                    "test",
+                                                    command,
+                                                    opts,
+                                                    NULL,
+                                                    &reply,
+                                                    &error));
          if (test_framework_is_replset ()) { /* replset */
             ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100,
                                    "Write Concern error:");
@@ -92,19 +100,10 @@ test_client_cmd_w_write_concern (void *context)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
-      } else { /* if wire version <= 4, no error */
-         ASSERT_OR_PRINT (_mongoc_client_command_with_write_concern (client,
-                                                                     "test",
-                                                                     command,
-                                                                     NULL,
-                                                                     bad_wc,
-                                                                     &reply,
-                                                                     &error),
-                          error);
-         ASSERT (!error.domain);
-         ASSERT (!error.code);
       }
    }
+
+   bson_destroy (opts);
 }
 
 
