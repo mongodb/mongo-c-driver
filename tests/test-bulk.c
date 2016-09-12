@@ -3375,9 +3375,9 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/BulkOperation/upsert_unordered",
                        test_upsert_unordered);
    TestSuite_AddFull (suite, "/BulkOperation/upsert_large",
-                      test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
+                      test_upsert_large, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite, "/BulkOperation/upsert_huge",
-                      test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
+                      test_upsert_huge, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_ordered",
                        test_upserted_index_ordered);
    TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_unordered",
@@ -3439,9 +3439,9 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
                   test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull (suite, "/BulkOperation/large_inserts_ordered",
-                      test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow);
+                      test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite, "/BulkOperation/large_inserts_unordered",
-                      test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow);
+                      test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/BulkOperation/numerous_ordered",
                       test_numerous_ordered);
    TestSuite_AddLive (suite, "/BulkOperation/numerous_unordered",
