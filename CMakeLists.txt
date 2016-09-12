@@ -10,7 +10,6 @@ NOTE: OpenSSL is required for authenticating to MongoDB 3.0 and later."
 option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
-option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -34,12 +33,6 @@ if (ENABLE_SASL AND SASL2_FOUND)
 else ()
    set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
    set (MONGOC_ENABLE_SASL 0)
-endif ()
-
-if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
-else ()
-   set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")

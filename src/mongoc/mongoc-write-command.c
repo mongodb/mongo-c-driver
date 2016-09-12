@@ -51,7 +51,6 @@ static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
 static const char *gCommandNames[] = { "delete", "insert", "update"};
 static const char *gCommandFields[] = { "deletes", "documents", "updates"};
-static const uint32_t gCommandFieldLens[] = { 7, 9, 7 };
 
 static int32_t
 _mongoc_write_result_merge_arrays (uint32_t               offset,
@@ -590,12 +589,13 @@ _mongoc_write_command_will_overflow (uint32_t len_so_far,
                                      int32_t  max_bson_size,
                                      int32_t  max_write_batch_size)
 {
-   /* max BSON object size + 16k bytes.
+   /* max BSON object size + 16k - 2 bytes for ending NUL bytes.
     * server guarantees there is enough room: SERVER-10643
     */
-   int32_t max_cmd_size = max_bson_size + 16384;
+   int32_t max_cmd_size = max_bson_size + 16382;
 
    BSON_ASSERT (max_bson_size);
+
 
    if (len_so_far + document_len > max_cmd_size) {
       return true;
@@ -799,7 +799,6 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    int32_t max_bson_obj_size;
    int32_t max_write_batch_size;
    int32_t min_wire_version;
-   uint32_t overhead;
    uint32_t key_len;
 
    ENTRY;
@@ -857,25 +856,18 @@ again:
                         !!command->flags.bypass_document_validation);
    }
 
-   /* 1 byte to specify array type, 1 byte for field name's null terminator */
-   overhead = cmd.len + 2 + gCommandFieldLens[command->type];
-
-   if (!_mongoc_write_command_will_overflow (overhead,
+   if (!_mongoc_write_command_will_overflow (0,
                                              command->documents->len,
                                              command->n_documents,
                                              max_bson_obj_size,
                                              max_write_batch_size)) {
       /* copy the whole documents buffer as e.g. "updates": [...] */
-      bson_append_array (&cmd,
+      BSON_APPEND_ARRAY (&cmd,
                          gCommandFields[command->type],
-                         gCommandFieldLens[command->type],
                          command->documents);
       i = command->n_documents;
    } else {
-      bson_append_array_begin (&cmd,
-                               gCommandFields[command->type],
-                               gCommandFieldLens[command->type],
-                               &ar);
+      bson_append_array_begin (&cmd, gCommandFields[command->type], -1, &ar);
 
       do {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -885,8 +877,8 @@ again:
          bson_iter_document (&iter, &len, &data);
          key_len = (uint32_t) bson_uint32_to_string (i, &key, str, sizeof str);
 
-         if (_mongoc_write_command_will_overflow (overhead,
-                                                  key_len + len + 2 + ar.len,
+         if (_mongoc_write_command_will_overflow (ar.len,
+                                                  key_len + len + 2,
                                                   i,
                                                   max_bson_obj_size,
                                                   max_write_batch_size)) {
@@ -914,8 +906,8 @@ again:
       ret = false;
    } else {
       ret = mongoc_cluster_run_command (&client->cluster, server_stream->stream,
-                                        server_stream->sd->id, MONGOC_QUERY_NONE,
-                                        database, &cmd, &reply, error);
+                                        MONGOC_QUERY_NONE, database, &cmd,
+                                        &reply, error);
 
       if (!ret) {
          result->failed = true;

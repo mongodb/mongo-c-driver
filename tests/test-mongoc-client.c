@@ -18,13 +18,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
 
-#define TRUST_DIR "tests/trust_dir"
-#define VERIFY_DIR TRUST_DIR "/verify"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_LOCALHOST TRUST_DIR "/keys/127.0.0.1.pem"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
-
 static char *
 gen_test_user (void)
 {
@@ -635,7 +628,7 @@ test_seed_list (bool rs,
 
       /* discovery should be quick despite down servers, say < 100ms */
       duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000), 100);
+      ASSERT_CMPINT ((int) (duration_usec / 1000), <, 100);
 
       bson_destroy (&reply);
 
@@ -672,8 +665,8 @@ test_seed_list (bool rs,
       /* client waited for min heartbeat to pass before reconnecting, then
        * reconnected quickly despite down servers, say < 100ms later */
       duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000),
-                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
+      ASSERT_CMPINT ((int) (duration_usec / 1000), <,
+                     MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
 
       bson_destroy (&reply);
 
@@ -953,8 +946,8 @@ test_mongoc_client_unix_domain_socket (void *context)
    assert (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
+
    mongoc_client_destroy (client);
-   bson_free (uri_str);
 }
 
 
@@ -1112,126 +1105,6 @@ test_mongoc_client_ssl_disabled (void)
 #endif
 
 
-
-#ifdef MONGOC_ENABLE_SSL
-static bool
-_cmd (mock_server_t   *server,
-      mongoc_client_t *client,
-      bool             server_replies,
-      bson_error_t    *error)
-{
-   future_t *future;
-   request_t *request;
-   bool r;
-
-   future = future_client_command_simple (client, "db", tmp_bson ("{'cmd': 1}"),
-                                          NULL, NULL, error);
-   request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
-                                           NULL);
-   ASSERT (request);
-
-   if (server_replies) {
-      mock_server_replies_simple (request, "{'ok': 1}");
-   } else {
-      mock_server_hangs_up (request);
-   }
-
-   r = future_get_bool (future);
-
-   future_destroy (future);
-   request_destroy (request);
-
-   return r;
-}
-
-
-
-static void
-_test_ssl_reconnect (bool pooled)
-{
-   mongoc_uri_t *uri;
-   mock_server_t *server;
-   mongoc_ssl_opt_t client_opts = { 0 };
-   mongoc_ssl_opt_t server_opts = { 0 };
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   bson_error_t error;
-   future_t *future;
-
-   client_opts.ca_file = CAFILE;
-
-   server_opts.ca_file = CAFILE;
-   server_opts.pem_file = PEMFILE_LOCALHOST;
-
-   server = mock_server_with_autoismaster (0);
-   mock_server_set_ssl_opts (server, &server_opts);
-   mock_server_run (server);
-
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_ssl_opts (pool, &client_opts);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_ssl_opts (client, &client_opts);
-   }
-
-   ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
-                    error);
-
-   /* man-in-the-middle: hostname switches from 127.0.0.1 to mongodb.com */
-   server_opts.pem_file = PEMFILE_NOPASS;
-   mock_server_set_ssl_opts (server, &server_opts);
-
-   /* server closes connections */
-   if (pooled) {
-      /* bg thread warns "failed to buffer", "handshake failed" */
-      suppress_one_message ();
-      suppress_one_message ();
-   }
-
-   ASSERT (!_cmd (server, client, false /* server hangs up */, &error));
-
-   /* next operation comes on a new connection, server verification fails */
-   future = future_client_command_simple (client, "db", tmp_bson ("{'cmd': 1}"),
-                                          NULL, NULL, &error);
-   ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "Failed to verify peer certificate");
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-
-   future_destroy (future);
-   mock_server_destroy (server);
-   mongoc_uri_destroy (uri);
-}
-
-
-static void
-test_ssl_reconnect_single (void)
-{
-   _test_ssl_reconnect (false);
-}
-
-
-static void
-test_ssl_reconnect_pooled (void)
-{
-   _test_ssl_reconnect (true);
-}
-#endif
-
-
 void
 test_client_install (TestSuite *suite)
 {
@@ -1276,10 +1149,6 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
-   TestSuite_Add (suite, "/Client/ssl/reconnect/single",
-                  test_ssl_reconnect_single);
-   TestSuite_Add (suite, "/Client/ssl/reconnect/pooled",
-                  test_ssl_reconnect_pooled);
 #else
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif

@@ -45,9 +45,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-uri-private.h"
-#ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
-#endif
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -117,8 +115,6 @@ _bson_error_message_printf (bson_error_t *error,
  *
  * Side effects:
  *       On success, @buffer and @reply_rpc are filled out with the reply.
- *       On failure, @error is filled out. If this was a network error
- *       and server_id is nonzero, the cluster disconnects from the server.
  *
  *--------------------------------------------------------------------------
  */
@@ -126,7 +122,6 @@ _bson_error_message_printf (bson_error_t *error,
 bool
 mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
                                 mongoc_stream_t     *stream,
-                                uint32_t             server_id,
                                 const char          *command_name,
                                 mongoc_rpc_t        *rpc,
                                 mongoc_rpc_t        *reply_rpc,
@@ -163,9 +158,6 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
                                    cluster->sockettimeoutms, error) ||
        !_mongoc_buffer_append_from_stream (buffer, stream, 4,
                                            cluster->sockettimeoutms, error)) {
-
-      mongoc_cluster_disconnect_node (cluster, server_id);
-
       /* add info about the command to writev_full's error message */
       _mongoc_get_db_name (rpc->query.collection, db);
       _bson_error_message_printf (
@@ -230,8 +222,6 @@ done:
  *
  * Side effects:
  *       @reply is set and should ALWAYS be released with bson_destroy().
- *       On failure, @error is filled out. If this was a network error
- *       and server_id is nonzero, the cluster disconnects from the server.
  *
  *--------------------------------------------------------------------------
  */
@@ -239,7 +229,6 @@ done:
 bool
 mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
                             mongoc_stream_t     *stream,
-                            uint32_t             server_id,
                             mongoc_query_flags_t flags,
                             const char          *db_name,
                             const bson_t        *command,
@@ -260,7 +249,7 @@ mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
    _mongoc_rpc_prep_command (&rpc, ns, command, flags);
 
    /* we can reuse the query rpc for the reply */
-   if (!mongoc_cluster_run_command_rpc (cluster, stream, server_id,
+   if (!mongoc_cluster_run_command_rpc (cluster, stream,
                                         _mongoc_get_command_name (command),
                                         &rpc, &rpc, &buffer, error)) {
       GOTO (done);
@@ -331,7 +320,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    bson_init (&command);
    bson_append_int32 (&command, "ismaster", 8, 1);
 
-   ret = mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+   ret = mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                      "admin", &command, reply, error);
 
    bson_destroy (&command);
@@ -525,7 +514,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
     */
    bson_init (&command);
    bson_append_int32 (&command, "getnonce", 8, 1);
-   if (!mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+   if (!mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                     auth_source, &command, &reply, error)) {
       bson_destroy (&command);
       bson_destroy (&reply);
@@ -560,7 +549,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
     * Execute the authenticate command. mongoc_cluster_run_command
     * checks for {ok: 1} in the response.
     */
-   ret = mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+   ret = mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                      auth_source, &command, &reply, error);
    if (!ret) {
       /* error->message is already set */
@@ -750,7 +739,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
                    mongoc_uri_get_username (cluster->uri),
                    sasl.step);
 
-      if (!mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+      if (!mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                        "$external", &cmd, &reply, error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
@@ -873,7 +862,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
    bson_append_utf8 (&b, "payload", 7, (const char *)buf, buflen);
    BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
 
-   ret = mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+   ret = mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                      "$external", &b, &reply, error);
 
    if (!ret) {
@@ -927,7 +916,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
    BSON_APPEND_UTF8 (&cmd, "mechanism", "MONGODB-X509");
    BSON_APPEND_UTF8 (&cmd, "user", username);
 
-   ret = mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+   ret = mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                      "$external", &cmd, &reply, error);
 
    if (!ret) {
@@ -997,7 +986,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
                    mongoc_uri_get_username (cluster->uri),
                    scram.step);
 
-      if (!mongoc_cluster_run_command (cluster, stream, 0, MONGOC_QUERY_SLAVE_OK,
+      if (!mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
                                        auth_source, &cmd, &reply, error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
@@ -1443,12 +1432,10 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    mongoc_topology_t *topology;
    mongoc_stream_t *stream;
    mongoc_topology_scanner_node_t *scanner_node;
-   int64_t timeout_ms;
    int64_t expire_at;
    bson_t reply;
 
    topology = cluster->client->topology;
-   timeout_ms = topology->connect_timeout_msec;
 
    scanner_node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
    BSON_ASSERT (scanner_node && !scanner_node->retired);
@@ -1465,8 +1452,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       }
       stream = scanner_node->stream;
 
-      expire_at = bson_get_monotonic_time() + timeout_ms * 1000;
-
+      expire_at = bson_get_monotonic_time() + topology->connect_timeout_msec * 1000;
       if (!mongoc_stream_wait (stream, expire_at)) {
          bson_set_error (error,
                          MONGOC_ERROR_STREAM,
@@ -1477,28 +1463,6 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
          mongoc_topology_scanner_node_disconnect (scanner_node, true);
          return NULL;
       }
-
-#ifdef MONGOC_ENABLE_SSL
-      if (scanner_node->ts->ssl_opts) {
-         if (!mongoc_stream_tls_do_handshake (stream, (int32_t) timeout_ms)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "TLS handshake failed.");
-            mongoc_topology_scanner_node_disconnect (scanner_node, true);
-            return NULL;
-         }
-
-         if (!mongoc_stream_tls_check_cert (stream, scanner_node->host.host)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed to verify peer certificate.");
-            mongoc_topology_scanner_node_disconnect (scanner_node, true);
-            return NULL;
-         }
-      }
-#endif
 
       if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
          mongoc_topology_scanner_node_disconnect (scanner_node, true);
@@ -2071,8 +2035,6 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
    if (scanner_node->last_used + (1000 * CHECK_CLOSED_DURATION_MSEC) < now) {
       if (mongoc_stream_check_closed (stream)) {
          mongoc_cluster_disconnect_node (cluster, server_id);
-         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                         "Stream is closed");
          return false;
       }
    }
@@ -2083,9 +2045,9 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
       BSON_APPEND_INT32 (&command, "ismaster", 1);
 
       before_ismaster = now;
-      r = mongoc_cluster_run_command (cluster, stream, server_id,
-                                      MONGOC_QUERY_SLAVE_OK, "admin", &command,
-                                      &reply, error);
+
+      r = mongoc_cluster_run_command (cluster, stream, MONGOC_QUERY_SLAVE_OK,
+                                      "admin", &command, &reply, error);
 
       now = bson_get_monotonic_time ();
 

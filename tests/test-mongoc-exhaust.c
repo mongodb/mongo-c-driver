@@ -346,10 +346,6 @@ test_cursor_set_max_await_time_ms (void)
    /* once started, cursor ignores set_max_await_time_ms () */
    mongoc_cursor_set_max_await_time_ms (cursor, 42);
    ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 typedef enum

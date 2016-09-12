@@ -220,11 +220,6 @@ test_kill_cursor_live (void)
                           MONGOC_ERROR_CURSOR,
                           16,
                           "cursor is invalid");
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_bulk_operation_destroy (bulk);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 

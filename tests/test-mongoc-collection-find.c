@@ -1,8 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-cursor-private.h>
 #include <assert.h>
-#include "mongoc-uri-private.h"
-#include "mongoc-client-private.h"
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -141,7 +139,6 @@ _test_collection_find_live (test_collection_find_t *test_data)
    bson_free (drop_cmd);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
    bson_free (collection_name);
    mongoc_client_destroy (client);
 }
@@ -237,8 +234,6 @@ _test_collection_op_query_or_find_command (
                        test_data->filename, test_data->lineno,
                        test_data->funcname, test_data->expected_result));
 
-   request_destroy (request);
-   future_destroy (future);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -285,8 +280,6 @@ _reply_to_op_query (request_t              *request,
 
    mock_server_reply_multi (request, MONGOC_REPLY_NONE, docs,
                             test_data->n_results, 0 /* cursor_id */);
-
-   bson_free (docs);
 }
 
 
@@ -997,89 +990,6 @@ test_getmore_await (void)
 }
 
 
-static void
-_test_tailable_timeout (bool pooled)
-{
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   mongoc_database_t *database;
-   char *collection_name;
-   mongoc_collection_t *collection;
-   bool r;
-   bson_error_t error;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bson_t reply;
-   
-   if (pooled) {
-      pool = test_framework_client_pool_new ();
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = test_framework_client_new ();
-   }
-   
-   database = mongoc_client_get_database (client, "test");
-   collection_name = gen_collection_name ("test");
-
-   collection = mongoc_database_get_collection (database, collection_name);
-   mongoc_collection_drop (collection, NULL);
-   mongoc_collection_destroy (collection);
-
-   collection = mongoc_database_create_collection (
-      database, collection_name,
-      tmp_bson ("{'capped': true, 'size': 10000}"), &error);
-
-   ASSERT_OR_PRINT (collection, error);
-
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
-
-   ASSERT_OR_PRINT (r, error);
-
-   client->cluster.sockettimeoutms = 100;
-   suppress_one_message ();
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
-      0, 0, 0, tmp_bson ("{'a': 1}"), NULL, NULL);
-
-   ASSERT (!mongoc_cursor_next (cursor, &doc));
-
-   client->cluster.sockettimeoutms = 30 * 1000 * 1000;
-   r = mongoc_client_command_simple (
-      client, "test", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error);
-
-   ASSERT_OR_PRINT (r, error);
-   ASSERT_HAS_FIELD (&reply, "version");
-
-   bson_destroy (&reply);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   bson_free (collection_name);
-   
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-}
-
-
-static void
-test_tailable_timeout_single (void)
-{
-   _test_tailable_timeout (false);
-}
-
-
-static void
-test_tailable_timeout_pooled (void)
-{
-   _test_tailable_timeout (true);
-}
-
-
 void
 test_collection_find_install (TestSuite *suite)
 {
@@ -1127,14 +1037,11 @@ test_collection_find_install (TestSuite *suite)
                   test_unrecognized_dollar_option);
    TestSuite_Add (suite, "/Collection/find/flags",
                   test_query_flags);
+
    TestSuite_Add (suite, "/Collection/getmore/batch_size",
                   test_getmore_batch_size);
    TestSuite_Add (suite, "/Collection/getmore/invalid_reply",
                   test_getmore_invalid_reply);
    TestSuite_Add (suite, "/Collection/getmore/await",
                   test_getmore_await);
-   TestSuite_Add (suite, "/Collection/tailable/timeout/single",
-                  test_tailable_timeout_single);
-   TestSuite_Add (suite, "/Collection/tailable/timeout/pooled",
-                  test_tailable_timeout_pooled);
 }

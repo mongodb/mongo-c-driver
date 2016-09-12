@@ -54,8 +54,7 @@ struct _mock_server_t
    int64_t start_time;
 
 #ifdef MONGOC_ENABLE_SSL
-   bool ssl;
-   mongoc_ssl_opt_t ssl_opts;
+   mongoc_ssl_opt_t *ssl_opts;
 #endif
 };
 
@@ -201,6 +200,8 @@ mock_server_down (void)
  *
  *       Set server-side SSL options before calling mock_server_run.
  *
+ *       opts should be valid for server's lifetime.
+ *
  * Returns:
  *       None.
  *
@@ -213,10 +214,7 @@ void
 mock_server_set_ssl_opts (mock_server_t *server,
                           mongoc_ssl_opt_t *opts)
 {
-   mongoc_mutex_lock (&server->mutex);
-   server->ssl = true;
-   memcpy (&server->ssl_opts, opts, sizeof *opts);
-   mongoc_mutex_unlock (&server->mutex);
+   server->ssl_opts = opts;
 }
 
 #endif
@@ -1460,17 +1458,14 @@ main_thread (void *data)
          client_stream = mongoc_stream_socket_new (client_sock);
 
 #ifdef MONGOC_ENABLE_SSL
-         mongoc_mutex_lock (&server->mutex);
-         if (server->ssl) {
+         if (server->ssl_opts) {
             client_stream = mongoc_stream_tls_new (client_stream,
-                                                   &server->ssl_opts, 0);
+                                                   server->ssl_opts, 0);
             if (!client_stream) {
-               mongoc_mutex_unlock (&server->mutex);
                perror ("Failed to attach tls stream");
                break;
             }
          }
-         mongoc_mutex_unlock (&server->mutex);
 #endif
          closure = (worker_closure_t *)bson_malloc (sizeof *closure);
          closure->server = server;
@@ -1524,23 +1519,9 @@ worker_thread (void *data)
    ssize_t i;
    autoresponder_handle_t handle;
 
-#ifdef MONGOC_ENABLE_SSL
-   bool ssl;
-#endif
-
    ENTRY;
 
    BSON_ASSERT(closure);
-
-#ifdef MONGOC_ENABLE_SSL
-   mongoc_mutex_lock (&server->mutex);
-   ssl = server->ssl;
-   mongoc_mutex_unlock (&server->mutex);
-
-   if (ssl) {
-      mongoc_stream_tls_do_handshake (client_stream, TIMEOUT);
-   }
-#endif
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&autoresponders, sizeof (autoresponder_handle_t));

@@ -1123,9 +1123,8 @@ mongoc_database_get_collection (mongoc_database_t *database,
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
 
-   return _mongoc_collection_new (database->client, database->name, collection,
-                                  database->read_prefs, database->read_concern,
-                                  database->write_concern);
+   return mongoc_client_get_collection (database->client, database->name,
+                                        collection);
 }
 
 

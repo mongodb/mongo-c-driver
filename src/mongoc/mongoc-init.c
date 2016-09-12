@@ -166,7 +166,6 @@ static void _mongoc_init_dtor (void) __attribute__((destructor));
 static void
 _mongoc_init_dtor (void)
 {
-   bson_mem_restore_vtable ();
    mongoc_cleanup ();
 }
 #endif

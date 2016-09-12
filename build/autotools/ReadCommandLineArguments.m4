@@ -10,12 +10,6 @@ AC_ARG_ENABLE(tracing,
     [],[enable_tracing="no"])
 AC_MSG_RESULT([$enable_tracing])
 
-AC_MSG_CHECKING([whether to automatic init and cleanup])
-AC_ARG_ENABLE(automatic-init-and-cleanup,
-    AC_HELP_STRING([--enable-automatic-init-and-cleanup], [turn on automatic mongoc_init() and mongoc_cleanup() [default=yes]]),
-    [],[enable_automatic_init_and_cleanup="yes"])
-AC_MSG_RESULT([$enable_automatic_init_and_cleanup])
-
 AC_MSG_CHECKING([whether to enable optimized builds])
 AC_ARG_ENABLE(optimizations, 
     AC_HELP_STRING([--enable-optimizations], [turn on build-time optimizations [default=yes]]),

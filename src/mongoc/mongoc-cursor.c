@@ -537,7 +537,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                              read_prefs_result.flags);
 
    if (!mongoc_cluster_run_command_rpc (cluster, server_stream->stream,
-                                        server_stream->sd->id,
                                         _mongoc_get_command_name (&cursor->query),
                                         &rpc, &cursor->rpc, &cursor->buffer,
                                         &cursor->error)) {

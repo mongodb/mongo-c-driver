@@ -150,8 +150,8 @@ test_mongoc_tls_crl (void)
 
    ssl_test (&copt, &sopt, "rev.mongodb.com", &cr, &sr);
 
-   ASSERT (cr.result == SSL_TEST_SSL_HANDSHAKE);
-   ASSERT (sr.result == SSL_TEST_SSL_HANDSHAKE);
+   ASSERT (cr.result == SSL_TEST_SSL_VERIFY);
+   ASSERT (sr.result == SSL_TEST_TIMEOUT);
 }
 
 

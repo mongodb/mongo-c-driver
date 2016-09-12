@@ -1329,8 +1329,6 @@ test_count_read_concern (void)
    mock_server_replies_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 42, error);
-   request_destroy (request);
-   future_destroy (future);
 
    /* readConcern: { level: majority } */
    rc = mongoc_read_concern_new ();
@@ -1349,8 +1347,7 @@ test_count_read_concern (void)
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 43, error);
    mongoc_read_concern_destroy (rc);
-   request_destroy (request);
-   future_destroy (future);
+
 
    /* readConcern: { level: local } */
    rc = mongoc_read_concern_new ();
@@ -1369,8 +1366,6 @@ test_count_read_concern (void)
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 44, error);
    mongoc_read_concern_destroy (rc);
-   request_destroy (request);
-   future_destroy (future);
 
    /* readConcern: { level: futureCompatible } */
    rc = mongoc_read_concern_new ();
@@ -1389,8 +1384,6 @@ test_count_read_concern (void)
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 45, error);
    mongoc_read_concern_destroy (rc);
-   request_destroy (request);
-   future_destroy (future);
 
    /* Setting readConcern to NULL should not send readConcern */
    rc = mongoc_read_concern_new ();
@@ -1409,8 +1402,6 @@ test_count_read_concern (void)
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 46, error);
    mongoc_read_concern_destroy (rc);
-   request_destroy (request);
-   future_destroy (future);
 
    /* Fresh read_concern should not send readConcern */
    rc = mongoc_read_concern_new ();
@@ -1427,10 +1418,8 @@ test_count_read_concern (void)
    mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
    count = future_get_int64_t (future);
    ASSERT_OR_PRINT (count == 47, error);
-
    mongoc_read_concern_destroy (rc);
-   request_destroy (request);
-   future_destroy (future);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -1719,7 +1708,6 @@ again:
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT (error.code == 16436);
-   mongoc_cursor_destroy (cursor);
 
    for (i = 0; i < 2; i++) {
       if (i % 2 == 0) {
@@ -2733,7 +2721,6 @@ test_find_read_concern (void)
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
 
    /* readConcernLevel = random */
    rc = mongoc_read_concern_new ();
@@ -2766,7 +2753,6 @@ test_find_read_concern (void)
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
 
    /* empty readConcernLevel doesn't send anything */
    rc = mongoc_read_concern_new ();
@@ -2796,7 +2782,6 @@ test_find_read_concern (void)
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
 
    /* readConcernLevel = NULL doesn't send anything */
    rc = mongoc_read_concern_new ();
@@ -2824,11 +2809,10 @@ test_find_read_concern (void)
          "    'ns': 'test.test',"
          "    'firstBatch': [{'_id': 123}]}}");
    ASSERT (future_get_bool (future));
-
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
-   mongoc_read_concern_destroy (rc);
+
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
    mock_server_destroy (server);
@@ -2935,7 +2919,7 @@ test_aggregate_read_concern (void)
    request_destroy (request);
    future_destroy (future);
 
-   mongoc_read_concern_destroy (rc);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);

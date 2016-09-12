@@ -1,7 +1,4 @@
 #include <mongoc.h>
-#include <mongoc-collection-private.h>
-#include <mongoc-write-concern-private.h>
-#include <mongoc-read-concern-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -125,7 +122,6 @@ test_command (void)
    assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
    assert (strstr (error.message, "a_non_existing_command"));
 
-   bson_destroy (&reply);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
@@ -308,46 +304,6 @@ test_get_collection_info (void)
 }
 
 static void
-test_get_collection (void)
-{
-   mongoc_client_t *client;
-   mongoc_database_t *database;
-   mongoc_write_concern_t *wc;
-   mongoc_read_concern_t *rc;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_collection_t *collection;
-
-   client = test_framework_client_new ();
-   assert (client);
-
-   database = mongoc_client_get_database (client, "test");
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, 2);
-   mongoc_database_set_write_concern (database, wc);
-
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, "majority");
-   mongoc_database_set_read_concern (database, rc);
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   mongoc_database_set_read_prefs (database, read_prefs);
-
-   collection = mongoc_database_get_collection (database, "test");
-
-   ASSERT_CMPINT32 (collection->write_concern->w, ==, 2);
-   ASSERT_CMPSTR (collection->read_concern->level, "majority");
-   ASSERT_CMPINT (collection->read_prefs->mode, ==, MONGOC_READ_SECONDARY);
-
-   mongoc_collection_destroy (collection);
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_read_concern_destroy (rc);
-   mongoc_write_concern_destroy (wc);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
-}
-
-static void
 test_get_collection_names (void)
 {
    mongoc_database_t *database;
@@ -525,8 +481,6 @@ test_database_install (TestSuite *suite)
    TestSuite_Add (suite, "/Database/create_collection", test_create_collection);
    TestSuite_Add (suite, "/Database/get_collection_info",
                   test_get_collection_info);
-   TestSuite_Add (suite, "/Database/get_collection",
-                  test_get_collection);
    TestSuite_Add (suite, "/Database/get_collection_names",
                   test_get_collection_names);
    TestSuite_Add (suite, "/Database/get_collection_names_error",

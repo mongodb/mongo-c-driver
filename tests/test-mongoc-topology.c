@@ -682,9 +682,7 @@ _test_connect_timeout (bool pooled, bool try_once)
          expected_duration_usec += 1000 * (
             connect_timeout_ms + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
 
-         if (!test_suite_valgrind ()) {
-            ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
-         }
+         ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
 
          /* single client puts server 0 in cooldown for 5 sec */
          if (pooled || !server0_in_cooldown) {
@@ -706,12 +704,10 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    duration_usec = bson_get_monotonic_time () - start;
 
-   if (!test_suite_valgrind ()) {
-      if (try_once) {
-         ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
-      } else {
-         ASSERT_ALMOST_EQUAL (duration_usec / 1000, server_selection_timeout_ms);
-      }
+   if (try_once) {
+      ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
+   } else {
+      ASSERT_ALMOST_EQUAL (duration_usec / 1000, server_selection_timeout_ms);
    }
 
    if (pooled) {
@@ -754,7 +750,7 @@ test_connect_timeout_try_once_false(void)
 
 
 static void
-test_multiple_selection_errors (void *context)
+test_multiple_selection_errors (void)
 {
    const char *uri = "mongodb://doesntexist,example.com:2/?replicaSet=rs"
       "&connectTimeoutMS=100";
@@ -815,6 +811,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
-   TestSuite_AddFull (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors, NULL, NULL, test_framework_skip_if_offline);
+   TestSuite_Add (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors);
    TestSuite_Add (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }

@@ -6,7 +6,7 @@
     <link type="guide" xref="index#api-reference" />
   </info>
 
-  <title>Version_Checks</title>
+  <title>Version Checks</title>
   <subtitle>Conditional compilation based on mongoc version</subtitle>
 
   <p>

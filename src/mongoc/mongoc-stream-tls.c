@@ -981,12 +981,6 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
       return NULL;
    }
 
-   if (opt->weak_cert_validation) {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_NONE, NULL);
-   } else {
-      SSL_CTX_set_verify (ssl_ctx, SSL_VERIFY_PEER, NULL);
-   }
-
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
    if (!bio_ssl) {
       return NULL;

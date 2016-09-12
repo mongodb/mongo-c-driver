@@ -192,11 +192,6 @@ provided to MongoDB, so an additional variable must be set to enable these tests
 
 Set this environment variable to `on` if MongoDB has enabled majority read concern.
 
-Some tests require Internet access, e.g. to check the error message when failing
-to open a MongoDB connection to example.com. Skip them with:
-
-* `MONGOC_TEST_OFFLINE`
-
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

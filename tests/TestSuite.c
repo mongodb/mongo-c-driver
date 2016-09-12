@@ -51,16 +51,12 @@
 #include "TestSuite.h"
 
 
-static int test_flags;
-
-
 #define TEST_VERBOSE   (1 << 0)
 #define TEST_NOFORK    (1 << 1)
 #define TEST_HELPONLY  (1 << 2)
 #define TEST_NOTHREADS (1 << 3)
 #define TEST_DEBUGOUTPUT (1 << 4)
 #define TEST_TRACE     (1 << 5)
-#define TEST_VALGRIND  (1 << 6)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
@@ -300,13 +296,6 @@ TestSuite_Init (TestSuite *suite,
          suite->testname = strdup (argv [++i]);
       }
    }
-
-   if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
-      suite->flags |= TEST_VALGRIND;
-   }
-
-   /* HACK: copy flags to global var */
-   test_flags = suite->flags;
 }
 
 
@@ -863,18 +852,4 @@ TestSuite_Destroy (TestSuite *suite)
    free (suite->name);
    free (suite->prgname);
    free (suite->testname);
-}
-
-
-int
-test_suite_debug_output (void)
-{
-   return 0 != (test_flags & TEST_DEBUGOUTPUT);
-}
-
-
-int
-test_suite_valgrind (void)
-{
-   return 0 != (test_flags & TEST_VALGRIND);
 }

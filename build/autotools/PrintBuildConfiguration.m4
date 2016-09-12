@@ -30,7 +30,6 @@ Build configuration:
   Compile with debug symbols (slow)                : ${enable_debug_symbols}
   Enable GCC build optimization                    : ${enable_optimizations}
   Enable automatic binary hardening                : ${enable_hardening}
-  Enable automatic init and cleanup                : ${enable_automatic_init_and_cleanup}
   Code coverage support                            : ${enable_coverage}
   Cross Compiling                                  : ${enable_crosscompile}
   Fast counters                                    : ${enable_rdtscp}

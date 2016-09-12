@@ -340,20 +340,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
          connecttimeoutms = mongoc_uri_get_option_as_int32 (
             uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
-         if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms)) {
+         if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms) ||
+             !mongoc_stream_tls_check_cert (base_stream, host->host)) {
             bson_set_error (error,
                             MONGOC_ERROR_STREAM,
                             MONGOC_ERROR_STREAM_SOCKET,
-                            "TLS handshake failed.");
-            mongoc_stream_destroy (base_stream);
-            return NULL;
-         }
-
-         if (!mongoc_stream_tls_check_cert (base_stream, host->host)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_SOCKET,
-                            "Failed to verify peer certificate.");
+                            "Failed to handshake and validate TLS certificate.");
             mongoc_stream_destroy (base_stream);
             return NULL;
          }
@@ -1252,7 +1244,6 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                            MONGOC_QUERY_NONE, &result);
 
    ret = mongoc_cluster_run_command (cluster, server_stream->stream,
-                                     server_stream->sd->id,
                                      result.flags, db_name,
                                      result.query_with_read_prefs,
                                      reply, error);
@@ -1342,7 +1333,6 @@ _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
     * killCursors command MAY be safely ignored."
     */
    mongoc_cluster_run_command (cluster, server_stream->stream,
-                               server_stream->sd->id,
                                MONGOC_QUERY_SLAVE_OK, db, &command,
                                NULL, NULL);
 
