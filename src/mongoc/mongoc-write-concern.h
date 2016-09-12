@@ -37,28 +37,34 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_write_concern_t mongoc_write_concern_t;
 
 
-mongoc_write_concern_t *mongoc_write_concern_new           (void);
-mongoc_write_concern_t *mongoc_write_concern_copy          (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_destroy       (mongoc_write_concern_t       *write_concern);
-bool                    mongoc_write_concern_get_fsync     (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_fsync     (mongoc_write_concern_t       *write_concern,
-                                                            bool                          fsync_);
-bool                    mongoc_write_concern_get_journal   (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_journal   (mongoc_write_concern_t       *write_concern,
-                                                            bool                          journal);
-int32_t                 mongoc_write_concern_get_w         (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_w         (mongoc_write_concern_t       *write_concern,
-                                                            int32_t                       w);
-const char             *mongoc_write_concern_get_wtag      (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_wtag      (mongoc_write_concern_t       *write_concern,
-                                                            const char                   *tag);
-int32_t                 mongoc_write_concern_get_wtimeout  (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t       *write_concern,
-                                                            int32_t                       wtimeout_msec);
-bool                    mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern);
-void                    mongoc_write_concern_set_wmajority (mongoc_write_concern_t       *write_concern,
-                                                            int32_t                       wtimeout_msec);
-
+mongoc_write_concern_t *mongoc_write_concern_new             (void);
+mongoc_write_concern_t *mongoc_write_concern_copy            (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_destroy         (mongoc_write_concern_t       *write_concern);
+bool                    mongoc_write_concern_get_fsync       (const mongoc_write_concern_t *write_concern)
+   BSON_GNUC_DEPRECATED;
+void                    mongoc_write_concern_set_fsync       (mongoc_write_concern_t       *write_concern,
+                                                              bool                          fsync_)
+   BSON_GNUC_DEPRECATED;
+bool                    mongoc_write_concern_get_journal     (const mongoc_write_concern_t *write_concern);
+bool                    mongoc_write_concern_journal_is_set  (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_journal     (mongoc_write_concern_t       *write_concern,
+                                                              bool                          journal);
+int32_t                 mongoc_write_concern_get_w           (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_w           (mongoc_write_concern_t       *write_concern,
+                                                              int32_t                       w);
+const char             *mongoc_write_concern_get_wtag        (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_wtag        (mongoc_write_concern_t       *write_concern,
+                                                              const char                   *tag);
+int32_t                 mongoc_write_concern_get_wtimeout    (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_wtimeout    (mongoc_write_concern_t       *write_concern,
+                                                              int32_t                       wtimeout_msec);
+bool                    mongoc_write_concern_get_wmajority   (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_wmajority   (mongoc_write_concern_t       *write_concern,
+                                                              int32_t                       wtimeout_msec);
+bool                    mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concern);
+bool                    mongoc_write_concern_is_valid        (const mongoc_write_concern_t *write_concern);
+bool                    mongoc_write_concern_append          (mongoc_write_concern_t       *write_concern,
+                                                              bson_t                       *doc);
 
 BSON_END_DECLS
 

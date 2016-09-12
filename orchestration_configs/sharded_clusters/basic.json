@@ -1,16 +1,5 @@
 {
   "id": "shard_cluster_1",
-  "configsvrs": [
-    {
-      "port": 27117
-    },
-    {
-      "port": 27118
-    },
-    {
-      "port": 27119
-    }
-  ],
   "shards": [
     {
       "id": "sh01",

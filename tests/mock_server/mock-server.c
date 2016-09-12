@@ -28,8 +28,12 @@
 #include "../test-conveniences.h"
 #include "../test-libmongoc.h"
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
-#define TIMEOUT 100
+/* /Async/ismaster_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
+#define TIMEOUT 5000
 
 
 struct _mock_server_t
@@ -54,7 +58,8 @@ struct _mock_server_t
    int64_t start_time;
 
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_ssl_opt_t *ssl_opts;
+   bool ssl;
+   mongoc_ssl_opt_t ssl_opts;
 #endif
 };
 
@@ -100,7 +105,7 @@ mock_server_new ()
 {
    mock_server_t *server = (mock_server_t *)bson_malloc0 (sizeof (mock_server_t));
 
-   server->request_timeout_msec = 10 * 1000;
+   server->request_timeout_msec = get_future_timeout_ms ();
    _mongoc_array_init (&server->autoresponders,
                        sizeof (autoresponder_handle_t));
    _mongoc_array_init (&server->worker_threads,
@@ -143,6 +148,43 @@ mock_server_with_autoismaster (int32_t max_wire_version)
    /* TODO: max_wire_version 0 is special */
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
+                                        " 'minWireVersion': 0,"
+                                        " 'maxWireVersion': %d}",
+                                        max_wire_version);
+
+   mock_server_auto_ismaster (server, ismaster);
+
+   bson_free (ismaster);
+
+   return server;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_mongos_new --
+ *
+ *       A new mock_server_t that autoresponds to ismaster as if it were a
+ *       mongos. Call mock_server_run to start it, then mock_server_get_uri
+ *       to connect.
+ *
+ * Returns:
+ *       A server you must mock_server_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mock_server_t *
+mock_mongos_new (int32_t max_wire_version)
+{
+   mock_server_t *server = mock_server_new ();
+
+   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                        " 'ismaster': true,"
+                                        " 'msg': 'isdbgrid',"
                                         " 'minWireVersion': 0,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
@@ -200,8 +242,6 @@ mock_server_down (void)
  *
  *       Set server-side SSL options before calling mock_server_run.
  *
- *       opts should be valid for server's lifetime.
- *
  * Returns:
  *       None.
  *
@@ -214,7 +254,10 @@ void
 mock_server_set_ssl_opts (mock_server_t *server,
                           mongoc_ssl_opt_t *opts)
 {
-   server->ssl_opts = opts;
+   mongoc_mutex_lock (&server->mutex);
+   server->ssl = true;
+   memcpy (&server->ssl_opts, opts, sizeof *opts);
+   mongoc_mutex_unlock (&server->mutex);
 }
 
 #endif
@@ -664,9 +707,9 @@ mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_set_rand_delay --
+ * mock_server_get_uptime_sec --
  *
- *       Whether to delay a random duration before responding.
+ *       How long since mock_server_run() was called.
  *
  *--------------------------------------------------------------------------
  */
@@ -1195,17 +1238,24 @@ mock_server_replies (request_t *request,
                      int32_t number_returned,
                      const char *docs_json)
 {
-   char *quotes_replaced = single_quotes_to_double (docs_json);
+   char *quotes_replaced;
    bson_t doc;
    bson_error_t error;
    bool r;
 
    assert (request);
 
-   r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
-   if (!r) {
-      MONGOC_WARNING ("%s", error.message);
-      return;
+   if (docs_json) {
+      quotes_replaced = single_quotes_to_double (docs_json);
+      r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
+      if (!r) {
+         MONGOC_WARNING ("%s", error.message);
+         return;
+      }
+
+      bson_free (quotes_replaced);
+   } else {
+      r = bson_init_from_json (&doc, "{}", -1, &error);
    }
 
    mock_server_reply_multi (request,
@@ -1214,7 +1264,6 @@ mock_server_replies (request_t *request,
                             1,
                             cursor_id);
    bson_destroy (&doc);
-   bson_free (quotes_replaced);
 }
 
 
@@ -1239,7 +1288,31 @@ void
 mock_server_replies_simple (request_t *request,
                             const char *docs_json)
 {
-   mock_server_replies (request, 0, 0, 0, 1, docs_json);
+   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
+}
+
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_replies_ok_and_destroys --
+ *
+ *       Respond to a client request.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Sends an OP_REPLY with "{ok: 1}" to the client.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_replies_ok_and_destroys (request_t *request)
+{
+   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, "{'ok': 1}");
+   request_destroy (request);
 }
 
 
@@ -1436,7 +1509,7 @@ main_thread (void *data)
    for (; ;) {
       client_sock = mongoc_socket_accept_ex (
             server->sock,
-            bson_get_monotonic_time () + TIMEOUT,
+            bson_get_monotonic_time () + 100 * 1000,
             &port);
 
       mongoc_mutex_lock (&server->mutex);
@@ -1458,14 +1531,18 @@ main_thread (void *data)
          client_stream = mongoc_stream_socket_new (client_sock);
 
 #ifdef MONGOC_ENABLE_SSL
-         if (server->ssl_opts) {
-            client_stream = mongoc_stream_tls_new (client_stream,
-                                                   server->ssl_opts, 0);
+         mongoc_mutex_lock (&server->mutex);
+         if (server->ssl) {
+            server->ssl_opts.weak_cert_validation = 1;
+            client_stream = mongoc_stream_tls_new_with_hostname (client_stream, NULL,
+                                                                 &server->ssl_opts, 0);
             if (!client_stream) {
+               mongoc_mutex_unlock (&server->mutex);
                perror ("Failed to attach tls stream");
                break;
             }
          }
+         mongoc_mutex_unlock (&server->mutex);
 #endif
          closure = (worker_closure_t *)bson_malloc (sizeof *closure);
          closure->server = server;
@@ -1519,9 +1596,28 @@ worker_thread (void *data)
    ssize_t i;
    autoresponder_handle_t handle;
 
+#ifdef MONGOC_ENABLE_SSL
+   bool ssl;
+#endif
+
    ENTRY;
 
    BSON_ASSERT(closure);
+
+#ifdef MONGOC_ENABLE_SSL
+   mongoc_mutex_lock (&server->mutex);
+   ssl = server->ssl;
+   mongoc_mutex_unlock (&server->mutex);
+
+   if (ssl) {
+      if (!mongoc_stream_tls_handshake_block (client_stream, "localhost", TIMEOUT, &error)) {
+         MONGOC_ERROR("Blocking TLS handshake failed: %s", error.message);
+         mongoc_stream_close (client_stream);
+         mongoc_stream_destroy (client_stream);
+         RETURN (NULL);
+      }
+   }
+#endif
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&autoresponders, sizeof (autoresponder_handle_t));
@@ -1536,10 +1632,14 @@ again:
    mongoc_mutex_unlock (&server->mutex);
 
    if (stopped) {
-      goto failure;
+      GOTO(failure);
    }
 
-   if (_mongoc_buffer_fill (&buffer, client_stream, 4, TIMEOUT, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, client_stream, 4, 100, &error) == -1) {
+      if (mongoc_stream_check_closed (client_stream)) {
+         GOTO (failure);
+      }
+
       GOTO (again);
    }
 

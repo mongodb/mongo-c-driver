@@ -30,9 +30,9 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
     <table>
       <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command to execute.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>. Otherwise, the command uses mode <code>MONGOC_READ_PRIMARY</code>.</p></td></tr>
       <tr><td><p>reply</p></td><td><p>A location to initialize a <code xref="bson:bson_t">bson_t</code>. This should be on the stack.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

@@ -8,7 +8,6 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
-#include "mongoc-tests.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 
@@ -36,25 +35,15 @@ auto_ismaster (mock_server_t *server,
 int
 should_run_fam_wc (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    if (test_framework_is_replset()) {
       return test_framework_max_wire_version_at_least (WIRE_VERSION_FAM_WRITE_CONCERN);
    }
    return 0;
 }
 
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *prefix)
-{
-   mongoc_collection_t *ret;
-   char *str;
-
-   str = gen_collection_name (prefix);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
 
 static void
 test_find_and_modify_bypass (bool bypass)
@@ -264,7 +253,7 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
 
    success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
 
-   ASSERT (success);
+   ASSERT (!success);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
 
    bson_destroy (&reply);
@@ -354,12 +343,47 @@ test_find_and_modify (void)
 }
 
 
+static void
+test_find_and_modify_opts (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_find_and_modify_opts_t *opts;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = mongoc_find_and_modify_opts_new ();
+   assert (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
+   assert (mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
+
+   future = future_collection_find_and_modify_with_opts (
+      collection, tmp_bson ("{}"), opts, NULL, &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'maxTimeMS': 42, 'foo': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
 
 
 void
 test_find_and_modify_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
+   TestSuite_AddLive (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/true",
                   test_find_and_modify_bypass_true);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/false",
@@ -371,4 +395,5 @@ test_find_and_modify_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/find_and_modify/find_and_modify/write_concern_failure",
                   test_find_and_modify_write_concern_wire_32_failure, NULL, NULL,
                   should_run_fam_wc);
+   TestSuite_Add (suite, "/find_and_modify/opts", test_find_and_modify_opts);
 }

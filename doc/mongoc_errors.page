@@ -1,0 +1,459 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="errors">
+  <info><link xref="index#errors" type="guide"/></info>
+  <title>Error Reporting</title>
+
+  <section id="description">
+    <title>Description</title>
+    <p>Many C Driver functions report errors by returning <code>false</code> or -1 and filling out a <code xref="bson:bson_error_t">bson_error_t</code> structure with an error domain, error code, and message. Use <code>domain</code> to determine which subsystem generated the error, and <code>code</code> for the specific error. <code>message</code> is a human-readable error description.</p>
+    <p>See also: <link xref="bson:errors">Handling Errors in libbson</link>.</p>
+    <table rules="all">
+      <thead>
+        <tr>
+          <td>
+            <p>Domain</p>
+          </td>
+          <td>
+            <p>Code</p>
+          </td>
+          <td>
+            <p>Description</p>
+          </td>
+        </tr>
+      </thead>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_CLIENT</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_CLIENT_TOO_BIG</code></p>
+        </td>
+        <td>
+          <p>You tried to send a message larger than the server's max message size.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_CLIENT_AUTHENTICATE</code></p>
+        </td>
+        <td>
+          <p>Wrong credentials, or failure sending or receiving authentication messages.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER</code></p>
+        </td>
+        <td>
+          <p>You tried an SSL connection but the driver was not built with SSL.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_CLIENT_IN_EXHAUST</code></p>
+        </td>
+        <td>
+          <p>You began iterating an exhaust cursor, then tried to begin another operation with the same <code xref="mongoc_client_t">mongoc_client_t</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_STREAM</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_STREAM_NAME_RESOLUTION</code></p>
+        </td>
+        <td>
+          <p>DNS failure.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_STREAM_SOCKET</code></p>
+        </td>
+        <td>
+          <p>Timeout communicating with server, or connection closed.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_STREAM_CONNECT</code></p>
+        </td>
+        <td>
+          <p>Failed to connect to server.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_PROTOCOL</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_PROTOCOL_INVALID_REPLY</code></p>
+        </td>
+        <td>
+          <p>Corrupt response from server.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</code></p>
+        </td>
+        <td>
+          <p>The server version is too old or too new to communicate with the driver.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_CURSOR</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_CURSOR_INVALID_CURSOR</code></p>
+        </td>
+        <td>
+          <p>You passed bad arguments to <code xref="mongoc_collection_find">mongoc_collection_find</code>, or you called <code xref="mongoc_cursor_next">mongoc_cursor_next</code> on a completed or failed cursor, or the cursor timed out on the server.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_QUERY</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_QUERY_FAILURE</code></p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SERVER</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_QUERY_FAILURE</code></p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SASL</code></em></p>
+        </td>
+        <td>
+          <p>A SASL error code.</p>
+        </td>
+        <td>
+          <p><code>man sasl_errors</code> for a list of codes.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_BSON</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_BSON_INVALID</code></p>
+        </td>
+        <td>
+          <p>Corrupt server reply, or you called <code xref="mongoc_collection_create_index">mongoc_collection_create_index</code> with invalid keys, or tried to insert or update with an invalid document.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_NAMESPACE</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_NAMESPACE_INVALID</code></p>
+        </td>
+        <td>
+          <p>You tried to create a collection with an invalid name.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_COMMAND</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_COMMAND_INVALID_ARG</code></p>
+        </td>
+        <td>
+          <p>Many functions set this error code when passed bad parameters. Print the error message for details.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</code></p>
+        </td>
+        <td>
+          <p>You tried to use a command option the server does not support.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_COMMAND</code></em></p>
+        </td>
+        <td>
+          <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from a command. The server error message is in <code>message</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SERVER</code></em></p>
+        </td>
+        <td>
+          <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from a command. The server error message is in <code>message</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_COLLECTION</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_COLLECTION_INSERT_FAILED</code>, <code>MONGOC_ERROR_COLLECTION_UPDATE_FAILED</code>, <code>MONGOC_ERROR_COLLECTION_DELETE_FAILED</code>.</p>
+        </td>
+        <td>
+          <p>Invalid or empty input to <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_COLLECTION</code></em></p>
+        </td>
+        <td>
+          <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SERVER</code></em></p>
+        </td>
+        <td>
+          <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
+        </td>
+        <td>
+          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_GRIDFS</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_GRIDFS_CHUNK_MISSING</code></p>
+        </td>
+        <td>
+          <p>The GridFS file is missing a document in its <code>chunks</code> collection.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_GRIDFS_INVALID_FILENAME</code></p>
+        </td>
+        <td>
+          <p>You passed a NULL filename to <code xref="mongoc_gridfs_remove_by_filename">mongoc_gridfs_remove_by_filename</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR</code></p>
+        </td>
+        <td>
+          <p>You called <code xref="mongoc_gridfs_file_set_id">mongoc_gridfs_file_set_id</code> after <code xref="mongoc_gridfs_file_save">mongoc_gridfs_file_save</code>.</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SCRAM</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_SCRAM_PROTOCOL_ERROR</code></p>
+        </td>
+        <td>
+          <p>Failure in SCRAM-SHA-1 authentication.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_SERVER_SELECTION</code></em></p>
+        </td>
+        <td>
+          <p><code>MONGOC_ERROR_SERVER_SELECTION_FAILURE</code></p>
+        </td>
+        <td>
+          <p>No replica set member or mongos is available, or none matches your <link xref="mongoc_read_prefs_t">read preference</link>, or you supplied an invalid <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p><em style="strong"><code>MONGOC_ERROR_WRITE_CONCERN</code></em></p>
+        </td>
+        <td>
+          <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
+        </td>
+        <td>
+          <p>There was a <link xref="mongoc_write_concern_t">write concern</link> error or <link xref="mongoc_write_concern_set_wtimeout">timeout</link> from the server.</p>
+        </td>
+      </tr>
+    </table>
+  </section>
+
+  <section id="error-api-version">
+  <title>Setting the Error API Version</title>
+
+  <p>The driver's error reporting began with a design flaw: when the error <em style="strong">domain</em> is <code>MONGOC_ERROR_COLLECTION</code>, <code>MONGOC_ERROR_QUERY</code>, or <code>MONGOC_ERROR_COMMAND</code>, the error <em style="strong">code</em> might originate from the server or the driver. An application cannot always know where an error originated, and therefore cannot tell what the code means.</p>
+
+  <p>For example, if <code xref="mongoc_collection_update">mongoc_collection_update</code> sets the error's domain to <code>MONGOC_ERROR_COLLECTION</code> and its code to 24, the application cannot know whether 24 is the generic driver error code <code>MONGOC_ERROR_COLLECTION_UPDATE_FAILED</code> or the specific server error code "LockTimeout".</p>
+
+  <p>To fix this flaw while preserving backward compatibility, the C Driver 1.4 introduces "Error API Versions". Version 1, the default Error API Version, maintains the flawed behavior. Version 2 adds a new error domain, <code>MONGOC_ERROR_SERVER</code>. In Version 2, error codes originating on the server always have error domain <code>MONGOC_ERROR_SERVER</code> or <code>MONGOC_ERROR_WRITE_CONCERN</code>. When the driver uses Version 2 the application can always determine the origin and meaning of error codes. New applications should use Version 2, and existing applications should be updated to use Version 2 as well.</p>
+
+  <table rules="all">
+    <thead>
+      <tr>
+        <td>
+          <p>Error Source</p>
+        </td>
+        <td>
+          <p>API Version 1</p>
+        </td>
+        <td>
+          <p>API Version 2</p>
+        </td>
+      </tr>
+    </thead>
+    <tr>
+      <td>
+        <p>
+          <code xref="mongoc_cursor_error">mongoc_cursor_error</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_QUERY</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_SERVER</code>
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><code xref="mongoc_client_command">mongoc_client_command</code>, <code xref="mongoc_database_command">mongoc_database_command</code>, and other command functions</p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_QUERY</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_SERVER</code>
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p><code xref="mongoc_collection_count_with_opts">mongoc_collection_count_with_opts</code>, <code xref="mongoc_client_get_database_names">mongoc_client_get_database_names</code>, and other command helper functions</p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_QUERY</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_SERVER</code>
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p>
+          <code xref="mongoc_collection_insert">mongoc_collection_insert</code>
+        </p>
+        <p>
+          <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>
+        </p>
+        <p>
+          <code xref="mongoc_collection_update">mongoc_collection_update</code>
+        </p>
+        <p>
+          <code xref="mongoc_collection_remove">mongoc_collection_remove</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_COMMAND</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_SERVER</code>
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p>
+          <code xref="mongoc_bulk_operation_execute">
+            mongoc_bulk_operation_execute
+          </code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_COMMAND</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_SERVER</code>
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p>Write-concern timeout</p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_WRITE_CONCERN</code>
+        </p>
+      </td>
+      <td>
+        <p>
+          <code>MONGOC_ERROR_WRITE_CONCERN</code>
+        </p>
+      </td>
+    </tr>
+  </table>
+
+  <p>The Error API Versions are defined with <code>MONGOC_ERROR_API_VERSION_LEGACY</code> and <code>MONGOC_ERROR_API_VERSION_2</code>. Set the version with <code xref="mongoc_client_set_error_api">mongoc_client_set_error_api</code> or <code xref="mongoc_client_pool_set_error_api">mongoc_client_pool_set_error_api</code>.</p>
+
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">MongoDB Server Error Codes</link></p>
+  </section>
+</page>

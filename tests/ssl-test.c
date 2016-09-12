@@ -1,7 +1,13 @@
 #include <bson.h>
 #include <errno.h>
+
+#include "mongoc-config.h"
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
+
+#include "mongoc-stream-tls.h"
 
 #include "ssl-test.h"
 
@@ -35,6 +41,7 @@ ssl_test_server (void * ptr)
    socklen_t sock_len;
    char buf[4 * NUM_IOVECS];
    ssize_t r;
+   bson_error_t error;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
    int len;
@@ -71,14 +78,21 @@ ssl_test_server (void * ptr)
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
-   ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname(sock_stream, NULL, data->server, 0);
    if (!ssl_stream) {
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 42;
+#endif
       assert(err);
 
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_INIT;
-
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__,
+                    ERR_error_string (ERR_get_error(), NULL));
+#endif
       mongoc_stream_destroy (sock_stream);
       mongoc_socket_destroy (listen_sock);
 
@@ -86,11 +100,15 @@ ssl_test_server (void * ptr)
    }
    assert(ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   if (!r) {
-      unsigned long err = ERR_get_error();
-      assert(err);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
 
+   if (!r) {
+      unsigned long err = 43;
+
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+      MONGOC_ERROR("msg: %s\n", ERR_error_string(ERR_get_error(), NULL));
+#endif
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_HANDSHAKE;
 
@@ -104,6 +122,7 @@ ssl_test_server (void * ptr)
    if (r < 0) {
       data->server_result->err = errno;
       data->server_result->result = SSL_TEST_TIMEOUT;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(ssl_stream);
       mongoc_socket_destroy (listen_sock);
@@ -149,7 +168,6 @@ ssl_test_client (void * ptr)
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *conn_sock;
    int i;
-   int errno_captured;
    char buf[1024];
    ssize_t r;
    mongoc_iovec_t riov;
@@ -157,6 +175,7 @@ ssl_test_client (void * ptr)
    mongoc_iovec_t wiov_many[NUM_IOVECS];
    struct sockaddr_in server_addr = { 0 };
    int len;
+   bson_error_t error;
 
    riov.iov_base = buf;
    riov.iov_len = sizeof buf;
@@ -183,13 +202,18 @@ ssl_test_client (void * ptr)
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert(sock_stream);
-   ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname(sock_stream, data->host, data->client, 1);
    if (! ssl_stream) {
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 44;
+#endif
       assert(err);
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_INIT;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(sock_stream);
 
@@ -197,29 +221,14 @@ ssl_test_client (void * ptr)
    }
    assert(ssl_stream);
 
-   errno = 0;
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   errno_captured = errno;
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
 
-   if (! r) {
-      unsigned long err = ERR_get_error();
-      assert(err || errno_captured);
+   if (!r) {
+      unsigned long err = 45;
 
-      if (err) {
-         data->client_result->ssl_err = err;
-      } else {
-         data->client_result->err = errno_captured;
-      }
-
+      data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_HANDSHAKE;
-
-      mongoc_stream_destroy(ssl_stream);
-      return NULL;
-   }
-
-   r = mongoc_stream_tls_check_cert (ssl_stream, data->host);
-   if (! r) {
-      data->client_result->result = SSL_TEST_SSL_VERIFY;
+      MONGOC_ERROR("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy(ssl_stream);
       return NULL;

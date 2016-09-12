@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_uri_set_auth_source">
+  <info>
+    <link type="guide" xref="mongoc_uri_t" group="function"/>
+  </info>
+  <title>mongoc_uri_set_auth_source()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_uri_set_auth_source (mongoc_uri_t *uri,
+                            const char   *value);
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>uri</p></td><td><p>A <code xref="mongoc_uri_t">mongoc_uri_t</code>.</p></td></tr>
+      <tr><td><p>value</p></td><td><p>The new "authSource" value.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>Sets the "authSource" URI option, after the URI has been parsed from a string.</p>
+    <p>Updates the option in-place if already set, otherwise appends it to the URI's <code xref="bson:bson_t">bson_t</code> of options.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns false if the option cannot be set, for example if <code>value</code> is not valid UTF-8.</p>
+  </section>
+
+</page>

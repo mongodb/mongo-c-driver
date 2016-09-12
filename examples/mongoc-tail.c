@@ -78,12 +78,12 @@ tail_collection (mongoc_collection_t *collection)
          }
       }
       if (mongoc_cursor_error(cursor, &error)) {
-         if ((error.domain == MONGOC_ERROR_QUERY) &&
-             (error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
+         if (error.domain == MONGOC_ERROR_SERVER) {
             fprintf(stderr, "%s\n", error.message);
             exit(1);
          }
       }
+
       mongoc_cursor_destroy(cursor);
       sleep(1);
    }
@@ -109,6 +109,8 @@ main (int   argc,
       fprintf(stderr, "Invalid URI: \"%s\"\n", argv[1]);
       return EXIT_FAILURE;
    }
+
+   mongoc_client_set_error_api (client, 2);
 
    collection = mongoc_client_get_collection(client, "local", "oplog.rs");
 

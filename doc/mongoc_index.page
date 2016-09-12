@@ -1,0 +1,75 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="guide"
+      id="index">
+  <title>MongoDB C Driver</title>
+  <subtitle>A Cross Platform MongoDB Client Library for C</subtitle>
+  <section id="introduction">
+    <title>Introduction</title>
+    <p>The MongoDB C Driver, also known as "libmongoc", is a library for using MongoDB from C applications, and for writing MongoDB drivers in higher-level languages.</p>
+    <p>It depends on <link xref="bson:index">libbson</link> to generate and parse BSON documents, the native data format of MongoDB.</p>
+  </section>
+
+  <section id="installation">
+    <title>Installation</title>
+    <links type="topic" />
+  </section>
+
+  <section id="tutorial">
+    <title>Tutorial</title>
+  </section>
+
+  <section id="basic-operations">
+    <title>Basic Operations</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="advanced-connections">
+    <title>Advanced Connections</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="authentication">
+    <title>Authentication</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="cursors">
+    <title>Cursors</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="bulk">
+    <title>Bulk Operations</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="aggregation">
+    <title>Aggregation Framework</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="matching">
+    <title>Client Side Document Matching</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="debugging">
+    <title>Troubleshooting</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="api-reference">
+    <title>API Reference</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="errors">
+    <title>Errors</title>
+    <links type="topic" style="2column" />
+  </section>
+
+  <section id="apm">
+    <title>Application Performance Monitoring</title>
+    <links type="topic" style="2column" />
+  </section>
+</page>

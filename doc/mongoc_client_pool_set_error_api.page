@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_client_pool_set_error_api">
+
+  <info>
+    <link type="guide" xref="mongoc_client_pool_t" group="function"/>
+  </info>
+  <title>mongoc_client_pool_set_error_api()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_client_pool_set_error_api (mongoc_client_pool_t *client,
+                                  int32_t               version);
+]]></code></synopsis>
+    <p>Configure how the C Driver reports errors. See <link xref="errors#error-api-version" />.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>pool</p></td><td><p>A <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>.</p></td></tr>
+      <tr><td><p>version</p></td><td><p>The version of the error API, either <code>MONGOC_ERROR_API_VERSION_LEGACY</code> or <code>MONGOC_ERROR_API_VERSION_2</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns true if the error API version was set, or logs an error message and returns false.</p>
+  </section>
+</page>

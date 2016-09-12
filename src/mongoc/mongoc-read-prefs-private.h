@@ -17,7 +17,7 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -33,6 +33,7 @@ struct _mongoc_read_prefs_t
 {
    mongoc_read_mode_t mode;
    bson_t             tags;
+   int32_t            max_staleness_ms;
 };
 
 
@@ -54,6 +55,10 @@ apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
 
 void
 apply_read_prefs_result_cleanup (mongoc_apply_read_prefs_result_t *result);
+
+bool
+_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
+                             bson_error_t              *error);
 
 BSON_END_DECLS
 

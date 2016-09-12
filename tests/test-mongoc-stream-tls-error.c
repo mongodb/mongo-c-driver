@@ -1,7 +1,11 @@
-#include <openssl/err.h>
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
 #include <mongoc-util-private.h>
+#include <mongoc-stream-tls.h>
+
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+# include <openssl/err.h>
+#endif
 
 #include "ssl-test.h"
 #include "TestSuite.h"
@@ -32,6 +36,7 @@ ssl_error_server (void *ptr)
    ssize_t r;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
+   bson_error_t error;
 
    iov.iov_base = &buf;
    iov.iov_len = 1;
@@ -67,7 +72,7 @@ ssl_error_server (void *ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new (sock_stream, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->server, 0);
    assert (ssl_stream);
 
    switch (data->behavior) {
@@ -75,7 +80,7 @@ ssl_error_server (void *ptr)
       _mongoc_usleep (data->handshake_stall_ms * 1000);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
-      r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+      r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
       assert (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
@@ -97,10 +102,7 @@ ssl_error_server (void *ptr)
 }
 
 
-#define TRUST_DIR "tests/trust_dir"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
-#if !defined(__sun)
+#if !defined(__sun) && !defined(__APPLE__)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -124,6 +126,7 @@ ssl_hangup_client (void *ptr)
    mongoc_iovec_t wiov;
    struct sockaddr_in server_addr = { 0 };
    int64_t start_time;
+   bson_error_t error;
 
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    assert (conn_sock);
@@ -145,10 +148,10 @@ ssl_hangup_client (void *ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new (sock_stream, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->client, 1);
    assert (ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
    assert (r);
 
    wiov.iov_base = (void *)&buf;
@@ -181,7 +184,7 @@ test_mongoc_tls_hangup (void)
    mongoc_thread_t threads[2];
    int i, r;
 
-   sopt.pem_file = PEMFILE_NOPASS;
+   sopt.pem_file = CERT_SERVER;
    sopt.weak_cert_validation = 1;
    copt.weak_cert_validation = 1;
 
@@ -288,7 +291,7 @@ test_mongoc_tls_handshake_stall (void)
    mongoc_thread_t threads[2];
    int i, r;
 
-   sopt.pem_file = PEMFILE_NOPASS;
+   sopt.pem_file = CERT_SERVER;
    sopt.weak_cert_validation = 1;
    copt.weak_cert_validation = 1;
 
@@ -325,10 +328,12 @@ void
 test_stream_tls_error_install (TestSuite *suite)
 {
    /* TLS stream doesn't detect hangup promptly on Solaris for some reason */
-#if !defined(__sun)
+#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+#if !defined(__sun) && !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
    TestSuite_Add (suite, "/TLS/handshake_stall",
                   test_mongoc_tls_handshake_stall);
+#endif
 }

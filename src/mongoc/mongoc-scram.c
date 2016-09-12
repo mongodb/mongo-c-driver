@@ -15,7 +15,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_CRYPTO
 
 #include <string.h>
 
@@ -24,13 +24,10 @@
 #include "mongoc-rand-private.h"
 #include "mongoc-util-private.h"
 
+#include "mongoc-crypto-private.h"
 #include "mongoc-b64-private.h"
 
 #include "mongoc-memcmp-private.h"
-
-#include <openssl/sha.h>
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
@@ -79,6 +76,8 @@ _mongoc_scram_init (mongoc_scram_t *scram)
    BSON_ASSERT (scram);
 
    memset (scram, 0, sizeof *scram);
+
+   mongoc_crypto_init (&scram->crypto);
 }
 
 
@@ -264,8 +263,6 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_SIZE];
 
-   /* Placeholder for HMAC return size, will always be scram::hashSize for HMAC SHA-1 */
-   uint32_t hash_len = 0;
    int i;
    int k;
    uint8_t *output = scram->salted_password;
@@ -277,26 +274,24 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    start_key[salt_len + 2] = 0;
    start_key[salt_len + 3] = 1;
 
-   /* U1 = HMAC(input, salt + 0001) */
-   HMAC (EVP_sha1 (),
-         password,
-         password_len,
-         start_key,
-         sizeof (start_key),
-         output,
-         &hash_len);
+   mongoc_crypto_hmac_sha1 (&scram->crypto,
+                            password,
+                            password_len,
+                            start_key,
+                            sizeof (start_key),
+                            output
+   );
 
    memcpy (intermediate_digest, output, MONGOC_SCRAM_HASH_SIZE);
 
    /* intermediateDigest contains Ui and output contains the accumulated XOR:ed result */
    for (i = 2; i <= iterations; i++) {
-      HMAC (EVP_sha1 (),
-            password,
-            password_len,
-            intermediate_digest,
-            sizeof (intermediate_digest),
-            intermediate_digest,
-            &hash_len);
+      mongoc_crypto_hmac_sha1 (&scram->crypto,
+                               password,
+                               password_len,
+                               intermediate_digest,
+                               sizeof (intermediate_digest),
+                               intermediate_digest);
 
       for (k = 0; k < MONGOC_SCRAM_HASH_SIZE; k++) {
          output[k] ^= intermediate_digest[k];
@@ -306,66 +301,36 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
 
 
 static bool
-_mongoc_scram_sha1 (const unsigned char *input,
-                    const size_t         input_len,
-                    unsigned char       *output)
-{
-   EVP_MD_CTX digest_ctx;
-   bool rval = false;
-
-   EVP_MD_CTX_init (&digest_ctx);
-
-   if (1 != EVP_DigestInit_ex (&digest_ctx, EVP_sha1 (), NULL)) {
-      goto cleanup;
-   }
-
-   if (1 != EVP_DigestUpdate (&digest_ctx, input, input_len)) {
-      goto cleanup;
-   }
-
-   rval = (1 == EVP_DigestFinal_ex (&digest_ctx, output, NULL));
-
-cleanup:
-   EVP_MD_CTX_cleanup (&digest_ctx);
-
-   return rval;
-}
-
-
-static bool
 _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
                                      uint8_t        *outbuf,
                                      uint32_t        outbufmax,
                                      uint32_t       *outbuflen)
 {
-   /* ClientKey := HMAC(saltedPassword, "Client Key") */
    uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t stored_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t client_signature[MONGOC_SCRAM_HASH_SIZE];
    unsigned char client_proof[MONGOC_SCRAM_HASH_SIZE];
-   uint32_t hash_len = 0;
    int i;
    int r = 0;
 
-   HMAC (EVP_sha1 (),
-         scram->salted_password,
-         MONGOC_SCRAM_HASH_SIZE,
-         (uint8_t *)MONGOC_SCRAM_CLIENT_KEY,
-         strlen (MONGOC_SCRAM_CLIENT_KEY),
-         client_key,
-         &hash_len);
+   /* ClientKey := HMAC(saltedPassword, "Client Key") */
+   mongoc_crypto_hmac_sha1 (&scram->crypto,
+                            scram->salted_password,
+                            MONGOC_SCRAM_HASH_SIZE,
+                            (uint8_t *)MONGOC_SCRAM_CLIENT_KEY,
+                            strlen (MONGOC_SCRAM_CLIENT_KEY),
+                            client_key);
 
    /* StoredKey := H(client_key) */
-   _mongoc_scram_sha1 (client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
+   mongoc_crypto_sha1 (&scram->crypto, client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
 
    /* ClientSignature := HMAC(StoredKey, AuthMessage) */
-   HMAC (EVP_sha1 (),
-         stored_key,
-         MONGOC_SCRAM_HASH_SIZE,
-         scram->auth_message,
-         scram->auth_messagelen,
-         client_signature,
-         &hash_len);
+   mongoc_crypto_hmac_sha1 (&scram->crypto,
+                            stored_key,
+                            MONGOC_SCRAM_HASH_SIZE,
+                            scram->auth_message,
+                            scram->auth_messagelen,
+                            client_signature);
 
    /* ClientProof := ClientKey XOR ClientSignature */
 
@@ -639,29 +604,26 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
                                        uint8_t        *verification,
                                        uint32_t        len)
 {
-   /* ServerKey := HMAC(SaltedPassword, "Server Key") */
-   uint32_t hash_len;
    uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
    char encoded_server_signature[MONGOC_SCRAM_B64_HASH_SIZE];
    int32_t encoded_server_signature_len;
    uint8_t server_signature[MONGOC_SCRAM_HASH_SIZE];
 
-   HMAC (EVP_sha1 (),
-         scram->salted_password,
-         MONGOC_SCRAM_HASH_SIZE,
-         (uint8_t *)MONGOC_SCRAM_SERVER_KEY,
-         strlen (MONGOC_SCRAM_SERVER_KEY),
-         server_key,
-         &hash_len);
+   /* ServerKey := HMAC(SaltedPassword, "Server Key") */
+   mongoc_crypto_hmac_sha1 (&scram->crypto,
+                            scram->salted_password,
+                            MONGOC_SCRAM_HASH_SIZE,
+                            (uint8_t *)MONGOC_SCRAM_SERVER_KEY,
+                            strlen (MONGOC_SCRAM_SERVER_KEY),
+                            server_key);
 
    /* ServerSignature := HMAC(ServerKey, AuthMessage) */
-   HMAC (EVP_sha1 (),
-         server_key,
-         MONGOC_SCRAM_HASH_SIZE,
-         scram->auth_message,
-         scram->auth_messagelen,
-         server_signature,
-         &hash_len);
+   mongoc_crypto_hmac_sha1 (&scram->crypto,
+                            server_key,
+                            MONGOC_SCRAM_HASH_SIZE,
+                            scram->auth_message,
+                            scram->auth_messagelen,
+                            server_signature);
 
    encoded_server_signature_len =
       mongoc_b64_ntop (server_signature, sizeof (server_signature),

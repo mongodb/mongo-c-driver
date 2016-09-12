@@ -20,7 +20,7 @@ mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
+      <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
     </table>
   </section>
 
@@ -31,7 +31,7 @@ mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);
 
   <section id="return">
     <title>Returns</title>
-    <p>A <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link> that should not be modified or freed.</p>
+    <p>A <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> that should not be modified or freed.</p>
   </section>
 
 </page>

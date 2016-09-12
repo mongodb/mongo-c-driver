@@ -21,7 +21,7 @@ mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t   
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
+      <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
       <tr><td><p>bypass</p></td><td><p>A boolean.</p></td></tr>
     </table>
   </section>

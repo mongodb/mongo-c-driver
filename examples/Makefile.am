@@ -1,5 +1,3 @@
-DOC_EXAMPLES = examples/example-client.c
-
 EXAMPLE_LDADD = libmongoc-1.0.la
 if EXPLICIT_LIBS
 EXAMPLE_LDADD += $(BSON_LIBS)
@@ -24,6 +22,11 @@ filter_bsondump_SOURCES = examples/filter-bsondump.c
 filter_bsondump_CFLAGS = -Wno-deprecated-declarations $(EXAMPLE_CFLAGS)
 filter_bsondump_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-application-performance-monitoring
+example_application_performance_monitoring_SOURCES = examples/example-application-performance-monitoring.c
+example_application_performance_monitoring_CFLAGS = $(EXAMPLE_CFLAGS)
+example_application_performance_monitoring_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += example-client
 example_client_SOURCES = examples/example-client.c
 example_client_CFLAGS = $(EXAMPLE_CFLAGS)
@@ -38,14 +41,6 @@ noinst_PROGRAMS += mongoc-ping
 mongoc_ping_SOURCES = examples/mongoc-ping.c
 mongoc_ping_CFLAGS = $(EXAMPLE_CFLAGS)
 mongoc_ping_LDADD = $(EXAMPLE_LDADD)
-
-noinst_PROGRAMS += mongoc-rpc-validate
-mongoc_rpc_validate_SOURCES = examples/mongoc-rpc-validate.c
-mongoc_rpc_validate_CFLAGS = -DMONGOC_COMPILATION $(EXAMPLE_CFLAGS)
-mongoc_rpc_validate_LDADD = libmongoc-priv.la
-if EXPLICIT_LIBS
-mongoc_rpc_validate_LDADD += $(BSON_LIBS)
-endif
 
 noinst_PROGRAMS += mongoc-tail
 mongoc_tail_SOURCES = examples/mongoc-tail.c
@@ -87,6 +82,11 @@ bulk5_SOURCES = examples/bulk/bulk5.c
 bulk5_CFLAGS = $(EXAMPLE_CFLAGS)
 bulk5_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += bulk6
+bulk6_SOURCES = examples/bulk/bulk6.c
+bulk6_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk6_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += aggregation1
 aggregation1_SOURCES = examples/aggregation/aggregation1.c
 aggregation1_CFLAGS = $(EXAMPLE_CFLAGS)
@@ -101,5 +101,6 @@ EXTRA_DIST += \
     examples/find_and_modify_with_opts/bypass.c \
     examples/find_and_modify_with_opts/fields.c \
     examples/find_and_modify_with_opts/flags.c \
+    examples/find_and_modify_with_opts/opts.c \
     examples/find_and_modify_with_opts/sort.c \
     examples/find_and_modify_with_opts/update.c

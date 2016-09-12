@@ -26,7 +26,7 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
     <title>Parameters</title>
     <table>
       <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
@@ -40,6 +40,7 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
     <p>A cursor where each result corresponds to the server's representation of
     an index on this collection. If the collection does not exist on the
     server, the cursor will be empty.</p>
+    <p>On error, returns NULL and fills out <code>error</code>.</p>
   </section>
 
 </page>

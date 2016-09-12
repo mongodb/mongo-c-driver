@@ -3,7 +3,6 @@
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
 
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
@@ -14,10 +13,6 @@
 
 #define TIMEOUT 20000 /* milliseconds */
 #define NSERVERS 10
-
-#define TRUST_DIR "tests/trust_dir"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
 
 static void
 test_topology_scanner_helper (uint32_t      id,
@@ -65,7 +60,7 @@ _test_topology_scanner(bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
-      copt.ca_file = CAFILE;
+      copt.ca_file = CERT_CA;
       copt.weak_cert_validation = 1;
 
       mongoc_topology_scanner_set_ssl_opts (topology_scanner, &copt);
@@ -79,8 +74,8 @@ _test_topology_scanner(bool with_ssl)
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
-         sopt.pem_file = PEMFILE_NOPASS;
-         sopt.ca_file = CAFILE;
+         sopt.ca_file = CERT_CA;
+         sopt.pem_file = CERT_SERVER;
 
          mock_server_set_ssl_opts (servers[i], &sopt);
       }
@@ -123,7 +118,7 @@ test_topology_scanner ()
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 void
 test_topology_scanner_ssl ()
 {
@@ -180,7 +175,7 @@ test_topology_scanner_discovery ()
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    secondary_pref, 15, &error);
+                                    secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
    AWAIT (scanner->async->ncmds == 1);
@@ -263,7 +258,7 @@ test_topology_scanner_oscillate ()
 
    assert (!scanner->async->ncmds);
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
 
    /* a single scan discovers servers 0 and 1 */
    request = mock_server_receives_ismaster (server0);
@@ -300,7 +295,7 @@ void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_discovery",

@@ -17,7 +17,7 @@
 #ifndef MONGOC_THREAD_PRIVATE_H
 #define MONGOC_THREAD_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -96,7 +96,7 @@ mongoc_cond_timedwait (mongoc_cond_t  *cond,
 {
    int r;
 
-   if (SleepConditionVariableCS(cond, mutex, timeout_msec)) {
+   if (SleepConditionVariableCS(cond, mutex, (DWORD)timeout_msec)) {
       return 0;
    } else {
       r = GetLastError();

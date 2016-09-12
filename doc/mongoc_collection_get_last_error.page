@@ -32,7 +32,7 @@ mongoc_collection_get_last_error (const mongoc_collection_t *collection);
 
   <section id="return">
     <title>Returns</title>
-    <p>A <code>bson_t</code> that should not be modified or <code>NULL</code>.</p>
+    <p>A <code xref="bson:bson_t">bson_t</code> that should not be modified or <code>NULL</code>.</p>
   </section>
 
 </page>

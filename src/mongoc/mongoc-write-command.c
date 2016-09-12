@@ -31,7 +31,7 @@
  */
 
 #define WRITE_CONCERN_DOC(wc) \
-   (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
+   (wc) ? \
    (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \
    (&gEmptyWriteConcern)
 
@@ -51,6 +51,7 @@ static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
 static const char *gCommandNames[] = { "delete", "insert", "update"};
 static const char *gCommandFields[] = { "deletes", "documents", "updates"};
+static const uint32_t gCommandFieldLens[] = { 7, 9, 7 };
 
 static int32_t
 _mongoc_write_result_merge_arrays (uint32_t               offset,
@@ -170,6 +171,7 @@ void
 _mongoc_write_command_init_insert (mongoc_write_command_t    *command,              /* IN */
                                    const bson_t              *document,             /* IN */
                                    mongoc_bulk_write_flags_t  flags,                /* IN */
+                                   int64_t                    operation_id,         /* IN */
                                    bool                       allow_bulk_op_insert) /* IN */
 {
    ENTRY;
@@ -181,7 +183,8 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
    command->n_documents = 0;
    command->flags = flags;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
-   command->hint = 0;
+   command->server_id = 0;
+   command->operation_id = operation_id;
 
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
@@ -193,10 +196,11 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
 
 
 void
-_mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
-                                   const bson_t              *selector, /* IN */
-                                   bool                       multi,    /* IN */
-                                   mongoc_bulk_write_flags_t  flags)    /* IN */
+_mongoc_write_command_init_delete (mongoc_write_command_t   *command,       /* IN */
+                                   const bson_t             *selector,      /* IN */
+                                   bool                      multi,         /* IN */
+                                   mongoc_bulk_write_flags_t flags,         /* IN */
+                                   int64_t                   operation_id)  /* IN */
 {
    ENTRY;
 
@@ -208,7 +212,8 @@ _mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
    command->n_documents = 0;
    command->u.delete_.multi = (uint8_t)multi;
    command->flags = flags;
-   command->hint = 0;
+   command->server_id = 0;
+   command->operation_id = operation_id;
 
    _mongoc_write_command_delete_append (command, selector);
 
@@ -217,12 +222,13 @@ _mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
 
 
 void
-_mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
-                                   const bson_t              *selector, /* IN */
-                                   const bson_t              *update,   /* IN */
-                                   bool                       upsert,   /* IN */
-                                   bool                       multi,    /* IN */
-                                   mongoc_bulk_write_flags_t  flags)    /* IN */
+_mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* IN */
+                                   const bson_t             *selector,      /* IN */
+                                   const bson_t             *update,        /* IN */
+                                   bool                      upsert,        /* IN */
+                                   bool                      multi,         /* IN */
+                                   mongoc_bulk_write_flags_t flags,         /* IN */
+                                   int64_t                   operation_id)  /* IN */
 {
    ENTRY;
 
@@ -234,9 +240,334 @@ _mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
    command->documents = bson_new ();
    command->n_documents = 0;
    command->flags = flags;
-   command->hint = 0;
+   command->server_id = 0;
+   command->operation_id = operation_id;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
+
+   EXIT;
+}
+
+
+/* takes initialized bson_t *doc and begins formatting a write command */
+static void
+_mongoc_write_command_init (bson_t                       *doc,
+                            mongoc_write_command_t       *command,
+                            const char                   *collection,
+                            const mongoc_write_concern_t *write_concern)
+{
+   bson_iter_t iter;
+
+   ENTRY;
+
+   if (!command->n_documents ||
+       !bson_iter_init (&iter, command->documents) ||
+       !bson_iter_next (&iter)) {
+      EXIT;
+   }
+
+   BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
+   BSON_APPEND_DOCUMENT (doc, "writeConcern",
+                         WRITE_CONCERN_DOC (write_concern));
+   BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
+
+   if (command->flags.bypass_document_validation !=
+       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      BSON_APPEND_BOOL (doc, "bypassDocumentValidation",
+                        !!command->flags.bypass_document_validation);
+   }
+
+   EXIT;
+}
+
+
+static void
+_mongoc_monitor_legacy_write (mongoc_client_t              *client,
+                              mongoc_write_command_t       *command,
+                              const char                   *db,
+                              const char                   *collection,
+                              const mongoc_write_concern_t *write_concern,
+                              mongoc_server_stream_t       *stream,
+                              int64_t                       request_id)
+{
+   bson_t doc;
+   mongoc_apm_command_started_t event;
+
+   ENTRY;
+
+   if (!client->apm_callbacks.started) {
+      EXIT;
+   }
+
+   bson_init (&doc);
+   _mongoc_write_command_init (&doc, command, collection, write_concern);
+
+   /* copy the whole documents buffer as e.g. "updates": [...] */
+   BSON_APPEND_ARRAY (&doc,
+                      gCommandFields[command->type],
+                      command->documents);
+
+   mongoc_apm_command_started_init (&event,
+                                    &doc,
+                                    db,
+                                    gCommandNames[command->type],
+                                    request_id,
+                                    command->operation_id,
+                                    &stream->sd->host,
+                                    stream->sd->id,
+                                    client->apm_context);
+
+   client->apm_callbacks.started (&event);
+
+   mongoc_apm_command_started_cleanup (&event);
+   bson_destroy (&doc);
+}
+
+
+static void
+append_write_err (bson_t       *doc,
+                  uint32_t      code,
+                  const char   *errmsg,
+                  size_t        errmsg_len,
+                  const bson_t *errinfo)
+{
+   bson_t array = BSON_INITIALIZER;
+   bson_t child;
+
+   BSON_ASSERT (errmsg);
+
+   /* writeErrors: [{index: 0, code: code, errmsg: errmsg, errInfo: {...}}] */
+   bson_append_document_begin (&array, "0", 1, &child);
+   bson_append_int32 (&child, "index", 5, 0);
+   bson_append_int32 (&child, "code", 4, (int32_t) code);
+   bson_append_utf8 (&child, "errmsg", 6, errmsg, (int) errmsg_len);
+   if (errinfo) {
+      bson_append_document (&child, "errInfo", 7, errinfo);
+   }
+
+   bson_append_document_end (&array, &child);
+   bson_append_array (doc, "writeErrors", 11, &array);
+
+   bson_destroy (&array);
+}
+
+
+static void
+append_write_concern_err (bson_t       *doc,
+                          const char   *errmsg,
+                          size_t        errmsg_len)
+{
+   bson_t array = BSON_INITIALIZER;
+   bson_t child;
+   bson_t errinfo;
+
+   BSON_ASSERT (errmsg);
+
+   /* writeConcernErrors: [{code: 64,
+    *                       errmsg: errmsg,
+    *                       errInfo: {wtimeout: true}}] */
+   bson_append_document_begin (&array, "0", 1, &child);
+   bson_append_int32 (&child, "code", 4, 64);
+   bson_append_utf8 (&child, "errmsg", 6, errmsg, (int) errmsg_len);
+   bson_append_document_begin (&child, "errInfo", 7, &errinfo);
+   bson_append_bool (&errinfo, "wtimeout", 8, true);
+   bson_append_document_end (&child, &errinfo);
+   bson_append_document_end (&array, &child);
+   bson_append_array (doc, "writeConcernErrors", 18, &array);
+
+   bson_destroy (&array);
+}
+
+
+static bool
+get_upserted_id (const bson_t *update,
+                 bson_value_t *upserted_id)
+{
+   bson_iter_t iter;
+   bson_iter_t id_iter;
+
+   /* Versions of MongoDB before 2.6 don't return the _id for an upsert if _id
+    * is not an ObjectId, so find it in the update document's query "q" or
+    * update "u". It must be in one or both: if it were in neither the _id
+    * would be server-generated, therefore an ObjectId, therefore returned and
+    * we wouldn't call this function. If _id is in both the update document
+    * *and* the query spec the update document _id takes precedence.
+    */
+
+   bson_iter_init (&iter, update);
+
+   if (bson_iter_find_descendant (&iter, "u._id", &id_iter)) {
+      bson_value_copy (bson_iter_value (&id_iter), upserted_id);
+      return true;
+   } else {
+      bson_iter_init (&iter, update);
+
+      if (bson_iter_find_descendant (&iter, "q._id", &id_iter)) {
+         bson_value_copy (bson_iter_value (&id_iter), upserted_id);
+         return true;
+      }
+   }
+
+   /* server bug? */
+   return false;
+}
+
+
+static void
+append_upserted (bson_t             *doc,
+                 const bson_value_t *upserted_id)
+{
+   bson_t array = BSON_INITIALIZER;
+   bson_t child;
+
+   /* append upserted: [{index: 0, _id: upserted_id}]*/
+   bson_append_document_begin (&array, "0", 1, &child);
+   bson_append_int32 (&child, "index", 5, 0);
+   bson_append_value (&child, "_id", 3, upserted_id);
+   bson_append_document_end (&array, &child);
+
+   bson_append_array (doc, "upserted", 8, &array);
+
+   bson_destroy (&array);
+}
+
+
+/* fire command-succeeded event as if we'd used a modern write command.
+ * note, cluster.request_id was incremented once for the write, again
+ * for the getLastError, so cluster.request_id is no longer valid; used the
+ * passed-in request_id instead.
+ */
+static void
+_mongoc_monitor_legacy_write_succeeded (mongoc_client_t        *client,
+                                        int64_t                 duration,
+                                        mongoc_write_command_t *command,
+                                        const bson_t           *gle,
+                                        mongoc_server_stream_t *stream,
+                                        int64_t                 request_id)
+{
+   bson_iter_t iter;
+   bson_t doc;
+   int64_t ok = 1;
+   int64_t n = 0;
+   uint32_t code = 8;
+   bool wtimeout = false;
+
+   /* server error message */
+   const char *errmsg = NULL;
+   size_t errmsg_len = 0;
+
+   /* server errInfo subdocument */
+   bool has_errinfo = false;
+   uint32_t len;
+   const uint8_t *data;
+   bson_t errinfo;
+
+   /* server upsertedId value */
+   bool has_upserted_id = false;
+   bson_value_t upserted_id;
+
+   /* server updatedExisting value */
+   bool has_updated_existing = false;
+   bool updated_existing = false;
+
+   mongoc_apm_command_succeeded_t event;
+
+   ENTRY;
+
+   if (!client->apm_callbacks.succeeded) {
+      EXIT;
+   }
+
+   /* first extract interesting fields from getlasterror response */
+   if (gle) {
+      bson_iter_init (&iter, gle);
+      while (bson_iter_next (&iter)) {
+         if (!strcmp (bson_iter_key (&iter), "ok")) {
+            ok = bson_iter_as_int64 (&iter);
+         } else if (!strcmp (bson_iter_key (&iter), "n")) {
+            n = bson_iter_as_int64 (&iter);
+         } else if (!strcmp (bson_iter_key (&iter), "code")) {
+            code = (uint32_t) bson_iter_as_int64 (&iter);
+            if (code == 0) {
+               /* server sent non-numeric error code? */
+               code = 8;
+            }
+         } else if (!strcmp (bson_iter_key (&iter), "upserted")) {
+            has_upserted_id = true;
+            bson_value_copy (bson_iter_value (&iter), &upserted_id);
+         } else if (!strcmp (bson_iter_key (&iter), "updatedExisting")) {
+            has_updated_existing = true;
+            updated_existing = bson_iter_as_bool (&iter);
+         } else if ((!strcmp (bson_iter_key (&iter), "err") ||
+                     !strcmp (bson_iter_key (&iter), "errmsg")) &&
+                    BSON_ITER_HOLDS_UTF8 (&iter)) {
+            errmsg = bson_iter_utf8_unsafe (&iter, &errmsg_len);
+         } else if (!strcmp (bson_iter_key (&iter), "errInfo") &&
+                    BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            bson_iter_document (&iter, &len, &data);
+            bson_init_static (&errinfo, data, len);
+            has_errinfo = true;
+         } else if (!strcmp (bson_iter_key (&iter), "wtimeout")) {
+            wtimeout = true;
+         }
+      }
+   }
+
+   /* based on PyMongo's _convert_write_result() */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "ok", 2, (int32_t) ok);
+
+   if (errmsg && !wtimeout) {
+      /* Failure, but pass to the success callback. Command Monitoring Spec:
+       * "Commands that executed on the server and return a status of {ok: 1}
+       * are considered successful commands and fire CommandSucceededEvent.
+       * Commands that have write errors are included since the actual command
+       * did succeed, only writes failed." */
+      append_write_err (&doc, code, errmsg, errmsg_len,
+                        has_errinfo ? &errinfo : NULL);
+   } else {
+      /* Success, perhaps with a writeConcernError. */
+      if (errmsg) {
+         append_write_concern_err (&doc, errmsg, errmsg_len);
+      }
+
+      if (command->type == MONGOC_WRITE_COMMAND_INSERT) {
+         /* GLE result for insert is always 0 in most MongoDB versions. */
+         n = command->n_documents;
+      } else if (command->type == MONGOC_WRITE_COMMAND_UPDATE) {
+         if (has_upserted_id) {
+            append_upserted (&doc, &upserted_id);
+         } else if (has_updated_existing && !updated_existing && n == 1) {
+            has_upserted_id = get_upserted_id (&command->documents[0],
+                                               &upserted_id);
+
+            if (has_upserted_id) {
+               append_upserted (&doc, &upserted_id);
+            }
+         }
+      }
+   }
+
+   bson_append_int32 (&doc, "n", 1, (int32_t) n);
+
+   mongoc_apm_command_succeeded_init (&event,
+                                      duration,
+                                      &doc,
+                                      gCommandNames[command->type],
+                                      request_id,
+                                      command->operation_id,
+                                      &stream->sd->host,
+                                      stream->sd->id,
+                                      client->apm_context);
+
+   client->apm_callbacks.succeeded (&event);
+
+   mongoc_apm_command_succeeded_cleanup (&event);
+   bson_destroy (&doc);
+
+   if (has_upserted_id) {
+      bson_value_destroy (&upserted_id);
+   }
 
    EXIT;
 }
@@ -253,8 +584,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
+   int64_t started;
    const uint8_t *data;
    mongoc_rpc_t rpc;
+   uint32_t request_id;
    bson_iter_t iter;
    bson_iter_t q_iter;
    uint32_t len;
@@ -270,8 +603,9 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-   r = bson_iter_init (&iter, command->documents);
+   started = bson_get_monotonic_time ();
 
+   r = bson_iter_init (&iter, command->documents);
    if (!r) {
       BSON_ASSERT (false);
       EXIT;
@@ -303,8 +637,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
+      request_id = ++client->cluster.request_id;
+
       rpc.delete_.msg_len = 0;
-      rpc.delete_.request_id = 0;
+      rpc.delete_.request_id = request_id;
       rpc.delete_.response_to = 0;
       rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
@@ -313,6 +649,9 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                          : MONGOC_DELETE_SINGLE_REMOVE;
       rpc.delete_.selector = data;
 
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream, request_id);
+
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
                                            write_concern, error)) {
@@ -320,19 +659,33 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
          EXIT;
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
             EXIT;
          }
 
          _mongoc_write_result_merge_legacy (
-            result, command, gle,
+            result, command, gle, client->error_api_version,
             MONGOC_ERROR_COLLECTION_DELETE_FAILED, offset);
 
          offset++;
-         bson_destroy (gle);
       }
+
+      _mongoc_monitor_legacy_write_succeeded (
+         client,
+         bson_get_monotonic_time () - started,
+         command,
+         gle,
+         server_stream,
+         request_id);
+
+      if (gle) {
+         bson_destroy (gle);
+         gle = NULL;
+      }
+
+      started = bson_get_monotonic_time ();
    } while (bson_iter_next (&iter));
 
    EXIT;
@@ -393,6 +746,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
                                      mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
+   int64_t started;
    uint32_t current_offset;
    mongoc_iovec_t *iov;
    const uint8_t *data;
@@ -405,6 +759,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    uint32_t n_docs_in_batch;
+   uint32_t request_id = 0;
    uint32_t idx = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
@@ -419,6 +774,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
 
+   started = bson_get_monotonic_time ();
    current_offset = offset;
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
@@ -474,7 +830,7 @@ again:
                           max_bson_obj_size, &write_err_doc);
 
          _mongoc_write_result_merge_legacy (
-            result, command, &write_err_doc,
+            result, command, &write_err_doc, client->error_api_version,
             MONGOC_ERROR_COLLECTION_INSERT_FAILED, offset + idx);
 
          bson_destroy (&write_err_doc);
@@ -499,8 +855,10 @@ again:
    } while (bson_iter_next (&iter));
 
    if (n_docs_in_batch) {
+      request_id = ++client->cluster.request_id;
+
       rpc.insert.msg_len = 0;
-      rpc.insert.request_id = 0;
+      rpc.insert.request_id = request_id;
       rpc.insert.response_to = 0;
       rpc.insert.opcode = MONGOC_OPCODE_INSERT;
       rpc.insert.flags = (
@@ -510,6 +868,9 @@ again:
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
 
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream, request_id);
+
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
                                            write_concern, error)) {
@@ -517,7 +878,7 @@ again:
          GOTO (cleanup);
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          bool err = false;
          bson_iter_t citer;
 
@@ -540,14 +901,24 @@ again:
             bson_iter_overwrite_int32 (&citer, n_docs_in_batch);
          }
       }
+
+      _mongoc_monitor_legacy_write_succeeded (
+         client,
+         bson_get_monotonic_time () - started,
+         command,
+         gle,
+         server_stream,
+         request_id);
+
+      started = bson_get_monotonic_time ();
    }
 
 cleanup:
 
    if (gle) {
       _mongoc_write_result_merge_legacy (
-         result, command, gle, MONGOC_ERROR_COLLECTION_INSERT_FAILED,
-         current_offset);
+         result, command, gle, client->error_api_version,
+         MONGOC_ERROR_COLLECTION_INSERT_FAILED, current_offset);
 
       current_offset = offset + idx;
       bson_destroy (gle);
@@ -589,13 +960,12 @@ _mongoc_write_command_will_overflow (uint32_t len_so_far,
                                      int32_t  max_bson_size,
                                      int32_t  max_write_batch_size)
 {
-   /* max BSON object size + 16k - 2 bytes for ending NUL bytes.
+   /* max BSON object size + 16k bytes.
     * server guarantees there is enough room: SERVER-10643
     */
-   int32_t max_cmd_size = max_bson_size + 16382;
+   int32_t max_cmd_size = max_bson_size + 16384;
 
    BSON_ASSERT (max_bson_size);
-
 
    if (len_so_far + document_len > max_cmd_size) {
       return true;
@@ -619,7 +989,9 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                      mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
+   int64_t started;
    mongoc_rpc_t rpc;
+   uint32_t request_id = 0;
    bson_iter_t iter, subiter, subsubiter;
    bson_t doc;
    bool has_update, has_selector, is_upsert;
@@ -632,7 +1004,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    int32_t affected = 0;
    int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
-               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+                 | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
    ENTRY;
 
@@ -641,6 +1013,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
+
+   started = bson_get_monotonic_time ();
 
    bson_iter_init (&iter, command->documents);
    while (bson_iter_next (&iter)) {
@@ -676,8 +1050,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
 
    bson_iter_init (&iter, command->documents);
    while (bson_iter_next (&iter)) {
+      request_id = ++client->cluster.request_id;
+
       rpc.update.msg_len = 0;
-      rpc.update.request_id = 0;
+      rpc.update.request_id = request_id;
       rpc.update.response_to = 0;
       rpc.update.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
@@ -716,6 +1092,9 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          }
       }
 
+      _mongoc_monitor_legacy_write (client, command, database, collection,
+                                    write_concern, server_stream, request_id);
+
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
                                            write_concern, error)) {
@@ -723,7 +1102,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          EXIT;
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
             EXIT;
@@ -755,15 +1134,27 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          }
 
          _mongoc_write_result_merge_legacy (
-            result, command, gle,
+            result, command, gle, client->error_api_version,
             MONGOC_ERROR_COLLECTION_UPDATE_FAILED, offset);
 
          offset++;
-         bson_destroy (gle);
       }
-   }
 
-   EXIT;
+      _mongoc_monitor_legacy_write_succeeded (
+         client,
+         bson_get_monotonic_time () - started,
+         command,
+         gle,
+         server_stream,
+         request_id);
+
+      if (gle) {
+         bson_destroy (gle);
+         gle = NULL;
+      }
+
+      started = bson_get_monotonic_time ();
+   }
 }
 
 
@@ -799,6 +1190,7 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    int32_t max_bson_obj_size;
    int32_t max_write_batch_size;
    int32_t min_wire_version;
+   uint32_t overhead;
    uint32_t key_len;
 
    ENTRY;
@@ -808,6 +1200,8 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
+
+   bson_init (&cmd);
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_write_batch_size = mongoc_server_stream_max_write_batch_size (server_stream);
@@ -820,7 +1214,7 @@ _mongoc_write_command(mongoc_write_command_t       *command,
 
    min_wire_version = server_stream->sd->min_wire_version;
    if ((min_wire_version == 0) &&
-       !_mongoc_write_concern_needs_gle (write_concern)) {
+       !mongoc_write_concern_is_acknowledged (write_concern)) {
       if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -843,31 +1237,30 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    }
 
 again:
-   bson_init (&cmd);
    has_more = false;
    i = 0;
 
-   BSON_APPEND_UTF8 (&cmd, gCommandNames[command->type], collection);
-   BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
-                         WRITE_CONCERN_DOC (write_concern));
-   BSON_APPEND_BOOL (&cmd, "ordered", command->flags.ordered);
-   if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      BSON_APPEND_BOOL (&cmd, "bypassDocumentValidation",
-                        !!command->flags.bypass_document_validation);
-   }
+   _mongoc_write_command_init (&cmd, command, collection, write_concern);
 
-   if (!_mongoc_write_command_will_overflow (0,
+   /* 1 byte to specify array type, 1 byte for field name's null terminator */
+   overhead = cmd.len + 2 + gCommandFieldLens[command->type];
+
+   if (!_mongoc_write_command_will_overflow (overhead,
                                              command->documents->len,
                                              command->n_documents,
                                              max_bson_obj_size,
                                              max_write_batch_size)) {
       /* copy the whole documents buffer as e.g. "updates": [...] */
-      BSON_APPEND_ARRAY (&cmd,
+      bson_append_array (&cmd,
                          gCommandFields[command->type],
+                         gCommandFieldLens[command->type],
                          command->documents);
       i = command->n_documents;
    } else {
-      bson_append_array_begin (&cmd, gCommandFields[command->type], -1, &ar);
+      bson_append_array_begin (&cmd,
+                               gCommandFields[command->type],
+                               gCommandFieldLens[command->type],
+                               &ar);
 
       do {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -875,10 +1268,13 @@ again:
          }
 
          bson_iter_document (&iter, &len, &data);
+
+         /* append array element like "0": { ... doc ... } */
          key_len = (uint32_t) bson_uint32_to_string (i, &key, str, sizeof str);
 
-         if (_mongoc_write_command_will_overflow (ar.len,
-                                                  key_len + len + 2,
+         /* 1 byte to specify document type, 1 byte for key's null terminator */
+         if (_mongoc_write_command_will_overflow (overhead,
+                                                  key_len + len + 2 + ar.len,
                                                   i,
                                                   max_bson_obj_size,
                                                   max_write_batch_size)) {
@@ -905,9 +1301,10 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      ret = mongoc_cluster_run_command (&client->cluster, server_stream->stream,
-                                        MONGOC_QUERY_NONE, database, &cmd,
-                                        &reply, error);
+      ret = mongoc_cluster_run_command_monitored (&client->cluster,
+                                                  server_stream,
+                                                  MONGOC_QUERY_NONE, database,
+                                                  &cmd, &reply, error);
 
       if (!ret) {
          result->failed = true;
@@ -918,12 +1315,12 @@ again:
       bson_destroy (&reply);
    }
 
-   bson_destroy (&cmd);
-
    if (has_more && (ret || !command->flags.ordered)) {
+      bson_reinit (&cmd);
       GOTO (again);
    }
 
+   bson_destroy (&cmd);
    EXIT;
 }
 
@@ -951,7 +1348,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       write_concern = client->write_concern;
    }
 
-   if (!_mongoc_write_concern_is_valid(write_concern)) {
+   if (!mongoc_write_concern_is_valid (write_concern)) {
       bson_set_error (&result->error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -960,10 +1357,10 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       EXIT;
    }
 
-   if (!command->hint) {
-      command->hint = server_stream->sd->id;
+   if (!command->server_id) {
+      command->server_id = server_stream->sd->id;
    } else {
-      BSON_ASSERT (command->hint == server_stream->sd->id);
+      BSON_ASSERT (command->server_id == server_stream->sd->id);
    }
 
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
@@ -1079,6 +1476,7 @@ _append_write_concern_err_legacy (mongoc_write_result_t *result,
 static void
 _append_write_err_legacy (mongoc_write_result_t *result,
                           const char            *err,
+                          mongoc_error_domain_t  domain,
                           int32_t                code,
                           uint32_t               offset)
 {
@@ -1087,8 +1485,7 @@ _append_write_err_legacy (mongoc_write_result_t *result,
 
    BSON_ASSERT (code > 0);
 
-   bson_set_error (&result->error, MONGOC_ERROR_COLLECTION, (uint32_t) code,
-                   "%s", err);
+   bson_set_error (&result->error, domain, (uint32_t) code, "%s", err);
 
    /* stop processing, if result->ordered */
    result->failed = true;
@@ -1117,6 +1514,7 @@ void
 _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
                                    mongoc_write_command_t *command, /* IN */
                                    const bson_t           *reply,   /* IN */
+                                   int32_t                 error_api_version,
                                    mongoc_error_code_t     default_code,
                                    uint32_t                offset)
 {
@@ -1128,11 +1526,16 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
    int32_t code = 0;
    int32_t n = 0;
    int32_t upsert_idx = 0;
+   mongoc_error_domain_t domain;
 
    ENTRY;
 
    BSON_ASSERT (result);
    BSON_ASSERT (reply);
+
+   domain = error_api_version >= MONGOC_ERROR_API_VERSION_2
+            ? MONGOC_ERROR_SERVER
+            : MONGOC_ERROR_COLLECTION;
 
    if (bson_iter_init_find (&iter, reply, "n") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
@@ -1167,7 +1570,7 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
             code = (int32_t) default_code;
          }
 
-         _append_write_err_legacy (result, err, code, offset);
+         _append_write_err_legacy (result, err, domain, code, offset);
       }
    }
 
@@ -1472,15 +1875,23 @@ _set_error_from_response (bson_t *bson_array,
 
 
 bool
-_mongoc_write_result_complete (mongoc_write_result_t *result,
-                               bson_t                *bson,
-                               bson_error_t          *error)
+_mongoc_write_result_complete (mongoc_write_result_t        *result,            /* IN */
+                               int32_t                       error_api_version, /* IN */
+                               const mongoc_write_concern_t *wc,                /* IN */
+                               bson_t                       *bson,              /* OUT */
+                               bson_error_t                 *error)             /* OUT */
 {
+   mongoc_error_domain_t domain;
+
    ENTRY;
 
    BSON_ASSERT (result);
 
-   if (bson) {
+   domain = error_api_version >= MONGOC_ERROR_API_VERSION_2
+            ? MONGOC_ERROR_SERVER
+            : MONGOC_ERROR_COMMAND;
+
+   if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
       if (!result->omit_nModified) {
@@ -1500,7 +1911,7 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
 
    /* set bson_error_t from first write error or write concern error */
    _set_error_from_response (&result->writeErrors,
-                             MONGOC_ERROR_COMMAND,
+                             domain,
                              "write",
                              &result->error);
 

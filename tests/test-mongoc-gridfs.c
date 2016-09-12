@@ -4,9 +4,11 @@
 #undef MONGOC_INSIDE
 
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 
 static mongoc_gridfs_t *
@@ -34,23 +36,69 @@ drop_collections (mongoc_gridfs_t *gridfs,
 
 
 static void
+_check_index (mongoc_collection_t *collection,
+              const char          *index_json)
+{
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *info;
+   const char *index_name;
+   bson_t index_key;
+   int n;
+
+   cursor = mongoc_collection_find_indexes (collection, &error);
+   ASSERT_OR_PRINT (cursor, error);
+
+   n = 0;
+
+   while (mongoc_cursor_next (cursor, &info)) {
+      index_name = bson_lookup_utf8 (info, "name");
+
+      /* if this is NOT the "_id" index */
+      if (strcmp (index_name, "_id_")) {
+         bson_lookup_doc (info, "key", &index_key);
+         ASSERT_MATCH (&index_key, index_json);
+      }
+
+      n++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   /* _id index plus the expected index */
+   ASSERT_CMPINT (n, ==, 2);
+
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
 test_create (void)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
    mongoc_client_t *client;
    bson_error_t error;
+   mongoc_collection_t *files;
+   mongoc_collection_t *chunks;
 
    client = test_framework_client_new ();
    ASSERT (client);
+
+   files = mongoc_client_get_collection (client, "test", "foo.files");
+   chunks = mongoc_client_get_collection (client, "test", "foo.chunks");
+   mongoc_collection_drop (files, NULL);
+   mongoc_collection_drop (chunks, NULL);
 
    ASSERT_OR_PRINT (
       (gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error)),
       error);
 
-   mongoc_gridfs_drop (gridfs, &error);
-
    file = mongoc_gridfs_create_file (gridfs, NULL);
+
+   _check_index (files, "{'filename': 1, 'uploadDate': 1}");
+   _check_index (chunks, "{'files_id': 1, 'n': 1}");
+
    ASSERT (file);
    ASSERT (mongoc_gridfs_file_save (file));
 
@@ -59,6 +107,8 @@ test_create (void)
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
+   mongoc_collection_destroy (chunks);
+   mongoc_collection_destroy (files);
    mongoc_client_destroy (client);
 }
 
@@ -250,6 +300,7 @@ test_create_from_stream (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (stream, errno);
    ASSERT (stream);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
@@ -483,6 +534,7 @@ test_empty (void)
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "empty", &error), error);
 
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/empty.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (stream, errno);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    ASSERT (file);
@@ -540,6 +592,7 @@ test_stream (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    in_stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (in_stream, errno);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, in_stream, NULL);
    ASSERT (file);
@@ -566,7 +619,7 @@ test_stream (void)
 
 
 static void
-test_long_seek (void)
+test_long_seek (void *ctx)
 {
    const uint64_t four_mb = 4 * 1024 * 1024;
 
@@ -589,7 +642,6 @@ test_long_seek (void)
    client = test_framework_client_new ();
    gridfs = get_test_gridfs (client, "long_seek", &error);
    ASSERT_OR_PRINT (gridfs, error);
-   mongoc_gridfs_drop (gridfs, NULL);
    file = mongoc_gridfs_create_file (gridfs, &opt);
    ASSERT (file);
 
@@ -615,6 +667,7 @@ test_long_seek (void)
    ASSERT_CMPSSIZE_T (r, ==, buflen);
    ASSERT_TELL (file, (uint64_t) buflen);
    cursor_id = mongoc_cursor_get_id (file->cursor);
+   ASSERT_CMPINT64 ((int64_t) 0, !=, cursor_id);
 
    /* seek forward into next batch and read, gridfs advances cursor */
    i = mongoc_gridfs_file_seek (file, four_mb, SEEK_CUR);
@@ -624,6 +677,7 @@ test_long_seek (void)
    ASSERT_TELL (file, four_mb + 2 * buflen);
 
    /* same as the cursor we started with */
+   ASSERT_CMPINT64 ((int64_t) 0, !=, mongoc_cursor_get_id (file->cursor));
    ASSERT_CMPINT64 (cursor_id, ==, mongoc_cursor_get_id (file->cursor));
 
    /* seek more than a batch forward, gridfs discards cursor */
@@ -691,7 +745,7 @@ test_remove_by_filename (void)
 }
 
 static void
-test_missing_chunk (void)
+test_missing_chunk (void *ctx)
 {
    mongoc_client_t *client;
    bson_error_t error;
@@ -759,20 +813,180 @@ test_missing_chunk (void)
    mongoc_client_destroy (client);
 }
 
+static mongoc_gridfs_t *
+_get_gridfs (mock_server_t *server,
+             mongoc_client_t *client)
+{
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_gridfs_t *gridfs;
+
+   /* gridfs ensures two indexes */
+   future = future_client_get_gridfs (client, "db", NULL, &error);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'createIndexes': 'fs.chunks'}");
+
+   mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'createIndexes': 'fs.files'}");
+
+   mock_server_replies_ok_and_destroys (request);
+
+   gridfs = future_get_mongoc_gridfs_ptr (future);
+   ASSERT (gridfs);
+
+   future_destroy (future);
+
+   return gridfs;
+}
+
+/* check that user can specify _id of any type for file */
+static void
+test_set_id (void) 
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_value_t id;
+   bson_t *query;
+   mongoc_gridfs_file_t *file;
+   mongoc_gridfs_file_t *result;
+   mongoc_gridfs_file_opt_t opt = { 0 };
+
+   /* create new client and grab gridfs handle */ 
+   client = test_framework_client_new ();
+   ASSERT (client); 
+   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error); 
+   ASSERT_OR_PRINT (gridfs, error);
+      
+   /* create bson */
+   id.value_type = BSON_TYPE_INT32;
+   id.value.v_int32 = 1;
+   
+   /* query for finding file */ 
+   query = tmp_bson ("{'_id': 1}");
+ 
+   /* create new file */
+   opt.filename = "test";
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   ASSERT (file); 
+  
+   /* if we find a file with new id, then file_set_id worked */
+   ASSERT_OR_PRINT (mongoc_gridfs_file_set_id (file, &id, &error), error);
+   ASSERT (mongoc_gridfs_file_save (file));
+   result = mongoc_gridfs_find_one (gridfs, query, 
+                                    &error); 
+   ASSERT_OR_PRINT (result, error); 
+
+   mongoc_gridfs_file_destroy (result);
+   mongoc_gridfs_file_destroy (file); 
+   mongoc_gridfs_destroy (gridfs); 
+   mongoc_client_destroy (client);  
+}
+
+/* check gridfs inherits read / write concern, read prefs from the client */
+static void
+test_inherit_client_config (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *write_concern;
+   mongoc_read_concern_t *read_concern;
+   mongoc_read_prefs_t *secondary_pref;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+
+   /* mock mongos: easiest way to test that read preference is configured */
+   server = mock_mongos_new (4);
+   mock_server_run (server);
+
+   /* configure read / write concern and read prefs on client */
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   write_concern = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (write_concern, 2);
+   mongoc_client_set_write_concern (client, write_concern);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_client_set_read_concern (client, read_concern);
+
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, secondary_pref);
+
+   gridfs = _get_gridfs (server, client);
+
+   /* test read prefs and read concern */
+   future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'find': 'fs.files', 'readConcern': {'level': 'majority'}},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'ns': 'fs.files', 'firstBatch': [{'_id': 1}]}}");
+
+   file = future_get_mongoc_gridfs_file_ptr (future);
+   ASSERT (file);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* test write concern */
+   future = future_gridfs_file_remove (file, &error);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'delete': 'fs.files', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'delete': 'fs.chunks', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   mongoc_gridfs_file_destroy (file);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_write_concern_destroy (write_concern);
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_read_prefs_destroy (secondary_pref);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_gridfs_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/GridFS/create", test_create);
-   TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);
-   TestSuite_Add (suite, "/GridFS/list", test_list);
-   TestSuite_Add (suite, "/GridFS/properties", test_properties);
-   TestSuite_Add (suite, "/GridFS/empty", test_empty);
-   TestSuite_Add (suite, "/GridFS/read", test_read);
-   TestSuite_Add (suite, "/GridFS/seek", test_seek);
-   TestSuite_Add (suite, "/GridFS/stream", test_stream);
-   TestSuite_Add (suite, "/GridFS/remove", test_remove);
-   TestSuite_Add (suite, "/GridFS/write", test_write);
-   TestSuite_Add (suite, "/GridFS/test_long_seek", test_long_seek);
-   TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
-   TestSuite_Add (suite, "/GridFS/missing_chunk", test_missing_chunk);
+   TestSuite_AddLive (suite, "/GridFS/create", test_create);
+   TestSuite_AddLive (suite, "/GridFS/create_from_stream", test_create_from_stream);
+   TestSuite_AddLive (suite, "/GridFS/list", test_list);
+   TestSuite_AddLive (suite, "/GridFS/properties", test_properties);
+   TestSuite_AddLive (suite, "/GridFS/empty", test_empty);
+   TestSuite_AddLive (suite, "/GridFS/read", test_read);
+   TestSuite_AddLive (suite, "/GridFS/seek", test_seek);
+   TestSuite_AddLive (suite, "/GridFS/stream", test_stream);
+   TestSuite_AddLive (suite, "/GridFS/remove", test_remove);
+   TestSuite_AddLive (suite, "/GridFS/write", test_write);
+   TestSuite_AddFull (suite, "/GridFS/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
+   TestSuite_AddFull (suite, "/GridFS/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id); 
+   TestSuite_Add (suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }

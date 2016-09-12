@@ -47,6 +47,7 @@ struct _mongoc_server_description_t
    uint32_t                         id;
    mongoc_host_list_t               host;
    int64_t                          round_trip_time;
+   int64_t                          last_update_time_usec;
    bson_t                           last_is_master;
    bool                             has_is_master;
    const char                      *connection_address;
@@ -72,6 +73,7 @@ struct _mongoc_server_description_t
    const char                      *current_primary;
    int64_t                          set_version;
    bson_oid_t                       election_id;
+   int64_t                          last_write_date_ms;
 };
 
 void
@@ -109,16 +111,21 @@ mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time);
 
 void
-mongoc_server_description_handle_ismaster (
-   mongoc_server_description_t   *sd,
-   const bson_t                  *reply,
-   int64_t                        rtt_msec,
-   bson_error_t                  *error);
+mongoc_server_description_handle_ismaster (mongoc_server_description_t   *sd,
+                                           const bson_t                  *reply,
+                                           int64_t                        rtt_msec,
+                                           bson_error_t                  *error);
 
-size_t
-mongoc_server_description_filter_eligible (
-   mongoc_server_description_t **descriptions,
-   size_t                        description_len,
-   const mongoc_read_prefs_t    *read_prefs);
+void
+mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
+                                        size_t                        sds_len,
+                                        mongoc_server_description_t  *primary,
+                                        int64_t                       heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t    *read_prefs);
+
+void
+mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
+                                       size_t                        description_len,
+                                       const mongoc_read_prefs_t    *read_prefs);
 
 #endif

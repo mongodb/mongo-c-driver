@@ -20,14 +20,27 @@
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+#include "mongoc-metadata-private.h"
+#endif
+
 #ifdef MONGOC_ENABLE_SSL
 # include "mongoc-scram-private.h"
 # include "mongoc-ssl.h"
-# include "mongoc-ssl-private.h"
+# ifdef MONGOC_ENABLE_SSL_OPENSSL
+#  include "mongoc-openssl-private.h"
+# endif
 #endif
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 
+
+#ifndef MONGOC_NO_AUTOMATIC_GLOBALS
+#pragma message("Configure the driver with --disable-automatic-init-and-cleanup\
+ (if using ./configure) or ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF (with cmake).\
+ Automatic cleanup is deprecated and will be removed in version 2.0.")
+#endif
 
 #ifdef MONGOC_ENABLE_SASL
 #include <sasl/sasl.h>
@@ -69,13 +82,16 @@ mongoc_sasl_mutex_free (void *mutex)
    bson_free (mutex);
 }
 
-#endif//MONGOC_ENABLE_SASL
+#endif  /* MONGOC_ENABLE_SASL */
 
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   _mongoc_openssl_init();
+#endif
+
 #ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_init();
    _mongoc_scram_startup();
 #endif
 
@@ -109,6 +125,10 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
    }
 #endif
 
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   _mongoc_metadata_init ();
+#endif
+
    MONGOC_ONCE_RETURN;
 }
 
@@ -121,8 +141,8 @@ mongoc_init (void)
 
 static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 {
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_cleanup();
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   _mongoc_openssl_cleanup();
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
@@ -139,6 +159,10 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 #endif
 
    _mongoc_counters_cleanup ();
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   _mongoc_metadata_cleanup ();
+#endif
 
    MONGOC_ONCE_RETURN;
 }
@@ -166,6 +190,7 @@ static void _mongoc_init_dtor (void) __attribute__((destructor));
 static void
 _mongoc_init_dtor (void)
 {
+   bson_mem_restore_vtable ();
    mongoc_cleanup ();
 }
 #endif

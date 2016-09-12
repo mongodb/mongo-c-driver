@@ -1,0 +1,96 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="authentication">
+  <info><link type="guide" xref="index#authentication" /></info>
+  <title>Authentication</title>
+  <p>This guide covers the use of authentication options with the MongoDB C Driver. Ensure that the MongoDB server is also properly configured for authentication before making a connection. For more information, see the <link href="https://docs.mongodb.org/manual/administration/security/">MongoDB security documentation</link>.</p>
+
+  <section id="basic-auth">
+    <info><link type="guide" xref="index#authentication" /></info>
+    <title>Basic Authentication</title>
+    <p>The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGODB-CR</code>) through the use of MongoDB connection URIs.</p>
+    <p>Simply provide the username and password as one would with an <code>HTTP URL</code>, as well as the database to authenticate against via <code>authSource</code>.</p>
+
+    <screen><code>mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/?authSource=mydb");</code></screen>
+  </section>
+
+  <section id="kerberos">
+    <info><link type="guide" xref="index#authentication" /></info>
+    <title>GSSAPI (Kerberos) Authentication</title>
+    <note style="warning"><p>Kerberos support is only provided in environments supported by the <code>cyrus-sasl</code> Kerberos implementation. This currently limits support to UNIX-like environments.</p></note>
+
+    <p><code>GSSAPI</code> (Kerberos) authentication is available in the Enterprise Edition of MongoDB, version 2.4 and newer. To authenticate using <code>GSSAPI</code>, the MongoDB C driver must be installed with SASL support. Run the <code>kinit</code> command before using the following authentication methods:</p>
+
+    <screen><output style="prompt">$ </output><input>kinit mongodbuser@EXAMPLE.COM</input>
+<output>mongodbuser@EXAMPLE.COM's Password:</output>
+<output style="prompt">$ </output><input>klist</input>
+<output>Credentials cache: FILE:/tmp/krb5cc_1000
+        Principal: mongodbuser@EXAMPLE.COM
+
+  Issued                Expires               Principal
+Feb  9 13:48:51 2013  Feb  9 23:48:51 2013  krbtgt/EXAMPLE.COM@EXAMPLE.COM</output></screen>
+
+    <p>Now authenticate using the MongoDB URI. <code>GSSAPI</code> authenticates against the <code>$external</code> virtual database, so a database does not need to be specified in the URI. Note that the Kerberos principal <em>must</em> be URL-encoded:</p>
+
+    <screen><code><![CDATA[mongoc_client_t *client;
+
+client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI");
+]]></code></screen>
+    <p>The driver supports these GSSAPI properties:</p>
+    <list>
+      <item><p><code>CANONICALIZE_HOST_NAME</code>: This might be required when the hosts report different hostnames than what is used in the kerberos database. The default is "false".</p></item>
+      <item><p><code>SERVICE_NAME</code>: Use a different service name than the default, "mongodb".</p></item>
+    </list>
+    <p>Set properties in the URL:</p>
+    <screen><code><![CDATA[mongoc_client_t *client;
+
+client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI&"
+                            "authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
+]]></code></screen>
+    <p>If you encounter errors such as <code>Invalid net address</code>, check if the application is behind a NAT (Network Address Translation) firewall. If so, create a ticket that uses <code>forwardable</code> and <code>addressless</code> Kerberos tickets. This can be done by passing <code>-f -A</code> to <code>kinit</code>.</p>
+    <screen><output style="prompt">$ </output><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen>
+  </section>
+
+  <section id="sasl-plain">
+    <info><link type="guide" xref="index#authentication" /></info>
+    <title>SASL Plain Authentication</title>
+    <note style="warning">
+      <p>The MongoDB C Driver must be compiled with SASL support in order to use <code>SASL PLAIN</code> authentication.</p>
+    </note>
+
+    <p>MongoDB Enterprise Edition versions 2.5.0 and newer support the <code>SASL PLAIN</code> authentication mechanism, initially intended for delegating authentication to an LDAP server. Using the <code>SASL PLAIN</code> mechanism is very similar to the challenge response mechanism with usernames and passwords. These examples use the <code>$external</code> virtual database for <code>LDAP</code> support:</p>
+
+    <note style="warning"><p><code>SASL PLAIN</code> is a clear-text authentication mechanism. It is strongly recommended to connect to MongoDB using SSL with certificate validation when using the <code>PLAIN</code> mechanism.</p></note>
+
+    <screen><code><![CDATA[mongoc_client_t *client;
+
+client = mongoc_client_new ("mongodb://user:password@example.com/?authMechanism=PLAIN&authSource=$external");]]></code></screen>
+  </section>
+
+  <section id="x509">
+    <info><link type="guide" xref="index#authentication" /></info>
+    <title>X.509 Certificate Authentication</title>
+    <note style="warning">
+      <p>The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options: </p>
+<code>$ mongod --clusterAuthMode x509 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem</code> 
+
+    </note>
+
+    <p>The <code>MONGODB-X509</code> mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during SSL negotiation. This authentication method requires the use of SSL connections with certificate validation and is available in MongoDB 2.5.1 and newer:</p>
+
+    <screen><code><![CDATA[mongoc_client_t *client;
+mongoc_ssl_opt_t ssl_opts = { 0 };
+
+ssl_opts.pem_file = "mycert.pem";
+ssl_opts.pem_pwd = "mycertpassword";
+ssl_opts.ca_file = "myca.pem";
+ssl_opts.ca_dir = "trust_dir";
+ssl_opts.weak_cert_validation = false;
+
+client = mongoc_client_new ("mongodb://x509_derived_username@localhost/?authMechanism=MONGODB-X509");
+mongoc_client_set_ssl_opts (client, &ssl_opts);
+]]></code></screen>
+
+    <p><code>MONGODB-X509</code> authenticates against the <code>$external</code> database, so specifying a database is not required. For more information on the x509_derived_username, see the MongoDB server <link href="https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user">x.509 tutorial</link>.</p>
+  </section>
+</page>

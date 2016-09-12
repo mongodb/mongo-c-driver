@@ -24,9 +24,11 @@
 /* strcasecmp on windows */
 #include "mongoc-util-private.h"
 
+#include "mongoc-config.h"
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
+#include "mongoc-metadata-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
@@ -543,8 +545,12 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "serverselectiontimeoutms") ||
        !strcasecmp(key, "socketcheckintervalms") ||
        !strcasecmp(key, "sockettimeoutms") ||
+       !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
        !strcasecmp(key, "minpoolsize") ||
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+       !strcasecmp(key, "maxstalenessms") ||
+#endif
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
@@ -629,10 +635,15 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp(key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
-         bson_free(key);
-         bson_free(value);
-         return false;
+         goto CLEANUP;
       }
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   } else if (!strcasecmp (key, "appname")) {
+      if (!mongoc_uri_set_appname (uri, value)) {
+         MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
+         goto CLEANUP;
+      }
+#endif
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
    }
@@ -922,6 +933,9 @@ mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   int32_t max_staleness_ms;
+#endif
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
@@ -945,6 +959,10 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   max_staleness_ms = mongoc_uri_get_option_as_int32 (uri, "maxstalenessms", 0);
+   mongoc_read_prefs_set_max_staleness_ms (uri->read_prefs, max_staleness_ms);
+#endif
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
@@ -953,7 +971,7 @@ mongoc_uri_new (const char *uri_string)
 
    _mongoc_uri_build_write_concern (uri);
 
-   if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
+   if (!mongoc_write_concern_is_valid (uri->write_concern)) {
       mongoc_uri_destroy(uri);
       return NULL;
    }
@@ -1101,6 +1119,37 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 
    return true;
 }
+
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+const char *
+mongoc_uri_get_appname (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, "appname", NULL);
+}
+
+
+bool
+mongoc_uri_set_appname (mongoc_uri_t *uri,
+                        const char   *value)
+{
+   BSON_ASSERT (value);
+
+   if (!bson_utf8_validate (value, strlen (value), false)) {
+      return false;
+   }
+
+   if (!_mongoc_metadata_appname_is_valid (value)) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, "appname", value);
+
+   return true;
+}
+#endif
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
@@ -1264,6 +1313,18 @@ mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
 }
 
 
+void
+mongoc_uri_set_read_prefs_t (mongoc_uri_t              *uri,
+                             const mongoc_read_prefs_t *prefs)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (prefs);
+
+   mongoc_read_prefs_destroy (uri->read_prefs);
+   uri->read_prefs = mongoc_read_prefs_copy (prefs);
+}
+
+
 const mongoc_read_concern_t *
 mongoc_uri_get_read_concern (const mongoc_uri_t *uri) /* IN */
 {
@@ -1273,12 +1334,36 @@ mongoc_uri_get_read_concern (const mongoc_uri_t *uri) /* IN */
 }
 
 
+void
+mongoc_uri_set_read_concern (mongoc_uri_t                *uri,
+                             const mongoc_read_concern_t *rc)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (rc);
+
+   mongoc_read_concern_destroy (uri->read_concern);
+   uri->read_concern = mongoc_read_concern_copy (rc);
+}
+
+
 const mongoc_write_concern_t *
 mongoc_uri_get_write_concern (const mongoc_uri_t *uri) /* IN */
 {
    BSON_ASSERT (uri);
 
    return uri->write_concern;
+}
+
+
+void
+mongoc_uri_set_write_concern (mongoc_uri_t                 *uri,
+                              const mongoc_write_concern_t *wc)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (wc);
+
+   mongoc_write_concern_destroy (uri->write_concern);
+   uri->write_concern = mongoc_write_concern_copy (wc);
 }
 
 
@@ -1316,8 +1401,9 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
  */
 
 int32_t
-mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
-                               int32_t fallback)
+mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
+                                const char         *option,
+                                int32_t             fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1361,8 +1447,9 @@ mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
-                               int32_t value)
+mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
+                                const char   *option,
+                                int32_t       value)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1405,8 +1492,9 @@ mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
-                               bool fallback)
+mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri,
+                               const char         *option,
+                               bool                fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1446,8 +1534,9 @@ mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
-                              bool value)
+mongoc_uri_set_option_as_bool (mongoc_uri_t *uri,
+                               const char   *option,
+                               bool          value)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1490,8 +1579,9 @@ mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
  */
 
 const char*
-mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
-                               const char *fallback)
+mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri,
+                               const char         *option,
+                               const char         *fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1535,8 +1625,9 @@ mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
-                              const char *value)
+mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
+                               const char   *option,
+                               const char   *value)
 {
    size_t len;
 

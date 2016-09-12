@@ -40,13 +40,13 @@ mongoc_client_command (mongoc_client_t           *client,
       <tr><td><p>batch_size</p></td><td><p>The batch size of documents to return from the MongoDB server.</p></td></tr>
       <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command specification.</p></td></tr>
       <tr><td><p>fields</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing the fields to return in result documents.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>. Otherwise, the command uses mode <code>MONGOC_READ_PRIMARY</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>This function will always return a <code xref="mongoc_cursor_t">mongoc_cursor_t</code> if valid parameters are passed.</p>
+    <p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p>
     <p>The cursor should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code>.</p>
   </section>
 

@@ -26,11 +26,53 @@ bson_t *tmp_bson (const char *json);
 void bson_iter_bson (const bson_iter_t *iter,
                      bson_t            *bson);
 
+
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
+#endif
+
+
+const char *bson_lookup_utf8 (const bson_t *b,
+                              const char   *key);
+
+bool bson_lookup_bool (const bson_t *b,
+                       const char   *key,
+                       bool          default_value);
+
+void bson_lookup_doc (const bson_t *b,
+                      const char   *key,
+                      bson_t       *doc);
+
+int32_t bson_lookup_int32 (const bson_t *b,
+                           const char   *key);
+
+int64_t bson_lookup_int64 (const bson_t *b,
+                           const char   *key);
+
+mongoc_write_concern_t * bson_lookup_write_concern (const bson_t *b,
+                                                    const char   *key);
+
+mongoc_read_prefs_t * bson_lookup_read_prefs (const bson_t *b,
+                                              const char   *key);
+
 char *single_quotes_to_double (const char *str);
+
+typedef struct {
+   char   *errmsg;
+   size_t  errmsg_len;
+   bool    strict_numeric_types;
+   char    path[1000];
+} match_ctx_t;
 
 bool match_bson (const bson_t *doc,
                  const bson_t *pattern,
                  bool          is_command);
+
+bool match_bson_with_ctx (const bson_t *doc,
+                          const bson_t *pattern,
+                          bool          is_command,
+                          match_ctx_t  *ctx);
 
 bool match_json (const bson_t *doc,
                  bool          is_command,

@@ -37,7 +37,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
       <tr><td><p>limit</p></td><td><p>A int64_t, zero to ignore.</p></td></tr>
       <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>, <code>NULL</code> to ignore.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code>.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
@@ -46,7 +46,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
     <p>This function shall execute a count query on the underlying 'collection'. The bson 'query' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
     <p>In addition to the standard functionality available from mongoc_collection_count, this function allows the user to add arbitrary extra keys to the count.  This pass through enables features such as hinting for counts.</p>
     <p>For more information, see the <link href="http://docs.mongodb.org/manual/reference/operator/query/">query reference</link> at the MongoDB website.</p>
-    <note style="tip"><p>The <link xref="mongoc_read_concern_t">mongoc_read_concern_t</link> specified on the <link xref="mongoc_collection_t">mongoc_collection_t</link> will be used, if any.</p></note>
+    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
 
   <section id="errors">

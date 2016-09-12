@@ -104,15 +104,15 @@ To see all of the options available to you during configuration, run::
 
   $ ./configure --help
 
-To build on Windows Vista or newer with Visual Studio 2010, do the following::
+To build on Windows Vista or newer with Visual Studio 2015, do the following::
 
   cd mongo-c-driver-$ver
   cd src\libbson
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 14 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
   cd ..\..
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 10 Win64" .
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 14 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
@@ -127,3 +127,19 @@ You can use the following to checkout and build mongo-c-driver::
   $ ./autogen.sh --with-libbson=bundled
   $ make
   $ sudo make install
+
+Building from Git on using Visual Studio 2015::
+
+  git clone https://github.com/mongodb/mongo-c-driver.git
+  cd mongo-c-driver
+  git checkout x.y.z # for your specific release
+  git submodule init
+  git submodule update # libbson is a submodule
+  cd src\libbson
+  cmake -DCMAKE_INSTALL_PREFIX=C:\libmongoc -G "Visual Studio 14 Win64" .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+  cd ..\..
+  cmake -DCMAKE_INSTALL_PREFIX=C:\libmongoc -DENABLE_SSL=WINDOWS -DBSON_ROOT_DIR=C:\libmongoc -G "Visual Studio 14 Win64" .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj

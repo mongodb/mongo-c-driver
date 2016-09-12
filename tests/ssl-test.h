@@ -13,7 +13,6 @@ typedef enum ssl_test_state {
    SSL_TEST_SUCCESS,
    SSL_TEST_SSL_INIT,
    SSL_TEST_SSL_HANDSHAKE,
-   SSL_TEST_SSL_VERIFY,
    SSL_TEST_TIMEOUT,
 } ssl_test_state_t;
 

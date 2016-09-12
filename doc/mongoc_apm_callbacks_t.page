@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<page id="mongoc_apm_callbacks_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+  <info><link type="guide" xref="index#apm" /></info>
+  <title>mongoc_apm_callbacks_t</title>
+  <subtitle>Application Performance Monitoring callbacks</subtitle>
+  <section id="description">
+    <title>Synopsis</title>
+    <p>Used to receive notification of events, such as when a MongoDB command begins, succeeds, or fails.</p>
+    <p>Create a <code>mongoc_apm_callbacks_t</code> with <code xref="mongoc_apm_callbacks_new">mongoc_apm_callbacks_new</code>, set callbacks on it, then pass it to <code xref="mongoc_client_set_apm_callbacks">mongoc_client_set_apm_callbacks</code> or <code xref="mongoc_client_pool_set_apm_callbacks">mongoc_client_pool_set_apm_callbacks</code>.</p>
+    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
+  </section>
+
+  <links type="topic" groups="function" style="2column">
+    <title>Functions</title>
+  </links>
+</page>
+
+

@@ -16,7 +16,7 @@
     <p>The <code>mongoc_read_concern_t</code> allows clients to choose a level of isolation for their reads. The default, MONGOC_READ_CONCERN_LEVEL_LOCAL, is right for the great majority of applications.</p>
     <p>You can specify a read concern on connection objects, database objects, or collection objects.</p>
     <p>See <link href="https://docs.mongodb.org/master/reference/readConcern/">readConcern</link> on the MongoDB website for more information.</p>
-    <p>Read Concern is only sent to MongoDB when it has explicitly been set by <link xref="mongoc_read_concern_set_level">mongoc_read_concern_set_level</link> to anything other then empty string.</p>
+    <p>Read Concern is only sent to MongoDB when it has explicitly been set by <code xref="mongoc_read_concern_set_level">mongoc_read_concern_set_level</code> to anything other then empty string.</p>
   </section>
 
   <section id="levels">

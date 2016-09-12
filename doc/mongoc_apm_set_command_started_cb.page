@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_apm_set_command_started_cb">
+
+  <info>
+    <link type="guide" xref="mongoc_apm_callbacks_t" group="function"/>
+  </info>
+  <title>mongoc_apm_set_command_started_cb()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef void
+(*mongoc_apm_command_started_cb_t) (const mongoc_apm_command_started_t *event);
+
+void
+mongoc_apm_set_command_started_cb  (mongoc_apm_callbacks_t             *callbacks,
+                                    mongoc_apm_command_started_cb_t     cb);
+]]></code></synopsis>
+    <p>Receive an event notification whenever the driver starts a MongoDB operation.</p>
+    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>callbacks</p></td><td><p>A <code xref="mongoc_apm_callbacks_t">mongoc_apm_callbacks_t</code>.</p></td></tr>
+      <tr><td><p>cb</p></td><td><p>A function to call with a <code xref="mongoc_apm_command_started_t">mongoc_apm_command_started_t</code> whenever the driver begins a MongoDB operation.</p></td></tr>
+    </table>
+  </section>
+
+</page>

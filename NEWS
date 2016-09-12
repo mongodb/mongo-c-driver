@@ -1,3 +1,283 @@
+mongo-c-driver 1.4.0
+====================
+
+It is my pleasure to announce mongo-c-driver 1.4.0.
+
+TLS
+---
+
+The driver can now use the native TLS and crypto functions included in Mac OS X
+and Windows. OpenSSL is no longer required for TLS or authentication on Mac or
+Windows. By default, OpenSSL is used if available, the default will switch in
+version 2.0 to prefer native TLS.
+
+For native TLS on Mac:
+
+  ./configure --enable-ssl=darwin
+
+For Windows:
+
+  cmake "-DENABLE_SSL=WINDOWS" -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"
+
+All of the TLS implementations now load the native default certificate store,
+with OpenSSL on Windows falling back on the Windows native certificate store if
+no other can be found.
+
+The "ca_dir" field on mongoc_ssl_opt_t is only supported by OpenSSL. All other
+fields, including "pem_file", are supported by all implementations.
+
+A new field, "allow_invalid_hostname", has been added to mongoc_ssl_opt_t and is
+preferred over the existing "allow_invalid_certificate" to disable hostname
+verification.
+
+See the documentation for mongoc_ssl_opt_t for details.
+
+The driver now supports the latest OpenSSL 1.1 in addition to past versions.
+
+Application Performance Monitoring
+----------------------------------
+
+The driver implements the MongoDB Command Monitoring Spec. Applications can
+record the duration and other details of every operation the driver performs on
+the server. See "Introduction to Application Performance Monitoring" in the
+docs.
+
+Error API
+---------
+
+New functions mongoc_client_set_error_api and mongoc_client_pool_set_error_api
+allow applications to distinguish client and server errors. See the "Error
+Reporting" doc.
+
+Unacknowledged Write Results
+----------------------------
+
+Unacknowledged writes (writes whose mongoc_write_concern_t "w" value is zero)
+now reply with an empty document instead of one with nInserted: 0, nUpdated: 0,
+and so on.
+
+Command functions now ignore the read preferences set on a client, database,
+or collection. Instead, they use the mongoc_read_prefs_t passed in explicitly,
+or default to "primary". This change was made to bring them in line with the
+Server Selection Spec. These are the affected functions:
+
+  * mongoc_client_command
+  * mongoc_client_command_simple
+  * mongoc_database_command
+  * mongoc_database_command_simple
+  * mongoc_collection_command
+  * mongoc_collection_command_simple
+
+On the other hand, the following command-specific helper functions now use the
+collection's read preference:
+
+  * mongoc_collection_count
+  * mongoc_collection_stats
+
+New functions to send maxTimeMS or any arbitrary options with findAndModify:
+
+  * mongoc_find_and_modify_opts_set_max_time_ms
+  * mongoc_find_and_modify_opts_append
+
+New function to include a write concern with a generic command function
+like mongoc_client_command_simple:
+
+  * mongoc_write_concern_append
+
+Public API For Higher-Level Drivers
+-----------------------------------
+
+New functions support language drivers (specifically the PHP and HHVM drivers)
+using only the libmongoc public API:
+
+  * mongoc_bulk_operation_get_hint
+  * mongoc_client_command_simple_with_server_id
+  * mongoc_client_get_server_description
+  * mongoc_client_get_server_description_by_id
+  * mongoc_client_get_server_descriptions
+  * mongoc_client_select_server
+  * mongoc_cursor_get_limit
+  * mongoc_cursor_new_from_command_reply
+  * mongoc_cursor_set_hint
+  * mongoc_cursor_set_limit
+  * mongoc_log_trace_disable
+  * mongoc_log_trace_enable
+  * mongoc_server_description_ismaster
+  * mongoc_server_description_round_trip_time
+  * mongoc_server_description_type
+  * mongoc_server_descriptions_destroy_all
+  * mongoc_uri_get_option_as_bool
+  * mongoc_uri_get_option_as_int32
+  * mongoc_uri_get_option_as_utf8
+  * mongoc_uri_option_is_bool
+  * mongoc_uri_option_is_int32
+  * mongoc_uri_option_is_utf8
+  * mongoc_uri_set_auth_source
+  * mongoc_uri_set_database
+  * mongoc_uri_set_option_as_bool
+  * mongoc_uri_set_option_as_int32
+  * mongoc_uri_set_option_as_utf8
+  * mongoc_uri_set_password
+  * mongoc_uri_set_read_concern
+  * mongoc_uri_set_read_prefs_t
+  * mongoc_uri_set_username
+  * mongoc_uri_set_write_concern
+  * mongoc_write_concern_is_acknowledged
+  * mongoc_write_concern_is_valid
+  * mongoc_write_concern_journal_is_set
+
+Now that these public APIs are available, the PHP drivers no longer define the
+MONGOC_I_AM_A_DRIVER preprocessor symbol to access private APIs. The symbol is
+removed from C Driver headers, and libmongoc-priv.so is no longer installed.
+
+Other Features
+--------------
+
+  * New connection string option "localThresholdMS".
+  * zSeries, POWER8, and ARM 64-bit platform support.
+  * Performance enhancements, reduce allocation and copying in command code.
+  * All man page names now begin with "mongoc_" to avoid install conflicts.
+  * New function mongoc_gridfs_file_set_id.
+
+Deprecations
+------------
+
+Automatically calling mongoc_init and mongoc_cleanup is a GCC-specific feature
+that is now deprecated, and will be removed in version 2. The driver should be
+built with:
+
+./configure --disable-automatic-init-and-cleanup
+
+Or:
+
+  cmake "-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF" -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"
+
+In this configuration, applications must explicitly init and cleanup libmongoc.
+
+Deprecated functions:
+
+  * mongoc_write_concern_get_fsync
+  * mongoc_write_concern_set_fsync
+
+Notable Bug Fixes
+-----------------
+
+  * Logic bugs using tag sets to select replica set members with complex configs
+  * mongoc_client_get_database_names no longer filters out a replica set
+    member's "local" database.
+  * mongoc_client_get_gridfs now ensures the proper indexes on the files and
+    chunks collections.
+  * SecondaryPreferred fails if primary matches tags but secondaries don't.
+  * mongoc_collection_find_and_modify_with_opts can return true on
+    writeConcernError.
+  * mongoc_collection_validate doesn't always init "reply".
+  * The strings referred to by mongoc_ssl_opt_t, like pem_file and ca_file, are
+    now copied into the client or client pool by mongoc_client_set_ssl_opts or
+    mongoc_client_pool_set_ssl_opts, and need not be kept valid afterward.
+  * mongoc_collection_count_with_opts ignored flags and read_prefs.
+  * minPoolSize of 0 should mean "no minimum".
+  * mongoc_database_create_collection should always use the primary.
+  * The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now
+    properly parsed from the URI, see the "Authentication" doc for details.
+  * Comprehensive compatibility with various C standards and compilers.
+  * mongoc_bulk_operation_execute didn't initialize "reply" if it was passed
+    invalid arguments.
+
+Acknowledgments
+---------------
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Ian Boros
+  * Fiona Rowan
+  * Jeremy Mikola
+  * Christoph Schwarz
+  * Remi Collet
+  * Derick Rethans
+  * Mike Lloyd
+  * David Hatch
+  * Brian Samek
+  * Jean-Bernard Jansen
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.3.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.3.5. This release fixes a crash
+in mongoc_cleanup when an allocator had been set with bson_mem_set_vtable, and
+introduces a configure option MONGOC_NO_AUTOMATIC_GLOBALS which prevents code
+built with GCC from automatically calling mongoc_init and mongoc_cleanup when
+your code does not.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.3.4
+====================
+
+It is my pleasure to announce the MongoDB C Driver 1.3.4. This release fixes a
+security vulnerability: when a mongoc_client_t uses SSL and is disconnected, it
+failed to re-verify the server certificate after reconnecting. This flaw affects
+single clients, not pooled ones.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.3.3
+====================
+
+It is my pleasure to announce MongoDB C Driver 1.3.3. This fixes a bug where
+a slightly-oversized bulk write operation was not split into batches; instead,
+it was sent whole to the server, which rejected it.
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.3.2
+====================
+
+It is my pleasure to announce MongoDB C Driver 1.3.2. This is a bugfix release:
+
+  * A socket is properly discarded after a network error from a command.
+  * mongoc_database_get_collection now copies the database's read preferences,
+    read concern, and write concern, instead of copying the client's.
+  * mongoc_cursor_t's private struct now allows a negative limit.
+
+Thanks to everyone who contributed to this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+  * Hannes Magnusson
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
+
 mongo-c-driver 1.3.1
 ====================
 

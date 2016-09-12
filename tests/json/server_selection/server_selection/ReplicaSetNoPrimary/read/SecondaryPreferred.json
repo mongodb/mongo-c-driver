@@ -1,64 +1,18 @@
 {
-    "candidate_servers": [
-        {
-            "address": "b:27017", 
-            "avg_rtt_ms": 5, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
-            "type": "RSSecondary"
-        }, 
-        {
-            "address": "c:27017", 
-            "avg_rtt_ms": 100, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
-            "type": "RSSecondary"
-        }
-    ], 
-    "eligible_servers": [
-        {
-            "address": "b:27017", 
-            "avg_rtt_ms": 5, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
-            "type": "RSSecondary"
-        }, 
-        {
-            "address": "c:27017", 
-            "avg_rtt_ms": 100, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
-            "type": "RSSecondary"
-        }
-    ], 
     "in_latency_window": [
         {
             "address": "b:27017", 
             "avg_rtt_ms": 5, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
+            "tags": {
+                "data_center": "nyc"
+            }, 
             "type": "RSSecondary"
         }
     ], 
     "operation": "read", 
     "read_preference": {
         "mode": "SecondaryPreferred", 
-        "tags": [
+        "tag_sets": [
             {
                 "data_center": "nyc"
             }
@@ -68,21 +22,17 @@
         {
             "address": "b:27017", 
             "avg_rtt_ms": 5, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
+            "tags": {
+                "data_center": "nyc"
+            }, 
             "type": "RSSecondary"
         }, 
         {
             "address": "c:27017", 
             "avg_rtt_ms": 100, 
-            "tags": [
-                {
-                    "data_center": "nyc"
-                }
-            ], 
+            "tags": {
+                "data_center": "nyc"
+            }, 
             "type": "RSSecondary"
         }
     ], 
@@ -91,21 +41,17 @@
             {
                 "address": "b:27017", 
                 "avg_rtt_ms": 5, 
-                "tags": [
-                    {
-                        "data_center": "nyc"
-                    }
-                ], 
+                "tags": {
+                    "data_center": "nyc"
+                }, 
                 "type": "RSSecondary"
             }, 
             {
                 "address": "c:27017", 
                 "avg_rtt_ms": 100, 
-                "tags": [
-                    {
-                        "data_center": "nyc"
-                    }
-                ], 
+                "tags": {
+                    "data_center": "nyc"
+                }, 
                 "type": "RSSecondary"
             }
         ], 

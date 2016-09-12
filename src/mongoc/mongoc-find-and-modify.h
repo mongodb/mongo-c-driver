@@ -53,8 +53,14 @@ mongoc_find_and_modify_opts_set_flags         (mongoc_find_and_modify_opts_t    
 bool
 mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
                                                             bool                           bypass);
+bool
+mongoc_find_and_modify_opts_set_max_time_ms   (mongoc_find_and_modify_opts_t        *opts,
+                                               uint32_t                              max_time_ms);
+bool
+mongoc_find_and_modify_opts_append            (mongoc_find_and_modify_opts_t        *opts,
+                                               const bson_t                         *extra);
 void
-mongoc_find_and_modify_opts_destroy           (mongoc_find_and_modify_opts_t *opts);
+mongoc_find_and_modify_opts_destroy           (mongoc_find_and_modify_opts_t        *opts);
 
 BSON_END_DECLS
 

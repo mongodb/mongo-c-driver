@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_server_descriptions_destroy_all">
+
+  <info>
+    <link type="guide" xref="mongoc_server_description_t" group="function"/>
+  </info>
+  <title>mongoc_server_descriptions_destroy_all()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
+mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
+                                        size_t n);]]></code></synopsis>
+    <p>Frees the array of <code xref="mongoc_server_description_t">mongoc_server_description_t</code> structs returned by <code xref="mongoc_client_get_server_descriptions">mongoc_client_get_server_descriptions</code>.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>sds</p></td><td><p>The array of server descriptions.</p></td></tr>
+      <tr><td><p>n</p></td><td><p>The number of elements in <code>sds</code>.</p></td></tr>
+    </table>
+  </section>
+
+</page>

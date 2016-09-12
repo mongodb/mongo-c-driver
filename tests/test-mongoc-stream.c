@@ -1,4 +1,3 @@
-#include "mongoc-tests.h"
 
 #include <fcntl.h>
 #include <mongoc.h>

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongoc-config.h"
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs.h"
@@ -30,6 +31,9 @@
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
 static bson_oid_t kObjectIdZero = { {0} };
+
+static bool _match_tag_set (const mongoc_server_description_t *sd,
+                            bson_iter_t                       *tag_set_iter);
 
 /* Destroy allocated resources within @description, but don't free it */
 void
@@ -57,11 +61,13 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   sd->last_write_date_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
    bson_init (&sd->last_is_master);
    sd->has_is_master = false;
+   sd->last_update_time_usec = bson_get_monotonic_time ();
 }
 
 /*
@@ -273,6 +279,88 @@ mongoc_server_description_host (mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_round_trip_time --
+ *
+ *      Get the round trip time of this server, which is the client's
+ *      measurement of the duration of an "ismaster" command.
+ *
+ * Returns:
+ *      The server's round trip time in milliseconds.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int64_t
+mongoc_server_description_round_trip_time (mongoc_server_description_t *description)
+{
+   return description->round_trip_time;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_type --
+ *
+ *      Get this server's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec.
+ *
+ * Returns:
+ *      A string.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char *
+mongoc_server_description_type (mongoc_server_description_t *description)
+{
+   switch (description->type) {
+   case MONGOC_SERVER_UNKNOWN:
+      return "Unknown";
+   case MONGOC_SERVER_STANDALONE:
+      return "Standalone";
+   case MONGOC_SERVER_MONGOS:
+      return "Mongos";
+   case MONGOC_SERVER_POSSIBLE_PRIMARY:
+      return "PossiblePrimary";
+   case MONGOC_SERVER_RS_PRIMARY:
+      return "RSPrimary";
+   case MONGOC_SERVER_RS_SECONDARY:
+      return "RSSecondary";
+   case MONGOC_SERVER_RS_ARBITER:
+      return "RSArbiter";
+   case MONGOC_SERVER_RS_OTHER:
+      return "RSOther";
+   case MONGOC_SERVER_RS_GHOST:
+      return "RSGhost";
+   case MONGOC_SERVER_DESCRIPTION_TYPES:
+   default:
+      MONGOC_ERROR ("Invalid mongoc_server_description_t type");
+      return "Invalid";
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_ismaster --
+ *
+ *      Return this server's most recent "ismaster" command response.
+ *
+ * Returns:
+ *      A reference to a BSON document, owned by the server description.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const bson_t *
+mongoc_server_description_ismaster (mongoc_server_description_t *description)
+{
+   return &description->last_is_master;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_set_state --
  *
  *       Set the server description's server type.
@@ -285,7 +373,6 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
 {
    description->type = type;
 }
-
 
 /*
  *--------------------------------------------------------------------------
@@ -330,7 +417,6 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
    }
 }
 
-
 /*
  *-------------------------------------------------------------------------
  *
@@ -371,6 +457,9 @@ mongoc_server_description_handle_ismaster (
    bson_error_t                  *error)
 {
    bson_iter_t iter;
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   bson_iter_t child;
+#endif
    bool is_master = false;
    bool is_shard = false;
    bool is_secondary = false;
@@ -463,6 +552,17 @@ mongoc_server_description_handle_ismaster (
          bson_init_static (&sd->tags, bytes, len);
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+      } else if (strcmp ("lastWrite", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
+             !bson_iter_recurse (&iter, &child) ||
+             !bson_iter_find (&child, "lastWriteDate") ||
+             !BSON_ITER_HOLDS_DATE_TIME (&child)) {
+            goto failure;
+         }
+
+         sd->last_write_date_ms = bson_iter_date_time (&child);
+#endif
       }
    }
 
@@ -544,85 +644,149 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    return copy;
 }
 
+
 /*
  *-------------------------------------------------------------------------
  *
- * mongoc_server_description_filter_eligible --
+ * mongoc_server_description_filter_stale --
  *
- *       Given a set of server descriptions, determine which are eligible
- *       as per the Server Selection spec. Determines the number of
- *       eligible servers, and sets any servers that are NOT eligible to
- *       NULL in the descriptions set.
- *
- * Returns:
- *       Number of eligible servers found.
+ *       Estimate servers' staleness according to the Server Selection Spec.
+ *       Determines the number of eligible servers, and sets any servers that
+ *       are too stale to NULL in the descriptions set.
  *
  *-------------------------------------------------------------------------
  */
 
-size_t
-mongoc_server_description_filter_eligible (
-   mongoc_server_description_t **descriptions,
-   size_t                        description_len,
-   const mongoc_read_prefs_t    *read_prefs)
+void
+mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
+                                        size_t                        sds_len,
+                                        mongoc_server_description_t  *primary,
+                                        int64_t                       heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t    *read_prefs)
+{
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   int64_t max_staleness_ms;
+   int64_t max_last_write_date_ms;
+   size_t i;
+
+   if (!read_prefs) {
+      /* NULL read_prefs is PRIMARY, no maxStalenessMS to filter by */
+      return;
+   }
+
+   max_staleness_ms = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
+   BSON_ASSERT (max_staleness_ms >= 0);
+
+   if (max_staleness_ms == 0) {
+      /* 0 means "no max staleness" */
+      return;
+   }
+
+   if (primary) {
+      int64_t staleness_usec;
+
+      for (i = 0; i < sds_len; i++) {
+         if (!sds[i] || sds[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+            continue;
+         }
+
+         /* See max-staleness.rst for explanation of these formulae. */
+         staleness_usec =
+            primary->last_write_date_ms * 1000 +
+            (sds[i]->last_update_time_usec - primary->last_update_time_usec) -
+            sds[i]->last_write_date_ms * 1000 +
+            heartbeat_frequency_ms * 1000;
+
+         if (staleness_usec > max_staleness_ms * 1000) {
+            sds[i] = NULL;
+         }
+      }
+   } else {
+      int64_t staleness_ms;
+
+      /* find max last_write_date */
+      max_last_write_date_ms = 0;
+      for (i = 0; i < sds_len; i++) {
+         if (sds[i] && sds[i]->type == MONGOC_SERVER_RS_SECONDARY &&
+             sds[i]->last_write_date_ms > max_last_write_date_ms) {
+            max_last_write_date_ms = sds[i]->last_write_date_ms;
+         }
+      }
+
+      /* use max last_write_date to estimate each secondary's staleness */
+      for (i = 0; i < sds_len; i++) {
+         if (!sds[i] || sds[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+            continue;
+         }
+
+         staleness_ms = max_last_write_date_ms -
+                        sds[i]->last_write_date_ms +
+                        heartbeat_frequency_ms;
+
+         if (staleness_ms > max_staleness_ms) {
+            sds[i] = NULL;
+         }
+      }
+   }
+#endif
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_server_description_filter_tags --
+ *
+ * Given a set of server descriptions, set to NULL any that don't
+ * match the the read preference's tag sets.
+ *
+ * https://github.com/mongodb/specifications/blob/master/source/server-selection/server-selection.rst#tag-set
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
+                                       size_t                        description_len,
+                                       const mongoc_read_prefs_t    *read_prefs)
 {
    const bson_t *rp_tags;
    bson_iter_t rp_tagset_iter;
-   bson_iter_t rp_iter;
-   bson_iter_t sd_iter;
-   uint32_t rp_len;
-   uint32_t sd_len;
-   const char *rp_val;
-   const char *sd_val;
+   bson_iter_t tag_set_iter;
    bool *sd_matched = NULL;
-   size_t found;
+   bool found;
    size_t i;
-   size_t rval = 0;
 
    if (!read_prefs) {
       /* NULL read_prefs is PRIMARY, no tags to filter by */
-      return description_len;
+      return;
    }
 
    rp_tags = mongoc_read_prefs_get_tags (read_prefs);
 
    if (bson_count_keys (rp_tags) == 0) {
-      return description_len;
+      /* no tags to filter by */
+      return;
    }
 
    sd_matched = (bool *) bson_malloc0 (sizeof(bool) * description_len);
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 
-   /* for each read preference tagset */
+   /* for each read preference tag set */
    while (bson_iter_next (&rp_tagset_iter)) {
-      found = description_len;
+      found = false;
 
       for (i = 0; i < description_len; i++) {
-         sd_matched[i] = true;
+         if (!descriptions[i]) {
+            /* NULLed earlier in mongoc_topology_description_suitable_servers */
+            continue;
+         }
 
-         bson_iter_recurse (&rp_tagset_iter, &rp_iter);
-
-         while (bson_iter_next (&rp_iter)) {
-            /* TODO: can we have non-utf8 tags? */
-            rp_val = bson_iter_utf8 (&rp_iter, &rp_len);
-
-            if (bson_iter_init_find (&sd_iter, &descriptions[i]->tags, bson_iter_key (&rp_iter))) {
-
-               /* If the server description has that key */
-               sd_val = bson_iter_utf8 (&sd_iter, &sd_len);
-
-               if (! (sd_len == rp_len && (0 == memcmp(rp_val, sd_val, rp_len)))) {
-                  /* If the key value doesn't match, no match */
-                  sd_matched[i] = false;
-                  found--;
-               }
-            } else {
-               /* If the server description doesn't have that key, no match */
-               sd_matched[i] = false;
-               found--;
-               break;
-            }
+         bson_iter_recurse (&rp_tagset_iter, &tag_set_iter);
+         sd_matched[i] = _match_tag_set (descriptions[i], &tag_set_iter);
+         if (sd_matched[i]) {
+            found = true;
          }
       }
 
@@ -633,11 +797,11 @@ mongoc_server_description_filter_eligible (
             }
          }
 
-         rval = found;
          goto CLEANUP;
       }
    }
 
+   /* tried each */
    for (i = 0; i < description_len; i++) {
       if (! sd_matched[i]) {
          descriptions[i] = NULL;
@@ -646,6 +810,47 @@ mongoc_server_description_filter_eligible (
 
 CLEANUP:
    bson_free (sd_matched);
+}
 
-   return rval;
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * _match_tag_set --
+ *
+ *       Check if a server's tags match one tag set, like
+ *       {'tag1': 'value1', 'tag2': 'value2'}.
+ *
+ *-------------------------------------------------------------------------
+ */
+static bool _match_tag_set (const mongoc_server_description_t *sd,
+                            bson_iter_t                       *tag_set_iter)
+{
+   bson_iter_t sd_iter;
+   uint32_t read_pref_tag_len;
+   uint32_t sd_len;
+   const char *read_pref_tag;
+   const char *read_pref_val;
+   const char *server_val;
+
+   while (bson_iter_next (tag_set_iter)) {
+      /* one {'tag': 'value'} pair from the read preference's tag set */
+      read_pref_tag = bson_iter_key (tag_set_iter);
+      read_pref_val = bson_iter_utf8 (tag_set_iter, &read_pref_tag_len);
+
+      if (bson_iter_init_find (&sd_iter, &sd->tags, read_pref_tag)) {
+         /* The server has this tag - does it have the right value? */
+         server_val = bson_iter_utf8 (&sd_iter, &sd_len);
+         if (sd_len != read_pref_tag_len ||
+             memcmp(read_pref_val, server_val, read_pref_tag_len)) {
+            /* If the values don't match, no match */
+            return false;
+         }
+      } else {
+         /* If the server description doesn't have that key, no match */
+         return false;
+      }
+   }
+
+   return true;
 }

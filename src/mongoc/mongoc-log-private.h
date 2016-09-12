@@ -17,7 +17,7 @@
 #ifndef MONGOC_LOG_PRIVATE_H
 #define MONGOC_LOG_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION) && !defined (MONGOC_I_AM_A_DRIVER)
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -38,13 +38,5 @@ void
 mongoc_log_trace_iovec       (const char *domain,
                               const mongoc_iovec_t *_iov,
                               size_t _iovcnt);
-
-void
-mongoc_log_trace_enable      (void);
-
-void
-mongoc_log_trace_disable     (void);
-
-
 
 #endif /* MONGOC_LOG_PRIVATE_H */

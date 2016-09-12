@@ -1,12 +1,15 @@
 #include <mongoc.h>
+#include <mongoc-collection-private.h>
+#include <mongoc-write-concern-private.h>
+#include <mongoc-read-concern-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "mongoc-client-private.h"
 #include "mongoc-database-private.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "test-conveniences.h"
 
 
 static void
@@ -122,9 +125,138 @@ test_command (void)
    assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
    assert (strstr (error.message, "a_non_existing_command"));
 
+   bson_destroy (&reply);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
+}
+
+
+static void
+_test_db_command_read_prefs (bool simple, bool pooled)
+{
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   mongoc_read_prefs_t *secondary_pref;
+   bson_t *cmd;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *reply;
+
+   /* mock mongos: easiest way to test that read preference is configured */
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   db = mongoc_client_get_database (client, "db");
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_database_set_read_prefs (db, secondary_pref);
+   cmd = tmp_bson ("{'foo': 1}");
+
+   if (simple) {
+      /* simple, without read preference */
+      future = future_database_command_simple (db, cmd,
+                                               NULL, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+
+      /* with read preference */
+      future = future_database_command_simple (db, cmd,
+                                               secondary_pref, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+   } else {
+      /* not simple, no read preference */
+      cursor = mongoc_database_command (db, MONGOC_QUERY_NONE, 0, 0, 0,
+                                        cmd, NULL, NULL);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+
+      /* with read preference */
+      cursor = mongoc_database_command (db, MONGOC_QUERY_NONE, 0, 0, 0,
+                                        cmd, NULL, secondary_pref);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_database_destroy (db);
+   mongoc_read_prefs_destroy (secondary_pref);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_server_destroy (server);
+}
+
+
+static void
+test_db_command_simple_read_prefs_single (void)
+{
+   _test_db_command_read_prefs (true, false);
+}
+
+
+static void
+test_db_command_simple_read_prefs_pooled (void)
+{
+   _test_db_command_read_prefs (true, true);
+}
+
+
+static void
+test_db_command_read_prefs_single (void)
+{
+   _test_db_command_read_prefs (false, false);
+}
+
+
+static void
+test_db_command_read_prefs_pooled (void)
+{
+   _test_db_command_read_prefs (false, true);
 }
 
 
@@ -304,6 +436,46 @@ test_get_collection_info (void)
 }
 
 static void
+test_get_collection (void)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_write_concern_t *wc;
+   mongoc_read_concern_t *rc;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_collection_t *collection;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+   database = mongoc_client_get_database (client, "test");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_database_set_write_concern (database, wc);
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, "majority");
+   mongoc_database_set_read_concern (database, rc);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_database_set_read_prefs (database, read_prefs);
+
+   collection = mongoc_database_get_collection (database, "test");
+
+   ASSERT_CMPINT32 (collection->write_concern->w, ==, 2);
+   ASSERT_CMPSTR (collection->read_concern->level, "majority");
+   ASSERT_CMPINT (collection->read_prefs->mode, ==, MONGOC_READ_SECONDARY);
+
+   mongoc_collection_destroy (collection);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_read_concern_destroy (rc);
+   mongoc_write_concern_destroy (wc);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_get_collection_names (void)
 {
    mongoc_database_t *database;
@@ -422,6 +594,8 @@ test_get_collection_names_error (void)
    request_t *request;
    char **names;
 
+   capture_logs (true);
+
    server = mock_server_new ();
    mock_server_auto_ismaster (server, "{'ismaster': true,"
                                        " 'maxWireVersion': 3}");
@@ -429,8 +603,6 @@ test_get_collection_names_error (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
-   suppress_one_message ();
-   suppress_one_message ();
    future = future_database_get_collection_names (database, &error);
    request = mock_server_receives_command (server,
                                             "test",
@@ -474,16 +646,26 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Database/copy", test_copy);
-   TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
-   TestSuite_Add (suite, "/Database/command", test_command);
-   TestSuite_Add (suite, "/Database/drop", test_drop);
-   TestSuite_Add (suite, "/Database/create_collection", test_create_collection);
-   TestSuite_Add (suite, "/Database/get_collection_info",
+   TestSuite_AddLive (suite, "/Database/copy", test_copy);
+   TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
+   TestSuite_AddLive (suite, "/Database/command", test_command);
+   TestSuite_Add (suite, "/Database/command/read_prefs/simple/single",
+                  test_db_command_simple_read_prefs_single);
+   TestSuite_Add (suite, "/Database/command/read_prefs/simple/pooled",
+                  test_db_command_simple_read_prefs_pooled);
+   TestSuite_Add (suite, "/Database/command/read_prefs/single",
+                  test_db_command_read_prefs_single);
+   TestSuite_Add (suite, "/Database/command/read_prefs/pooled",
+                  test_db_command_read_prefs_pooled);
+   TestSuite_AddLive (suite, "/Database/drop", test_drop);
+   TestSuite_AddLive (suite, "/Database/create_collection", test_create_collection);
+   TestSuite_AddLive (suite, "/Database/get_collection_info",
                   test_get_collection_info);
-   TestSuite_Add (suite, "/Database/get_collection_names",
+   TestSuite_AddLive (suite, "/Database/get_collection",
+                  test_get_collection);
+   TestSuite_AddLive (suite, "/Database/get_collection_names",
                   test_get_collection_names);
-   TestSuite_Add (suite, "/Database/get_collection_names_error",
+   TestSuite_AddLive (suite, "/Database/get_collection_names_error",
                   test_get_collection_names_error);
    TestSuite_Add (suite, "/Database/get_default_database",
                   test_get_default_database);

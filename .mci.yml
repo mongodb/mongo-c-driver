@@ -23,20 +23,42 @@ c_driver_variables:
   release_archive: &release_archive_builder
     - name: "releasearchive"
 
+  just_compile: &just_compile
+    - name: "compile"
+
+  compile_unix_variants: &compile_unix_variants
+    - name: "compileunixtest-c11"
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
+
+  compile_most_unix_variants: &compile_most_unix_variants
+    - name: "compileunixtest-c99"
+    - name: "compileunixtest-openssl-sasl"
+    - name: "compileunixtest-openssl-nosasl"
+    - name: "compileunixtest-nossl-sasl"
+    - name: "compileunixtest-nossl-nosasl"
+
   topology_test_list: &topology_tests
     - name: "compile"
     - name: "integration-test-2.4"
     - name: "integration-test-2.4-replica-set"
     - name: "integration-test-2.4-sharded"
+    - name: "integration-test-2.4-shard-multi"
     - name: "integration-test-2.6"
     - name: "integration-test-2.6-replica-set"
     - name: "integration-test-2.6-sharded"
+    - name: "integration-test-2.6-shard-multi"
     - name: "integration-test-3.0"
     - name: "integration-test-3.0-replica-set"
     - name: "integration-test-3.0-sharded"
+    - name: "integration-test-3.0-shard-multi"
     - name: "integration-test-latest"
     - name: "integration-test-latest-replica-set"
     - name: "integration-test-latest-sharded"
+    - name: "integration-test-latest-shard-multi"
 
   topology_test_no_auth_list: &topology_tests_no_auth
     - name: "compile"
@@ -53,12 +75,32 @@ c_driver_variables:
     - name: "integration-test-latest-replica-set-no-auth"
     - name: "integration-test-latest-sharded-no-auth"
 
+  topology_test_latest: &topology_tests_latest
+    - name: "compile"
+    - name: "integration-test-latest"
+    - name: "integration-test-latest-no-auth"
+    - name: "integration-test-latest-replica-set"
+    - name: "integration-test-latest-replica-set-no-auth"
+    - name: "integration-test-latest-sharded"
+    - name: "integration-test-latest-shard-multi"
+    - name: "integration-test-latest-sharded-no-auth"
+
+  ssl_tests_test_list: &ssl_tests_latest
+    - name: "compile"
+    - name: "integration-test-latest-ssl"
+    - name: "integration-test-latest-ssl-no-auth"
+
   ssl_test_list: &ssl_tests
     - name: "compile"
     - name: "integration-test-3.0-ssl"
+    - name: "integration-test-3.0-ssl-no-auth"
+    - name: "integration-test-latest-ssl"
+    - name: "integration-test-latest-ssl-no-auth"
 
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
+    linuxppc64le: &mongo_url_linuxppc64le
+      mongo_url_prefix: "http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-"
     linux64: &mongo_url_linux64
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-"
     ubuntu1204: &mongo_url_ubuntu1204
@@ -67,31 +109,56 @@ c_driver_variables:
     ubuntu1404: &mongo_url_ubuntu1404
       mongo_url_platform: "ubuntu1404-"
       <<: *mongo_url_linux64
+    windows64ssl: &mongo_url_windows64ssl
+      mongo_url_prefix: "http://downloads.10gen.com/win32/mongodb-win32-x86_64-enterprise-windows-64-"
+      mongo_url_platform: ""
     windows64: &mongo_url_windows64
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-"
       mongo_url_platform: ""
     windows32: &mongo_url_windows32
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
+    rhel70: &mongo_url_rhel70
+      mongo_url_platform: "rhel70-"
+      <<: *mongo_url_linux64
+    rhel62: &mongo_url_rhel62
+      mongo_url_platform: "rhel62-"
+      <<: *mongo_url_linux64
     rhel55: &mongo_url_rhel55
-      mongo_url_platform: "rhel57-"
+      mongo_url_platform: "rhel55-"
       <<: *mongo_url_linux64
     rhel55_32: &mongo_url_rhel55_32
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
-    osx-108: &mongo_url_osx_108
+    osx-1010: &mongo_url_osx_1010
       mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
+    osx-1010: &mongo_url_osx_1010_enterprise
+      mongo_url_prefix: "http://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-"
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
+    rhel71_ppc64le: &mongo_url_ppc64le_rhel71
+      mongo_url_platform: "rhel71-"
+      <<: *mongo_url_linuxppc64le
 
   ## Common sets of CFLAGS
   cflags:
+    standard: &cflags_power8
+      cflags: "-mcpu=power8 -mtune=power8 -mcmodel=medium -Werror"
     standard: &cflags_64
       cflags: "-m64 -march=x86-64 -Werror"
+    standard_no_werror: &cflags_64_no_werror
+      cflags: "-m64 -march=x86-64"
     standard_32: &cflags_32
-      cflags: "-m32 -march=i386 -Werror"
-    osx_108: &cflags_osx_108
+      # Until CDRIVER-1417, omit "-Werror"
+      cflags: "-m32 -march=i386"
+    osx_1010: &cflags_osx_1010
       cflags: "-m64 -march=x86-64"
     solaris_64: &cflags_solaris_64
       cflags: "-m64 -march=x86-64"
+
+  configure:
+  standard: &configure_flags_default
+     configure_flags: "--enable-experimental-features --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
+  no_experimental: &configure_flags_no_experimental
+     configure_flags: "--enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-optimizations --enable-maintainer-flags --disable-silent-rules --disable-automatic-init-and-cleanup --with-libbson=bundled"
 
   ## Extra $PATH entries
   paths:
@@ -109,39 +176,45 @@ c_driver_variables:
     mongo_orchestration:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
-          pidfile=/cygdrive/c/mo.pid
-          if [ -f $pidfile ]; then
-            echo "Existing pidfile $pidfile"
-            cat $pidfile
-            mongo-orchestration --pidfile c:\\mo.pid stop
-            rm -f $pidfile
-          fi
-          ls -la
-          fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
+          export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
+          if [ -f "/cygdrive/c/tmp/orchestration-home/server.pid" ]; then
+            echo "Prior Mongo Orchestration?"
+            mongo-orchestration stop
+          fi
+
+          # This seems to alleviate issues starting Orchestration on Windows.
+          python -m virtualenv venv
+          cd venv
+          . Scripts/activate
+          git clone https://github.com/10gen/mongo-orchestration.git
+          cd mongo-orchestration
+          pip install .
+          cd ../..
+
+          mkdir -p /cygdrive/c/tmp/orchestration-home
+          rm -f /cygdrive/c/$MONGO_ORCHESTRATION_HOME/server.pid
+          echo From shell `date` > /cygdrive/c/tmp/orchestration-home/server.log
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
-          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern --pidfile c:\\mo.pid
-          sleep 10
-          cat c:\\mo.pid
-          cat orchestration.config
-          cat server.log
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
-          pidfile=/data/mo.pid
-          if [ -f $pidfile ]; then
-            echo "Existing pidfile $pidfile"
-            cat $pidfile
-            mongo-orchestration --pidfile /data/mo.pid stop;
-            rm -f $pidfile
-          fi
-          df -h
-          ls -la
           echo "Starting Mongo Orchestration..."
+          export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
+          set +o errexit
+          if [ -f /tmp/orchestration-home/server.pid ]; then
+            echo "Prior Mongo Orchestration?"
+            kill `cat /tmp/orchestration-home/server.pid`
+          fi
+          killall mongod mongos
+          set -o errexit
+          mkdir -p /data/db
+          mkdir -p $MONGO_ORCHESTRATION_HOME
+          rm -f $MONGO_ORCHESTRATION_HOME/server.pid
+          echo From shell `date` > $MONGO_ORCHESTRATION_HOME/server.log
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern --pidfile $pidfile
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
@@ -151,12 +224,64 @@ c_driver_variables:
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
     compile:
+      osx_openssl: &compile_osx_openssl
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      osx_nativessl: &compile_osx_nativessl
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      osx_nossl: &compile_osx_nossl
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      unix_openssl11: &compile_unix_openssl11
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          prefix=`pwd`/openssl
+          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
+          tar zxvf openssl.tar.gz
+          cd openssl-1.1.0-pre6
+          ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
+          make && make install
+          cd ..
+          export LDFLAGS="-L$prefix/lib -lssl -lcrypto"
+          export SSL_LIBS="-L$prefix/lib -lssl -lcrypto"
+          export SSL_CFLAGS="-I$prefix/include"
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       unix: &compile_unix
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+      unix32: &compile_unix_32
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          # No, SSL, SASL, or ABI check.
+          ./autogen.sh --build=i386-pc-linux-gnu --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-ssl=no --enable-maintainer-flags=no --enable-debug --with-libbson=bundled
+          make -j8
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris64: &compile_solaris64
         compile_script: |
           set -o errexit
@@ -164,58 +289,57 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
           set -o verbose
-          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
       msvc: &compile_msvc
         compile_script: |
-          file "tests/binary/gridfs-large.dat"
           set -o errexit
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
-          dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
+          git submodule update --init
           cd src/libbson
-          echo "GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
+          echo "MSBUILD: $MSBUILD, GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
-          "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
           "$MSBUILD" /m ALL_BUILD.vcxproj
-          "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
-
-    username_password:
-      common: &username_password_common
-        set_username_password: |
-          export MONGOC_TEST_USER=bob
-          export MONGOC_TEST_PASSWORD=pwd123
-          export MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
+          (cd src/libbson && ./Debug/test-libbson.exe --no-fork -d)
 
     connection_flags:
       ssl: &connection_flags_ssl
         set_connection_flags: |
-          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/tmp/orchestration-home/ca.pem --sslPEMKeyFile=/tmp/orchestration-home/client.pem"
           export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
-          export MONGOC_TEST_SSL_PEM_FILE=/tmp/mongoc-test-certificates/client.pem
-          export MONGOC_TEST_SSL_CA_FILE=/tmp/mongoc-test-certificates/ca.pem
+          export MONGOC_TEST_SSL_PEM_FILE=/tmp/orchestration-home/client.pem
+          export MONGOC_TEST_SSL_CA_FILE=/tmp/orchestration-home/ca.pem
+
+      winssl: &connection_flags_winssl
+        set_connection_flags: |
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=/cygdrive/c/tmp/orchestration-home/ca.pem --sslPEMKeyFile=/cygdrive/c/tmp/orchestration-home/client.pem"
+          export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
+          export MONGOC_TEST_SSL_PEM_FILE=/cygdrive/c/tmp/orchestration-home/client.pem
+          export MONGOC_TEST_SSL_CA_FILE=/cygdrive/c/tmp/orchestration-home/ca.pem
 
     integration_tests:
       msvc: &run_integration_tests_msvc
         run_integration_tests: |
-          export PATH=$PATH:`pwd`/tests
-          ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
-          touch tests/trust_dir/done
-          export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+          export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          ./Debug/test-libmongoc.exe -d -f -p
+          ./Debug/test-libmongoc.exe -d -F test-results.json
       solaris: &run_integration_tests_solaris
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -223,27 +347,69 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
-          make TEST_ARGS="-f -p -d" check
+          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
+          make TEST_ARGS="-d -F test-results.json" test
 
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          make TEST_ARGS="-f -p -d" check
+          export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+
+          # This libtool wrapper script was built in a unique dir like
+          # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongo-c-driver",
+          # replace its absolute path with "." so it can run in the CWD.
+          sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongo-c-driver/./g' test-libmongoc
+          make TEST_ARGS="-d -F test-results.json" test
+
+      unix_openssl11: &run_integration_tests_unix_openssl11
+        run_integration_tests: |
+          prefix=`pwd`/openssl
+          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
+          tar zxvf openssl.tar.gz
+          cd openssl-1.1.0-pre6
+          ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
+          make && make install
+          cd ..
+          LD_EXTRA=":$prefix/lib"
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export LD_LIBRARY_PATH=".libs:src/libbson/.libs$LD_EXTRA"
+
+          # This libtool wrapper script was built in a unique dir like
+          # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongo-c-driver",
+          # replace its absolute path with "." so it can run in the CWD.
+          sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongo-c-driver/./g' test-libmongoc
+          make TEST_ARGS="-d -F test-results.json" test
+
+      osx: &run_integration_tests_osx
+        run_integration_tests: |
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
+          make TEST_ARGS="-d -F test-results.json" test
 
 ## Other OS-specific attributes, grouped by OS
-  unix_common: &unix_common
-    <<: *username_password_common
-    <<: *compile_unix
+  unix_common_openssl11: &unix_common_openssl11
+    <<: *compile_unix_openssl11
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix_openssl11
+    <<: *start_topology_command
+    <<: *unix_path
+
+  unix_common_32: &unix_common_32
+    <<: *compile_unix_32
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_unix
     <<: *start_topology_command
     <<: *unix_path
 
-  osx_common: &osx_common
-    <<: *unix_common
-    <<: *osx_path
+  unix_common: &unix_common
+    <<: *compile_unix
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
 
   solaris_common: &solaris_common
     <<: *unix_common
@@ -251,7 +417,6 @@ c_driver_variables:
     <<: *solaris_path
 
   solaris64_common: &solaris64_common
-    <<: *username_password_common
     <<: *compile_unix
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_solaris
@@ -268,33 +433,50 @@ c_driver_variables:
     msvc2010_32bit: &with_msvc2010_32bit
       generator: Visual Studio 10 2010
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
-      <<: *username_password_common
       generator: Visual Studio 10 2010 Win64
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
     msvc2013_32bit: &with_msvc2013_32bit
       generator: Visual Studio 12 2013
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
-      <<: *username_password_common
       generator: Visual Studio 12 2013 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2013: &with_msvc2013_nativessl
+      generator: Visual Studio 12 2013 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
     msvc2015_32bit: &with_msvc2015_32bit
       generator: Visual Studio 14 2015
       # Evergreen builders only have 64-bit SSL and SASL available.
-      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF -DENABLE_EXPERIMENTAL_FEATURES=ON"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
     msvc2015: &with_msvc2015
-      <<: *username_password_common
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2015: &with_msvc2015_nativessl
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=WINDOWS -DENABLE_EXPERIMENTAL_FEATURES=ON"
+    msvc2015: &with_msvc2015_openssl
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=OPENSSL -DENABLE_EXPERIMENTAL_FEATURES=ON"
+    msvc2015: &with_msvc2015_no_experimental
+      generator: Visual Studio 14 2015 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+      cmake_defs: "-DENABLE_SSL=OPENSSL"  # Omit "ENABLE_EXPERIMENTAL_FEATURES"
 
   ## all windows buildvariants have these attributes in common
   windows_common: &windows_common
@@ -325,7 +507,7 @@ functions:
         rm -rf mongo-c-driver*
         ls -la
         curl -s https://s3.amazonaws.com/mciuploads/mongo-c-driver/${revision}/${version_id}/artifacts/mongo-c-driver-archive.tar.gz --output mongo-c-driver-archive.tar.gz
-        tar zxvf mongo-c-driver-archive.tar.gz
+        tar zxf mongo-c-driver-archive.tar.gz
         rm mongo-c-driver-archive.tar.gz
         mv mongo-c-driver* mongo-c-driver
 
@@ -368,7 +550,7 @@ functions:
         set -o errexit
         ls -la
         curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent --max-time 120
-        tar -xzf ${build_id}.tar.gz
+        tar zxf ${build_id}.tar.gz
 
   "compile function" :
     command: shell.exec
@@ -382,6 +564,25 @@ functions:
           export CFLAGS="${cflags}"
           ${compile_script}
 
+  "quick unix compile function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          set -o errexit
+          set -o verbose
+          CC=${CC} CFLAGS="${CFLAGS}" ./autogen.sh ${configure_flags}
+          make -j8
+
+  "quick unix test function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          make abicheck
+          (cd src/libbson && make test TEST_ARGS="--no-fork -d")
+          MONGOC_TEST_SKIP_LIVE=on MONGOC_TEST_SKIP_SLOW=on make TEST_ARGS="-d -F test-results.json" test
+
   "set topology standalone" :
     command: expansions.update
     params:
@@ -391,12 +592,12 @@ functions:
         - key: "topology_type"
           value: "server"
 
-  "set-topology-standalone-ssl" :
+  "set topology standalone ssl" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "ssl.json"
+          value: "auth-ssl.json"
         - key: "topology_type"
           value: "server"
 
@@ -417,6 +618,22 @@ functions:
           value: "auth.json"
         - key: "topology_type"
           value: "sharded_cluster"
+
+  "connect to two mongos servers" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongoc_test_uri"
+          value: "mongodb://localhost:27017,localhost:27018"
+
+  "set topology standalone ssl no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "basic-ssl.json"
+        - key: "topology_type"
+          value: "server"
 
   "set topology standalone no auth" :
     command: expansions.update
@@ -498,8 +715,15 @@ functions:
       script: |
         set -o errexit
         set -o verbose
-        # TODO: this won't work for Windows
-        cp -rf orchestration_configs/certificates /tmp/mongoc-test-certificates
+        if [ ${windows|false} = true ]; then
+           mkdir -p /cygdrive/c/tmp/orchestration-home/lib
+           cp -rf tests/x509gen/* /cygdrive/c/tmp/orchestration-home
+           cp -f /cygdrive/c/tmp/orchestration-home/client.pem /cygdrive/c/tmp/orchestration-home/lib/
+        else
+           mkdir -p /tmp/orchestration-home/lib
+           cp -rf tests/x509gen/* /tmp/orchestration-home
+           cp -f /tmp/orchestration-home/client.pem /tmp/orchestration-home/lib/
+        fi
 
   "run integration tests" :
     command: shell.exec
@@ -508,38 +732,54 @@ functions:
       script: |
         set -o errexit
         set -o verbose
+        if [ ${use_auth|false} = true ]; then
+           export MONGOC_TEST_USER=bob
+           export MONGOC_TEST_PASSWORD=pwd123
+           export MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
+        fi
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
-        ${set_username_password}
+        export MONGO_ORCHESTRATION_HOME=/tmp/orchestration-home
+
+        # Run this function on exit.
+        result=1
+        done=false
+        finish () {
+           set +o errexit
+           if [ "$done" = false ]; then
+              # There was an error.
+              mongo-orchestration stop
+              echo "ORCHESTRATION LOG"
+              if [ ${windows|false} = true ]; then
+                cat /cygdrive/c/tmp/orchestration-home/server.log
+              else
+                cat /tmp/orchestration-home/server.log
+              fi
+              echo "  END OF ORCHESTRATION LOG"
+           fi
+
+           exit $result
+        }
+
+        trap finish EXIT
+
         ${set_connection_flags}
         ${start_mongo_orchestration}
         ${start_topology}
+        set +o errexit
+
+        # Use multi-mongos URI, or empty for default.
+        export MONGOC_TEST_URI="${mongoc_test_uri}"
         ${run_integration_tests}
+        result=$?
 
+        mongo-orchestration stop
+        done=true
 
-#######################################
-#            Pre Task                 #
-#######################################
-
-pre:
-    - command: shell.track
-
-post:
-    - command: shell.exec
-      params:
-        working_dir: "mongo-c-driver"
-        script: |
-            if [ ${windows|false} = true ]; then
-                mongo-orchestration --pidfile c:\\mo.pid stop
-                rm -f /cygdrive/c/mo.pid
-            else
-                mongo-orchestration --pidfile /data/mo.pid stop
-                rm -f /data/mo.pid
-            fi
-            pkill -9 mongo-orchestration; pkill -9 mongod; pkill -9 mongos;
-            rm -rf /tmp/mongo* /data/db
-            cat server.log
-    - command: shell.cleanup
+  "report results" :
+    command: attach.results
+    params:
+      file_location: "mongo-c-driver/test-results.json"
 
 
 #######################################
@@ -559,8 +799,6 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                sudo apt-get update
-                sudo apt-get install -y yelp-tools yelp-xsl
                 ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
@@ -575,12 +813,96 @@ tasks:
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-    - name: compile
-      depends_on:
-        - name: "releasearchive"
-          variant: ubuntu-1404-64-release
+    - name: compileunixtest-c11
       commands:
-        - func: "fetch releasearchive"
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c11 -D_XOPEN_SOURCE=600"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-c99
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c99 -D_XOPEN_SOURCE=600"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-c89
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: ${configure_flags}
+             CFLAGS: "${CFLAGS} -std=c89 -D_POSIX_C_SOURCE=200112L"
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-openssl-sasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl --enable-ssl=openssl"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-openssl-nosasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl=no --enable-ssl=openssl"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-nossl-sasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl --enable-ssl=no"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compileunixtest-nossl-nosasl
+      commands:
+        - command: git.get_project
+          params:
+            directory: mongo-c-driver
+        - func: "quick unix compile function"
+          vars:
+             configure_flags: "${configure_flags} --enable-sasl=no --enable-ssl=no"
+             CFLAGS: ${CFLAGS}
+             CC: ${CC|gcc}
+        - func: "quick unix test function"
+
+    - name: compile
+      commands:
+        - func: "fetch source"
+        - command: git.apply_patch
+          params:
+            directory: "mongo-c-driver"
         - func: "compile function"
         - command: shell.exec
           params:
@@ -588,7 +910,7 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                tar -czf ../mongo-c-driver.tar.gz .
+                tar czf ../mongo-c-driver.tar.gz .
         - command: s3.put
           params:
             aws_key: ${aws_key}
@@ -609,6 +931,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-replica-set"
       depends_on:
@@ -620,6 +945,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-sharded"
       depends_on:
@@ -631,6 +959,24 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-2.4-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6"
       depends_on:
@@ -642,6 +988,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6-replica-set"
       depends_on:
@@ -653,6 +1002,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6-sharded"
       depends_on:
@@ -664,6 +1016,24 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-2.6-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0"
       depends_on:
@@ -675,6 +1045,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-replica-set"
       depends_on:
@@ -686,6 +1059,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-sharded"
       depends_on:
@@ -697,6 +1073,24 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-3.0-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest"
       depends_on:
@@ -708,6 +1102,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest-replica-set"
       depends_on:
@@ -719,6 +1116,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest-sharded"
       depends_on:
@@ -730,6 +1130,24 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-latest-shard-multi"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "connect to two mongos servers"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-no-auth"
       depends_on:
@@ -741,6 +1159,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.4-replica-set-no-auth"
       depends_on:
@@ -752,6 +1171,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.4-sharded-no-auth"
       depends_on:
@@ -763,6 +1183,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-no-auth"
       depends_on:
@@ -774,6 +1195,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-replica-set-no-auth"
       depends_on:
@@ -785,6 +1207,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-sharded-no-auth"
       depends_on:
@@ -796,6 +1219,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-no-auth"
       depends_on:
@@ -807,6 +1231,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-replica-set-no-auth"
       depends_on:
@@ -818,6 +1243,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-sharded-no-auth"
       depends_on:
@@ -829,6 +1255,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-no-auth"
       depends_on:
@@ -840,6 +1267,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-replica-set-no-auth"
       depends_on:
@@ -851,6 +1279,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-sharded-no-auth"
       depends_on:
@@ -862,6 +1291,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-with-MMAPv1"
       depends_on:
@@ -874,6 +1304,9 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-with-WiredTiger"
       depends_on:
@@ -886,18 +1319,66 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-ssl"
       depends_on:
         - name: "compile"
       commands:
-        - func: "set-topology-standalone-ssl"
+        - func: "set topology standalone ssl"
         - func: "set version 3.0"
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "copy certificates"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-3.0-ssl-no-auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+        - func: "report results"
+
+    - name: "integration-test-latest-ssl"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+        - func: "report results"
+
+    - name: "integration-test-latest-ssl-no-auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+        - func: "report results"
+
 
 #######################################
 #           Buildvariants             #
@@ -909,34 +1390,6 @@ buildvariants:
 #         Linux Buildvariants         #
 #######################################
 
-### RHEL 5.5
-#
-#- name: rhel55
-#  display_name: "RHEL 5.5"
-#  expansions:
-#    <<: *cflags_64
-#    <<: *warning_flags_rhel55
-#    <<: *cpppath_rhel55
-#    <<: *libpath_rhel55_64
-#    <<: *mongo_url_rhel55
-#  run_on:
-#  - rhel55-test
-#  tasks: *topology_tests
-#
-### RHEL 5.5 32-bit
-#
-#- name: rhel55-32-bit
-#  display_name: "RHEL 5.5 32"
-#  expansions:
-#    <<: *cflags_32
-#    <<: *warning_flags_rhel55
-#    <<: *cpppath_rhel55
-#    <<: *libpath_rhel55_32
-#    <<: *mongo_url_rhel55_32
-#  run_on:
-#  - rhel55-test
-#  tasks: *topology_tests
-
 - name: ubuntu-1404-64-release
   display_name: "Release Archive Creator"
   expansions:
@@ -944,7 +1397,7 @@ buildvariants:
     <<: *mongo_url_ubuntu1404
     <<: *unix_common
   run_on:
-     - ubuntu1404-build
+     - ubuntu1404-test
   tasks: *release_archive_builder
 
 ## Ubuntu 1204
@@ -959,7 +1412,66 @@ buildvariants:
   - ubuntu1204-test
   tasks: *topology_tests
 
+- name: rhel-62
+  display_name: "RHEL 6.2 64"
+  expansions:
+    <<: *cflags_64_no_werror
+    <<: *mongo_url_rhel62
+    <<: *unix_common
+  run_on:
+     - rhel62-test
+  tasks: *topology_tests
+
+- name: rhel-70
+  display_name: "RHEL 7.0 64"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_url_rhel70
+    <<: *unix_common
+  run_on:
+  - rhel70
+  tasks: *topology_tests
+
+- name: rhel-72-zseries
+  display_name: "RHEL 7.2 zSeries"
+  expansions:
+    <<: *unix_common
+  run_on:
+     - rhel72-zseries-build
+  tasks: *just_compile
+
+- name: rhel-71-power8
+  display_name: "RHEL 7.1 Power8"
+  expansions:
+    <<: *cflags_power8
+    <<: *mongo_url_ppc64le_rhel71
+    <<: *unix_common
+  run_on:
+     - rhel71-power8-test
+  tasks: *topology_tests_latest
+
+- name: rhel-71-power8-ssl
+  display_name: "RHEL 7.1 Power8 SSL"
+  expansions:
+    <<: *cflags_power8
+    <<: *mongo_url_ppc64le_rhel71
+    <<: *unix_common
+    <<: *ssl
+  run_on:
+     - rhel71-power8-test
+  tasks: *ssl_tests_latest
+
 ## Ubuntu 1404
+
+- name: ubuntu-1404-32
+  display_name: "Ubu 14 gcc-4.8.4 32"
+  expansions:
+    <<: *cflags_32
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common_32
+  run_on:
+  - ubuntu1404-test
+  tasks: *topology_tests_no_auth
 
 - name: ubuntu-1404-64
   display_name: "Ubu 14 gcc-4.8.4 64"
@@ -984,19 +1496,68 @@ buildvariants:
   - ubuntu1404-test
   tasks: *ssl_tests
 
+
+- name: ubuntu-1404-64-openssl1.1
+  display_name: "Ubu 14 gcc-4.8.4 64 OpenSSL 1.1"
+  expansions:
+    <<: *cflags_64_no_werror
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common_openssl11
+    <<: *ssl
+  run_on:
+  - ubuntu1404-test
+  tasks: *ssl_tests
+
 #######################################
 #         OS X Buildvariants          #
 #######################################
 
-- name: os-x-108-64
-  display_name: "OSX 10.8 clang 64"
+- name: os-x-1010-64-nossl
+  display_name: "OSX 10.10 clang 64 NOSSL"
   expansions:
-    <<: *mongo_url_osx_108
-    <<: *cflags_osx_108
-    <<: *osx_common
+    <<: *mongo_url_osx_1010
+    <<: *cflags_osx_1010
+    <<: *compile_osx_nossl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_osx
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
   run_on:
-  - osx-108
-  tasks: *topology_tests
+  - osx-1010
+  tasks: *topology_tests_no_auth
+
+- name: os-x-1010-64-openssl
+  display_name: "OSX 10.10 clang 64 OpenSSL"
+  expansions:
+    <<: *mongo_url_osx_1010_enterprise
+    <<: *cflags_osx_1010
+    <<: *compile_osx_openssl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_osx
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
+    <<: *ssl
+  run_on:
+  - osx-1010
+  tasks: *ssl_tests_latest
+
+- name: os-x-1010-64-nativessl
+  display_name: "OSX 10.10 clang 64 NativeSSL"
+  expansions:
+    <<: *mongo_url_osx_1010_enterprise
+    <<: *cflags_osx_1010
+    <<: *compile_osx_nativessl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_osx
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
+    <<: *ssl
+  run_on:
+  - osx-1010
+  tasks: *ssl_tests_latest
 
 #######################################
 #        Windows Buildvariants        #
@@ -1042,6 +1603,17 @@ buildvariants:
   - windows-64-vs2013-compile
   tasks: *topology_tests
 
+- name: windows-64-vs2013-nativessl
+  display_name: "Win VS2013 64 NativeSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64ssl
+    <<: *with_msvc2013_nativessl
+    <<: *ssl
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *ssl_tests
+
 - name: windows-32-vs2015
   display_name: "Win VS2015 32"
   expansions:
@@ -1049,7 +1621,7 @@ buildvariants:
     <<: *mongo_url_windows64
     <<: *with_msvc2015_32bit
   run_on:
-  - windows-64-vs2015-compile-spawn
+  - windows-64-vs2015-compile
   tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2015
@@ -1059,8 +1631,41 @@ buildvariants:
     <<: *mongo_url_windows64
     <<: *with_msvc2015
   run_on:
-  - windows-64-vs2015-compile-spawn
+  - windows-64-vs2015-compile
   tasks: *topology_tests
+
+- name: windows-64-vs2015-no-experimental
+  display_name: "Win VS2015 64 No-Experimental"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2015_no_experimental
+  run_on:
+  - windows-64-vs2015-compile
+  tasks:
+  - compile
+
+- name: windows-64-vs2015-nativessl
+  display_name: "Win VS2015 64 NativeSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64ssl
+    <<: *with_msvc2015_nativessl
+    <<: *ssl
+  run_on:
+  - windows-64-vs2015-compile
+  tasks: *ssl_tests
+
+- name: windows-64-vs2015-openssl
+  display_name: "Win VS2015 64 OpenSSL"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64ssl
+    <<: *with_msvc2015_openssl
+    <<: *ssl
+  run_on:
+  - windows-64-vs2015-compile
+  tasks: *ssl_tests
 
 #######################################
 #        Solaris Buildvariant         #
@@ -1085,3 +1690,108 @@ buildvariants:
   run_on:
       - solaris
   tasks: *topology_tests
+
+
+##### Compiler and distro sanitychecks
+
+- name: compile-clang35
+  display_name: "Debian 8.1 (clang 3.5)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_no_experimental
+  run_on:
+  - debian81-build
+  tasks: *compile_unix_variants
+
+- name: compile-clang37
+  display_name: "Archlinux (clang 3.7)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_no_experimental
+  run_on:
+  - archlinux-build
+  tasks: *compile_unix_variants
+
+- name: compile-clang38
+  display_name: "Ubuntu 16.04 (clang 3.8)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64"
+    CC: clang
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1604-build
+  tasks: *compile_unix_variants
+
+- name: compile-gcc48
+  display_name: "RHEL 7.0 (GCC 4.8)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - rhel70
+  tasks: *compile_unix_variants
+
+- name: compile-gcc49
+  display_name: "Debian 8.1 (GCC 4.9)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - debian81-build
+  tasks: *compile_unix_variants
+
+- name: compile-gcc53
+  display_name: "Ubuntu 16.04 (GCC 5.3)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1604-build
+  tasks: *compile_unix_variants
+
+- name: compile-archlinux
+  display_name: "Archlinux (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - archlinux-build
+  tasks: *compile_unix_variants
+
+- name: compile-rhel70
+  display_name: "RHEL 7.0 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - rhel70
+  tasks: *compile_unix_variants
+
+- name: compile-ubuntu1204
+  display_name: "Ubuntu 12.04 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1204-build
+  tasks: *compile_most_unix_variants
+
+- name: compile-ubuntu1404
+  display_name: "Ubuntu 14.04 (GCC)"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1404-build
+  tasks: *compile_unix_variants
+
+- name: compile-ubuntu1404-no-experimental
+  display_name: "Ubuntu 14.04 No-Experimental"
+  expansions:
+    CFLAGS: "-m64 -march=x86-64 -Werror"
+    <<: *configure_flags_no_experimental
+  run_on:
+  - ubuntu1404-build
+  tasks: *compile_most_unix_variants

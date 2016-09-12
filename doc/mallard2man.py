@@ -31,6 +31,7 @@ page to a groff styled man page.
 import os
 import re
 import sys
+import time
 
 import codecs
 from datetime import datetime
@@ -44,18 +45,25 @@ INFO = '{http://projectmallard.org/1.0/}info'
 ITEM = '{http://projectmallard.org/1.0/}item'
 LISTING = '{http://projectmallard.org/1.0/}listing'
 LIST = '{http://projectmallard.org/1.0/}list'
+STEPS = '{http://projectmallard.org/1.0/}steps'
 LINK = '{http://projectmallard.org/1.0/}link'
 LINKS = '{http://projectmallard.org/1.0/}links'
 SYNOPSIS = '{http://projectmallard.org/1.0/}synopsis'
 CODE = '{http://projectmallard.org/1.0/}code'
+INPUT = '{http://projectmallard.org/1.0/}input'
+VAR = '{http://projectmallard.org/1.0/}var'
+CMD = '{http://projectmallard.org/1.0/}cmd'
 P = '{http://projectmallard.org/1.0/}p'
+DESC = '{http://projectmallard.org/1.0/}desc'
 SCREEN = '{http://projectmallard.org/1.0/}screen'
 EM = '{http://projectmallard.org/1.0/}em'
 NOTE = '{http://projectmallard.org/1.0/}note'
 TABLE = '{http://projectmallard.org/1.0/}table'
+THEAD = '{http://projectmallard.org/1.0/}thead'
 TR = '{http://projectmallard.org/1.0/}tr'
 TD = '{http://projectmallard.org/1.0/}td'
 OUTPUT = '{http://projectmallard.org/1.0/}output'
+EXAMPLE = '{http://projectmallard.org/1.0/}example'
 
 # Matches "\" and "-", but not "\-".
 replaceables = re.compile(r'(\\(?!-))|((?<!\\)-)')
@@ -144,6 +152,9 @@ class Convert(object):
         # "name \- description" text.
         return replaceables.sub(self._escape_char, text)
 
+    def _compressWhitespace(self, text):
+        return ' '.join(text.split())
+
     def _write(self, text):
         self._write_noescape(self._escape(text))
 
@@ -151,19 +162,20 @@ class Convert(object):
         self.outFile.write(text)
 
     def _writeCommand(self, text):
-        self._write(text)
+        self._write_noescape(text)
         self._write('\n')
 
     def _writeLine(self, text):
         if text is not None:
             text = text.strip()
-            if text.startswith('.'):
-                text = '\\&' + text
             self._write(text)
         self._write('\n')
 
     def _generateHeader(self):
-        year = datetime.utcnow().year
+        # For Debian reproducible builds:
+        # https://reproducible-builds.org/specs/source-date-epoch/
+        source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        year = datetime.utcfromtimestamp(int(source_date_epoch or time.time())).year
         self._writeComment('This manpage is Copyright (C) %s %s' % (year, COPYRIGHT_HOLDER))
         self._writeComment('')
         self._writeComment(
@@ -175,7 +187,9 @@ class Convert(object):
     "Free Documentation License\".")
         self._writeComment('')
 
-        date = datetime.fromtimestamp(int(os.stat(self.inFile).st_mtime)).strftime('%Y-%m-%d')
+        mtime = int(source_date_epoch or os.stat(self.inFile).st_mtime)
+        date = datetime.utcfromtimestamp(mtime).strftime('%Y-%m-%d')
+
         title = self.title.replace('()','').upper()
         self._write('.TH "%s" "%s" "%s" "%s"\n' % (title, self.section, date, GROUP))
         self._write('.SH NAME\n')
@@ -185,8 +199,10 @@ class Convert(object):
         # Try to render the title first
         for child in section.getchildren():
             if child.tag == TITLE:
+                if child.text is None:
+                    raise RuntimeError("Can't put formatting tags in <title>")
                 s = child.text.strip().upper()
-                self._writeCommand('.SH "%s"' % s)
+                self._writeCommand('.SH "%s"' % s.replace('"', ''))
         for child in section.getchildren():
             self._generateElement(child)
             if child.tail:
@@ -224,11 +240,11 @@ class Convert(object):
 
     def _generateP(self, p):
         if p.text:
-            self._writeLine(p.text)
+            self._writeLine(self._compressWhitespace(p.text))
         for child in p.getchildren():
             self._generateElement(child)
             if child.tail:
-                self._writeLine(child.tail)
+                self._writeLine(self._compressWhitespace(child.tail))
 
     def _generateScreen(self, screen):
         for child in screen.getchildren():
@@ -254,15 +270,15 @@ class Convert(object):
             self._generateElement(child)
 
     def _generateElement(self, ele):
-        if ele.tag == SECTION:
+        if ele.tag in (SECTION, EXAMPLE):
             self._generateSection(ele)
         elif ele.tag == SYNOPSIS:
             self._generateSynopsis(ele)
-        elif ele.tag == CODE:
+        elif ele.tag in (CODE, VAR, CMD):
             self._generateCode(ele)
-        elif ele.tag == OUTPUT:
+        elif ele.tag in (INPUT, OUTPUT):
             self._generateOutput(ele)
-        elif ele.tag == P:
+        elif ele.tag in (P, DESC):
             self._generateP(ele)
         elif ele.tag == EM:
             self._generateEM(ele)
@@ -270,10 +286,8 @@ class Convert(object):
             self._generateListing(ele)
         elif ele.tag == ITEM:
             self._generateItem(ele)
-        elif ele.tag == LIST:
+        elif ele.tag in (LIST, STEPS):
             self._generateList(ele)
-        elif ele.tag == TITLE:
-            pass
         elif ele.tag == SCREEN:
             self._generateScreen(ele)
         elif ele.tag == LINK:
@@ -291,6 +305,8 @@ class Convert(object):
             f = os.path.join(self.relpath, f)
             d = codecs.open(f, 'r', encoding='utf-8').read()
             self._writeLine(d)
+        elif ele.tag in (TITLE, INFO, THEAD, LINKS):
+            pass
         else:
             print('unknown element type %s' % ele)
 

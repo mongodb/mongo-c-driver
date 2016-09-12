@@ -30,9 +30,9 @@ mongoc_database_command_simple (mongoc_database_t         *database,
     <table>
       <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
       <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>. Otherwise, the command uses mode <code>MONGOC_READ_PRIMARY</code>.</p></td></tr>
       <tr><td><p>reply</p></td><td><p>A location to store the commands first result document.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

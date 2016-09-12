@@ -1,4 +1,3 @@
-#include "mongoc-tests.h"
 
 #include <bcon.h>
 #include <mongoc.h>

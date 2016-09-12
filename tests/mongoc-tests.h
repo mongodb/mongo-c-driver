@@ -18,17 +18,6 @@
 #ifndef MONGOC_TESTS_H
 #define MONGOC_TESTS_H
 
-
-#ifdef BSON_DISABLE_ASSERT
-# undef BSON_DISABLE_ASSERT
-#endif
-
-
-#ifdef BSON_DISABLE_CHECKS
-# undef BSON_DISABLE_CHECKS
-#endif
-
-
 #include <assert.h>
 #include <bson.h>
 #include <stdio.h>
@@ -40,61 +29,9 @@
 
 BSON_BEGIN_DECLS
 
-
-#ifdef _WIN32
-# define gettestpid _getpid
-#else
-# define gettestpid getpid
-#endif
-
-
-#define assert_cmpstr(a, b)                                             \
-   do {                                                                 \
-      if (((a) != (b)) && !!strcmp((a), (b))) {                         \
-         fprintf(stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n",  \
-                         a, b);                                         \
-         abort();                                                       \
-      }                                                                 \
-   } while (0)
-
-
-#define assert_cmpint(a, eq, b)                                         \
-   do {                                                                 \
-      if (!((a) eq (b))) {                                              \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n"           \
-                         "%s:%d  %s()\n",                               \
-                         a, #eq, b,                                     \
-                         __FILE__, __LINE__, BSON_FUNC);             \
-         abort();                                                       \
-      }                                                                 \
-   } while (0)
-
-
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-# define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("GCC diagnostic push") \
-   _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-# define END_IGNORE_DEPRECATIONS \
-   _Pragma ("GCC diagnostic pop")
-#elif defined(__clang__)
-# define BEGIN_IGNORE_DEPRECATIONS \
-   _Pragma ("clang diagnostic push") \
-   _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
-# define END_IGNORE_DEPRECATIONS \
-   _Pragma ("clang diagnostic pop")
-#else
-# define BEGIN_IGNORE_DEPRECATIONS
-# define END_IGNORE_DEPRECATIONS
-#endif
-
-
-extern char *TEST_RESULT;
-
-
 void
 run_test (const char *name,
           void (*func) (void));
-
 
 BSON_END_DECLS
 

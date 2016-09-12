@@ -5,9 +5,13 @@
 #include "test-libmongoc.h"
 
 static void
-server_selection_error_dns (const char *uri, const char *errmsg, bool assert_as)
+server_selection_error_dns (const char *uri_str,
+                            const char *errmsg,
+                            bool        assert_as,
+                            bool        pooled)
 {
-
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_error_t error;
@@ -15,12 +19,21 @@ server_selection_error_dns (const char *uri, const char *errmsg, bool assert_as)
    bson_t reply;
    bool success;
 
-   client = mongoc_client_new (uri);
+   uri = mongoc_uri_new (uri_str);
+   ASSERT (uri);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+   }
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
    command = tmp_bson("{'ping': 1}");
-   success = mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
+   success = mongoc_collection_command_simple (collection, command, NULL,
+                                               &reply, &error);
    ASSERT_OR_PRINT(success == assert_as, error);
 
    if (!success && errmsg) {
@@ -29,61 +42,125 @@ server_selection_error_dns (const char *uri, const char *errmsg, bool assert_as)
 
    bson_destroy (&reply);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
 }
 
 static void
-test_server_selection_error_dns_single (void)
+test_server_selection_error_dns_direct_single (void)
 {
    server_selection_error_dns (
-      "mongodb://non-existing-localhost:27017/",
-      "No suitable servers found (`serverselectiontryonce` set): [Failed to resolve 'non-existing-localhost']",
-      false
+      "mongodb://example-localhost:27017/",
+      "No suitable servers found (`serverSelectionTryOnce` set): "
+      "[Failed to resolve 'example-localhost']",
+      false, false
    );
 }
 
 static void
-test_server_selection_error_dns_multi_fail (void)
+test_server_selection_error_dns_direct_pooled (void)
 {
    server_selection_error_dns (
-      "mongodb://non-existing-localhost:27017,other-non-existing-localhost:27017/",
-      "No suitable servers found (`serverselectiontryonce` set): [Failed to resolve 'non-existing-localhost'] [Failed to resolve 'other-non-existing-localhost']",
-      false
+      "mongodb://example-localhost:27017/",
+      "No suitable servers found: `serverSelectionTimeoutMS` expired: "
+      "[Failed to resolve 'example-localhost']",
+      false, true
    );
 }
 
 static void
-test_server_selection_error_dns_multi_success (void *context)
+test_server_selection_error_dns_multi_fail_single (void)
+{
+   server_selection_error_dns (
+      "mongodb://example-localhost:27017,other-example-localhost:27017/",
+      "No suitable servers found (`serverSelectionTryOnce` set):"
+      " [Failed to resolve 'example-localhost']"
+      " [Failed to resolve 'other-example-localhost']",
+      false, false
+   );
+
+}
+
+static void
+test_server_selection_error_dns_multi_fail_pooled (void)
+{
+   server_selection_error_dns (
+      "mongodb://example-localhost:27017,other-example-localhost:27017/",
+      "No suitable servers found: `serverSelectionTimeoutMS` expired:"
+      " [Failed to resolve 'example-localhost']"
+      " [Failed to resolve 'other-example-localhost']",
+      false, true
+   );
+
+}
+
+static void
+_test_server_selection_error_dns_multi_success (bool pooled)
 {
    char *uri_str;
 
    uri_str = bson_strdup_printf (
-      "mongodb://non-existing-localhost:27017,"
+      "mongodb://example-localhost:27017,"
       "%s:%d,"
-      "other-non-existing-localhost:27017/",
+      "other-example-localhost:27017/",
       test_framework_get_host (),
       test_framework_get_port ());
 
-   server_selection_error_dns (uri_str, "", true);
+   server_selection_error_dns (uri_str, "", true, pooled);
 
    bson_free (uri_str);
 }
 
 static void
-test_server_selection_uds_auth_failure (void *context)
+test_server_selection_error_dns_multi_success_single (void *context)
 {
+   _test_server_selection_error_dns_multi_success (false);
+}
+
+static void
+test_server_selection_error_dns_multi_success_pooled (void *context)
+{
+   _test_server_selection_error_dns_multi_success (true);
+}
+
+static void
+_test_server_selection_uds_auth_failure (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
    bson_t reply;
    char *path;
-   char *uri;
+   char *uri_str;
 
-   path = test_framework_get_unix_domain_socket_path ();
-   uri = bson_strdup_printf ("mongodb://user:wrongpass@%s", path);
-   client = mongoc_client_new (uri);
-   test_framework_set_ssl_opts (client);
+   path = test_framework_get_unix_domain_socket_path_escaped ();
+   uri_str = bson_strdup_printf ("mongodb://user:wrongpass@%s", path);
 
-   assert (client);
+   uri = mongoc_uri_new (uri_str);
+   ASSERT (uri);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+#ifdef MONGOC_ENABLE_SSL
+      test_framework_set_pool_ssl_opts (pool);
+#endif
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+#ifdef MONGOC_ENABLE_SSL
+      test_framework_set_ssl_opts (client);
+#endif
+   }
+
+   capture_logs (true);
 
    ASSERT_OR_PRINT (! mongoc_client_get_server_status (client, NULL,
                                                        &reply, &error), error);
@@ -91,43 +168,117 @@ test_server_selection_uds_auth_failure (void *context)
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    bson_destroy (&reply);
    bson_free (path);
-   bson_free (uri);
-
-   mongoc_client_destroy (client);
+   bson_free (uri_str);
+   mongoc_uri_destroy (uri);
 }
 
 static void
-test_server_selection_uds_not_found (void *context)
+test_server_selection_uds_auth_failure_single (void *context)
 {
+   _test_server_selection_uds_auth_failure (false);
+}
+
+static void
+test_server_selection_uds_auth_failure_pooled (void *context)
+{
+   _test_server_selection_uds_auth_failure (true);
+}
+
+static void
+_test_server_selection_uds_not_found (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
    bson_t reply;
 
-   client = mongoc_client_new ("mongodb:///tmp/mongodb-so-close.sock");
+   uri = mongoc_uri_new ("mongodb:///tmp/mongodb-so-close.sock");
+   ASSERT (uri);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+#ifdef MONGOC_ENABLE_SSL
+      test_framework_set_pool_ssl_opts (pool);
+#endif
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+#ifdef MONGOC_ENABLE_SSL
+      test_framework_set_ssl_opts (client);
+#endif
+   }
+
+#ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
+#endif
 
-   assert (client);
-
-   ASSERT_OR_PRINT (! mongoc_client_get_server_status (client, NULL,
-                                                       &reply, &error), error);
-
+   ASSERT (! mongoc_client_get_server_status (client, NULL, &reply, &error));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
    bson_destroy (&reply);
 
-   mongoc_client_destroy (client);
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+static void
+test_server_selection_uds_not_found_single (void *context)
+{
+   _test_server_selection_uds_not_found (false);
+}
+
+static void
+test_server_selection_uds_not_found_pooled (void *context)
+{
+   _test_server_selection_uds_not_found (true);
 }
 
 
 void
 test_server_selection_errors_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/server_selection/errors/dns/single", test_server_selection_error_dns_single);
-   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail", test_server_selection_error_dns_multi_fail);
-   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success", test_server_selection_error_dns_multi_success, NULL, NULL, test_framework_skip_if_single);
-   TestSuite_AddFull (suite, "/server_selection/errors/uds/auth_failure", test_server_selection_uds_auth_failure, NULL, NULL, test_framework_skip_if_windows);
-   TestSuite_AddFull (suite, "/server_selection/errors/uds/not_found", test_server_selection_uds_not_found, NULL, NULL, test_framework_skip_if_windows);
+   TestSuite_Add (suite, "/server_selection/errors/dns/direct/single",
+                  test_server_selection_error_dns_direct_single);
+   TestSuite_Add (suite, "/server_selection/errors/dns/direct/pooled",
+                  test_server_selection_error_dns_direct_pooled);
+   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail/single",
+                  test_server_selection_error_dns_multi_fail_single);
+   TestSuite_Add (suite, "/server_selection/errors/dns/multi/fail/pooled",
+                  test_server_selection_error_dns_multi_fail_pooled);
+   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success/single",
+                      test_server_selection_error_dns_multi_success_single, NULL, NULL,
+                      test_framework_skip_if_single);
+   TestSuite_AddFull (suite, "/server_selection/errors/dns/multi/success/pooled",
+                      test_server_selection_error_dns_multi_success_pooled, NULL, NULL,
+                      test_framework_skip_if_single);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/auth_failure/single",
+                      test_server_selection_uds_auth_failure_single, NULL, NULL,
+                      test_framework_skip_if_no_uds);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/auth_failure/pooled",
+                      test_server_selection_uds_auth_failure_pooled, NULL, NULL,
+                      test_framework_skip_if_no_uds);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/not_found/single",
+                      test_server_selection_uds_not_found_single, NULL, NULL,
+                      test_framework_skip_if_windows);
+   TestSuite_AddFull (suite, "/server_selection/errors/uds/not_found/pooled",
+                      test_server_selection_uds_not_found_pooled, NULL, NULL,
+                      test_framework_skip_if_windows);
 }

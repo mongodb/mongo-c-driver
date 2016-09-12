@@ -25,14 +25,15 @@ mongoc_collection_stats (mongoc_collection_t *collection,
     <table>
       <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>options</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing extra options to pass to the <code>collStats</code> command.</p></td></tr>
-      <tr><td><p>reply</p></td><td><p>An optional location for a <code xref="bson:bson_t">bson_t</code> to store the result.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>An uninitialized <code xref="bson:bson_t">bson_t</code> to store the result.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>This function is a helper to retrieve statistics about the collection.</p>
+    <p>Run the <code>collStats</code> command to retrieve statistics about the collection.</p>
+    <p>The command uses the <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> set on <code>collection</code>.</p>
   </section>
 
   <section id="errors">
@@ -42,8 +43,8 @@ mongoc_collection_stats (mongoc_collection_t *collection,
 
   <section id="return">
     <title>Returns</title>
-    <p>true if successful</p>
-    <p><code>reply</code> is always initialized to simplfiy memory handling.</p>
+    <p>True if successful.</p>
+    <p><code>reply</code> is always initialized and must be freed with <code xref="bson:bson_destroy">bson_destroy</code>.</p>
   </section>
 
 </page>

@@ -99,6 +99,28 @@ MONGOC_GRIDFS_FILE_STR_ACCESSOR (content_type)
 MONGOC_GRIDFS_FILE_BSON_ACCESSOR (aliases)
 MONGOC_GRIDFS_FILE_BSON_ACCESSOR (metadata)
 
+/**
+ * mongoc_gridfs_file_set_id:
+ *
+ * the user can set the files_id to an id of any type. Must be called before 
+ * mongoc_gridfs_file_save.
+ *
+ */
+
+bool
+mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file, const bson_value_t *id,
+               bson_error_t *error)
+{
+   
+   if (!file->is_dirty){
+      bson_set_error (error, MONGOC_ERROR_GRIDFS, 
+                      MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
+                      "Cannot set file id after saving file.");
+      return false; 
+   }
+   bson_value_copy (id, &file->files_id); 
+   return true; 
+}
 
 /** save a gridfs file */
 bool
@@ -426,7 +448,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* Try to get the current chunk */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
-         return -1;
+      return -1;
    }
 
    for (i = 0; i < iovcnt; i++) {

@@ -17,7 +17,7 @@
 #ifndef MONGOC_UTIL_PRIVATE_H
 #define MONGOC_UTIL_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -50,6 +50,9 @@ void _mongoc_get_db_name (const char *ns,
                           char *db /* OUT */);
 
 void _mongoc_bson_destroy_if_set (bson_t *bson);
+
+size_t
+_mongoc_strlen_or_zero (const char *s);
 BSON_END_DECLS
 
 

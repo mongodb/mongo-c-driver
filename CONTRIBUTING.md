@@ -95,6 +95,16 @@ typedef enum
 } my_flags_t;
 ```
 
+### Adding a new error code or domain                                              
+                                                                                   
+When adding a new error code or domain, you must do the following. This is most
+applicable if you are adding a new symbol with a bson_error_t as a parameter,
+and the existing codes or domains are inappropriate.                               
+                                                                                   
+ - Add the domain to `mongoc_error_domain_t` in `src/mongoc/mongoc-error.h`        
+ - Add the code to `mongoc_error_code_t` in `src/mongoc/mongoc-error.h`            
+ - Add documentation for the domain or code to the table in `doc/mongoc_errors.page`
+                              
 ### Adding a new symbol
 
 This should be done rarely but there are several things that you need to do
@@ -102,8 +112,7 @@ when adding a new symbol.
 
  - Add the symbol to `src/libmongoc.symbols`
  - Add the symbol to `build/autotools/versions.ldscript`
- - Add the symbol to `build/cmake/libmongoc.def`
- - Add the symbol to `build/cmake/libmongoc-ssl.def`
+ - Add the symbol to all the `.def` files in `build/cmake/`.
  - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.page`
 
 ### Documentation
@@ -147,7 +156,9 @@ Additional environment variables:
 
 * `MONGOC_TEST_HOST`: default `localhost`, the host running MongoDB.
 * `MONGOC_TEST_PORT`: default 27017, MongoDB's listening port.
-* `MONGOC_TEST_SERVER_VERBOSE`: set to `on` for wire protocol logging from 
+* `MONGOC_TEST_URI`: override both host and port with a full connection string,
+  like "mongodb://server1,server2".
+* `MONGOC_TEST_SERVER_VERBOSE`: set to `on` for wire protocol logging from
   tests that use `mock_server_t`. 
 
 If you start `mongod` with SSL, set these variables to configure how
@@ -192,6 +203,11 @@ provided to MongoDB, so an additional variable must be set to enable these tests
 
 Set this environment variable to `on` if MongoDB has enabled majority read concern.
 
+Some tests require Internet access, e.g. to check the error message when failing
+to open a MongoDB connection to example.com. Skip them with:
+
+* `MONGOC_TEST_OFFLINE`
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner
@@ -200,14 +216,18 @@ The test runner can be configured by declaring the `TEST_ARGS` environment
 variable. The following options can be provided:
 
 ```
-    -h, --help   Show this help menu.
-    -f           Do not fork() before running tests.
-    -l NAME      Run test by name, e.g. "/Client/command" or "/Client/*".
-    -p           Do not run tests in parallel.
-    -v           Be verbose with logs.
+    -h, --help    Show this help menu.
+    -f, --no-fork Do not spawn a process per test (abort on first error).
+    -l NAME       Run test by name, e.g. "/Client/command" or "/Client/*".
+    -v            Be verbose with logs.
+    -s, --silent  Suppress all output.
+    -F FILENAME   Write test results (JSON) to FILENAME.
+    -d            Print debug output (useful if a test hangs).
+    -t, --trace   Enable mongoc tracing (useful to debug tests).
 ```
 
-`TEST_ARGS` is set to "-f -p" by default.
+`TEST_ARGS` is set to "--no-fork" by default, meaning that the suite aborts on
+the first test failure. Use "--fork" to continue after failures.
 
 To run just a specific portion of the test suite use the -l option like so:
 

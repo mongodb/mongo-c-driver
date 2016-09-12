@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
@@ -51,6 +52,7 @@ mongoc_write_concern_new (void)
    write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
    write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+   write_concern->is_default = true;
 
    return write_concern;
 }
@@ -114,12 +116,13 @@ mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern)
  */
 void
 mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
-                                bool             fsync_)
+                                bool                    fsync_)
 {
    BSON_ASSERT (write_concern);
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->fsync_ = !!fsync_;
+      write_concern->is_default = false;
    }
 }
 
@@ -129,6 +132,15 @@ mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
    return (write_concern->journal == true);
+}
+
+
+bool
+mongoc_write_concern_journal_is_set (
+   const mongoc_write_concern_t *write_concern)
+{
+   BSON_ASSERT (write_concern);
+   return (write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT);
 }
 
 
@@ -148,6 +160,7 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->journal = !!journal;
+      write_concern->is_default = false;
    }
 }
 
@@ -180,6 +193,9 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = w;
+      if (w != MONGOC_WRITE_CONCERN_W_DEFAULT) {
+         write_concern->is_default = false;
+      }
    }
 }
 
@@ -215,6 +231,7 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->wtimeout = wtimeout_msec;
+      write_concern->is_default = false;
    }
 }
 
@@ -247,6 +264,7 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
+      write_concern->is_default = false;
 
       if (wtimeout_msec >= 0) {
          write_concern->wtimeout = wtimeout_msec;
@@ -278,6 +296,7 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
       bson_free (write_concern->wtag);
       write_concern->wtag = bson_strdup (wtag);
       write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
+      write_concern->is_default = false;
    }
 }
 
@@ -327,6 +346,22 @@ _mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern) {
    return &write_concern->compiled_gle;
 }
 
+
+/**
+ * _mongoc_write_concern_is_default:
+ * @write_concern: A mongoc_write_concern_t.
+ *
+ * This is an internal function.
+ *
+ * Returns is_default, which is true when write_concern has not been modified.
+ *
+ */
+bool
+_mongoc_write_concern_is_default (mongoc_write_concern_t *write_concern) {
+   return write_concern->is_default;
+}
+
+
 /**
  * mongoc_write_concern_freeze:
  * @write_concern: A mongoc_write_concern_t.
@@ -361,7 +396,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       BSON_APPEND_UTF8 (compiled, "w", "majority");
    } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_DEFAULT) {
       /* Do Nothing */
-   } else if (write_concern->w > 0) {
+   } else {
       BSON_APPEND_INT32 (compiled, "w", write_concern->w);
    }
 
@@ -383,7 +418,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 
 
 /**
- * mongoc_write_concern_needs_gle:
+ * mongoc_write_concern_is_acknowledged:
  * @concern: (in): A mongoc_write_concern_t.
  *
  * Checks to see if @write_concern requests that a getlasterror command is to
@@ -392,20 +427,21 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
  * Returns: true if a getlasterror command should be sent.
  */
 bool
-_mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
+mongoc_write_concern_is_acknowledged (
+   const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
       return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
                (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
-              mongoc_write_concern_get_fsync(write_concern) ||
-              mongoc_write_concern_get_journal(write_concern));
+              write_concern->fsync_ == true ||
+              mongoc_write_concern_get_journal (write_concern));
    }
-   return false;
+   return true;
 }
 
 
 /**
- * _mongoc_write_concern_is_valid:
+ * mongoc_write_concern_is_valid:
  * @write_concern: (in): A mongoc_write_concern_t.
  *
  * Checks to see if @write_concern is valid and does not contain conflicting
@@ -414,14 +450,14 @@ _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
  * Returns: true if the write concern is valid; otherwise false.
  */
 bool
-_mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
+mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
 {
    if (!write_concern) {
       return false;
    }
 
    /* Journal or fsync should require acknowledgement.  */
-   if ((mongoc_write_concern_get_fsync (write_concern) ||
+   if ((write_concern->fsync_ == true ||
         mongoc_write_concern_get_journal (write_concern)) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
         write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
@@ -432,5 +468,83 @@ _mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
       return false;
    }
 
+   return true;
+}
+
+
+bool
+_mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern,
+                                bson_error_t                 *error)
+{
+   if (write_concern && !mongoc_write_concern_is_valid (write_concern)) {
+      bson_set_error (error, MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid mongoc_write_concern_t");
+      return false;
+   }
+   return true;
+}
+
+
+/**
+ * _mongoc_parse_wc_err:
+ * @doc: (in): A bson document.
+ * @error: (out): A bson_error_t.
+ *
+ * Parses a document, usually a server reply,
+ * looking for a writeConcernError. Returns true if
+ * there is a writeConcernError, false otherwise.
+ */
+bool
+_mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error) {
+   bson_iter_t iter;
+   bson_iter_t inner;
+
+   if (bson_iter_init_find(&iter, doc, "writeConcernError") &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter))
+   {
+      const char *errmsg = NULL;
+      int32_t code = 0;
+      bson_iter_recurse(&iter, &inner);
+      while (bson_iter_next(&inner)) {
+         if (BSON_ITER_IS_KEY (&inner, "code")) {
+            code = bson_iter_int32 (&inner);
+         } else if (BSON_ITER_IS_KEY (&inner, "errmsg")) {
+            errmsg = bson_iter_utf8 (&inner, NULL);
+         }
+      }
+      bson_set_error(error, MONGOC_ERROR_WRITE_CONCERN, code,
+                     "Write Concern error: %s", errmsg);
+      return true;
+   }
+   return false;
+}
+
+
+/**
+ * mongoc_write_concern_append:
+ * @write_concern: (in): A mongoc_write_concern_t.
+ * @command: (out): A pointer to a bson document.
+ *
+ * Appends a write_concern document to a command, to send to
+ * a server.
+ *
+ * Returns true on success, false on failure.
+ *
+ */
+bool
+mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
+                             bson_t                 *command)
+{
+   if (!mongoc_write_concern_is_valid (write_concern)) {
+      MONGOC_ERROR ("Invalid writeConcern passed into "
+                    "mongoc_write_concern_append.");
+      return false;
+   }
+   if (!bson_append_document (command, "writeConcern", 12,
+                              _mongoc_write_concern_get_bson (write_concern))) {
+      MONGOC_ERROR ("Could not append writeConcern to command.");
+      return false;
+   }
    return true;
 }

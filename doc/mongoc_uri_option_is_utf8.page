@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_uri_option_is_utf8">
+  <info>
+    <link type="guide" xref="mongoc_uri_t" group="function"/>
+  </info>
+  <title>mongoc_uri_option_is_utf8()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_uri_option_is_utf8 (const char *option);
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>option</p></td><td><p>The name of an option, case insensitive.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>Returns true if the option is a known MongoDB URI option of string type. For example, "replicaSet=my_rs" is a valid MongoDB URI option, so <code>mongoc_uri_option_is_utf8 ("replicaSet")</code> is true.</p>
+  </section>
+
+</page>

@@ -7,15 +7,6 @@
 
 {{ header_comment }}
 
-#define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
-
-static int64_t
-get_future_timeout_ms ()
-{
-    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
-                                        DEFAULT_FUTURE_TIMEOUT_MS);
-}
-
 void
 future_get_void (future_t *future)
 {

@@ -30,6 +30,10 @@ if [ -d .git ]; then
     cd src/libbson
     NOCONFIGURE=1 ./autogen.sh
     cd ../../
+elif [ ! -f src/libbson/autogen.sh ]; then
+    echo "Not a release archive or a git clone"
+    echo "Please download mongoc from https://github.com/mongodb/mongo-c-driver/releases"
+    exit 1
 fi
 
 if test -z `which autoreconf`; then

@@ -23,6 +23,8 @@
 
 #include <bson.h>
 
+#define MONGOC_ERROR_API_VERSION_LEGACY 1
+#define MONGOC_ERROR_API_VERSION_2      2
 
 BSON_BEGIN_DECLS
 
@@ -45,6 +47,7 @@ typedef enum
    MONGOC_ERROR_SCRAM,
    MONGOC_ERROR_SERVER_SELECTION,
    MONGOC_ERROR_WRITE_CONCERN,
+   MONGOC_ERROR_SERVER, /* Error API Version 2 only */
 } mongoc_error_domain_t;
 
 
@@ -99,6 +102,7 @@ typedef enum
    MONGOC_ERROR_SERVER_SELECTION_INVALID_ID,
 
    MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+   MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,                       
 
    /* Dup with query failure. */
    MONGOC_ERROR_PROTOCOL_ERROR = 17,

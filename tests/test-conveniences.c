@@ -18,9 +18,15 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+/* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
 
 #include "test-conveniences.h"
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
@@ -114,6 +120,189 @@ bson_iter_bson (const bson_iter_t *iter,
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_utf8 --
+ *
+ *       Return a string by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+const char *
+bson_lookup_utf8 (const bson_t *b,
+                  const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&descendent));
+
+   return bson_iter_utf8 (&descendent, NULL);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_bool --
+ *
+ *       Return a boolean by key, or return the default value.
+ *       Asserts and aborts if the key is present but not boolean.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+bson_lookup_bool (const bson_t *b,
+                  const char   *key,
+                  bool          default_value)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+
+   if (bson_iter_find_descendant (&iter, key, &descendent)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&descendent));
+      return bson_iter_bool (&descendent);
+   }
+
+   return default_value;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_doc --
+ *
+ *       Find a subdocument by key and return it by static-initializing
+ *       the passed-in bson_t "doc". There is no need to bson_destroy
+ *       "doc". Asserts and aborts if the key is absent or not a subdoc.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_lookup_doc (const bson_t *b,
+                 const char   *key,
+                 bson_t       *doc)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   bson_iter_bson (&descendent, doc);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_int32 --
+ *
+ *       Return an int32_t by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+bson_lookup_int32 (const bson_t *b,
+                   const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&descendent));
+
+   return bson_iter_int32 (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_int64 --
+ *
+ *       Return an int64_t by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+bson_lookup_int64 (const bson_t *b,
+                   const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&descendent));
+
+   return bson_iter_int64 (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_write_concern --
+ *
+ *       Find a subdocument like {w: <int32>} and interpret it as a
+ *       mongoc_write_concern_t, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_write_concern_t *
+bson_lookup_write_concern (const bson_t *b,
+                           const char   *key)
+{
+   bson_t doc;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+
+   bson_lookup_doc (b, key, &doc);
+   /* current command monitoring tests always have "w" and no other fields */
+   mongoc_write_concern_set_w (wc, bson_lookup_int32 (&doc, "w"));
+
+   return wc;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_read_prefs --
+ *
+ *       Find a subdocument like {mode: "mode"} and interpret it as a
+ *       mongoc_read_prefs_t, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_read_prefs_t *
+bson_lookup_read_prefs (const bson_t *b,
+                        const char   *key)
+{
+   bson_t doc;
+   const char *str;
+   mongoc_read_mode_t mode;
+
+   bson_lookup_doc (b, key, &doc);
+   str = bson_lookup_utf8 (&doc, "mode");
+
+   if (0 == strcasecmp("primary", str)) {
+      mode = MONGOC_READ_PRIMARY;
+   } else if (0 == strcasecmp("primarypreferred", str)) {
+      mode = MONGOC_READ_PRIMARY_PREFERRED;
+   } else if (0 == strcasecmp("secondary", str)) {
+      mode = MONGOC_READ_SECONDARY;
+   } else if (0 == strcasecmp("secondarypreferred", str)) {
+      mode = MONGOC_READ_SECONDARY_PREFERRED;
+   } else if (0 == strcasecmp("nearest", str)) {
+      mode = MONGOC_READ_NEAREST;
+   } else {
+      MONGOC_ERROR ("Bad readPreference: {\"mode\": \"%s\"}.", str);
+      abort ();
+   }
+
+   return mongoc_read_prefs_new (mode);
+}
+
+
 static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);
@@ -127,14 +316,15 @@ is_empty_doc_or_array (const bson_value_t *value);
 
 static bool
 find (bson_value_t *value,
-      const bson_iter_t *iter,
+      const bson_t *doc,
       const char *key,
       bool is_command,
       bool is_first);
 
 static bool
 match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern);
+                  const bson_value_t *pattern,
+                  match_ctx_t        *ctx);
 
 /*--------------------------------------------------------------------------
  *
@@ -199,6 +389,8 @@ match_json (const bson_t *doc,
    char *double_quoted;
    bson_error_t error;
    bson_t *pattern;
+   char errmsg[1000];
+   match_ctx_t ctx = { 0 };
    bool matches;
 
    va_start (args, json_pattern);
@@ -207,8 +399,6 @@ match_json (const bson_t *doc,
    va_end (args);
 
    double_quoted = single_quotes_to_double (json_pattern_formatted);
-
-
    pattern = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
    if (!pattern) {
@@ -216,16 +406,19 @@ match_json (const bson_t *doc,
       abort ();
    }
 
-   matches = match_bson (doc, pattern, is_command);
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof errmsg;
+   matches = match_bson_with_ctx (doc, pattern, is_command, &ctx);
 
    if (!matches) {
       fprintf (stderr,
             "ASSERT_MATCH failed with document:\n\n"
                   "%s\n"
-                  "pattern:\n%s\n\n"
+                  "pattern:\n%s\n"
+                  "%s\n"
                   "%s:%d %s()\n",
             doc ? bson_as_json (doc, NULL) : "{}",
-            double_quoted,
+            double_quoted, ctx.errmsg,
             filename, lineno, funcname);
    }
 
@@ -243,12 +436,90 @@ match_json (const bson_t *doc,
  *
  *       Does "doc" match "pattern"?
  *
+ *       See match_bson_with_ctx for details.
+ *
+ * Returns:
+ *       True or false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+match_bson (const bson_t *doc,
+            const bson_t *pattern,
+            bool          is_command)
+{
+   match_ctx_t ctx = { 0 };
+
+   ctx.strict_numeric_types = true;
+   return match_bson_with_ctx (doc, pattern, is_command, &ctx);
+}
+
+
+static void
+match_err (match_ctx_t *ctx,
+           const char  *fmt,
+           ...)
+{
+   va_list args;
+   char *formatted;
+
+   BSON_ASSERT (ctx);
+
+   va_start (args, fmt);
+   formatted = bson_strdupv_printf (fmt, args);
+   va_end (args);
+
+   if (ctx->errmsg) {
+      bson_snprintf (ctx->errmsg, ctx->errmsg_len, "%s: %s",
+                     ctx->path, formatted);
+   } else {
+      MONGOC_ERROR ("%s: %s", ctx->path, formatted);
+   }
+
+   bson_free (formatted);
+}
+
+
+/* When matching two docs, and preparing to recurse to match two subdocs with
+ * the given key, derive context for matching them from the current context. */
+static void
+derive (match_ctx_t *ctx,
+        match_ctx_t *derived,
+        const char  *key)
+{
+   BSON_ASSERT (ctx);
+   BSON_ASSERT (derived);
+   BSON_ASSERT (key);
+
+   derived->strict_numeric_types = ctx->strict_numeric_types;
+   derived->errmsg = ctx->errmsg;  /* location to write err msg if any */
+   derived->errmsg_len = ctx->errmsg_len;
+
+   if (strlen (ctx->path) > 0) {
+      bson_snprintf (derived->path, sizeof derived->path, "%s.%s",
+                     ctx->path, key);
+   } else {
+      bson_snprintf (derived->path, sizeof derived->path, "%s", key);
+   }
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * match_bson_with_ctx --
+ *
+ *       Does "doc" match "pattern"?
+ *
  *       mongoc_matcher_t prohibits $-prefixed keys, which is something
  *       we need to test in e.g. test_mongoc_client_read_prefs, so this
  *       does *not* use mongoc_matcher_t. Instead, "doc" matches "pattern"
  *       if its key-value pairs are a simple superset of pattern's. Order
  *       matters.
- *       
+ *
  *       The only special pattern syntaxes are "field": {"$exists": true/false}
  *       and "field": {"$empty": true/false}.
  *
@@ -266,14 +537,14 @@ match_json (const bson_t *doc,
  */
 
 bool
-match_bson (const bson_t *doc,
-            const bson_t *pattern,
-            bool          is_command)
+match_bson_with_ctx (const bson_t *doc,
+                     const bson_t *pattern,
+                     bool          is_command,
+                     match_ctx_t  *ctx)
 {
    bson_iter_t pattern_iter;
    const char *key;
    const bson_value_t *value;
-   bson_iter_t doc_iter;
    bool is_first = true;
    bool is_exists_operator;
    bool is_empty_operator;
@@ -281,6 +552,7 @@ match_bson (const bson_t *doc,
    bool empty;
    bool found;
    bson_value_t doc_value;
+   match_ctx_t derived;
 
    if (bson_empty0 (pattern)) {
       /* matches anything */
@@ -289,16 +561,16 @@ match_bson (const bson_t *doc,
 
    if (bson_empty0 (doc)) {
       /* non-empty pattern can't match doc */
+      match_err (ctx, "doc empty");
       return false;
    }
 
    assert (bson_iter_init (&pattern_iter, pattern));
-   assert (bson_iter_init (&doc_iter, doc));
 
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
       value = bson_iter_value (&pattern_iter);
-      found = find (&doc_value, &doc_iter, key, is_command, is_first);
+      found = find (&doc_value, doc, key, is_command, is_first);
 
       /* is value {"$exists": true} or {"$exists": false} ? */
       is_exists_operator = get_exists_operator (value, &exists);
@@ -306,24 +578,23 @@ match_bson (const bson_t *doc,
       /* is value {"$empty": true} or {"$empty": false} ? */
       is_empty_operator = get_empty_operator (value, &empty);
 
+      derive (ctx, &derived, key);
+
       if (is_exists_operator) {
          if (exists != found) {
+            match_err (&derived, "%s found", exists ? "" : " not");
             return false;
          }
       } else if (!found) {
+         match_err (&derived, "not found");
          return false;
       } else if (is_empty_operator) {
          if (empty != is_empty_doc_or_array (&doc_value)) {
+            match_err (&derived, "%s found", empty ? "" : " not");
             return false;
          }
-      } else if (!match_bson_value (&doc_value, value)) {
+      } else if (!match_bson_value (&doc_value, value, &derived)) {
          return false;
-      }
-
-      /* don't advance if next call may be for another key in the same subdoc,
-       * or if we're skipping a pattern key that was {$exists: false}. */
-      if (!strchr (key, '.') && !(is_exists_operator && !exists)) {
-         bson_iter_next (&doc_iter);
       }
 
       is_first = false;
@@ -353,33 +624,32 @@ match_bson (const bson_t *doc,
 
 static bool
 find (bson_value_t *value,
-      const bson_iter_t *iter,
+      const bson_t *doc,
       const char *key,
       bool is_command,
       bool is_first)
 {
-   bson_iter_t i2;
+   bson_iter_t iter;
    bson_iter_t descendent;
 
-   /* don't advance iter. */
-   memcpy (&i2, iter, sizeof *iter);
+   bson_iter_init (&iter, doc);
 
    if (strchr (key, '.')) {
-      if (!bson_iter_find_descendant (&i2, key, &descendent)) {
+      if (!bson_iter_find_descendant (&iter, key, &descendent)) {
          return false;
       }
 
       bson_value_copy(bson_iter_value (&descendent), value);
       return true;
    } else if (is_command && is_first) {
-      if (!bson_iter_find_case (&i2, key)) {
+      if (!bson_iter_find_case (&iter, key)) {
          return false;
       }
-   } else if (!bson_iter_find (&i2, key)) {
+   } else if (!bson_iter_find (&iter, key)) {
       return false;
    }
 
-   bson_value_copy (bson_iter_value (&i2), value);
+   bson_value_copy (bson_iter_value (&iter), value);
    return true;
 }
 
@@ -490,27 +760,135 @@ is_empty_doc_or_array (const bson_value_t *value)
 
 static bool
 match_bson_arrays (const bson_t *array,
-                   const bson_t *pattern)
+                   const bson_t *pattern,
+                   match_ctx_t  *ctx)
 {
-   /* an array is just a document with keys "0", "1", ...
-    * so match_bson suffices if the number of keys is equal. */
-   if (bson_count_keys (array) != bson_count_keys (pattern)) {
+   uint32_t array_count;
+   uint32_t pattern_count;
+   bson_iter_t array_iter;
+   bson_iter_t pattern_iter;
+   const bson_value_t *array_value;
+   const bson_value_t *pattern_value;
+   match_ctx_t derived;
+
+   array_count = bson_count_keys (array);
+   pattern_count = bson_count_keys (pattern);
+
+   if (array_count != pattern_count) {
+      match_err (ctx, "expected %" PRIu32 " keys, not %" PRIu32,
+                 pattern_count, array_count);
       return false;
    }
-   
-   return match_bson (array, pattern, false);
+
+   assert (bson_iter_init (&array_iter, array));
+   assert (bson_iter_init (&pattern_iter, pattern));
+
+   while (bson_iter_next (&array_iter)) {
+      BSON_ASSERT (bson_iter_next (&pattern_iter));
+      array_value = bson_iter_value (&array_iter);
+      pattern_value = bson_iter_value (&pattern_iter);
+
+      derive (ctx, &derived, bson_iter_key (&array_iter));
+
+      if (!match_bson_value (array_value, pattern_value, &derived)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
+static const char *
+bson_type_to_str (bson_type_t t)
+{
+   switch (t) {
+   case BSON_TYPE_EOD: return "EOD";
+   case BSON_TYPE_DOUBLE: return "DOUBLE";
+   case BSON_TYPE_UTF8: return "UTF8";
+   case BSON_TYPE_DOCUMENT: return "DOCUMENT";
+   case BSON_TYPE_ARRAY: return "ARRAY";
+   case BSON_TYPE_BINARY: return "BINARY";
+   case BSON_TYPE_UNDEFINED: return "UNDEFINED";
+   case BSON_TYPE_OID: return "OID";
+   case BSON_TYPE_BOOL: return "BOOL";
+   case BSON_TYPE_DATE_TIME: return "DATE_TIME";
+   case BSON_TYPE_NULL: return "NULL";
+   case BSON_TYPE_REGEX: return "REGEX";
+   case BSON_TYPE_DBPOINTER: return "DBPOINTER";
+   case BSON_TYPE_CODE: return "CODE";
+   case BSON_TYPE_SYMBOL: return "SYMBOL";
+   case BSON_TYPE_CODEWSCOPE: return "CODEWSCOPE";
+   case BSON_TYPE_INT32: return "INT32";
+   case BSON_TYPE_TIMESTAMP: return "TIMESTAMP";
+   case BSON_TYPE_INT64: return "INT64";
+   case BSON_TYPE_MAXKEY: return "MAXKEY";
+   case BSON_TYPE_MINKEY: return "MINKEY";
+#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
+   case BSON_TYPE_DECIMAL128: return "DECIMAL128";
+#endif
+   default: return "Unknown";
+   }
+}
+
+
+static bool
+is_number_type (bson_type_t t)
+{
+   if (t == BSON_TYPE_DOUBLE || t == BSON_TYPE_INT32 || t == BSON_TYPE_INT64) {
+      return true;
+   }
+
+   return false;
+}
+
+
+static int64_t
+bson_value_as_int64 (const bson_value_t *value)
+{
+   if (value->value_type == BSON_TYPE_DOUBLE) {
+      return (int64_t) value->value.v_double;
+   } else if (value->value_type == BSON_TYPE_INT32) {
+      return (int64_t) value->value.v_int32;
+   } else if (value->value_type == BSON_TYPE_INT64) {
+      return value->value.v_int64;
+   } else {
+      MONGOC_ERROR ("bson_value_as_int64 called on value of type %d",
+                    value->value_type);
+      abort ();
+   }
 }
 
 
 static bool
 match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern)
+                  const bson_value_t *pattern,
+                  match_ctx_t        *ctx)
 {
    bson_t subdoc;
    bson_t pattern_subdoc;
+   int64_t doc_int64;
+   int64_t pattern_int64;
    bool ret;
 
+   if (is_number_type (pattern->value_type) &&
+       ctx && !ctx->strict_numeric_types) {
+      doc_int64 = bson_value_as_int64 (doc);
+      pattern_int64 = bson_value_as_int64 (pattern);
+
+      if (doc_int64 != pattern_int64) {
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64,
+                    pattern_int64, doc_int64);
+         return false;
+      }
+
+      return true;
+   }
+
    if (doc->value_type != pattern->value_type) {
+      match_err (ctx, "expected type %s, got %s",
+                 bson_type_to_str (pattern->value_type),
+                 bson_type_to_str (doc->value_type));
       return false;
    }
    
@@ -528,9 +906,9 @@ match_bson_value (const bson_value_t *doc,
       }
 
       if (doc->value_type == BSON_TYPE_ARRAY) {
-         ret = match_bson_arrays (&subdoc, &pattern_subdoc);
+         ret = match_bson_arrays (&subdoc, &pattern_subdoc, ctx);
       } else {
-         ret = match_bson (&subdoc, &pattern_subdoc, false);
+         ret = match_bson_with_ctx (&subdoc, &pattern_subdoc, false, ctx);
       }
 
       bson_destroy (&subdoc);
@@ -539,62 +917,126 @@ match_bson_value (const bson_value_t *doc,
       return ret;
 
    case BSON_TYPE_BINARY:
-      return doc->value.v_binary.data_len == pattern->value.v_binary.data_len &&
-             !memcmp (doc->value.v_binary.data,
-                      pattern->value.v_binary.data,
-                      doc->value.v_binary.data_len);
+      ret = doc->value.v_binary.data_len == pattern->value.v_binary.data_len &&
+            !memcmp (doc->value.v_binary.data,
+                     pattern->value.v_binary.data,
+                     doc->value.v_binary.data_len);
+      break;
 
    case BSON_TYPE_BOOL:
-      return doc->value.v_bool == pattern->value.v_bool;
+      ret = doc->value.v_bool == pattern->value.v_bool;
+
+      if (!ret) {
+         match_err (ctx, "expected %d, got %d",
+                    pattern->value.v_bool, doc->value.v_bool);
+      }
+
+      return ret;
 
    case BSON_TYPE_CODE:
-      return doc->value.v_code.code_len == pattern->value.v_code.code_len &&
-             !memcmp (doc->value.v_code.code,
-                      pattern->value.v_code.code,
-                      doc->value.v_code.code_len);
+      ret = doc->value.v_code.code_len == pattern->value.v_code.code_len &&
+            !memcmp (doc->value.v_code.code,
+                     pattern->value.v_code.code,
+                     doc->value.v_code.code_len);
+
+      break;
 
    case BSON_TYPE_CODEWSCOPE:
-      return doc->value.v_codewscope.code_len ==
-                pattern->value.v_codewscope.code_len &&
-             !memcmp (doc->value.v_codewscope.code,
-                      pattern->value.v_codewscope.code,
-                      doc->value.v_codewscope.code_len) &&
-             doc->value.v_codewscope.scope_len ==
-                pattern->value.v_codewscope.scope_len
-             && !memcmp (doc->value.v_codewscope.scope_data,
-                         pattern->value.v_codewscope.scope_data,
-                         doc->value.v_codewscope.scope_len);
+      ret = doc->value.v_codewscope.code_len ==
+            pattern->value.v_codewscope.code_len &&
+            !memcmp (doc->value.v_codewscope.code,
+                     pattern->value.v_codewscope.code,
+                     doc->value.v_codewscope.code_len) &&
+            doc->value.v_codewscope.scope_len ==
+            pattern->value.v_codewscope.scope_len
+            && !memcmp (doc->value.v_codewscope.scope_data,
+                        pattern->value.v_codewscope.scope_data,
+                        doc->value.v_codewscope.scope_len);
+
+      break;
 
    case BSON_TYPE_DATE_TIME:
-      return doc->value.v_datetime == pattern->value.v_datetime;
+      ret = doc->value.v_datetime == pattern->value.v_datetime;
+
+      if (!ret) {
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64,
+                    ctx->path, pattern->value.v_datetime,
+                    doc->value.v_datetime);
+      }
+
+      return ret;
+
    case BSON_TYPE_DOUBLE:
-      return doc->value.v_double == pattern->value.v_double;
+      ret = doc->value.v_double == pattern->value.v_double;
+
+      if (!ret) {
+         match_err (ctx, "expected %f, got %f",
+                    ctx->path, pattern->value.v_double, doc->value.v_double);
+      }
+
+      return ret;
+
    case BSON_TYPE_INT32:
-      return doc->value.v_int32 == pattern->value.v_int32;
+      ret = doc->value.v_int32 == pattern->value.v_int32;
+
+      if (!ret) {
+         match_err (ctx, "expected %" PRId32 ", got %" PRId32,
+                    ctx->path, pattern->value.v_int32, doc->value.v_int32);
+      }
+
+      return ret;
+
    case BSON_TYPE_INT64:
-      return doc->value.v_int64 == pattern->value.v_int64;
+      ret = doc->value.v_int64 == pattern->value.v_int64;
+
+      if (!ret) {
+         match_err (ctx, "expected %" PRId64 ", got %" PRId64,
+                    ctx->path, pattern->value.v_int64, doc->value.v_int64);
+      }
+
+      return ret;
+
    case BSON_TYPE_OID:
-      return bson_oid_equal (&doc->value.v_oid, &pattern->value.v_oid);
+      ret = bson_oid_equal (&doc->value.v_oid, &pattern->value.v_oid);
+      break;
+
    case BSON_TYPE_REGEX:
-      return !strcmp (doc->value.v_regex.regex,
+      ret = !strcmp (doc->value.v_regex.regex,
                       pattern->value.v_regex.regex) &&
              !strcmp (doc->value.v_regex.options,
                       pattern->value.v_regex.options);
+
+      break;
+
    case BSON_TYPE_SYMBOL:
-      return doc->value.v_symbol.len == pattern->value.v_symbol.len &&
+      ret = doc->value.v_symbol.len == pattern->value.v_symbol.len &&
              !strncmp (doc->value.v_symbol.symbol,
                        pattern->value.v_symbol.symbol,
                        doc->value.v_symbol.len);
+
+      break;
+
    case BSON_TYPE_TIMESTAMP:
-      return doc->value.v_timestamp.timestamp ==
+      ret = doc->value.v_timestamp.timestamp ==
                 pattern->value.v_timestamp.timestamp &&
              doc->value.v_timestamp.increment ==
                 pattern->value.v_timestamp.increment;
+
+      break;
+
    case BSON_TYPE_UTF8:
-      return doc->value.v_utf8.len == pattern->value.v_utf8.len &&
-             !strncmp (doc->value.v_utf8.str,
+      ret = doc->value.v_utf8.len == pattern->value.v_utf8.len &&
+            !strncmp (doc->value.v_utf8.str,
                        pattern->value.v_utf8.str,
                        doc->value.v_utf8.len);
+
+      if (!ret) {
+         match_err (ctx, "expected \"%s\", got \"%s\"",
+                    pattern->value.v_utf8.str, doc->value.v_utf8.str);
+      }
+
+      return ret;
+
 
    /* these are empty types, if "a" and "b" are the same type they're equal */
    case BSON_TYPE_EOD:
@@ -605,11 +1047,23 @@ match_bson_value (const bson_value_t *doc,
       return true;
 
    case BSON_TYPE_DBPOINTER:
-      fprintf (stderr, "DBPointer comparison not implemented");
+      MONGOC_ERROR ("DBPointer comparison not implemented");
       abort ();
-
+#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
+   case BSON_TYPE_DECIMAL128:
+      MONGOC_ERROR ("Decimal128 comparison not implemented");
+      abort ();
+#endif
    default:
-      fprintf (stderr, "unexpected value type %d", doc->value_type);
+      MONGOC_ERROR ("unexpected value type %d: %s",
+                    doc->value_type, bson_type_to_str (doc->value_type));
       abort ();
    }
+
+   if (!ret) {
+      match_err (ctx, "%s values mismatch",
+                 bson_type_to_str (pattern->value_type));
+   }
+
+   return ret;
 }

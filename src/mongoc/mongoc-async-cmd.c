@@ -65,30 +65,21 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
 {
    mongoc_stream_t *tls_stream;
    const char *host = (const char *)ctx;
+   int retry_events = 0;
 
    for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
-   if (mongoc_stream_tls_do_handshake (tls_stream, timeout_msec)) {
-      if (mongoc_stream_tls_check_cert (tls_stream, host)) {
-         return 1;
-      } else {
-         bson_set_error (error, MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Failed to verify TLS cert.");
-         return -1;
-      }
-   } else if (mongoc_stream_tls_should_retry (tls_stream)) {
-      *events = mongoc_stream_tls_should_read (tls_stream) ? POLLIN : POLLOUT;
-   } else {
-      bson_set_error (error, MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to initialize TLS state.");
-      return -1;
+   if (mongoc_stream_tls_handshake (tls_stream, host, timeout_msec, &retry_events, error)) {
+      return 1;
    }
 
-   return 0;
+   if (retry_events) {
+      *events = retry_events;
+      return 0;
+   }
+   return -1;
 }
 #endif
 
@@ -240,14 +231,15 @@ _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 {
    int64_t now;
    int64_t timeout_msec;
+   int retval;
 
    now = bson_get_monotonic_time ();
    timeout_msec = (acmd->expire_at - now) / 1000;
 
    BSON_ASSERT (timeout_msec < INT32_MAX);
-
-   switch (acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
-                        (int32_t) timeout_msec, &acmd->error)) {
+   retval = acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
+                         (int32_t) timeout_msec, &acmd->error);
+   switch (retval) {
       case -1:
          return MONGOC_ASYNC_CMD_ERROR;
          break;

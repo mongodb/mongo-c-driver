@@ -1,14 +1,14 @@
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = \
-	$(top_builddir)/src/libmongoc-1.0.pc \
-	$(top_builddir)/src/libmongoc-priv.pc
+pkgconfig_DATA = $(top_builddir)/src/libmongoc-1.0.pc
 if ENABLE_SSL
 pkgconfig_DATA += $(top_builddir)/src/libmongoc-ssl-1.0.pc
 endif
 
 
-lib_LTLIBRARIES += libmongoc-priv.la
 lib_LTLIBRARIES += libmongoc-1.0.la
+
+# For libmongoc-test and other test programs.
+noinst_LTLIBRARIES += libmongoc-priv.la
 
 
 MONGOC_CPPFLAGS_SHARED = \
@@ -25,11 +25,6 @@ MONGOC_CPPFLAGS_SHARED = \
 	$(SASL_CFLAGS)
 if OS_SOLARIS
 MONGOC_CPPFLAGS_SHARED += -D_REENTRANT
-endif
-if !ENABLE_DEBUG
-MONGOC_CPPFLAGS_SHARED += \
-	-DBSON_DISABLE_ASSERT \
-	-DBSON_DISABLE_CHECKS
 endif
 libmongoc_priv_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
 libmongoc_1_0_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)

@@ -51,46 +51,18 @@
 #include "TestSuite.h"
 
 
-#define TEST_VERBOSE   (1 << 0)
-#define TEST_NOFORK    (1 << 1)
-#define TEST_HELPONLY  (1 << 2)
-#define TEST_NOTHREADS (1 << 3)
-#define TEST_DEBUGOUTPUT (1 << 4)
-#define TEST_TRACE     (1 << 5)
+static int test_flags;
+
+
+#define TEST_VERBOSE     (1 << 0)
+#define TEST_NOFORK      (1 << 1)
+#define TEST_HELPONLY    (1 << 2)
+#define TEST_DEBUGOUTPUT (1 << 3)
+#define TEST_TRACE       (1 << 4)
+#define TEST_VALGRIND    (1 << 5)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
-
-
-#if !defined(_WIN32)
-#  include <pthread.h>
-#  define Mutex                   pthread_mutex_t
-#  define Mutex_Init(_n)          pthread_mutex_init((_n), NULL)
-#  define Mutex_Lock              pthread_mutex_lock
-#  define Mutex_Unlock            pthread_mutex_unlock
-#  define Mutex_Destroy           pthread_mutex_destroy
-#  define Thread                  pthread_t
-#  define Thread_Create(_t,_f,_d) pthread_create((_t), NULL, (_f), (_d))
-#  define Thread_Join(_n)         pthread_join((_n), NULL)
-#else
-#  define Mutex                   CRITICAL_SECTION
-#  define Mutex_Init              InitializeCriticalSection
-#  define Mutex_Lock              EnterCriticalSection
-#  define Mutex_Unlock            LeaveCriticalSection
-#  define Mutex_Destroy           DeleteCriticalSection
-#  define Thread                  HANDLE
-#  define Thread_Join(_n)         WaitForSingleObject ((_n), INFINITE)
-#  define strdup _strdup
-#endif
-
-
-#if !defined(Memory_Barrier)
-# define Memory_Barrier() bson_memory_barrier()
-#endif
-
-
-# define AtomicInt_DecrementAndTest(p) (bson_atomic_int_add(p, -1) == 0)
-
 
 #if !defined(BSON_HAVE_TIMESPEC)
 struct timespec
@@ -98,18 +70,6 @@ struct timespec
    time_t tv_sec;
    long   tv_nsec;
 };
-#endif
-
-
-#if defined(_WIN32)
-static int
-Thread_Create (Thread *thread,
-               void *(*cb)(void *),
-               void *arg)
-{
-   *thread = CreateThread (NULL, 0, (void *)cb, arg, 0, NULL);
-   return 0;
-}
 #endif
 
 
@@ -182,9 +142,12 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
    ts->tv_sec = atime * 1e-9;
    ts->tv_nsec = atime - (ts->tv_sec * 1e9);
 #elif defined(_WIN32)
+   /* GetTickCount64() returns milliseconds */
    ULONGLONG ticks = GetTickCount64 ();
-   ts->tv_sec = ticks / NANOSEC_PER_SEC;
-   ts->tv_nsec = ticks % NANOSEC_PER_SEC;
+   ts->tv_sec = ticks / 1000;
+
+   /* milliseconds -> microseconds -> nanoseconds*/
+   ts->tv_nsec = (ticks % 1000) * 1000 * 1000;
 #else
 # warning "Monotonic clock is not yet supported on your platform."
 #endif
@@ -249,16 +212,16 @@ TestSuite_Init (TestSuite *suite,
    suite->name = strdup (name);
    suite->flags = 0;
    suite->prgname = strdup (argv [0]);
+   suite->silent = false;
 
    for (i = 0; i < argc; i++) {
       if (0 == strcmp ("-v", argv [i])) {
          suite->flags |= TEST_VERBOSE;
       } else if (0 == strcmp ("-d", argv [i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
-      } else if (0 == strcmp ("-f", argv [i])) {
+      } else if ((0 == strcmp ("-f", argv [i])) ||
+                 (0 == strcmp ("--no-fork", argv [i]))) {
          suite->flags |= TEST_NOFORK;
-      } else if (0 == strcmp ("-p", argv [i])) {
-         suite->flags |= TEST_NOTHREADS;
       } else if ((0 == strcmp ("-t", argv [i])) ||
                  (0 == strcmp ("--trace", argv [i]))) {
 #ifdef MONGOC_TRACE
@@ -288,6 +251,9 @@ TestSuite_Init (TestSuite *suite,
       } else if ((0 == strcmp ("-h", argv [i])) ||
                  (0 == strcmp ("--help", argv [i]))) {
          suite->flags |= TEST_HELPONLY;
+      } else if ((0 == strcmp ("-s", argv [i])) ||
+                 (0 == strcmp ("--silent", argv [i]))) {
+         suite->silent = true;
       } else if ((0 == strcmp ("-l", argv [i]))) {
          if (argc - 1 == i) {
             _Print_StdErr ("-l requires an argument.\n");
@@ -296,8 +262,30 @@ TestSuite_Init (TestSuite *suite,
          suite->testname = strdup (argv [++i]);
       }
    }
+   
+   if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
+      suite->flags |= TEST_VALGRIND;
+   }
+
+   if (suite->silent) {
+      if (suite->outfile) {
+         _Print_StdErr ("Cannot combine -F with --silent\n");
+         abort ();
+      }
+
+      suite->flags &= ~(TEST_DEBUGOUTPUT | TEST_VERBOSE);
+   }
+
+   /* HACK: copy flags to global var */
+   test_flags = suite->flags;
 }
 
+
+int
+TestSuite_CheckLive (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? 0 : 1;
+}
 
 static int
 TestSuite_CheckDummy (void)
@@ -319,6 +307,15 @@ TestSuite_Add (TestSuite  *suite, /* IN */
                TestFunc    func)  /* IN */
 {
    TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckDummy);
+}
+
+
+void
+TestSuite_AddLive (TestSuite  *suite, /* IN */
+                   const char *name,  /* IN */
+                   TestFunc    func)  /* IN */
+{
+   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckLive);
 }
 
 
@@ -364,7 +361,79 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
 }
 
 
-#if !defined(_WIN32)
+#if defined(_WIN32)
+static void
+_print_getlasterror_win (const char *msg)
+{
+   LPTSTR err_msg;
+
+   FormatMessage (
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL,
+      GetLastError (),
+      MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+      &err_msg,
+      0,
+      NULL);
+
+   _Print_StdErr ("%s: %s\n", msg, err_msg);
+
+   LocalFree (err_msg);
+}
+
+
+static int
+TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
+                          Test *test)       /* IN */
+{
+   STARTUPINFO si;
+   PROCESS_INFORMATION pi;
+   char *cmdline;
+   DWORD exit_code = -1;
+
+   ZeroMemory (&si, sizeof (si));
+   si.cb = sizeof (si);
+   ZeroMemory (&pi, sizeof (pi));
+
+   cmdline = bson_strdup_printf ("%s --silent --no-fork -l %s",
+                                 suite->prgname, test->name);
+
+   if (!CreateProcess (NULL,
+                       cmdline,
+                       NULL,    /* Process handle not inheritable  */
+                       NULL,    /* Thread handle not inheritable   */
+                       FALSE,   /* Set handle inheritance to FALSE */
+                       0,       /* No creation flags               */
+                       NULL,    /* Use parent's environment block  */
+                       NULL,    /* Use parent's starting directory */
+                       &si,
+                       &pi)) {
+      _Print_StdErr ("CreateProcess failed (%d).\n", GetLastError ());
+      bson_free (cmdline);
+
+      return -1;
+   }
+
+   if (WaitForSingleObject (pi.hProcess, INFINITE) != WAIT_OBJECT_0) {
+      _print_getlasterror_win ("Couldn't await process");
+      goto done;
+   }
+
+   if (!GetExitCodeProcess (pi.hProcess, &exit_code)) {
+      _print_getlasterror_win ("Couldn't get exit code");
+      goto done;
+   }
+
+done:
+   CloseHandle (pi.hProcess);
+   CloseHandle (pi.hThread);
+   bson_free (cmdline);
+
+   return exit_code;
+}
+#else  /* Unix */
 static int
 TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                           Test *test)       /* IN */
@@ -389,11 +458,9 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       fd = open ("/dev/null", O_WRONLY);
       dup2 (fd, STDOUT_FILENO);
       close (fd);
-      srand (test->seed);
-      test->func (test->ctx);
-
-      TestSuite_Destroy (suite);
-      exit (0);
+      execl (suite->prgname, suite->prgname, "--no-fork",
+             "-l", test->name, (char *) 0);
+      exit (-1);
    }
 
    if (-1 == waitpid (child, &exit_code, 0)) {
@@ -408,7 +475,6 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 static int
 TestSuite_RunTest (TestSuite *suite,       /* IN */
                    Test *test,             /* IN */
-                   Mutex *mutex, /* IN */
                    int *count)             /* INOUT */
 {
    struct timespec ts1;
@@ -428,51 +494,50 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        * TODO: If not verbose, close()/dup(/dev/null) for stdout.
        */
 
-      /* Tracing is superduper slow */
-#ifdef MONGOC_TRACE
-      if (suite->flags & TEST_TRACE) {
-         mongoc_log_set_handler (mongoc_log_default_handler, NULL);
-         mongoc_log_trace_enable ();
-      } else {
-         mongoc_log_trace_disable ();
+      if (suite->flags & TEST_DEBUGOUTPUT) {
+         _Print_StdOut ("Begin %s\n", name);
       }
+
+      if ((suite->flags & TEST_NOFORK)) {
+#ifdef MONGOC_TRACE
+         if (suite->flags & TEST_TRACE) {
+            mongoc_log_set_handler (mongoc_log_default_handler, NULL);
+            mongoc_log_trace_enable ();
+         } else {
+            mongoc_log_trace_disable ();
+         }
 #endif
 
-#if defined(_WIN32)
-      srand (test->seed);
-
-      if (suite->flags & TEST_DEBUGOUTPUT) {
-         _Print_StdOut ("Begin %s\n", name);
-      }
-
-      test->func (test->ctx);
-      status = 0;
-#else
-      if (suite->flags & TEST_DEBUGOUTPUT) {
-         _Print_StdOut ("Begin %s\n", name);
-      }
-      
-      if ((suite->flags & TEST_NOFORK)) {
          srand (test->seed);
          test->func (test->ctx);
          status = 0;
       } else {
          status = TestSuite_RunFuncInChild (suite, test);
       }
-#endif
+
+      capture_logs (false);
+
+      if (suite->silent) {
+         return status;
+      }
 
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
 
-      Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"%s\", "
-                      "\"name\": \"%s\", "
+                      "\"test_file\": \"%s\", "
                       "\"seed\": \"%u\", "
+                      "\"start\": %u.%09u, "
+                      "\"end\": %u.%09u, "
                       "\"elapsed\": %u.%09u }%s\n",
                (status == 0) ? "PASS" : "FAIL",
                name,
                test->seed,
+               (unsigned)ts1.tv_sec,
+               (unsigned)ts1.tv_nsec,
+               (unsigned)ts2.tv_sec,
+               (unsigned)ts2.tv_nsec,
                (unsigned)ts3.tv_sec,
                (unsigned)ts3.tv_nsec,
                ((*count) == 1) ? "" : ",");
@@ -482,20 +547,18 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
       }
-      Mutex_Unlock (mutex);
-   } else {
+   } else if (!suite->silent) {
       status = 0;
-      Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
-                "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n",
-                test->name);
+                "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s\n",
+                test->name,
+                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = '\0';
       _Print_StdOut ("%s", buf);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
       }
-      Mutex_Unlock (mutex);
    }
 
    return status ? 1 : 0;
@@ -512,14 +575,14 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "usage: %s [OPTIONS]\n"
 "\n"
 "Options:\n"
-"    -h, --help   Show this help menu.\n"
-"    -f           Do not fork() before running tests.\n"
-"    -l NAME      Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
-"    -p           Do not run tests in parallel.\n"
-"    -v           Be verbose with logs.\n"
-"    -F FILENAME  Write test results (JSON) to FILENAME.\n"
-"    -d           Print debug output (useful if a test hangs).\n"
-"    -t, --trace  Enable mongoc tracing (useful to debug tests).\n"
+"    -h, --help    Show this help menu.\n"
+"    -f, --no-fork Do not spawn a process per test (abort on first error).\n"
+"    -l NAME       Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
+"    -v            Be verbose with logs.\n"
+"    -s, --silent  Suppress all output.\n"
+"    -F FILENAME   Write test results (JSON) to FILENAME.\n"
+"    -d            Print debug output (useful if a test hangs).\n"
+"    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
 "\n"
 "Tests:\n",
             suite->prgname);
@@ -533,11 +596,8 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 
 
 static void
-TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
-                           FILE *stream)     /* IN */
+TestSuite_PrintJsonSystemHeader (FILE *stream)
 {
-   char *uri_str = test_framework_get_uri_str ();
-
 #ifdef _WIN32
 #  define INFO_BUFFER_SIZE 32767
 
@@ -558,9 +618,6 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
    }
 
    fprintf (stream,
-            "{\n"
-            "  \"uri\": \"%s\",\n"
-            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
             "    \"release\": \"%ld.%ld (%ld)\",\n"
@@ -569,28 +626,16 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "      \"pagesize\": %ld,\n"
             "      \"npages\": %d\n"
             "    }\n"
-            "  },\n"
-            "  \"options\": {\n"
-            "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\"\n"
-            "    \"tracing\": \"%s\"\n"
-            "  },\n"
-            "  \"tests\": [\n",
-            uri_str,
-            test_framework_is_mongos () ? "true" : "false",
+            "  },\n",
             major_version, minor_version, build,
             si.dwProcessorType,
             si.dwPageSize,
-            0,
-            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
-            (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false");
+            0
+   );
 #else
    struct utsname u;
    uint64_t pagesize;
    uint64_t npages = 0;
-
-   ASSERT (suite);
 
    if (uname (&u) == -1) {
       perror ("uname()");
@@ -602,11 +647,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
 #  if defined(_SC_PHYS_PAGES)
    npages = sysconf (_SC_PHYS_PAGES);
 #  endif
-
    fprintf (stream,
-            "{\n"
-            "  \"uri\": \"%s\",\n"
-            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
             "    \"release\": \"%s\",\n"
@@ -615,28 +656,82 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "      \"pagesize\": %"PRIu64",\n"
             "      \"npages\": %"PRIu64"\n"
             "    }\n"
-            "  },\n"
-            "  \"options\": {\n"
-            "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\"\n"
-            "    \"tracing\": \"%s\"\n"
-            "  },\n"
-            "  \"tests\": [\n",
-            uri_str,
-            test_framework_is_mongos () ? "true" : "false",
+            "  },\n",
             u.sysname,
             u.release,
             u.machine,
             pagesize,
-            npages,
-            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
-            (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false");
+            npages
+   );
 #endif
+}
+
+char *egetenv (const char *name)
+{
+   return getenv(name) ? getenv(name) : "";
+}
+static void
+TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
+                           FILE *stream)     /* IN */
+{
+   char *hostname = test_framework_get_host ();
+   char *udspath  = test_framework_get_unix_domain_socket_path_escaped ();
+   int   port     = test_framework_get_port ();
+   bool  ssl      = test_framework_get_ssl ();
+
+   ASSERT (suite);
+
+   fprintf (stream, "{\n");
+   TestSuite_PrintJsonSystemHeader (stream);
+   fprintf (stream,
+            "  \"auth\": { \"user\": \"%s\", \"pass\": \"%s\" }, \n"
+            "  \"addr\": { \"host\": \"%s\", \"port\": %d, \"uri\": \"%s\" },\n"
+            "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
+            "  \"uds\": \"%s\", \n"
+            "  \"SSL\": {\n"
+            "    \"enabled\": %s,\n"
+            "    \"weak_cert_validation\": %s,\n"
+            "    \"pem_file\": \"%s\",\n"
+            "    \"pem_pwd\": \"%s\",\n"
+            "    \"ca_file\": \"%s\",\n"
+            "    \"ca_dir\": \"%s\",\n"
+            "    \"crl_file\": \"%s\"\n"
+            "  },\n"
+            "  \"framework\": {\n"
+            "    \"verbose\": { \"monitoring\": %s, \"server\": %s },\n"
+            "    \"futureTimeoutMS\": %"PRIu64",\n"
+            "    \"majorityReadConcern\": %s,\n"
+            "    \"IPv6\": %s\n"
+            "  },\n"
+            "  \"options\": {\n"
+            "    \"fork\": %s,\n"
+            "    \"tracing\": %s\n"
+            "  },\n"
+            "  \"results\": [\n",
+            egetenv ("MONGOC_TEST_USER"), egetenv ("MONGOC_TEST_PASSWORD"),
+            hostname, port, egetenv ("MONGOC_TEST_URI"),
+            egetenv ("MONGOC_TEST_GSSAPI_HOST"), egetenv ("MONGOC_TEST_GSSAPI_USER"),
+            udspath,
+            ssl ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true": "false",
+            egetenv ("MONGOC_TEST_SSL_PEM_FILE"),
+            egetenv ("MONGOC_TEST_SSL_PEM_PWD"),
+            egetenv ("MONGOC_TEST_SSL_CA_FILE"),
+            egetenv ("MONGOC_TEST_SSL_CA_DIR"),
+            egetenv ("MONGOC_TEST_SSL_CRL_FILE"),
+            getenv ("MONGOC_TEST_MONITORING_VERBOSE") ? "true" : "false",
+            getenv ("MONGOC_TEST_SERVER_VERBOSE") ? "true" : "false",
+            get_future_timeout_ms (),
+            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
+            (suite->flags & TEST_NOFORK) ? "false" : "true",
+            (suite->flags & TEST_TRACE) ? "true" : "false"
+   );
+
+   bson_free (hostname);
+   bson_free (udspath);
 
    fflush (stream);
-
-   bson_free (uri_str);
 }
 
 
@@ -648,105 +743,30 @@ TestSuite_PrintJsonFooter (FILE *stream) /* IN */
 }
 
 
-typedef struct
-{
-   TestSuite *suite;
-   Test *test;
-   Mutex *mutex;
-   int *count;
-} ParallelInfo;
-
-
-static void *
-TestSuite_ParallelWorker (void *data) /* IN */
-{
-   ParallelInfo *info = (ParallelInfo *)data;
-   int status;
-
-   ASSERT (info);
-
-   status = TestSuite_RunTest (info->suite, info->test, info->mutex, info->count);
-
-   if (AtomicInt_DecrementAndTest (info->count)) {
-      TestSuite_PrintJsonFooter (stdout);
-      if (info->suite->outfile) {
-         TestSuite_PrintJsonFooter (info->suite->outfile);
-      }
-      exit (status);
-   }
-
-   return NULL;
-}
-
-
-static void
-TestSuite_RunParallel (TestSuite *suite) /* IN */
-{
-   ParallelInfo *info;
-   Thread *threads;
-   Mutex mutex;
-   Test *test;
-   int count = 0;
-   int i;
-
-   ASSERT (suite);
-
-   Mutex_Init (&mutex);
-
-   for (test = suite->tests; test; test = test->next) {
-      count++;
-   }
-
-   threads = (Thread *)calloc (count, sizeof *threads);
-
-   Memory_Barrier ();
-
-   for (test = suite->tests, i = 0; test; test = test->next, i++) {
-      info = (ParallelInfo *)calloc (1, sizeof *info);
-      info->suite = suite;
-      info->test = test;
-      info->count = &count;
-      info->mutex = &mutex;
-      Thread_Create (&threads [i], TestSuite_ParallelWorker, info);
-   }
-
-#ifdef _WIN32
-   Sleep (30000);
-#else
-   sleep (30);
-#endif
-
-   _Print_StdErr ("Timed out, aborting!\n");
-
-   abort ();
-}
-
-
 static int
 TestSuite_RunSerial (TestSuite *suite) /* IN */
 {
    Test *test;
-   Mutex mutex;
    int count = 0;
    int status = 0;
-
-   Mutex_Init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       count++;
    }
 
    for (test = suite->tests; test; test = test->next) {
-      status += TestSuite_RunTest (suite, test, &mutex, &count);
+      status += TestSuite_RunTest (suite, test, &count);
       count--;
+   }
+
+   if (suite->silent) {
+      return status;
    }
 
    TestSuite_PrintJsonFooter (stdout);
    if (suite->outfile) {
       TestSuite_PrintJsonFooter (suite->outfile);
    }
-
-   Mutex_Destroy (&mutex);
 
    return status;
 }
@@ -756,7 +776,6 @@ static int
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
-   Mutex mutex;
    char name[128];
    Test *test;
    int count = 1;
@@ -766,8 +785,6 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
 
    ASSERT (suite);
    ASSERT (testname);
-
-   Mutex_Init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       snprintf (name, sizeof name, "%s%s",
@@ -781,8 +798,12 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       }
 
       if (match) {
-         status += TestSuite_RunTest (suite, test, &mutex, &count);
+         status += TestSuite_RunTest (suite, test, &count);
       }
+   }
+
+   if (suite->silent) {
+      return status;
    }
 
    TestSuite_PrintJsonFooter (stdout);
@@ -790,7 +811,6 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       TestSuite_PrintJsonFooter (suite->outfile);
    }
 
-   Mutex_Destroy (&mutex);
    return status;
 }
 
@@ -805,20 +825,20 @@ TestSuite_Run (TestSuite *suite) /* IN */
       return 0;
    }
 
-   TestSuite_PrintJsonHeader (suite, stdout);
-   if (suite->outfile) {
-      TestSuite_PrintJsonHeader (suite, suite->outfile);
+   if (!suite->silent) {
+      TestSuite_PrintJsonHeader (suite, stdout);
+      if (suite->outfile) {
+         TestSuite_PrintJsonHeader (suite, suite->outfile);
+      }
    }
 
    if (suite->tests) {
       if (suite->testname) {
          failures += TestSuite_RunNamed (suite, suite->testname);
-      } else if ((suite->flags & TEST_NOTHREADS)) {
-         failures += TestSuite_RunSerial (suite);
       } else {
-         TestSuite_RunParallel (suite);
+         failures += TestSuite_RunSerial (suite);
       }
-   } else {
+   } else if (!suite->silent) {
       TestSuite_PrintJsonFooter (stdout);
       if (suite->outfile) {
          TestSuite_PrintJsonFooter (suite->outfile);
@@ -852,4 +872,18 @@ TestSuite_Destroy (TestSuite *suite)
    free (suite->name);
    free (suite->prgname);
    free (suite->testname);
+}
+
+
+int
+test_suite_debug_output (void)
+{
+   return 0 != (test_flags & TEST_DEBUGOUTPUT);
+}
+
+
+int
+test_suite_valgrind (void)
+{
+   return 0 != (test_flags & TEST_VALGRIND);
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_cursor_get_batch_size">
+  <info>
+    <link type="guide" xref="mongoc_cursor_t" group="function"/>
+  </info>
+  <title>mongoc_cursor_get_batch_size()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[uint32_t
+mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor);
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>cursor</p></td><td><p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>Retrieve the cursor's batch size, the maximum number of documents returned per round trip to the server. A batch size of zero means the cursor accepts the server's maximum batch size.</p>
+    <p>See <link href="https://docs.mongodb.org/manual/core/cursors/#cursor-batches">Cursor Batches</link> in the MongoDB Manual.</p>
+  </section>
+
+</page>

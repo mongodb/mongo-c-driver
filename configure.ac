@@ -1,8 +1,8 @@
 AC_PREREQ(2.60)
 
-# Set version from contents of "VERSION_CURRENT" file.
+# Set version from contents of "VERSION_CURRENT" file (and strip newlines).
 AC_INIT([mongo-c-driver],
-        m4_esyscmd_s(cat VERSION_CURRENT),
+        m4_esyscmd(cat VERSION_CURRENT | tr -d '\n'),
         [https://jira.mongodb.org/browse/CDRIVER])
 
 m4_include([build/autotools/Versions.m4])
@@ -27,12 +27,13 @@ m4_include([build/autotools/CheckSasl.m4])
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
 m4_include([build/autotools/AutoHarden.m4])
-m4_include([build/autotools/PlatformFlags.m4])
 m4_include([build/autotools/MaintainerFlags.m4])
+m4_include([build/autotools/PlatformFlags.m4])
 m4_include([build/autotools/Optimizations.m4])
 m4_include([build/autotools/Coverage.m4])
 m4_include([build/autotools/LDVersionScript.m4])
 m4_include([build/autotools/WeakSymbols.m4])
+m4_include([build/autotools/AutomaticInitAndCleanup.m4])
 
 # We would put AM_INIT_AUTOMAKE into SetupAutomake.m4, but seems to cause
 # autoconf errors.
@@ -45,10 +46,9 @@ AC_CONFIG_FILES([
     build/version
     src/libmongoc-1.0.pc
     src/libmongoc-ssl-1.0.pc
-    src/libmongoc-priv.pc
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
-    doc/installing.page
+    doc/mongoc_installing.page
     doc/mongoc_version.page
 ])
 

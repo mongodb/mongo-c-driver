@@ -127,6 +127,65 @@ _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl,
 
 
 void
+_mongoc_sasl_set_properties (mongoc_sasl_t      *sasl,
+                             const mongoc_uri_t *uri)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   bson_t properties;
+   const char *service_name = NULL;
+   bool canonicalize = false;
+
+   options = mongoc_uri_get_options (uri);
+
+   if (!mongoc_uri_get_mechanism_properties (uri, &properties)) {
+      bson_init (&properties);
+   }
+
+   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      service_name = bson_iter_utf8 (&iter, NULL);
+   }
+
+   if (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      /* newer "authMechanismProperties" URI syntax takes precedence */
+      service_name = bson_iter_utf8 (&iter, NULL);
+   }
+
+   _mongoc_sasl_set_service_name (sasl, service_name);
+
+   /*
+    * Driver Authentication Spec: "Drivers MAY allow the user to request
+    * canonicalization of the hostname. This might be required when the hosts
+    * report different hostnames than what is used in the kerberos database.
+    * The default is "false".
+    *
+    * Some underlying GSSAPI layers will do this for us, but can be disabled in
+    * their config (krb.conf).
+    *
+    * See CDRIVER-323 for more information.
+    */
+   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      canonicalize = bson_iter_bool (&iter);
+   }
+
+   if (bson_iter_init_find_case (&iter,
+                                 &properties,
+                                 "CANONICALIZE_HOST_NAME") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      /* newer "authMechanismProperties" URI syntax takes precedence */
+      canonicalize = !strcasecmp (bson_iter_utf8 (&iter, NULL), "true");
+   }
+
+   sasl->canonicalize_host_name = canonicalize;
+
+   bson_destroy (&properties);
+}
+
+
+void
 _mongoc_sasl_init (mongoc_sasl_t *sasl)
 {
    sasl_callback_t callbacks [] = {
@@ -183,7 +242,7 @@ _mongoc_sasl_is_failure (int           status,
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
                          status,
-                         "SASL Failrue: insufficient memory.");
+                         "SASL Failure: insufficient memory.");
          break;
       case SASL_NOMECH:
          bson_set_error (error,

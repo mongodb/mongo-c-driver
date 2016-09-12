@@ -13,11 +13,14 @@ MONGOC_DEF_FILES = \
 	src/mongoc/op-msg.def \
 	src/mongoc/op-query.def \
 	src/mongoc/op-reply.def \
+	src/mongoc/op-reply-header.def \
 	src/mongoc/op-update.def \
 	src/mongoc/mongoc-counters.defs
 
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
+	src/mongoc/mongoc-apm.h \
+	src/mongoc/mongoc-apm-private.h \
 	src/mongoc/mongoc-array-private.h \
 	src/mongoc/mongoc-async-private.h \
 	src/mongoc/mongoc-async-cmd-private.h \
@@ -38,6 +41,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-cursor-transform-private.h \
 	src/mongoc/mongoc-cursor-private.h \
 	src/mongoc/mongoc-cursor.h \
+	src/mongoc/mongoc-crypto-private.h \
 	src/mongoc/mongoc-database-private.h \
 	src/mongoc/mongoc-database.h \
 	src/mongoc/mongoc-errno-private.h \
@@ -81,7 +85,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-set-private.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-socket-private.h \
-	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \
 	src/mongoc/mongoc-stream-gridfs.h \
@@ -93,6 +96,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
 	src/mongoc/mongoc-trace.h \
+	src/mongoc/mongoc-trace-private.h \
 	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
@@ -103,16 +107,40 @@ INST_H_FILES = \
 	src/mongoc/mongoc-write-concern.h \
 	src/mongoc/utlist.h
 
+if ENABLE_EXPERIMENTAL_FEATURES
+INST_H_FILES += \
+	src/mongoc/mongoc-linux-distro-scanner-private.h \
+	src/mongoc/mongoc-metadata.h \
+	src/mongoc/mongoc-metadata-os-private.h \
+	src/mongoc/mongoc-metadata-private.h
+endif
+
 if ENABLE_SSL
 INST_H_FILES += \
+	src/mongoc/mongoc-crypto-cng-private.h \
+	src/mongoc/mongoc-crypto-common-crypto-private.h \
+	src/mongoc/mongoc-crypto-openssl-private.h \
+	src/mongoc/mongoc-openssl-private.h \
 	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \
+	src/mongoc/mongoc-secure-channel-private.h \
+	src/mongoc/mongoc-secure-transport-private.h \
+	src/mongoc/mongoc-ssl.h \
+	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-tls.h \
-	src/mongoc/mongoc-ssl.h
+	src/mongoc/mongoc-stream-tls-openssl-bio-private.h \
+	src/mongoc/mongoc-stream-tls-openssl.h \
+	src/mongoc/mongoc-stream-tls-openssl-private.h \
+	src/mongoc/mongoc-stream-tls-private.h \
+	src/mongoc/mongoc-stream-tls-secure-channel.h \
+	src/mongoc/mongoc-stream-tls-secure-channel-private.h \
+	src/mongoc/mongoc-stream-tls-secure-transport.h \
+	src/mongoc/mongoc-stream-tls-secure-transport-private.h
 endif
 
 MONGOC_SOURCES_SHARED += \
 	$(INST_H_FILES) \
+	src/mongoc/mongoc-apm.c \
 	src/mongoc/mongoc-array.c \
 	src/mongoc/mongoc-async.c \
 	src/mongoc/mongoc-async-cmd.c \
@@ -165,12 +193,55 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-write-command.c \
 	src/mongoc/mongoc-write-concern.c
 
+if ENABLE_CRYPTO
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-crypto.c \
+	src/mongoc/mongoc-scram.c
+
+if ENABLE_CRYPTO_LIBCRYPTO
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-crypto-openssl.c \
+	src/mongoc/mongoc-rand-openssl.c
+endif
+if ENABLE_CRYPTO_COMMON_CRYPTO
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-crypto-common-crypto.c \
+	src/mongoc/mongoc-rand-common-crypto.c
+endif
+if ENABLE_CRYPTO_CNG
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-crypto-cng.c \
+	src/mongoc/mongoc-rand-cng.c
+endif
+endif
+
+if ENABLE_EXPERIMENTAL_FEATURES
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-linux-distro-scanner.c \
+	src/mongoc/mongoc-metadata.c
+endif
+
 if ENABLE_SSL
 MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-rand.c \
-	src/mongoc/mongoc-scram.c \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
+
+if ENABLE_SSL_OPENSSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-openssl.c \
+	src/mongoc/mongoc-stream-tls-openssl.c \
+	src/mongoc/mongoc-stream-tls-openssl-bio.c
+endif
+if ENABLE_SSL_SECURE_TRANSPORT
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-secure-transport.c \
+	src/mongoc/mongoc-stream-tls-secure-transport.c
+endif
+if ENABLE_SSL_SECURE_CHANNEL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-secure-channel.c \
+	src/mongoc/mongoc-stream-tls-secure-channel.c
+endif
 endif
 
 if ENABLE_SASL

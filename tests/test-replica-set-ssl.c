@@ -7,10 +7,6 @@
 #include "mongoc-write-concern-private.h"
 #include "TestSuite.h"
 
-#define TRUST_DIR "tests/trust_dir"
-#define CAFILE TRUST_DIR "/verify/mongo_root.pem"
-#define PEMFILE_LOCALHOST TRUST_DIR "/keys/127.0.0.1.pem"
-
 #undef G_LOG_DOMAIN
 #define G_LOG_DOMAIN "test"
 
@@ -102,8 +98,8 @@ main (int   argc,   /* IN */
    cwd = getcwd(buf, sizeof(buf));
    assert(cwd);
 
-   gTestCAFile = bson_strdup_printf("%s/" CAFILE, cwd);
-   gTestPEMFileLocalhost = bson_strdup_printf("%s/" PEMFILE_LOCALHOST, cwd);
+   gTestCAFile = bson_strdup_printf("%s/" CERT_CA, cwd);
+   gTestPEMFileLocalhost = bson_strdup_printf("%s/" CERT_SERVER, cwd);
 
    use_pool = false;
    run_test("/ReplicaSet/single/ssl/client", &test_replica_set_ssl_client);

@@ -9,6 +9,7 @@ bulk2
 bulk3
 bulk4
 bulk5
+bulk6
 ChangeLog
 cluster1
 CMakeCache.txt
@@ -23,6 +24,7 @@ depcomp
 .dirstamp
 .DS_Store
 echo-server
+example-application-performance-monitoring
 example-client
 example-scram
 example-gridfs
@@ -46,7 +48,6 @@ Makefile.in
 missing
 mongoc-dump
 mongoc-ping
-mongoc-rpc-validate
 mongoc-stat
 mongoc-tail
 *.o
@@ -62,7 +63,7 @@ stamp-h1
 tags
 test-libmongoc
 test-load
-test.log
+test-results.json
 test-mock-server
 test-mongoc-array
 test-mongoc-buffer
@@ -90,3 +91,14 @@ test-replica-set-ssl
 test-secondary
 test-sharded-cluster
 test-x509
+# Windows things
+*.dir
+*.vcxproj*
+*.cmake
+Debug
+x64
+*.sdf
+*.sln
+install_manifest.txt
+.vs
+doc/installing.page

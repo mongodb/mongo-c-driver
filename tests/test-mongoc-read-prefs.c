@@ -173,7 +173,7 @@ _test_command (const mongoc_uri_t *uri,
                         0,                    /* cursorId */
                         0,                    /* startingFrom */
                         1,                    /* numberReturned */
-                        "{'a': 1}");
+                        "{'ok': 1}");
 
    /* mongoc_cursor_next returned true */
    assert (future_get_bool (future));

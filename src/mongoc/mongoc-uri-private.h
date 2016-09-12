@@ -17,7 +17,7 @@
 #ifndef MONGOC_URI_PRIVATE_H
 #define MONGOC_URI_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -38,48 +38,6 @@ mongoc_uri_append_host           (      mongoc_uri_t *uri,
 bool
 mongoc_uri_parse_host            (      mongoc_uri_t  *uri,
                                   const char          *str);
-bool
-mongoc_uri_set_username          (      mongoc_uri_t *uri,
-                                  const char         *username);
-bool
-mongoc_uri_set_password          (      mongoc_uri_t *uri,
-                                  const char         *password);
-bool
-mongoc_uri_set_database          (      mongoc_uri_t *uri,
-                                  const char         *database);
-bool
-mongoc_uri_set_auth_source       (      mongoc_uri_t *uri,
-                                  const char         *value);
-bool
-mongoc_uri_option_is_int32       (const char         *key);
-bool
-mongoc_uri_option_is_bool        (const char         *key);
-bool
-mongoc_uri_option_is_utf8        (const char         *key);
-int32_t
-mongoc_uri_get_option_as_int32   (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                        int32_t       fallback);
-bool
-mongoc_uri_get_option_as_bool    (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                        bool          fallback);
-const char*
-mongoc_uri_get_option_as_utf8    (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                  const char         *fallback);
-bool
-mongoc_uri_set_option_as_int32   (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                        int32_t       value);
-bool
-mongoc_uri_set_option_as_bool    (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                        bool          value);
-bool
-mongoc_uri_set_option_as_utf8    (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                  const char         *value);
 
 BSON_END_DECLS
 

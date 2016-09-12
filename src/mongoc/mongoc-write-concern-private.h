@@ -17,7 +17,7 @@
 #ifndef MONGOC_WRITE_CONCERN_PRIVATE_H
 #define MONGOC_WRITE_CONCERN_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -33,7 +33,7 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_write_concern_t
 {
-   int8_t    fsync_;
+   int8_t    fsync_;  /* deprecated */
    int8_t    journal;
    int32_t   w;
    int32_t   wtimeout;
@@ -41,13 +41,17 @@ struct _mongoc_write_concern_t
    bool      frozen;
    bson_t    compiled;
    bson_t    compiled_gle;
+   bool      is_default;
 };
 
 
 const bson_t *_mongoc_write_concern_get_gle   (mongoc_write_concern_t       *write_concern);
 const bson_t *_mongoc_write_concern_get_bson  (mongoc_write_concern_t       *write_concern);
-bool          _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern);
-bool          _mongoc_write_concern_is_valid  (const mongoc_write_concern_t *write_concern);
+bool _mongoc_write_concern_is_default         (mongoc_write_concern_t       *write_concern);
+bool _mongoc_write_concern_validate           (const mongoc_write_concern_t *write_concern,
+                                               bson_error_t                 *error);
+bool _mongoc_parse_wc_err                     (const bson_t                 *doc,
+                                               bson_error_t                 *error);
 
 BSON_END_DECLS
 

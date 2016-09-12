@@ -97,4 +97,4 @@ bool mock_rs_request_is_to_secondary (mock_rs_t *rs,
 
 void mock_rs_destroy (mock_rs_t *rs);
 
-#endif //MOCK_RS_H
+#endif  /* MOCK_RS_H */

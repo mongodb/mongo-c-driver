@@ -1,11 +1,11 @@
 #include <mongoc.h>
 #include <mongoc-bulk-operation-private.h>
 #include <mongoc-client-private.h>
+#include <mongoc-cursor-private.h>
 
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
-#include "mongoc-tests.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
@@ -18,14 +18,14 @@ static char *gFourMBString;
 static size_t gFourMB = 1024 * 1024 * 4;
 
 
-void
+static void
 test_bulk_cleanup ()
 {
    bson_free (gHugeString);
 }
 
 
-void
+static void
 init_huge_string (mongoc_client_t *client)
 {
    int32_t max_bson_size;
@@ -44,7 +44,7 @@ init_huge_string (mongoc_client_t *client)
 }
 
 
-const char *
+static const char *
 huge_string (mongoc_client_t *client)
 {
    init_huge_string (client);
@@ -52,7 +52,7 @@ huge_string (mongoc_client_t *client)
 }
 
 
-size_t
+static size_t
 huge_string_length (mongoc_client_t *client)
 {
    init_huge_string (client);
@@ -60,7 +60,7 @@ huge_string_length (mongoc_client_t *client)
 }
 
 
-void
+static void
 init_four_mb_string ()
 {
    if (!gFourMBString) {
@@ -72,7 +72,7 @@ init_four_mb_string ()
 }
 
 
-const char *
+static const char *
 four_mb_string ()
 {
    init_four_mb_string ();
@@ -95,7 +95,7 @@ four_mb_string ()
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 server_has_write_commands (mongoc_client_t *client)
 {
    bson_t *ismaster_cmd = tmp_bson ("{'ismaster': 1}");
@@ -134,7 +134,7 @@ server_has_write_commands (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 check_n_modified (bool          has_write_commands,
                   const bson_t *reply,
                   int32_t       n_modified)
@@ -166,7 +166,7 @@ check_n_modified (bool          has_write_commands,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_error_count (int           len,
                     const bson_t *reply)
 {
@@ -198,7 +198,7 @@ assert_error_count (int           len,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_n_inserted (int           n,
                    const bson_t *reply)
 {
@@ -225,7 +225,7 @@ assert_n_inserted (int           n,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_n_removed (int           n,
                   const bson_t *reply)
 {
@@ -266,7 +266,7 @@ assert_n_removed (int           n,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 oid_created_on_client (const bson_t *doc)
 {
    bson_oid_t new_oid;
@@ -290,22 +290,8 @@ oid_created_on_client (const bson_t *doc)
    return 0 == memcmp (pid, new_pid, 2);
 }
 
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *prefix)
-{
-   mongoc_collection_t *ret;
-   char *str;
 
-   str = gen_collection_name (prefix);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
-
-
-void
+static void
 create_unique_index (mongoc_collection_t *collection)
 {
    mongoc_index_opt_t opt;
@@ -380,6 +366,22 @@ test_bulk (void)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_bulk_error (void)
+{
+   bson_t reply = { 0 };
+   bson_error_t error;
+   mongoc_bulk_operation_t *bulk;
+
+   bulk = mongoc_bulk_operation_new (true);
+   assert (!mongoc_bulk_operation_execute (bulk, &reply, &error));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   /* reply was initialized */
+   ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
+}
 
 static void
 test_insert (bool ordered)
@@ -876,8 +878,66 @@ test_replace_one (bool ordered)
 }
 
 
+/*
+ * check that we include command overhead in msg size when deciding to split,
+ * CDRIVER-1082
+ */
 static void
-test_upsert_large (void)
+test_upsert_large (void *ctx)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bool has_write_cmds;
+   bson_t *selector = tmp_bson ("{'_id': 'aaaaaaaaaa'}");
+   size_t sz = 8396691;  /* a little over 8 MB */
+   char *large_str = bson_malloc (sz);
+   bson_t update = BSON_INITIALIZER;
+   bson_t child;
+   bson_error_t error;
+   int i;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   has_write_cmds = server_has_write_commands (client);
+   collection = get_test_collection (client, "test_upsert_large");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   bson_append_document_begin (&update, "$set", 4, &child);
+   bson_append_utf8 (&child, "big", 3, large_str, (int) sz);
+   bson_append_document_end (&update, &child);
+
+   /* two 8MB+ docs could fit in 16MB + 16K, if not for command overhead,
+    * check the driver splits into two msgs */
+   for (i = 0; i < 2; i++) {
+      mongoc_bulk_operation_update (bulk, selector, &update, true);
+   }
+
+   ASSERT_OR_PRINT ((bool) mongoc_bulk_operation_execute (bulk, &reply, &error),
+                    error);
+
+   ASSERT_MATCH (&reply, "{'nInserted': 0,"
+                         " 'nMatched':  1,"
+                         " 'nRemoved':  0,"
+                         " 'nUpserted': 1,"
+                         " 'upserted': [{'index': 0, '_id': 'aaaaaaaaaa'}],"
+                         " 'writeErrors': []}");
+
+   check_n_modified (has_write_cmds, &reply, 0);
+   ASSERT_COUNT (1, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&update);
+   bson_free (large_str);
+}
+
+
+#if !defined (_MSC_VER) || !defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
+static void
+test_upsert_huge (void *ctx)
 {
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
@@ -891,13 +951,12 @@ test_upsert_large (void)
    bson_error_t error;
    bson_t reply;
    mongoc_cursor_t *cursor;
-   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
-   collection = get_test_collection (client, "test_upsert_large");
+   collection = get_test_collection (client, "test_upsert_huge");
    assert (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
@@ -931,15 +990,9 @@ test_upsert_large (void)
                                     &query,
                                     NULL,
                                     NULL);
-   while (mongoc_cursor_next (cursor, &retdoc)) {
-      ok++;
-   }
-   ASSERT_CMPINT (ok, ==, 1);
 
-   if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "ERROR: %s\n", error.message);
-      ASSERT (false);
-   }
+   ASSERT_CURSOR_NEXT (cursor, &retdoc);
+   ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&query);
    bson_destroy (&reply);
@@ -949,6 +1002,7 @@ test_upsert_large (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
+#endif /* CDRIVER-1423 */
 
 
 static void
@@ -1001,8 +1055,11 @@ test_update (bool ordered)
 
    /* update doc without $-operators rejected */
    sel = tmp_bson ("{'a': {'$gte': 2}}");
-   suppress_one_message ();
+   capture_logs (true);
    mongoc_bulk_operation_update (bulk, sel, bad_update_doc, false);
+   ASSERT_CAPTURED_LOG ("update with $-operators",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "only works with $ operators");
    ASSERT_CMPINT (0, ==, (int)bulk->commands.len);
 
    update_doc = tmp_bson ("{'$set': {'foo': 'bar'}}");
@@ -1768,6 +1825,92 @@ test_write_concern_write_command_unordered_multi_err (void)
 
 
 static void
+_test_write_concern_err_api (bool    has_write_commands,
+                             int32_t error_api_version)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   uint32_t expected_code;
+
+   /* set wire protocol version for legacy writes or write commands */
+   mock_server = mock_server_with_autoismaster (has_write_commands ? 3 : 0);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   ASSERT (mongoc_client_set_error_api (client, error_api_version));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (has_write_commands) {
+      request = mock_server_receives_command (mock_server, "test",
+                                              MONGOC_QUERY_NONE, NULL);
+
+      mock_server_replies_simple (
+         request,
+         "{'ok': 1.0, 'n': 1, "
+         " 'writeConcernError': {'code': 42, 'errmsg': 'foo'}}");
+   } else {
+      request = mock_server_receives_insert (
+         mock_server, "test.test", MONGOC_INSERT_NONE, "{'_id': 1}");
+
+      request_destroy (request);
+      request = mock_server_receives_gle (mock_server, "test");
+      mock_server_replies_simple (
+         request, "{'ok': 1.0, 'n': 1, 'err': 'foo', 'wtimeout': true}");
+   }
+
+   assert (!future_get_uint32_t (future));
+   /* legacy write concern errs have no code from server, driver uses 64 */
+   expected_code = has_write_commands ? 42 : 64;
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
+                          expected_code, "foo");
+
+   future_destroy (future);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+
+static void
+test_write_concern_error_legacy_v1 (void)
+{
+   _test_write_concern_err_api (false, 1);
+}
+
+
+static void
+test_write_concern_error_write_command_v1 (void)
+{
+   _test_write_concern_err_api (true, 1);
+}
+
+
+static void
+test_write_concern_error_legacy_v2 (void)
+{
+   _test_write_concern_err_api (false, 2);
+}
+
+
+static void
+test_write_concern_error_write_command_v2 (void)
+{
+   _test_write_concern_err_api (true, 2);
+}
+
+
+static void
 test_multiple_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
@@ -1976,7 +2119,7 @@ test_wtimeout_plus_duplicate_key_err_write_commands (void)
 
 
 static void
-test_large_inserts_ordered (void)
+test_large_inserts_ordered (void *ctx)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1992,7 +2135,6 @@ test_large_inserts_ordered (void)
    const bson_t *retdoc;
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
-   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
@@ -2044,16 +2186,8 @@ test_large_inserts_ordered (void)
                                     &query,
                                     NULL,
                                     NULL);
-   while (mongoc_cursor_next (cursor, &retdoc)) {
-      ok++;
-   }
-
-   ASSERT_CMPINT (ok, ==, 1);
-
-   if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "ERROR: %s\n", error.message);
-      ASSERT (false);
-   }
+   ASSERT_CURSOR_NEXT (cursor, &retdoc);
+   ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&query);
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
@@ -2080,6 +2214,7 @@ test_large_inserts_ordered (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    bson_destroy (huge_doc);
    mongoc_client_destroy (client);
@@ -2087,7 +2222,7 @@ test_large_inserts_ordered (void)
 
 
 static void
-test_large_inserts_unordered (void)
+test_large_inserts_unordered (void *ctx)
 {
    mongoc_client_t *client;
    bson_t *huge_doc;
@@ -2102,7 +2237,6 @@ test_large_inserts_unordered (void)
    const bson_t *retdoc;
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
-   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
@@ -2149,16 +2283,10 @@ test_large_inserts_unordered (void)
                                     &query,
                                     NULL,
                                     NULL);
-   while (mongoc_cursor_next (cursor, &retdoc)) {
-      ok++;
-   }
 
-   ASSERT_CMPINT (ok, ==, 2);
-
-   if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "ERROR: %s\n", error.message);
-      ASSERT (false);
-   }
+   ASSERT_CURSOR_NEXT (cursor, &retdoc);
+   ASSERT_CURSOR_NEXT (cursor, &retdoc);
+   ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&query);
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
@@ -2500,14 +2628,63 @@ test_bulk_new (void)
 typedef enum {
     INSERT,
     UPDATE,
-    REMOVE
+    REMOVE,
+    OP_TYPE_LAST
 } op_type_t;
 
 
-static void
-_test_legacy_write_err (op_type_t op_type)
+static const char *
+op_type_str (op_type_t op_type)
 {
+   switch (op_type) {
+   case INSERT:
+      return "insert";
+   case UPDATE:
+      return "update";
+   case REMOVE:
+      return "remove";
+   case OP_TYPE_LAST:
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
+   }
+}
+
+
+typedef enum
+{
+   HANGUP,
+   SERVER_ERROR,
+   ERR_TYPE_LAST
+} err_type_t;
+
+
+static const char *
+err_type_str (err_type_t err_type)
+{
+   if (err_type == HANGUP) {
+      return "hangup";
+   } else {
+      return "server_error";
+   }
+}
+
+
+typedef struct
+{
+   op_type_t  op_type;
+   err_type_t err_type;
+   int        pooled;
+   int32_t    err_api_version;
+} err_test_t;
+
+
+static void
+_test_legacy_write_err (void *ctx)
+{
+   err_test_t *err_test;
    mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
@@ -2517,14 +2694,25 @@ _test_legacy_write_err (op_type_t op_type)
    future_t *future;
    request_t *request = NULL;
 
+   err_test = (err_test_t *) ctx;
+
    server = mock_server_with_autoismaster (0);  /* wire version = 0 */
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   if (err_test->pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      assert (mongoc_client_pool_set_error_api (pool,
+                                                err_test->err_api_version));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      assert (mongoc_client_set_error_api (client, err_test->err_api_version));
+   }
+
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
-   switch (op_type) {
+   switch (err_test->op_type) {
    case INSERT:
       mongoc_bulk_operation_insert (bulk, doc);
       break;
@@ -2537,14 +2725,15 @@ _test_legacy_write_err (op_type_t op_type)
    case REMOVE:
       mongoc_bulk_operation_remove (bulk, doc);
       break;
+   case OP_TYPE_LAST:
    default:
-      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      fprintf (stderr, "Invalid op_type: : %d\n", err_test->op_type);
       abort ();
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   switch (op_type) {
+   switch (err_test->op_type) {
    case INSERT:
       request = mock_server_receives_insert (server, "test.test",
                                              MONGOC_INSERT_NONE,
@@ -2561,46 +2750,54 @@ _test_legacy_write_err (op_type_t op_type)
                                              MONGOC_REMOVE_NONE,
                                              "{'_id': 1}");
       break;
+   case OP_TYPE_LAST:
    default:
-      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      fprintf (stderr, "Invalid op_type: : %d\n", err_test->op_type);
       abort ();
    }
 
    request_destroy (request);
    request = mock_server_receives_gle (server, "test");
-   mock_server_hangs_up (request);
+
+   if (err_test->err_type == HANGUP) {
+      capture_logs (true);
+      mock_server_hangs_up (request);
+   } else {
+      /* getlasterror reply has ok: 1, even if reporting an error */
+      mock_server_replies_simple (request,
+                                  "{'ok': 1, 'err': 'oops', 'code': 42}");
+   }
+
    request_destroy (request);
 
    /* bulk operation fails */
    assert (!future_get_uint32_t (future));
 
+   if (err_test->err_type == HANGUP) {
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET, "Failed to read");
+   } else if (err_test->err_api_version == 2) {
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 42, "oops");
+   } else {
+      /* legacy error API */
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 42, "oops");
+   }
+
    future_destroy (future);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
+   bson_destroy (&reply);
+
+   if (err_test->pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    mock_server_destroy (server);
 }
 
-
-static void
-test_legacy_insert_err (void)
-{
-   _test_legacy_write_err (INSERT);
-}
-
-
-static void
-test_legacy_update_err (void)
-{
-   _test_legacy_write_err (UPDATE);
-}
-
-
-static void
-test_legacy_remove_err (void)
-{
-   _test_legacy_write_err (REMOVE);
-}
 
 static void
 test_bulk_write_concern_over_1000(void)
@@ -2608,20 +2805,17 @@ test_bulk_write_concern_over_1000(void)
    mongoc_client_t *client;
    mongoc_bulk_operation_t *bulk;
    mongoc_write_concern_t *write_concern;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
    bson_t doc;
    bson_error_t error;
    uint32_t success;
    int i;
    char *str;
-   bson_t *query;
-   const bson_t *result;
+   bson_t reply;
+   bson_iter_t iter;
    bool r;
 
    client = test_framework_client_new ();
    assert (client);
-
 
    write_concern = mongoc_write_concern_new();
    mongoc_write_concern_set_w (write_concern, 1);
@@ -2647,48 +2841,45 @@ test_bulk_write_concern_over_1000(void)
    success = mongoc_bulk_operation_execute(bulk, NULL, &error);
    ASSERT_OR_PRINT (success, error);
 
-   collection = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
+   /* wait for bulk insert to complete on this connection */
+   r = mongoc_client_command_simple (client, "test",
+                                     tmp_bson ("{'getlasterror': 1}"),
+                                     NULL, &reply, &error);
 
-   query = bson_new();
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
-
-   r = mongoc_cursor_next (cursor, &result);
-   if (!r) {
-      mongoc_cursor_error(cursor, &error);
-      fprintf(stderr, "%s", error.message);
+   ASSERT_OR_PRINT (r, error);
+   if (bson_iter_init_find (&iter, &reply, "err") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      MONGOC_ERROR ("%s\n", bson_iter_utf8 (&iter, NULL));
+      abort ();
    }
-   assert(r);
 
-   bson_destroy (query);
-   mongoc_cursor_destroy (cursor);
+   bson_free (str);
    mongoc_bulk_operation_destroy(bulk);
-   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mongoc_write_concern_destroy (write_concern);
 }
 
 
 static uint32_t
-hint_for_read_mode (mongoc_client_t *client,
-                    mongoc_read_mode_t read_mode)
+server_id_for_read_mode (mongoc_client_t *client,
+                         mongoc_read_mode_t read_mode)
 {
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd;
    bson_error_t error;
-   uint32_t hint;
+   uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
-                                15, &error);
+                                &error);
 
    ASSERT_OR_PRINT (sd, error);
-   hint = sd->id;
+   server_id = sd->id;
 
    mongoc_server_description_destroy (sd);
    mongoc_read_prefs_destroy (prefs);
 
-   return hint;
+   return server_id;
 }
 
 
@@ -2703,7 +2894,7 @@ _test_bulk_hint (bool pooled,
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    bool ret;
-   uint32_t hint;
+   uint32_t server_id;
    bson_t reply;
    bson_error_t error;
    future_t *future;
@@ -2720,7 +2911,7 @@ _test_bulk_hint (bool pooled,
       client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
    }
 
-   /* warm up the client so its hint is valid */
+   /* warm up the client so its server_id is valid */
    ret = mongoc_client_command_simple (client, "admin",
                                        tmp_bson ("{'isMaster': 1}"),
                                        NULL, NULL, &error);
@@ -2728,13 +2919,15 @@ _test_bulk_hint (bool pooled,
 
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_hint (bulk));
    if (use_primary) {
-      hint = hint_for_read_mode (client, MONGOC_READ_PRIMARY);
+      server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
    } else {
-      hint = hint_for_read_mode (client, MONGOC_READ_SECONDARY);
+      server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
    }
 
-   mongoc_bulk_operation_set_hint (bulk, hint);
+   mongoc_bulk_operation_set_hint (bulk, server_id);
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_bulk_operation_get_hint (bulk));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
@@ -2763,7 +2956,7 @@ _test_bulk_hint (bool pooled,
       BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    }
 
-   ASSERT_CMPINT (hint, ==, future_get_uint32_t (future));
+   ASSERT_CMPUINT32 (server_id, ==, future_get_uint32_t (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -2829,59 +3022,134 @@ test_hint_pooled_command_primary (void)
    _test_bulk_hint (true, true, true);
 }
 
+
+static void
+test_bulk_reply_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
+   mongoc_bulk_operation_update (bulk, tmp_bson ("{}"),
+                                 tmp_bson ("{'$set': {'x': 1}}"), false);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
+
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, &reply, &error),
+                    error);
+
+   ASSERT (bson_empty (&reply));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
+   op_type_t op_type;
+   err_type_t err_type;
+   int pooled;
+   int32_t err_api_version;
+   char *name;
+   /* (op types) X (err types) X (pooled / single) X (err API versions) */
+   static err_test_t err_tests[3 * 2 * 2 * 2];
+   err_test_t *err_test = err_tests;
+
    atexit (test_bulk_cleanup);
 
-   TestSuite_Add (suite, "/BulkOperation/basic",
-                  test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/insert_ordered",
-                  test_insert_ordered);
-   TestSuite_Add (suite, "/BulkOperation/insert_unordered",
-                  test_insert_unordered);
-   TestSuite_Add (suite, "/BulkOperation/insert_check_keys",
-                  test_insert_check_keys);
-   TestSuite_Add (suite, "/BulkOperation/update_ordered",
-                  test_update_ordered);
-   TestSuite_Add (suite, "/BulkOperation/update_unordered",
-                  test_update_unordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_ordered",
-                  test_upsert_ordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_unordered",
-                  test_upsert_unordered);
-   TestSuite_Add (suite, "/BulkOperation/upsert_large",
-                  test_upsert_large);
-   TestSuite_Add (suite, "/BulkOperation/upserted_index_ordered",
-                  test_upserted_index_ordered);
-   TestSuite_Add (suite, "/BulkOperation/upserted_index_unordered",
-                  test_upserted_index_unordered);
-   TestSuite_Add (suite, "/BulkOperation/update_one_ordered",
-                  test_update_one_ordered);
-   TestSuite_Add (suite, "/BulkOperation/update_one_unordered",
-                  test_update_one_unordered);
-   TestSuite_Add (suite, "/BulkOperation/replace_one_ordered",
-                  test_replace_one_ordered);
-   TestSuite_Add (suite, "/BulkOperation/replace_one_unordered",
-                  test_replace_one_unordered);
-   TestSuite_Add (suite, "/BulkOperation/index_offset",
-                  test_index_offset);
-   TestSuite_Add (suite, "/BulkOperation/single_ordered_bulk",
-                  test_single_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/insert_continue_on_error",
-                  test_insert_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/update_continue_on_error",
-                  test_update_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/remove_continue_on_error",
-                  test_remove_continue_on_error);
-   TestSuite_Add (suite, "/BulkOperation/single_error_ordered_bulk",
-                  test_single_error_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/multiple_error_ordered_bulk",
-                  test_multiple_error_ordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/single_unordered_bulk",
-                  test_single_unordered_bulk);
-   TestSuite_Add (suite, "/BulkOperation/single_error_unordered_bulk",
-                  test_single_error_unordered_bulk);
+   for (op_type = (op_type_t) 0; op_type < OP_TYPE_LAST; op_type++) {
+      for (err_type = (err_type_t) 0; err_type < ERR_TYPE_LAST; err_type++) {
+         for (pooled = 0; pooled <= 1; pooled++) {
+            for (err_api_version = 1; err_api_version <= 2; err_api_version++) {
+               err_test->op_type = op_type;
+               err_test->err_type = err_type;
+               err_test->pooled = pooled;
+               err_test->err_api_version = err_api_version;
+
+               name = bson_strdup_printf ("/BulkOperation/error/%s/%s/%s/v%d",
+                                          op_type_str (op_type),
+                                          err_type_str (err_type),
+                                          pooled ? "pooled" : "single",
+                                          err_api_version);
+
+               TestSuite_AddFull (suite, name, _test_legacy_write_err, NULL,
+                                  (void *) err_test, NULL);
+
+               err_test++;
+
+               bson_free (name);
+            }
+         }
+      }
+   }
+
+   TestSuite_AddLive (suite, "/BulkOperation/basic",
+                      test_bulk);
+   TestSuite_Add (suite, "/BulkOperation/error",
+                  test_bulk_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_ordered",
+                       test_insert_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_unordered",
+                       test_insert_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_check_keys",
+                       test_insert_check_keys);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_ordered",
+                       test_update_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_unordered",
+                       test_update_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/upsert_ordered",
+                       test_upsert_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/upsert_unordered",
+                       test_upsert_unordered);
+   TestSuite_AddFull (suite, "/BulkOperation/upsert_large",
+                      test_upsert_large, NULL, NULL, test_framework_skip_if_slow);
+#if !defined (_MSC_VER) || !defined (MONGOC_ENABLE_SSL_OPENSSL) /* CDRIVER-1423 */
+   TestSuite_AddFull (suite, "/BulkOperation/upsert_huge",
+                      test_upsert_huge, NULL, NULL, test_framework_skip_if_slow);
+#endif
+   TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_ordered",
+                       test_upserted_index_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/upserted_index_unordered",
+                       test_upserted_index_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_one_ordered",
+                       test_update_one_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_one_unordered",
+                       test_update_one_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/replace_one_ordered",
+                       test_replace_one_ordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/replace_one_unordered",
+                       test_replace_one_unordered);
+   TestSuite_AddLive  (suite, "/BulkOperation/index_offset",
+                       test_index_offset);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_ordered_bulk",
+                       test_single_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/insert_continue_on_error",
+                       test_insert_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/update_continue_on_error",
+                       test_update_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/remove_continue_on_error",
+                       test_remove_continue_on_error);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_error_ordered_bulk",
+                       test_single_error_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/multiple_error_ordered_bulk",
+                       test_multiple_error_ordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_unordered_bulk",
+                       test_single_unordered_bulk);
+   TestSuite_AddLive  (suite, "/BulkOperation/single_error_unordered_bulk",
+                       test_single_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered",
                   test_write_concern_legacy_ordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered/multi_err",
@@ -2898,35 +3166,38 @@ test_bulk_install (TestSuite *suite)
                   test_write_concern_write_command_unordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered/multi_err",
                   test_write_concern_write_command_unordered_multi_err);
-   TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
-                  test_multiple_error_unordered_bulk);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/legacy/v1",
+                  test_write_concern_error_legacy_v1);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/write_command/v1",
+                  test_write_concern_error_write_command_v1);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/legacy/v2",
+                  test_write_concern_error_legacy_v2);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/error/write_command/v2",
+                  test_write_concern_error_write_command_v2);
+   TestSuite_AddLive (suite, "/BulkOperation/multiple_error_unordered_bulk",
+                      test_multiple_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/legacy",
                   test_wtimeout_plus_duplicate_key_err_legacy);
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
                   test_wtimeout_plus_duplicate_key_err_write_commands);
-   TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",
-                  test_large_inserts_ordered);
-   TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",
-                  test_large_inserts_unordered);
-   TestSuite_Add (suite, "/BulkOperation/numerous_ordered",
-                  test_numerous_ordered);
-   TestSuite_Add (suite, "/BulkOperation/numerous_unordered",
-                  test_numerous_unordered);
-   TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_ordered",
-                  test_bulk_edge_case_372_ordered);
-   TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_unordered",
-                  test_bulk_edge_case_372_unordered);
-   TestSuite_Add (suite, "/BulkOperation/new",
-                  test_bulk_new);
-   TestSuite_Add (suite, "/BulkOperation/over_1000",
-                  test_bulk_edge_over_1000);
-   TestSuite_Add (suite, "/BulkOperation/write_concern/over_1000",
-                  test_bulk_write_concern_over_1000);
-
-   TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
-   TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);
-   TestSuite_Add (suite, "/BulkOperation/error/remove", test_legacy_remove_err);
-
+   TestSuite_AddFull (suite, "/BulkOperation/large_inserts_ordered",
+                      test_large_inserts_ordered, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/BulkOperation/large_inserts_unordered",
+                      test_large_inserts_unordered, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/BulkOperation/numerous_ordered",
+                      test_numerous_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/numerous_unordered",
+                      test_numerous_unordered);
+   TestSuite_AddLive (suite, "/BulkOperation/CDRIVER-372_ordered",
+                      test_bulk_edge_case_372_ordered);
+   TestSuite_AddLive (suite, "/BulkOperation/CDRIVER-372_unordered",
+                      test_bulk_edge_case_372_unordered);
+   TestSuite_AddLive (suite, "/BulkOperation/new",
+                      test_bulk_new);
+   TestSuite_AddLive (suite, "/BulkOperation/over_1000",
+                      test_bulk_edge_over_1000);
+   TestSuite_AddLive (suite, "/BulkOperation/write_concern/over_1000",
+                      test_bulk_write_concern_over_1000);
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/secondary",
                   test_hint_single_legacy_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/primary",
@@ -2943,4 +3214,6 @@ test_bulk_install (TestSuite *suite)
                   test_hint_pooled_command_secondary);
    TestSuite_Add (suite, "/BulkOperation/hint/pooled/command/primary",
                   test_hint_pooled_command_primary);
+   TestSuite_AddLive (suite, "/BulkOperation/reply_w0",
+                      test_bulk_reply_w0);
 }

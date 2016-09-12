@@ -16,6 +16,7 @@
 
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
+#include <mongoc-sasl-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -141,6 +142,42 @@ test_gssapi_kerberos (void *context)
 }
 
 
+static void
+test_sasl_properties (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_sasl_t sasl;
+
+   uri = mongoc_uri_new (
+      "mongodb://host/?authMechanism=GSSAPI&"
+      "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
+
+   memset (&sasl, 0, sizeof sasl);
+   _mongoc_sasl_set_properties (&sasl, uri);
+
+   ASSERT (sasl.canonicalize_host_name);
+   ASSERT_CMPSTR (sasl.service_name, "sn");
+
+   mongoc_uri_destroy (uri);
+
+   /* authMechanismProperties take precedence */
+   uri = mongoc_uri_new (
+      "mongodb://host/?authMechanism=GSSAPI&"
+      "canonicalizeHostname=true&gssapiServiceName=blah&"
+      "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:False");
+
+   _mongoc_sasl_destroy (&sasl);
+   memset (&sasl, 0, sizeof sasl);
+   _mongoc_sasl_set_properties (&sasl, uri);
+
+   ASSERT (!sasl.canonicalize_host_name);
+   ASSERT_CMPSTR (sasl.service_name, "sn");
+
+   _mongoc_sasl_destroy (&sasl);
+   mongoc_uri_destroy (uri);
+}
+
+
 void
 test_sasl_install (TestSuite *suite)
 {
@@ -150,4 +187,5 @@ test_sasl_install (TestSuite *suite)
                       NULL,
                       NULL,
                       should_run_gssapi_kerberos);
+   TestSuite_Add (suite, "/SASL/properties", test_sasl_properties);
 }

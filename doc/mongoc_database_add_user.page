@@ -34,7 +34,7 @@ mongoc_database_add_user (mongoc_database_t *database,
       <tr><td><p>password</p></td><td><p>The cleartext password for the user.</p></td></tr>
       <tr><td><p>roles</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> for roles.</p></td></tr>
       <tr><td><p>custom_data</p></td><td><p>A optional <code xref="bson:bson_t">bson_t</code> for extra data.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>A location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

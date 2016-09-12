@@ -159,12 +159,11 @@ cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, 
     <title>The "explain" command</title>
     <p>With MongoDB before 3.2, a query with option <code>$explain: true</code> returns information about the query plan, instead of the query results. Beginning in MongoDB 3.2, there is a separate "explain" command. The driver will not convert "$explain" queries to "explain" commands, you must call the "explain" command explicitly:</p>
     <code mime="text/x-csrc"><![CDATA[/* MongoDB 3.2+, "explain" command syntax */
-command = BCON_NEW ("explain", "{",
-                    "find", BCON_UTF8 ("collection_name"),
-                    "filter", "{",
-                    "foo", BCON_INT32 (1), "}",
-                    "}", "}");
-cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+ command = BCON_NEW ("explain", "{",
+                     "find", BCON_UTF8 ("collection_name"),
+                     "filter", "{", "foo", BCON_INT32 (1), "}",
+                     "}");
+mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
 ]]></code>
   </section>
 

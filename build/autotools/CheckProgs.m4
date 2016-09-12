@@ -13,6 +13,8 @@ if test -z "$GREP"; then
     AC_MSG_ERROR([You need 'grep' to compile libbson])
 fi
 
+AC_CHECK_HEADERS_ONCE([strings.h])
+
 # Optional for documentation
 AC_PATH_PROG(YELP_BUILD, yelp-build)
 

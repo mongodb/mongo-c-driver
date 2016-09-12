@@ -20,13 +20,100 @@
 
 
 /*
+ * MONGOC_ENABLE_SSL_SECURE_CHANNEL is set from configure to determine if we are
+ * compiled with Native SSL support on Windows
+ */
+#define MONGOC_ENABLE_SSL_SECURE_CHANNEL @MONGOC_ENABLE_SSL_SECURE_CHANNEL@
+
+#if MONGOC_ENABLE_SSL_SECURE_CHANNEL != 1
+#  undef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+#endif
+
+
+/*
+ * MONGOC_ENABLE_CRYPTO_CNG is set from configure to determine if we are
+ * compiled with Native Crypto support on Windows
+ */
+#define MONGOC_ENABLE_CRYPTO_CNG @MONGOC_ENABLE_CRYPTO_CNG@
+
+#if MONGOC_ENABLE_CRYPTO_CNG != 1
+#  undef MONGOC_ENABLE_CRYPTO_CNG
+#endif
+
+
+/*
+ * MONGOC_ENABLE_SSL_SECURE_TRANSPORT is set from configure to determine if we are
+ * compiled with Native SSL support on Darwin
+ */
+#define MONGOC_ENABLE_SSL_SECURE_TRANSPORT @MONGOC_ENABLE_SSL_SECURE_TRANSPORT@
+
+#if MONGOC_ENABLE_SSL_SECURE_TRANSPORT != 1
+#  undef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+#endif
+
+
+/*
+ * MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO is set from configure to determine if we are
+ * compiled with Native Crypto support on Darwin
+ */
+#define MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO @MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO@
+
+#if MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO != 1
+#  undef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
+#endif
+
+
+/*
+ * MONGOC_ENABLE_SSL_OPENSSL is set from configure to determine if we are
+ * compiled with OpenSSL support.
+ */
+#define MONGOC_ENABLE_SSL_OPENSSL @MONGOC_ENABLE_SSL_OPENSSL@
+
+#if MONGOC_ENABLE_SSL_OPENSSL != 1
+#  undef MONGOC_ENABLE_SSL_OPENSSL
+#endif
+
+
+/*
+ * MONGOC_ENABLE_CRYPTO_LIBCRYPTO is set from configure to determine if we are
+ * compiled with OpenSSL support.
+ */
+#define MONGOC_ENABLE_CRYPTO_LIBCRYPTO @MONGOC_ENABLE_CRYPTO_LIBCRYPTO@
+
+#if MONGOC_ENABLE_CRYPTO_LIBCRYPTO != 1
+#  undef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
+#endif
+
+
+/*
  * MONGOC_ENABLE_SSL is set from configure to determine if we are
- * compiled with SSL support.
+ * compiled with any SSL support.
  */
 #define MONGOC_ENABLE_SSL @MONGOC_ENABLE_SSL@
 
 #if MONGOC_ENABLE_SSL != 1
 #  undef MONGOC_ENABLE_SSL
+#endif
+
+
+/*
+ * MONGOC_ENABLE_CRYPTO is set from configure to determine if we are
+ * compiled with any crypto support.
+ */
+#define MONGOC_ENABLE_CRYPTO @MONGOC_ENABLE_CRYPTO@
+
+#if MONGOC_ENABLE_CRYPTO != 1
+#  undef MONGOC_ENABLE_CRYPTO
+#endif
+
+
+/*
+ * Use system crypto profile
+ */
+#define MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE @MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE@
+
+#if MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE != 1
+#  undef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
 #endif
 
 
@@ -65,5 +152,24 @@
 #  undef MONGOC_HAVE_WEAK_SYMBOLS
 #endif
 
+
+/*
+ * Disable automatic calls to mongoc_init() and mongoc_cleanup()
+ * before main() is called, and after exit() (respectively).
+ */
+#define MONGOC_NO_AUTOMATIC_GLOBALS @MONGOC_NO_AUTOMATIC_GLOBALS@
+
+#if MONGOC_NO_AUTOMATIC_GLOBALS != 1
+#  undef MONGOC_NO_AUTOMATIC_GLOBALS
+#endif
+
+/*
+ * Define to support experimental future mongoc features
+ */
+#define MONGOC_EXPERIMENTAL_FEATURES @MONGOC_EXPERIMENTAL_FEATURES@
+
+#if MONGOC_EXPERIMENTAL_FEATURES != 1
+#  undef MONGOC_EXPERIMENTAL_FEATURES
+#endif
 
 #endif /* MONGOC_CONFIG_H */

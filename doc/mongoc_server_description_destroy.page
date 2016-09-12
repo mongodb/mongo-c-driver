@@ -20,18 +20,13 @@ mongoc_server_description_destroy(mongoc_server_description_t *description);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>description</p></td><td><p>A <link xref="mongoc_server_description_t">The description to destroy.</link>.</p></td></tr>
+      <tr><td><p>description</p></td><td><p>A <code xref="mongoc_server_description_t">mongoc_server_description_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>This function cleans up all memory associated with the given server description.</p>
-  </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>None.</p>
+    <p>Clean up all memory associated with the server description.</p>
   </section>
 
 </page>

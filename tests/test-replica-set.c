@@ -143,7 +143,7 @@ test1 (void)
                                    read_prefs);
 
    BSON_ASSERT(cursor);
-   BSON_ASSERT(!cursor->hint);
+   BSON_ASSERT(!cursor->server_id);
 
    /*
     * Send OP_QUERY to server and get first document back.
@@ -151,7 +151,7 @@ test1 (void)
    MONGOC_INFO("Sending OP_QUERY.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(r);
-   BSON_ASSERT(cursor->hint);
+   BSON_ASSERT(cursor->server_id);
    BSON_ASSERT(cursor->sent);
    BSON_ASSERT(!cursor->done);
    BSON_ASSERT(cursor->rpc.reply.n_returned == 100);
@@ -161,7 +161,7 @@ test1 (void)
     * Make sure we queried a secondary.
     */
    description = mongoc_topology_server_by_id(client->topology,
-                                              cursor->hint,
+                                              cursor->server_id,
                                               &error);
    ASSERT_OR_PRINT (description, error);
    BSON_ASSERT (description->type != MONGOC_SERVER_RS_PRIMARY);
@@ -174,7 +174,7 @@ test1 (void)
    for (i = 0; i < 98; i++) {
       r = mongoc_cursor_next(cursor, &doc);
       BSON_ASSERT(r);
-      BSON_ASSERT(cursor->hint);
+      BSON_ASSERT(cursor->server_id);
       BSON_ASSERT(!cursor->done);
       BSON_ASSERT(!cursor->end_of_event);
    }
@@ -185,18 +185,18 @@ test1 (void)
    MONGOC_INFO("Fetcing last doc from OP_REPLY.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(r);
-   BSON_ASSERT(cursor->hint);
+   BSON_ASSERT(cursor->server_id);
    BSON_ASSERT(cursor->sent);
    BSON_ASSERT(!cursor->done);
    BSON_ASSERT(!cursor->end_of_event);
 
    /*
-    * Determine which node we queried by using the hint to
+    * Determine which node we queried by using the server_id to
     * get the cluster information.
     */
 
-   BSON_ASSERT(cursor->hint);
-   replica = get_replica(client, cursor->hint);
+   BSON_ASSERT(cursor->server_id);
+   replica = get_replica(client, cursor->server_id);
 
    /*
     * Kill the node we are communicating with.

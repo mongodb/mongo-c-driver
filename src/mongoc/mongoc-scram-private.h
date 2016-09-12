@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -25,6 +25,7 @@
 
 
 #include <bson.h>
+#include "mongoc-crypto-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -33,16 +34,19 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_scram_t
 {
-   bool         done;
-   int          step;
-   char        *user;
-   char        *pass;
-   uint8_t      salted_password[MONGOC_SCRAM_HASH_SIZE];
-   char         encoded_nonce[48];
-   int32_t      encoded_nonce_len;
-   uint8_t     *auth_message;
-   uint32_t     auth_messagemax;
-   uint32_t     auth_messagelen;
+   bool                done;
+   int                 step;
+   char               *user;
+   char               *pass;
+   uint8_t             salted_password[MONGOC_SCRAM_HASH_SIZE];
+   char                encoded_nonce[48];
+   int32_t             encoded_nonce_len;
+   uint8_t            *auth_message;
+   uint32_t            auth_messagemax;
+   uint32_t            auth_messagelen;
+#ifdef MONGOC_ENABLE_CRYPTO
+   mongoc_crypto_t     crypto;
+#endif
 } mongoc_scram_t;
 
 void
@@ -69,7 +73,6 @@ _mongoc_scram_step (mongoc_scram_t *scram,
                     uint32_t        outbufmax,
                     uint32_t       *outbuflen,
                     bson_error_t   *error);
-
 
 BSON_END_DECLS
 

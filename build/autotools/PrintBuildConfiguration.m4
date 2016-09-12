@@ -1,5 +1,12 @@
 AC_OUTPUT
 
+if test "$enable_experimental_features" = "yes"; then
+enable_experimental_text="
+  Experimental future BSON and MongoDB features    : yes"
+else
+enable_experimental_text=""
+fi
+
 if test -n "$MONGOC_PRERELEASE_VERSION"; then
 cat << EOF
  *** IMPORTANT *** 
@@ -22,6 +29,11 @@ cat << EOF
 EOF
 fi
 
+if test x"${enable_automatic_init_and_cleanup}" != x"no"; then
+  automatic_init_deprecated="
+      DEPRECATED: use --disable-automatic-init-and-cleanup"
+fi
+
 echo "
 libmongoc $MONGOC_VERSION was configured with the following options:
 
@@ -30,13 +42,14 @@ Build configuration:
   Compile with debug symbols (slow)                : ${enable_debug_symbols}
   Enable GCC build optimization                    : ${enable_optimizations}
   Enable automatic binary hardening                : ${enable_hardening}
+  Enable automatic init and cleanup                : ${enable_automatic_init_and_cleanup}${automatic_init_deprecated}
   Code coverage support                            : ${enable_coverage}
   Cross Compiling                                  : ${enable_crosscompile}
   Fast counters                                    : ${enable_rdtscp}
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
-  Libbson                                          : ${with_libbson}
+  Libbson                                          : ${with_libbson}${enable_experimental_text}
 
 Documentation:
   man                                              : ${enable_man_pages}

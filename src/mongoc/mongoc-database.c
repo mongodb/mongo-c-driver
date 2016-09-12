@@ -172,10 +172,12 @@ mongoc_database_command (mongoc_database_t         *database,
    BSON_ASSERT (database);
    BSON_ASSERT (command);
 
-   if (!read_prefs) {
-      read_prefs = database->read_prefs;
-   }
-
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
    return mongoc_client_command (database->client, database->name, flags, skip,
                                  limit, batch_size, command, fields, read_prefs);
 }
@@ -191,10 +193,12 @@ mongoc_database_command_simple (mongoc_database_t         *database,
    BSON_ASSERT (database);
    BSON_ASSERT (command);
 
-   if (!read_prefs) {
-      read_prefs = database->read_prefs;
-   }
-
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
    return mongoc_client_command_simple (database->client, database->name,
                                         command, read_prefs, reply, error);
 }
@@ -1123,8 +1127,9 @@ mongoc_database_get_collection (mongoc_database_t *database,
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
 
-   return mongoc_client_get_collection (database->client, database->name,
-                                        collection);
+   return _mongoc_collection_new (database->client, database->name, collection,
+                                  database->read_prefs, database->read_concern,
+                                  database->write_concern);
 }
 
 

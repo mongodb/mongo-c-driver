@@ -87,9 +87,10 @@
 
   <section id="pool-options">
     <title>Connection Pool Options</title>
+    <p>These options govern the behavior of a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>. They are ignored by a non-pooled <code xref="mongoc_client_t">mongoc_client_t</code>.</p>
     <table>
-      <tr><td><p>maxPoolSize</p></td><td><p>The maximum number of connections in the pool. The default value is 100.</p></td></tr>
-      <tr><td><p>minPoolSize</p></td><td><p>The minimum number of connections in the connection pool. Default value is 0. These are lazily created.</p></td></tr>
+      <tr><td><p>maxPoolSize</p></td><td><p>The maximum number of clients created by a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> total (both in the pool and checked out). The default value is 100. Once it is reached, <code xref="mongoc_client_pool_pop">mongoc_client_pool_pop</code> blocks until another thread pushes a client.</p></td></tr>
+      <tr><td><p>minPoolSize</p></td><td><p>The number of clients to keep in the pool; once it is reached, <code xref="mongoc_client_pool_push">mongoc_client_pool_push</code> destroys clients instead of pushing them. The default value, 0, means "no minimum": a client pushed into the pool is always stored, not destroyed.</p></td></tr>
       <tr><td><p>maxIdleTimeMS</p></td><td><p>Not implemented.</p></td></tr>
       <tr><td><p>waitQueueMultiple</p></td><td><p>Not implemented.</p></td></tr>
       <tr><td><p>waitQueueTimeoutMS</p></td><td><p>Not implemented.</p></td></tr>
@@ -138,20 +139,26 @@
     <table>
       <tr>
         <td><p>readConcernLevel</p></td>
-        <td><p>The level of isolation for read operations. If the level is left unspecified, the server default will be used. See the <link xref="https://docs.mongodb.org/master/reference/readConcern/">readConcern in the MongoDB Manual</link> for details.</p></td>
+        <td><p>The level of isolation for read operations. If the level is left unspecified, the server default will be used. See <link href="https://docs.mongodb.org/master/reference/readConcern/">readConcern in the MongoDB Manual</link> for details.</p></td>
       </tr>
     </table>
   </section>
 
   <section id="read-prefs-options">
     <title>Read Preference Options</title>
+    <p>When connected to a replica set, the driver chooses which member to query using the read preference:</p>
+    <steps>
+      <item><p>Choose members whose type matches "readPreference".</p></item>
+      <item><p>From these, if there are any tags sets configured, choose members matching the first tag set. If there are none, fall back to the next tag set and so on, until some members are chosen or the tag sets are exhausted.</p></item>
+      <item><p>From the chosen servers, distribute queries randomly among the server with the fastest round-trip times. These include the server with the fastest time and any whose round-trip time is no more than "localThresholdMS" slower.</p></item>
+    </steps>
     <table>
       <tr>
         <td><p>readPreference</p></td>
         <td>
           <p>Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:</p>
           <list>
-            <item><p>primary</p></item>
+            <item><p>primary (default)</p></item>
             <item><p>primaryPreferred</p></item>
             <item><p>secondary</p></item>
             <item><p>secondaryPreferred</p></item>
@@ -161,9 +168,21 @@
       </tr>
       <tr>
         <td><p>readPreferenceTags</p></td>
-        <td><p>Specifies a tag set as a comma-seperated list of colon-separted key-value pairs.</p></td>
+        <td>
+          <p>Specifies a tag set as a comma-separated list of colon-separated key-value pairs.</p>
+          <p>Cannot be combined with preference "primary".</p>
+        </td>
+      </tr>
+      <tr>
+        <td><p>localThresholdMS</p></td>
+        <td>
+          <p>How far to distribute queries, beyond the server with the fastest round-trip time. By default, only servers within 15ms of the fastest round-trip time receive queries.</p>
+        </td>
       </tr>
     </table>
+    <note>
+      <p>"localThresholdMS" is ignored when talking to replica sets through a mongos. The equivalent is <link href="https://docs.mongodb.org/manual/reference/program/mongos/#cmdoption--localThreshold">mongos's localThreshold command line option</link>.</p>
+    </note>
   </section>
 
   <links type="topic" groups="function" style="2column">

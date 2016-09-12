@@ -31,8 +31,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
     <title>Parameters</title>
     <table>
       <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
-      <tr><td><p>reply</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>An uninitialized <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
@@ -43,8 +43,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
 
   <section id="return">
     <title>Returns</title>
-    <p>A non-zero <code>hint</code> of the peer node on success, otherwise <code>0</code> and <code>error</code> is set.</p>
+    <p>On success, returns the server id used. On failure, returns 0 and sets <code>error</code>.</p>
     <p>The <code>reply</code> document counts operations and collects error information. See <link xref="bulk">Bulk Write Operations</link> for examples.</p>
+    <p>See also <code xref="mongoc_bulk_operation_get_hint">mongoc_bulk_operation_get_hint</code>, which gets the id of the server used even if the operation failed.</p>
+  </section>
 
- </section>
 </page>

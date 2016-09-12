@@ -12,28 +12,17 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
-#include "mongoc-tests.h"
 
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "exhaust-test"
 
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *name)
-{
-   mongoc_collection_t *ret;
-   char *str;
-
-   str = gen_collection_name (name);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
 
 int skip_if_mongos (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_is_mongos () ? 0 : 1;
 }
 
@@ -42,22 +31,22 @@ static int64_t
 get_timestamp (mongoc_client_t *client,
                mongoc_cursor_t *cursor)
 {
-   uint32_t hint;
+   uint32_t server_id;
 
-   hint = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_hint (cursor);
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_node_t *scanner_node;
 
       scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, hint);
+         client->topology->scanner, server_id);
 
       return scanner_node->timestamp;
    } else {
       mongoc_cluster_node_t *cluster_node;
 
-      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(
-         client->cluster.nodes, hint);
+      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
+         client->cluster.nodes, server_id);
 
       return cluster_node->timestamp;
    }
@@ -80,7 +69,7 @@ test_exhaust_cursor (bool pooled)
    bson_t *bptr[10];
    int i;
    bool r;
-   uint32_t hint;
+   uint32_t server_id;
    bson_error_t error;
    bson_oid_t oid;
    int64_t timestamp1;
@@ -218,8 +207,9 @@ test_exhaust_cursor (bool pooled)
       cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
-      stream = (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, cursor->hint);
-      hint = cursor->hint;
+      server_id = cursor->server_id;
+      stream = (mongoc_stream_t *) mongoc_set_get(client->cluster.nodes, 
+                                                  server_id);
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -233,7 +223,8 @@ test_exhaust_cursor (bool pooled)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, hint));
+      assert (stream == (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes,
+                                                            server_id));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);
@@ -280,7 +271,7 @@ test_exhaust_cursor_multi_batch (void *context)
    bson_t doc = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    int i;
-   uint32_t hint;
+   uint32_t server_id;
    mongoc_cursor_t *cursor;
    const bson_t *cursor_doc;
 
@@ -297,8 +288,8 @@ test_exhaust_cursor_multi_batch (void *context)
       mongoc_bulk_operation_insert (bulk, &doc);
    }
 
-   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   ASSERT_OR_PRINT (hint, error);
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
 
    cursor = mongoc_collection_find (
       collection,
@@ -309,9 +300,11 @@ test_exhaust_cursor_multi_batch (void *context)
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
       i++;
+      ASSERT (mongoc_cursor_is_alive (cursor));
    }
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT (!mongoc_cursor_is_alive (cursor));
    ASSERT_CMPINT (i, ==, 1000);
 
    mongoc_cursor_destroy (cursor);
@@ -346,6 +339,10 @@ test_cursor_set_max_await_time_ms (void)
    /* once started, cursor ignores set_max_await_time_ms () */
    mongoc_cursor_set_max_await_time_ms (cursor, 42);
    ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 typedef enum
@@ -375,14 +372,13 @@ _request_error (request_t           *request,
 static void
 _check_error (mongoc_client_t     *client,
               mongoc_cursor_t     *cursor,
-              bool                 pooled,
               exhaust_error_type_t error_type)
 {
-   uint32_t hint;
+   uint32_t server_id;
    bson_error_t error;
 
-   hint = mongoc_cursor_get_hint (cursor);
-   ASSERT (hint);
+   server_id = mongoc_cursor_get_hint (cursor);
+   ASSERT (server_id);
    ASSERT (mongoc_cursor_error (cursor, &error));
 
    if (error_type == NETWORK_ERROR) {
@@ -393,16 +389,14 @@ _check_error (mongoc_client_t     *client,
 
       /* socket was discarded */
       ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
-                                                 hint,
+                                                 server_id,
                                                  false /* don't reconnect */,
                                                  &error));
 
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                             pooled ?
-                             "Could not find node" :
-                             "Could not find stream");
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to read");
    } else {
       /* query failure */
       ASSERT_ERROR_CONTAINS (error,
@@ -425,6 +419,8 @@ _mock_test_exhaust (bool                 pooled,
    const bson_t *doc;
    future_t *future;
    request_t *request;
+
+   capture_logs (true);
 
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
@@ -461,10 +457,9 @@ _mock_test_exhaust (bool                 pooled,
       future = future_cursor_next (cursor, &doc);
    }
 
-   suppress_one_message ();
    _request_error (request, error_type);
    ASSERT (!future_get_bool (future));
-   _check_error (client, cursor, pooled, error_type);
+   _check_error (client, cursor, error_type);
 
    future_destroy (future);
    request_destroy (request);
@@ -535,7 +530,7 @@ test_exhaust_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_mongos);
-   TestSuite_Add (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
+   TestSuite_AddLive (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/single", test_exhaust_network_err_1st_batch_single);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/pooled", test_exhaust_network_err_1st_batch_pooled);
    TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/single", test_exhaust_server_err_1st_batch_single);

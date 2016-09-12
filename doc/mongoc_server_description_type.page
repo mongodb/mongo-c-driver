@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_server_description_type">
+  <info>
+    <link type="guide" xref="mongoc_server_description_t" group="function"/>
+  </info>
+  <title>mongoc_server_description_type()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[const char *
+mongoc_server_description_type (const mongoc_server_description_t *description);
+
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>description</p></td><td><p>A <code xref="mongoc_server_description_t">mongoc_server_description_t</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>This function returns a string, one of the server types defined Server Discovery And Monitoring Spec:</p>
+    <list>
+      <item><p>Standalone</p></item>
+      <item><p>Mongos</p></item>
+      <item><p>PossiblePrimary</p></item>
+      <item><p>RSPrimary</p></item>
+      <item><p>RSSecondary</p></item>
+      <item><p>RSArbiter</p></item>
+      <item><p>RSOther</p></item>
+      <item><p>RSGhost</p></item>
+      <item><p>Unknown</p></item>
+    </list>
+  </section>
+
+</page>

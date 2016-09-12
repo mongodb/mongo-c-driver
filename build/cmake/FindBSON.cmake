@@ -82,7 +82,7 @@ if (BSON_VERSION)
       "Could NOT find BSON version"
   )
 else ()
-   find_package_handle_standard_args(BSON "Could NOT find BSON uuuurh"
+   find_package_handle_standard_args(BSON "Could NOT find BSON"
       BSON_LIBRARIES
       BSON_INCLUDE_DIR
   )

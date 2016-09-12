@@ -21,9 +21,5 @@ elif test "$enable_debug_symbols" != "no"; then
 fi
 
 
-AS_IF([test $"enable_debug" = "no"],
-      [CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_ASSERT"
-       CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_CHECKS"])
-
 AS_IF([test "$enable_tracing" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DMONGOC_TRACE"])
