@@ -930,6 +930,12 @@ test_tailable_alive (void)
 
    /* still alive */
    ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
+
+   /* no next document, but still alive and could return more in the future */
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
 
    mongoc_cursor_destroy (cursor);
 
