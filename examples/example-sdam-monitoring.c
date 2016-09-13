@@ -36,8 +36,8 @@ server_changed (const mongoc_apm_server_changed_t *event)
    printf (
       "server changed: %s %s -> %s\n",
       mongoc_apm_server_changed_get_host (event)->host_and_port,
-      mongoc_server_description_type ((mongoc_server_description_t *) prev_sd),
-      mongoc_server_description_type ((mongoc_server_description_t *) new_sd));
+      mongoc_server_description_type (prev_sd),
+      mongoc_server_description_type (new_sd));
 }
 
 

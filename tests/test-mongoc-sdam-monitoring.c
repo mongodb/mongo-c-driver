@@ -70,10 +70,9 @@ static void
 sd_to_bson (const mongoc_server_description_t *sd,
             bson_t                            *bson)
 {
-   mongoc_host_list_t *host_list;
+   const mongoc_host_list_t *host_list;
 
-   host_list = mongoc_server_description_host (
-      (mongoc_server_description_t *) sd);
+   host_list = mongoc_server_description_host (sd);
 
    bson_init (bson);
    BSON_APPEND_UTF8 (bson, "address", host_list->host_and_port);
@@ -92,7 +91,7 @@ sd_to_bson (const mongoc_server_description_t *sd,
 
    BSON_APPEND_UTF8 (
       bson, "type",
-      mongoc_server_description_type ((mongoc_server_description_t *) sd));
+      mongoc_server_description_type (sd));
 }
 
 static void

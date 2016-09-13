@@ -20,6 +20,12 @@ New features and bug fixes:
   * mongoc_collection_find no longer treats the "filter" key specially in
     queries - querying for a document with a key named "filter" is the same
     now as any other key.
+  * The server description parameter to the following functions is "const":
+    * mongoc_server_description_host
+    * mongoc_server_description_id
+    * mongoc_server_description_ismaster
+    * mongoc_server_description_round_trip_time
+    * mongoc_server_description_type
 
 Thanks to everyone who contributed to the development of this release.
 

@@ -31,18 +31,18 @@ mongoc_server_description_t *
 mongoc_server_description_new_copy (const mongoc_server_description_t *description);
 
 uint32_t
-mongoc_server_description_id (mongoc_server_description_t *description);
+mongoc_server_description_id (const mongoc_server_description_t *description);
 
 mongoc_host_list_t *
-mongoc_server_description_host (mongoc_server_description_t *description);
+mongoc_server_description_host (const mongoc_server_description_t *description);
 
 int64_t
-mongoc_server_description_round_trip_time (mongoc_server_description_t *description);
+mongoc_server_description_round_trip_time (const mongoc_server_description_t *description);
 
 const char *
-mongoc_server_description_type (mongoc_server_description_t *description);
+mongoc_server_description_type (const mongoc_server_description_t *description);
 
 const bson_t *
-mongoc_server_description_ismaster (mongoc_server_description_t *description);
+mongoc_server_description_ismaster (const mongoc_server_description_t *description);
 
 #endif

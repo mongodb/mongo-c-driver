@@ -252,7 +252,7 @@ mongoc_server_description_has_election_id (mongoc_server_description_t *descript
  */
 
 uint32_t
-mongoc_server_description_id (mongoc_server_description_t *description)
+mongoc_server_description_id (const mongoc_server_description_t *description)
 {
    return description->id;
 }
@@ -265,15 +265,17 @@ mongoc_server_description_id (mongoc_server_description_t *description)
  *      Return a reference to the host associated with this server description.
  *
  * Returns:
- *      A mongoc_host_list_t *, this server description's host.
+ *      This server description's host, a mongoc_host_list_t * you must
+ *      not modify or free.
  *
  *--------------------------------------------------------------------------
  */
 
 mongoc_host_list_t *
-mongoc_server_description_host (mongoc_server_description_t *description)
+mongoc_server_description_host (const mongoc_server_description_t *description)
 {
-   return &description->host;
+
+   return &((mongoc_server_description_t * ) description)->host;
 }
 
 /*
@@ -291,7 +293,7 @@ mongoc_server_description_host (mongoc_server_description_t *description)
  */
 
 int64_t
-mongoc_server_description_round_trip_time (mongoc_server_description_t *description)
+mongoc_server_description_round_trip_time (const mongoc_server_description_t *description)
 {
    return description->round_trip_time;
 }
@@ -311,7 +313,7 @@ mongoc_server_description_round_trip_time (mongoc_server_description_t *descript
  */
 
 const char *
-mongoc_server_description_type (mongoc_server_description_t *description)
+mongoc_server_description_type (const mongoc_server_description_t *description)
 {
    switch (description->type) {
    case MONGOC_SERVER_UNKNOWN:
@@ -353,7 +355,7 @@ mongoc_server_description_type (mongoc_server_description_t *description)
  */
 
 const bson_t *
-mongoc_server_description_ismaster (mongoc_server_description_t *description)
+mongoc_server_description_ismaster (const mongoc_server_description_t *description)
 {
    return &description->last_is_master;
 }
