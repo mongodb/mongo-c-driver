@@ -1,3 +1,4 @@
+usr/include/libmongoc-1.0/mongoc-apm.h
 usr/include/libmongoc-1.0/mongoc-bulk-operation.h
 usr/include/libmongoc-1.0/mongoc-client-pool.h
 usr/include/libmongoc-1.0/mongoc-client.h
@@ -30,6 +31,9 @@ usr/include/libmongoc-1.0/mongoc-stream-buffered.h
 usr/include/libmongoc-1.0/mongoc-stream-file.h
 usr/include/libmongoc-1.0/mongoc-stream-gridfs.h
 usr/include/libmongoc-1.0/mongoc-stream-socket.h
+usr/include/libmongoc-1.0/mongoc-stream-tls-openssl.h
+usr/include/libmongoc-1.0/mongoc-stream-tls-secure-channel.h
+usr/include/libmongoc-1.0/mongoc-stream-tls-secure-transport.h
 usr/include/libmongoc-1.0/mongoc-stream-tls.h
 usr/include/libmongoc-1.0/mongoc-stream.h
 usr/include/libmongoc-1.0/mongoc-trace.h
@@ -45,6 +49,7 @@ usr/include/libmongoc-1.0/op-insert.def
 usr/include/libmongoc-1.0/op-kill-cursors.def
 usr/include/libmongoc-1.0/op-msg.def
 usr/include/libmongoc-1.0/op-query.def
+usr/include/libmongoc-1.0/op-reply-header.def
 usr/include/libmongoc-1.0/op-reply.def
 usr/include/libmongoc-1.0/op-update.def
 usr/include/libmongoc-1.0/utlist.h
