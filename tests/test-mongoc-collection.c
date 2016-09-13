@@ -163,8 +163,8 @@ test_read_prefs_is_valid (void) {
    mongoc_cursor_destroy (cursor);
  
    /* mongoc_collection_find_with_opts */
-   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"),
-                                              read_prefs, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL,
+                                              read_prefs);
 
    ASSERT (cursor);
    ASSERT (mongoc_cursor_error (cursor, &error));
@@ -209,8 +209,8 @@ test_read_prefs_is_valid (void) {
    mongoc_cursor_destroy (cursor);
  
    /* mongoc_collection_find_with_opts */
-   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"),
-                                              read_prefs, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL,
+                                              read_prefs);
 
    ASSERT (cursor);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -3267,8 +3267,8 @@ test_find_limit (void)
    mongoc_cursor_destroy (cursor);
 
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), NULL,
-      tmp_bson ("{'limit': {'$numberLong': '2'}}"));
+      collection, tmp_bson ("{}"),
+      tmp_bson ("{'limit': {'$numberLong': '2'}}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
@@ -3336,8 +3336,8 @@ test_find_batch_size (void)
    mongoc_cursor_destroy (cursor);
 
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), NULL,
-      tmp_bson ("{'batchSize': {'$numberLong': '2'}}"));
+      collection, tmp_bson ("{}"),
+      tmp_bson ("{'batchSize': {'$numberLong': '2'}}"), NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,

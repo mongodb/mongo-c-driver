@@ -532,8 +532,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
  * Parameters:
  *       @collection: A mongoc_collection_t.
  *       @filter: The query to locate matching documents.
- *       @read_prefs: Optional read preferences to choose cluster node.
  *       @opts: Other options.
+ *       @read_prefs: Optional read preferences to choose cluster node.
  *
  * Returns:
  *       A newly allocated mongoc_cursor_t that should be freed with
@@ -551,8 +551,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
 mongoc_cursor_t *
 mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
                                   const bson_t              *filter,
-                                  const mongoc_read_prefs_t *read_prefs,
-                                  const bson_t              *opts)
+                                  const bson_t              *opts,
+                                  const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (collection);
    BSON_ASSERT (filter);

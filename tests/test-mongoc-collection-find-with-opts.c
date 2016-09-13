@@ -64,8 +64,8 @@ _test_collection_op_query_or_find_command (
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find_with_opts (collection,
                                               test_data->filter_bson,
-                                              test_data->read_prefs,
-                                              test_data->opts_bson);
+                                              test_data->opts_bson,
+                                              test_data->read_prefs);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    future = future_cursor_next (cursor, &doc);
@@ -586,10 +586,9 @@ test_exhaust (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find_with_opts (collection,
-                                              tmp_bson (NULL),
-                                              NULL,
-                                              tmp_bson ("{'exhaust': true}"));
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
+                                              tmp_bson ("{'exhaust': true}"),
+                                              NULL);
 
    future = future_cursor_next (cursor, &doc);
 
@@ -637,8 +636,8 @@ test_getmore_cmd_await (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
-                                              NULL, opts);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL), opts,
+                                              NULL);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (

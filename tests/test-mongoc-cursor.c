@@ -208,7 +208,7 @@ test_limit (void)
       }
 
       cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
-                                                 NULL, opts);
+                                                 opts, NULL);
 
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
       n_docs = 0;
@@ -941,8 +941,8 @@ test_tailable_alive (void)
    mongoc_cursor_destroy (cursor);
 
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson (NULL), NULL,
-      tmp_bson ("{'tailable': true, 'awaitData': true}"));
+      collection, tmp_bson (NULL),
+      tmp_bson ("{'tailable': true, 'awaitData': true}"), NULL);
 
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_next (cursor, &doc));
