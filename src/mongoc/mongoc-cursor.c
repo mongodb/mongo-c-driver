@@ -976,6 +976,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
       }
       /* singleBatch limit and batchSize are handled in _mongoc_n_return,
        * exhaust noCursorTimeout oplogReplay tailable in _mongoc_cursor_flags
+       * maxAwaitTimeMS is handled in _mongoc_cursor_prepare_getmore_command
        */
       else if (strcmp (key, SINGLE_BATCH) &&
                strcmp (key, LIMIT) &&
@@ -983,7 +984,8 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
                strcmp (key, EXHAUST) &&
                strcmp (key, NO_CURSOR_TIMEOUT) &&
                strcmp (key, OPLOG_REPLAY) &&
-               strcmp (key, TAILABLE)) {
+               strcmp (key, TAILABLE) &&
+               strcmp (key, MAX_AWAIT_TIME_MS)) {
          /* pass unrecognized options to server, prefixed with $ */
          PUSH_DOLLAR_QUERY ();
          dollar_modifier = bson_strdup_printf ("$%s", key);
@@ -1311,11 +1313,24 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 {
    const char *collection;
    int collection_len;
+   bson_iter_t iter;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command, FIND, FIND_LEN, collection, collection_len);
    bson_append_document (command, FILTER, FILTER_LEN, &cursor->filter);
-   bson_concat (command, &cursor->opts);
+   bson_iter_init (&iter, &cursor->opts);
+
+   while (bson_iter_next (&iter)) {
+      /* don't append "maxAwaitTimeMS" */
+      if (strcmp (bson_iter_key (&iter), MAX_AWAIT_TIME_MS)) {
+         if (!bson_append_iter (command, bson_iter_key (&iter), -1, &iter)) {
+            bson_set_error (&cursor->error, MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID, "Cursor opts too large");
+            MARK_FAILED (cursor);
+            return false;
+         }
+      }
+   }
 
    if (cursor->read_concern->level != NULL) {
       const bson_t *read_concern_bson;

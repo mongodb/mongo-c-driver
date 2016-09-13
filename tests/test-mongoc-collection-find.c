@@ -999,9 +999,12 @@ test_getmore_await (void)
       future = future_cursor_next (cursor, &doc);
 
       /* only the slave ok bit is still in the query header */
-      request = mock_server_receives_command (server, "db",
-                                              MONGOC_QUERY_SLAVE_OK,
-                                              "{'find': 'collection'}");
+      request = mock_server_receives_command (
+         server, "db",
+         MONGOC_QUERY_SLAVE_OK,
+         "{'find': 'collection',"
+         " 'maxTimeMS': {'$exists': false},"
+         " 'maxAwaitTimeMS': {'$exists': false}}");
 
       /* reply with cursor id 1 */
       mock_server_replies_simple (request, "{'ok': 1,"
@@ -1031,6 +1034,7 @@ test_getmore_await (void)
          MONGOC_QUERY_SLAVE_OK,
          "{'getMore': {'$numberLong': '1'},"
          " 'collection': 'collection',"
+         " 'maxAwaitTimeMS': {'$exists': false},"
          " 'maxTimeMS': %s}",
          max_time_json);
 

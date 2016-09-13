@@ -642,7 +642,10 @@ test_getmore_cmd_await (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK,
-      "{'find': 'collection', 'filter': {}}");
+      "{'find': 'collection',"
+      " 'filter': {},"
+      " 'maxTimeMS': {'$exists': false},"
+      " 'maxAwaitTimeMS': {'$exists': false}}");
 
    ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1,"
@@ -663,6 +666,7 @@ test_getmore_cmd_await (void)
       server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'getMore': {'$numberLong': '123'},"
       " 'collection': 'collection',"
+      " 'maxAwaitTimeMS': {'$exists': false},"
       " 'maxTimeMS': {'$numberLong': '9999'}}}");
 
    ASSERT (request);
