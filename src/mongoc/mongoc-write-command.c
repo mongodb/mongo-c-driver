@@ -591,6 +591,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    bson_iter_t iter;
    bson_iter_t q_iter;
    uint32_t len;
+   int64_t limit = 0;
    bson_t *gle = NULL;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
@@ -645,13 +646,14 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
       rpc.delete_.collection = ns;
-      if (bson_iter_find (&iter, "limit") && (BSON_ITER_HOLDS_INT32 (&iter) ||
-               BSON_ITER_HOLDS_INT64 (&iter))) {
-         rpc.delete_.flags = bson_iter_as_int64 (&iter) ? MONGOC_DELETE_SINGLE_REMOVE
-                                                        : MONGOC_DELETE_NONE;
-      } else {
-         rpc.delete_.flags = MONGOC_DELETE_NONE;
+
+      if (bson_iter_find (&q_iter, "limit") &&
+          (BSON_ITER_HOLDS_INT32 (&q_iter) || BSON_ITER_HOLDS_INT64 (&q_iter))) {
+          limit = bson_iter_as_int64 (&q_iter);
       }
+
+      rpc.delete_.flags = limit ? MONGOC_DELETE_SINGLE_REMOVE
+                                : MONGOC_DELETE_NONE;
       rpc.delete_.selector = data;
 
       _mongoc_monitor_legacy_write (client, command, database, collection,
