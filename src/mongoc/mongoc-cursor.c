@@ -218,9 +218,9 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
                               const char                  *db_and_collection,
                               bool                         is_command,
                               const bson_t                *filter,
+                              const bson_t                *opts,
                               const mongoc_read_prefs_t   *read_prefs,
-                              const mongoc_read_concern_t *read_concern,
-                              const bson_t                *opts)
+                              const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
    mongoc_topology_description_type_t td_type;
@@ -429,15 +429,17 @@ _mongoc_cursor_new (mongoc_client_t             *client,
 done:
 
    if (error.domain != 0) {
-      cursor = _mongoc_cursor_new_with_opts (
-         client, db_and_collection, is_command, NULL, NULL, NULL, NULL);
+      cursor = _mongoc_cursor_new_with_opts (client, db_and_collection,
+                                             is_command, NULL, NULL, NULL,
+                                             NULL);
 
       MARK_FAILED (cursor);
       memcpy (&cursor->error, &error, sizeof (bson_error_t));
    } else {
-      cursor = _mongoc_cursor_new_with_opts (
-         client, db_and_collection, is_command, has_filter ? &filter : query,
-         read_prefs, read_concern, &opts);
+      cursor = _mongoc_cursor_new_with_opts (client, db_and_collection,
+                                             is_command,
+                                             has_filter ? &filter : query,
+                                             &opts, read_prefs, read_concern);
 
       if (slave_ok) {
          cursor->slave_ok = true;

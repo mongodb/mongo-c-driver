@@ -557,9 +557,8 @@ mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
    }
 
    return _mongoc_cursor_new_with_opts (collection->client, collection->ns,
-                                        false /* is_command */,
-                                        filter, read_prefs,
-                                        collection->read_concern, opts);
+                                        false /* is_command */, filter, opts,
+                                        read_prefs, collection->read_concern);
 }
 
 
