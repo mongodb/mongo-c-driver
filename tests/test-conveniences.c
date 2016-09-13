@@ -591,7 +591,7 @@ match_bson_with_ctx (const bson_t *doc,
 
       if (is_exists_operator) {
          if (exists != found) {
-            match_err (&derived, "%s found", exists ? "" : " not");
+            match_err (&derived, "%s found", found ? "" : "not");
             return false;
          }
       } else if (!found) {
