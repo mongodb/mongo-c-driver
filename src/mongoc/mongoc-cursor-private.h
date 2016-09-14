@@ -160,8 +160,7 @@ mongoc_cursor_t         *_mongoc_cursor_new_with_opts (mongoc_client_t          
                                                        const bson_t                 *opts,
                                                        const mongoc_read_prefs_t    *read_prefs,
                                                        const mongoc_read_concern_t  *read_concern);
-mongoc_cursor_t *
-_mongoc_cursor_new (mongoc_client_t              *client,
+mongoc_cursor_t         *_mongoc_cursor_new           (mongoc_client_t              *client,
                                                        const char                   *db_and_collection,
                                                        mongoc_query_flags_t          flags,
                                                        uint32_t                      skip,

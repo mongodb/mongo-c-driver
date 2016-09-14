@@ -2066,8 +2066,8 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   cursor = _mongoc_cursor_new (client, NULL, MONGOC_QUERY_NONE, 0, 0, 0, false,
-                                NULL, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new_with_opts (client, NULL, false /* is_command */,
+                                          NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
    _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);

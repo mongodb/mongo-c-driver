@@ -897,9 +897,9 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = _mongoc_cursor_new (database->client, database->name,
-                                MONGOC_QUERY_SLAVE_OK, 0, 0, 0, true, NULL,
-                                NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new_with_opts (database->client, database->name,
+                                          true /* is_command */, NULL,
+                                          NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 

@@ -1199,8 +1199,9 @@ mongoc_client_command (mongoc_client_t           *client,
       local_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    }
 
-   cursor = _mongoc_cursor_new (
-      client, db_name, flags, skip, limit, batch_size, true, query, fields,
+   /* flags, skip, limit, batch_size, fields are unused: CDRIVER-1543 */
+   cursor = _mongoc_cursor_new_with_opts (
+      client, db_name, true /* is_command */, query, NULL,
       read_prefs ? read_prefs : local_prefs, NULL);
   
    mongoc_read_prefs_destroy (local_prefs);  /* ok if NULL */
@@ -1795,8 +1796,9 @@ mongoc_client_find_databases (mongoc_client_t *client,
 
    BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
 
-   cursor = _mongoc_cursor_new (client, "admin", MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                true, NULL, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new_with_opts (client, "admin",
+                                          true /* is_command */,
+                                          NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 
