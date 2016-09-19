@@ -509,6 +509,8 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    mongoc_read_concern_destroy(cursor->read_concern);
    mongoc_write_concern_destroy (cursor->write_concern);
 
+   bson_destroy (&cursor->filter);
+   bson_destroy (&cursor->opts);
    bson_free(cursor);
 
    mongoc_counter_cursors_active_dec();
