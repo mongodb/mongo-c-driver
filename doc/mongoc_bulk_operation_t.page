@@ -22,6 +22,11 @@
     <note style="warning"><p>It is only valid to call <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code> once. The <code>mongoc_bulk_operation_t</code> must be destroyed afterwards.</p></note>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><code xref="bulk">Bulk Write Operations</code></p>
+  </section>
+
   <links type="topic" groups="function" style="2column">
     <title>Functions</title>
   </links>

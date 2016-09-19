@@ -36,6 +36,11 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
     </table>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><code xref="bulk">Bulk Write Operations</code></p>
+  </section>
+
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via the <code>error</code> parameter.</p>

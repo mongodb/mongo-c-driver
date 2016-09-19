@@ -32,7 +32,8 @@ typedef struct
    mongoc_index_opt_geo_t     *geo_options;
    mongoc_index_opt_storage_t *storage_options;
    const bson_t               *partial_filter_expression;
-   void                       *padding[5];
+   const bson_t               *collation;
+   void                       *padding[4];
 } mongoc_index_opt_t;]]></code></synopsis>
   </section>
 

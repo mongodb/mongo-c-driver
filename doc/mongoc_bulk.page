@@ -131,7 +131,13 @@ Error: waiting for replication timed out]]></code></synopsis>
     <note style="tip"><p>This feature is only available when using MongoDB 3.4 and later.</p></note>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk-collation.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
       <p>Running the above example will result in:</p>
-      <synopsis><code mime="text/x-csrc"><![CDATA[TODO SOMETHING]]></code></synopsis>
+      <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 2,
+   "nMatched" : 1,
+   "nModified" : 1,
+   "nRemoved" : 0,
+   "nUpserted" : 0,
+   "writeErrors" : [  ]
+}]]></code></synopsis>
   </section>
 
   <section id="bulk-unacknowledged">
