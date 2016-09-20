@@ -1215,6 +1215,7 @@ _mongoc_client_command_with_stream (mongoc_client_t           *client,
                                     const char                *db_name,
                                     const bson_t              *command,
                                     mongoc_server_stream_t    *server_stream,
+                                    const mongoc_query_flags_t flags,
                                     const mongoc_read_prefs_t *read_prefs,
                                     bson_t                    *reply,
                                     bson_error_t              *error)
@@ -1225,7 +1226,7 @@ _mongoc_client_command_with_stream (mongoc_client_t           *client,
    ENTRY;
 
    apply_read_preferences (read_prefs, server_stream, command,
-                           MONGOC_QUERY_NONE, &result);
+                           flags, &result);
 
    ret = mongoc_cluster_run_command_monitored (
       &client->cluster, server_stream, result.flags, db_name,
@@ -1271,8 +1272,8 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (client, db_name, command,
-                                                server_stream, read_prefs,
-                                                reply, error);
+                                                server_stream, MONGOC_QUERY_NONE,
+                                                read_prefs, reply, error);
    } else {
       if (reply) {
          bson_init (reply);
@@ -1292,6 +1293,7 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
                                   const char                *db_name,
                                   const bson_t              *command,
                                   const bson_t              *opts,
+                                  const mongoc_query_flags_t flags,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bson_t                    *reply,
                                   bson_error_t              *error)
@@ -1301,7 +1303,7 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
    mongoc_cluster_t *cluster;
    bson_t reply_local;
    bson_t *reply_ptr;
-   bool ret;
+   bool ret = false;
 
    ENTRY;
 
@@ -1312,7 +1314,7 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
    reply_ptr = reply ? reply : &reply_local;
 
    if (!_mongoc_read_prefs_validate (read_prefs, error)) {
-      RETURN (false);
+      GOTO (err);
    }
 
    cluster = &client->cluster;
@@ -1331,20 +1333,38 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
       if (opts && bson_iter_init (&iter, opts)) {
          command_with_opts = bson_copy (command);
          while (bson_iter_next (&iter)) {
-            if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
+            if (BSON_ITER_IS_KEY (&iter, "collation")) {
+               if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+                  bson_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                  "The selected server does not support collation");
+                  GOTO (err);
+               }
+
+            }
+            else if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
                if (!_mongoc_write_concern_iter_is_valid (&iter)) {
                   bson_set_error (error,
                                   MONGOC_ERROR_COMMAND,
                                   MONGOC_ERROR_COMMAND_INVALID_ARG,
                                   "Invalid writeConcern");
-                  bson_destroy (command_with_opts);
-                  RETURN (false);
+                  GOTO (err);
                }
 
                if (server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
                   continue;
                }
 
+            }
+            else if (BSON_ITER_IS_KEY (&iter, "readConcern")) {
+               if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+                  bson_set_error (error,
+                                  MONGOC_ERROR_COMMAND,
+                                  MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                                  "The selected server does not support readConcern");
+                  GOTO (err);
+               }
             }
             bson_append_iter (command_with_opts, bson_iter_key (&iter), -1, &iter);
          }
@@ -1357,29 +1377,32 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
                                                 command_with_opts :
                                                 command,
                                                 server_stream,
+                                                flags,
                                                 read_prefs,
                                                 reply_ptr,
                                                 error);
-   } else {
-      if (reply) {
-         bson_init (reply);
+      if (ret && command_with_opts) {
+         ret = !_mongoc_parse_wc_err (reply_ptr, error);
       }
-
-      ret = false;
+      if (reply_ptr == &reply_local) {
+         bson_destroy (reply_ptr);
+      }
+      GOTO (done);
    }
 
-   if (ret && command_with_opts) {
-      ret = !_mongoc_parse_wc_err (reply_ptr, error);
+err:
+   if (reply) {
+      bson_init (reply);
    }
 
-   mongoc_server_stream_cleanup (server_stream);
+done:
 
    if (command_with_opts) {
       bson_destroy (command_with_opts);
    }
 
-   if (reply_ptr == &reply_local) {
-      bson_destroy (reply_ptr);
+   if (server_stream) {
+      mongoc_server_stream_cleanup (server_stream);
    }
 
    RETURN (ret);
@@ -1415,7 +1438,7 @@ mongoc_client_command_simple_with_server_id (mongoc_client_t           *client,
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (client, db_name, command,
-                                                server_stream, read_prefs,
+                                                server_stream, MONGOC_QUERY_NONE, read_prefs,
                                                 reply, error);
 
       mongoc_server_stream_cleanup (server_stream);

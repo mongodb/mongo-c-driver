@@ -56,6 +56,7 @@ test_client_cmd_w_write_concern (void *context)
                                                       "test",
                                                       command,
                                                       opts,
+                                                      MONGOC_QUERY_NONE,
                                                       NULL,
                                                       &reply,
                                                       &error),
@@ -69,6 +70,7 @@ test_client_cmd_w_write_concern (void *context)
                                               "test",
                                               command,
                                               opts,
+                                              MONGOC_QUERY_NONE,
                                               NULL,
                                               &reply,
                                               &error));
@@ -90,6 +92,7 @@ test_client_cmd_w_write_concern (void *context)
                                                     "test",
                                                     command,
                                                     opts,
+                                                    MONGOC_QUERY_NONE,
                                                     NULL,
                                                     &reply,
                                                     &error));

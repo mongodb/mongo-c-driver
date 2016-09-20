@@ -143,6 +143,7 @@ _mongoc_client_command_with_opts (mongoc_client_t            *client,
                                   const char                 *db_name,
                                   const bson_t               *command,
                                   const bson_t               *opts,
+                                  const mongoc_query_flags_t  flags,
                                   const mongoc_read_prefs_t  *read_prefs,
                                   bson_t                     *reply,
                                   bson_error_t               *error);

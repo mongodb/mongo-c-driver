@@ -1246,7 +1246,7 @@ _mongoc_write_command(mongoc_write_command_t       *command,
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot set collation for unacknowledged writes");
+                      "Collation is not supported by the selected server");
       EXIT;
    }
 

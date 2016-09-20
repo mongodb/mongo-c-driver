@@ -80,6 +80,7 @@ typedef_list = [
     typedef("mongoc_insert_flags_t", None),
     typedef("mongoc_iovec_ptr", "mongoc_iovec_t *"),
     typedef("mongoc_query_flags_t", None),
+    typedef("const_mongoc_index_opt_t", "mongoc_index_opt_t *"),
     typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
     typedef("mongoc_ss_optype_t", None),
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
@@ -148,6 +149,15 @@ future_functions = [
                      param("int64_t", "limit"),
                      param("const_bson_ptr", "opts"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_create_index_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_bson_ptr", "keys"),
+                     param("const_mongoc_index_opt_t", "opt"),
+                     param("bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",

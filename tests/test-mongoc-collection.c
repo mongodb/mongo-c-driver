@@ -2174,6 +2174,61 @@ test_count_with_opts (void)
 
 
 static void
+test_count_with_collation (int wire)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   future = future_collection_count_with_opts (
+      collection, MONGOC_QUERY_SLAVE_OK, NULL, 0, 0, tmp_bson ("{'collation': {'locale': 'en'}}"),
+      NULL, &error);
+
+   if (wire == WIRE_VERSION_COLLATION) {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, "{'count': 'collection', 'collation': {'locale': 'en'}}");
+      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+      ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+      request_destroy (request);
+   } else {
+      ASSERT (-1 == future_get_int64_t (future));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "The selected server does not support collation");
+   }
+
+
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_count_with_collation_ok (void)
+{
+   test_count_with_collation (WIRE_VERSION_COLLATION);
+}
+
+
+static void
+test_count_with_collation_fail (void)
+{
+   test_count_with_collation (WIRE_VERSION_COLLATION-1);
+}
+
+
+static void
 test_drop (void)
 {
    mongoc_collection_t *collection;
@@ -3892,6 +3947,164 @@ test_aggregate_read_concern (void)
 }
 
 
+static void
+test_aggregate_with_collation (int wire)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   future_t *future;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_error_t error;
+
+   /* wire protocol version 0 */
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   cursor = mongoc_collection_aggregate (
+      collection,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("[{'a': 1}]"),
+      tmp_bson ("{'collation': {'locale': 'en'}}"),
+      NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   if (wire == WIRE_VERSION_COLLATION) {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'aggregate': 'collection',"
+         " 'pipeline': [{'a': 1}]},"
+         " 'collation': {'locale': 'en'}");
+
+      mock_server_replies_simple (request,
+                                  "{'ok': 1,"
+                                  " 'cursor': {"
+                                  "    'id': 0,"
+                                  "    'ns': 'db.collection',"
+                                  "    'firstBatch': [{'_id': 123}]"
+                                  "}}");
+      ASSERT (future_get_bool (future));
+      ASSERT_MATCH (doc, "{'_id': 123}");
+      /* cursor is completed */
+      assert (!mongoc_cursor_next (cursor, &doc));
+      request_destroy (request);
+   } else {
+      ASSERT (!future_get_bool (future));
+      mongoc_cursor_next (cursor, &doc);
+
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "The selected server does not support collation");
+   }
+
+   mongoc_cursor_destroy (cursor);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_aggregate_with_collation_fail (void)
+{
+   test_aggregate_with_collation (WIRE_VERSION_COLLATION-1);
+}
+
+static void
+test_aggregate_with_collation_ok (void)
+{
+   test_aggregate_with_collation (WIRE_VERSION_COLLATION);
+}
+
+
+static void
+test_index_with_collation (int wire)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   request_t *request;
+   bson_error_t error;
+   bson_t *collation;
+   bson_t keys;
+   mongoc_index_opt_t opt;
+   bson_t reply;
+   future_t *future;
+
+   /* wire protocol version 0 */
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   bson_init (&keys);
+   bson_append_int32 (&keys, "hello", -1, 1);
+   mongoc_index_opt_init (&opt);
+   collation = BCON_NEW ("locale", BCON_UTF8 ("en"), "strength", BCON_INT32 (2));
+   opt.collation = collation;
+
+   future = future_collection_create_index_with_opts (collection,
+                                                      &keys,
+                                                      &opt,
+                                                      NULL,
+                                                      &reply,
+                                                      &error);
+
+   if (wire == WIRE_VERSION_COLLATION) {
+      request = mock_server_receives_command (
+         server, "db", 0,
+         "{ 'createIndexes' : 'collection',"
+         "  'indexes' : ["
+         "    {"
+         "      'key' : {"
+         "        'hello' : 1"
+         "      },"
+         "      'name' : 'hello_1',"
+         "      'collation': {'locale': 'en', 'strength': 2 }"
+         "    }"
+         "  ]"
+         "}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      request_destroy (request);
+   }
+   else {
+      ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "The selected server does not support collation");
+   }
+
+   bson_destroy (collation);
+   bson_destroy (&keys);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_index_with_collation_fail (void)
+{
+   test_index_with_collation (WIRE_VERSION_COLLATION-1);
+}
+
+static void
+test_index_with_collation_ok (void)
+{
+   test_index_with_collation (WIRE_VERSION_COLLATION);
+}
 
 void
 test_collection_install (TestSuite *suite)
@@ -3940,6 +4153,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/index", test_index);
    TestSuite_AddLive (suite, "/Collection/index_w_write_concern",
                       test_index_w_write_concern);
+   TestSuite_Add (suite, "/Collection/index/collation/wire4", test_index_with_collation_fail);
+   TestSuite_Add (suite, "/Collection/index/collation/wire5", test_index_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);
@@ -3951,12 +4166,16 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);
    TestSuite_Add (suite, "/Collection/count/read_concern", test_count_read_concern);
+   TestSuite_Add (suite, "/Collection/count/collation/wire4", test_count_with_collation_fail);
+   TestSuite_Add (suite, "/Collection/count/collation/wire5", test_count_with_collation_ok);
    TestSuite_AddFull (suite, "/Collection/count/read_concern_live", test_count_read_concern_live, NULL, NULL, mongod_supports_majority_read_concern);
    TestSuite_AddLive (suite, "/Collection/drop", test_drop);
    TestSuite_AddLive (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_AddLive (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
+   TestSuite_Add (suite, "/Collection/aggregate/collation/wire4", test_aggregate_with_collation_fail);
+   TestSuite_Add (suite, "/Collection/aggregate/collation/wire5", test_aggregate_with_collation_ok);
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
    TestSuite_AddLive (suite, "/Collection/stats", test_stats);

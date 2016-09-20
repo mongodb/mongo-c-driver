@@ -424,6 +424,23 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
          cursor->write_concern = _mongoc_write_concern_new_from_iter (&iter);
       }
    }
+   if (opts && bson_iter_init_find (&iter, opts, "collation")
+         && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      if (selected_server->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The selected server does not support collation");
+         GOTO (done);
+      }
+      if (!bson_append_iter (&command, bson_iter_key (&iter), -1, &iter)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Failed to append \"collation\" to create command.");
+         GOTO (done);
+      }
+   }
 
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, &command);
@@ -697,9 +714,6 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
                                    const mongoc_read_prefs_t *read_prefs,  /* IN */
                                    bson_error_t              *error)       /* OUT */
 {
-   mongoc_server_stream_t *server_stream = NULL;
-   mongoc_cluster_t *cluster;
-   mongoc_apply_read_prefs_result_t read_prefs_result = READ_PREFS_RESULT_INIT;
    bson_iter_t iter;
    int64_t ret = -1;
    bool success;
@@ -708,16 +722,6 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    bson_t q;
 
    ENTRY;
-
-   cluster = &collection->client->cluster;
-   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
-   if (!server_stream) {
-      GOTO (done);
-   }
-
-   if (!_mongoc_read_prefs_validate (read_prefs, error)) {
-      GOTO (done); 
-   }
 
    BSON_ASSERT (collection);
 
@@ -739,37 +743,29 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    if (collection->read_concern->level != NULL) {
       const bson_t *read_concern_bson;
 
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support readConcern");
-         GOTO (done);
-      }
-
       read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
       BSON_APPEND_DOCUMENT (&cmd, "readConcern", read_concern_bson);
    }
    if (opts) {
-       bson_concat(&cmd, opts);
+       bson_concat (&cmd, opts);
    }
 
-   apply_read_preferences (read_prefs, server_stream,
-                           &cmd, flags, &read_prefs_result);
+   success = _mongoc_client_command_with_opts (collection->client,
+                                               collection->db,
+                                               &cmd,
+                                               opts,
+                                               flags,
+                                               read_prefs,
+                                               &reply,
+                                               error);
 
-   success = mongoc_cluster_run_command_monitored (
-      cluster, server_stream, read_prefs_result.flags, collection->db,
-      read_prefs_result.query_with_read_prefs, &reply, error);
-
-   if (success && bson_iter_init_find(&iter, &reply, "n")) {
-      ret = bson_iter_as_int64(&iter);
+   if (success) {
+      if (bson_iter_init_find (&iter, &reply, "n")) {
+         ret = bson_iter_as_int64 (&iter);
+      }
    }
 
    bson_destroy (&reply);
-
-done:
-   apply_read_prefs_result_cleanup (&read_prefs_result);
-   mongoc_server_stream_cleanup (server_stream);
    bson_destroy (&cmd);
 
    RETURN (ret);
@@ -820,6 +816,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t    *collection,
                                            collection->db,
                                            &cmd,
                                            opts,
+                                           MONGOC_QUERY_NONE,
                                            NULL,
                                            NULL,
                                            error);
@@ -876,6 +873,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t    *collection,
                                            collection->db,
                                            &cmd,
                                            opts,
+                                           MONGOC_QUERY_NONE,
                                            NULL,
                                            NULL,
                                            error);
@@ -1086,6 +1084,9 @@ mongoc_collection_create_index_with_opts (
    char *alloc_name = NULL;
    bool ret = false;
    bool reply_initialized = false;
+   bool has_collation = false;
+   mongoc_server_stream_t *server_stream = NULL;
+   bson_iter_t iter;
 
    ENTRY;
 
@@ -1152,6 +1153,10 @@ mongoc_collection_create_index_with_opts (
    if (opt->partial_filter_expression) {
       BSON_APPEND_DOCUMENT (&doc, "partialFilterExpression", opt->partial_filter_expression);
    }
+   if (opt->collation) {
+      BSON_APPEND_DOCUMENT (&doc, "collation", opt->collation);
+      has_collation = true;
+   }
    if (opt->geo_options) {
        geo_opt = opt->geo_options;
        def_geo = mongoc_index_opt_geo_get_default ();
@@ -1191,22 +1196,56 @@ mongoc_collection_create_index_with_opts (
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   ret = _mongoc_client_command_with_opts (collection->client,
-                                           collection->db,
-                                           &cmd,
-                                           opts,
-                                           NULL,
-                                           reply,
-                                           &local_error);
+   server_stream = mongoc_cluster_stream_for_reads (&collection->client->cluster, NULL, error);
+
+   if (opts && bson_iter_init (&iter, opts)) {
+      while (bson_iter_next (&iter)) {
+         if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
+            if (!_mongoc_write_concern_iter_is_valid (&iter)) {
+               bson_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "Invalid writeConcern");
+               GOTO (done);
+            }
+
+            if (server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
+               continue;
+            }
+
+         }
+         bson_append_iter (&cmd, bson_iter_key (&iter), -1, &iter);
+      }
+   }
+   if (has_collation && server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "The selected server does not support collation");
+      GOTO (done);
+   }
+   ret = mongoc_cluster_run_command_monitored (
+      &collection->client->cluster, server_stream, MONGOC_QUERY_NONE, collection->db,
+      &cmd, reply, &local_error);
 
    reply_initialized = true;
 
-   /*
-    * If we failed due to the command not being found, then use the legacy
-    * version which performs an insert into the system.indexes collection.
-    */
-   if (!ret) {
+   if (ret) {
+      if (reply) {
+         ret = !_mongoc_parse_wc_err (reply, error);
+      }
+   } else {
+      /*
+       * If we failed due to the command not being found, then use the legacy
+       * version which performs an insert into the system.indexes collection.
+       */
       if (local_error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+         if (has_collation) {
+               bson_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "The selected server does not support collation");
+         }
          ret = _mongoc_collection_create_index_legacy (collection, keys, opt,
                                                        error);
          /* Clear the error reply from the first request */
@@ -1222,6 +1261,7 @@ mongoc_collection_create_index_with_opts (
    bson_free (alloc_name);
 
 done:
+   mongoc_server_stream_cleanup (server_stream);
    if (!reply_initialized && reply) {
       bson_init (reply);
    }
@@ -2141,6 +2181,7 @@ mongoc_collection_rename_with_opts (
                                            "admin",
                                            &cmd,
                                            opts,
+                                           MONGOC_QUERY_NONE,
                                            NULL,
                                            NULL,
                                            error);
