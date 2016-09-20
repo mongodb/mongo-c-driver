@@ -1,0 +1,134 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>bson_reserve_buffer()</title>
+<link rel="stylesheet" type="text/css" href="C.css">
+<script type="text/javascript" src="jquery.js"></script><script type="text/javascript" src="jquery.syntax.js"></script><script type="text/javascript" src="yelp.js"></script>
+</head>
+<body><div class="page" role="main">
+<div class="header"><div class="trails" role="navigation"><div class="trail">
+<a class="trail" href="index.html" title="Libbson">Libbson</a> › <a class="trail" href="index.html#api-reference" title="API Reference">API Reference</a> » <a class="trail" href="bson_t.html" title="bson_t">bson_t</a> » </div></div></div>
+<div class="body">
+<div class="hgroup"><h1 class="title"><span class="title">bson_reserve_buffer()</span></h1></div>
+<div class="region">
+<div class="contents"></div>
+<div id="synopsis" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Synopsis</span></h2></div>
+<div class="region"><div class="contents"><div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">uint8_t *
+bson_reserve_buffer (bson_t   *bson,
+                     uint32_t  size);</pre></div></div></div></div></div></div></div>
+</div></div>
+<div id="parameters" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Parameters</span></h2></div>
+<div class="region"><div class="contents"><div class="table"><div class="inner"><div class="region"><table class="table">
+<tr>
+<td><p class="p">bson</p></td>
+<td><p class="p">An initialized <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span>.</p></td>
+</tr>
+<tr>
+<td><p class="p">size</p></td>
+<td><p class="p">The length in bytes of the new buffer.</p></td>
+</tr>
+</table></div></div></div></div></div>
+</div></div>
+<div id="description" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Description</span></h2></div>
+<div class="region"><div class="contents">
+<p class="p">Grow the internal buffer of <span class="code">bson</span> to <span class="code">size</span> and set the document length to <span class="code">size</span>. Useful for eliminating copies when reading BSON bytes from a stream.</p>
+<p class="p">First, initialize <span class="code">bson</span> with <span class="code"><a href="bson_init.html" title="bson_init()">bson_init</a></span> or <span class="code"><a href="bson_new.html" title="bson_new()">bson_new</a></span>, then call this function. After it returns, the length of <span class="code">bson</span> is set to <span class="code">size</span> but its contents are uninitialized memory: you must fill the contents with a BSON document of the correct length before any other operations.</p>
+<p class="p">The document must be freed with <span class="code"><a href="bson_destroy.html" title="bson_destroy()">bson_destroy</a></span>.</p>
+</div></div>
+</div></div>
+<div id="return" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Returns</span></h2></div>
+<div class="region"><div class="contents"><p class="p">A pointer to the internal buffer, which is at least <span class="code">size</span> bytes, or NULL if the space could not be allocated.</p></div></div>
+</div></div>
+<div id="example" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Example</span></h2></div>
+<div class="region"><div class="contents">
+<p class="p">Use <span class="code">bson_reserve_buffer</span> to write a function that takes a <span class="code"><a href="bson_t.html" title="bson_t">bson_t</a></span> pointer and reads a file into it directly:</p>
+<div class="code"><pre class="contents syntax brush-clang">#include &lt;stdio.h&gt;
+#include &lt;bson.h&gt;
+
+bool
+read_into (bson_t   *bson,
+           FILE     *fp)
+{
+   uint8_t *buffer;
+   long size;
+
+   if (fseek(fp, 0L, SEEK_END) &lt; 0) {
+      perror ("Couldn't get file size");
+      return 1;
+   }
+
+   size = ftell (fp);
+   if (size == EOF) {
+      perror ("Couldn't get file size");
+      return 1;
+   }
+
+   if (size &gt; INT32_MAX) {
+      fprintf (stderr, "File too large\n");
+      return 1;
+   }
+
+   /* reserve buffer space - bson is temporarily invalid */
+   buffer = bson_reserve_buffer (bson, (uint32_t) size);
+   if (!buffer) {
+      fprintf (stderr, "Couldn't reserve %ld bytes", size);
+      return false;
+   }
+
+   /* read file directly into the buffer */
+   rewind(fp);
+   if (fread ((void *) buffer, 1, (size_t) size, fp) &lt; (size_t) size) {
+      perror ("Couldn't read file");
+      return false;
+   }
+
+   return true;
+}
+
+int
+main ()
+{
+   FILE *fp;
+   char *json;
+
+   /* stack-allocated, initialized bson_t */
+   bson_t bson = BSON_INITIALIZER;
+
+   if (!(fp = fopen ("document.bson", "rb"))) {
+      perror ("Couldn't read file");
+      return 1;
+   }
+
+   read_into (&amp;bson, fp);
+   fclose (fp);
+
+   json = bson_as_json (&amp;bson, NULL);
+   printf ("%s\n", json);
+
+   bson_free (json);
+   bson_destroy (&amp;bson);
+
+   return 0;
+}</pre></div>
+<p class="p">See also <span class="code"><a href="bson_steal.html" title="bson_steal()">bson_steal</a></span> and <span class="code"><a href="bson_destroy_with_steal.html" title="bson_destroy_with_steal()">bson_destroy_with_steal</a></span>.</p>
+</div></div>
+</div></div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h2><span class="title">More Information</span></h2></div>
+<div class="region"><ul><li class="links "><a href="bson_t.html" title="bson_t">bson_t</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+<div class="clear"></div>
+</div>
+<div class="footer"></div>
+</div></body>
+</html>
