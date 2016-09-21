@@ -959,6 +959,347 @@ test_tailable_alive (void)
 }
 
 
+typedef struct
+{
+   int64_t skip;
+   int64_t limit;
+   int64_t batch_size;
+   int64_t expected_n_return[3];
+   int64_t reply_length[3];
+} cursor_n_return_test;
+
+
+static bson_t *
+_make_n_empty_docs (int64_t n)
+{
+   int64_t i;
+   bson_t *docs;
+
+   docs = bson_malloc (n * sizeof (bson_t));
+   for (i = 0; i < n; i++) {
+      bson_init (&docs[i]);
+   }
+
+   return docs;
+}
+
+
+static void
+_test_cursor_n_return_op_query (mongoc_cursor_t      *cursor,
+                                mock_server_t        *server,
+                                cursor_n_return_test *test)
+{
+   bson_t *reply_docs;
+   const bson_t *doc;
+   request_t *request;
+   future_t *future;
+   int i;
+   int reply_no;
+   bool cursor_finished;
+
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (server, "db.coll",
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         (uint32_t) test->skip,
+                                         (uint32_t) test->expected_n_return[0],
+                                         NULL, NULL);
+
+   reply_docs = _make_n_empty_docs (test->reply_length[0]);
+   mock_server_reply_multi (request, MONGOC_REPLY_NONE, reply_docs,
+                            (uint32_t) test->reply_length[0],
+                            123 /* cursor_id */);
+
+   ASSERT (future_get_bool (future));
+   bson_free (reply_docs);
+   future_destroy (future);
+   request_destroy (request);
+
+   /* advance to the end of the batch */
+   for (i = 1; i < test->reply_length[0]; i++) {
+      ASSERT (mongoc_cursor_next (cursor, &doc));
+   }
+
+   for (reply_no = 1; reply_no < 3; reply_no++) {
+      /* expect op_getmore, send reply_length[reply_no] docs to client */
+      future = future_cursor_next (cursor, &doc);
+      request = mock_server_receives_getmore (
+         server, "db.coll", (uint32_t) test->expected_n_return[reply_no], 123);
+
+      reply_docs = _make_n_empty_docs (test->reply_length[reply_no]);
+      cursor_finished = (reply_no == 2);
+      mock_server_reply_multi (request, MONGOC_REPLY_NONE, reply_docs,
+                               (uint32_t) test->reply_length[reply_no],
+                               cursor_finished ? 0 : 123);
+
+      ASSERT (future_get_bool (future));
+      bson_free (reply_docs);
+      future_destroy (future);
+      request_destroy (request);
+
+      /* advance to the end of the batch */
+      for (i = 1; i < test->reply_length[reply_no]; i++) {
+         ASSERT (mongoc_cursor_next (cursor, &doc));
+      }
+   }
+}
+
+
+static void
+_make_reply_batch (bson_string_t *reply,
+                   uint32_t n_docs,
+                   bool first_batch,
+                   bool finished) {
+
+   uint32_t j;
+
+   bson_string_append_printf (reply, "{'ok': 1, 'cursor': {"
+                                     "    'id': %d,"
+                                     "    'ns': 'db.coll',",
+                              finished ? 0 : 123);
+
+   if (first_batch) {
+      bson_string_append (reply, "'firstBatch': [{}");
+   } else {
+      bson_string_append (reply, "'nextBatch': [{}");
+   }
+
+   for (j = 1; j < n_docs; j++) {
+      bson_string_append (reply, ", {}");
+   }
+
+   bson_string_append (reply, "]}}");
+}
+
+
+static void
+_test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
+                                mock_server_t        *server,
+                                cursor_n_return_test *test)
+{
+   bson_t find_cmd = BSON_INITIALIZER;
+   bson_t getmore_cmd = BSON_INITIALIZER;
+   const bson_t *doc;
+   request_t *request;
+   future_t *future;
+   int j;
+   int reply_no;
+   bson_string_t *reply;
+   bool cursor_finished;
+
+   BSON_APPEND_UTF8 (&find_cmd, "find", "coll");
+   if (test->skip) {
+      BSON_APPEND_INT64 (&find_cmd, "skip", test->skip);
+   }
+   if (test->limit > 0) {
+      BSON_APPEND_INT64 (&find_cmd, "limit", test->limit);
+   } else if (test->limit < 0) {
+      BSON_APPEND_INT64 (&find_cmd, "limit", -test->limit);
+      BSON_APPEND_BOOL (&find_cmd, "singleBatch", true);
+   }
+
+   if (test->batch_size) {
+      BSON_APPEND_INT64 (&find_cmd, "batchSize", BSON_ABS (test->batch_size));
+   }
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (server, "db",
+                                           MONGOC_QUERY_SLAVE_OK, NULL);
+
+   ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
+
+   reply = bson_string_new (NULL);
+   _make_reply_batch (reply, (uint32_t) test->reply_length[0], true, false);
+   mock_server_replies_simple (request, reply->str);
+   bson_string_free (reply, true);
+
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+
+   /* advance to the end of the batch */
+   for (j = 1; j < test->reply_length[0]; j++) {
+      ASSERT (mongoc_cursor_next (cursor, &doc));
+   }
+
+   for (reply_no = 1; reply_no < 3; reply_no++) {
+      /* expect getMore command, send reply_length[reply_no] docs to client */
+      future = future_cursor_next (cursor, &doc);
+      request = mock_server_receives_command (server, "db",
+                                              MONGOC_QUERY_SLAVE_OK, NULL);
+
+      bson_reinit (&getmore_cmd);
+      BSON_APPEND_INT64 (&getmore_cmd, "getMore", 123);
+      if (test->expected_n_return[reply_no] && test->batch_size) {
+         BSON_APPEND_INT64 (&getmore_cmd, "batchSize",
+                            BSON_ABS (test->expected_n_return[reply_no]));
+      } else {
+         BSON_APPEND_DOCUMENT (&getmore_cmd, "batchSize",
+                               tmp_bson ("{'$exists': false}"));
+      }
+
+      printf ("%s\n", bson_as_json (&getmore_cmd, NULL));
+
+      ASSERT (match_bson (request_get_doc (request, 0), &getmore_cmd, true));
+
+      reply = bson_string_new (NULL);
+      cursor_finished = (reply_no == 2);
+      _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false,
+                         cursor_finished);
+
+      mock_server_replies_simple (request, reply->str);
+      bson_string_free (reply, true);
+
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+
+      /* advance to the end of the batch */
+      for (j = 1; j < test->reply_length[reply_no]; j++) {
+         ASSERT (mongoc_cursor_next (cursor, &doc));
+      }
+   }
+
+   bson_destroy (&find_cmd);
+   bson_destroy (&getmore_cmd);
+}
+
+
+static void
+_test_cursor_n_return (bool find_cmd,
+                       bool find_with_opts)
+{
+   cursor_n_return_test tests[] = {
+      {
+         0,           /* skip              */
+         0,           /* limit             */
+         0,           /* batch_size        */
+         { 0, 0, 0 }, /* expected_n_return */
+         { 1, 1, 1 }  /* reply_length      */
+      }, {
+         7,           /* skip              */
+         0,           /* limit             */
+         0,           /* batch_size        */
+         { 0, 0, 0 }, /* expected_n_return */
+         { 1, 1, 1 }  /* reply_length      */
+      }, {
+         0,           /* skip              */
+         3,           /* limit             */
+         0,           /* batch_size        */
+         { 3, 2, 1 }, /* expected_n_return */
+         { 1, 1, 1 }  /* reply_length      */
+      }, {
+         0,           /* skip              */
+         5,           /* limit             */
+         2,           /* batch_size        */
+         { 2, 2, 1 }, /* expected_n_return */
+         { 2, 2, 1 }  /* reply_length      */
+      }, {
+         0,           /* skip              */
+         4,           /* limit             */
+         7,           /* batch_size        */
+         { 4, 2, 1 }, /* expected_n_return */
+         { 2, 1, 1 }  /* reply_length      */
+      }, {
+         0,           /* skip              */
+         -3,          /* limit             */
+         1,           /* batch_size        */
+         {-3,-3,-3 }, /* expected_n_return */
+         { 1, 1, 1 }  /* reply_length      */
+      }
+   };
+
+   cursor_n_return_test *test;
+   size_t i;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+
+   server = mock_server_with_autoismaster (find_cmd ? WIRE_VERSION_FIND_CMD
+                                                    : 0);
+
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "coll");
+
+   for (i = 0; i < sizeof (tests) / sizeof (cursor_n_return_test); i++) {
+      test = &tests[i];
+
+      if (find_with_opts) {
+         bson_reinit (&opts);
+
+         if (test->skip) {
+            BSON_APPEND_INT64 (&opts, "skip", test->skip);
+         }
+
+         if (test->limit > 0) {
+            BSON_APPEND_INT64 (&opts, "limit", test->limit);
+         } else if (test->limit < 0) {
+            BSON_APPEND_INT64 (&opts, "limit", -test->limit);
+            BSON_APPEND_BOOL (&opts, "singleBatch", true);
+         }
+
+         if (test->batch_size) {
+            BSON_APPEND_INT64 (&opts, "batchSize", test->batch_size);
+         }
+
+         cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
+                                                    &opts, NULL);
+      } else {
+         cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
+                                          (uint32_t) test->skip,
+                                          (uint32_t) test->limit,
+                                          (uint32_t) test->batch_size,
+                                          tmp_bson (NULL), NULL, NULL);
+      }
+
+      if (find_cmd) {
+         _test_cursor_n_return_find_cmd (cursor, server, test);
+      } else {
+         _test_cursor_n_return_op_query (cursor, server, test);
+      }
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_n_return_op_query (void)
+{
+   _test_cursor_n_return (false, false);
+}
+
+
+static void
+test_n_return_op_query_with_opts (void)
+{
+   _test_cursor_n_return (false, true);
+}
+
+
+static void
+test_n_return_find_cmd (void)
+{
+   _test_cursor_n_return (true, false);
+}
+
+
+static void
+test_n_return_find_cmd_with_opts (void)
+{
+   _test_cursor_n_return (true, true);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -1010,4 +1351,12 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
    TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
+   TestSuite_Add (suite, "/Cursor/n_return/op_query",
+                  test_n_return_op_query);
+   TestSuite_Add (suite, "/Cursor/n_return/op_query/with_opts",
+                  test_n_return_op_query_with_opts);
+   TestSuite_Add (suite, "/Cursor/n_return/find_cmd",
+                  test_n_return_find_cmd);
+   TestSuite_Add (suite, "/Cursor/n_return/find_cmd/with_opts",
+                  test_n_return_find_cmd_with_opts);
 }
