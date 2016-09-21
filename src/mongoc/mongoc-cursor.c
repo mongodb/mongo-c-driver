@@ -1253,10 +1253,7 @@ _translate_query_opt (const char *query_field,
    /* strip the leading '$' */
    query_field++;
 
-   if (!strcmp (QUERY, query_field)) {
-      *cmd_field = FILTER;
-      *len = FILTER_LEN;
-   } else if (!strcmp (ORDERBY, query_field)) {
+   if (!strcmp (ORDERBY, query_field)) {
       *cmd_field = SORT;
       *len = SORT_LEN;
    } else if (!strcmp (SHOW_DISK_LOC, query_field)) { /* <= MongoDb 3.0 */
