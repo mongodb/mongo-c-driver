@@ -425,7 +425,7 @@ request_matches_getmore (const request_t *request,
 
    if (rpc->get_more.n_return != n_return) {
       test_error ("requests's n_return = %d, expected %d",
-                  rpc->query.n_return, n_return);
+                  rpc->get_more.n_return, n_return);
       return false;
    }
 
@@ -666,6 +666,16 @@ request_from_query (request_t *request,
    bson_string_append (query_as_str, str);
    bson_free (str);
 
+   if (rpc->query.skip) {
+      bson_string_append_printf (query_as_str, " skip=%d",
+                                 (int) rpc->query.skip);
+   }
+
+   if (rpc->query.n_return) {
+      bson_string_append_printf (query_as_str, " n_return=%d",
+                                 (int) rpc->query.n_return);
+   }
+
    request->as_str = bson_string_free (query_as_str, false);
 }
 
@@ -873,8 +883,9 @@ static void
 request_from_getmore (request_t *request,
                       const mongoc_rpc_t *rpc)
 {
-   request->as_str = bson_strdup_printf ("getmore %s %" PRId64 " n_return=%d",
-                                         rpc->get_more.collection,
-                                         rpc->get_more.cursor_id,
-                                         rpc->get_more.n_return);
+   request->as_str = bson_strdup_printf (
+      "OP_GETMORE %s %" PRId64 " n_return=%d",
+      rpc->get_more.collection,
+      rpc->get_more.cursor_id,
+      rpc->get_more.n_return);
 }

@@ -969,7 +969,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId64 ", got %" PRId64,
-                    ctx->path, pattern->value.v_datetime,
+                    pattern->value.v_datetime,
                     doc->value.v_datetime);
       }
 
@@ -980,7 +980,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %f, got %f",
-                    ctx->path, pattern->value.v_double, doc->value.v_double);
+                    pattern->value.v_double, doc->value.v_double);
       }
 
       return ret;
@@ -990,7 +990,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId32 ", got %" PRId32,
-                    ctx->path, pattern->value.v_int32, doc->value.v_int32);
+                    pattern->value.v_int32, doc->value.v_int32);
       }
 
       return ret;
@@ -1000,7 +1000,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId64 ", got %" PRId64,
-                    ctx->path, pattern->value.v_int64, doc->value.v_int64);
+                    pattern->value.v_int64, doc->value.v_int64);
       }
 
       return ret;
