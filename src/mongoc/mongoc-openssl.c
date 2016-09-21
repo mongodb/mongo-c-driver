@@ -275,7 +275,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    verify_status = SSL_get_verify_result (ssl);
 
    if (verify_status == X509_V_OK) {
-      /* get's a stack of alt names that we can iterate through */
+      /* gets a stack of alt names that we can iterate through */
       sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
          (X509 *)peer, NID_subject_alt_name, NULL, NULL);
 
