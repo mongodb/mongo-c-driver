@@ -1330,6 +1330,11 @@ again:
 
       if (!ret) {
          result->failed = true;
+         if (bson_empty0 (&reply)) {
+            /* The command not only failed,
+             * the roundtrip to the server failed and the node was disconnected */
+            result->must_stop = true;
+         }
       }
 
       _mongoc_write_result_merge (result, command, &reply, offset);
@@ -1337,7 +1342,7 @@ again:
       bson_destroy (&reply);
    }
 
-   if (has_more && (ret || !command->flags.ordered)) {
+   if (has_more && (ret || !command->flags.ordered) && !result->must_stop) {
       bson_reinit (&cmd);
       GOTO (again);
    }

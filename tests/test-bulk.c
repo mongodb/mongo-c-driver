@@ -383,6 +383,76 @@ test_bulk_error (void)
    ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
 }
 
+
+static void
+test_bulk_error_unordered (void)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   int i;
+   mongoc_uri_t *uri;
+
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
+   mock_server_run (mock_server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
+   mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 500);
+   client = mongoc_client_new_from_uri (uri);
+   mongoc_uri_destroy (uri);
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   for (i=0; i<=2048; i++) {
+      mongoc_bulk_operation_update_with_opts (bulk, tmp_bson ("{'hello': 'earth'}"), tmp_bson ("{'$set': {'hello': 'world'}}"), NULL, &error);
+   }
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   request = mock_server_receives_command (
+      mock_server,
+      "test",
+      MONGOC_QUERY_NONE,
+      "{ 'update' : 'test', 'writeConcern' : {  }, 'ordered' : false }",
+      NULL
+   );
+   mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
+
+   request = mock_server_receives_command (
+      mock_server,
+      "test",
+      MONGOC_QUERY_NONE,
+      "{ 'update' : 'test', 'writeConcern' : {  }, 'ordered' : false }",
+      NULL
+   );
+
+   request_destroy (request);
+   mock_server_destroy (mock_server);
+
+   future_wait_max (future, 100);
+   ASSERT (!future_value_get_uint32_t (&future->return_value));
+   future_destroy (future);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_SOCKET,
+                          "Failed to read 36 bytes from socket within");
+
+   ASSERT_MATCH (&reply, "{'nInserted': 0,"
+                         " 'nMatched':  5,"
+                         " 'nRemoved':  0,"
+                         " 'nUpserted': 0}");
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 static void
 test_insert (bool ordered)
 {
@@ -3356,10 +3426,10 @@ test_bulk_install (TestSuite *suite)
       }
    }
 
-   TestSuite_AddLive (suite, "/BulkOperation/basic",
-                      test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/error",
-                  test_bulk_error);
+   TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
+   TestSuite_Add (suite, "/BulkOperation/error", test_bulk_error);
+   TestSuite_Add (suite, "/BulkOperation/error/unordered",
+                  test_bulk_error_unordered);
    TestSuite_AddLive  (suite, "/BulkOperation/insert_ordered",
                        test_insert_ordered);
    TestSuite_AddLive  (suite, "/BulkOperation/insert_unordered",

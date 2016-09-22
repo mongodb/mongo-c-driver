@@ -30,6 +30,7 @@ void future_start (future_t *future,
 void future_resolve (future_t *future, future_value_t return_value);
 
 bool future_wait (future_t *future);
+bool future_wait_max (future_t *future, int64_t timeout_ms);
 
 void future_get_void (future_t *future);
 
@@ -41,3 +42,4 @@ future_get_{{ T }} (future_t *future);
 void future_destroy (future_t *future);
 
 #endif /* FUTURE_H */
+

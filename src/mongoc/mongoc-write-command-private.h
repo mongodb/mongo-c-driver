@@ -83,7 +83,8 @@ typedef struct
    /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
    uint32_t     n_writeConcernErrors;
    bson_t       writeConcernErrors;
-   bool         failed;
+   bool         failed; /* The command failed */
+   bool         must_stop; /* The stream may have been disonnected */
    bson_error_t error;
    uint32_t     upsert_append_count;
 } mongoc_write_result_t;

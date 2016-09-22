@@ -420,9 +420,9 @@ future_resolve (future_t *future, future_value_t return_value)
 
 
 bool
-future_wait (future_t *future)
+future_wait_max (future_t *future, int64_t timeout_ms)
 {
-   int64_t deadline = bson_get_monotonic_time () + get_future_timeout_ms ();
+   int64_t deadline = bson_get_monotonic_time () + timeout_ms;
    bool resolved;
 
    mongoc_mutex_lock (&future->mutex);
@@ -442,6 +442,13 @@ future_wait (future_t *future)
    }
 
    return resolved;
+}
+
+
+bool
+future_wait (future_t *future)
+{
+   return future_wait_max (future, get_future_timeout_ms ());
 }
 
 
