@@ -107,6 +107,7 @@ test_client_cmd_w_write_concern (void *context)
    }
 
    bson_destroy (opts);
+   mongoc_client_destroy (client);
 }
 
 
