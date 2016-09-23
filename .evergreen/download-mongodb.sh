@@ -124,8 +124,7 @@ get_mongodb_download_url_for ()
              MONGODB_24=""
       ;;
       linux-ubuntu-16.04-ppc64le)
-         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-ubuntu1604-3.3.11.tgz"
-         MONGODB_LATEST="https://s3.amazonaws.com/mciuploads/mongodb-mongo-master/enterprise-ubuntu1604-ppc64le/4e682143bca253a840f07604c0d7c522d48b5c29/binaries/mongo-mongodb_mongo_master_enterprise_ubuntu1604_ppc64le_4e682143bca253a840f07604c0d7c522d48b5c29_16_08_12_10_41_29.tgz"
+         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-ubuntu1604-latest.tgz"
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
