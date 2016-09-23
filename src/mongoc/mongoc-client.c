@@ -1852,7 +1852,7 @@ mongoc_client_get_server_descriptions (
    for (i = 0; i < set->items_len; ++i) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
       if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         sds[i] = mongoc_server_description_new_copy (sd);
+         sds[*n] = mongoc_server_description_new_copy (sd);
          ++(*n);
       }
    }

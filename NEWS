@@ -1,3 +1,22 @@
+mongo-c-driver 1.4.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.4.1. This is a bugfix release:
+
+  * mongoc_client_get_server_descriptions could return a list including NULLs
+  * Tailable cursors on MongoDB 3.2 only worked with MONGOC_QUERY_AWAIT_DATA
+  * Spurious warnings with MONGOC_DISABLE_SHM
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.4.0
 ====================
 
