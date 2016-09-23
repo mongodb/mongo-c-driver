@@ -133,6 +133,7 @@ extern "C" {
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zd")
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zx")
+#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "p")
 
 #define ASSERT_MEMCMP(a, b, n) \
    do { \

@@ -27,7 +27,8 @@
 
 BSON_BEGIN_DECLS
 
-size_t 				  mongoc_client_pool_get_size(mongoc_client_pool_t *pool);
+size_t 				  mongoc_client_pool_get_size   (mongoc_client_pool_t *pool);
+size_t              mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool);
 
 BSON_END_DECLS
 
