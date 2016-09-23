@@ -41,7 +41,9 @@ mongocdocdir = ${docdir}
 mongocdoc_DATA = \
 	COPYING \
 	NEWS \
-	README.rst
+	README.rst \
+	THIRD_PARTY_NOTICES
+
 EXTRA_DIST += $(mongocdoc_DATA)
 
 EXTRA_DIST += \
