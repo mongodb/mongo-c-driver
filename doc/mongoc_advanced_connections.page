@@ -110,7 +110,7 @@ client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");</code></scre
    <listing><title>Specifying Client Certificate</title>
    <p>MongoDB requires client certificates by default, unless the <code>--sslAllowConnectionsWithoutCertificates</code> is provided. The C Driver can be configured to present a client certificate using a <code>mongoc_ssl_opt_t</code>:</p>
 <screen><code>const mongoc_ssl_opt_t *ssl_default = mongoc_ssl_opt_get_default ();
-mongoc_ssl_opts_t ssl_opts = { 0 };
+mongoc_ssl_opt_t ssl_opts = { 0 };
 
 /* optionally copy in a custom trust directory or file; otherwise the default is used. */
 memcpy (&amp;ssl_opts, ssl_default, sizeof ssl_opts);

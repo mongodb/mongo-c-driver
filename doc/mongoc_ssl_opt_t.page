@@ -37,7 +37,7 @@
     <title>Client Authentication</title>
     <p>When MongoDB is started with SSL enabled, it will by default require the client o provide a client certificate issued by a certificate authority specified by <code>--sslCAFile</code>, or an authority trusted by the native certificate store in use on the server.</p>
     <p>To provide the client certificate, the user must configure the <code>pem_file</code> to point at a PEM armored certificate.</p>
-    <screen><code mime="text/x-csrc"><![CDATA[mongoc_ssl_opts_t ssl_opts = { 0 };
+    <screen><code mime="text/x-csrc"><![CDATA[mongoc_ssl_opt_t ssl_opts = { 0 };
 
 ssl_opts.pem_file = "/path/to/client-certificate.pem"
 
