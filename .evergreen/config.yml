@@ -22,12 +22,25 @@ functions:
         directory: "mongoc"
     - command: shell.exec
       params:
+        working_dir: "mongoc"
+        script: |
+           if [ "${is_patch}" = "true" ]; then
+              VERSION=$(git describe)-patch-${version_id}
+           else
+              VERSION=latest
+           fi
+           echo "CURRENT_VERSION: $VERSION" > expansion.yml
+    - command: expansions.update
+      params:
+        file: mongoc/expansion.yml
+    - command: shell.exec
+      params:
         continue_on_err: true
         # Must be http as RHEL55 has https issues
         script: |
           set -o xtrace
           rm -f *.tar.gz
-          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${revision}/${version_id}/artifacts/mongoc.tar.gz --output mongoc.tar.gz --silent --max-time 120
+          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
           pip install --upgrade git+git://github.com/mongodb/mongo-orchestration@master
 
   "upload release":
@@ -40,7 +53,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: mongoc.tar.gz
-        remote_file: mongo-c-driver/${revision}/${version_id}/artifacts/mongoc.tar.gz
+        remote_file: mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
@@ -83,31 +96,18 @@ functions:
   "upload docs" :
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
-           if [ "${is_patch}" = "true" ]; then
-              VERSION=$(git describe)-patch-${version_id}
-           else
-              VERSION=latest
-           fi
-           echo "docspath: $VERSION" > expansion.yml
-    - command: expansions.update
-      params:
-        file: mongoc/expansion.yml
-    - command: shell.exec
-      params:
         silent: true
         working_dir: "mongoc"
         script: |
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp doc/html s3://mciuploads/${project}/docs/${docspath} --recursive --acl public-read --region us-east-1
+           aws s3 cp doc/html s3://mciuploads/${project}/docs/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file:  mongoc/doc/html/index.html
-        remote_file: ${project}/docs/${docspath}/index.html
+        remote_file: ${project}/docs/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
