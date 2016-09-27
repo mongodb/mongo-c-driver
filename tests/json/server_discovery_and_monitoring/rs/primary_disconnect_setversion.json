@@ -1,5 +1,5 @@
 {
-    "description": "Primaries with and without electionIds",
+    "description": "Disconnected from primary, reject primary with stale setVersion",
     "uri": "mongodb://a/?replicaSet=rs",
     "phases": [
         {
@@ -11,11 +11,128 @@
                         "ismaster": true,
                         "hosts": [
                             "a:27017",
-                            "b:27017",
-                            "c:27017"
+                            "b:27017"
                         ],
+                        "setName": "rs",
                         "setVersion": 1,
-                        "setName": "rs"
+                        "electionId": {
+                            "$oid": "000000000000000000000001"
+                        }
+                    }
+                ],
+                [
+                    "b:27017",
+                    {
+                        "ok": 1,
+                        "ismaster": true,
+                        "hosts": [
+                            "a:27017",
+                            "b:27017"
+                        ],
+                        "setName": "rs",
+                        "setVersion": 2,
+                        "electionId": {
+                            "$oid": "000000000000000000000001"
+                        }
+                    }
+                ]
+            ],
+            "outcome": {
+                "servers": {
+                    "a:27017": {
+                        "type": "Unknown",
+                        "setName": null,
+                        "electionId": null
+                    },
+                    "b:27017": {
+                        "type": "RSPrimary",
+                        "setName": "rs",
+                        "setVersion": 2,
+                        "electionId": {
+                            "$oid": "000000000000000000000001"
+                        }
+                    }
+                },
+                "topologyType": "ReplicaSetWithPrimary",
+                "setName": "rs"
+            }
+        },
+        {
+            "responses": [
+                [
+                    "b:27017",
+                    {}
+                ]
+            ],
+            "outcome": {
+                "servers": {
+                    "a:27017": {
+                        "type": "Unknown",
+                        "setName": null,
+                        "electionId": null
+                    },
+                    "b:27017": {
+                        "type": "Unknown",
+                        "setName": null,
+                        "electionId": null
+                    }
+                },
+                "topologyType": "ReplicaSetNoPrimary",
+                "setName": "rs"
+            }
+        },
+        {
+            "responses": [
+                [
+                    "a:27017",
+                    {
+                        "ok": 1,
+                        "ismaster": true,
+                        "hosts": [
+                            "a:27017",
+                            "b:27017"
+                        ],
+                        "setName": "rs",
+                        "setVersion": 1,
+                        "electionId": {
+                            "$oid": "000000000000000000000001"
+                        }
+                    }
+                ]
+            ],
+            "outcome": {
+                "servers": {
+                    "a:27017": {
+                        "type": "Unknown",
+                        "setName": null,
+                        "electionId": null
+                    },
+                    "b:27017": {
+                        "type": "Unknown",
+                        "setName": null,
+                        "electionId": null
+                    }
+                },
+                "topologyType": "ReplicaSetNoPrimary",
+                "setName": "rs"
+            }
+        },
+        {
+            "responses": [
+                [
+                    "a:27017",
+                    {
+                        "ok": 1,
+                        "ismaster": true,
+                        "hosts": [
+                            "a:27017",
+                            "b:27017"
+                        ],
+                        "setName": "rs",
+                        "setVersion": 2,
+                        "electionId": {
+                            "$oid": "000000000000000000000002"
+                        }
                     }
                 ]
             ],
@@ -24,15 +141,12 @@
                     "a:27017": {
                         "type": "RSPrimary",
                         "setName": "rs",
-                        "setVersion": 1,
-                        "electionId": null
+                        "setVersion": 2,
+                        "electionId": {
+                            "$oid": "000000000000000000000002"
+                        }
                     },
                     "b:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    },
-                    "c:27017": {
                         "type": "Unknown",
                         "setName": null,
                         "electionId": null
@@ -48,58 +162,12 @@
                     "b:27017",
                     {
                         "ok": 1,
-                        "ismaster": true,
+                        "ismaster": false,
+                        "secondary": true,
                         "hosts": [
                             "a:27017",
-                            "b:27017",
-                            "c:27017"
+                            "b:27017"
                         ],
-                        "setName": "rs",
-                        "setVersion": 1,
-                        "electionId": {
-                            "$oid": "000000000000000000000002"
-                        }
-                    }
-                ]
-            ],
-            "outcome": {
-                "servers": {
-                    "a:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    },
-                    "b:27017": {
-                        "type": "RSPrimary",
-                        "setName": "rs",
-                        "setVersion": 1,
-                        "electionId": {
-                            "$oid": "000000000000000000000002"
-                        }
-                    },
-                    "c:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    }
-                },
-                "topologyType": "ReplicaSetWithPrimary",
-                "setName": "rs"
-            }
-        },
-        {
-            "responses": [
-                [
-                    "a:27017",
-                    {
-                        "ok": 1,
-                        "ismaster": true,
-                        "hosts": [
-                            "a:27017",
-                            "b:27017",
-                            "c:27017"
-                        ],
-                        "setVersion": 1,
                         "setName": "rs"
                     }
                 ]
@@ -109,61 +177,14 @@
                     "a:27017": {
                         "type": "RSPrimary",
                         "setName": "rs",
-                        "setVersion": 1,
-                        "electionId": null
-                    },
-                    "b:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    },
-                    "c:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    }
-                },
-                "topologyType": "ReplicaSetWithPrimary",
-                "setName": "rs"
-            }
-        },
-        {
-            "responses": [
-                [
-                    "c:27017",
-                    {
-                        "ok": 1,
-                        "ismaster": true,
-                        "hosts": [
-                            "a:27017",
-                            "b:27017",
-                            "c:27017"
-                        ],
-                        "setName": "rs",
-                        "setVersion": 1,
+                        "setVersion": 2,
                         "electionId": {
-                            "$oid": "000000000000000000000001"
+                            "$oid": "000000000000000000000002"
                         }
-                    }
-                ]
-            ],
-            "outcome": {
-                "servers": {
-                    "a:27017": {
-                        "type": "RSPrimary",
-                        "setName": "rs",
-                        "setVersion": 1,
-                        "electionId": null
                     },
                     "b:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
-                    },
-                    "c:27017": {
-                        "type": "Unknown",
-                        "setName": null,
-                        "electionId": null
+                        "type": "RSSecondary",
+                        "setName": "rs"
                     }
                 },
                 "topologyType": "ReplicaSetWithPrimary",
