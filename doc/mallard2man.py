@@ -310,7 +310,6 @@ class Convert(object):
             pass
         else:
             print('unknown element type %s' % ele)
-            sys.exit(1)
 
     def _generateTable(self, table):
         for child in table.getchildren():
