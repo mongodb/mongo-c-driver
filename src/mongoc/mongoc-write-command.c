@@ -1330,7 +1330,7 @@ again:
 
       if (!ret) {
          result->failed = true;
-         if (bson_empty0 (&reply)) {
+         if (bson_empty (&reply)) {
             /* The command not only failed,
              * the roundtrip to the server failed and the node was disconnected */
             result->must_stop = true;
