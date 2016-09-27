@@ -125,7 +125,7 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE*
    }
 
    while ((cert = CertEnumCertificatesInStore (cert_store, cert)) != NULL) {
-      X509* x509Obj = d2i_X509 (NULL, &cert->pbCertEncoded, cert->cbCertEncoded);
+      X509* x509Obj = d2i_X509 (NULL, (const unsigned char **)&cert->pbCertEncoded, cert->cbCertEncoded);
 
       if (x509Obj == NULL) {
          MONGOC_WARNING ("Error parsing X509 object from Windows certificate store");
