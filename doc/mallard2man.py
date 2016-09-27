@@ -53,6 +53,7 @@ CODE = '{http://projectmallard.org/1.0/}code'
 INPUT = '{http://projectmallard.org/1.0/}input'
 VAR = '{http://projectmallard.org/1.0/}var'
 CMD = '{http://projectmallard.org/1.0/}cmd'
+SYS = '{http://projectmallard.org/1.0/}sys'
 P = '{http://projectmallard.org/1.0/}p'
 DESC = '{http://projectmallard.org/1.0/}desc'
 SCREEN = '{http://projectmallard.org/1.0/}screen'
@@ -274,7 +275,7 @@ class Convert(object):
             self._generateSection(ele)
         elif ele.tag == SYNOPSIS:
             self._generateSynopsis(ele)
-        elif ele.tag in (CODE, VAR, CMD):
+        elif ele.tag in (CODE, VAR, SYS, CMD):
             self._generateCode(ele)
         elif ele.tag in (INPUT, OUTPUT):
             self._generateOutput(ele)
@@ -309,6 +310,7 @@ class Convert(object):
             pass
         else:
             print('unknown element type %s' % ele)
+            sys.exit(1)
 
     def _generateTable(self, table):
         for child in table.getchildren():
