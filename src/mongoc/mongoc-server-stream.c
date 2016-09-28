@@ -100,3 +100,4 @@ mongoc_server_stream_max_write_batch_size (mongoc_server_stream_t *server_stream
    return COALESCE (server_stream->sd->max_write_batch_size,
                     MONGOC_DEFAULT_WRITE_BATCH_SIZE);
 }
+
