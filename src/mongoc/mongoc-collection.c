@@ -689,18 +689,33 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
                          const mongoc_read_prefs_t *read_prefs,  /* IN */
                          bson_error_t              *error)       /* OUT */
 {
+   int64_t ret;
+   bson_t opts = BSON_INITIALIZER;
+
+   /* Complex types must be parts of `opts`, otherwise we can't
+    * follow various specs that require validation etc */
+   if (collection->read_concern->level != NULL) {
+      const bson_t *read_concern_bson;
+
+      read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
+      BSON_APPEND_DOCUMENT (&opts, "readConcern", read_concern_bson);
+   }
+
    /* Server Selection Spec: "may-use-secondary" commands SHOULD take a read
     * preference argument and otherwise MUST use the default read preference
     * from client, database or collection configuration. */
-   return mongoc_collection_count_with_opts (
+   ret = mongoc_collection_count_with_opts (
       collection,
       flags,
       query,
       skip,
       limit,
-      NULL,
+      &opts,
       read_prefs ? read_prefs : collection->read_prefs,
       error);
+
+   bson_destroy (&opts);
+   return ret;
 }
 
 
@@ -739,15 +754,6 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    }
    if (skip) {
       bson_append_int64(&cmd, "skip", 4, skip);
-   }
-   if (collection->read_concern->level != NULL) {
-      const bson_t *read_concern_bson;
-
-      read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
-      BSON_APPEND_DOCUMENT (&cmd, "readConcern", read_concern_bson);
-   }
-   if (opts) {
-       bson_concat (&cmd, opts);
    }
 
    success = _mongoc_client_command_with_opts (collection->client,
