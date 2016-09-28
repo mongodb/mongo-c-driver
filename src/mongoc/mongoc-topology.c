@@ -577,7 +577,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   "No suitable servers found (`serverSelectionTryOnce` set)",
                   &scanner_error, error);
 
-               topology->stale = true;
                return NULL;
             }
          } else {
@@ -588,7 +587,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                _mongoc_server_selection_error (timeout_msg,
                                                &scanner_error, error);
 
-               topology->stale = true;
                return NULL;
             }
          }
