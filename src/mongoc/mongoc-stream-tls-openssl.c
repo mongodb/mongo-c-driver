@@ -25,6 +25,7 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
@@ -637,9 +638,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
       struct in_addr addr;
       X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
 
-#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
       X509_VERIFY_PARAM_set_hostflags (param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-#endif
       if (inet_pton (AF_INET, host, &addr) ||
           inet_pton (AF_INET6, host, &addr)) {
          X509_VERIFY_PARAM_set1_ip_asc (param, host);
