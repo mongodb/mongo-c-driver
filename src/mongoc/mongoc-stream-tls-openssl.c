@@ -544,10 +544,13 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 
    BIO_get_ssl (openssl->bio, &ssl);
 
+/* Added in OpenSSL 0.9.8f, as a build time option */
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
    /* Set the SNI hostname we are expecting certificate for */
    if (!tls->ssl_opts.allow_invalid_hostname) {
       SSL_set_tlsext_host_name (ssl, host);
    }
+#endif
 
    if (BIO_do_handshake (openssl->bio) == 1) {
 
