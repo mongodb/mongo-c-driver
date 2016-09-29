@@ -11,6 +11,7 @@
 #include "mock_server/mock-rs.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"

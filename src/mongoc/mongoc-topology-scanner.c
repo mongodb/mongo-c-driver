@@ -277,9 +277,17 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
       mongoc_stream_failed (node->stream);
       node->stream = NULL;
       node->last_failed = now;
-      message = async_status == MONGOC_ASYNC_CMD_TIMEOUT ?
-                "connection error" :
-                "connection timeout";
+
+      if (error->code) {
+         message = error->message;
+      } else {
+         if (async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
+            message = "connection timeout";
+         } else {
+            message = "connection error";
+         }
+      }
+
       bson_set_error (&node->last_error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_STREAM_CONNECT,
