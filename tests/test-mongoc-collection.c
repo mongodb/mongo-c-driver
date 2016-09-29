@@ -2303,7 +2303,7 @@ test_count_with_collation (int wire)
       ASSERT (-1 == future_get_int64_t (future));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                              "The selected server does not support collation");
    }
 
