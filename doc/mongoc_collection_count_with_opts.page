@@ -44,9 +44,9 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
   <section id="description">
     <title>Description</title>
     <p>This function shall execute a count query on the underlying 'collection'. The bson 'query' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
+    <p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any. If <code>read_prefs</code> is NULL, the collection's read preferences are used.</p>
     <p>In addition to the standard functionality available from mongoc_collection_count, this function allows the user to add arbitrary extra keys to the count.  This pass through enables features such as hinting for counts.</p>
     <p>For more information, see the <link href="http://docs.mongodb.org/manual/reference/operator/query/">query reference</link> at the MongoDB website.</p>
-    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
 
   <section id="errors">

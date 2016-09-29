@@ -7,7 +7,8 @@ New features and bug fixes:
   * MongoDB 3.4 Support
     * MaxStalenessMS
     * MongoDB Handshake
-    * Most command helpers take Write Concern
+  * mongoc_collection_count_with_opts uses the collection's read preference if
+    none is passed in
   * Improved TLS support
     * Fixed LibreSSL (libssl) support
     * Added LibreSSL (libtls) support

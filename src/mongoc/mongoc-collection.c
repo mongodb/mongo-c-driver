@@ -34,6 +34,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-util-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -711,7 +712,7 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
       skip,
       limit,
       &opts,
-      read_prefs ? read_prefs : collection->read_prefs,
+      read_prefs,
       error);
 
    bson_destroy (&opts);
@@ -756,14 +757,15 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
       bson_append_int64(&cmd, "skip", 4, skip);
    }
 
-   success = _mongoc_client_command_with_opts (collection->client,
-                                               collection->db,
-                                               &cmd,
-                                               opts,
-                                               flags,
-                                               read_prefs,
-                                               &reply,
-                                               error);
+   success = _mongoc_client_command_with_opts (
+      collection->client,
+      collection->db,
+      &cmd,
+      opts,
+      flags,
+      COALESCE (read_prefs, collection->read_prefs),
+      &reply,
+      error);
 
    if (success) {
       if (bson_iter_init_find (&iter, &reply, "n")) {

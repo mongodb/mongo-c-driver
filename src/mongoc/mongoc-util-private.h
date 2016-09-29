@@ -36,6 +36,7 @@
 # define _ignore_value(x) ((void) (x))
 #endif
 
+#define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
 BSON_BEGIN_DECLS
 

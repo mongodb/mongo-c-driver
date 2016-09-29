@@ -17,11 +17,10 @@
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-server-stream-private.h"
+#include "mongoc-util-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "server-stream"
-
-#define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
 mongoc_server_stream_t *
 mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
