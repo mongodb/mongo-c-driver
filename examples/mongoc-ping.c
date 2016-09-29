@@ -26,29 +26,90 @@ main (int   argc,
    mongoc_database_t *database;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
+   uint16_t port = 27017;
+   struct stat stat_buf;
+   bool use_ssl = false;
    const bson_t *reply;
-   uint16_t port;
+   char *host_and_port;
    bson_error_t error;
    bson_t ping;
-   char *host_and_port;
    char *str;
+   int opt;
+#ifdef MONGOC_ENABLE_SSL
+   mongoc_ssl_opt_t ssl_opts = {0};
+#endif
 
-   if (argc < 2 || argc > 3) {
-      fprintf(stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
-      return 1;
+   while ((opt = getopt (argc, argv, "a:p:ds")) != -1) {
+      switch (opt) {
+         case 'a':
+            if (!stat (optarg, &stat_buf) && S_ISREG (stat_buf.st_mode)) {
+#ifdef MONGOC_ENABLE_SSL
+               ssl_opts.ca_file = optarg;
+#endif
+               fprintf (stderr, "Verifying certificate against '%s'\n", optarg);
+            } else {
+               fprintf(stderr, "'%s' is not a readable file\n", optarg);
+            }
+            break;
+
+         case 'p':
+            if (!stat (optarg, &stat_buf) && S_ISREG (stat_buf.st_mode)) {
+               fprintf (stderr, "Presenting myself as '%s'\n", optarg);
+#ifdef MONGOC_ENABLE_SSL
+               ssl_opts.pem_file = optarg;
+#endif
+            } else {
+               fprintf(stderr, "'%s' is not a readable file\n", optarg);
+            }
+            break;
+
+         case 'd':
+            fprintf (stderr, "Disabling hostname verification\n");
+#ifdef MONGOC_ENABLE_SSL
+            ssl_opts.allow_invalid_hostname = true;
+#endif
+            break;
+
+         case 's':
+            fprintf (stderr, "Enabling SSL\n");
+            use_ssl = true;
+            break;
+
+         default:
+            fprintf (stderr, "Usage:\n\t%s [-a certifcate_authority.pem] "
+                  "[-p private_key.pem] [-d] HOSTNAME [PORT]\n"
+                  "\t\t(-d disables certificate verification)\n", argv[0]);
+            return 2;
+      }
    }
+
+   if (optind >= argc) {
+      fprintf (stderr, "Usage:\n\t%s [-a certifcate_authority.pem] "
+               "[-p private_key.pem] [-d] HOSTNAME [PORT]\n"
+               "\t\t(-d disables certificate verification)\n", argv[0]);
+      return 2;
+   }
+
+   if (strncmp (argv[optind], "mongodb://", 10) == 0) {
+      host_and_port = bson_strdup (argv[optind]);
+   } else {
+      if (optind+2 == argc) {
+          port = atoi(argv[optind+1]);
+      }
+      host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[optind], port);
+   }
+
 
    mongoc_init();
-
-   port = (argc == 3) ? atoi(argv[2]) : 27017;
-
-   if (strncmp (argv[1], "mongodb://", 10) == 0) {
-      host_and_port = bson_strdup (argv [1]);
-   } else {
-      host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[1], port);
+   client = mongoc_client_new (host_and_port);
+   if (use_ssl) {
+#ifdef MONGOC_ENABLE_SSL
+      mongoc_client_set_ssl_opts (client, &ssl_opts);
+#else
+      fprintf (stderr, "Trying to enable SSL when mongoc is compiled without SSL support\n");
+      return 2;
+#endif
    }
-
-   client = mongoc_client_new(host_and_port);
 
    if (!client) {
       fprintf(stderr, "Invalid hostname or port: %s\n", host_and_port);
@@ -71,6 +132,7 @@ main (int   argc,
    }
 
    mongoc_cursor_destroy(cursor);
+   mongoc_database_destroy (database);
    bson_destroy(&ping);
    mongoc_client_destroy(client);
    bson_free(host_and_port);
