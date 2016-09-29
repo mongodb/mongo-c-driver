@@ -7,6 +7,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
@@ -285,6 +286,63 @@ test_topology_scanner_oscillate (void)
 
 
 void
+test_topology_scanner_connection_error (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   /* assuming nothing is listening on this port */
+   client = mongoc_client_new (
+      "mongodb://localhost:9876/?connectTimeoutMS=10");
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "connection error calling ismaster on "
+                          "'localhost:9876'");
+
+   mongoc_client_destroy (client);
+}
+
+
+void
+test_topology_scanner_connection_timeout (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+   char *expected_msg;
+
+   /* server does NOT automatically reply to ismaster */
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10);
+   client = mongoc_client_new_from_uri (uri);
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   expected_msg = bson_strdup_printf (
+      "connection timeout calling ismaster on '%s'",
+      mongoc_uri_get_hosts (uri)->host_and_port);
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          expected_msg);
+
+   bson_free (expected_msg);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
+void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
@@ -295,4 +353,8 @@ test_topology_scanner_install (TestSuite *suite)
                   test_topology_scanner_discovery);
    TestSuite_Add (suite, "/TOPOLOGY/scanner_oscillate",
                   test_topology_scanner_oscillate);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error",
+                  test_topology_scanner_connection_error);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_timeout",
+                  test_topology_scanner_connection_timeout);
 }
