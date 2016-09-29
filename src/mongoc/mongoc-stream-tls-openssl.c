@@ -560,6 +560,11 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
       }
 
       *events = 0;
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: Failed certificate verification");
+
       RETURN (false);
    }
 
