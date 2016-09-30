@@ -67,42 +67,21 @@ mongoc_async_run (mongoc_async_t *async,
    mongoc_async_cmd_t *acmd, *tmp;
    mongoc_stream_poll_t *poller = NULL;
    int i;
-   ssize_t nactive = 0;
+   ssize_t nactive;
    int64_t now;
-   int64_t expire_at = 0;
+   int64_t expire_at;
+   int64_t poll_timeout_msec;
+   size_t poll_size;
 
-   size_t poll_size = 0;
+   BSON_ASSERT (timeout_msec > 0);
+
+   now = bson_get_monotonic_time ();
+   expire_at = now + ((int64_t) timeout_msec * 1000);
+   poll_size = 0;
 
    for (;;) {
-      now = bson_get_monotonic_time ();
-
-      if (expire_at == 0) {
-         if (timeout_msec >= 0) {
-            expire_at = now + ((int64_t) timeout_msec * 1000);
-         } else {
-            expire_at = -1;
-         }
-      } else if (timeout_msec >= 0) {
-         timeout_msec = (expire_at - now) / 1000;
-      }
-
-      if (now > expire_at) {
-         break;
-      }
-
-      DL_FOREACH_SAFE (async->cmds, acmd, tmp)
-      {
-         /* async commands are sorted by expire_at */
-         if (now > acmd->expire_at) {
-            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time), acmd->data,
-                      &acmd->error);
-            mongoc_async_cmd_destroy (acmd);
-         } else {
-            break;
-         }
-      }
-
       if (!async->ncmds) {
+         /* work complete */
          break;
       }
 
@@ -120,13 +99,10 @@ mongoc_async_run (mongoc_async_t *async,
          i++;
       }
 
-      if (timeout_msec >= 0) {
-         timeout_msec = BSON_MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
-      } else {
-         timeout_msec = (async->cmds->expire_at - now) / 1000;
-      }
-
-      nactive = mongoc_stream_poll (poller, async->ncmds, timeout_msec);
+      poll_timeout_msec = (expire_at - now) / 1000;
+      BSON_ASSERT (poll_timeout_msec < INT32_MAX);
+      nactive = mongoc_stream_poll (poller, async->ncmds,
+                                    (int32_t) poll_timeout_msec);
 
       if (nactive) {
          i = 0;
@@ -151,11 +127,25 @@ mongoc_async_run (mongoc_async_t *async,
             i++;
          }
       }
+
+      now = bson_get_monotonic_time ();
+      if (now > expire_at) {
+         break;
+      }
    }
 
    if (poll_size) {
       bson_free (poller);
    }
 
-   return async->ncmds;
+   /* commands that succeeded or failed already have been removed from the
+    * list and freed. therefore, all remaining commands have timed out. */
+   DL_FOREACH_SAFE (async->cmds, acmd, tmp) {
+      acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time),
+                acmd->data, &acmd->error);
+      mongoc_async_cmd_destroy (acmd);
+   }
+
+   /* cancel the loop in the caller, mongoc_topology_scanner_work() */
+   return false;
 }

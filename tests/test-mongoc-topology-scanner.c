@@ -6,6 +6,7 @@
 #include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/mock-rs.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 
@@ -296,6 +297,126 @@ test_topology_scanner_oscillate ()
 }
 
 
+/* skip on Windows: https://daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken/ */
+#ifndef _WIN32
+void
+test_topology_scanner_connection_error (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   /* assuming nothing is listening on this port */
+   client = mongoc_client_new (
+      "mongodb://localhost:9876/?connectTimeoutMS=10");
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "connection error calling ismaster on "
+                          "'localhost:9876'");
+
+   mongoc_client_destroy (client);
+}
+#endif
+
+
+void
+test_topology_scanner_connection_timeout (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+   char *expected_msg;
+
+   /* server does NOT automatically reply to ismaster */
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10);
+   client = mongoc_client_new_from_uri (uri);
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   expected_msg = bson_strdup_printf (
+      "connection timeout calling ismaster on '%s'",
+      mongoc_uri_get_hosts (uri)->host_and_port);
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          expected_msg);
+
+   bson_free (expected_msg);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
+typedef struct
+{
+   uint16_t         slow_port;
+   mongoc_client_t *client;
+} initiator_data_t;
+
+
+static mongoc_stream_t *
+slow_initiator (const mongoc_uri_t       *uri,
+                const mongoc_host_list_t *host,
+                void                     *user_data,
+                bson_error_t             *err)
+{
+   initiator_data_t *data;
+
+   data = (initiator_data_t *) user_data;
+
+   if (host->port == data->slow_port) {
+      _mongoc_usleep (500 * 1000);  /* 500 ms is longer than connectTimeoutMS */
+   }
+
+   return mongoc_client_default_stream_initiator (uri, host, data->client, err);
+}
+
+
+static void
+test_topology_scanner_blocking_initiator (void)
+{
+   mock_rs_t *rs;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   initiator_data_t data;
+   bson_error_t error;
+
+   rs = mock_rs_with_autoismaster (0,    /* wire version   */
+                                   true, /* has primary    */
+                                   1,    /* n_secondaries  */
+                                   0     /* n_arbiters     */);
+
+   mock_rs_run (rs);
+   uri = mongoc_uri_copy (mock_rs_get_uri (rs));
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* pretend last host in linked list is slow */
+   data.slow_port = mongoc_uri_get_hosts (uri)->next->port;
+   data.client = client;
+   mongoc_client_set_stream_initiator (client, slow_initiator, &data);
+
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin",
+                                                  tmp_bson ("{'ismaster': 1}"),
+                                                  NULL,
+                                                  NULL, &error), error);
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_rs_destroy (rs);
+}
+
+
 void
 test_topology_scanner_install (TestSuite *suite)
 {
@@ -307,4 +428,12 @@ test_topology_scanner_install (TestSuite *suite)
                   test_topology_scanner_discovery);
    TestSuite_Add (suite, "/TOPOLOGY/scanner_oscillate",
                   test_topology_scanner_oscillate);
+#ifndef _WIN32
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error",
+                  test_topology_scanner_connection_error);
+#endif
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_timeout",
+                  test_topology_scanner_connection_timeout);
+   TestSuite_Add (suite, "/TOPOLOGY/blocking_initiator",
+                  test_topology_scanner_blocking_initiator);
 }
