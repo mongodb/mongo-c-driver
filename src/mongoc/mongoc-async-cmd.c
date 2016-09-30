@@ -162,8 +162,6 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
                       int32_t                   timeout_msec)
 {
    mongoc_async_cmd_t *acmd;
-   mongoc_async_cmd_t *tmp;
-   bool found = false;
 
    BSON_ASSERT (cmd);
    BSON_ASSERT (dbname);
@@ -171,7 +169,7 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
 
    acmd = (mongoc_async_cmd_t *)bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
-   acmd->expire_at = bson_get_monotonic_time () + (int64_t) timeout_msec * 1000;
+   acmd->timeout_msec = timeout_msec;
    acmd->stream = stream;
    acmd->setup = setup;
    acmd->setup_ctx = setup_ctx;
@@ -186,22 +184,8 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
 
    _mongoc_async_cmd_state_start (acmd);
 
-   /* slot the cmd into the right place in the expiration list */
-   {
-      async->ncmds++;
-      DL_FOREACH (async->cmds, tmp)
-      {
-         if (tmp->expire_at >= acmd->expire_at) {
-            DL_PREPEND_ELEM (async->cmds, tmp, acmd);
-            found = true;
-            break;
-         }
-      }
-
-      if (! found) {
-         DL_APPEND (async->cmds, acmd);
-      }
-   }
+   async->ncmds++;
+   DL_APPEND (async->cmds, acmd);
 
    return acmd;
 }
@@ -230,16 +214,11 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 {
-   int64_t now;
-   int64_t timeout_msec;
    int retval;
 
-   now = bson_get_monotonic_time ();
-   timeout_msec = (acmd->expire_at - now) / 1000;
-
-   BSON_ASSERT (timeout_msec < INT32_MAX);
+   BSON_ASSERT (acmd->timeout_msec < INT32_MAX);
    retval = acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
-                         (int32_t) timeout_msec, &acmd->error);
+                         (int32_t) acmd->timeout_msec, &acmd->error);
    switch (retval) {
       case -1:
          return MONGOC_ASYNC_CMD_ERROR;
