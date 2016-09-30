@@ -285,6 +285,8 @@ test_topology_scanner_oscillate (void)
 }
 
 
+/* skip on Windows: https://daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken/ */
+#ifndef _WIN32
 void
 test_topology_scanner_connection_error (void)
 {
@@ -305,6 +307,7 @@ test_topology_scanner_connection_error (void)
 
    mongoc_client_destroy (client);
 }
+#endif
 
 
 void
@@ -353,8 +356,10 @@ test_topology_scanner_install (TestSuite *suite)
                   test_topology_scanner_discovery);
    TestSuite_Add (suite, "/TOPOLOGY/scanner_oscillate",
                   test_topology_scanner_oscillate);
+#ifndef _WIN32
    TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error",
                   test_topology_scanner_connection_error);
+#endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_timeout",
                   test_topology_scanner_connection_timeout);
 }
