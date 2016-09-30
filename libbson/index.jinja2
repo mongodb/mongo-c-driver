@@ -1,0 +1,26 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>libbson - Releases</title>
+    <link rel="stylesheet" type="text/css" href="C.css">
+</head>
+<body>
+<div class="page" role="main">
+    <div class="body">
+        <div class="hgroup">
+            <h1 class="title"><span class="title">libbson - Releases</span></h1>
+            <p><a href="current/index.html">Current Release: {{ lib_version }}</a></p>
+        </div>
+
+        <div class="links">
+            <ul>
+                {% for v in all_versions %}
+                <li><a rel="nofollow" href="{{ v }}/index.html">{{ v }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+</html>

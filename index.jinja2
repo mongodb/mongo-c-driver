@@ -1,0 +1,146 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MongoDB C Driver</title>
+    <link rel="stylesheet" type="text/css" href="C.css">
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="jquery.syntax.js"></script>
+    <script type="text/javascript" src="yelp.js"></script>
+</head>
+<body>
+<div class="page" role="main">
+    <div class="body">
+        <div class="hgroup">
+            <h1 class="title"><span class="title">MongoDB C Driver</span></h1>
+            <h2 class="subtitle"><span class="subtitle">A Cross Platform MongoDB Client Library for C</span>
+            </h2>
+        </div>
+
+        <div id="introduction" class="sect">
+            <div class="inner">
+                <div class="region">
+                    <div class="contents">
+                        <p class="p">The MongoDB C Driver, also known as "libmongoc", is the official client library for C applications, and provides a base for MongoDB drivers in higher-level languages.</p>
+                        <p class="p">The library is compatible with all major platforms. It depends on <span class="link"><a href="/libbson/current/index.html" title="bson:index">libbson</a></span> to
+                            create and parse BSON data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="download" class="sect">
+            <div class="hgroup"><h2>Download</h2>
+            </div>
+            <div class="links topiclinks">
+                <div class="inner">
+                    <div class="region">
+                        <div class="linkdiv ">Latest release: <a class="linkdiv" href="https://github.com/mongodb/mongo-c-driver/releases/download/{{ lib_version }}/mongo-c-driver-{{ lib_version }}.tar.gz">
+                            <span class="title">mongo-c-driver-{{ lib_version }}.tar.gz</span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="listing">
+            <h2>Example: Count documents in a collection</h2>
+            <div class="synopsis">
+                <div class="inner">
+                    <div class="region">
+                        <div class="contents">
+                            <div class="code"><pre class="contents syntax brush-clang">#include &lt;bson.h&gt;
+#include &lt;mongoc.h&gt;
+#include &lt;stdio.h&gt;
+
+int
+main ()
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   int64_t count;
+
+   mongoc_init ();
+
+   client = mongoc_client_new ("mongodb://localhost:27017/");
+   collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &amp;error);
+
+   if (count &lt; 0) {
+      fprintf (stderr, "%s\n", error.message);
+   } else {
+      printf ("%" PRId64 "\n", count);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_cleanup ();
+
+   return count < 0 ? -1 : 0;
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="documentation" class="sect">
+            <div class="hgroup"><h2>Documentation</h2>
+            </div>
+            <div class="links topiclinks">
+                <div class="inner">
+                    <div class="region">
+                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/installing.html"> <span
+                                class="title">Installation</span></a>
+                        </div>
+                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/tutorial.html"> <span class="title">Tutorial</span></a>
+                        </div>
+                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/index.html"> <span class="title">libmongoc reference</span></a>
+                        </div>
+                        <div class="linkdiv "><a class="linkdiv" href="libbson/current/index.html"> <span class="title">libbson reference</span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="help" class="sect">
+            <div class="hgroup"><h2>How To Ask For Help</h2>
+            </div>
+            <div class="links topiclinks">
+                <div class="inner">
+                    <div class="region">
+                        <p>For help using the driver:</p>
+                        <div class="linkdiv "><a class="linkdiv" href="http://groups.google.com/group/mongodb-user"> <span
+                                class="title">MongoDB Users Mailing List</span></a>
+                        </div>
+                        <p>To file a bug or feature request:</p>
+                        <div class="linkdiv "><a class="linkdiv" href="https://jira.mongodb.org/browse/CDRIVER"> <span
+                                class="title">MongoDB Jira Issue Tracker</span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="older-versions" class="sect">
+            <div class="hgroup"><h2 class="title"><span class="title">Documentation for Older Versions</span>
+            </h2>
+            </div>
+            <div class="links topiclinks">
+                <div class="inner">
+                    <div class="region">
+                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/index.html"><span class="title">libmongoc releases</span></a>
+                        </div>
+                        <div class="linkdiv "><a class="linkdiv" href="libbson/index.html"><span class="title">libbson releases</span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
