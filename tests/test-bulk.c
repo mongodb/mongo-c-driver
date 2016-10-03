@@ -3175,7 +3175,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
             " 'writeConcern': {'w': %d, 'wtimeout': 100},"
             " 'ordered': true,"
             " 'deletes': ["
-            "    {'q': {'_id': 1}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            "    {'q': {'_id': 1}, 'limit': 0, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
             " ]"
          "}";
          break;
@@ -3195,7 +3195,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
             " 'writeConcern': {'w': %d, 'wtimeout': 100},"
             " 'ordered': true,"
             " 'updates': ["
-            "    {'q': {'_id': 3}, 'u':  {'_id': 4}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            "    {'q': {'_id': 3}, 'u':  {'_id': 4}, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': false}"
             " ]"
          "}";
          break;
@@ -3205,7 +3205,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
             " 'writeConcern': {'w': %d, 'wtimeout': 100},"
             " 'ordered': true,"
             " 'updates': ["
-            "    {'q': {'_id': 5}, 'u':  { '$set': {'_id': 6} }, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            "    {'q': {'_id': 5}, 'u':  { '$set': {'_id': 6} }, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': true }"
             " ]"
          "}";
          break;
@@ -3215,7 +3215,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
             " 'writeConcern': {'w': %d, 'wtimeout': 100},"
             " 'ordered': true,"
             " 'updates': ["
-            "    {'q': {'_id': 7}, 'u':  { '$set': {'_id': 8} }, 'multi': false, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}}"
+            "    {'q': {'_id': 7}, 'u':  { '$set': {'_id': 8} }, 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}, 'multi': false}"
             " ]"
          "}";
          break;
