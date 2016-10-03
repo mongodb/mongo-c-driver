@@ -13,12 +13,12 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[bool
-mongoc_collection_rename_with_opts (mongoc_collection_t    *collection,
-                                    const char             *new_db,
-                                    const char             *new_name,
-                                    bool                    drop_target_before_rename,
-                                    const bson_t           *opts,
-                                    bson_error_t           *error);
+mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
+                                    const char          *new_db,
+                                    const char          *new_name,
+                                    bool                 drop_target_before_rename,
+                                    const bson_t        *opts,
+                                    bson_error_t        *error);
 ]]></code></synopsis>
   </section>
 
@@ -37,7 +37,7 @@ mongoc_collection_rename_with_opts (mongoc_collection_t    *collection,
   <section id="description">
     <title>Description</title>
     <p>This function is a helper to rename an existing collection on a MongoDB server. The name of the collection will also be updated internally so it is safe to continue using this collection after the rename. Additional operations will occur on renamed collection.</p>
-    <note style="tip"><p>The <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note> 
+    <p>If no write concern is provided in <code>command_opts</code>, the collection's write concern is used.</p>
   </section>
 
 

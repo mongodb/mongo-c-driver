@@ -829,7 +829,10 @@ _mongoc_populate_query_error (const bson_t *doc,
 }
 
 
-/* returns true if the reply is a server error */
+/* returns true if the reply is a server error
+ *
+ * note we deliberately do *not* check for writeConcernError
+ */
 static bool
 _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          bool          is_command,

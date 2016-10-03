@@ -46,6 +46,7 @@ BSON_GNUC_WARN_UNUSED_RESULT;
   <section id="description">
     <title>Description</title>
 <p>This function shall execute a command on a collection. This is performed lazily and therefore requires calling <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> on the resulting cursor structure. The cursor should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use.</p>
+    <p>The collection's read preference, read concern, and write concern are not applied to the command.</p>
   </section>
 
   <section id="return">

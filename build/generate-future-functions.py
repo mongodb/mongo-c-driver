@@ -84,6 +84,7 @@ typedef_list = [
     typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
     typedef("mongoc_ss_optype_t", None),
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
+    typedef("mongoc_write_concern_ptr", "mongoc_write_concern_t *"),
 
     # Const libmongoc.
     typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
@@ -114,6 +115,35 @@ future_functions = [
                      param("const_char_ptr", "db_name"),
                      param("const_bson_ptr", "command"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_client_read_command_with_opts",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_client_write_command_with_opts",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_client_read_write_command_with_opts",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 

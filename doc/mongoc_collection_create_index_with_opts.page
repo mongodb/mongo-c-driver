@@ -31,8 +31,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t      *collection,
     <table>
       <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>keys</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
-      <tr><td><p>opt</p></td><td><p>A mongoc_index_opt_t.</p></td></tr> 
-      <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> with extra options, such as writeConcern or collation, or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>index_opts</p></td><td><p>A mongoc_index_opt_t.</p></td></tr>
+      <tr><td><p>command_opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> with extra options, such as writeConcern or collation, or <code>NULL</code>.</p></td></tr>
       <tr><td><p>reply</p></td><td><p>An optional location for a <code xref="bson:bson_t">bson_t</code> which will store the server's reply.</p></td></tr>
       <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
@@ -43,9 +43,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t      *collection,
     <p>This function will request the creation of a new index.</p>
     <p>This function will use the <code>createIndexes</code> command if available on the MongoDB server. If not, it will fallback to inserting into <code>system.indexes</code> for compatibility with MongoDB &lt;= 2.4.</p>
     <p>The server's reply is stored in <code>reply</code>.</p>
+    <p>If no write concern is provided in <code>command_opts</code>, the collection's write concern is used.</p>
     <p>See <code xref="mongoc_index_opt_t">mongoc_index_opt_t</code> for options on creating indexes.</p>
-    <note style="tip"><p>The <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p>
-    </note> 
   </section>
 
   <section id="errors">

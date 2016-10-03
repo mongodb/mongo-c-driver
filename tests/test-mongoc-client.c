@@ -2,6 +2,7 @@
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
 #include <mongoc-write-concern-private.h>
+#include <mongoc-read-concern-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
@@ -37,43 +38,36 @@ test_client_cmd_w_write_concern (void *context)
    bson_error_t error;
    bool wire_version_5;
 
-   opts = bson_new ();
-   good_wc = mongoc_write_concern_new ();
-   bad_wc = mongoc_write_concern_new ();
-   client = test_framework_client_new ();
-   ASSERT (client);
-
-   mongoc_client_set_error_api (client, 2);
-
-   /* determine server config */
    wire_version_5 = test_framework_max_wire_version_at_least (5);
 
-   /* valid writeConcern on all server configs */
-   mongoc_write_concern_set_w (good_wc, 1);
-   bson_reinit (opts);
-   mongoc_write_concern_append (good_wc, opts);
-   ASSERT_OR_PRINT (_mongoc_client_command_with_opts (client,
-                                                      "test",
-                                                      command,
-                                                      opts,
-                                                      MONGOC_QUERY_NONE,
-                                                      NULL,
-                                                      &reply,
-                                                      &error),
-                    error);
+   opts = bson_new ();
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
 
+   good_wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (good_wc, 1);
+
+   bad_wc = mongoc_write_concern_new ();
    /* writeConcern that will not pass mongoc_write_concern_is_valid */
    bad_wc->wtimeout = -10;
+
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_client_write_command_with_opts (client,
+                                                           "test",
+                                                           command,
+                                                           opts,
+                                                           &reply,
+                                                           &error), error);
+
    bson_reinit (opts);
+
    mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!_mongoc_client_command_with_opts (client,
-                                              "test",
-                                              command,
-                                              opts,
-                                              MONGOC_QUERY_NONE,
-                                              NULL,
-                                              &reply,
-                                              &error));
+   ASSERT (!mongoc_client_write_command_with_opts (client,
+                                                   "test",
+                                                   command,
+                                                   opts,
+                                                   &reply,
+                                                   &error));
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -88,14 +82,14 @@ test_client_cmd_w_write_concern (void *context)
          mongoc_write_concern_set_w (bad_wc, 99);
          bson_reinit (opts);
          mongoc_write_concern_append_bad (bad_wc, opts);
-         ASSERT (!_mongoc_client_command_with_opts (client,
-                                                    "test",
-                                                    command,
-                                                    opts,
-                                                    MONGOC_QUERY_NONE,
-                                                    NULL,
-                                                    &reply,
-                                                    &error));
+
+         /* bad write concern in opts */
+         ASSERT (!mongoc_client_write_command_with_opts (client,
+                                                         "test",
+                                                         command,
+                                                         opts,
+                                                         &reply,
+                                                         &error));
          if (test_framework_is_replset ()) { /* replset */
             ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100,
                                    "Write Concern error:");
@@ -501,6 +495,45 @@ test_mongoc_client_command (void)
 
 
 static void
+test_mongoc_client_command_defaults (void)
+{
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_read_concern_t *read_concern;
+   mongoc_cursor_t *cursor;
+
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "majority");
+
+   client = test_framework_client_new ();
+   mongoc_client_set_read_prefs (client, read_prefs);
+   mongoc_client_set_read_concern (client, read_concern);
+
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 0, 0,
+                                   tmp_bson ("{'ping': 1}"), NULL, NULL);
+
+   /* Read and Write Concern spec: "If your driver offers a generic RunCommand
+    * method on your database object, ReadConcern MUST NOT be applied
+    * automatically to any command. A user wishing to use a ReadConcern in a
+    * generic command must supply it manually." Server Selection Spec: "The
+    * generic command method MUST ignore any default read preference from
+    * client, database or collection configuration. The generic command method
+    * SHOULD allow an optional read preference argument."
+    */
+   ASSERT (cursor->read_concern->level == NULL);
+   ASSERT (cursor->read_prefs->mode == MONGOC_READ_PRIMARY);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_mongoc_client_command_secondary (void)
 {
    mongoc_client_t *client;
@@ -708,6 +741,214 @@ test_command_not_found_simple (void)
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
+}
+
+
+static void
+test_command_with_opts_read_prefs (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *read_prefs;
+   bson_t *cmd;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, read_prefs);
+
+   /* read prefs omitted for command that writes */
+   cmd = tmp_bson ("{'create': 'db'}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE, "{'create': 'db'}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* read prefs are included for read command */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
+
+   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the slaveOK
+    * wire protocol flag and MUST also use $readPreference".
+    */
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'count': 'collection'},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_command_with_opts_legacy (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_t *opts;
+   mongoc_read_concern_t *read_concern;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* writeConcern is omitted */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'writeConcern': {'w': 1}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'$exists': false}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* readConcern causes error */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "local");
+   opts = tmp_bson (NULL);
+   mongoc_read_concern_append (read_concern, opts);
+   ASSERT (!mongoc_client_read_command_with_opts (
+      client, "db", cmd, NULL, opts, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "does not support readConcern");
+
+   /* collation causes error */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'collation': {'locale': 'en_US'}}");
+   ASSERT (!mongoc_client_read_command_with_opts (
+      client, "db", cmd, NULL, opts, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "does not support collation");
+
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_command_with_opts_modern (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_t *opts;
+   mongoc_write_concern_t *wc;
+   mongoc_read_concern_t *read_concern;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (5);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* collation allowed */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'collation': {'locale': 'en_US'}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'collation': {'locale': 'en_US'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* writeConcern included */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'writeConcern': {'w': 1}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 1}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* apply client's write concern by default */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_client_set_write_concern (client, wc);
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 1}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* readConcern allowed */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "local");
+   opts = tmp_bson (NULL);
+   mongoc_read_concern_append (read_concern, opts);
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'count': 'collection', 'readConcern': {'level': 'local'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* apply client's readConcern by default */
+   mongoc_client_set_read_concern (client, read_concern);
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'count': 'collection', 'readConcern': {'level': 'local'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -2160,6 +2401,7 @@ test_client_install (TestSuite *suite)
                       test_mongoc_client_authenticate_timeout, NULL, NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
+   TestSuite_AddLive (suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_AddFull (suite, "/Client/command_w_write_concern",
                       test_client_cmd_w_write_concern, NULL, NULL,
@@ -2172,6 +2414,9 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command/read_prefs/pooled", test_command_read_prefs_pooled);
    TestSuite_AddLive (suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_AddLive (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/read_prefs", test_command_with_opts_read_prefs);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);

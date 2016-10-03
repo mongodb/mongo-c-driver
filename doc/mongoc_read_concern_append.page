@@ -4,31 +4,31 @@
       style="function"                     
       xmlns:api="http://projectmallard.org/experimental/api/" 
       xmlns:ui="http://projectmallard.org/experimental/ui/"  
-      id="mongoc_write_concern_append">                     
+      id="mongoc_read_concern_append">                     
   <info>                                                   
-    <link type="guide" xref="mongoc_write_concern_t" group="function"/>
+    <link type="guide" xref="mongoc_read_concern_t" group="function"/>
   </info>                                                             
-  <title>mongoc_write_concern_append()</title>                       
+  <title>mongoc_read_concern_append()</title>                       
                                                                     
   <section id="synopsis">                                          
     <title>Synopsis</title>                                       
     <synopsis><code mime="text/x-csrc"><![CDATA[bool
-mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
-                             bson_t                 *command);    
+mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
+                            bson_t                *opts);
 ]]></code></synopsis>                                            
   </section>
 
   <section id="parameters">
     <title>Parameters</title>                               
     <table>                                                
-      <tr><td><p>write_concern</p></td><td><p>A pointer to a <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
+      <tr><td><p>read_concern</p></td><td><p>A pointer to a <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code>.</p></td></tr>
       <tr><td><p>command</p></td><td><p>A pointer to a <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
     </table>                                              
   </section>                                                           
                                                                       
   <section id="description">                                         
-    <title>Description</title>
-    <p>This function appends a write concern to command options. It is useful for appending a write concern to command options before passing them to <code xref="mongoc_client_write_command_with_opts">mongoc_client_write_command_with_opts</code> or a related function that takes an options document.</p>
+    <title>Description</title>                                      
+    <p>This function appends a read concern to command options. It is useful for appending a read concern to command options before passing them to <code xref="mongoc_client_read_command_with_opts">mongoc_client_read_command_with_opts</code> or a related function that takes an options document.</p>
   </section>                                                  
                                                              
   <section id="return">                                     

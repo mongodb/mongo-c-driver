@@ -17,6 +17,26 @@ New features and bug fixes:
   * Additional features for Application Performance Monitoring:
     * mongoc_topology_description_has_writable_server
     * mongoc_topology_description_has_readable_server
+  * New command functions accept flexible options as a BSON document:
+    * mongoc_client_read_command_with_opts
+    * mongoc_client_write_command_with_opts
+    * mongoc_client_read_write_command_with_opts
+    * mongoc_database_read_command_with_opts
+    * mongoc_database_write_command_with_opts
+    * mongoc_database_read_write_command_with_opts
+    * mongoc_collection_read_command_with_opts
+    * mongoc_collection_write_command_with_opts
+    * mongoc_collection_read_write_command_with_opts
+  * New helper function to include read concern in one of the above function's
+    options parameter: mongoc_read_concern_append.
+  * mongoc_client_command no longer applies the client's read preference and
+    read concern by default. Same change for mongoc_database_command and
+    mongoc_collection_command.
+  * mongoc_collection_count_with_opts now applies the collection's read
+    preference if no read preference is provided
+  * mongoc_collection_create_index and mongoc_collection_drop_index now applies the collection's write concern.
+  * mongoc_collection_create_index_with_opts now applies the collection's
+    write concern if none is specified in "opts"
   * connectTimeoutMS timer now begins after DNS resolution, and resets
     for each interface attempted (e.g., if the driver first tries IPv6,
     then IPv4).

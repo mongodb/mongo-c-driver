@@ -1,4 +1,4 @@
-/* gcc example.c -o example $(pkg-config --cflags --libs libmongoc-1.0) */
+/* gcc example-client.c -o example-client $(pkg-config --cflags --libs libmongoc-1.0) */
 
 /* ./example-client [CONNECTION_STRING [COLLECTION_NAME]] */
 

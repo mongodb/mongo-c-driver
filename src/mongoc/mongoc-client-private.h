@@ -97,6 +97,20 @@ struct _mongoc_client_t
 };
 
 
+/* Defines whether _mongoc_client_command_with_opts() is acting as a read
+ * command helper for a command like "distinct", or a write command helper for
+ * a command like "createRole", or both, like "aggregate" with "$out".
+ */
+typedef enum
+{
+   MONGOC_CMD_READ = 1,
+   MONGOC_CMD_WRITE = 2,
+   MONGOC_CMD_RW = 3,
+} mongoc_command_mode_t;
+
+BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
+
+
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
                              mongoc_topology_t  *topology);
@@ -138,14 +152,17 @@ _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          const char      *db,
                                          const char      *collection);
 bool
-_mongoc_client_command_with_opts (mongoc_client_t            *client,
-                                  const char                 *db_name,
-                                  const bson_t               *command,
-                                  const bson_t               *opts,
-                                  const mongoc_query_flags_t  flags,
-                                  const mongoc_read_prefs_t  *read_prefs,
-                                  bson_t                     *reply,
-                                  bson_error_t               *error);
+_mongoc_client_command_with_opts (mongoc_client_t              *client,
+                                  const char                   *db_name,
+                                  const bson_t                 *command,
+                                  mongoc_command_mode_t         mode,
+                                  const bson_t                 *opts,
+                                  const mongoc_query_flags_t    flags,
+                                  const mongoc_read_prefs_t    *default_prefs,
+                                  mongoc_read_concern_t        *default_rc,
+                                  mongoc_write_concern_t       *default_wc,
+                                  bson_t                       *reply,
+                                  bson_error_t                 *error);
 
 BSON_END_DECLS
 

@@ -38,7 +38,7 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
 
   <section id="description">
     <title>Description</title>
-    <p>This is a simplified version of <code xref="mongoc_collection_command">mongoc_collection_command()</code> that returns the first result document in <code>reply</code>. The parameter <code>reply</code> is initialized even upon failure to simplify memory management.</p>
+    <p>This is a simplified version of <code xref="mongoc_collection_command">mongoc_collection_command()</code> that returns the first result document in <code>reply</code>. The collection's read preference, read concern, and write concern are not applied to the command. The parameter <code>reply</code> is initialized even upon failure to simplify memory management.</p>
     <p>This function tries to unwrap an embedded error in the command when possible. The unwrapped error will be propagated via the <code>error</code> parameter. Additionally, the result document is set in <code>reply</code>.</p>
   </section>
 

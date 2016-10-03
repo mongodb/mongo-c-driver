@@ -13,10 +13,10 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[bool
-mongoc_collection_drop_index_with_opts (mongoc_collection_t    *collection,
-                                        const char             *index_name,
-                                        const bson_t           *opts,
-                                        bson_error_t           *error);
+mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
+                                        const char          *index_name,
+                                        const bson_t        *opts,
+                                        bson_error_t        *error);
 ]]></code></synopsis>
   </section>
 
@@ -33,8 +33,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t    *collection,
   <section id="description">
     <title>Description</title>
     <p>This function requests than an index on <code>collection</code> be dropped. In the event of an error it returns <code>false</code> and <code>error</code> is set.</p>
-    <note style="tip"><p>The <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p>
-    </note>
+    <p>If no write concern is provided in <code>opts</code>, the collection's write concern is used.</p>
   </section>
 
   <section id="errors">

@@ -406,6 +406,20 @@ future_value_get_mongoc_topology_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_write_concern_ptr(future_value_t *future_value, mongoc_write_concern_ptr value)
+{
+  future_value->type = future_value_mongoc_write_concern_ptr_type;
+  future_value->mongoc_write_concern_ptr_value = value;
+}
+
+mongoc_write_concern_ptr
+future_value_get_mongoc_write_concern_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_write_concern_ptr_type);
+  return future_value->mongoc_write_concern_ptr_value;
+}
+
+void
 future_value_set_const_mongoc_find_and_modify_opts_ptr(future_value_t *future_value, const_mongoc_find_and_modify_opts_ptr value)
 {
   future_value->type = future_value_const_mongoc_find_and_modify_opts_ptr_type;

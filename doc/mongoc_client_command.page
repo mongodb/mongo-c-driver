@@ -26,7 +26,7 @@ mongoc_client_command (mongoc_client_t           *client,
                        const bson_t              *fields,
                        const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
-    <p>This function executes a command on the server using the database and command specification provided.</p>
+    <p>This function executes a command on the server using the database and command specification provided. The client's read preference, read concern, and write concern are not applied to the command.</p>
   </section>
 
   <section id="parameters">

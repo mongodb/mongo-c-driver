@@ -45,6 +45,9 @@ const char             *mongoc_read_concern_get_level     (const mongoc_read_con
 BSON_API
 bool                    mongoc_read_concern_set_level     (mongoc_read_concern_t       *read_concern,
                                                            const char                  *level);
+BSON_API
+bool                    mongoc_read_concern_append        (mongoc_read_concern_t       *read_concern,
+                                                           bson_t                      *doc);
 
 
 BSON_END_DECLS

@@ -44,6 +44,7 @@ mongoc_database_command (mongoc_database_t         *database,
 
   <section id="description">
     <p>The <code>mongoc_database_command()</code> function shall execute a command on a database. This is performed lazily after calling <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> on the resulting cursor structure.</p>
+    <p>The database's read preference, read concern, and write concern are not applied to the command.</p>
   </section>
 
   <section id="return">

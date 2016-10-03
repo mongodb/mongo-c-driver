@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_collection_read_write_command_with_opts">
+
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
+  <title>mongoc_collection_read_write_command_with_opts()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_collection_read_write_command_with_opts (mongoc_collection_t       *collection,
+                                                const bson_t              *command,
+                                                const mongoc_read_prefs_t *read_prefs,
+                                                const bson_t              *opts,
+                                                bson_t                    *reply,
+                                                bson_error_t              *error);
+]]></code></synopsis>
+
+    <p>Execute a command on the server, applying logic for commands that both read and write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use <code xref="mongoc_collection_command_simple">mongoc_collection_command_simple</code>.</p>
+    <p>Use this function for commands that both read and write, such as "mapReduce" with an output collection.</p>
+    <p>Read concern is applied from <code>opts</code> or else from <code>collection</code>. (Read concern requires MongoDB 3.2 or later, otherwise an error is returned.) Read preferences are applied from <code>read_prefs</code> or else from <code>collection</code>. Write concern is applied from <code>opts</code>, or else from <code>collection</code>. The write concern is omitted for MongoDB before 3.2.</p>
+    <p><code>reply</code> is always initialized, and must be freed with <code xref="bson:bson_destroy">bson_destroy()</code>.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
+      <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command specification.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing additional options.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>A location for the resulting document.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="errors">
+    <title>Errors</title>
+    <p>Errors are propagated via the <code>error</code> parameter.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p><code>true</code> if successful; otherwise <code>false</code> and <code>error</code> is set.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
+  </section>
+
+  <section id="example">
+    <title>Example</title>
+    <p>See the example code for <code xref="mongoc_client_read_command_with_opts">mongoc_client_read_command_with_opts</code>.</p>
+  </section>
+
+</page>

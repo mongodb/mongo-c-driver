@@ -1,4 +1,4 @@
-/* Don't try to compile this file on it's own. It's meant to be #included
+/* Don't try to compile this file on its own. It's meant to be #included
    by example code */
 
 /* Insert some sample data */

@@ -358,8 +358,8 @@ _mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern) {
  *
  */
 bool
-_mongoc_write_concern_is_default (mongoc_write_concern_t *write_concern) {
-   return write_concern->is_default;
+_mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern) {
+   return !write_concern || write_concern->is_default;
 }
 
 

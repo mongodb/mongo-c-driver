@@ -36,7 +36,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
       <tr><td><p>skip</p></td><td><p>A int64_t, zero to ignore.</p></td></tr>
       <tr><td><p>limit</p></td><td><p>A int64_t, zero to ignore.</p></td></tr>
       <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>, <code>NULL</code> to ignore.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>, otherwise uses the collection's read preference.</p></td></tr>
       <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>

@@ -204,6 +204,53 @@ mongoc_database_command_simple (mongoc_database_t         *database,
                                         command, read_prefs, reply, error);
 }
 
+
+bool
+mongoc_database_read_command_with_opts (mongoc_database_t         *database,
+                                        const bson_t              *command,
+                                        const mongoc_read_prefs_t *read_prefs,
+                                        const bson_t              *opts,
+                                        bson_t                    *reply,
+                                        bson_error_t              *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_READ, opts,
+      MONGOC_QUERY_NONE, COALESCE (read_prefs, database->read_prefs),
+      database->read_concern, database->write_concern, reply, error);
+}
+
+
+bool
+mongoc_database_write_command_with_opts (mongoc_database_t      *database,
+                                         const bson_t           *command,
+                                         const bson_t           *opts,
+                                         bson_t                 *reply,
+                                         bson_error_t           *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_WRITE, opts,
+      MONGOC_QUERY_NONE, database->read_prefs, database->read_concern,
+      database->write_concern, reply, error);
+}
+
+
+bool
+mongoc_database_read_write_command_with_opts (
+   mongoc_database_t         *database,
+   const bson_t              *command,
+   const mongoc_read_prefs_t *read_prefs,
+   const bson_t              *opts,
+   bson_t                    *reply,
+   bson_error_t              *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_RW, opts,
+      MONGOC_QUERY_NONE, COALESCE (read_prefs, database->read_prefs),
+      database->read_concern, database->write_concern,
+      reply, error);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -247,10 +294,13 @@ mongoc_database_drop_with_opts (mongoc_database_t      *database,
    ret = _mongoc_client_command_with_opts (database->client,
                                            database->name,
                                            &cmd,
+                                           MONGOC_CMD_WRITE,
                                            opts,
                                            MONGOC_QUERY_NONE,
-                                           NULL,
-                                           NULL,
+                                           database->read_prefs,
+                                           database->read_concern,
+                                           database->write_concern,
+                                           NULL, /* reply */
                                            error);
    bson_destroy(&cmd);
 
@@ -855,6 +905,8 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
       filter = &legacy_filter;
    }
 
+   /* Enumerate Collections Spec: "run listCollections on the primary node in
+    * replicaset mode" */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
@@ -881,7 +933,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
                                   bson_error_t      *error)
 {
    mongoc_cursor_t *cursor;
-   mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
    bson_t child;
    bson_error_t lerror;
@@ -896,8 +947,8 @@ mongoc_database_find_collections (mongoc_database_t *database,
       bson_append_document_end (&cmd, &child);
    }
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
+   /* Enumerate Collections Spec: "run listCollections on the primary node in
+    * replicaset mode" */
    cursor = _mongoc_cursor_new_with_opts (database->client, database->name,
                                           true /* is_command */, NULL,
                                           NULL, NULL, NULL);
@@ -923,7 +974,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
    }
 
    bson_destroy (&cmd);
-   mongoc_read_prefs_destroy (read_prefs);
 
    return cursor;
 }
@@ -1094,10 +1144,13 @@ mongoc_database_create_collection (mongoc_database_t *database,
    if (_mongoc_client_command_with_opts (database->client,
                                          database->name,
                                          &cmd,
+                                         MONGOC_CMD_WRITE,
                                          opts,
                                          MONGOC_QUERY_NONE,
-                                         NULL,
-                                         NULL,
+                                         database->read_prefs,
+                                         database->read_concern,
+                                         database->write_concern,
+                                         NULL, /* reply */
                                          error)) {
       collection = _mongoc_collection_new (database->client,
                                            database->name,

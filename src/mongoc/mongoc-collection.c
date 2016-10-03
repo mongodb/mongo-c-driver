@@ -36,7 +36,6 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
 
-
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
 
@@ -528,7 +527,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    
    return _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
                               limit, batch_size, false, query, fields,
-                              read_prefs, collection->read_concern);
+                              COALESCE (read_prefs, collection->read_prefs),
+                              collection->read_concern);
 }
 
 
@@ -574,9 +574,9 @@ mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new_with_opts (collection->client, collection->ns,
-                                        false /* is_command */, filter, opts,
-                                        read_prefs, collection->read_concern);
+   return _mongoc_cursor_new_with_opts (
+      collection->client, collection->ns, false /* is_command */, filter, opts,
+      COALESCE (read_prefs, collection->read_prefs), collection->read_concern);
 }
 
 
@@ -640,6 +640,82 @@ mongoc_collection_command (mongoc_collection_t       *collection,
    return mongoc_client_command (collection->client, ns, flags,
                                  skip, limit, batch_size, query, fields, read_prefs);
 }
+
+
+bool
+mongoc_collection_read_command_with_opts (mongoc_collection_t       *collection,
+                                          const bson_t              *command,
+                                          const mongoc_read_prefs_t *read_prefs,
+                                          const bson_t              *opts,
+                                          bson_t                    *reply,
+                                          bson_error_t              *error)
+{
+   BSON_ASSERT (collection);
+
+   return _mongoc_client_command_with_opts (
+      collection->client,
+      collection->db,
+      command,
+      MONGOC_CMD_READ,
+      opts,
+      MONGOC_QUERY_NONE,
+      COALESCE (read_prefs, collection->read_prefs),
+      collection->read_concern,
+      collection->write_concern,
+      reply,
+      error);
+}
+
+
+bool
+mongoc_collection_write_command_with_opts (
+   mongoc_collection_t       *collection,
+   const bson_t              *command,
+   const bson_t              *opts,
+   bson_t                    *reply,
+   bson_error_t              *error)
+{
+   BSON_ASSERT (collection);
+
+   return _mongoc_client_command_with_opts (
+      collection->client,
+      collection->db,
+      command,
+      MONGOC_CMD_WRITE,
+      opts,
+      MONGOC_QUERY_NONE,
+      collection->read_prefs,
+      collection->read_concern,
+      collection->write_concern,
+      reply,
+      error);
+}
+
+
+bool
+mongoc_collection_read_write_command_with_opts (mongoc_collection_t       *collection,
+                                                const bson_t              *command,
+                                                const mongoc_read_prefs_t *read_prefs,
+                                                const bson_t              *opts,
+                                                bson_t                    *reply,
+                                                bson_error_t              *error)
+{
+   BSON_ASSERT (collection);
+
+   return _mongoc_client_command_with_opts (
+      collection->client,
+      collection->db,
+      command,
+      MONGOC_CMD_RW,
+      opts,
+      MONGOC_QUERY_NONE,
+      COALESCE (read_prefs, collection->read_prefs),
+      collection->read_concern,
+      collection->write_concern,
+      reply,
+      error);
+}
+
 
 bool
 mongoc_collection_command_simple (mongoc_collection_t       *collection,
@@ -761,9 +837,12 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
       collection->client,
       collection->db,
       &cmd,
+      MONGOC_CMD_READ,
       opts,
       flags,
       COALESCE (read_prefs, collection->read_prefs),
+      collection->read_concern,
+      collection->write_concern,
       &reply,
       error);
 
@@ -823,10 +902,13 @@ mongoc_collection_drop_with_opts (mongoc_collection_t    *collection,
    ret = _mongoc_client_command_with_opts (collection->client,
                                            collection->db,
                                            &cmd,
+                                           MONGOC_CMD_WRITE,
                                            opts,
                                            MONGOC_QUERY_NONE,
-                                           NULL,
-                                           NULL,
+                                           collection->read_prefs,
+                                           collection->read_concern,
+                                           collection->write_concern,
+                                           NULL, /* reply */
                                            error);
    bson_destroy (&cmd);
 
@@ -880,10 +962,13 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t    *collection,
    ret = _mongoc_client_command_with_opts (collection->client,
                                            collection->db,
                                            &cmd,
+                                           MONGOC_CMD_WRITE,
                                            opts,
                                            MONGOC_QUERY_NONE,
-                                           NULL,
-                                           NULL,
+                                           collection->read_prefs,
+                                           collection->read_concern,
+                                           collection->write_concern,
+                                           NULL, /* reply */
                                            error);
    bson_destroy(&cmd);
 
@@ -1307,6 +1392,7 @@ _mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
    idx_collection = mongoc_database_get_collection (db, "system.indexes");
    BSON_ASSERT (idx_collection);
 
+   /* Index Enumeration Spec: "run listIndexes on the primary node". */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    cursor = mongoc_collection_find (idx_collection, MONGOC_QUERY_NONE, 0, 0, 0,
@@ -1335,6 +1421,9 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
    BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
    bson_append_document_end (&cmd, &child);
 
+   /* Set slaveOk but no read preference: Index Enumeration Spec says
+    * "listIndexes can be run on a secondary" when directly connected but
+    * "run listIndexes on the primary node in replicaSet mode". */
    cursor = _mongoc_collection_cursor_new (collection, MONGOC_QUERY_SLAVE_OK);
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
@@ -2194,10 +2283,13 @@ mongoc_collection_rename_with_opts (
    ret = _mongoc_client_command_with_opts (collection->client,
                                            "admin",
                                            &cmd,
+                                           MONGOC_CMD_WRITE,
                                            opts,
                                            MONGOC_QUERY_NONE,
-                                           NULL,
-                                           NULL,
+                                           collection->read_prefs,
+                                           collection->read_concern,
+                                           collection->write_concern,
+                                           NULL, /* reply */
                                            error);
 
    if (ret) {

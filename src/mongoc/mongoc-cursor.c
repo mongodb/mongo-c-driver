@@ -293,13 +293,13 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
       bson_init (&cursor->opts);
    }
 
-   /* ok if client's read pref / read concern are NULL, copy fns handle it */
-   cursor->read_prefs = mongoc_read_prefs_copy (read_prefs ?
-                                                read_prefs :
-                                                client->read_prefs);
-   cursor->read_concern = mongoc_read_concern_copy (read_concern ?
-                                                    read_concern :
-                                                    client->read_concern);
+   cursor->read_prefs = read_prefs ?
+                        mongoc_read_prefs_copy (read_prefs) :
+                        mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cursor->read_concern = read_concern ?
+                          mongoc_read_concern_copy (read_concern) :
+                          mongoc_read_concern_new ();
 
    if (db_and_collection) {
       _mongoc_set_cursor_ns (cursor, db_and_collection,

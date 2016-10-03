@@ -37,8 +37,7 @@ mongoc_database_command_simple (mongoc_database_t         *database,
   </section>
 
   <section id="description">
-    <p>This is a simplified interface to <code xref="mongoc_database_command">mongoc_database_command()</code> that returns the first result document.</p>
-    <note style="warning"><p>This function will <em>always</em> initialize <code>reply</code>. The caller should always call <code xref="bson:bson_destroy">bson_destroy()</code> with <code>reply</code> as an argument.</p></note>
+    <p>This is a simplified interface to <code xref="mongoc_database_command">mongoc_database_command()</code> that returns the first result document. The database's read preference, read concern, and write concern are not applied to the command.  The parameter <code>reply</code> is initialized even upon failure to simplify memory management.</p>
   </section>
 
   <section id="errors">
