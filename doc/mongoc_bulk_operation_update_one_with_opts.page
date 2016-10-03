@@ -39,7 +39,7 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t       *bulk,
 
   <section id="seealso">
     <title>See Also</title>
-    <p><code xref="mongoc_bulk_operation_update">mongoc_bulk_operation_update_with_opts()</code></p>
+    <p><code xref="mongoc_bulk_operation_update">mongoc_bulk_operation_update_many_with_opts()</code></p>
   </section>
 
   <section id="errors">

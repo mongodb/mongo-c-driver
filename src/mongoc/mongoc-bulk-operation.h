@@ -53,7 +53,7 @@ BSON_API
 void mongoc_bulk_operation_remove                (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector);
 BSON_API
-bool mongoc_bulk_operation_remove_with_opts      (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *opts,
                                                   bson_error_t                  *error); /* OUT */
@@ -82,7 +82,7 @@ void mongoc_bulk_operation_update                (mongoc_bulk_operation_t       
                                                   const bson_t                  *document,
                                                   bool                           upsert);
 BSON_API
-bool mongoc_bulk_operation_update_with_opts      (mongoc_bulk_operation_t       *bulk,
+bool mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t       *bulk,
                                                   const bson_t                  *selector,
                                                   const bson_t                  *document,
                                                   const bson_t                  *opts,

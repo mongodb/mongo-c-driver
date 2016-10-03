@@ -4,19 +4,19 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_bulk_operation_remove_with_opts">
+      id="mongoc_bulk_operation_remove_many_with_opts">
   <info>
     <link type="guide" xref="mongoc_bulk_operation_t" group="function"/>
   </info>
-  <title>mongoc_bulk_operation_remove_with_opts()</title>
+  <title>mongoc_bulk_operation_remove_many_with_opts()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[bool
-mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t       *bulk,
-                                        const bson_t                  *selector,
-                                        const bson_t                  *opts,
-                                        bson_error_t                  *error); /* OUT */
+mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t       *bulk,
+                                             const bson_t                  *selector,
+                                             const bson_t                  *opts,
+                                             bson_error_t                  *error); /* OUT */
 ]]></code></synopsis>
     <p>Delete documents as part of a bulk operation. This only queues the operation. To execute it, call <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
   </section>

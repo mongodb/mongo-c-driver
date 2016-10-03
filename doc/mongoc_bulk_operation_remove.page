@@ -31,7 +31,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,
     <title>See Also</title>
     <p><code xref="mongoc_bulk_operation_remove_one">mongoc_bulk_operation_remove_one()</code></p>
     <p><code xref="mongoc_bulk_operation_remove_one_with_opts">mongoc_bulk_operation_remove_one_with_opts()</code></p>
-    <p><code xref="mongoc_bulk_operation_remove_with_opts">mongoc_bulk_operation_remove_with_opts()</code></p>
+    <p><code xref="mongoc_bulk_operation_remove_many_with_opts">mongoc_bulk_operation_remove_many_with_opts()</code></p>
   </section>
 
   <section id="errors">
