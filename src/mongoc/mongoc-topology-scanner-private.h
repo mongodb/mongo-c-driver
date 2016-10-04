@@ -123,12 +123,12 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
 
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
-                               int32_t timeout_msec,
+                               int64_t timeout_msec,
                                bool obey_cooldown);
 
-bool
+void
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
-                              int32_t                    timeout_msec);
+                              int64_t                    timeout_msec);
 
 void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts);

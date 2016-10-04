@@ -34,7 +34,7 @@ mongoc_async_cmd (mongoc_async_t           *async,
                   const bson_t             *cmd,
                   mongoc_async_cmd_cb_t     cb,
                   void                     *cb_data,
-                  int32_t                   timeout_msec)
+                  int64_t                   timeout_msec)
 {
    return mongoc_async_cmd_new (async, stream, setup, setup_ctx, dbname, cmd, cb,
                                 cb_data, timeout_msec);
@@ -61,9 +61,9 @@ mongoc_async_destroy (mongoc_async_t *async)
    bson_free (async);
 }
 
-bool
+void
 mongoc_async_run (mongoc_async_t *async,
-                  int32_t         timeout_msec)
+                  int64_t         timeout_msec)
 {
    mongoc_async_cmd_t *acmd, *tmp;
    mongoc_stream_poll_t *poller = NULL;
@@ -77,21 +77,15 @@ mongoc_async_run (mongoc_async_t *async,
    BSON_ASSERT (timeout_msec > 0);
 
    now = bson_get_monotonic_time ();
-   expire_at = now + ((int64_t) timeout_msec * 1000);
+   expire_at = now + timeout_msec * 1000;
    poll_size = 0;
 
-   if (!async->cmds) {
-      return 0;
-   }
-
-   for (;;) {
-      if (!async->ncmds) {
-         /* work complete */
-         break;
-      }
-
+   while (async->ncmds) {
+      /* ncmds grows if we discover a replica & start calling ismaster on it */
       if (poll_size < async->ncmds) {
-         poller = (mongoc_stream_poll_t *)bson_realloc (poller, sizeof (*poller) * async->ncmds);
+         poller = (mongoc_stream_poll_t *) bson_realloc (
+            poller, sizeof (*poller) * async->ncmds);
+
          poll_size = async->ncmds;
       }
 
@@ -150,7 +144,4 @@ mongoc_async_run (mongoc_async_t *async,
                 acmd->data, &acmd->error);
       mongoc_async_cmd_destroy (acmd);
    }
-
-   /* cancel the loop in the caller, mongoc_topology_scanner_work() */
-   return false;
 }
