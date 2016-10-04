@@ -1058,22 +1058,22 @@ mongoc_database_create_collection (mongoc_database_t *database,
          }
       }
 
-      if (bson_iter_init_find (&iter, opts, "storage")) {
+      if (bson_iter_init_find (&iter, opts, "storageEngine")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"storage\" parameter must be a document");
+                            "The \"storageEngine\" parameter must be a document");
 
             return NULL;
          }
 
-         if (bson_iter_find (&iter, "wiredtiger")) {
+         if (bson_iter_find (&iter, "wiredTiger")) {
             if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
                bson_set_error (error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredtiger\" option must take a document argument with a \"configString\" field");
+                               "The \"wiredTiger\" option must take a document argument with a \"configString\" field");
                return NULL;
             }
 
@@ -1089,7 +1089,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                bson_set_error (error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredtiger\" option must take a document argument with a \"configString\" field");
+                               "The \"wiredTiger\" option must take a document argument with a \"configString\" field");
                return NULL;
             }
          }

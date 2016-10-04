@@ -489,8 +489,8 @@ test_create_collection (void)
    BSON_APPEND_BOOL (&options, "capped", true);
    BSON_APPEND_BOOL (&options, "autoIndexId", true);
 
-   BSON_APPEND_DOCUMENT_BEGIN(&options, "storage", &storage_opts);
-   BSON_APPEND_DOCUMENT_BEGIN(&storage_opts, "wiredtiger", &wt_opts);
+   BSON_APPEND_DOCUMENT_BEGIN(&options, "storageEngine", &storage_opts);
+   BSON_APPEND_DOCUMENT_BEGIN(&storage_opts, "wiredTiger", &wt_opts);
    BSON_APPEND_UTF8(&wt_opts, "configString", "block_compressor=zlib");
    bson_append_document_end(&storage_opts, &wt_opts);
    bson_append_document_end(&options, &storage_opts);
