@@ -2474,7 +2474,7 @@ again:
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT (error.code == 16436);
+   ASSERT (error.code);
    mongoc_cursor_destroy (cursor);
 
    for (i = 0; i < 2; i++) {
