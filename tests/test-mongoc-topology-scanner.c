@@ -57,7 +57,6 @@ _test_topology_scanner(bool with_ssl)
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
-   bool more_to_do;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = { 0 };
@@ -100,11 +99,7 @@ _test_topology_scanner(bool with_ssl)
 
    for (i = 0; i < 3; i++) {
       mongoc_topology_scanner_start (topology_scanner, TIMEOUT, false);
-
-      more_to_do = mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
-
-      assert(! more_to_do);
-
+      mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
       mongoc_topology_scanner_reset (topology_scanner);
    }
 

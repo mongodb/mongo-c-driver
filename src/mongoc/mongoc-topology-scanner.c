@@ -532,7 +532,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
-                               int32_t timeout_msec,
+                               int64_t timeout_msec,
                                bool obey_cooldown)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
@@ -583,19 +583,11 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
  *--------------------------------------------------------------------------
  */
 
-bool
+void
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
-                              int32_t                    timeout_msec)
+                              int64_t                    timeout_msec)
 {
-   bool r;
-
-   r = mongoc_async_run (ts->async, timeout_msec);
-
-   if (! r) {
-      ts->in_progress = false;
-   }
-
-   return r;
+   mongoc_async_run (ts->async, timeout_msec);
 }
 
 /*

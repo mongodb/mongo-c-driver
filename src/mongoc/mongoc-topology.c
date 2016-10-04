@@ -273,43 +273,6 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    bson_free(topology);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_run_scanner --
- *
- *       Not threadsafe, the expectation is that we're either single
- *       threaded or only the background thread runs scans.
- *
- *       Crank the underlying scanner until we've timed out or finished.
- *
- * Returns:
- *       true if there is more work to do, false otherwise
- *
- *--------------------------------------------------------------------------
- */
-static bool
-_mongoc_topology_run_scanner (mongoc_topology_t *topology,
-                              int64_t        work_msec)
-{
-   int64_t now;
-   int64_t expire_at;
-   bool keep_going = true;
-
-   now = bson_get_monotonic_time ();
-   expire_at = now + (work_msec * 1000);
-
-   /* while there is more work to do and we haven't timed out */
-   while (keep_going && now <= expire_at) {
-      keep_going = mongoc_topology_scanner_work (topology->scanner, (expire_at - now) / 1000);
-
-      if (keep_going) {
-         now = bson_get_monotonic_time ();
-      }
-   }
-
-   return keep_going;
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -327,8 +290,8 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *er
                                   topology->connect_timeout_msec,
                                   true);
 
-   while (_mongoc_topology_run_scanner (topology,
-                                        topology->connect_timeout_msec)) {}
+   mongoc_topology_scanner_work (topology->scanner,
+                                 topology->connect_timeout_msec);
 
    /* Aggregate all scanner errors, if any */
    mongoc_topology_scanner_sum_errors (topology->scanner, error);
@@ -808,9 +771,8 @@ void * _mongoc_topology_run_background (void *data)
 
       /* scanning locks and unlocks the mutex itself until the scan is done */
       mongoc_mutex_unlock (&topology->mutex);
-
-      while (_mongoc_topology_run_scanner (topology,
-                                           topology->connect_timeout_msec)) {}
+      mongoc_topology_scanner_work (topology->scanner,
+                                    topology->connect_timeout_msec);
 
       mongoc_mutex_lock (&topology->mutex);
 
