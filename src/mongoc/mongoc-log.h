@@ -93,6 +93,7 @@ void mongoc_log_set_handler (mongoc_log_func_t  log_func,
  * does not re-enter the logging system or deadlock will occur.
  *
  */
+BSON_API
 void mongoc_log (mongoc_log_level_t  log_level,
                  const char         *log_domain,
                  const char         *format,
@@ -101,6 +102,7 @@ void mongoc_log (mongoc_log_level_t  log_level,
 
 
 
+BSON_API
 void mongoc_log_default_handler (mongoc_log_level_t  log_level,
                                  const char         *log_domain,
                                  const char         *message,
@@ -113,6 +115,7 @@ void mongoc_log_default_handler (mongoc_log_level_t  log_level,
  *
  * Returns: The string representation of log_level
  */
+BSON_API
 const char *
 mongoc_log_level_str (mongoc_log_level_t log_level);
 
@@ -122,6 +125,7 @@ mongoc_log_level_str (mongoc_log_level_t log_level);
  *
  * Enables tracing at runtime (if it has been enabled at compile time).
  */
+BSON_API
 void
 mongoc_log_trace_enable (void);
 
@@ -131,6 +135,7 @@ mongoc_log_trace_enable (void);
  *
  * Disables tracing at runtime (if it has been enabled at compile time).
  */
+BSON_API
 void
 mongoc_log_trace_disable (void);
 

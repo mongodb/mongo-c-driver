@@ -29,8 +29,11 @@
 
 BSON_BEGIN_DECLS
 
+BSON_API
 void mongoc_rand_seed(const void* buf, int num);
+BSON_API
 void mongoc_rand_add(const void* buf, int num, double entropy);
+BSON_API
 int mongoc_rand_status(void);
 
 BSON_END_DECLS
