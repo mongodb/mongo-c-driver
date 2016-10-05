@@ -166,7 +166,7 @@ test_sharded_cluster_SOURCES = \
 test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
 test_sharded_cluster_LDADD = $(TEST_LIBS)
 
-check: test abicheck
+check: test
 
 TEST_ARGS = "--no-fork"
 
@@ -178,15 +178,12 @@ test: $(TEST_PROGS)
 valgrind: $(TEST_PROGS)
 	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc $(TEST_ARGS)
 
-if OS_LINUX
-abicheck:
-	@ $(srcdir)/tests/abicheck.sh "$(srcdir)/src/libmongoc.symbols"
-else
-abicheck:
-endif
+local-check: $(TEST_PROGS)
+	@ export MONGOC_TEST_SKIP_LIVE=on
+	@ for TEST_PROG in $(TEST_PROGS) ; do \
+		./$$TEST_PROG $(TEST_ARGS) -F test-results.json; \
+	done
 
-# TODO: run tests that do not need to talk to a server
-local-check:
 
 DISTCLEANFILES += \
 	test-results.json
@@ -194,7 +191,6 @@ DISTCLEANFILES += \
 .PHONY: valgrind debug
 
 EXTRA_DIST += \
-	tests/abicheck.sh \
 	tests/binary/delete1.dat \
 	tests/binary/empty.dat \
 	tests/binary/get_more1.dat \

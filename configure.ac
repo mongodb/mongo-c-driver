@@ -44,7 +44,6 @@ m4_include([build/autotools/MaintainerFlags.m4])
 m4_include([build/autotools/PlatformFlags.m4])
 m4_include([build/autotools/Optimizations.m4])
 m4_include([build/autotools/Coverage.m4])
-m4_include([build/autotools/LDVersionScript.m4])
 m4_include([build/autotools/WeakSymbols.m4])
 m4_include([build/autotools/AutomaticInitAndCleanup.m4])
 

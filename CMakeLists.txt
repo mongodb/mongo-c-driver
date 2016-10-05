@@ -364,18 +364,8 @@ if (MONGOC_ENABLE_SASL)
    include_directories(${SASL2_INCLUDE_DIR})
 endif()
 
-if (MSVC)
-   # Export the functions listed in a definitions file.
-   if (MONGOC_ENABLE_SSL)
-      set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
-   else ()
-      set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
-   endif ()
-
-   set(MONGOC_SHARED_SOURCES ${SOURCES} ${MONGOC_DEF_FILE})
-else()
-   set(MONGOC_SHARED_SOURCES ${SOURCES})
-endif()
+set(MONGOC_SHARED_SOURCES ${SOURCES})
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 add_library(mongoc_shared SHARED ${MONGOC_SHARED_SOURCES} ${HEADERS})
 add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})

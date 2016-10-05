@@ -42,12 +42,6 @@ libmongoc_1_0_la_LDFLAGS = \
 	-no-undefined \
 	-rpath $(libdir)
 
-if HAVE_LD_VERSION_SCRIPT
-libmongoc_1_0_la_LDFLAGS += -Wl,--version-script=$(srcdir)/build/autotools/versions.ldscript
-else
-libmongoc_1_0_la_LDFLAGS += -export-symbols-regex "^mongoc_"
-endif
-
 MONGOC_LIBADD_SHARED = \
 	$(BSON_LIBS) \
 	$(PTHREAD_LIBS) \
@@ -71,7 +65,5 @@ include src/mongoc/Makefile.am
 include src/tools/Makefile.am
 
 EXTRA_DIST += \
-	src/libmongoc.symbols \
-	build/autotools/versions.ldscript \
 	src/libmongoc-1.0.pc.in \
 	src/libmongoc-ssl-1.0.pc.in
