@@ -48,8 +48,8 @@ AS_IF([test x"$enable_hardening" != x"no"], [
   check_link_flag([-Wl,-z,relro],
    [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,relro"
     check_link_flag([-Wl,-z,now], [HARDEN_LDFLAGS="$HARDEN_LDFLAGS -Wl,-z,now"])])])
-AC_SUBST([HARDEN_CFLAGS])
-AC_SUBST([HARDEN_LDFLAGS])
+dnl AC_SUBST([HARDEN_CFLAGS])
+dnl AC_SUBST([HARDEN_LDFLAGS])
 
 # End of flag tests.
 CC="$saved_CC"
