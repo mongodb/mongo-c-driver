@@ -4,7 +4,7 @@
 saved_CC="$CC"
 saved_CXX="$CXX"
 saved_LD="$LD"
-flag_wrap="$srcdir/scripts/wrap-compiler-for-flag-check"
+flag_wrap="$srcdir/build/autotools/scripts/wrap-compiler-for-flag-check"
 CC="$flag_wrap $CC"
 CXX="$flag_wrap $CXX"
 LD="$flag_wrap $LD"
