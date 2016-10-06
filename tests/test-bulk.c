@@ -352,7 +352,8 @@ test_bulk (void)
    ASSERT_MATCH (&reply, "{'nInserted': 4,"
                          " 'nMatched':  4,"
                          " 'nRemoved':  4,"
-                         " 'nUpserted': 0}");
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 4);
    ASSERT_COUNT (0, collection);
