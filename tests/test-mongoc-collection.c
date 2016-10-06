@@ -4106,6 +4106,27 @@ test_index_with_collation_ok (void)
    test_index_with_collation (WIRE_VERSION_COLLATION);
 }
 
+static void
+test_insert_duplicate_key (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_duplicate_key");
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                             tmp_bson ("{'_id': 1}"), NULL, NULL);
+
+   ASSERT (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                      tmp_bson ("{'_id': 1}"), NULL, &error));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_DUPLICATE_KEY);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -4193,4 +4214,5 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
    TestSuite_Add (suite, "/Collection/find_indexes/error", test_find_indexes_err);
+   TestSuite_AddLive (suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
 }

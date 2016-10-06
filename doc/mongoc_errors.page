@@ -196,6 +196,15 @@
         </td>
       </tr>
       <tr>
+        <td />
+        <td>
+          <p><code>MONGOC_ERROR_DUPLICATE_KEY</code></p>
+        </td>
+        <td>
+          <p>An insert or update failed because because of a duplicate <code>_id</code> or other unique-index violation.</p>
+        </td>
+      </tr>
+      <tr>
         <td>
           <p><em style="strong"><code>MONGOC_ERROR_COMMAND</code></em></p>
         </td>

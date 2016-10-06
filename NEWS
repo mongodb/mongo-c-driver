@@ -20,6 +20,7 @@ New features and bug fixes:
   * connectTimeoutMS timer now begins after DNS resolution, and resets
     for each interface attempted (e.g., if the driver first tries IPv6,
     then IPv4).
+  * New error code MONGOC_ERROR_DUPLICATE_KEY.
   * mongoc_collection_find no longer treats the "filter" key specially in
     queries - querying for a document with a key named "filter" is the same
     now as any other key.

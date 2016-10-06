@@ -59,6 +59,16 @@ _mongoc_write_result_merge_arrays (uint32_t               offset,
                                    bson_t                *dest,
                                    bson_iter_t           *iter);
 
+static bool
+_is_duplicate_key_error (int32_t code)
+{
+   return code == 11000 ||
+          code == 16460 || /* see SERVER-11493 */
+          code == 11001 || /* duplicate key for updates before 2.6 */
+          code == 12582;   /* mongos before 2.6 */
+}
+
+
 void
 _mongoc_write_command_insert_append (mongoc_write_command_t *command,
                                      const bson_t           *document)
@@ -1588,6 +1598,10 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
    if (bson_iter_init_find (&iter, reply, "code") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       code = bson_iter_int32 (&iter);
+   }
+
+   if (_is_duplicate_key_error (code)) {
+      code = MONGOC_ERROR_DUPLICATE_KEY;
    }
 
    if (code || err) {
