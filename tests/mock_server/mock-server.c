@@ -1716,7 +1716,6 @@ mock_server_reply_multi (request_t           *request,
    int i;
 
    BSON_ASSERT (request);
-   BSON_ASSERT (docs);
 
    reply = bson_malloc0 (sizeof (reply_t));
 
