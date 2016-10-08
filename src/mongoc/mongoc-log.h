@@ -76,6 +76,7 @@ typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
  *
  * Sets the function to be called to handle logging.
  */
+BSON_API
 void mongoc_log_set_handler (mongoc_log_func_t  log_func,
                              void              *user_data);
 
