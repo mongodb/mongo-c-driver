@@ -2,9 +2,11 @@
 
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-uri-private.h"
 
 #include "mongoc-tests.h"
 #include "TestSuite.h"
+#include "test-conveniences.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
 #include "mock_server/future.h"
