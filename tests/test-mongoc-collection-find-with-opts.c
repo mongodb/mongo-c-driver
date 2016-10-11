@@ -304,6 +304,21 @@ test_fields (void)
 
 
 static void
+test_slice (void)
+{
+   test_collection_find_with_opts_t test_data = { 0 };
+
+   test_data.opts = "{'projection': {'array': {'$slice': 10}}}";
+   test_data.expected_op_query_projection = "{'array': {'$slice': 10}}";
+   test_data.expected_find_command =
+      "{'find': 'collection', "
+       " 'filter': {},"
+       " 'projection': {'array': {'$slice': 10}}}";
+   _test_collection_find_with_opts (&test_data);
+}
+
+
+static void
 test_int_modifiers (void)
 {
    const char *modifiers[] = {
@@ -731,6 +746,8 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_sort);
    TestSuite_Add (suite, "/Collection/find_with_opts/fields",
                   test_fields);
+   TestSuite_Add (suite, "/Collection/find_with_opts/slice",
+                  test_slice);
    TestSuite_Add (suite, "/Collection/find_with_opts/modifiers/integer",
                   test_int_modifiers);
    TestSuite_Add (suite, "/Collection/find_with_opts/modifiers/index_spec",

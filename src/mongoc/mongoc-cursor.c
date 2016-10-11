@@ -181,13 +181,11 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
 }
 
 
-/* true if there are $ and non-$ keys. precondition: bson must be valid. */
+/* true if there are $-keys. precondition: bson must be valid. */
 static bool
-_mixed_dollar_non_dollar (const bson_t *bson)
+_has_dollar_fields (const bson_t *bson)
 {
    bson_iter_t iter;
-   bool has_dollar = false;
-   bool has_non_dollar = false;
    const char *key;
 
    BSON_ASSERT (bson_iter_init (&iter, bson));
@@ -195,13 +193,39 @@ _mixed_dollar_non_dollar (const bson_t *bson)
       key = bson_iter_key (&iter);
 
       if (key[0] == '$') {
-         has_dollar = true;
-      } else {
-         has_non_dollar = true;
+         return true;
       }
    }
 
-   return has_dollar && has_non_dollar;
+   return false;
+}
+
+
+/* true if there are any non-$ keys. precondition: bson must be valid. */
+static bool
+_has_nondollar_fields (const bson_t *bson)
+{
+   bson_iter_t iter;
+   const char *key;
+
+   BSON_ASSERT (bson_iter_init (&iter, bson));
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+
+      if (key[0] != '$') {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+
+/* true if there are $ and non-$ keys. precondition: bson must be valid. */
+static bool
+_mixed_dollar_non_dollar (const bson_t *bson)
+{
+   return _has_dollar_fields (bson) && _has_nondollar_fields (bson);
 }
 
 
@@ -248,13 +272,19 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
    }
 
    if (opts) {
-      if (!bson_validate (opts,
-                          BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_EMPTY_KEYS,
-                          NULL)) {
+      if (!bson_validate (opts, BSON_VALIDATE_EMPTY_KEYS, NULL)) {
          MARK_FAILED (cursor);
          bson_set_error (&cursor->error, MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Cannot use $-modifiers or empty keys in 'opts'.");
+                         "Cannot use empty keys in 'opts'.");
+         GOTO (finish);
+      }
+
+      if (_has_dollar_fields (opts)) {
+         MARK_FAILED (cursor);
+         bson_set_error (&cursor->error, MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "Cannot use $-modifiers in 'opts'.");
          GOTO (finish);
       }
 
