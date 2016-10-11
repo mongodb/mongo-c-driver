@@ -290,7 +290,6 @@ _mongoc_topology_description_server_is_candidate (
       switch ((int)read_mode) {
       case MONGOC_READ_PRIMARY:
          switch ((int)desc_type) {
-         case MONGOC_SERVER_POSSIBLE_PRIMARY:
          case MONGOC_SERVER_RS_PRIMARY:
             return true;
          default:
@@ -305,7 +304,6 @@ _mongoc_topology_description_server_is_candidate (
          }
       default:
          switch ((int)desc_type) {
-         case MONGOC_SERVER_POSSIBLE_PRIMARY:
          case MONGOC_SERVER_RS_PRIMARY:
          case MONGOC_SERVER_RS_SECONDARY:
             return true;
