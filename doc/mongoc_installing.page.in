@@ -100,7 +100,6 @@ Build configuration:
 Enable debugging (slow)                          : no
 Compile with debug symbols (slow)                : no
 Enable GCC build optimization                    : yes
-Enable automatic binary hardening                : yes
 Code coverage support                            : no
 Cross Compiling                                  : no
 Fast counters                                    : no

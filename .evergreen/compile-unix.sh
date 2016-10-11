@@ -59,7 +59,6 @@ RELEASE_FLAGS="\
    --enable-html-docs=no \
    --enable-extra-align=no \
    --enable-optimizations \
-   --enable-hardening \
    --disable-automatic-init-and-cleanup \
    --with-libbson=bundled \
 "
