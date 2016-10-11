@@ -564,11 +564,11 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 {
    mongoc_stream_t *sock_stream;
 
+   _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
+
    if (node->stream) { return true; }
 
    BSON_ASSERT (!node->retired);
-
-   _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
 
    if (node->ts->initiator) {
       sock_stream = node->ts->initiator (node->ts->uri, &node->host,
