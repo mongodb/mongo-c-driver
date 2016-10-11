@@ -35,6 +35,8 @@ New features and bug fixes:
     exported symbols from the internal private ABI.
   * mongoc no longer crashes when multi roundtrip bulk operation fails.
   * Added support for the new readConcernLevel "linearizable".
+  * New CMake option ENABLE_TRACING allows debug output, which before had only
+    been available with "configure --enable-tracing".
 
 Removed configure flags:
   * --enable-experimental has been removed and all of its features

@@ -14,6 +14,7 @@ option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
+option(ENABLE_TRACING "Turn on verbose debug output" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -165,6 +166,10 @@ set (MONGOC_HAVE_WEAK_SYMBOLS 0)
 set (MONGOC_CC ${CMAKE_C_COMPILER})
 set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
 set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
+
+if (ENABLE_TRACING)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
+endif ()
 
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
