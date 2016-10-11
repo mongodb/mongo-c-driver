@@ -35,8 +35,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
   <section id="description">
     <title>Description</title>
     <p>This function shall insert <code>document</code> into <code>collection</code>.</p>
-    <p>If no <code>_id</code> element is found in <code>document</code>, then a <code xref="bson:bson_oid_t">bson_oid_t</code> will be generated locally and added to the document.</p>
-    <p>You can retrieve a generated <code>_id</code> from <code xref="mongoc_collection_get_last_error">mongoc_collection_get_last_error()</code>.</p>
+    <p>If no <code>_id</code> element is found in <code>document</code>, then a <code xref="bson:bson_oid_t">bson_oid_t</code> will be generated locally and added to the document. If you must know the inserted document's <code>_id</code>, generate it in your code and include it as the first field of <code>document</code>. The <code>_id</code> you generate can be a <code xref="bson:bson_oid_t">bson_oid_t</code> or any other non-array BSON type.</p>
   </section>
 
   <section id="errors">

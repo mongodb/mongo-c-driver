@@ -819,7 +819,6 @@ _test_legacy_bulk_insert (const bson_t **bsons,
    gle = mongoc_collection_get_last_error (collection);
    assert (gle);
 
-   /* TODO: should contain inserted ids, CDRIVER-703 */
    ASSERT_MATCH (gle, gle_json_formatted);
 
    future_destroy (future);

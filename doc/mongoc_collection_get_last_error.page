@@ -26,7 +26,7 @@ mongoc_collection_get_last_error (const mongoc_collection_t *collection);
 
   <section id="description">
     <title>Description</title>
-    <p>The mongoc_collection_get_last_error() function shall return getLastError document, according to write_concern on last executed command for current collection instance.</p>
+    <p>The mongoc_collection_get_last_error() function returns a bulk result. See <link xref="bulk">Bulk Write Operations</link> for examples of bulk results.</p>
     <p>A write_concern must be at least <code>MONGOC_WRITE_CONCERN_W_DEFAULT</code> in last command execution for this to be available.</p>
   </section>
 

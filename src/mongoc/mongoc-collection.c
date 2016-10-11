@@ -2014,8 +2014,7 @@ mongoc_collection_get_name (mongoc_collection_t *collection)
  *
  * mongoc_collection_get_last_error --
  *
- *       Returns getLastError document, according to write_concern on last
- *       executed command for current collection instance.
+ *       Returns a bulk result.
  *
  * Returns:
  *       NULL or a bson_t that should not be modified or freed. This value
