@@ -487,7 +487,6 @@ test_create_collection (void)
    BSON_APPEND_INT32 (&options, "size", 1234);
    BSON_APPEND_INT32 (&options, "max", 4567);
    BSON_APPEND_BOOL (&options, "capped", true);
-   BSON_APPEND_BOOL (&options, "autoIndexId", true);
 
    BSON_APPEND_DOCUMENT_BEGIN(&options, "storageEngine", &storage_opts);
    BSON_APPEND_DOCUMENT_BEGIN(&storage_opts, "wiredTiger", &wt_opts);
@@ -551,7 +550,6 @@ test_get_collection_info (void)
    BSON_APPEND_INT32 (&capped_options, "max", 1024);
 
    autoindexid_name = gen_collection_name ("autoindexid");
-   BSON_APPEND_BOOL (&autoindexid_options, "autoIndexId", false);
 
    noopts_name = gen_collection_name ("noopts");
 

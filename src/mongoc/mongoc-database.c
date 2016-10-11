@@ -1013,15 +1013,6 @@ mongoc_database_create_collection (mongoc_database_t *database,
          capped = bson_iter_bool (&iter);
       }
 
-      if (bson_iter_init_find (&iter, opts, "autoIndexId") &&
-          !BSON_ITER_HOLDS_BOOL (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The argument \"autoIndexId\" must be a boolean.");
-         return NULL;
-      }
-
       if (bson_iter_init_find (&iter, opts, "size")) {
          if (!BSON_ITER_HOLDS_INT32 (&iter) &&
              !BSON_ITER_HOLDS_INT64 (&iter)) {
