@@ -12,6 +12,8 @@ New features and bug fixes:
   * Improved TLS support
     * Fixed LibreSSL (libssl) support
     * Added LibreSSL (libtls) support
+    * Fixed Secure Channel build on VS 2010
+    * OpenSSL now supports SNI (all others already do)
   * Additional features for Application Performance Monitoring:
     * mongoc_topology_description_has_writable_server
     * mongoc_topology_description_has_readable_server
@@ -27,6 +29,17 @@ New features and bug fixes:
     * mongoc_server_description_ismaster
     * mongoc_server_description_round_trip_time
     * mongoc_server_description_type
+  * Exported symbols are no longer declared in seperate export files.
+    This could break ABI with applications using clang, which previously
+    exported symbols from the internal private ABI.
+  * mongoc no longer crashes when multi roundtrip bulk operation fails.
+  * Added support for the new readConcernLevel "linearizable".
+
+Removed configure flags:
+  * --enable-experimental has been removed and all of its features
+    are always available now
+  * --enable-hardening has been removed. The flag never actually enabled
+    any hardening features and has therefore been removed
 
 Thanks to everyone who contributed to the development of this release.
 
