@@ -164,8 +164,8 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 }
 
 
-static const char *
-_get_read_mode_string (mongoc_read_mode_t mode)
+const char *
+_mongoc_read_mode_as_str (mongoc_read_mode_t mode)
 {
    switch (mode) {
    case MONGOC_READ_PRIMARY:
@@ -246,7 +246,7 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
 
       bson_append_document_begin (result->query_with_read_prefs,
                                   "$readPreference", 15, &child);
-      mode_str = _get_read_mode_string (mode);
+      mode_str = _mongoc_read_mode_as_str (mode);
       bson_append_utf8 (&child, "mode", 4, mode_str, -1);
       if (!bson_empty0 (tags)) {
          bson_append_array (&child, "tags", 4, tags);

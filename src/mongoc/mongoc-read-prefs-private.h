@@ -46,6 +46,9 @@ typedef struct _mongoc_apply_read_prefs_result_t {
 
 #define READ_PREFS_RESULT_INIT { NULL, false, MONGOC_QUERY_NONE }
 
+const char *
+_mongoc_read_mode_as_str (mongoc_read_mode_t mode);
+
 void
 apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
                         const mongoc_server_stream_t *server_stream,

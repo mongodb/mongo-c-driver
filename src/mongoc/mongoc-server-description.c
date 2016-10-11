@@ -695,6 +695,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
             heartbeat_frequency_ms * 1000;
 
          if (staleness_usec > max_staleness_ms * 1000) {
+            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }
@@ -721,6 +722,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                         heartbeat_frequency_ms;
 
          if (staleness_ms > max_staleness_ms) {
+            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }
@@ -789,6 +791,10 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
       if (found) {
          for (i = 0; i < description_len; i++) {
             if (! sd_matched[i]) {
+               TRACE ("Rejected [%s] [%s], doesn't match tags",
+                      mongoc_server_description_type (descriptions[i]),
+                      descriptions[i]->host.host_and_port);
+
                descriptions[i] = NULL;
             }
          }
@@ -800,6 +806,10 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
    /* tried each */
    for (i = 0; i < description_len; i++) {
       if (! sd_matched[i]) {
+         TRACE ("Rejected [%s] [%s], reached end of tags array without match",
+                mongoc_server_description_type (descriptions[i]),
+                descriptions[i]->host.host_and_port);
+
          descriptions[i] = NULL;
       }
    }

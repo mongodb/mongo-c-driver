@@ -20,6 +20,7 @@
 #include "mongoc-topology-description-apm-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-read-prefs-private.h"
 
 
 static void
@@ -365,7 +366,13 @@ _mongoc_replica_set_read_suitable_cb (void *item,
 
       /* add to our candidates */
       data->candidates[data->candidates_len++] = server;
+   } else {
+      TRACE ("Rejected [%s] [%s] for mode [%s]",
+             mongoc_server_description_type (server),
+             server->host.host_and_port,
+             _mongoc_read_mode_as_str (data->read_mode));
    }
+
    return true;
 }
 
@@ -529,6 +536,10 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
       server = (mongoc_server_description_t *)mongoc_set_get_item (topology->servers, 0);
       if (_mongoc_topology_description_server_is_candidate (server->type, read_mode, topology->type)) {
          _mongoc_array_append_val (set, server);
+      } else {
+         TRACE ("Rejected [%s] [%s] for read mode [%s] with topology type Single",
+                mongoc_server_description_type (server),
+                server->host.host_and_port, _mongoc_read_mode_as_str (read_mode));
       }
       goto DONE;
    }
@@ -574,6 +585,10 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
             for (i = 0; i < data.candidates_len; i++) {
                if (candidates[i] &&
                    candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+                  TRACE ("Rejected [%s] [%s] for mode [%s] with RS topology",
+                         mongoc_server_description_type (candidates[i]),
+                         candidates[i]->host.host_and_port,
+                         _mongoc_read_mode_as_str (read_mode));
                   candidates[i] = NULL;
                }
             }
@@ -670,7 +685,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
    if (!topology->compatible) {
       /* TODO: check this in mongoc_topology_compatible (), CDRIVER-689 */
-      RETURN(NULL);
+      TRACE ("%s", "Incompatible topology");
+      RETURN (NULL);
    }
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
@@ -679,7 +695,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
       if (sd->has_is_master) {
          RETURN(sd);
       } else {
-         RETURN(NULL);
+         TRACE ("Topology type single, [%s] is down", sd->host.host_and_port);
+         RETURN (NULL);
       }
    }
 
@@ -695,7 +712,13 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
    _mongoc_array_destroy (&suitable_servers);
 
-   RETURN(sd);
+   if (sd) {
+      TRACE ("Topology type [%s], selected [%s] [%s]",
+             mongoc_topology_description_type (topology),
+             mongoc_server_description_type (sd), sd->host.host_and_port);
+   }
+
+   RETURN (sd);
 }
 
 /*
