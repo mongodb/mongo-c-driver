@@ -1,3 +1,14 @@
+mongo-c-driver 1.4.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.4.2. This release fixes bugs in
+"minPoolSize" logic, see CDRIVER-1558 for details.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.4.1
 ====================
 
