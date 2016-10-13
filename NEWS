@@ -38,6 +38,7 @@ New features and bug fixes:
   * New CMake option ENABLE_TRACING allows debug output, which before had only
     been available with "configure --enable-tracing".
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
+  * The random number generator used to select servers is now properly seeded.
 
 Removed configure flags:
   * --enable-experimental has been removed and all of its features

@@ -48,6 +48,7 @@ struct _mongoc_topology_description_t
    char                              *compatibility_error;
    uint32_t                           max_server_id;
    bool                               stale;
+   unsigned int                       rand_seed;
 
    mongoc_apm_callbacks_t             apm_callbacks;
    void                              *apm_context;

@@ -38,6 +38,12 @@
 
 #define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
+#ifdef _WIN32
+# define MONGOC_RAND_R rand_s
+#else
+# define MONGOC_RAND_R rand_r
+#endif
+
 BSON_BEGIN_DECLS
 
 
