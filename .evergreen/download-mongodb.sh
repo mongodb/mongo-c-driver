@@ -131,7 +131,7 @@ get_mongodb_download_url_for ()
              MONGODB_24=""
       ;;
       linux-ubuntu-16.04-aarch64)
-         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-aarch64-enterprise-ubuntu1604-3.3.10.tgz"
+         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-arm64-enterprise-ubuntu1604-latest.tgz"
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
