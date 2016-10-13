@@ -419,7 +419,8 @@ mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file)
 }
 
 
-/** readv against a gridfs file */
+/** readv against a gridfs file
+ *  timeout_msec is unused */
 ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
                           mongoc_iovec_t       *iov,
@@ -437,9 +438,6 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
-   BSON_ASSERT (timeout_msec <= INT_MAX);
-
-   /* TODO: we should probably do something about timeout_msec here */
 
    /* Reading when positioned past the end does nothing */
    if (file->pos >= file->length) {
@@ -484,7 +482,8 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 }
 
 
-/** writev against a gridfs file */
+/** writev against a gridfs file
+ *  timeout_msec is unused */
 ssize_t
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
                            mongoc_iovec_t       *iov,
@@ -501,9 +500,6 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    BSON_ASSERT (file);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
-   BSON_ASSERT (timeout_msec <= INT_MAX);
-
-   /* TODO: we should probably do something about timeout_msec here */
 
    /* Pull in the correct page */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
