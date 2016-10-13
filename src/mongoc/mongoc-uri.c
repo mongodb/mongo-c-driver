@@ -462,7 +462,7 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri,
    return true;
 }
 
-static void
+static bool
 mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
                        const char   *str) /* IN */
 {
@@ -476,22 +476,33 @@ mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
 
 again:
    if ((keyval = scan_to_unichar(str, ',', "", &end_keyval))) {
-      if ((key = scan_to_unichar(keyval, ':', "", &end_key))) {
-         bson_append_utf8(&b, key, -1, end_key + 1, -1);
-         bson_free(key);
+      if (!(key = scan_to_unichar(keyval, ':', "", &end_key))) {
+         bson_free (keyval);
+         goto fail;
       }
+
+      bson_append_utf8(&b, key, -1, end_key + 1, -1);
+      bson_free(key);
       bson_free(keyval);
       str = end_keyval + 1;
       goto again;
-   } else {
-       if ((key = scan_to_unichar(str, ':', "", &end_key))) {
-         bson_append_utf8(&b, key, -1, end_key + 1, -1);
-         bson_free(key);
-      }
+   } else if ((key = scan_to_unichar(str, ':', "", &end_key))) {
+      bson_append_utf8(&b, key, -1, end_key + 1, -1);
+      bson_free(key);
+   } else if (strlen (str)) {
+      /* we're not finished but we couldn't parse the string */
+      goto fail;
    }
 
    mongoc_read_prefs_add_tag(uri->read_prefs, &b);
    bson_destroy(&b);
+
+   return true;
+
+fail:
+   MONGOC_WARNING ("invalid readPreferenceTags: \"%s\"", str);
+   bson_destroy (&b);
+   return false;
 }
 
 
@@ -635,7 +646,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
                         (0 == strcasecmp (value, "t")) ||
                         (0 == strcmp (value, "1")));
    } else if (!strcasecmp(key, "readpreferencetags")) {
-      mongoc_uri_parse_tags(uri, value);
+      if (!mongoc_uri_parse_tags(uri, value)) {
+         goto CLEANUP;
+      }
    } else if (!strcasecmp(key, "authmechanism") ||
               !strcasecmp(key, "authsource")) {
       bson_append_utf8(&uri->credentials, key, -1, value, -1);

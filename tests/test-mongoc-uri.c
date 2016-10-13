@@ -604,6 +604,7 @@ typedef struct
    bool                parses;
    mongoc_read_mode_t  mode;
    bson_t             *tags;
+   const char         *log_msg;
 } read_prefs_test;
 
 
@@ -631,6 +632,8 @@ test_mongoc_uri_read_prefs (void)
       "0", "{", "}"
    );
 
+   const char *conflicts = "Primary read preference mode conflicts with tags";
+
    const read_prefs_test tests [] = {
       { "mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL },
       { "mongodb://localhost/?slaveOk=false", true, MONGOC_READ_PRIMARY, NULL },
@@ -643,13 +646,19 @@ test_mongoc_uri_read_prefs (void)
       /* readPreference should take priority over slaveOk */
       { "mongodb://localhost/?slaveOk=false&readPreference=secondary", true, MONGOC_READ_SECONDARY, NULL },
       /* readPreferenceTags conflict with primary mode */
-      { "mongodb://localhost/?readPreferenceTags=", false },
-      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", false },
-      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", false },
+      { "mongodb://localhost/?readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=", true, MONGOC_READ_SECONDARY_PREFERRED, tags_empty },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=dc:ny", true, MONGOC_READ_SECONDARY_PREFERRED, tags_dcny },
       { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcny_empty },
       { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny,use:ssd&readPreferenceTags=dc:sf&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcnyusessd_dcsf_empty },
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"foo\""},
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo,bar", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"foo,bar\""},
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=1", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"1\""},
       { NULL }
    };
 
@@ -663,9 +672,10 @@ test_mongoc_uri_read_prefs (void)
          ASSERT_NO_CAPTURED_LOGS (t->uri);
       } else {
          assert(!uri);
-         ASSERT_CAPTURED_LOG (
-            t->uri, MONGOC_LOG_LEVEL_WARNING,
-            "Primary read preference mode conflicts with tags");
+         if (t->log_msg) {
+            ASSERT_CAPTURED_LOG (t->uri, MONGOC_LOG_LEVEL_WARNING, t->log_msg);
+         }
+
          continue;
       }
 

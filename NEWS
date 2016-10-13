@@ -35,6 +35,7 @@ New features and bug fixes:
     exported symbols from the internal private ABI.
   * mongoc no longer crashes when multi roundtrip bulk operation fails.
   * Added support for the new readConcernLevel "linearizable".
+  * Clients now check for misformatted "readPreferenceTags" in URI.
   * New CMake option ENABLE_TRACING allows debug output, which before had only
     been available with "configure --enable-tracing".
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
