@@ -219,6 +219,7 @@ EXTRA_DIST += \
 	tests/mongoc-tests.h \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
+	$(wildcard tests/release_files/*.txt) \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
