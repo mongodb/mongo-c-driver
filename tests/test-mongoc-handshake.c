@@ -257,7 +257,9 @@ test_mongoc_handshake_data_append_success (void)
    ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
    val = bson_iter_utf8 (&md_iter, NULL);
    ASSERT (val);
-   ASSERT (strstr (val, platform) != NULL);
+   if (strlen(val) < 250) { /* standard val are < 100, may be truncated on some platform */
+      ASSERT (strstr (val, platform) != NULL);
+   }
 
    mock_server_replies_simple (request,
                                "{'ok': 1, 'ismaster': true}");
