@@ -4,6 +4,7 @@
 #include <mongoc-cursor-private.h>
 #include <mongoc-collection-private.h>
 #include <mongoc-write-concern-private.h>
+#include <mongoc-read-concern-private.h>
 
 #include "TestSuite.h"
 
@@ -78,6 +79,151 @@ test_aggregate_w_write_concern (void *context) {
    bson_free (json);
 }
 
+static void
+test_aggregate_inherit_collection (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   mongoc_collection_t *collection;
+   const bson_t *doc;
+   request_t *request;
+   future_t *future;
+   bson_t *pipeline;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_read_concern_t *rc2;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc2;
+   mongoc_write_concern_t *wc;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+
+   pipeline = BCON_NEW ("pipeline", "[",
+      "{", "$out", BCON_UTF8 ("collection2"), "}",
+   "]");
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_read_concern_append (rc, &opts);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_write_concern_append (wc, &opts);
+
+   /* Uses the opts */
+   cursor = mongoc_collection_aggregate (collection,
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         pipeline,
+                                         &opts,
+                                         NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      " { 'aggregate' : 'collection',"
+      "   'pipeline' : [ { '$out' : 'collection2' } ],"
+      "   'cursor' : {  },"
+      "   'readConcern' : { 'level' : 'majority' },"
+      "   'writeConcern' : { 'w' : 2 } }");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   /* Set collection level defaults */
+   wc2 = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc2, 3);
+   mongoc_collection_set_write_concern (collection, wc2);
+   rc2 = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc2, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_collection_set_read_concern (collection, rc2);
+
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Inherits from collection */
+   cursor = mongoc_collection_aggregate (collection,
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         pipeline,
+                                         NULL,
+                                         NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      " { 'aggregate' : 'collection',"
+      "   'pipeline' : [ { '$out' : 'collection2' } ],"
+      "   'cursor' : {  },"
+      "   'readConcern' : { 'level' : 'local' },"
+      "   'writeConcern' : { 'w' : 3 } }");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Uses the opts, not default collection level */
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_SLAVE_OK, pipeline, &opts, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      " { 'aggregate' : 'collection',"
+      "   'pipeline' : [ { '$out' : 'collection2' } ],"
+      "   'cursor' : {  },"
+      "   'readConcern' : { 'level' : 'majority' },"
+      "   'writeConcern' : { 'w' : 2 } }");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Doesn't inherit write concern when not using $out  */
+   bson_destroy (pipeline);
+   pipeline = BCON_NEW ("pipeline", "[",
+         "{", "$in", BCON_UTF8 ("collection2"), "}",
+   "]");
+
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_SLAVE_OK, pipeline, NULL, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      " { 'aggregate' : 'collection',"
+      "   'pipeline' : [ { '$in' : 'collection2' } ],"
+      "   'cursor' : {  },"
+      "   'readConcern' : { 'level' : 'local' },"
+      "   'writeConcern' : { '$exists' : false } }");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   bson_destroy(pipeline);
+   mongoc_read_concern_destroy (rc);
+   mongoc_read_concern_destroy (rc2);
+   mongoc_write_concern_destroy (wc);
+   mongoc_write_concern_destroy (wc2);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
 
 static void
 test_read_prefs_is_valid (void) {
@@ -4295,6 +4441,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Collection/count/read_concern_live", test_count_read_concern_live, NULL, NULL, mongod_supports_majority_read_concern);
    TestSuite_AddLive (suite, "/Collection/drop", test_drop);
    TestSuite_AddLive (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_Add (suite, "/Collection/aggregate/inherit/collection", test_aggregate_inherit_collection);
    TestSuite_AddLive (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);

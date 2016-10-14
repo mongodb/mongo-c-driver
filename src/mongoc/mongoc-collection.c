@@ -304,11 +304,15 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    mongoc_server_description_t *selected_server = NULL;
+   bool has_batch_size = false;
+   bool has_out_key = false;
+   bson_iter_t kiter;
+   bson_iter_t ar;
    mongoc_cursor_t *cursor;
+   int32_t batch_size = 0;
    bson_iter_t iter;
    bson_t command;
    bson_t child;
-   int32_t batch_size = 0;
    bool use_cursor;
 
    ENTRY;
@@ -360,87 +364,64 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       BSON_APPEND_ARRAY (&command, "pipeline", pipeline);
    }
 
+   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
+       BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
+      while (bson_iter_next (&ar)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&ar) && bson_iter_recurse (&ar, &kiter)) {
+            has_out_key |= bson_iter_find (&kiter, "$out");
+         }
+      }
+   }
+
    /* for newer version, we include a cursor subdocument */
    if (use_cursor) {
       bson_append_document_begin (&command, "cursor", 6, &child);
 
-      if (opts && bson_iter_init (&iter, opts)) {
-         while (bson_iter_next (&iter)) {
-            if (BSON_ITER_IS_KEY (&iter, "batchSize") &&
-                (BSON_ITER_HOLDS_INT32 (&iter) ||
+      if (opts
+            && bson_iter_init_find (&iter, opts, "batchSize")
+            && (BSON_ITER_HOLDS_INT32 (&iter) ||
                  BSON_ITER_HOLDS_INT64 (&iter) ||
                  BSON_ITER_HOLDS_DOUBLE (&iter))) {
                batch_size = (int32_t)bson_iter_as_int64 (&iter);
                BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-            }
-         }
+               has_batch_size = true;
       }
 
       bson_append_document_end (&command, &child);
    }
 
-   if (opts && bson_iter_init (&iter, opts)) {
-      while (bson_iter_next (&iter)) {
-         if (!(BSON_ITER_IS_KEY (&iter, "batchSize") ||
-               BSON_ITER_IS_KEY (&iter, "cursor") ||
-               BSON_ITER_IS_KEY (&iter, "writeConcern"))) {
-            if (!bson_append_iter (&command, bson_iter_key (&iter), -1, &iter)) {
-               bson_set_error (&cursor->error,
-                     MONGOC_ERROR_COMMAND,
-                     MONGOC_ERROR_COMMAND_INVALID_ARG,
-                     "Failed to append \"batchSize\" or \"cursor\" to create command.");
-               GOTO (done);
-            }
-         }
-      }
-   }
+   if (opts) {
+      bool ok = false;
+      bson_t opts_dupe = BSON_INITIALIZER;
 
-   if (collection->read_concern->level != NULL) {
-      const bson_t *read_concern_bson;
-
-      if (selected_server->max_wire_version < WIRE_VERSION_READ_CONCERN) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support readConcern");
-         GOTO (done);
+      if (has_batch_size) {
+         bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
+         bson_iter_init (&iter, &opts_dupe);
+      } else {
+         bson_iter_init (&iter, opts);
       }
 
-      read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
-      BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
-   }
+      ok = _mongoc_client_command_append_iterator_opts_to_command (&iter,
+            selected_server->max_wire_version,
+            &command,
+            &cursor->error);
 
-   if (opts && bson_iter_init_find (&iter, opts, "writeConcern")
-         && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      if (!_mongoc_write_concern_iter_is_valid (&iter)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid writeConcern");
-         GOTO (done);
-      }
+      bson_destroy (&opts_dupe);
 
-      if (selected_server->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
-         cursor->write_concern = _mongoc_write_concern_new_from_iter (&iter);
-      }
-   }
-   if (opts && bson_iter_init_find (&iter, opts, "collation")
-         && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      if (selected_server->max_wire_version < WIRE_VERSION_COLLATION) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The selected server does not support collation");
-         GOTO (done);
-      }
-      if (!bson_append_iter (&command, bson_iter_key (&iter), -1, &iter)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Failed to append \"collation\" to create command.");
+      if (!ok) {
          GOTO (done);
       }
    }
+
+   /* Only inherit WriteConcern when for aggregate with $out */
+   if (!bson_has_field (&command, "writeConcern") && has_out_key) {
+      cursor->write_concern = mongoc_write_concern_copy (mongoc_collection_get_write_concern (collection));
+   }
+
+   if (!bson_has_field (&command, "readConcern")) {
+      cursor->read_concern = mongoc_read_concern_copy (mongoc_collection_get_read_concern (collection));
+   }
+
 
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, &command);

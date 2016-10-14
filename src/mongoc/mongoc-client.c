@@ -1279,6 +1279,54 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    RETURN (ret);
 }
 
+bool
+_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
+                                                        int           max_wire_version,
+                                                        bson_t       *command,
+                                                        bson_error_t *error)
+{
+   ENTRY;
+
+   while (bson_iter_next (iter)) {
+      if (BSON_ITER_IS_KEY (iter, "collation")) {
+         if (max_wire_version < WIRE_VERSION_COLLATION) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The selected server does not support collation");
+            RETURN (false);
+         }
+
+      }
+      else if (BSON_ITER_IS_KEY (iter, "writeConcern")) {
+         if (!_mongoc_write_concern_iter_is_valid (iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid writeConcern");
+            RETURN (false);
+         }
+
+         if (max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
+            continue;
+         }
+
+      }
+      else if (BSON_ITER_IS_KEY (iter, "readConcern")) {
+         if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "The selected server does not support readConcern");
+            RETURN (false);
+         }
+      }
+
+      bson_append_iter (command, bson_iter_key (iter), -1, iter);
+   }
+
+   RETURN (true);
+}
 
 static void
 _ensure_copied (bson_t       **dst,
@@ -1368,46 +1416,14 @@ _mongoc_client_command_with_opts (mongoc_client_t            *client,
       bson_iter_t iter;
 
       if (opts && bson_iter_init (&iter, opts)) {
+         bool ok = false;
          _ensure_copied (&command_with_opts, command);
-         while (bson_iter_next (&iter)) {
-            if (BSON_ITER_IS_KEY (&iter, "collation")) {
-               if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_COMMAND,
-                                  MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                                  "The selected server does not support collation");
-                  GOTO (err);
-               }
-
-            }
-            else if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
-               if (!_mongoc_write_concern_iter_is_valid (&iter)) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_COMMAND,
-                                  MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                  "Invalid writeConcern");
-                  GOTO (err);
-               }
-
-               if (server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-                  continue;
-               }
-
-               opts_has_write_concern = true;
-            }
-            else if (BSON_ITER_IS_KEY (&iter, "readConcern")) {
-               if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
-                  bson_set_error (error,
-                                  MONGOC_ERROR_COMMAND,
-                                  MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                                  "The selected server does not support readConcern");
-                  GOTO (err);
-               }
-
-               opts_has_read_concern = true;
-            }
-
-            bson_append_iter (command_with_opts, bson_iter_key (&iter), -1, &iter);
+         ok = _mongoc_client_command_append_iterator_opts_to_command (&iter,
+               server_stream->sd->max_wire_version,
+               command_with_opts,
+               error);
+         if (!ok) {
+            GOTO (err);
          }
       }
 

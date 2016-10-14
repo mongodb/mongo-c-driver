@@ -38,6 +38,8 @@ struct _mongoc_read_concern_t
 
 bool          _mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
 const bson_t *_mongoc_read_concern_get_bson   (mongoc_read_concern_t       *read_concern);
+bool mongoc_read_concern_append               (mongoc_read_concern_t  *read_concern,
+                                               bson_t                 *command);
 
 BSON_END_DECLS
 

@@ -135,6 +135,10 @@ mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
 {
    BSON_ASSERT (read_concern);
 
+   if (!read_concern->level) {
+      return true;
+   }
+
    if (!bson_append_document (command, "readConcern", 11,
                               _mongoc_read_concern_get_bson (read_concern))) {
       MONGOC_ERROR ("Could not append readConcern to command.");

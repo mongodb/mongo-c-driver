@@ -1240,6 +1240,12 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                                    read_prefs_result.query_with_read_prefs);
    }
 
+   if (cursor->read_concern &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN) {
+      mongoc_read_concern_append (cursor->read_concern,
+                                  read_prefs_result.query_with_read_prefs);
+   }
+
    ret = mongoc_cluster_run_command_monitored (
       cluster,
       server_stream,
