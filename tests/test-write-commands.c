@@ -60,7 +60,8 @@ test_split_insert (void)
                                   collection->collection, NULL, 0, &result);
 
    r = _mongoc_write_result_complete (&result, 2, collection->write_concern,
-                                      &reply, &error);
+                                      (mongoc_error_domain_t) 0, &reply,
+                                      &error);
    ASSERT_OR_PRINT (r, error);
    assert (result.nInserted == 3000);
 
@@ -119,7 +120,7 @@ test_invalid_write_concern (void)
                                   write_concern, 0, &result);
 
    r = _mongoc_write_result_complete (&result, 2, collection->write_concern,
-                                      &reply, &error);
+                                      (mongoc_error_domain_t) 0, &reply, &error);
 
    assert(!r);
    ASSERT_CMPINT(error.domain, ==, MONGOC_ERROR_COMMAND);

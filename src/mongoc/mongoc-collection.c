@@ -1460,6 +1460,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    ret = _mongoc_write_result_complete (&result,
                                         collection->client->error_api_version,
                                         write_concern,
+                                        /* no error domain override */
+                                        (mongoc_error_domain_t) 0,
                                         collection->gle,
                                         error);
 
@@ -1547,6 +1549,8 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    ret = _mongoc_write_result_complete (&result,
                                         collection->client->error_api_version,
                                         write_concern,
+                                        /* no error domain override */
+                                        (mongoc_error_domain_t) 0,
                                         collection->gle,
                                         error);
 
@@ -1648,6 +1652,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    ret = _mongoc_write_result_complete (&result,
                                         collection->client->error_api_version,
                                         write_concern,
+                                        /* no error domain override */
+                                        (mongoc_error_domain_t) 0,
                                         collection->gle,
                                         error);
 
@@ -1789,6 +1795,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    ret = _mongoc_write_result_complete (&result,
                                         collection->client->error_api_version,
                                         write_concern,
+                                        0 /* no error domain override */,
                                         collection->gle,
                                         error);
 

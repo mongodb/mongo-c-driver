@@ -583,6 +583,46 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t        *client,
 }
 
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * too_large_error --
+ *
+ *       Fill a bson_error_t and optional bson_t with error info after
+ *       receiving a document for bulk insert, update, or remove that is
+ *       larger than max_bson_size.
+ *
+ *       "err_doc" should be NULL or an empty initialized bson_t.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       "error" and optionally "err_doc" are filled out.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static void
+too_large_error (bson_error_t *error,
+                 int32_t       idx,
+                 int32_t       len,
+                 int32_t       max_bson_size,
+                 bson_t       *err_doc)
+{
+   bson_set_error (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                   "Document %u is too large for the cluster. "
+                   "Document is %u bytes, max is %d.",
+                   idx, len, max_bson_size);
+
+   if (err_doc) {
+      BSON_APPEND_INT32 (err_doc, "index", idx);
+      BSON_APPEND_UTF8 (err_doc, "err", error->message);
+      BSON_APPEND_INT32 (err_doc, "code", MONGOC_ERROR_BSON_INVALID);
+   }
+}
+
+
 static void
 _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      mongoc_client_t              *client,
@@ -595,6 +635,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      bson_error_t                 *error)
 {
    int64_t started;
+   int32_t max_bson_obj_size;
    const uint8_t *data;
    mongoc_rpc_t rpc;
    uint32_t request_id;
@@ -615,6 +656,8 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
 
    started = bson_get_monotonic_time ();
+
+   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
    r = bson_iter_init (&iter, command->documents);
    if (!r) {
@@ -647,6 +690,11 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
+      if (len > max_bson_obj_size) {
+         too_large_error (error, 0, len, max_bson_obj_size, NULL);
+         result->failed = true;
+         EXIT;
+      }
 
       request_id = ++client->cluster.request_id;
 
@@ -706,49 +754,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    } while (bson_iter_next (&iter));
 
    EXIT;
-}
-
-
-/*
- *-------------------------------------------------------------------------
- *
- * too_large_error --
- *
- *       Fill a bson_error_t and optional bson_t with error info after
- *       receiving a document for bulk insert, update, or remove that is
- *       larger than max_bson_size.
- *
- *       "err_doc" should be NULL or an empty initialized bson_t.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       "error" and optionally "err_doc" are filled out.
- *
- *-------------------------------------------------------------------------
- */
-
-static void
-too_large_error (bson_error_t *error,
-                 int32_t       idx,
-                 int32_t       len,
-                 int32_t       max_bson_size,
-                 bson_t       *err_doc)
-{
-   /* MongoDB 2.6 uses code 2 for "too large". TODO: see CDRIVER-644 */
-   const int code = 2;
-
-   bson_set_error (error, MONGOC_ERROR_BSON, code,
-                   "Document %u is too large for the cluster. "
-                   "Document is %u bytes, max is %d.",
-                   idx, len, max_bson_size);
-
-   if (err_doc) {
-      BSON_APPEND_INT32 (err_doc, "index", idx);
-      BSON_APPEND_UTF8 (err_doc, "err", error->message);
-      BSON_APPEND_INT32 (err_doc, "code", code);
-   }
 }
 
 
@@ -1007,6 +1012,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                      bson_error_t                 *error)
 {
    int64_t started;
+   int32_t max_bson_obj_size;
    mongoc_rpc_t rpc;
    uint32_t request_id = 0;
    bson_iter_t iter, subiter, subsubiter;
@@ -1032,6 +1038,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
 
    started = bson_get_monotonic_time ();
+
+   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
    bson_iter_init (&iter, command->documents);
    while (bson_iter_next (&iter)) {
@@ -1085,11 +1093,23 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
       while (bson_iter_next (&subiter)) {
          if (strcmp (bson_iter_key (&subiter), "u") == 0) {
             bson_iter_document (&subiter, &len, &data);
+            if (len > max_bson_obj_size) {
+               too_large_error (error, 0, len, max_bson_obj_size, NULL);
+               result->failed = true;
+               EXIT;
+            }
+
             rpc.update.update = data;
             bson_init_static (&update, data, len);
             has_update = true;
          } else if (strcmp (bson_iter_key (&subiter), "q") == 0) {
             bson_iter_document (&subiter, &len, &data);
+            if (len > max_bson_obj_size) {
+               too_large_error (error, 0, len, max_bson_obj_size, NULL);
+               result->failed = true;
+               EXIT;
+            }
+
             rpc.update.selector = data;
             bson_init_static (&selector, data, len);
             has_selector = true;
@@ -1533,7 +1553,9 @@ _append_write_err_legacy (mongoc_write_result_t *result,
 
    BSON_ASSERT (code > 0);
 
-   bson_set_error (&result->error, domain, (uint32_t) code, "%s", err);
+   if (!result->error.domain) {
+      bson_set_error (&result->error, domain, (uint32_t) code, "%s", err);
+   }
 
    /* stop processing, if result->ordered */
    result->failed = true;
@@ -1927,11 +1949,12 @@ _set_error_from_response (bson_t *bson_array,
 
 
 bool
-_mongoc_write_result_complete (mongoc_write_result_t        *result,            /* IN */
-                               int32_t                       error_api_version, /* IN */
-                               const mongoc_write_concern_t *wc,                /* IN */
-                               bson_t                       *bson,              /* OUT */
-                               bson_error_t                 *error)             /* OUT */
+_mongoc_write_result_complete (mongoc_write_result_t        *result,              /* IN */
+                               int32_t                       error_api_version,   /* IN */
+                               const mongoc_write_concern_t *wc,                  /* IN */
+                               mongoc_error_domain_t         err_domain_override, /* IN */
+                               bson_t                       *bson,                /* OUT */
+                               bson_error_t                 *error)               /* OUT */
 {
    mongoc_error_domain_t domain;
 
@@ -1939,9 +1962,15 @@ _mongoc_write_result_complete (mongoc_write_result_t        *result,            
 
    BSON_ASSERT (result);
 
-   domain = error_api_version >= MONGOC_ERROR_API_VERSION_2
-            ? MONGOC_ERROR_SERVER
-            : MONGOC_ERROR_COMMAND;
+   if (error_api_version >= MONGOC_ERROR_API_VERSION_2) {
+      domain = MONGOC_ERROR_SERVER;
+   } else if (err_domain_override) {
+      domain = err_domain_override;
+   } else if (result->error.domain) {
+      domain = (mongoc_error_domain_t) result->error.domain;
+   } else {
+      domain = MONGOC_ERROR_COLLECTION;
+   }
 
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);

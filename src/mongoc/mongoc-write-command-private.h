@@ -140,6 +140,7 @@ void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
 bool _mongoc_write_result_complete     (mongoc_write_result_t         *result,
                                         int32_t                        error_api_version,
                                         const mongoc_write_concern_t  *wc,
+                                        mongoc_error_domain_t          err_domain_override,
                                         bson_t                        *reply,
                                         bson_error_t                  *error);
 void _mongoc_write_result_destroy      (mongoc_write_result_t         *result);

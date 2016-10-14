@@ -288,6 +288,41 @@ test_insert (void)
    mongoc_client_destroy(client);
 }
 
+
+static void
+test_insert_oversize (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   bool r;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_oversize");
+
+   /* two huge strings make the doc too large */
+   assert (bson_append_utf8 (&doc, "x", 1,
+                             huge_string (client),
+                             (int) huge_string_length (client)));
+
+   assert (bson_append_utf8 (&doc, "y", 1,
+                             huge_string (client),
+                             (int) huge_string_length (client)));
+
+
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL,
+                                 &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                          "too large");
+
+   bson_destroy (&doc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 /* CDRIVER-759, a 2.4 mongos responds to getLastError after an oversized insert:
  *
  * { err: "assertion src/mongo/s/strategy_shard.cpp:461", n: 0, ok: 1.0 }
@@ -323,7 +358,7 @@ test_legacy_insert_oversize_mongos (void)
    mock_server_replies_simple (request, "{'err': 'oh no!', 'n': 0, 'ok': 1}");
    ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COLLECTION,
                           MONGOC_ERROR_COLLECTION_INSERT_FAILED,
                           "oh no!");
 
@@ -807,14 +842,8 @@ _test_legacy_bulk_insert (const bson_t **bsons,
 
    /* mongoc_collection_insert_bulk returns false, there was an error */
    assert (!future_get_bool (future));
-
-   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-   assert (
-      (error.domain == MONGOC_ERROR_COMMAND) ||
-      (error.domain == MONGOC_ERROR_BSON &&
-       error.code == MONGOC_ERROR_BSON_INVALID));
-
-   ASSERT_STARTSWITH (error.message, err_msg);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                          err_msg);
 
    gle = mongoc_collection_get_last_error (collection);
    assert (gle);
@@ -1201,6 +1230,48 @@ test_update (void)
 
 
 static void
+test_update_oversize (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t huge = BSON_INITIALIZER;
+   bson_t empty = BSON_INITIALIZER;
+   bool r;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_oversize");
+
+   /* first test oversized selector. two huge strings make the doc too large */
+   assert (bson_append_utf8 (&huge, "x", 1,
+                             huge_string (client),
+                             (int) huge_string_length (client)));
+
+   assert (bson_append_utf8 (&huge, "y", 1,
+                             huge_string (client),
+                             (int) huge_string_length (client)));
+
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, &huge, &empty,
+                                 NULL, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                          "too large");
+
+   /* swap docs to test oversized update operator */
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, &empty, &huge,
+                                 NULL, &error);
+   ASSERT (!r);   
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                          "too large");
+
+   bson_destroy (&huge);
+   bson_destroy (&empty);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_remove (void)
 {
    mongoc_collection_t *collection;
@@ -1255,6 +1326,36 @@ test_remove (void)
    mongoc_database_destroy(database);
    bson_context_destroy(context);
    mongoc_client_destroy(client);
+}
+
+
+static void test_remove_oversize (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   bool r;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_remove_oversize");
+
+   /* two huge strings make the doc too large */
+   assert (bson_append_utf8 (&doc, "x", 1, huge_string (client),
+                             (int) huge_string_length (client)));
+
+   assert (bson_append_utf8 (&doc, "y", 1, huge_string (client),
+                             (int) huge_string_length (client)));
+
+   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, &doc, NULL,
+                                 &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID,
+                          "too large");
+
+   bson_destroy (&doc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -4119,7 +4220,7 @@ test_insert_duplicate_key (void)
 
    ASSERT (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
                                       tmp_bson ("{'_id': 1}"), NULL, &error));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COLLECTION);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_DUPLICATE_KEY);
 
    mongoc_collection_destroy (collection);
@@ -4164,7 +4265,8 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
-   TestSuite_Add (suite, "/Collection/insert/oversize", test_legacy_insert_oversize_mongos);
+   TestSuite_AddFull (suite, "/Collection/insert/oversize", test_insert_oversize, NULL, NULL, test_framework_skip_if_slow_or_live);
+   TestSuite_Add (suite, "/Collection/insert/oversize/mongos", test_legacy_insert_oversize_mongos);
    TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_AddLive (suite, "/Collection/save", test_save);
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
@@ -4181,7 +4283,9 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/regex", test_regex);
    TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
+   TestSuite_AddFull (suite, "/Collection/update/oversize", test_update_oversize, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/remove", test_remove);
+   TestSuite_AddFull (suite, "/Collection/remove/oversize", test_remove_oversize, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);

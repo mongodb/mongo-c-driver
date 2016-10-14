@@ -679,6 +679,7 @@ cleanup:
    ret = _mongoc_write_result_complete (&bulk->result,
                                         bulk->client->error_api_version,
                                         bulk->write_concern,
+                                        MONGOC_ERROR_COMMAND /* err domain */,
                                         reply,
                                         error);
    mongoc_server_stream_cleanup (server_stream);

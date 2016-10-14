@@ -161,7 +161,7 @@
           <p><code>MONGOC_ERROR_BSON_INVALID</code></p>
         </td>
         <td>
-          <p>Corrupt server reply, or you called <code xref="mongoc_collection_create_index">mongoc_collection_create_index</code> with invalid keys, or tried to insert or update with an invalid document.</p>
+          <p>You passed an invalid or oversized BSON document as a parameter, or called <code xref="mongoc_collection_create_index">mongoc_collection_create_index</code> with invalid keys, or the server reply was corrupt.</p>
         </td>
       </tr>
       <tr>

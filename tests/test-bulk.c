@@ -12,74 +12,6 @@
 #include "mock_server/mock-rs.h"
 
 
-static char *gHugeString;
-static size_t gHugeStringLength;
-static char *gFourMBString;
-static size_t gFourMB = 1024 * 1024 * 4;
-
-
-static void
-test_bulk_cleanup ()
-{
-   bson_free (gHugeString);
-}
-
-
-static void
-init_huge_string (mongoc_client_t *client)
-{
-   int32_t max_bson_size;
-
-   assert (client);
-
-   if (!gHugeString) {
-      max_bson_size = mongoc_cluster_get_max_bson_obj_size(&client->cluster);
-      assert (max_bson_size > 0);
-      gHugeStringLength = (size_t) max_bson_size - 37;
-      gHugeString = (char *)bson_malloc (gHugeStringLength);
-      assert (gHugeString);
-      memset (gHugeString, 'a', gHugeStringLength - 1);
-      gHugeString[gHugeStringLength - 1] = '\0';
-   }
-}
-
-
-static const char *
-huge_string (mongoc_client_t *client)
-{
-   init_huge_string (client);
-   return gHugeString;
-}
-
-
-static size_t
-huge_string_length (mongoc_client_t *client)
-{
-   init_huge_string (client);
-   return gHugeStringLength;
-}
-
-
-static void
-init_four_mb_string ()
-{
-   if (!gFourMBString) {
-      gFourMBString = (char *)bson_malloc (gFourMB);
-      assert (gFourMBString);
-      memset (gFourMBString, 'a', gFourMB - 1);
-      gFourMBString[gFourMB - 1] = '\0';
-   }
-}
-
-
-static const char *
-four_mb_string ()
-{
-   init_four_mb_string ();
-   return gFourMBString;
-}
-
-
 /*--------------------------------------------------------------------------
  *
  * server_has_write_commands --
@@ -1024,6 +956,7 @@ test_upsert_huge (void *ctx)
 
    client = test_framework_client_new ();
    assert (client);
+   mongoc_client_set_error_api (client, 2);
    has_write_cmds = server_has_write_commands (client);
 
    collection = get_test_collection (client, "test_upsert_huge");
@@ -2224,20 +2157,7 @@ test_large_inserts_ordered (void *ctx)
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-   if (!(
-      (error.domain == MONGOC_ERROR_COMMAND) ||
-      (error.domain == MONGOC_ERROR_BSON &&
-       error.code == MONGOC_ERROR_BSON_INVALID))) {
-      fprintf (stderr, "Expected error domain %d, or domain %d with code %d.\n"
-         "Got domain %d, code %d, message: \"%s\"\n",
-              MONGOC_ERROR_COMMAND, MONGOC_ERROR_BSON,
-               MONGOC_ERROR_BSON_INVALID,
-              error.domain, error.code, error.message);
-      fflush (stderr);
-      abort ();
-   }
-
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_MATCH (&reply, "{'nInserted': 1,"
                          " 'nMatched': 0,"
                          " 'nRemoved': 0,"
@@ -2268,7 +2188,7 @@ test_large_inserts_ordered (void *ctx)
    assert (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
-   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) gFourMB);
+   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), FOUR_MB);
    bson_iter_init_find (&iter, big_doc, "a");
 
    for (i = 1; i <= 6; i++) {
@@ -2327,11 +2247,7 @@ test_large_inserts_unordered (void *ctx)
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-   assert ((error.domain == MONGOC_ERROR_COMMAND) ||
-           (error.domain == MONGOC_ERROR_BSON &&
-            error.code == MONGOC_ERROR_BSON_INVALID));
-
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_MATCH (&reply, "{'nInserted': 2,"
                          " 'nMatched':  0,"
                          " 'nRemoved':  0,"
@@ -2367,7 +2283,7 @@ test_large_inserts_unordered (void *ctx)
    assert (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
-   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) gFourMB);
+   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) FOUR_MB);
    bson_iter_init_find (&iter, big_doc, "a");
 
    for (i = 1; i <= 6; i++) {
@@ -3412,8 +3328,6 @@ test_bulk_install (TestSuite *suite)
    /* (op types) X (err types) X (pooled / single) X (err API versions) */
    static err_test_t err_tests[3 * 2 * 2 * 2];
    err_test_t *err_test = err_tests;
-
-   atexit (test_bulk_cleanup);
 
    for (op_type = (op_type_t) 0; op_type < OP_TYPE_LAST; op_type++) {
       for (err_type = (err_type_t) 0; err_type < ERR_TYPE_LAST; err_type++) {

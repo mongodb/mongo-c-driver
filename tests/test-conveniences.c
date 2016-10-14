@@ -22,6 +22,8 @@
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-cluster-private.h"
+#include "mongoc-client-private.h"
 
 #include "test-conveniences.h"
 #include "TestSuite.h"
@@ -33,6 +35,10 @@
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
+
+static char *gHugeString;
+static size_t gHugeStringLength;
+static char *gFourMBString;
 
 static void test_conveniences_cleanup ();
 
@@ -62,6 +68,8 @@ test_conveniences_cleanup ()
 
       _mongoc_array_destroy (&gTmpBsonArray);
    }
+
+   bson_free (gHugeString);
 }
 
 
@@ -1092,3 +1100,57 @@ mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
    return true;
 }
 
+
+static void
+init_huge_string (mongoc_client_t *client)
+{
+   int32_t max_bson_size;
+
+   assert (client);
+
+   if (!gHugeString) {
+      max_bson_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster);
+      assert (max_bson_size > 0);
+      gHugeStringLength = (size_t) max_bson_size - 37;
+      gHugeString = (char *) bson_malloc (gHugeStringLength);
+      assert (gHugeString);
+      memset (gHugeString, 'a', gHugeStringLength - 1);
+      gHugeString[gHugeStringLength - 1] = '\0';
+   }
+}
+
+
+const char *
+huge_string (mongoc_client_t *client)
+{
+   init_huge_string (client);
+   return gHugeString;
+}
+
+
+size_t
+huge_string_length (mongoc_client_t *client)
+{
+   init_huge_string (client);
+   return gHugeStringLength;
+}
+
+
+static void
+init_four_mb_string ()
+{
+   if (!gFourMBString) {
+      gFourMBString = (char *)bson_malloc (FOUR_MB);
+      assert (gFourMBString);
+      memset (gFourMBString, 'a', FOUR_MB - 1);
+      gFourMBString[FOUR_MB - 1] = '\0';
+   }
+}
+
+
+const char *
+four_mb_string ()
+{
+   init_four_mb_string ();
+   return gFourMBString;
+}

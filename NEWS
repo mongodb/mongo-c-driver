@@ -40,6 +40,11 @@ New features and bug fixes:
     been available with "configure --enable-tracing".
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
   * The random number generator used to select servers is now properly seeded.
+  * mongoc_collection_insert, mongoc_collection_update, mongoc_collection_remove
+    consistently use domain MONGOC_ERROR_BSON, code MONGOC_ERROR_BSON_INVALID
+    if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.
+    mongoc_bulk_operation_execute continues to use MONGOC_ERROR_COMMAND for
+    all errors.
 
 Removed configure flags:
   * --enable-experimental has been removed and all of its features

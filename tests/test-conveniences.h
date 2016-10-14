@@ -86,6 +86,14 @@ bool match_json (const bson_t *doc,
 bool mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
                                       bson_t                 *command);
 
+#define FOUR_MB 1024 * 1024 * 4
+
+const char *huge_string (mongoc_client_t *client);
+
+size_t huge_string_length (mongoc_client_t *client);
+
+const char *four_mb_string ();
+
 #define ASSERT_MATCH(doc, ...) \
    do { \
       assert (match_json (doc, false, \
