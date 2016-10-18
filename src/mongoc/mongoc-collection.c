@@ -2503,14 +2503,15 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
       }
    }
 
-   if (!bson_concat (&command, &opts->extra)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "mongoc_find_and_modify_opts_t.extra is corrupt.");
-      bson_destroy (&command);
-      mongoc_server_stream_cleanup (server_stream);
-      RETURN (false);
+   if (bson_iter_init (&iter, &opts->extra)) {
+      bool ok = _mongoc_client_command_append_iterator_opts_to_command (
+         &iter, server_stream->sd->max_wire_version, &command, error
+      );
+      if (!ok) {
+         bson_destroy (&command);
+         mongoc_server_stream_cleanup (server_stream);
+         RETURN (false);
+      }
    }
 
    ret = mongoc_cluster_run_command_monitored (cluster, server_stream,
