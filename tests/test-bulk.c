@@ -3317,6 +3317,33 @@ test_bulk_collation_w0_wire4 (void) {
    _test_bulk_collation (0, WIRE_VERSION_COLLATION-1, BULK_UPDATE_ONE);
 }
 
+static void
+test_bulk_update_one_error_message (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+
+   client = mongoc_client_new ("mongodb://server");
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_update_many_with_opts (bulk, tmp_bson ("{'_id': 5}"), tmp_bson ("{'set': {'_id': 6}}"), NULL, &error);
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid key 'set': update only works with $ operators");
+
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -3481,4 +3508,5 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire5", test_bulk_collation_multi_w0_wire4);
    TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire5);
    TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire4);
+   TestSuite_Add (suite, "/BulkOperation/update_one/error_message", test_bulk_update_one_error_message);
 }

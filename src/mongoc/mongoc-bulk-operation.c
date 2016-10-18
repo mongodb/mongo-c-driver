@@ -446,8 +446,8 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t       *bulk,
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "%s(): update only works with $ operators.",
-                            BSON_FUNC);
+                            "Invalid key '%s': update only works with $ operators.",
+                            bson_iter_key (&iter));
             RETURN (false);
          }
       }
