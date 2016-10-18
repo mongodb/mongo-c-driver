@@ -283,6 +283,60 @@ test_write_concern_wtimeout_validity (void)
    mongoc_write_concern_destroy(write_concern);
 }
 
+static void
+_test_write_concern_from_iterator (const char *swc, bool ok)
+{
+   bson_t *bson = tmp_bson (swc);
+   const bson_t *bson2;
+   mongoc_write_concern_t *wc;
+   bson_iter_t iter;
+
+   if (test_suite_debug_output ()) {
+      fprintf (stdout, "  - %s\n", swc);
+      fflush (stdout);
+   }
+
+   bson_iter_init_find (&iter, bson, "writeConcern");
+   ASSERT_CMPINT ((int)_mongoc_write_concern_iter_is_valid (&iter), ==, (int)ok);
+
+   wc = _mongoc_write_concern_new_from_iter (&iter);
+   bson2 = _mongoc_write_concern_get_bson (wc);
+   ASSERT (bson_compare (bson, bson2));
+   mongoc_write_concern_destroy (wc);
+}
+
+static void
+test_write_concern_from_iterator (void)
+{
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority'}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority', 'j': true}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag'}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'j': true}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'j': false}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': true}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': false}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': true}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': false}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': true}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': false}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': -3}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag', 'wtimeout': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'wtimeout': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'wtimeout': 42}}", true);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1.0}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': {'some': 'stuff'}}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'w': []}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 'never'}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': 'never'}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'j': 1.0}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': 1.0}}", false);
+   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': true}}", true);
+}
+
 
 void
 test_write_concern_install (TestSuite *suite)
@@ -293,4 +347,5 @@ test_write_concern_install (TestSuite *suite)
    TestSuite_Add (suite, "/WriteConcern/bson_includes_false_fsync_and_journal", test_write_concern_bson_includes_false_fsync_and_journal);
    TestSuite_Add (suite, "/WriteConcern/fsync_and_journal_gle_and_validity", test_write_concern_fsync_and_journal_gle_and_validity);
    TestSuite_Add (suite, "/WriteConcern/wtimeout_validity", test_write_concern_wtimeout_validity);
+   TestSuite_Add (suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
 }

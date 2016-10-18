@@ -624,12 +624,13 @@ _mongoc_write_concern_iter_is_valid (bson_iter_t *iter)
          has_fsync = bson_iter_bool (&inner);
       }
       else if (BSON_ITER_IS_KEY (&inner, "w")) {
-         if (!BSON_ITER_HOLDS_INT32 (&inner)) {
+         if (BSON_ITER_HOLDS_INT32 (&inner)) {
+            if (bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
+                  bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
+               w0 = true;
+            }
+         } else if (!(BSON_ITER_HOLDS_UTF8 (&inner))) {
             return false;
-         }
-         if (bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
-               bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
-            w0 = true;
          }
       }
       else if (BSON_ITER_IS_KEY (&inner, "j")) {
