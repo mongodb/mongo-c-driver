@@ -3323,7 +3323,6 @@ test_bulk_update_one_error_message (void)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
-   bson_t reply;
    bson_error_t error;
 
    client = mongoc_client_new ("mongodb://server");
