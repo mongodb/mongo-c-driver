@@ -4246,7 +4246,7 @@ test_aggregate_with_collation (int wire)
       ASSERT (mongoc_cursor_error (cursor, &error));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                              "The selected server does not support collation");
    }
 
@@ -4327,7 +4327,7 @@ test_index_with_collation (int wire)
       ASSERT (!future_get_bool (future));
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                              "The selected server does not support collation");
    }
 

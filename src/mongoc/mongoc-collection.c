@@ -1294,7 +1294,7 @@ mongoc_collection_create_index_with_opts (
    if (has_collation && server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                       "The selected server does not support collation");
       GOTO (done);
    }
@@ -1317,7 +1317,7 @@ mongoc_collection_create_index_with_opts (
          if (has_collation) {
                bson_set_error (error,
                                MONGOC_ERROR_COMMAND,
-                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                                "The selected server does not support collation");
          }
          ret = _mongoc_collection_create_index_legacy (collection, keys, opt,

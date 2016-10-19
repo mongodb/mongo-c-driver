@@ -1292,7 +1292,7 @@ _mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
          if (max_wire_version < WIRE_VERSION_COLLATION) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                             "The selected server does not support collation");
             RETURN (false);
          }

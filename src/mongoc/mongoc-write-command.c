@@ -1275,7 +1275,7 @@ _mongoc_write_command(mongoc_write_command_t       *command,
        server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                       "Collation is not supported by the selected server");
       EXIT;
    }
