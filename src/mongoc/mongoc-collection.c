@@ -415,10 +415,12 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    /* Only inherit WriteConcern when for aggregate with $out */
    if (!bson_has_field (&command, "writeConcern") && has_out_key) {
+      mongoc_write_concern_destroy (cursor->write_concern);
       cursor->write_concern = mongoc_write_concern_copy (mongoc_collection_get_write_concern (collection));
    }
 
    if (!bson_has_field (&command, "readConcern")) {
+      mongoc_read_concern_destroy (cursor->read_concern);
       cursor->read_concern = mongoc_read_concern_copy (mongoc_collection_get_read_concern (collection));
    }
 
