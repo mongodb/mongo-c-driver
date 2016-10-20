@@ -101,7 +101,7 @@ print_all_documents (mongoc_collection_t *collection)
     <p>The driver automatically converts queries to the new "find" command syntax if needed, so this change is typically invisible to C Driver users. However, an application written exclusively for MongoDB 3.2 and later can choose to use the new syntax directly instead of relying on the driver to convert from the old syntax:</p>
     <code mime="text/x-csrc"><![CDATA[/* MongoDB 3.2+ "find" command syntax */
 query = BCON_NEW ("filter", "{", "foo", BCON_INT32 (1), "}",
-                  "sort": "{", "bar", BCON_INT32 (-1), "}");
+                  "sort", "{", "bar", BCON_INT32 (-1), "}");
 cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 ]]></code>
     <p>The "find" command takes different options from the traditional OP_QUERY message.</p>
