@@ -12,6 +12,7 @@
 #include "test-conveniences.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/mock-rs.h"
 
 
 static void
@@ -2979,6 +2980,141 @@ test_aggregate_modern (void *data)
 }
 
 
+#ifdef TODO_CDRIVER_562
+static void
+test_aggregate_w_server_id (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_AGG_CURSOR,
+                                   true /* has primary */,
+                                   1    /* secondary   */,
+                                   0    /* arbiters    */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* use serverId instead of prefs to select the secondary */
+   opts = tmp_bson ("{'serverId': 2}");
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE,
+                                         tmp_bson (NULL), opts, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_rs_receives_command (rs, "db", MONGOC_QUERY_SLAVE_OK,
+                                       "{'aggregate': 'collection',"
+                                       " 'cursor': {},"
+                                       " 'serverId': {'$exists': false}}");
+
+   ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1,"
+                                    " 'cursor': {"
+                                    "    'ns': 'db.collection',"
+                                    "    'firstBatch': [{}]}}");
+   ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+
+static void
+test_aggregate_w_server_id_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t *opts;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (WIRE_VERSION_AGG_CURSOR);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = tmp_bson ("{'serverId': 1}");
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE,
+                                         tmp_bson (NULL), opts, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* does NOT set slave ok, since this is a sharded topology */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'aggregate': 'collection', 'serverId': {'$exists': false}}");
+
+   mock_server_replies_simple (request, "{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{}]}}");
+
+   ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_aggregate_server_id_option (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *q;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   q = tmp_bson (NULL);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, q, tmp_bson ("{'serverId': 'foo'}"), NULL);
+
+   ASSERT_ERROR_CONTAINS (cursor->error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be an integer");
+
+   mongoc_cursor_destroy (cursor);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, q, tmp_bson ("{'serverId': 0}"), NULL);
+
+   ASSERT_ERROR_CONTAINS (cursor->error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be >= 1");
+
+   mongoc_cursor_destroy (cursor);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, q, tmp_bson ("{'serverId': 1}"),
+      NULL);
+
+   mongoc_cursor_next (cursor, &doc);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+#endif
+
+
 static void
 test_validate (void *ctx)
 {
@@ -4447,6 +4583,11 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire4", test_aggregate_with_collation_fail);
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire5", test_aggregate_with_collation_ok);
+#ifdef TODO_CDRIVER_562
+   TestSuite_AddLive (suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);
+   TestSuite_Add (suite, "/Collection/aggregate_w_server_id/sharded", test_aggregate_w_server_id_sharded);
+   TestSuite_AddFull (suite, "/Collection/aggregate_w_server_id/option", test_aggregate_server_id_option, NULL, NULL, test_framework_skip_if_auth);
+#endif
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
    TestSuite_AddLive (suite, "/Collection/stats", test_stats);

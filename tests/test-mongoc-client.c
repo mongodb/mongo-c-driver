@@ -16,6 +16,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/mock-rs.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -23,6 +24,128 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
+
+
+#ifdef TODO_CDRIVER_562
+static void
+test_client_cmd_w_server_id (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *opts;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
+                                   true /* has primary */,
+                                   1    /* secondary   */,
+                                   0    /* arbiters    */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+
+   /* use serverId instead of prefs to select the secondary */
+   opts = tmp_bson ("{'serverId': 2, 'readConcern': {'level': 'local'}}");
+   future = future_client_read_command_with_opts (client, "db",
+                                                  tmp_bson ("{'ping': 1}"),
+                                                  NULL /* prefs */, opts,
+                                                  &reply, &error);
+
+   /* recognized that wire version is recent enough for readConcern */
+   request = mock_rs_receives_command (
+      rs, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'ping': 1,"
+      " 'readConcern': {'level': 'local'},"
+      " 'serverId': {'$exists': false}}");
+
+   ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+
+static void
+test_client_cmd_w_server_id_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *opts;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   opts = tmp_bson ("{'serverId': 2}");
+   future = future_client_read_command_with_opts (client, "db",
+                                                  tmp_bson ("{'ping': 1}"),
+                                                  NULL /* prefs */, opts,
+                                                  &reply, &error);
+
+   /* does NOT set slave ok, since this is a sharded topology */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'ping': 1, 'serverId': {'$exists': false}}");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_server_id_option (void *ctx)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *cmd;
+   bool r;
+
+   client = test_framework_client_new ();
+   cmd = tmp_bson ("{'ping': 1}");
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 'foo'}"),
+      NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be an integer");
+
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 0}"),
+      NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be >= 1");
+
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 1}"),
+      NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_client_destroy (client);
+}
+#endif
 
 
 static void
@@ -964,14 +1087,14 @@ test_unavailable_seeds (void)
    bson_t query = BSON_INITIALIZER;
    const bson_t *doc;
    bson_error_t error;
-   
+
    int i;
 
    for (i = 0; i < 2; i++) {
       servers[i] = mock_server_down ();  /* hangs up on all requests */
       mock_server_run (servers[i]);
    }
-   
+
    uri_str = uri_strs = bson_malloc0 (7 * sizeof (char *));
    *(uri_str++) = bson_strdup_printf (
       "mongodb://%s",
@@ -1070,7 +1193,7 @@ host_equals (void *item,
 
 
 /* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
-static void 
+static void
 test_seed_list (bool rs,
                 connection_option_t connection_option,
                 bool pooled)
@@ -2403,6 +2526,11 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_AddLive (suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+#ifdef TODO_CDRIVER_562
+   TestSuite_Add (suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
+   TestSuite_Add (suite, "/Client/command_w_server_id/sharded", test_client_cmd_w_server_id_sharded);
+   TestSuite_AddFull (suite, "/Client/command_w_server_id/option", test_server_id_option, NULL, NULL, test_framework_skip_if_auth);
+#endif
    TestSuite_AddFull (suite, "/Client/command_w_write_concern",
                       test_client_cmd_w_write_concern, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_2);

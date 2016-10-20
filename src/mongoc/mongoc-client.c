@@ -1279,8 +1279,9 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    RETURN (ret);
 }
 
+
 bool
-_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
+_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t  *iter,
                                                         int           max_wire_version,
                                                         bson_t       *command,
                                                         bson_error_t *error)
@@ -1320,6 +1321,9 @@ _mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
                             "The selected server does not support readConcern");
             RETURN (false);
          }
+      }
+      else if (BSON_ITER_IS_KEY (iter, "serverId")) {
+         continue;
       }
 
       bson_append_iter (command, bson_iter_key (iter), -1, iter);
@@ -1363,17 +1367,17 @@ _ensure_copied (bson_t       **dst,
  *--------------------------------------------------------------------------
  */
 bool
-_mongoc_client_command_with_opts (mongoc_client_t            *client,
-                                  const char                 *db_name,
-                                  const bson_t               *command,
-                                  mongoc_command_mode_t       mode,
-                                  const bson_t               *opts,
-                                  const mongoc_query_flags_t  flags,
-                                  const mongoc_read_prefs_t  *default_prefs,
-                                  mongoc_read_concern_t      *default_rc,
-                                  mongoc_write_concern_t     *default_wc,
-                                  bson_t                     *reply,
-                                  bson_error_t               *error)
+_mongoc_client_command_with_opts (mongoc_client_t           *client,
+                                  const char                *db_name,
+                                  const bson_t              *command,
+                                  mongoc_command_mode_t      mode,
+                                  const bson_t              *opts,
+                                  mongoc_query_flags_t       flags,
+                                  const mongoc_read_prefs_t *default_prefs,
+                                  mongoc_read_concern_t     *default_rc,
+                                  mongoc_write_concern_t    *default_wc,
+                                  bson_t                    *reply,
+                                  bson_error_t              *error)
 {
    mongoc_server_stream_t *server_stream = NULL;
    bson_t *command_with_opts = NULL;
@@ -1382,6 +1386,7 @@ _mongoc_client_command_with_opts (mongoc_client_t            *client,
    bson_t *reply_ptr;
    bool opts_has_read_concern = false;
    bool opts_has_write_concern = false;
+   uint32_t server_id;
    bool ret = false;
 
    ENTRY;
@@ -1403,14 +1408,24 @@ _mongoc_client_command_with_opts (mongoc_client_t            *client,
    }
 
    cluster = &client->cluster;
+   if (!_mongoc_get_server_id_from_opts (opts, MONGOC_ERROR_COMMAND,
+                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                         &server_id, error)) {
+      GOTO (err);
+   }
 
-   /* Server Selection Spec: "The generic command method has a default read
-    * preference of mode 'primary'. The generic command method MUST ignore any
-    * default read preference from client, database or collection
-    * configuration. The generic command method SHOULD allow an optional read
-    * preference argument."
-    */
-   server_stream = mongoc_cluster_stream_for_reads (cluster, default_prefs, error);
+   if (server_id) {
+      /* "serverId" passed in opts */
+      server_stream = mongoc_cluster_stream_for_server (
+         cluster, server_id, true /* reconnect ok */, error);
+
+      if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
+         flags |= MONGOC_QUERY_SLAVE_OK;
+      }
+   } else {
+      server_stream = mongoc_cluster_stream_for_reads (
+         cluster, default_prefs, error);
+   }
 
    if (server_stream) {
       bson_iter_t iter;

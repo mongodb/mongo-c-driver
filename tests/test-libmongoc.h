@@ -67,6 +67,7 @@ bool test_framework_server_is_secondary (mongoc_client_t *client,
                                          uint32_t server_id);
 bool test_framework_max_wire_version_at_least (int version);
 
+int test_framework_skip_if_auth (void);
 int test_framework_skip_if_no_auth (void);
 int test_framework_skip_if_max_version_version_less_than_2 (void);
 int test_framework_skip_if_max_version_version_less_than_4 (void);

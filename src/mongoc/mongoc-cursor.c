@@ -248,6 +248,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
 {
    mongoc_cursor_t *cursor;
    mongoc_topology_description_type_t td_type;
+   uint32_t server_id;
 
    ENTRY;
 
@@ -288,7 +289,20 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
          GOTO (finish);
       }
 
-      bson_copy_to (opts, &cursor->opts);
+      bson_init (&cursor->opts);
+      bson_copy_to_excluding_noinit (opts, &cursor->opts, "serverId", NULL);
+
+      /* true if there's a valid serverId or no serverId, false on err */
+      if (!_mongoc_get_server_id_from_opts (opts, MONGOC_ERROR_CURSOR,
+                                            MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                                            &server_id, &cursor->error)) {
+         MARK_FAILED (cursor);
+         GOTO (finish);
+      }
+
+      if (server_id) {
+         mongoc_cursor_set_hint (cursor, server_id);
+      }
    } else {
       bson_init (&cursor->opts);
    }

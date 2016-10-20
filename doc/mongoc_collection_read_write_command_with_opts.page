@@ -26,6 +26,7 @@ mongoc_collection_read_write_command_with_opts (mongoc_collection_t       *colle
     <p>Execute a command on the server, applying logic for commands that both read and write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use <code xref="mongoc_collection_command_simple">mongoc_collection_command_simple</code>.</p>
     <p>Use this function for commands that both read and write, such as "mapReduce" with an output collection.</p>
     <p>Read concern is applied from <code>opts</code> or else from <code>collection</code>. (Read concern requires MongoDB 3.2 or later, otherwise an error is returned.) Read preferences are applied from <code>read_prefs</code> or else from <code>collection</code>. Write concern is applied from <code>opts</code>, or else from <code>collection</code>. The write concern is omitted for MongoDB before 3.2.</p>
+    <p>To target a specific server, include an integer "serverId" field in <code>opts</code> with an id obtained first by calling <code xref="mongoc_client_select_server">mongoc_client_select_server</code>, then <code xref="mongoc_server_description_id">mongoc_server_description_id</code> on its return value.</p>
     <p><code>reply</code> is always initialized, and must be freed with <code xref="bson:bson_destroy">bson_destroy()</code>.</p>
   </section>
 

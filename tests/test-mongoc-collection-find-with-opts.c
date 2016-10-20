@@ -7,6 +7,8 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-libmongoc.h"
+#include "mock_server/mock-rs.h"
 
 
 typedef struct
@@ -726,6 +728,236 @@ test_getmore_cmd_await (void)
 }
 
 
+#ifdef TODO_CDRIVER_562
+static void
+test_find_w_server_id (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   rs = mock_rs_with_autoismaster (0    /* wire version */,
+                                   true /* has primary  */,
+                                   1    /* secondary    */,
+                                   0    /* arbiters     */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* use serverId instead of prefs to select the secondary */
+   opts = tmp_bson ("{'serverId': 2}");
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL), opts,
+                                              NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_rs_receives_query (rs, "db.collection", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{}", NULL);
+
+   ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   mock_rs_replies_simple (request, "{}");
+   ASSERT_OR_PRINT (future_get_bool (future), cursor->error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+
+static void
+test_find_cmd_w_server_id (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
+                                   true /* has primary  */,
+                                   1    /* secondary    */,
+                                   0    /* arbiters     */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* use serverId instead of prefs to select the secondary */
+   opts = tmp_bson ("{'serverId': 2, 'readConcern': {'level': 'local'}}");
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL), opts,
+                                              NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* recognized that wire version is recent enough for readConcern */
+   request = mock_rs_receives_command (
+      rs, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'find': 'collection', "
+      " 'filter': {},"
+      " 'readConcern': {'level': 'local'},"
+      " 'serverId': {'$exists': false}}");
+
+   ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1,"
+                                    " 'cursor': {"
+                                    "    'id': 0,"
+                                    "    'ns': 'db.collection',"
+                                    "    'firstBatch': [{}]}}");
+
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+
+static void
+test_find_w_server_id_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = tmp_bson ("{'serverId': 1}");
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL), opts,
+                                              NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* does NOT set slave ok, since this is a sharded topology */
+   request = mock_server_receives_query (server, "db.collection",
+                                         MONGOC_QUERY_NONE, 0, 0, "{}",
+                                         NULL);
+
+   mock_server_replies_simple (request, "{}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_find_cmd_w_server_id_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = tmp_bson ("{'serverId': 1, 'readConcern': {'level': 'local'}}");
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL), opts,
+                                              NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* recognized that wire version is recent enough for readConcern */
+   /* does NOT set slave ok, since this is a sharded topology */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'find': 'collection', "
+      " 'filter': {},"
+      " 'readConcern': {'level': 'local'},"
+      " 'serverId': {'$exists': false}}");
+
+   mock_rs_replies_simple (request, "{'ok': 1,"
+                                    " 'cursor': {"
+                                    "    'id': 0,"
+                                    "    'ns': 'db.collection',"
+                                    "    'firstBatch': [{}]}}");
+
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_server_id_option (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *q;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   q = tmp_bson (NULL);
+   cursor = mongoc_collection_find_with_opts (
+      collection, q, tmp_bson ("{'serverId': 'foo'}"), NULL);
+
+   ASSERT_ERROR_CONTAINS (cursor->error, MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "must be an integer");
+
+   mongoc_cursor_destroy (cursor);
+   cursor = mongoc_collection_find_with_opts (
+      collection, q, tmp_bson ("{'serverId': 0}"), NULL);
+
+   ASSERT_ERROR_CONTAINS (cursor->error, MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "must be >= 1");
+
+   mongoc_cursor_destroy (cursor);
+   cursor = mongoc_collection_find_with_opts (
+      collection, q, tmp_bson ("{'serverId': 1}"),
+      NULL);
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+#endif
+
+
 void
 test_collection_find_with_opts_install (TestSuite *suite)
 {
@@ -778,4 +1010,16 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_exhaust);
    TestSuite_Add (suite, "/Collection/find_with_opts/await/getmore_cmd",
                   test_getmore_cmd_await);
+#ifdef TODO_CDRIVER_562
+   TestSuite_Add (suite, "/Collection/find_with_opts/server_id",
+                  test_find_w_server_id);
+   TestSuite_Add (suite, "/Collection/find_cmd_with_opts/server_id",
+                  test_find_cmd_w_server_id);
+   TestSuite_Add (suite, "/Collection/find_with_opts/server_id/sharded",
+                  test_find_w_server_id_sharded);
+   TestSuite_Add (suite, "/Collection/find_cmd_with_opts/server_id/sharded",
+                  test_find_cmd_w_server_id_sharded);
+   TestSuite_AddLive (suite, "/Collection/find_with_opts/server_id/option",
+                      test_server_id_option);
+#endif
 }

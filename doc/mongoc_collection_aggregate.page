@@ -47,6 +47,7 @@ mongoc_collection_aggregate (
 
     <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
     <note style="info"><p>The <code>pipeline</code> parameter should contain a field named <code>pipeline</code> containing a BSON array of pipeline stages.</p></note>
+    <p>To target a specific server, include an integer "serverId" field in <code>opts</code> with an id obtained first by calling <code xref="mongoc_client_select_server">mongoc_client_select_server</code>, then <code xref="mongoc_server_description_id">mongoc_server_description_id</code> on its return value.</p>
     <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> and the <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
 

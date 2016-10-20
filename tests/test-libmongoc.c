@@ -1445,6 +1445,21 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 }
 
 
+int test_framework_skip_if_auth (void)
+{
+   char *user;
+
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   /* run tests if the MONGOC_TEST_USER env var is not set */
+   user = test_framework_get_admin_user ();
+   bson_free (user);
+   return user ? 0 : 1;
+}
+
+
 int test_framework_skip_if_no_auth (void)
 {
    char *user;

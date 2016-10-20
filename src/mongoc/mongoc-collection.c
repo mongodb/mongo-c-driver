@@ -309,6 +309,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_iter_t kiter;
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
+   uint32_t server_id;
    int32_t batch_size = 0;
    bson_iter_t iter;
    bson_t command;
@@ -332,17 +333,38 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       GOTO (done); 
    }
 
-   selected_server = mongoc_topology_select(collection->client->topology,
-                                            MONGOC_SS_READ,
-                                            read_prefs,
-                                            &cursor->error);
-
-   if (!selected_server) {
+   if (!_mongoc_get_server_id_from_opts (opts, MONGOC_ERROR_COMMAND,
+                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                         &server_id, &cursor->error)) {
       GOTO (done);
    }
 
-   cursor->server_id = selected_server->id;
-   use_cursor = 
+   if (server_id) {
+      /* "serverId" passed in opts */
+      selected_server = mongoc_topology_server_by_id (
+         collection->client->topology,
+         server_id, &cursor->error);
+
+      if (!selected_server) {
+         GOTO (done);
+      }
+
+      /* will set slaveok bit if server is not mongos */
+      mongoc_cursor_set_hint (cursor, server_id);
+   } else {
+      selected_server = mongoc_topology_select(collection->client->topology,
+                                               MONGOC_SS_READ,
+                                               read_prefs,
+                                               &cursor->error);
+      if (!selected_server) {
+         GOTO (done);
+      }
+
+      /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
+      cursor->server_id = selected_server->id;
+   }
+
+   use_cursor =
       selected_server->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
 
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
@@ -401,6 +423,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
          bson_iter_init (&iter, opts);
       }
 
+      /* omits "serverId" */
       ok = _mongoc_client_command_append_iterator_opts_to_command (&iter,
             selected_server->max_wire_version,
             &command,
