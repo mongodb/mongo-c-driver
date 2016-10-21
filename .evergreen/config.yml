@@ -4976,6 +4976,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile .openssl"
     - ".debug-compile .nossl"
+    - "debug-compile-valgrind"
 
 
 - name: clang34ubuntu
