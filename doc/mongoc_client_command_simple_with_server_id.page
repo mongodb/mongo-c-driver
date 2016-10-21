@@ -43,6 +43,7 @@ which will store the server's reply.</p></td></tr>
   <section id="return">
     <title>Returns</title>
     <p>Returns true if successful, otherwise false.</p>
+    <p>This function does not check the server response for a write concern error or write concern timeout.</p>
   </section>
 
 </page>

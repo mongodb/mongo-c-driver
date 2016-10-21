@@ -46,6 +46,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
   <section id="return">
     <title>Returns</title>
     <p>true if the document was successfully inserted, otherwise false and <code>error</code> is set.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
   </section>
 
 </page>

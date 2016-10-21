@@ -43,6 +43,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
   <section id="return">
     <title>Returns</title>
     <p>true if successful, otherwise false and error is set.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
   </section>
 
 </page>

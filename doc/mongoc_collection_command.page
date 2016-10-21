@@ -26,8 +26,8 @@ mongoc_collection_command (mongoc_collection_t       *collection,
                            const mongoc_read_prefs_t *read_prefs)
 BSON_GNUC_WARN_UNUSED_RESULT;
 ]]></code></synopsis>
+    <p>This function creates a cursor which will execute the command when <code xref="mongoc_cursor_next">mongoc_cursor_next</code> is called on it. The collection's read preference, read concern, and write concern are not applied to the command, and <code xref="mongoc_cursor_next">mongoc_cursor_next</code> will not check the server response for a write concern error or write concern timeout.</p>
   </section>
-
 
   <section id="parameters">
     <title>Parameters</title>
@@ -43,17 +43,10 @@ BSON_GNUC_WARN_UNUSED_RESULT;
     </table>
   </section>
 
-  <section id="description">
-    <title>Description</title>
-<p>This function shall execute a command on a collection. This is performed lazily and therefore requires calling <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> on the resulting cursor structure. The cursor should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use.</p>
-    <p>The collection's read preference, read concern, and write concern are not applied to the command.</p>
-  </section>
-
   <section id="return">
     <title>Returns</title>
-    <p>A lazy <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code>.</p>
-    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
+    <p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p>
+    <p>The cursor should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code>.</p>
   </section>
-
 
 </page>

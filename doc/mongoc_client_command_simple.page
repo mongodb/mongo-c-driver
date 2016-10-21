@@ -48,6 +48,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
   <section id="return">
     <title>Returns</title>
     <p><code>true</code> if successful; otherwise <code>false</code> and <code>error</code> is set.</p>
+    <p>This function does not check the server response for a write concern error or write concern timeout.</p>
   </section>
 
 </page>

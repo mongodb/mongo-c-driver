@@ -50,7 +50,7 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
   <section id="return">
     <title>Returns</title>
     <p><code>true</code> if successful, otherwise <code>false</code>.</p>
-    <p>Not all commands have truly succeeded when <code>{ok:1.0}</code> is returned. This could simply mean the RPC successfully was executed.</p>
+    <p>This function does not check the server response for a write concern error or write concern timeout.</p>
   </section>
 
   <section id="example">

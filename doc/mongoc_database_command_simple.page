@@ -48,6 +48,7 @@ mongoc_database_command_simple (mongoc_database_t         *database,
   <section id="return">
     <title>Returns</title>
     <p><code>true</code> on success, <code>false</code> on failure and <code>error</code> is set.</p>
+    <p>This function does not check the server response for a write concern error or write concern timeout.</p>
   </section>
 
 </page>

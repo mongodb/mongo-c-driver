@@ -49,6 +49,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
   <section id="return">
     <title>Returns</title>
     <p>On success, returns the server id used. On failure, returns 0 and sets <code>error</code>.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
     <p>The <code>reply</code> document counts operations and collects error information. See <link xref="bulk">Bulk Write Operations</link> for examples.</p>
     <p>See also <code xref="mongoc_bulk_operation_get_hint">mongoc_bulk_operation_get_hint</code>, which gets the id of the server used even if the operation failed.</p>
   </section>
