@@ -26,6 +26,7 @@ depcomp
 .DS_Store
 echo-server
 example-command-monitoring
+example-command-with-opts
 example-client
 example-scram
 example-gridfs
