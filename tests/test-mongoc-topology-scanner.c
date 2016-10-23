@@ -17,11 +17,11 @@
 #define NSERVERS 10
 
 static void
-test_topology_scanner_helper (uint32_t      id,
-                              const bson_t *bson,
-                              int64_t       rtt_msec,
-                              void         *data,
-                              bson_error_t *error)
+test_topology_scanner_helper (uint32_t            id,
+                              const bson_t       *bson,
+                              int64_t             rtt_msec,
+                              void               *data,
+                              const bson_error_t *error /* IN */)
 {
    bson_iter_t iter;
    int *finished = (int*)data;

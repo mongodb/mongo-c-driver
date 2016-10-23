@@ -88,11 +88,11 @@ mongoc_topology_reconcile (mongoc_topology_t *topology) {
  */
 
 void
-_mongoc_topology_scanner_cb (uint32_t      id,
-                             const bson_t *ismaster_response,
-                             int64_t       rtt_msec,
-                             void         *data,
-                             bson_error_t *error)
+_mongoc_topology_scanner_cb (uint32_t            id,
+                             const bson_t       *ismaster_response,
+                             int64_t             rtt_msec,
+                             void               *data,
+                             const bson_error_t *error /* IN */)
 {
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
@@ -451,6 +451,35 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                         const mongoc_read_prefs_t *read_prefs,
                         bson_error_t              *error)
 {
+   uint32_t server_id = mongoc_topology_select_server_id (topology, optype,
+                                                          read_prefs, error);
+
+   if (server_id) {
+      /* new copy of the server description */
+      return mongoc_topology_server_by_id (topology, server_id, error);
+   } else {
+      return NULL;
+   }
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_select_server_id --
+ *
+ *       Alternative to mongoc_topology_select when you only need the id.
+ *
+ * Returns:
+ *       A server id, or 0 on failure, in which case @error will be set.
+ *
+ *-------------------------------------------------------------------------
+ */
+uint32_t
+mongoc_topology_select_server_id (mongoc_topology_t         *topology,
+                                  mongoc_ss_optype_t         optype,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_error_t              *error)
+{
    static const char *timeout_msg =
       "No suitable servers found: `serverSelectionTimeoutMS` expired";
    int r;
@@ -461,6 +490,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    bool tried_once;
    bson_error_t scanner_error = { 0 };
    int64_t heartbeat_msec;
+   uint32_t server_id;
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -503,7 +533,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   &scanner_error, error);
 
                topology->stale = true;
-               return NULL;
+               return 0;
             }
 
             sleep_usec = scan_ready - loop_end;
@@ -519,7 +549,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (!mongoc_topology_compatible (&topology->description, read_prefs,
                                           error)) {
-            return NULL;
+            return 0;
          }
 
          selected_server = mongoc_topology_description_select (
@@ -529,7 +559,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             local_threshold_ms);
 
          if (selected_server) {
-            return mongoc_server_description_new_copy(selected_server);
+            return selected_server->id;
          }
 
          topology->stale = true;
@@ -540,7 +570,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   "No suitable servers found (`serverSelectionTryOnce` set)",
                   &scanner_error, error);
 
-               return NULL;
+               return 0;
             }
          } else {
             loop_end = bson_get_monotonic_time ();
@@ -550,7 +580,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                _mongoc_server_selection_error (timeout_msg,
                                                &scanner_error, error);
 
-               return NULL;
+               return 0;
             }
          }
       }
@@ -564,7 +594,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
       if (!mongoc_topology_compatible (&topology->description, read_prefs,
                                        error)) {
          mongoc_mutex_unlock (&topology->mutex);
-         return NULL;
+         return 0;
       }
 
       selected_server = mongoc_topology_description_select (
@@ -591,14 +621,14 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             _mongoc_server_selection_error (timeout_msg,
                                             &scanner_error, error);
 
-            return NULL;
+            return 0;
          } else if (r) {
             bson_set_error(error,
                            MONGOC_ERROR_SERVER_SELECTION,
                            MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                            "Unknown error '%d' received while waiting on "
                            "thread condition", r);
-            return NULL;
+            return 0;
          }
 
          loop_start = bson_get_monotonic_time ();
@@ -607,12 +637,12 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             _mongoc_server_selection_error (timeout_msg,
                                             &scanner_error, error);
 
-            return NULL;
+            return 0;
          }
       } else {
-         selected_server = mongoc_server_description_new_copy(selected_server);
+         server_id = selected_server->id;
          mongoc_mutex_unlock (&topology->mutex);
-         return selected_server;
+         return server_id;
       }
    }
 }
@@ -660,6 +690,54 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology,
 }
 
 /*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_host_by_id --
+ *
+ *      Copy the mongoc_host_list_t for @id, if that server is present
+ *      in @description. Otherwise, return NULL and fill out the optional
+ *      @error.
+ *
+ *      NOTE: this method returns a copy of the original mongoc_host_list_t.
+ *      Callers must own and clean up this copy.
+ *
+ *      NOTE: this method locks and unlocks @topology's mutex.
+ *
+ * Returns:
+ *      A mongoc_host_list_t, or NULL.
+ *
+ * Side effects:
+ *      Fills out optional @error if server not found.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+mongoc_host_list_t *
+_mongoc_topology_host_by_id (mongoc_topology_t *topology,
+                             uint32_t id,
+                             bson_error_t *error)
+{
+   mongoc_server_description_t *sd;
+   mongoc_host_list_t *host = NULL;
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   /* not a copy - direct pointer into topology description data */
+   sd = mongoc_topology_description_server_by_id (&topology->description,
+                                                  id,
+                                                  error);
+
+   if (sd) {
+      host = bson_malloc0 (sizeof (mongoc_host_list_t));
+      memcpy (host, &sd->host, sizeof (mongoc_host_list_t));
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return host;
+}
+
+/*
  *--------------------------------------------------------------------------
  *
  * _mongoc_topology_request_scan --
@@ -694,6 +772,8 @@ mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
                                    uint32_t            id,
                                    const bson_error_t *error)
 {
+   BSON_ASSERT (error);
+
    mongoc_mutex_lock (&topology->mutex);
    mongoc_topology_description_invalidate_server (&topology->description,
                                                   id, error);
@@ -737,7 +817,7 @@ mongoc_topology_server_timestamp (mongoc_topology_t *topology,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_get_type --
+ * _mongoc_topology_get_type --
  *
  *      Return the topology's description's type.
  *
@@ -749,7 +829,7 @@ mongoc_topology_server_timestamp (mongoc_topology_t *topology,
  *--------------------------------------------------------------------------
  */
 mongoc_topology_description_type_t
-_mongoc_topology_description_get_type (mongoc_topology_t *topology)
+_mongoc_topology_get_type (mongoc_topology_t *topology)
 {
    mongoc_topology_description_type_t td_type;
 

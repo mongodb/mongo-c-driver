@@ -728,7 +728,6 @@ test_getmore_cmd_await (void)
 }
 
 
-#ifdef TODO_CDRIVER_562
 static void
 test_find_w_server_id (void)
 {
@@ -740,7 +739,6 @@ test_find_w_server_id (void)
    const bson_t *doc;
    future_t *future;
    request_t *request;
-   bson_error_t error;
 
    rs = mock_rs_with_autoismaster (0    /* wire version */,
                                    true /* has primary  */,
@@ -863,11 +861,13 @@ test_find_w_server_id_sharded (void)
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
 
 
+#ifdef TODO_CDRIVER_562
 static void
 test_find_cmd_w_server_id_sharded (void)
 {
@@ -912,10 +912,11 @@ test_find_cmd_w_server_id_sharded (void)
    future_destroy (future);
    request_destroy (request);
    mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
-
+#endif
 
 static void
 test_server_id_option (void)
@@ -955,7 +956,6 @@ test_server_id_option (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
-#endif
 
 static void
 test_find_with_opts_collation_error (void *ctx)
@@ -1040,18 +1040,18 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_exhaust);
    TestSuite_Add (suite, "/Collection/find_with_opts/await/getmore_cmd",
                   test_getmore_cmd_await);
-#ifdef TODO_CDRIVER_562
    TestSuite_Add (suite, "/Collection/find_with_opts/server_id",
                   test_find_w_server_id);
    TestSuite_Add (suite, "/Collection/find_cmd_with_opts/server_id",
                   test_find_cmd_w_server_id);
    TestSuite_Add (suite, "/Collection/find_with_opts/server_id/sharded",
                   test_find_w_server_id_sharded);
+#ifdef TODO_CDRIVER_562
    TestSuite_Add (suite, "/Collection/find_cmd_with_opts/server_id/sharded",
                   test_find_cmd_w_server_id_sharded);
+#endif
    TestSuite_AddLive (suite, "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);
-#endif
    TestSuite_AddFull (suite, "/Collection/find_with_opts/collation/error",
                       test_find_with_opts_collation_error, NULL, NULL,
                       test_framework_skip_if_max_version_version_more_than_4);

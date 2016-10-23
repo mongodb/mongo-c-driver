@@ -332,7 +332,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t             *client,
          GOTO (finish);
       }
 
-      td_type = _mongoc_topology_description_get_type (client->topology);
+      td_type = _mongoc_topology_get_type (client->topology);
 
       if (td_type == MONGOC_TOPOLOGY_SHARDED) {
          bson_set_error (&cursor->error,

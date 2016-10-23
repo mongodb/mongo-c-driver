@@ -114,7 +114,7 @@ void
 mongoc_server_description_handle_ismaster (mongoc_server_description_t   *sd,
                                            const bson_t                  *reply,
                                            int64_t                        rtt_msec,
-                                           bson_error_t                  *error);
+                                           const bson_error_t            *error /* IN */);
 
 void
 mongoc_server_description_filter_stale (mongoc_server_description_t **sds,

@@ -26,7 +26,6 @@
 #define MONGOC_LOG_DOMAIN "client-test"
 
 
-#ifdef TODO_CDRIVER_562
 static void
 test_client_cmd_w_server_id (void)
 {
@@ -87,7 +86,7 @@ test_client_cmd_w_server_id_sharded (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
-   opts = tmp_bson ("{'serverId': 2}");
+   opts = tmp_bson ("{'serverId': 1}");
    future = future_client_read_command_with_opts (client, "db",
                                                   tmp_bson ("{'ping': 1}"),
                                                   NULL /* prefs */, opts,
@@ -145,7 +144,6 @@ test_server_id_option (void *ctx)
 
    mongoc_client_destroy (client);
 }
-#endif
 
 
 static void
@@ -1316,7 +1314,9 @@ test_seed_list (bool rs,
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
-      mongoc_topology_invalidate_server (topology, id, NULL);
+      bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                      "err");
+      mongoc_topology_invalidate_server (topology, id, &error);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
@@ -2541,11 +2541,9 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_AddLive (suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
-#ifdef TODO_CDRIVER_562
    TestSuite_Add (suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
    TestSuite_Add (suite, "/Client/command_w_server_id/sharded", test_client_cmd_w_server_id_sharded);
    TestSuite_AddFull (suite, "/Client/command_w_server_id/option", test_server_id_option, NULL, NULL, test_framework_skip_if_auth);
-#endif
    TestSuite_AddFull (suite, "/Client/command_w_write_concern",
                       test_client_cmd_w_write_concern, NULL, NULL,
                       test_framework_skip_if_max_version_version_less_than_2);

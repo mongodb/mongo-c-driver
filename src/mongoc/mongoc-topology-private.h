@@ -86,10 +86,21 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                         const mongoc_read_prefs_t *read_prefs,
                         bson_error_t              *error);
 
+uint32_t
+mongoc_topology_select_server_id (mongoc_topology_t         *topology,
+                                  mongoc_ss_optype_t         optype,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_error_t              *error);
+
 mongoc_server_description_t *
 mongoc_topology_server_by_id (mongoc_topology_t *topology,
                               uint32_t           id,
                               bson_error_t      *error);
+
+mongoc_host_list_t *
+_mongoc_topology_host_by_id (mongoc_topology_t *topology,
+                             uint32_t id,
+                             bson_error_t *error);
 
 void
 mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
@@ -101,7 +112,7 @@ mongoc_topology_server_timestamp (mongoc_topology_t *topology,
                                   uint32_t           id);
 
 mongoc_topology_description_type_t
-_mongoc_topology_description_get_type (mongoc_topology_t *topology);
+_mongoc_topology_get_type (mongoc_topology_t *topology);
 
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology);

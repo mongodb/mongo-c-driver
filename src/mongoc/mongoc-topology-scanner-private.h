@@ -35,11 +35,11 @@
 
 BSON_BEGIN_DECLS
 
-typedef void (*mongoc_topology_scanner_cb_t)(uint32_t      id,
-                                             const bson_t *bson,
-                                             int64_t       rtt,
-                                             void         *data,
-                                             bson_error_t *error);
+typedef void (*mongoc_topology_scanner_cb_t)(uint32_t            id,
+                                             const bson_t       *bson,
+                                             int64_t             rtt,
+                                             void               *data,
+                                             const bson_error_t *error /* IN */);
 
 struct mongoc_topology_scanner;
 

@@ -303,7 +303,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const bson_t              *opts,       /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_server_description_t *selected_server = NULL;
+   mongoc_server_stream_t *server_stream = NULL;
    bool has_batch_size = false;
    bool has_out_key = false;
    bson_iter_t kiter;
@@ -340,32 +340,33 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    }
 
    if (server_id) {
-      /* "serverId" passed in opts */
-      selected_server = mongoc_topology_server_by_id (
-         collection->client->topology,
-         server_id, &cursor->error);
-
-      if (!selected_server) {
-         GOTO (done);
-      }
-
       /* will set slaveok bit if server is not mongos */
       mongoc_cursor_set_hint (cursor, server_id);
    } else {
-      selected_server = mongoc_topology_select(collection->client->topology,
-                                               MONGOC_SS_READ,
-                                               read_prefs,
-                                               &cursor->error);
-      if (!selected_server) {
+      server_id = mongoc_topology_select_server_id (
+         collection->client->topology,
+         MONGOC_SS_READ,
+         read_prefs,
+         &cursor->error);
+
+      if (!server_id) {
          GOTO (done);
       }
 
       /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
-      cursor->server_id = selected_server->id;
+      cursor->server_id = server_id;
    }
 
-   use_cursor =
-      selected_server->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
+   /* server id isn't enough. ensure we're connected & know its wire version */
+   server_stream = mongoc_cluster_stream_for_server (
+      &collection->client->cluster, cursor->server_id,
+      true /* reconnect ok */, &cursor->error);
+
+   if (!server_stream) {
+      GOTO (done);
+   }
+
+   use_cursor = server_stream->sd->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
 
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
@@ -416,7 +417,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       bool ok = false;
       bson_t opts_dupe = BSON_INITIALIZER;
 
-      if (has_batch_size || selected_server->max_wire_version == 0) {
+      if (has_batch_size || server_stream->sd->max_wire_version == 0) {
          bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
          bson_iter_init (&iter, &opts_dupe);
       } else {
@@ -425,7 +426,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
       /* omits "serverId" */
       ok = _mongoc_client_command_append_iterator_opts_to_command (&iter,
-            selected_server->max_wire_version,
+            server_stream->sd->max_wire_version,
             &command,
             &cursor->error);
 
@@ -457,10 +458,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    }
 
 done:
-   if (selected_server) {
-      mongoc_server_description_destroy (selected_server);
-   }
-
+   mongoc_server_stream_cleanup (server_stream);  /* null ok */
    bson_destroy(&command);
 
    /* we always return the cursor, even if it fails; users can detect the

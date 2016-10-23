@@ -443,10 +443,28 @@ mongoc_server_description_update_rtt (mongoc_server_description_t *server,
    }
 }
 
+
+static void
+_mongoc_server_description_set_error (mongoc_server_description_t *sd,
+                                      const bson_error_t          *error)
+{
+   if (error && error->code) {
+      memcpy (&sd->error, error, sizeof (bson_error_t));
+   } else {
+      bson_set_error (&sd->error, MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      "unknown error calling ismaster");
+   }
+}
+
+
 /*
  *-------------------------------------------------------------------------
  *
- * Called during SDAM, from topology description's ismaster handler.
+ * Called during SDAM, from topology description's ismaster handler, or
+ * when handshaking a connection in _mongoc_cluster_stream_for_server.
+ *
+ * If @ismaster_response is empty, @error must say why ismaster failed.
  *
  *-------------------------------------------------------------------------
  */
@@ -456,7 +474,7 @@ mongoc_server_description_handle_ismaster (
    mongoc_server_description_t   *sd,
    const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
-   bson_error_t                  *error)
+   const bson_error_t            *error /* IN */)
 {
    bson_iter_t iter;
    bson_iter_t child;
@@ -475,6 +493,7 @@ mongoc_server_description_handle_ismaster (
 
    mongoc_server_description_reset (sd);
    if (!ismaster_response) {
+      _mongoc_server_description_set_error (sd, error);
       EXIT;
    }
 
@@ -586,6 +605,11 @@ mongoc_server_description_handle_ismaster (
       sd->type = MONGOC_SERVER_UNKNOWN;
    }
 
+   if (!num_keys) {
+      /* empty reply means ismaster failed */
+      _mongoc_server_description_set_error (sd, error);
+   }
+
    mongoc_server_description_update_rtt(sd, rtt_msec);
 
    EXIT;
@@ -634,9 +658,11 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    bson_init (&copy->last_is_master);
 
    if (description->has_is_master) {
-      mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
-                                                 description->round_trip_time, NULL);
+      mongoc_server_description_handle_ismaster (
+         copy, &description->last_is_master,
+         description->round_trip_time, &description->error);
    }
+
    /* Preserve the error */
    memcpy (&copy->error, &description->error, sizeof copy->error);
    return copy;

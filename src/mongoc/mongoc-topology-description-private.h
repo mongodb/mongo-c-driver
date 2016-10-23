@@ -78,7 +78,7 @@ mongoc_topology_description_handle_ismaster (
    mongoc_server_description_t   *sd,
    const bson_t                  *reply,
    int64_t                        rtt_msec,
-   bson_error_t                  *error);
+   const bson_error_t            *error /* IN */);
 
 mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *description,
@@ -110,7 +110,7 @@ mongoc_topology_description_suitable_servers (
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
                                                uint32_t                       id,
-                                               const bson_error_t            *error);
+                                               const bson_error_t            *error /* IN */);
 
 bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,

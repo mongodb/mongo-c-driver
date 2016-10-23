@@ -994,7 +994,7 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *      Invalidate a server if a network error occurred while using it in
  *      another part of the client. Server description is set to type
  *      UNKNOWN, the error is recorded, and other parameters are reset to
- *      defaults.
+ *      defaults. Pass in the reason for invalidation in @error.
  *
  *      NOTE: this method should only be called while holding the mutex on
  *      the owning topology object.
@@ -1004,18 +1004,20 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
                                                uint32_t                       id,
-                                               const bson_error_t            *error)
+                                               const bson_error_t            *error /* IN */)
 {
    mongoc_server_description_t *sd;
 
+   BSON_ASSERT (error);
+
    sd = mongoc_topology_description_server_by_id (topology, id, NULL);
 
-   /* if pooled, the topology scanner thread might've already removed the sd */
+   /* sd can be removed during a handshake in mongoc_cluster_fetch_stream_single
+    * or mongoc_cluster_fetch_stream_pooled, or if we're pooled the topology
+    * scanner thread can remove sd in the background.
+    */
    if (sd) {
-      mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, NULL);
-      if (error) {
-         memcpy (&sd->error, error, sizeof *error);
-      }
+      mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, error);
    }
 }
 
@@ -1624,7 +1626,8 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
  * mongoc_topology_description_handle_ismaster --
  *
  *      Handle an ismaster. This is called by the background SDAM process,
- *      and by client when invalidating servers.
+ *      and by client when invalidating servers. If there was an error
+ *      calling ismaster, pass it in as @error.
  *
  *      NOTE: this method should only be called while holding the mutex on
  *      the owning topology object.
@@ -1638,7 +1641,7 @@ mongoc_topology_description_handle_ismaster (
    mongoc_server_description_t   *sd,
    const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
-   bson_error_t                  *error)
+   const bson_error_t            *error /* IN */)
 {
    mongoc_topology_description_t *prev_td = NULL;
    mongoc_server_description_t *prev_sd = NULL;
@@ -1649,7 +1652,6 @@ mongoc_topology_description_handle_ismaster (
    if (!_mongoc_topology_description_has_server (topology,
                                                  sd->connection_address,
                                                  NULL)) {
-      MONGOC_DEBUG("Couldn't find %s in Topology Description", sd->connection_address);
       return;
    }
 
@@ -1662,6 +1664,7 @@ mongoc_topology_description_handle_ismaster (
       prev_sd = mongoc_server_description_new_copy (sd);
    }
 
+   /* pass the current error in */
    mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec,
                                               error);
 

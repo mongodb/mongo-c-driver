@@ -107,7 +107,6 @@ test_get_servers (void)
    mongoc_server_description_t *sd_c;
    mongoc_server_description_t **sds;
    size_t n;
-   bson_error_t error;
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
@@ -116,11 +115,11 @@ test_get_servers (void)
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (td, "a");
    mongoc_topology_description_handle_ismaster (
-      td, sd_a, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, &error);
+      td, sd_a, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (td, "c");
    mongoc_topology_description_handle_ismaster (
-      td, sd_c, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, &error);
+      td, sd_c, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sds = mongoc_topology_description_get_servers (td, &n);
    ASSERT_CMPSIZE_T ((size_t) 2, ==, n);

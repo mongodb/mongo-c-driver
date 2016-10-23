@@ -976,6 +976,62 @@ test_cursor_hint_mongos_cmd (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
+/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+ * must update topology description with the server response. If not, this test
+ * fails under auth with "auth failed" because we use the wrong auth protocol.
+ */
+static void
+_test_cursor_hint_no_warmup (bool pooled)
+{
+
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *q = tmp_bson (NULL);
+   mongoc_cursor_t *cursor;
+   const bson_t *doc = NULL;
+   bson_error_t error;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   collection = get_test_collection (client, "test_cursor_hint_no_warmup");
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q,
+                                    NULL, NULL);
+
+   /* no chance for topology scan, no server selection */
+   ASSERT (mongoc_cursor_set_hint (cursor, 1));
+   ASSERT_CMPUINT32 (1, ==, mongoc_cursor_get_hint (cursor));
+
+   mongoc_cursor_next (cursor, &doc);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+test_hint_no_warmup_single (void)
+{
+   _test_cursor_hint_no_warmup (false);
+}
+
+static void
+test_hint_no_warmup_pooled (void)
+{
+   _test_cursor_hint_no_warmup (true);
+}
 
 static void
 test_tailable_alive (void)
@@ -1462,6 +1518,10 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
    TestSuite_Add (suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
    TestSuite_Add (suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
+   TestSuite_AddLive (suite, "/Cursor/hint/no_warmup/single",
+                      test_hint_no_warmup_single);
+   TestSuite_AddLive (suite, "/Cursor/hint/no_warmup/pooled",
+                      test_hint_no_warmup_pooled);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
    TestSuite_Add (suite, "/Cursor/n_return/op_query",
                   test_n_return_op_query);

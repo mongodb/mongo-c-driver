@@ -305,7 +305,9 @@ _test_topology_invalidate_server (bool pooled)
            sd->type == MONGOC_SERVER_RS_PRIMARY ||
            sd->type == MONGOC_SERVER_MONGOS);
 
-   mongoc_topology_invalidate_server (client->topology, id, NULL);
+   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                   "error");
+   mongoc_topology_invalidate_server (client->topology, id, &error);
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
