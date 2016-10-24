@@ -1209,7 +1209,6 @@ mongoc_collection_create_index_with_opts (
                          MONGOC_ERROR_BSON_INVALID,
                          "Cannot generate index name from invalid `keys` argument"
                          );
-         bson_destroy (&cmd);
          GOTO (done);
       }
    }
@@ -1356,10 +1355,10 @@ mongoc_collection_create_index_with_opts (
       }
    }
 
+done:
    bson_destroy (&cmd);
    bson_free (alloc_name);
 
-done:
    mongoc_server_stream_cleanup (server_stream);
    if (!reply_initialized && reply) {
       bson_init (reply);
