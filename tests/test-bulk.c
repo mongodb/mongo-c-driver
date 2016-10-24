@@ -375,7 +375,7 @@ test_bulk_error_unordered (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "Failed to read 36 bytes from socket within");
+                          "socket error or timeout");
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
                          " 'nMatched':  5,"
@@ -2770,7 +2770,8 @@ _test_legacy_write_err (void *ctx)
 
    if (err_test->err_type == HANGUP) {
       ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_SOCKET, "Failed to read");
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "socket error or timeout");
    } else if (err_test->err_api_version == 2) {
       ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 42, "oops");
    } else {

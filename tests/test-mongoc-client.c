@@ -521,13 +521,12 @@ test_mongoc_client_authenticate_timeout (void *context)
 
    /* don't reply */
    assert (!future_get_bool (future));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
-   ASSERT_STARTSWITH (
-      error.message,
-      "Failed to send \"saslStart\" command with database \"admin\"");
-
-   ASSERT_CONTAINS (error.message, "within 10 milliseconds");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+      "Failed to send \"saslStart\" command with database \"admin\":"
+         " socket error or timeout");
 
    bson_destroy (&reply);
    future_destroy (future);
@@ -2180,9 +2179,7 @@ _test_ssl_reconnect (bool pooled)
    if (pooled) {
       ASSERT_CAPTURED_LOG (
          "failed to write data because server closed the connection",
-         MONGOC_LOG_LEVEL_WARNING,
-         "Failure to buffer 36 bytes: Failed to buffer 36 bytes"
-         " within 10000 milliseconds");
+         MONGOC_LOG_LEVEL_WARNING, "Failed to buffer 36 bytes");
    }
 
    /* next operation comes on a new connection, server verification fails */

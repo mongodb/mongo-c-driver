@@ -385,7 +385,7 @@ _check_error (mongoc_client_t     *client,
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
                              MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to read");
+                             "socket error or timeout");
 
       /* socket was discarded */
       ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
@@ -396,7 +396,7 @@ _check_error (mongoc_client_t     *client,
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
                              MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to read");
+                             "socket error or timeout");
    } else {
       /* query failure */
       ASSERT_ERROR_CONTAINS (error,

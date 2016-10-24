@@ -109,6 +109,21 @@ mongoc_async_run (mongoc_async_t *async,
          DL_FOREACH_SAFE (async->cmds, acmd, tmp)
          {
             if (poller[i].revents & (POLLERR | POLLHUP)) {
+               int hup = poller[i].revents & POLLHUP;
+               if (acmd->state == MONGOC_ASYNC_CMD_SEND) {
+                  bson_set_error (
+                     &acmd->error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
+                     hup ? "connection refused" : "unknown connection error");
+               } else {
+                  bson_set_error (
+                     &acmd->error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
+                     hup ? "connection closed" : "unknown socket error");
+               }
+
                acmd->state = MONGOC_ASYNC_CMD_ERROR_STATE;
             }
 
@@ -140,6 +155,13 @@ mongoc_async_run (mongoc_async_t *async,
    /* commands that succeeded or failed already have been removed from the
     * list and freed. therefore, all remaining commands have timed out. */
    DL_FOREACH_SAFE (async->cmds, acmd, tmp) {
+      bson_set_error (&acmd->error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      acmd->state == MONGOC_ASYNC_CMD_SEND ?
+                      "connection timeout" :
+                      "socket timeout");
+
       acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time),
                 acmd->data, &acmd->error);
       mongoc_async_cmd_destroy (acmd);

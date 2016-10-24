@@ -101,15 +101,12 @@ test_get_max_msg_size (void)
 
 
 #define ASSERT_CURSOR_ERR() do { \
-      char *error_message = bson_strdup_printf ( \
-         "Failed to read 4 bytes from socket within %d milliseconds.", \
-         socket_timeout_ms); \
       assert (!future_get_bool (future)); \
       assert (mongoc_cursor_error (cursor, &error)); \
-      ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM); \
-      ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET); \
-      ASSERT_CMPSTR (error.message, error_message); \
-      bson_free (error_message); \
+      ASSERT_ERROR_CONTAINS(error, \
+                            MONGOC_ERROR_STREAM, \
+                            MONGOC_ERROR_STREAM_SOCKET, \
+                            "Failed to read 4 bytes: socket error or timeout");\
    } while (0)
 
 

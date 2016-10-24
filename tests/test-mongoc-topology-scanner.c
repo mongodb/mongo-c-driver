@@ -298,7 +298,7 @@ test_topology_scanner_connection_error (void)
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "connection error calling ismaster on "
+                          "connection refused calling ismaster on "
                           "'localhost:9876'");
 
    mongoc_client_destroy (client);
@@ -307,7 +307,7 @@ test_topology_scanner_connection_error (void)
 
 
 void
-test_topology_scanner_connection_timeout (void)
+test_topology_scanner_socket_timeout (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -315,7 +315,6 @@ test_topology_scanner_connection_timeout (void)
    bson_error_t error;
    char *expected_msg;
 
-   /* server does NOT automatically reply to ismaster */
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -326,8 +325,9 @@ test_topology_scanner_connection_timeout (void)
    ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
                                           NULL, NULL, &error));
 
+   /* the mock server did accept connection, but never replied */
    expected_msg = bson_strdup_printf (
-      "connection timeout calling ismaster on '%s'",
+      "socket timeout calling ismaster on '%s'",
       mongoc_uri_get_hosts (uri)->host_and_port);
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
@@ -416,8 +416,8 @@ test_topology_scanner_install (TestSuite *suite)
    TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error",
                   test_topology_scanner_connection_error);
 #endif
-   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_timeout",
-                  test_topology_scanner_connection_timeout);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_socket_timeout",
+                  test_topology_scanner_socket_timeout);
    TestSuite_Add (suite, "/TOPOLOGY/blocking_initiator",
                   test_topology_scanner_blocking_initiator);
 }

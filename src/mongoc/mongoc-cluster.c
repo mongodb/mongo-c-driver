@@ -107,17 +107,6 @@ _bson_error_message_printf (bson_error_t *error,
    }
 }
 
-
-#define RUN_CMD_ERR_FMT(_domain, _code, _msg, ...) \
-   do { \
-      bson_set_error (error, _domain, _code, _msg, __VA_ARGS__); \
-      _bson_error_message_printf ( \
-         error, \
-         "Failed to send \"%s\" command with database \"%s\": %s", \
-         command_name, db_name, error->message); \
-   } while (0)
-
-
 #define RUN_CMD_ERR(_domain, _code, _msg) \
    do { \
       bson_set_error (error, _domain, _code, _msg); \
@@ -254,11 +243,8 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                            reply_header_size, reply_header_size,
                                            cluster->sockettimeoutms)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
-      RUN_CMD_ERR_FMT (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                       "Failed to read %lu bytes from socket within "
-                       "%" PRIu32 " milliseconds.",
-                       (unsigned long) reply_header_size,
-                       cluster->sockettimeoutms);
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                   "socket error or timeout");
 
       GOTO (done);
    }
@@ -286,11 +272,8 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
 
    if (doc_len != mongoc_stream_read (stream, (void *) reply_buf, doc_len,
                                       doc_len, cluster->sockettimeoutms)) {
-      RUN_CMD_ERR_FMT (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                       "Failed to read %lu bytes from socket within"
-                       " %" PRIu32 " milliseconds.",
-                       (unsigned long) doc_len,
-                       cluster->sockettimeoutms);
+      RUN_CMD_ERR (MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                   "socket error or timeout");
    }
 
    if (_mongoc_populate_cmd_error (reply_ptr,

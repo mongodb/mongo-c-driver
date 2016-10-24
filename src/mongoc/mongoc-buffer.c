@@ -176,8 +176,8 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to read %"PRIu64" bytes from socket within %d milliseconds.",
-                      (uint64_t)size, (int)timeout_msec);
+                      "Failed to read %"PRIu64" bytes: socket error or timeout",
+                      (uint64_t) size);
       RETURN (false);
    }
 
@@ -244,8 +244,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to buffer %u bytes within %d milliseconds.",
-                      (unsigned)min_bytes, (int)timeout_msec);
+                      "Failed to buffer %u bytes",
+                      (unsigned) min_bytes);
       RETURN (-1);
    }
 
@@ -255,10 +255,9 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Could only buffer %u of %u bytes in %d milliseconds.",
-                      (unsigned)buffer->len,
-                      (unsigned)min_bytes,
-                      (int)timeout_msec);
+                      "Could only buffer %u of %u bytes",
+                      (unsigned) buffer->len,
+                      (unsigned) min_bytes);
       RETURN (-1);
    }
 
