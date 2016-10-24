@@ -1110,6 +1110,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
       GOTO (done);
    }
 
+   if (cursor->server_id_set &&
+       server_stream->sd->type != MONGOC_SERVER_MONGOS) {
+      /* directly querying a server, set slaveOk in case it's secondary */
+      flags |= MONGOC_QUERY_SLAVE_OK;
+   }
+
    apply_read_preferences (cursor->read_prefs, server_stream,
                            query_ptr, flags, &result);
 
@@ -1242,6 +1248,12 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (!_mongoc_cursor_flags (cursor, &flags)) {
       GOTO (done);
+   }
+
+   if (cursor->server_id_set &&
+       server_stream->sd->type != MONGOC_SERVER_MONGOS) {
+      /* directly querying a server, set slaveOk in case it's secondary */
+      flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    apply_read_preferences (cursor->read_prefs, server_stream,
@@ -2029,9 +2041,7 @@ mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
    }
 
    cursor->server_id = server_id;
-
-   /* directly querying a server, set slaveOk in case it's secondary */
-   cursor->slave_ok = true;
+   cursor->server_id_set = true;
 
    return true;
 }

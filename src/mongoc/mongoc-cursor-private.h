@@ -109,6 +109,7 @@ struct _mongoc_cursor_t
    mongoc_client_t           *client;
 
    uint32_t                   server_id;
+   bool                       server_id_set;
    bool                       slave_ok;
 
    unsigned                   is_command      : 1;
