@@ -93,6 +93,7 @@ test_mongos_max_staleness_read_pref (void)
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -144,8 +145,8 @@ _test_last_write_date (bool pooled)
    ASSERT_CMPINT64 (delta, >, (int64_t) 0);
    ASSERT_CMPINT64 (delta, <, (int64_t) 10 * 1000);
 
-   mongoc_server_description_cleanup (s0);
-   mongoc_server_description_cleanup (s1);
+   mongoc_server_description_destroy (s0);
+   mongoc_server_description_destroy (s1);
    mongoc_collection_destroy (collection);
 
    if (pooled) {
@@ -193,7 +194,7 @@ _test_last_write_date_absent (bool pooled)
    /* lastWriteDate absent */
    ASSERT_CMPINT64 (sd->last_write_date_ms, ==, (int64_t) -1);
 
-   mongoc_server_description_cleanup (sd);
+   mongoc_server_description_destroy (sd);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

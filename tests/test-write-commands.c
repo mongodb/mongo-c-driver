@@ -139,8 +139,9 @@ test_invalid_write_concern (void)
 static void
 test_bypass_validation (void *context)
 {
+   mongoc_collection_t *collection2;
    mongoc_collection_t *collection;
-   bson_t reply = BSON_INITIALIZER;
+   bson_t reply;
    mongoc_bulk_operation_t *bulk;
    mongoc_database_t *database;
    mongoc_write_concern_t *wr;
@@ -162,16 +163,19 @@ test_bypass_validation (void *context)
    assert (collection);
 
    options = tmp_bson ("{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
-   ASSERT_OR_PRINT (mongoc_database_create_collection (database, collname, options, &error), error);
+   collection2 = mongoc_database_create_collection (database, collname, options, &error);
+   ASSERT_OR_PRINT(collection2, error);
+   mongoc_collection_destroy (collection2);
 
    /* {{{ Default fails validation */
    bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
    for (i = 0; i < 3; i++) {
-      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+      bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
       mongoc_bulk_operation_insert (bulk, doc);
    }
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   bson_destroy (&reply);
    ASSERT(!r);
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
@@ -182,11 +186,12 @@ test_bypass_validation (void *context)
    bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, false);
    for (i = 0; i < 3; i++) {
-      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+      bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
       mongoc_bulk_operation_insert (bulk, doc);
    }
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   bson_destroy (&reply);
    ASSERT(!r);
 
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
@@ -197,11 +202,12 @@ test_bypass_validation (void *context)
    bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, true);
    for (i = 0; i < 3; i++) {
-      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+      bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
       mongoc_bulk_operation_insert (bulk, doc);
    }
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   bson_destroy (&reply);
    ASSERT_OR_PRINT(r, error);
    mongoc_bulk_operation_destroy (bulk);
    /* }}} */
@@ -213,11 +219,12 @@ test_bypass_validation (void *context)
    mongoc_bulk_operation_set_write_concern (bulk, wr);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, true);
    for (i = 0; i < 3; i++) {
-      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+      bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
       mongoc_bulk_operation_insert (bulk, doc);
    }
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   bson_destroy (&reply);
    ASSERT_OR_PRINT(!r, error);
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
          "Cannot set bypassDocumentValidation for unacknowledged writes");
@@ -227,6 +234,9 @@ test_bypass_validation (void *context)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   bson_free (dbname);
+   bson_free (collname);
+   mongoc_database_destroy (database);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }

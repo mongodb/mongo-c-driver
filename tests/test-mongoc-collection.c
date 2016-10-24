@@ -1282,7 +1282,9 @@ test_decimal128 (void *ctx)
 
    ASSERT(read_decimal.high == decimal128.high && read_decimal.low == decimal128.low);
 
+   bson_destroy (doc);
    bson_destroy (&query);
+   mongoc_write_concern_destroy (wr);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -2137,6 +2139,7 @@ test_count_read_pref (void)
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -2417,6 +2420,7 @@ test_count_with_opts (void)
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -2458,6 +2462,7 @@ test_count_with_collation (int wire)
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -2601,7 +2606,6 @@ test_aggregate_bypass (void *context)
    client = test_framework_client_new ();
    assert (client);
 
-   return;
    dbname = gen_collection_name ("dbtest");
    collname = gen_collection_name ("data");
    database = mongoc_client_get_database (client, dbname);
@@ -3388,6 +3392,7 @@ test_stats_read_pref (void)
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -3462,9 +3467,11 @@ test_find_and_modify_write_concern (int wire_version)
    bson_destroy (&reply);
    bson_destroy (update);
 
+   request_destroy (request);
    mongoc_write_concern_destroy (write_concern);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
    bson_destroy (&doc);
 }
 

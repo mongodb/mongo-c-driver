@@ -223,6 +223,8 @@ test_client_cmd_w_write_concern (void *context)
       }
    }
 
+   mongoc_write_concern_destroy (good_wc);
+   mongoc_write_concern_destroy (bad_wc);
    bson_destroy (opts);
    mongoc_client_destroy (client);
 }

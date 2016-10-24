@@ -314,6 +314,7 @@ test_bulk_error (void)
 
    /* reply was initialized */
    ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
+   mongoc_bulk_operation_destroy (bulk);
 }
 
 
@@ -356,6 +357,7 @@ test_bulk_error_unordered (void)
    );
    mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
 
+   request_destroy (request);
    request = mock_server_receives_command (
       mock_server,
       "test",
@@ -1875,6 +1877,7 @@ _test_write_concern_err_api (bool    has_write_commands,
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN,
                           expected_code, "foo");
 
+   request_destroy (request);
    future_destroy (future);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2028,6 +2031,7 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
          " 'writeErrors': [{'index': 0, 'code': 11000, 'errmsg': 'dupe'}],"
          " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
 
+      request_destroy (request);
       request = mock_server_receives_command (
          mock_server,
          "test",
@@ -2298,6 +2302,7 @@ test_large_inserts_unordered (void *ctx)
 
    bson_destroy (huge_doc);
    bson_destroy (&reply);
+   mongoc_cursor_destroy (cursor);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -3171,6 +3176,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    }
 
 
+   bson_destroy (opts);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_write_concern_destroy (wc);
@@ -3249,6 +3255,7 @@ _test_bulk_collation_multi (int w, int wire_version)
 
 
 
+   bson_destroy (opts);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);

@@ -1138,8 +1138,6 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
                                tmp_bson ("{'$exists': false}"));
       }
 
-      printf ("%s\n", bson_as_json (&getmore_cmd, NULL));
-
       ASSERT (match_bson (request_get_doc (request, 0), &getmore_cmd, true));
 
       reply = bson_string_new (NULL);

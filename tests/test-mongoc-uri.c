@@ -858,6 +858,7 @@ test_mongoc_uri_long_hostname (void)
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, host_and_port);
 
    mongoc_uri_destroy (uri);
+   bson_free (uri_str);
    bson_free (host_and_port);
    bson_free (host);
 
@@ -877,6 +878,7 @@ test_mongoc_uri_long_hostname (void)
    ASSERT (!mongoc_uri_new_for_host_port (host, 12345));
    ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
 
+   bson_free (uri_str);
    bson_free (host_and_port);
    bson_free (host);
 }

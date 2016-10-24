@@ -235,6 +235,8 @@ test_distro_scanner_reads (void)
    ASSERT (version);
    ASSERT (strlen (version));
 #endif
+   bson_free (name);
+   bson_free (version);
 }
 #endif
 
