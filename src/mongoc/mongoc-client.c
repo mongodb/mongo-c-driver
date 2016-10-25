@@ -634,6 +634,9 @@ mongoc_client_new(const char *uri_string)
    topology = mongoc_topology_new(uri, true);
 
    client = _mongoc_client_new_from_uri (uri, topology);
+   if (!client) {
+      mongoc_topology_destroy (topology);
+   }
    mongoc_uri_destroy (uri);
 
    return client;
