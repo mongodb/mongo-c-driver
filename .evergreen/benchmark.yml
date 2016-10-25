@@ -58,16 +58,8 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           mkdir db
-          mongo_major_version=$(./mongodb/bin/mongod --version | grep 'db version' | awk '{print $3}' | cut -d . -f 1)
-          echo "$mongo_major_version"
-
-          if [ "$mongo_major_version" = "v2" ]; then
-              echo "Starting Mongo 2.4"
-              ./mongodb/bin/mongod --dbpath `pwd`/db --logpath `pwd`/db/db.log --fork
-          else
-              echo "Starting Mongo 3.2"
-              ./mongodb/bin/mongod --dbpath `pwd`/db --logpath `pwd`/db/db.log --fork
-          fi;
+          echo "Starting Mongodb"
+          ./mongodb/bin/mongod --dbpath `pwd`/db --logpath `pwd`/db/db.log --fork
 
   benchmark_common: &benchmark_common
     <<: *compile_unix
