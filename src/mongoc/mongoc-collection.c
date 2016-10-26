@@ -416,7 +416,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       bool ok = false;
       bson_t opts_dupe = BSON_INITIALIZER;
 
-      if (has_batch_size) {
+      if (has_batch_size || selected_server->max_wire_version == 0) {
          bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
          bson_iter_init (&iter, &opts_dupe);
       } else {
