@@ -1960,6 +1960,15 @@ mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
 }
 
 
+bool
+mongoc_cursor_sent (const mongoc_cursor_t *cursor) /* IN */
+{
+   BSON_ASSERT (cursor);
+
+   return cursor->sent != 0;
+}
+
+
 const bson_t *
 mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
 {

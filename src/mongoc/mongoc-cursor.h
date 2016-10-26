@@ -53,6 +53,8 @@ void             mongoc_cursor_get_host               (mongoc_cursor_t         *
 BSON_API
 bool             mongoc_cursor_is_alive               (const mongoc_cursor_t   *cursor);
 BSON_API
+bool             mongoc_cursor_sent                   (const mongoc_cursor_t   *cursor);
+BSON_API
 const bson_t    *mongoc_cursor_current                (const mongoc_cursor_t   *cursor);
 BSON_API
 void             mongoc_cursor_set_batch_size         (mongoc_cursor_t         *cursor,
