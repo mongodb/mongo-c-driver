@@ -957,6 +957,36 @@ test_server_id_option (void)
 }
 #endif
 
+static void
+test_find_with_opts_collation_error (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *q;
+   bson_t *opts;
+   const bson_t *doc;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   q = tmp_bson (NULL);
+   opts = tmp_bson ("{'collation': {'locale': 'is'}}");
+   cursor = mongoc_collection_find_with_opts (collection, q, opts, NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      ASSERT (false);
+   }
+
+   ASSERT ( mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "Collation is not supported by this server");
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
 
 void
 test_collection_find_with_opts_install (TestSuite *suite)
@@ -1022,4 +1052,7 @@ test_collection_find_with_opts_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);
 #endif
+   TestSuite_AddFull (suite, "/Collection/find_with_opts/collation/error",
+                      test_find_with_opts_collation_error, NULL, NULL,
+                      test_framework_skip_if_max_version_version_more_than_4);
 }

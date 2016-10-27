@@ -44,11 +44,13 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream);
 
 static bool
-_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
-                                     bson_t          *command);
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t        *cursor,
+                                     bson_t                 *command,
+                                     mongoc_server_stream_t *server_stream);
 
 static const bson_t *
-_mongoc_cursor_find_command (mongoc_cursor_t *cursor);
+_mongoc_cursor_find_command (mongoc_cursor_t        *cursor,
+                             mongoc_server_stream_t *server_stream);
 
 
 static bool
@@ -621,7 +623,7 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
    }
 
    if (_use_find_command (cursor, server_stream)) {
-      b = _mongoc_cursor_find_command (cursor);
+      b = _mongoc_cursor_find_command (cursor, server_stream);
    } else {
       /* When the user explicitly provides a readConcern -- but the server
        * doesn't support readConcern, we must error:
@@ -673,7 +675,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
 
    if (!cursor->is_command) {
       /* simulate a MongoDB 3.2+ "find" command */
-      if (!_mongoc_cursor_prepare_find_command (cursor, &doc)) {
+      if (!_mongoc_cursor_prepare_find_command (cursor, &doc, server_stream)) {
          /* cursor->error is set */
          bson_destroy (&doc);
          RETURN (false);
@@ -1019,6 +1021,12 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
          OPT_CHECK (BOOL);
          PUSH_DOLLAR_QUERY ();
          BSON_APPEND_BOOL (query, "$snapshot", bson_iter_as_bool (&iter));
+      } else if (!strcmp (key, COLLATION)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Collation is not supported by this server");
+         return NULL;
       }
       /* singleBatch limit and batchSize are handled in _mongoc_n_return,
        * exhaust noCursorTimeout oplogReplay tailable in _mongoc_cursor_flags
@@ -1369,8 +1377,9 @@ _mongoc_cursor_collection (const mongoc_cursor_t *cursor,
 
 
 static bool
-_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
-                                     bson_t          *command)
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t        *cursor,
+                                     bson_t                 *command,
+                                     mongoc_server_stream_t *server_stream)
 {
    const char *collection;
    int collection_len;
@@ -1383,7 +1392,16 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 
    while (bson_iter_next (&iter)) {
       /* don't append "maxAwaitTimeMS" */
-      if (strcmp (bson_iter_key (&iter), MAX_AWAIT_TIME_MS)) {
+      if (!strcmp (bson_iter_key (&iter), COLLATION) &&
+          server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Collation is not supported by this server");
+         MARK_FAILED (cursor);
+         return false;
+      }
+      else if (strcmp (bson_iter_key (&iter), MAX_AWAIT_TIME_MS)) {
          if (!bson_append_iter (command, bson_iter_key (&iter), -1, &iter)) {
             bson_set_error (&cursor->error, MONGOC_ERROR_BSON,
                             MONGOC_ERROR_BSON_INVALID, "Cursor opts too large");
@@ -1406,14 +1424,15 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 
 
 static const bson_t *
-_mongoc_cursor_find_command (mongoc_cursor_t *cursor)
+_mongoc_cursor_find_command (mongoc_cursor_t        *cursor,
+                             mongoc_server_stream_t *server_stream)
 {
    bson_t command = BSON_INITIALIZER;
    const bson_t *bson = NULL;
 
    ENTRY;
 
-   if (!_mongoc_cursor_prepare_find_command (cursor, &command)) {
+   if (!_mongoc_cursor_prepare_find_command (cursor, &command, server_stream)) {
       RETURN (NULL);
    }
 

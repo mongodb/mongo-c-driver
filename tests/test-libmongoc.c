@@ -1744,7 +1744,7 @@ int test_framework_skip_if_max_version_version_more_than_4 (void)
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_max_wire_version_at_least (4) ? 0 : 1;
+   return test_framework_max_wire_version_at_least (5) ? 0 : 1;
 }
 
 int test_framework_skip_if_max_version_version_less_than_5 (void)

@@ -53,6 +53,8 @@ struct _mongoc_cursor_interface_t
 #define AWAIT_DATA_LEN 9
 #define BATCH_SIZE "batchSize"
 #define BATCH_SIZE_LEN 9
+#define COLLATION "collation"
+#define COLLATION_LEN 9
 #define COMMENT "comment"
 #define COMMENT_LEN 7
 #define EXHAUST "exhaust"
