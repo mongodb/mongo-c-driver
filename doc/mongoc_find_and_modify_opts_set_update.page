@@ -28,6 +28,7 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t  *opts,
   <section id="description">
     <title>Description</title>
     <p>Adds update argument to the builder.</p>
+    <p><code>update</code> does not have to remain valid after calling this function.</p>
   </section>
 
 

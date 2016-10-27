@@ -27,6 +27,7 @@ mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
   <section id="description">
     <title>Description</title>
     <p>Adds arbitrary options to a <link href="https://docs.mongodb.org/manual/reference/command/findAndModify/">findAndModify</link> command.</p>
+    <p><code>extra</code> does not have to remain valid after calling this function.</p>
   </section>
 
   <section id="return">
