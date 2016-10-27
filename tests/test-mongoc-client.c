@@ -1039,6 +1039,22 @@ test_command_with_opts_modern (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   /* apply write concern from opts, not client */
+   opts = tmp_bson ("{'writeConcern': {'w': 2}}");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 4);
+   mongoc_client_set_write_concern (client, wc);
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
    /* readConcern allowed */
    cmd = tmp_bson ("{'count': 'collection'}");
    read_concern = mongoc_read_concern_new ();

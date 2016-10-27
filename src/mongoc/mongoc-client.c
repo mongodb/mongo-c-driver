@@ -1387,8 +1387,6 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
    mongoc_cluster_t *cluster;
    bson_t reply_local;
    bson_t *reply_ptr;
-   bool opts_has_read_concern = false;
-   bool opts_has_write_concern = false;
    uint32_t server_id;
    bool ret = false;
 
@@ -1448,8 +1446,8 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
       /* use default write concern unless it's in opts */
       if ((mode & MONGOC_CMD_WRITE) &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN &&
-          !opts_has_write_concern &&
-          !_mongoc_write_concern_is_default (default_wc)) {
+          !_mongoc_write_concern_is_default (default_wc) &&
+          (!command_with_opts || !bson_has_field (command_with_opts, "writeConcern"))) {
 
          _ensure_copied (&command_with_opts, command);
          bson_append_document (
@@ -1458,16 +1456,15 @@ _mongoc_client_command_with_opts (mongoc_client_t           *client,
       }
 
       /* use read prefs and read concern for read commands, unless in opts */
-      if (mode & MONGOC_CMD_READ) {
-         if (server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
-             !opts_has_read_concern &&
-             !_mongoc_read_concern_is_default (default_rc)) {
+      if ((mode & MONGOC_CMD_READ) &&
+          server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
+          !_mongoc_read_concern_is_default (default_rc) &&
+          (!command_with_opts || !bson_has_field (command_with_opts, "readConcern"))) {
 
-            _ensure_copied (&command_with_opts, command);
-            bson_append_document (
-               command_with_opts, "readConcern", 11,
-               _mongoc_read_concern_get_bson (default_rc));
-         }
+         _ensure_copied (&command_with_opts, command);
+         bson_append_document (
+            command_with_opts, "readConcern", 11,
+            _mongoc_read_concern_get_bson (default_rc));
       }
 
       ret = _mongoc_client_command_with_stream (
