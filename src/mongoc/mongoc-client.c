@@ -2042,17 +2042,13 @@ _mongoc_client_set_apm_callbacks_private (mongoc_client_t        *client,
                                           mongoc_apm_callbacks_t *callbacks,
                                           void                   *context)
 {
-   if (client->apm_callbacks_set) {
-      MONGOC_ERROR ("Can only set callbacks once");
-      return false;
-   }
-
    if (callbacks) {
       memcpy (&client->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+   } else {
+      memset (&client->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
    }
 
    client->apm_context = context;
-   client->apm_callbacks_set = true;
    mongoc_topology_set_apm_callbacks (client->topology, callbacks, context);
 
    return true;

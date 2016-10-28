@@ -88,7 +88,6 @@ struct _mongoc_client_t
    mongoc_read_concern_t     *read_concern;
    mongoc_write_concern_t    *write_concern;
 
-   bool                       apm_callbacks_set;
    mongoc_apm_callbacks_t     apm_callbacks;
    void                      *apm_context;
 
