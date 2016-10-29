@@ -860,6 +860,170 @@ test_get_error (void)
 
 
 static void
+insert_200_docs (mongoc_collection_t *collection)
+{
+   int i;
+   bson_t *doc;
+   bool r;
+   bson_error_t error;
+
+   /* insert 200 docs so we have a couple batches */
+   doc = tmp_bson (NULL);
+   for (i = 0; i < 200; i++) {
+      r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL,
+                                    &error);
+
+      ASSERT_OR_PRINT (r, error);
+   }
+}
+
+
+static void
+increment (const mongoc_apm_command_started_t *event)
+{
+   int *i = (int *) mongoc_apm_command_started_get_context (event);
+
+   ++(*i);
+}
+
+
+static mongoc_apm_callbacks_t *
+increment_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, increment);
+
+   return callbacks;
+}
+
+
+static void
+decrement (const mongoc_apm_command_started_t *event)
+{
+   int *i = (int *) mongoc_apm_command_started_get_context (event);
+
+   --(*i);
+}
+
+
+static mongoc_apm_callbacks_t *
+decrement_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, decrement);
+
+   return callbacks;
+}
+
+
+static void
+test_change_callbacks (void *ctx)
+{
+   mongoc_apm_callbacks_t *inc_callbacks;
+   mongoc_apm_callbacks_t *dec_callbacks;
+   int incremented = 0;
+   int decremented = 0;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+
+   inc_callbacks = increment_callbacks ();
+   dec_callbacks = decrement_callbacks ();
+
+   client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+
+   collection = get_test_collection (client, "test_change_callbacks");
+
+   insert_200_docs (collection);
+   ASSERT_CMPINT (incremented, ==, 200);
+
+   mongoc_client_set_apm_callbacks (client, dec_callbacks, &decremented);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE,
+                                         tmp_bson (NULL), NULL, NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &b));
+   ASSERT_CMPINT (decremented, ==, -1);
+
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+   while (mongoc_cursor_next (cursor, &b)) { }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (incremented, ==, 201);
+
+   mongoc_collection_drop (collection, NULL);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (inc_callbacks);
+   mongoc_apm_callbacks_destroy (dec_callbacks);
+}
+
+
+static void
+test_reset_callbacks (void *ctx)
+{
+   mongoc_apm_callbacks_t *inc_callbacks;
+   mongoc_apm_callbacks_t *dec_callbacks;
+   int incremented = 0;
+   int decremented = 0;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bool r;
+   bson_t *cmd;
+   bson_t cmd_reply;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+
+   inc_callbacks = increment_callbacks ();
+   dec_callbacks = decrement_callbacks ();
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_reset_apm_callbacks");
+
+   /* insert 200 docs so we have a couple batches */
+   insert_200_docs (collection);
+
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+   cmd = tmp_bson ("{'aggregate': '%s', 'pipeline': [], 'cursor': {}}",
+                   collection->collection);
+
+   r = mongoc_client_command_simple (client, "test", cmd, NULL, &cmd_reply,
+                                     &error);
+
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (incremented, ==, 1);
+
+   /* reset callbacks */
+   mongoc_client_set_apm_callbacks (client, NULL, NULL);
+   /* destroys cmd_reply */
+   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, 1);
+   ASSERT (mongoc_cursor_next (cursor, &b));
+   ASSERT_CMPINT (incremented, ==, 1);  /* same value as before */
+
+   mongoc_client_set_apm_callbacks (client, dec_callbacks, &decremented);
+   while (mongoc_cursor_next (cursor, &b)) { }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (decremented, ==, -1);
+
+   mongoc_collection_drop (collection, NULL);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (inc_callbacks);
+   mongoc_apm_callbacks_destroy (dec_callbacks);
+}
+
+
+static void
 test_set_callbacks_cb (const mongoc_apm_command_started_t *event)
 {
    int *n_calls = (int *) mongoc_apm_command_started_get_context (event);
@@ -1431,6 +1595,13 @@ test_command_monitoring_install (TestSuite *suite)
                   test_set_callbacks_single);
    TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/pooled",
                   test_set_callbacks_pooled);
+   /* require aggregation cursor */
+   TestSuite_AddFull (suite, "/command_monitoring/set_callbacks/change",
+                      test_change_callbacks, NULL, NULL,
+                      test_framework_skip_if_max_wire_version_less_than_1);
+   TestSuite_AddFull (suite, "/command_monitoring/set_callbacks/reset",
+                      test_reset_callbacks, NULL, NULL,
+                      test_framework_skip_if_max_wire_version_less_than_1);
    TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/single",
                   test_bulk_operation_id_single);
    TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/pooled",

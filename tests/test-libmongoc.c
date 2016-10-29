@@ -1723,6 +1723,14 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
+int test_framework_skip_if_max_wire_version_less_than_1 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return test_framework_max_wire_version_at_least (2);
+}
+
 int test_framework_skip_if_max_wire_version_less_than_2 (void)
 {
    if (!TestSuite_CheckLive ()) {

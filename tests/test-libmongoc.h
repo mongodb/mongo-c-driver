@@ -69,6 +69,7 @@ bool test_framework_max_wire_version_at_least (int version);
 
 int test_framework_skip_if_auth (void);
 int test_framework_skip_if_no_auth (void);
+int test_framework_skip_if_max_wire_version_less_than_1 (void);
 int test_framework_skip_if_max_wire_version_less_than_2 (void);
 int test_framework_skip_if_max_wire_version_less_than_4 (void);
 int test_framework_skip_if_max_wire_version_more_than_4 (void);
