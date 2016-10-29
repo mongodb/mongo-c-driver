@@ -1723,7 +1723,7 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
-int test_framework_skip_if_max_version_version_less_than_2 (void)
+int test_framework_skip_if_max_wire_version_less_than_2 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1731,7 +1731,7 @@ int test_framework_skip_if_max_version_version_less_than_2 (void)
    return test_framework_max_wire_version_at_least (2);
 }
 
-int test_framework_skip_if_max_version_version_less_than_4 (void)
+int test_framework_skip_if_max_wire_version_less_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1739,7 +1739,7 @@ int test_framework_skip_if_max_version_version_less_than_4 (void)
    return test_framework_max_wire_version_at_least (4);
 }
 
-int test_framework_skip_if_max_version_version_more_than_4 (void)
+int test_framework_skip_if_max_wire_version_more_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1747,7 +1747,7 @@ int test_framework_skip_if_max_version_version_more_than_4 (void)
    return test_framework_max_wire_version_at_least (5) ? 0 : 1;
 }
 
-int test_framework_skip_if_max_version_version_less_than_5 (void)
+int test_framework_skip_if_max_wire_version_less_than_5 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;

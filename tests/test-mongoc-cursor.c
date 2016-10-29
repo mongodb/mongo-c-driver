@@ -1500,16 +1500,16 @@ test_cursor_install (TestSuite *suite)
 
    TestSuite_AddFull (suite, "/Cursor/new_from_agg",
                       test_cursor_new_from_aggregate, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_2);
+                      test_framework_skip_if_max_wire_version_less_than_2);
    TestSuite_AddFull (suite, "/Cursor/new_from_agg_no_initial",
                       test_cursor_new_from_aggregate_no_initial, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_2);
+                      test_framework_skip_if_max_wire_version_less_than_2);
    TestSuite_AddFull (suite, "/Cursor/new_from_find",
                       test_cursor_new_from_find, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_4);
+                      test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddFull (suite, "/Cursor/new_from_find_batches",
                       test_cursor_new_from_find_batches, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_4);
+                      test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
    TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);

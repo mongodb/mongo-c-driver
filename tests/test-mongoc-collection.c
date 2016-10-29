@@ -4523,7 +4523,7 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_AddFull (suite, "/Collection/aggregate/write_concern",
                       test_aggregate_w_write_concern, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_2);
+                      test_framework_skip_if_max_wire_version_less_than_2);
    TestSuite_AddLive (suite, "/Collection/read_prefs_is_valid",
                       test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
@@ -4587,7 +4587,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/aggregate/inherit/collection", test_aggregate_inherit_collection);
    TestSuite_AddLive (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
-   TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
+   TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire4", test_aggregate_with_collation_fail);
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire5", test_aggregate_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);

@@ -2546,7 +2546,7 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/command_w_server_id/option", test_server_id_option, NULL, NULL, test_framework_skip_if_auth);
    TestSuite_AddFull (suite, "/Client/command_w_write_concern",
                       test_client_cmd_w_write_concern, NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_2);
+                      test_framework_skip_if_max_wire_version_less_than_2);
    TestSuite_Add (suite, "/Client/command/write_concern",
                   test_client_cmd_write_concern);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);

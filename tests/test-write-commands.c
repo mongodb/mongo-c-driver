@@ -248,5 +248,5 @@ test_write_command_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
    TestSuite_AddFull (suite, "/WriteCommand/bypass_validation", test_bypass_validation,
                       NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_4);
+                      test_framework_skip_if_max_wire_version_less_than_4);
 }
