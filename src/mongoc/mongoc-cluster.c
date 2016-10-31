@@ -428,6 +428,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    int64_t start;
    int64_t rtt_msec;
    mongoc_server_description_t *sd;
+   bool r;
 
    ENTRY;
 
@@ -451,6 +452,14 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    bson_destroy (&command);
    bson_destroy (&reply);
+
+   r = _mongoc_topology_update_from_handshake (cluster->client->topology, sd);
+   if (!r) {
+      mongoc_server_description_reset (sd);
+      bson_set_error (&sd->error, MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "\"%s\" removed from topology", address);
+   }
 
    RETURN (sd);
 }
@@ -1638,6 +1647,12 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                         server_id);
    }
 
+   if (sd->type == MONGOC_SERVER_UNKNOWN) {
+      memcpy (error, &sd->error, sizeof *error);
+      mongoc_server_description_destroy (sd);
+      return NULL;
+   }
+
    /* stream open but not auth'ed: first use since connect or reconnect */
    if (cluster->requires_auth && !scanner_node->has_auth) {
       if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
@@ -2148,13 +2163,12 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
 {
    mongoc_topology_t *topology;
    mongoc_topology_scanner_node_t *scanner_node;
-   mongoc_server_description_t *sd;
    mongoc_stream_t *stream;
    int64_t now;
    int64_t before_ismaster;
    bson_t command;
    bson_t reply;
-   bool r;
+   bool r = true;
 
    topology = cluster->client->topology;
 
@@ -2202,28 +2216,15 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
 
       bson_destroy (&command);
 
-      if (r) {
-         sd = mongoc_topology_description_server_by_id (&topology->description,
-                                                        server_id, NULL);
+      mongoc_topology_description_handle_ismaster (
+         &topology->description, server_id, &reply,
+         (now - before_ismaster) / 1000,    /* RTT_MS */
+         error);
 
-         if (!sd) {
-            bson_destroy (&reply);
-            return false;
-         }
-
-         mongoc_topology_description_handle_ismaster (
-            &topology->description, sd, &reply,
-            (now - before_ismaster) / 1000,    /* RTT_MS */
-            error);
-
-         bson_destroy (&reply);
-      } else {
-         bson_destroy (&reply);
-         return false;
-      }
+      bson_destroy (&reply);
    }
 
-   return true;
+   return r;
 }
 
 

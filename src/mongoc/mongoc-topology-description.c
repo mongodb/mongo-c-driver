@@ -1006,19 +1006,10 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
                                                uint32_t                       id,
                                                const bson_error_t            *error /* IN */)
 {
-   mongoc_server_description_t *sd;
-
    BSON_ASSERT (error);
 
-   sd = mongoc_topology_description_server_by_id (topology, id, NULL);
-
-   /* sd can be removed during a handshake in mongoc_cluster_fetch_stream_single
-    * or mongoc_cluster_fetch_stream_pooled, or if we're pooled the topology
-    * scanner thread can remove sd in the background.
-    */
-   if (sd) {
-      mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, error);
-   }
+   /* send NULL ismaster reply */
+   mongoc_topology_description_handle_ismaster (topology, id, NULL, 0, error);
 }
 
 /*
@@ -1638,21 +1629,21 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
 void
 mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
-   mongoc_server_description_t   *sd,
+   uint32_t                       server_id,
    const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
    const bson_error_t            *error /* IN */)
 {
    mongoc_topology_description_t *prev_td = NULL;
    mongoc_server_description_t *prev_sd = NULL;
+   mongoc_server_description_t *sd;
 
    BSON_ASSERT (topology);
-   BSON_ASSERT (sd);
+   BSON_ASSERT (server_id != 0);
 
-   if (!_mongoc_topology_description_has_server (topology,
-                                                 sd->connection_address,
-                                                 NULL)) {
-      return;
+   sd = mongoc_topology_description_server_by_id (topology, server_id, NULL);
+   if (!sd) {
+      return;  /* server already removed from topology */
    }
 
    if (topology->apm_callbacks.topology_changed) {

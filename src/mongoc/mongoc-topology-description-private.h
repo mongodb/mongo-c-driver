@@ -75,7 +75,7 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 void
 mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
-   mongoc_server_description_t   *sd,
+   uint32_t                       server_id,
    const bson_t                  *reply,
    int64_t                        rtt_msec,
    const bson_error_t            *error /* IN */);

@@ -3032,7 +3032,6 @@ test_aggregate_w_server_id (void)
 }
 
 
-#ifdef TODO_CDRIVER_562
 static void
 test_aggregate_w_server_id_sharded (void)
 {
@@ -3075,7 +3074,7 @@ test_aggregate_w_server_id_sharded (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
-#endif
+
 
 static void
 test_aggregate_server_id_option (void *ctx)
@@ -4591,9 +4590,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire4", test_aggregate_with_collation_fail);
    TestSuite_Add (suite, "/Collection/aggregate/collation/wire5", test_aggregate_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);
-#ifdef TODO_CDRIVER_562
    TestSuite_Add (suite, "/Collection/aggregate_w_server_id/sharded", test_aggregate_w_server_id_sharded);
-#endif
    TestSuite_AddFull (suite, "/Collection/aggregate_w_server_id/option", test_aggregate_server_id_option, NULL, NULL, test_framework_skip_if_auth);
    TestSuite_AddFull (suite, "/Collection/validate", test_validate, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);

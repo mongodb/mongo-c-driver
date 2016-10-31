@@ -764,6 +764,125 @@ test_invalid_server_id (void)
 }
 
 
+static bool
+auto_ping (request_t *request,
+           void *data)
+{
+   if (!request->is_command || strcasecmp (request->command_name, "ping")) {
+      return false;
+   }
+
+   mock_server_replies_ok_and_destroys (request);
+
+   return true;
+}
+
+
+/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+ * must update topology description with the server response.
+ */
+static void
+_test_server_removed_during_handshake (bool pooled)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   mongoc_server_description_t **sds;
+   size_t n;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_autoresponds (server, auto_ping, NULL, NULL);
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* no auto heartbeat */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+   }
+
+   /* initial connection, discover one-node replica set */
+   r = mongoc_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"),
+                                     NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   ASSERT_CMPINT (_mongoc_topology_get_type (client->topology), ==,
+                  MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+   sd = mongoc_client_get_server_description (client, 1);
+   ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
+   mongoc_server_description_destroy (sd);
+
+   /* primary changes setName */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'BAD NAME',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
+
+   /* pretend to close a connection. does NOT affect server description yet */
+   mongoc_cluster_disconnect_node (&client->cluster, 1);
+   sd = mongoc_client_get_server_description (client, 1);
+   /* still primary */
+   ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
+   mongoc_server_description_destroy (sd);
+
+   /* opens new stream and runs ismaster again, discovers bad setName. */
+   r = mongoc_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"),
+                                     NULL, NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                          "removed from topology");
+
+   sds = mongoc_client_get_server_descriptions (client, &n);
+   ASSERT_CMPSIZE_T (n, ==, (size_t) 0);
+   ASSERT_CMPINT (_mongoc_topology_get_type (client->topology), ==,
+                  MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+   
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_server_removed_during_handshake_single (void)
+{
+   _test_server_removed_during_handshake (false);
+}
+
+
+static void
+test_server_removed_during_handshake_pooled (void)
+{
+   _test_server_removed_during_handshake (true);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -796,4 +915,8 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/try_once/succeed",
                   test_select_after_try_once);
    TestSuite_AddLive (suite, "/Topology/invalid_server_id", test_invalid_server_id);
+   TestSuite_Add (suite, "/Topology/server_removed/single",
+                  test_server_removed_during_handshake_single);
+   TestSuite_Add (suite, "/Topology/server_removed/pooled",
+                  test_server_removed_during_handshake_pooled);
 }

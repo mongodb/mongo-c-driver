@@ -95,7 +95,6 @@ _mongoc_topology_scanner_cb (uint32_t            id,
                              const bson_error_t *error /* IN */)
 {
    mongoc_topology_t *topology;
-   mongoc_server_description_t *sd;
 
    BSON_ASSERT (data);
 
@@ -109,23 +108,16 @@ _mongoc_topology_scanner_cb (uint32_t            id,
       mongoc_mutex_lock (&topology->mutex);
    }
 
-   sd = mongoc_topology_description_server_by_id (&topology->description, id,
-                                                  NULL);
+   mongoc_topology_description_handle_ismaster (&topology->description, id,
+                                                ismaster_response, rtt_msec,
+                                                error);
 
-   if (sd) {
-      mongoc_topology_description_handle_ismaster (&topology->description, sd,
-                                                   ismaster_response, rtt_msec,
-                                                   error);
+   /* The processing of the ismaster results above may have added/removed
+    * server descriptions. We need to reconcile that with our monitoring agents
+    */
+   mongoc_topology_reconcile(topology);
 
-      /* The processing of the ismaster results above may have added/removed
-       * server descriptions. We need to reconcile that with our monitoring agents
-       */
-
-      mongoc_topology_reconcile(topology);
-
-      /* TODO only wake up all clients if we found any topology changes */
-      mongoc_cond_broadcast (&topology->cond_client);
-   }
+   mongoc_cond_broadcast (&topology->cond_client);
 
    if (rtt_msec >= 0) {
       mongoc_mutex_unlock (&topology->mutex);
@@ -778,6 +770,52 @@ mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
    mongoc_topology_description_invalidate_server (&topology->description,
                                                   id, error);
    mongoc_mutex_unlock (&topology->mutex);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_update_from_handshake --
+ *
+ *      A client opens a new connection and calls ismaster on it when it
+ *      detects a closed connection in _mongoc_cluster_check_interval, or if
+ *      mongoc_client_pool_pop creates a new client. Update the topology
+ *      description from the ismaster response.
+ *
+ *      NOTE: this method uses @topology's mutex.
+ *
+ * Returns:
+ *      false if the server was removed from the topology
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_topology_update_from_handshake (mongoc_topology_t                 *topology,
+                                        const mongoc_server_description_t *sd)
+{
+   bool has_server;
+
+   BSON_ASSERT (topology);
+   BSON_ASSERT (sd);
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   mongoc_topology_description_handle_ismaster (
+      &topology->description, sd->id, &sd->last_is_master, sd->round_trip_time,
+      &sd->error);
+
+   /* The processing of the ismaster results above may have added/removed
+    * server descriptions. We need to reconcile that with our monitoring agents
+    */
+   mongoc_topology_reconcile(topology);
+
+   has_server = (NULL != mongoc_topology_description_server_by_id (
+      &topology->description, sd->id, NULL));
+
+   /* if pooled, wake threads waiting in mongoc_topology_server_by_id */
+   mongoc_cond_broadcast (&topology->cond_client);
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return has_server;
 }
 
 /*

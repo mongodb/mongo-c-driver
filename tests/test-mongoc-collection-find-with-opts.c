@@ -867,7 +867,6 @@ test_find_w_server_id_sharded (void)
 }
 
 
-#ifdef TODO_CDRIVER_562
 static void
 test_find_cmd_w_server_id_sharded (void)
 {
@@ -916,7 +915,6 @@ test_find_cmd_w_server_id_sharded (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
-#endif
 
 static void
 test_server_id_option (void)
@@ -1046,10 +1044,8 @@ test_collection_find_with_opts_install (TestSuite *suite)
                   test_find_cmd_w_server_id);
    TestSuite_Add (suite, "/Collection/find_with_opts/server_id/sharded",
                   test_find_w_server_id_sharded);
-#ifdef TODO_CDRIVER_562
    TestSuite_Add (suite, "/Collection/find_cmd_with_opts/server_id/sharded",
                   test_find_cmd_w_server_id_sharded);
-#endif
    TestSuite_AddLive (suite, "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);
    TestSuite_AddFull (suite, "/Collection/find_with_opts/collation/error",

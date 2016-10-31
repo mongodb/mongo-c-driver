@@ -202,7 +202,8 @@ process_sdam_test_ismaster_responses (bson_t                        *phase,
       bson_iter_bson (&ismaster_field_iter, &response);
 
       /* send ismaster through the topology description's handler */
-      mongoc_topology_description_handle_ismaster (td, sd, &response, 1, NULL);
+      mongoc_topology_description_handle_ismaster (td, sd->id, &response, 1,
+                                                   NULL);
    }
 }
 
