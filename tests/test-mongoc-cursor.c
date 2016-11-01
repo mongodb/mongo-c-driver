@@ -804,6 +804,7 @@ _test_cursor_hint (bool pooled,
    bson_t *q = BCON_NEW ("a", BCON_INT32 (1));
    mongoc_cursor_t *cursor;
    uint32_t server_id;
+   mongoc_query_flags_t expected_flags;
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
@@ -827,15 +828,17 @@ _test_cursor_hint (bool pooled,
 
    if (use_primary) {
       server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
+      expected_flags = MONGOC_QUERY_NONE;
    } else {
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
+      expected_flags = MONGOC_QUERY_SLAVE_OK;
    }
 
    ASSERT (mongoc_cursor_set_hint (cursor, server_id));
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+   request = mock_rs_receives_query (rs, "test.test", expected_flags,
                                      0, 0, "{'a': 1}", NULL);
 
    if (use_primary) {
@@ -888,14 +891,29 @@ test_hint_pooled_primary (void)
    _test_cursor_hint (true, true);
 }
 
+mongoc_read_mode_t modes[] = {
+   MONGOC_READ_PRIMARY,
+   MONGOC_READ_SECONDARY_PREFERRED,
+   MONGOC_READ_SECONDARY,
+};
+
+mongoc_query_flags_t expected_flag[] = {
+   MONGOC_QUERY_NONE,
+   MONGOC_QUERY_SLAVE_OK,
+   MONGOC_QUERY_NONE,
+};
+
+/* test that mongoc_cursor_set_hint sets slaveok for mongos only if read pref
+ * is secondaryPreferred. */
 static void
 test_cursor_hint_mongos (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   size_t i;
+   mongoc_read_prefs_t *prefs;
    mongoc_cursor_t *cursor;
-   uint32_t server_id;
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
@@ -904,27 +922,30 @@ test_cursor_hint_mongos (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    tmp_bson (NULL), NULL, NULL);
 
-   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
-   server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
-   ASSERT (mongoc_cursor_set_hint (cursor, server_id));
-   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
+   for (i = 0; i < sizeof (prefs) / sizeof (mongoc_read_prefs_t *); i++) {
+      prefs = mongoc_read_prefs_new (modes[i]);
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                       tmp_bson (NULL), NULL, prefs);
 
-   future = future_cursor_next (cursor, &doc);
+      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
+      ASSERT (mongoc_cursor_set_hint (cursor, 1));
+      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_hint (cursor));
 
-   /* slaveok is NOT set for mongos */
-   request = mock_server_receives_query (server, "test.test",
-                                         MONGOC_QUERY_NONE,
-                                         0, 0, "{}", NULL);
+      future = future_cursor_next (cursor, &doc);
 
-   mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+      request = mock_server_receives_query (server, "test.test",
+                                            expected_flag[i], 0, 0, "{}", NULL);
 
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
+      mock_server_replies_simple (request, "{}");
+      assert (future_get_bool (future));
+
+      request_destroy (request);
+      future_destroy (future);
+      mongoc_cursor_destroy (cursor);
+      mongoc_read_prefs_destroy (prefs);
+   }
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -937,7 +958,8 @@ test_cursor_hint_mongos_cmd (void)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
-   uint32_t server_id;
+   size_t i;
+   mongoc_read_prefs_t *prefs;
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
@@ -946,32 +968,35 @@ test_cursor_hint_mongos_cmd (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    tmp_bson (NULL), NULL, NULL);
 
-   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
-   server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
-   ASSERT (mongoc_cursor_set_hint (cursor, server_id));
-   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
+   for (i = 0; i < sizeof (prefs) / sizeof (mongoc_read_prefs_t *); i++) {
+      prefs = mongoc_read_prefs_new (modes[i]);
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                       tmp_bson (NULL), NULL, prefs);
 
-   future = future_cursor_next (cursor, &doc);
+      ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
+      ASSERT (mongoc_cursor_set_hint (cursor, 1));
+      ASSERT_CMPUINT32 ((uint32_t) 1, ==, mongoc_cursor_get_hint (cursor));
 
-   /* slaveok is NOT set for mongos */
-   request = mock_server_receives_command (server, "test",
-                                           MONGOC_QUERY_NONE,
-                                           0, 0, "{'find': 'test'}", NULL);
+      future = future_cursor_next (cursor, &doc);
 
-   mock_server_replies_simple (request, "{'ok': 1,"
-                                        " 'cursor': {"
-                                        "    'id': 0,"
-                                        "    'ns': 'test.test',"
-                                        "    'firstBatch': [{}]}}");
+      request = mock_server_receives_command (server, "test", expected_flag[i],
+                                              0, 0, "{'find': 'test'}", NULL);
 
-   assert (future_get_bool (future));
+      mock_server_replies_simple (request, "{'ok': 1,"
+         " 'cursor': {"
+         "    'id': 0,"
+         "    'ns': 'test.test',"
+         "    'firstBatch': [{}]}}");
 
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
+      assert (future_get_bool (future));
+
+      request_destroy (request);
+      future_destroy (future);
+      mongoc_cursor_destroy (cursor);
+      mongoc_read_prefs_destroy (prefs);
+   }
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);

@@ -888,8 +888,9 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
 
 
 static bool
-_mongoc_cursor_flags (mongoc_cursor_t      *cursor,
-                      mongoc_query_flags_t *flags /* OUT */)
+_mongoc_cursor_flags (mongoc_cursor_t        *cursor,
+                      mongoc_server_stream_t *stream,
+                      mongoc_query_flags_t   *flags /* OUT */)
 {
    bson_iter_t iter;
    const char *key;
@@ -920,6 +921,18 @@ _mongoc_cursor_flags (mongoc_cursor_t      *cursor,
 
    if (cursor->slave_ok) {
       *flags |= MONGOC_QUERY_SLAVE_OK;
+   } else if (cursor->server_id_set) {
+      /* mongoc_cursor_set_hint sets slaveok according to Server Selection Spec:
+       * if server is secondary, or a mongos with read mode secondaryPreferred.
+       */
+      if (stream->sd->type == MONGOC_SERVER_MONGOS &&
+          cursor->read_prefs->mode == MONGOC_READ_SECONDARY_PREFERRED) {
+         *flags |= MONGOC_QUERY_SLAVE_OK;
+      } else if ((stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+                  stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+                 stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
+         *flags |= MONGOC_QUERY_SLAVE_OK;
+      }
    }
 
    return true;
@@ -927,11 +940,12 @@ _mongoc_cursor_flags (mongoc_cursor_t      *cursor,
 
 
 static bson_t *
-_mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
-                                        bson_t               *query /* OUT */,
-                                        bson_t               *fields /* OUT */,
-                                        mongoc_query_flags_t *flags /* OUT */,
-                                        int32_t              *skip /* OUT */)
+_mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t        *cursor,
+                                        mongoc_server_stream_t *stream,
+                                        bson_t                 *query /* OUT */,
+                                        bson_t                 *fields/* OUT */,
+                                        mongoc_query_flags_t   *flags /* OUT */,
+                                        int32_t                *skip  /* OUT */)
 {
    bool pushed_dollar_query;
    bson_iter_t iter;
@@ -1048,7 +1062,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t      *cursor,
       }
    }
 
-   if (!_mongoc_cursor_flags (cursor, flags)) {
+   if (!_mongoc_cursor_flags (cursor, stream, flags)) {
       /* cursor->error is set */
       return NULL;
    }
@@ -1107,7 +1121,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
       cmd_name = "find";
    }
 
-   query_ptr = _mongoc_cursor_parse_opts_for_op_query (cursor, 
+   query_ptr = _mongoc_cursor_parse_opts_for_op_query (cursor,
+                                                       server_stream,
                                                        &query,
                                                        &fields,
                                                        &flags,
@@ -1116,12 +1131,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    if (!query_ptr) {
       /* invalid opts. cursor->error is set */
       GOTO (done);
-   }
-
-   if (cursor->server_id_set &&
-       server_stream->sd->type != MONGOC_SERVER_MONGOS) {
-      /* directly querying a server, set slaveOk in case it's secondary */
-      flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    apply_read_preferences (cursor->read_prefs, server_stream,
@@ -1254,14 +1263,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
-   if (!_mongoc_cursor_flags (cursor, &flags)) {
+   if (!_mongoc_cursor_flags (cursor, server_stream, &flags)) {
       GOTO (done);
-   }
-
-   if (cursor->server_id_set &&
-       server_stream->sd->type != MONGOC_SERVER_MONGOS) {
-      /* directly querying a server, set slaveOk in case it's secondary */
-      flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    apply_read_preferences (cursor->read_prefs, server_stream,
@@ -1547,7 +1550,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
    started = bson_get_monotonic_time ();
    cluster = &cursor->client->cluster;
 
-   if (!_mongoc_cursor_flags (cursor, &flags)) {
+   if (!_mongoc_cursor_flags (cursor, server_stream, &flags)) {
       GOTO (fail);
    }
 
@@ -1754,8 +1757,8 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      const bson_t    **bson)
 {
    int64_t limit;
-   mongoc_query_flags_t flags;
    const bson_t *b = NULL;
+   bool tailable;
 
    ENTRY;
 
@@ -1763,12 +1766,6 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    if (bson) {
       *bson = NULL;
-   }
-
-   if (!_mongoc_cursor_flags (cursor, &flags)) {
-      /* cursor->error is set */
-      cursor->done = true;
-      RETURN (false);
    }
 
    /*
@@ -1803,9 +1800,10 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
    }
 
 complete:
+   tailable = _mongoc_cursor_get_opt_bool (cursor, "tailable");
    cursor->done = (cursor->end_of_event &&
                    ((cursor->in_exhaust && !cursor->rpc.reply.cursor_id) ||
-                    (!b && !(flags & MONGOC_QUERY_TAILABLE_CURSOR))));
+                    (!b && !tailable)));
 
    if (bson) {
       *bson = b;
