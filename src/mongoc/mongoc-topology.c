@@ -74,6 +74,31 @@ mongoc_topology_reconcile (mongoc_topology_t *topology) {
       }
    }
 }
+
+
+/* call this while already holding the lock */
+static bool
+_mongoc_topology_update_no_lock (uint32_t            id,
+                                 const bson_t       *ismaster_response,
+                                 int64_t             rtt_msec,
+                                 mongoc_topology_t  *topology,
+                                 const bson_error_t *error /* IN */)
+{
+   mongoc_topology_description_handle_ismaster (&topology->description, id,
+                                                ismaster_response, rtt_msec,
+                                                error);
+
+   /* The processing of the ismaster results above may have added/removed
+    * server descriptions. We need to reconcile that with our monitoring agents
+    */
+   mongoc_topology_reconcile(topology);
+
+   /* return false if server removed from topology */
+   return mongoc_topology_description_server_by_id (&topology->description,
+                                                    id, NULL) != NULL;
+}
+
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -108,14 +133,8 @@ _mongoc_topology_scanner_cb (uint32_t            id,
       mongoc_mutex_lock (&topology->mutex);
    }
 
-   mongoc_topology_description_handle_ismaster (&topology->description, id,
-                                                ismaster_response, rtt_msec,
-                                                error);
-
-   /* The processing of the ismaster results above may have added/removed
-    * server descriptions. We need to reconcile that with our monitoring agents
-    */
-   mongoc_topology_reconcile(topology);
+   _mongoc_topology_update_no_lock (id, ismaster_response, rtt_msec, topology,
+                                    error);
 
    mongoc_cond_broadcast (&topology->cond_client);
 
@@ -799,17 +818,9 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t                 *topol
 
    mongoc_mutex_lock (&topology->mutex);
 
-   mongoc_topology_description_handle_ismaster (
-      &topology->description, sd->id, &sd->last_is_master,
-      sd->round_trip_time_msec, &sd->error);
-
-   /* The processing of the ismaster results above may have added/removed
-    * server descriptions. We need to reconcile that with our monitoring agents
-    */
-   mongoc_topology_reconcile(topology);
-
-   has_server = (NULL != mongoc_topology_description_server_by_id (
-      &topology->description, sd->id, NULL));
+   has_server = _mongoc_topology_update_no_lock (sd->id, &sd->last_is_master,
+                                                 sd->round_trip_time_msec,
+                                                 topology, NULL);
 
    /* if pooled, wake threads waiting in mongoc_topology_server_by_id */
    mongoc_cond_broadcast (&topology->cond_client);
