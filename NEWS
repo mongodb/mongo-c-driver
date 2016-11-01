@@ -68,6 +68,8 @@ New features and bug fixes:
     if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.
     mongoc_bulk_operation_execute continues to use MONGOC_ERROR_COMMAND for
     all errors.
+  * If mongoc_client_pool_t fails to start its scanner thread in the background,
+    it logs and aborts instead of silently continuing, then failing to connect.
 
 Removed configure flags:
   * --enable-experimental has been removed. All previously experimental

@@ -1006,6 +1006,8 @@ DONE:
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
 {
+   int r;
+
    if (topology->single_threaded) {
       return false;
    }
@@ -1017,8 +1019,14 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
       _mongoc_handshake_freeze ();
       _mongoc_topology_description_monitor_opening (&topology->description);
 
-      mongoc_thread_create (&topology->thread, _mongoc_topology_run_background,
-                            topology);
+      r = mongoc_thread_create (&topology->thread,
+                                _mongoc_topology_run_background, topology);
+
+      if (r != 0) {
+         MONGOC_ERROR ("could not start topology scanner thread: %s",
+                       strerror (r));
+         abort ();
+      }
    }
 
    mongoc_mutex_unlock (&topology->mutex);
