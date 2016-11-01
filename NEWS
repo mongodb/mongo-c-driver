@@ -62,7 +62,9 @@ New features and bug fixes:
   * New CMake option ENABLE_TRACING allows debug output, which before had only
     been available with "configure --enable-tracing".
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
-  * The random number generator used to select servers is now properly seeded.
+  * Bugfixes: The random number generator used to select servers is now properly
+    seeded, and secondary queries are now properly distributed according to
+    localThresholdMS, not just to the lowest-latency secondary.
   * mongoc_collection_insert, mongoc_collection_update, mongoc_collection_remove
     consistently use domain MONGOC_ERROR_BSON, code MONGOC_ERROR_BSON_INVALID
     if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.

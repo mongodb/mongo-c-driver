@@ -365,7 +365,7 @@ test_server_selection_logic_cb (bson_t *test)
       sd->type = server_type_from_test (bson_iter_utf8 (&sd_iter, NULL));
 
       if (bson_iter_init_find (&sd_iter, &server, "avg_rtt_ms")) {
-         sd->round_trip_time = bson_iter_int32 (&sd_iter);
+         sd->round_trip_time_msec = bson_iter_int32 (&sd_iter);
       } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
          test_error ("%s has no avg_rtt_ms", sd->host.host_and_port);
          abort ();

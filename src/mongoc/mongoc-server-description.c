@@ -99,7 +99,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
 
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
-   sd->round_trip_time = -1;
+   sd->round_trip_time_msec = -1;
 
    sd->set_name = NULL;
    sd->set_version = MONGOC_NO_SET_VERSION;
@@ -295,7 +295,7 @@ mongoc_server_description_host (const mongoc_server_description_t *description)
 int64_t
 mongoc_server_description_round_trip_time (const mongoc_server_description_t *description)
 {
-   return description->round_trip_time;
+   return description->round_trip_time_msec;
 }
 
 /*
@@ -434,12 +434,13 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
  */
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t                      new_time)
+                                      int64_t                      rtt_msec)
 {
-   if (server->round_trip_time == -1) {
-      server->round_trip_time = new_time;
+   if (server->round_trip_time_msec == -1) {
+      server->round_trip_time_msec = rtt_msec;
    } else {
-      server->round_trip_time = ALPHA * new_time + (1 - ALPHA) * server->round_trip_time;
+      server->round_trip_time_msec = (int64_t) (ALPHA * rtt_msec +
+         (1 - ALPHA) * server->round_trip_time_msec);
    }
 }
 
@@ -616,7 +617,7 @@ mongoc_server_description_handle_ismaster (
 
 failure:
    sd->type = MONGOC_SERVER_UNKNOWN;
-   sd->round_trip_time = -1;
+   sd->round_trip_time_msec = -1;
 
    EXIT;
 }
@@ -643,7 +644,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
    copy->id = description->id;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
-   copy->round_trip_time = -1;
+   copy->round_trip_time_msec = -1;
 
    copy->connection_address = copy->host.host_and_port;
 
@@ -660,7 +661,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    if (description->has_is_master) {
       mongoc_server_description_handle_ismaster (
          copy, &description->last_is_master,
-         description->round_trip_time, &description->error);
+         description->round_trip_time_msec, &description->error);
    }
 
    /* Preserve the error */

@@ -88,7 +88,7 @@ bool
 mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_result_t result;
-   int64_t rtt;
+   int64_t rtt_msec;
    _mongoc_async_cmd_phase_t phase_callback;
 
    phase_callback = gMongocCMDPhases[acmd->state];
@@ -102,13 +102,13 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-   rtt = bson_get_monotonic_time () - acmd->start_time;
+   rtt_msec = (bson_get_monotonic_time () - acmd->start_time) / 1000;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
-      acmd->cb (result, &acmd->reply, rtt, acmd->data, &acmd->error);
+      acmd->cb (result, &acmd->reply, rtt_msec, acmd->data, &acmd->error);
    } else {
       /* we're in ERROR, TIMEOUT, or CANCELED */
-      acmd->cb (result, NULL, rtt, acmd->data, &acmd->error);
+      acmd->cb (result, NULL, rtt_msec, acmd->data, &acmd->error);
    }
 
    mongoc_async_cmd_destroy (acmd);

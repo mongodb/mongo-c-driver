@@ -27,7 +27,7 @@ test_rtt_calculation_cb (bson_t *test)
 
    /* parse RTT into server description */
    assert(bson_iter_init_find(&iter, test, "avg_rtt_ms"));
-   description->round_trip_time = bson_iter_int64(&iter);
+   description->round_trip_time_msec = bson_iter_int64(&iter);
 
    /* update server description with new rtt */
    assert(bson_iter_init_find(&iter, test, "new_rtt_ms"));
@@ -35,7 +35,7 @@ test_rtt_calculation_cb (bson_t *test)
 
    /* ensure new RTT was calculated correctly */
    assert(bson_iter_init_find(&iter, test, "new_avg_rtt"));
-   assert(description->round_trip_time == bson_iter_int64(&iter));
+   assert(description->round_trip_time_msec == bson_iter_int64(&iter));
 
    mongoc_server_description_destroy(description);
 }

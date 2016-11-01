@@ -883,6 +883,48 @@ test_server_removed_during_handshake_pooled (void)
 }
 
 
+static void
+test_rtt (void *ctx)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   int64_t rtt_msec;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   future = future_client_command_simple (client, "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, NULL, &error);
+
+   request = mock_server_receives_ismaster (server);
+   _mongoc_usleep (1000 * 1000);  /* one second */
+   mock_server_replies_ok_and_destroys (request);
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
+                                           "{'ping': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   ASSERT (sd);
+
+   /* assert, with plenty of slack, that rtt was calculated in ms, not usec */
+   rtt_msec = mongoc_server_description_round_trip_time (sd);
+   ASSERT_CMPINT64 (rtt_msec, >, (int64_t) 900);   /* 900 ms */
+   ASSERT_CMPINT64 (rtt_msec, <, (int64_t) 9000);  /* 9 seconds */
+
+   mongoc_server_description_destroy (sd);
+   future_destroy (future);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -919,4 +961,6 @@ test_topology_install (TestSuite *suite)
                   test_server_removed_during_handshake_single);
    TestSuite_Add (suite, "/Topology/server_removed/pooled",
                   test_server_removed_during_handshake_pooled);
+   TestSuite_AddFull (suite, "/Topology/rtt", test_rtt, NULL, NULL,
+                      test_framework_skip_if_slow);
 }

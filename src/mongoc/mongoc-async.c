@@ -162,7 +162,7 @@ mongoc_async_run (mongoc_async_t *async,
                       "connection timeout" :
                       "socket timeout");
 
-      acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time),
+      acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time) / 1000,
                 acmd->data, &acmd->error);
       mongoc_async_cmd_destroy (acmd);
    }

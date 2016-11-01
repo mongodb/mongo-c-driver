@@ -800,8 +800,8 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t                 *topol
    mongoc_mutex_lock (&topology->mutex);
 
    mongoc_topology_description_handle_ismaster (
-      &topology->description, sd->id, &sd->last_is_master, sd->round_trip_time,
-      &sd->error);
+      &topology->description, sd->id, &sd->last_is_master,
+      sd->round_trip_time_msec, &sd->error);
 
    /* The processing of the ismaster results above may have added/removed
     * server descriptions. We need to reconcile that with our monitoring agents

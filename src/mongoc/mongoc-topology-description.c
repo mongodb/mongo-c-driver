@@ -631,13 +631,15 @@ mongoc_topology_description_suitable_servers (mongoc_array_t                *set
     * Find the nearest, then select within the window */
 
    for (i = 0; i < data.candidates_len; i++) {
-      if (candidates[i] && (nearest == -1 || nearest > candidates[i]->round_trip_time)) {
-         nearest = candidates[i]->round_trip_time;
+      if (candidates[i] &&
+          (nearest == -1 || nearest > candidates[i]->round_trip_time_msec)) {
+         nearest = candidates[i]->round_trip_time_msec;
       }
    }
 
    for (i = 0; i < data.candidates_len; i++) {
-      if (candidates[i] && (candidates[i]->round_trip_time <= nearest + local_threshold_ms)) {
+      if (candidates[i] &&
+          (candidates[i]->round_trip_time_msec <= nearest + local_threshold_ms)) {
          _mongoc_array_append_val (set, candidates[i]);
       }
    }

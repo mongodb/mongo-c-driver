@@ -46,7 +46,7 @@ struct _mongoc_server_description_t
 {
    uint32_t                         id;
    mongoc_host_list_t               host;
-   int64_t                          round_trip_time;
+   int64_t                          round_trip_time_msec;
    int64_t                          last_update_time_usec;
    bson_t                           last_is_master;
    bool                             has_is_master;
@@ -108,7 +108,7 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
                                            const bson_oid_t            *election_id);
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t                      new_time);
+                                      int64_t                      rtt_msec);
 
 void
 mongoc_server_description_handle_ismaster (mongoc_server_description_t   *sd,
