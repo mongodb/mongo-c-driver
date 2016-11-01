@@ -148,7 +148,9 @@ mongoc_cursor_t              *mongoc_collection_find                 (mongoc_col
                                                                       uint32_t                       batch_size,
                                                                       const bson_t                  *query,
                                                                       const bson_t                  *fields,
-                                                                      const mongoc_read_prefs_t     *read_prefs) BSON_GNUC_WARN_UNUSED_RESULT;
+                                                                      const mongoc_read_prefs_t     *read_prefs)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_with_opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 BSON_API
 mongoc_cursor_t              *mongoc_collection_find_with_opts       (mongoc_collection_t           *collection,
                                                                       const bson_t                  *filter,

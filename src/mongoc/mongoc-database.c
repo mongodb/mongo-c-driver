@@ -336,6 +336,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
    const bson_t *doc;
    bool ret = false;
    bson_t query;
+   bson_t opts;
    bson_t user;
    char *input;
    char *pwd = NULL;
@@ -367,8 +368,12 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
     */
    bson_init(&query);
    bson_append_utf8(&query, "user", 4, username, -1);
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &query, NULL, NULL);
+
+   bson_init (&opts);
+   bson_append_int64 (&opts, "limit", 5, 1);
+   bson_append_bool (&opts, "singleBatch", 11, true);
+
+   cursor = mongoc_collection_find_with_opts (collection, &query, &opts, NULL);
    if (!mongoc_cursor_next(cursor, &doc)) {
       if (mongoc_cursor_error(cursor, error)) {
          GOTO (failure);
@@ -398,6 +403,7 @@ failure:
    }
    mongoc_collection_destroy(collection);
    bson_destroy(&query);
+   bson_destroy(&opts);
    bson_free(pwd);
 
    RETURN (ret);
@@ -909,8 +915,8 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
     * replicaset mode" */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    filter ? filter : &q, NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (col, filter ? filter : &q, NULL,
+                                              read_prefs);
 
    _mongoc_cursor_transform_init (
       cursor,

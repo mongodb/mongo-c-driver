@@ -429,8 +429,7 @@ test_insert (bool ordered)
    bson_destroy (&reply);
    ASSERT_COUNT (2, collection);
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    assert (cursor);
 
    while (mongoc_cursor_next (cursor, &inserted_doc)) {
@@ -987,15 +986,7 @@ test_upsert_huge (void *ctx)
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (1, collection);
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    0,
-                                    0,
-                                    &query,
-                                    NULL,
-                                    NULL);
-
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    ASSERT_CURSOR_NEXT (cursor, &retdoc);
    ASSERT_CURSOR_DONE (cursor);
 
@@ -2171,14 +2162,7 @@ test_large_inserts_ordered (void *ctx)
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (1, collection);
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    0,
-                                    0,
-                                    &query,
-                                    NULL,
-                                    NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    ASSERT_CURSOR_NEXT (cursor, &retdoc);
    ASSERT_CURSOR_DONE (cursor);
 
@@ -2264,15 +2248,7 @@ test_large_inserts_unordered (void *ctx)
 
    ASSERT_COUNT (2, collection);
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    0,
-                                    0,
-                                    &query,
-                                    NULL,
-                                    NULL);
-
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    ASSERT_CURSOR_NEXT (cursor, &retdoc);
    ASSERT_CURSOR_NEXT (cursor, &retdoc);
    ASSERT_CURSOR_DONE (cursor);

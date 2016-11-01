@@ -472,6 +472,8 @@ done:
  *
  * mongoc_collection_find --
  *
+ *       DEPRECATED: use mongoc_collection_find_with_opts.
+ *
  *       Performs a query against the configured MongoDB server. If @read_prefs
  *       is provided, it will be used to locate a MongoDB node in the cluster
  *       to deliver the query to.
@@ -1398,8 +1400,8 @@ _mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
    /* Index Enumeration Spec: "run listIndexes on the primary node". */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = mongoc_collection_find (idx_collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &query, NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (idx_collection, &query, NULL,
+                                              read_prefs);
 
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy (idx_collection);

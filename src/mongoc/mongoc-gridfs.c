@@ -32,6 +32,7 @@
 #include "mongoc-gridfs-file-list-private.h"
 #include "mongoc-client.h"
 #include "mongoc-trace-private.h"
+#include "mongoc-cursor-private.h"
 
 #define MONGOC_GRIDFS_STREAM_CHUNK 4096
 
@@ -356,8 +357,11 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    BSON_APPEND_UTF8 (&q, "filename", filename);
    BSON_APPEND_INT32 (&fields, "_id", 1);
 
-   cursor = mongoc_collection_find (gridfs->files, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &q, &fields, NULL);
+   cursor = _mongoc_cursor_new (gridfs->client, gridfs->files->ns,
+                                MONGOC_QUERY_NONE, 0, 0, 0,
+                                false /* is command */,
+                                &q, &fields, NULL, NULL);
+
    BSON_ASSERT (cursor);
 
    while (mongoc_cursor_next (cursor, &doc)) {

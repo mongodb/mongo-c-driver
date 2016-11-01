@@ -41,7 +41,7 @@ fetch (mongoc_collection_t *col,
    const bson_t *b;
    bson_error_t error;
 
-   cursor = mongoc_collection_find(col, MONGOC_QUERY_NONE, 0, 0, 0, spec, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (col, spec, NULL, NULL);
    while (mongoc_cursor_next(cursor, &b)) {
       BSON_ASSERT(b);
       print_doc(b);

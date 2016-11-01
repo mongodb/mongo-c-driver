@@ -111,10 +111,8 @@ test_get_max_msg_size (void)
 
 
 #define START_QUERY(client_port_variable) do { \
-      cursor = mongoc_collection_find (collection, \
-                                       MONGOC_QUERY_NONE, \
-                                       0, 0, 0, tmp_bson ("{}"), \
-                                       NULL, NULL); \
+      cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), \
+                                                 NULL, NULL); \
       future = future_cursor_next (cursor, &doc); \
       request = mock_server_receives_query (server, "test.test", \
                                             MONGOC_QUERY_SLAVE_OK, 0, 0, \

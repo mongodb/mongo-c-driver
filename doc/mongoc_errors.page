@@ -117,7 +117,7 @@
           <p><code>MONGOC_ERROR_CURSOR_INVALID_CURSOR</code></p>
         </td>
         <td>
-          <p>You passed bad arguments to <code xref="mongoc_collection_find">mongoc_collection_find</code>, or you called <code xref="mongoc_cursor_next">mongoc_cursor_next</code> on a completed or failed cursor, or the cursor timed out on the server.</p>
+          <p>You passed bad arguments to <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts</code>, or you called <code xref="mongoc_cursor_next">mongoc_cursor_next</code> on a completed or failed cursor, or the cursor timed out on the server.</p>
         </td>
       </tr>
       <tr>

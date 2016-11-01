@@ -14,7 +14,9 @@
   <title>mongoc_collection_find()</title>
 
   <section id="deprecation">
-    <p>For a more convenient API, see <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts</code>.</p>
+    <title>Deprecated</title>
+    <p>This function is deprecated and should not be used in new code.</p>
+    <p>Use the more convenient <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts</code> instead.</p>
   </section>
 
   <section id="synopsis">
@@ -28,6 +30,7 @@ mongoc_collection_find (mongoc_collection_t       *collection,
                         const bson_t              *query,
                         const bson_t              *fields,
                         const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_with_opts)
    BSON_GNUC_WARN_UNUSED_RESULT;
 ]]></code></synopsis>
   </section>

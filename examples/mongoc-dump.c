@@ -74,8 +74,7 @@ mongoc_dump_collection (mongoc_client_t *client,
    }
 
    col = mongoc_client_get_collection (client, database, collection);
-   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (col, &query, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       if (BSON_UNLIKELY (doc->len != fwrite (bson_get_data (doc), 1, doc->len, stream))) {

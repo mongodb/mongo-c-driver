@@ -80,6 +80,9 @@ New features and bug fixes:
     the list of monitoring callbacks.
   * Improved error reporting when the driver fails to reach the server.
 
+Deprecations:
+  * mongoc_collection_find is deprecated for mongoc_collection_find_with_opts.
+
 Removed configure flags:
   * --enable-experimental has been removed. All previously experimental
     features are now always on.

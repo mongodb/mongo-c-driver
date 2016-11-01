@@ -722,7 +722,9 @@ _mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 {
-   bson_t *query, *fields, child, child2;
+   bson_t query;
+   bson_t child;
+   bson_t opts;
    const bson_t *chunk;
    const char *key;
    bson_iter_t iter;
@@ -756,35 +758,32 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       }
 
       if (!file->cursor) {
-         query = bson_new ();
+         bson_init (&query);
+         BSON_APPEND_VALUE (&query, "files_id", &file->files_id);
+         BSON_APPEND_DOCUMENT_BEGIN (&query, "n", &child);
+         BSON_APPEND_INT32 (&child, "$gte", file->n);
+         bson_append_document_end (&query, &child);
 
-         bson_append_document_begin(query, "$query", -1, &child);
-            bson_append_value (&child, "files_id", -1, &file->files_id);
+         bson_init (&opts);
+         BSON_APPEND_DOCUMENT_BEGIN (&opts, "sort", &child);
+         BSON_APPEND_INT32 (&child, "n", 1);
+         bson_append_document_end (&opts, &child);
 
-            bson_append_document_begin (&child, "n", -1, &child2);
-               bson_append_int32 (&child2, "$gte", -1, file->n);
-            bson_append_document_end (&child, &child2);
-         bson_append_document_end(query, &child);
-
-         bson_append_document_begin(query, "$orderby", -1, &child);
-            bson_append_int32 (&child, "n", -1, 1);
-         bson_append_document_end(query, &child);
-
-         fields = bson_new ();
-         bson_append_int32 (fields, "n", -1, 1);
-         bson_append_int32 (fields, "data", -1, 1);
-         bson_append_int32 (fields, "_id", -1, 0);
+         BSON_APPEND_DOCUMENT_BEGIN (&opts, "projection", &child);
+         BSON_APPEND_INT32 (&child, "n", 1);
+         BSON_APPEND_INT32 (&child, "data", 1);
+         BSON_APPEND_INT32 (&child, "_id", 0);
+         bson_append_document_end (&opts, &child);
 
          /* find all chunks greater than or equal to our current file pos */
-         file->cursor = mongoc_collection_find (file->gridfs->chunks,
-                                                MONGOC_QUERY_NONE, 0, 0, 0, query,
-                                                fields, NULL);
+         file->cursor = mongoc_collection_find_with_opts (file->gridfs->chunks,
+                                                          &query, &opts, NULL);
 
          file->cursor_range[0] = file->n;
          file->cursor_range[1] = (uint32_t)(file->length / file->chunk_size);
 
-         bson_destroy (query);
-         bson_destroy (fields);
+         bson_destroy (&query);
+         bson_destroy (&opts);
 
          BSON_ASSERT (file->cursor);
       }

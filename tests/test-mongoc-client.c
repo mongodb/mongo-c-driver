@@ -391,8 +391,7 @@ test_mongoc_client_authenticate (void *context)
    auth_client = mongoc_client_new (uri_str_auth);
    test_framework_set_ssl_opts (auth_client);
    collection = mongoc_client_get_collection (auth_client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &q, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r) {
       r = mongoc_cursor_error(cursor, &error);
@@ -449,8 +448,7 @@ test_mongoc_client_authenticate_failure (void *context)
    test_framework_set_ssl_opts (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &q, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
@@ -560,15 +558,7 @@ test_wire_version (void)
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    1,
-                                    0,
-                                    &q,
-                                    NULL,
-                                    NULL);
-
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
 
@@ -1144,16 +1134,9 @@ test_unavailable_seeds (void)
       assert (client);
 
       collection = mongoc_client_get_collection (client, "test", "test");
-      cursor = mongoc_collection_find (collection,
-                                       MONGOC_QUERY_NONE,
-                                       0,
-                                       0,
-                                       0,
-                                       &query,
-                                       NULL,
-                                       NULL);
-
-      assert (! mongoc_cursor_next (cursor, &doc));
+      cursor = mongoc_collection_find_with_opts (collection, &query, NULL,
+                                                 NULL);
+      assert (!mongoc_cursor_next (cursor, &doc));
       assert (mongoc_cursor_error (cursor, &error));
       ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
       ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
@@ -1787,8 +1770,8 @@ _test_mongoc_client_get_description (bool pooled)
    ASSERT (NULL == mongoc_client_get_server_description (client, 1234));
 
    collection = get_test_collection (client, "test_mongoc_client_description");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL,
+                                              NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    server_id = mongoc_cursor_get_hint (cursor);
    ASSERT (0 != server_id);
