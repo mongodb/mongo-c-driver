@@ -201,6 +201,7 @@ endif ()
 
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
+add_definitions(-D_DEFAULT_SOURCE)
 if (APPLE)
    # Until CDRIVER-520.
    add_definitions(-Wno-deprecated-declarations)
@@ -389,6 +390,7 @@ set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONG
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
+      set_source_files_properties(${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
       else()
@@ -517,7 +519,7 @@ mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 
 if (ENABLE_TESTS)
    enable_testing()
-   add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+   add_test(NAME test-libmongoc COMMAND test-libmongoc --no-fork -d)
 endif ()
 
 mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
@@ -535,7 +537,9 @@ mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
+file(COPY ${SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
+file(COPY ${SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 install(
   TARGETS mongoc_shared mongoc_static ${EXAMPLES}

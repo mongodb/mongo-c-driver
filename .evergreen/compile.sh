@@ -11,7 +11,11 @@ case "$OS" in
    ;;
 
    *)
-      sh ./.evergreen/compile-unix.sh
+      if [ "$BUILDTOOL" = "cmake" ]; then
+         sh ./.evergreen/compile-unix-cmake.sh
+      else
+         sh ./.evergreen/compile-unix.sh
+      fi
    ;;
 esac
 

@@ -332,6 +332,22 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
+    - name: cmake-compile
+      tags: ["release-eng", "cmake-compile"]
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              BUILDTOOL="cmake" sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: debug-compile
       tags: ["debug-compile"]
       commands:
@@ -448,6 +464,7 @@ tasks:
               set -o xtrace
               RELEASE=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
+
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
       commands:
@@ -4975,6 +4992,7 @@ buildvariants:
     - ubuntu1404-build
   tasks:
     - "make-release-archive"
+    - ".release-eng"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
