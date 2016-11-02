@@ -24,7 +24,11 @@ TEST_CFLAGS += \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
-	-I$(top_builddir)/src/mongoc
+	-I$(top_builddir)/src/mongoc \
+	-DBINARY_DIR="\"$(top_srcdir)/tests/binary\"" \
+	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
+	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
+	-DOS_RELEASE_FILE_DIR="\"$(top_srcdir)/tests/release_files\""
 
 TEST_LIBS = \
 	$(COVERAGE_LDFLAGS) \

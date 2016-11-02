@@ -154,24 +154,20 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    /* Single */
-   if (realpath ("tests/json/server_discovery_and_monitoring/single", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/single", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Replica set */
-   if (realpath ("tests/json/server_discovery_and_monitoring/rs", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/rs", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Sharded */
-   if (realpath ("tests/json/server_discovery_and_monitoring/sharded", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   if (realpath ("tests/json/server_discovery_and_monitoring/supplemental", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 }
 
 void

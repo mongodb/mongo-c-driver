@@ -450,7 +450,7 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   ASSERT (realpath ("tests/json/server_discovery_and_monitoring/monitoring",
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/monitoring",
                      resolved));
 
    install_json_test_suite (suite, resolved, &test_sdam_monitoring_cb);

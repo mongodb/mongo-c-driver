@@ -225,10 +225,9 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   if (realpath ("tests/json/max_staleness", resolved)) {
-      install_json_test_suite (suite, resolved,
-                               &test_server_selection_logic_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/max_staleness", resolved));
+   install_json_test_suite (suite, resolved,
+                            &test_server_selection_logic_cb);
 }
 
 void

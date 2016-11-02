@@ -54,14 +54,12 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    /* RTT calculation */
-   if (realpath ("tests/json/server_selection/rtt", resolved)) {
-      install_json_test_suite(suite, resolved, &test_rtt_calculation_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_selection/rtt", resolved));
+   install_json_test_suite(suite, resolved, &test_rtt_calculation_cb);
 
    /* SS logic */
-   if (realpath ("tests/json/server_selection/server_selection", resolved)) {
-      install_json_test_suite(suite, resolved, &test_server_selection_logic_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_selection/server_selection", resolved));
+   install_json_test_suite(suite, resolved, &test_server_selection_logic_cb);
 }
 
 void

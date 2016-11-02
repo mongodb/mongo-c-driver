@@ -808,9 +808,8 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   if (realpath ("tests/json/command_monitoring", resolved)) {
-      install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/command_monitoring", resolved));
+   install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
 }
 
 

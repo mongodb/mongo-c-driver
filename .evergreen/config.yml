@@ -324,7 +324,10 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              ./autogen.sh --enable-html-docs --enable-man-pages && make dist
+              export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+              export MONGOC_TEST_SKIP_LIVE=on
+              export MONGOC_TEST_SKIP_SLOW=on
+              ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
         - func: "upload docs"
         - func: "upload release"
         - func: "upload build"

@@ -66,4 +66,5 @@ dist-hook:
 	fi
 
 uninstall-local:
+	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
 	-rm -r $(mongocdocdir)

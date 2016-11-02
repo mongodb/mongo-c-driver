@@ -26,11 +26,17 @@
 extern "C" {
 #endif
 
-#define OS_RELEASE_FILE_DIR "tests/release_files"
+#ifndef OS_RELEASE_FILE_DIR
+# define OS_RELEASE_FILE_DIR "tests/release_files"
+#endif
 
 
 #ifndef BINARY_DIR
 # define BINARY_DIR "tests/binary"
+#endif
+
+#ifndef JSON_DIR
+# define JSON_DIR "tests/json"
 #endif
 
 #ifndef CERT_TEST_DIR

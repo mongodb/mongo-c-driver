@@ -6,7 +6,8 @@ CLEANFILES += $(wildcard doc/html/*.png)
 .PHONY: doc/html
 
 doc/html:
-	$(AM_V_GEN)$(YELP_BUILD) html -x build/libbson.xsl -o doc/html/ doc
+	-mkdir doc/html
+	$(AM_V_GEN)$(YELP_BUILD) html -x $(top_srcdir)/build/libbson.xsl -o doc/html/ doc
 
 YELP_HTML_FILES = \
 	doc/html/C.css \
