@@ -1,4 +1,5 @@
-BUILT_MAN_FILES = $(patsubst doc/%.page,doc/man/%.3,$(wildcard doc/*.page))
+MAN_FILES_TO_BUILD = $(patsubst doc/%.page,doc/man/%.3,$(wildcard doc/*.page))
+BUILT_MAN_FILES = $(wildcard doc/man/*.3)
 CLEANFILES += $(wildcard doc/man/*.3)
 
 dist_man_MANS = $(BUILT_MAN_FILES)
@@ -13,6 +14,5 @@ man3_MANS = $(BUILT_MAN_FILES)
 %.3: ../%.page
 	$(AM_V_GEN)./doc/mallard2man.py 3 $^
 
-man: $(BUILT_MAN_FILES)
-EXTRA_DIST += $(wildcard doc/man/*.3) \
-				  doc/mallard2man.py
+man: $(MAN_FILES_TO_BUILD)
+EXTRA_DIST += $(MAN_FILES_TO_BUILD)
