@@ -7,7 +7,7 @@ CLEANFILES += $(wildcard doc/html/*.png)
 
 doc/html:
 	-mkdir doc/html
-	$(AM_V_GEN)$(YELP_BUILD) html -x $(top_srcdir)/build/libbson.xsl -o doc/html/ doc
+	$(AM_V_GEN)$(YELP_BUILD) html -x $(top_srcdir)/build/libmongoc.xsl -o doc/html/ doc
 
 YELP_HTML_FILES = \
 	doc/html/C.css \
