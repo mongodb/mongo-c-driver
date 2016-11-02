@@ -390,7 +390,10 @@ set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONG
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
-      set_source_files_properties(${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+      if (NOT MSVC)
+         # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
+         set_source_files_properties(${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+      endif()
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
       else()
