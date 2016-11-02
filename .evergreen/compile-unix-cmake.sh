@@ -3,6 +3,13 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 CMAKE=/opt/cmake/bin/cmake
+if command -v gtar 2>/dev/null; then
+   TAR=gtar
+else
+   TAR=tar
+fi
+
+$TAR xf ../mongoc.tar.gz -C . --strip-components=1
 
 cpus=$(grep -c '^processor' /proc/cpuinfo)
 MAKEFLAGS="-j${cpus}"
