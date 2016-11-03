@@ -6,7 +6,7 @@ CLEANFILES += $(wildcard doc/html/*.png)
 .PHONY: doc/html
 
 doc/html:
-	-mkdir doc/html
+	-mkdir -p doc/html
 	$(AM_V_GEN)$(YELP_BUILD) html -x $(top_srcdir)/build/libmongoc.xsl -o doc/html/ doc
 
 YELP_HTML_FILES = \
