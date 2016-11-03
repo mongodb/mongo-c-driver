@@ -598,7 +598,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
    }
 
-   BSON_ASSERT (file->length == target_length);
+   BSON_ASSERT (file->length = target_length);
    file->is_dirty = true;
 
    RETURN (diff);
