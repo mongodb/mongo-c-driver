@@ -37,6 +37,12 @@
               .section-anchor:hover {
                   opacity: 1;
               }
+
+              .footer {
+                  float: right;
+                  padding: 1em 0;
+                  font-style: italic;
+              }
             </style>
             <script type="text/javascript">
               document.addEventListener("DOMContentLoaded", function() {
@@ -75,4 +81,13 @@
             </script>]]>
         </xsl:text>
     </xsl:template>
+
+    <xsl:param name="libversion" select="document('version.xml')"/>
+
+    <xsl:template name="html.footer.custom">
+        <section id="version">
+            <xsl:value-of select="$libversion" />
+        </section>
+    </xsl:template>
+
 </xsl:stylesheet>
