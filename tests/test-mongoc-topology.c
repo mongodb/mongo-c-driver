@@ -305,12 +305,15 @@ _test_topology_invalidate_server (bool pooled)
            sd->type == MONGOC_SERVER_RS_PRIMARY ||
            sd->type == MONGOC_SERVER_MONGOS);
 
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, !=, (int64_t) -1);
+
    bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
                    "error");
    mongoc_topology_invalidate_server (client->topology, id, &error);
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
 
    fake_sd = (mongoc_server_description_t *)bson_malloc0 (sizeof (*fake_sd));
 
@@ -331,6 +334,7 @@ _test_topology_invalidate_server (bool pooled)
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
    assert (sd->error.domain != 0);
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
 
    mongoc_server_stream_cleanup (server_stream);
 

@@ -456,6 +456,10 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
                       MONGOC_ERROR_STREAM_CONNECT,
                       "unknown error calling ismaster");
    }
+
+   /* Server Discovery and Monitoring Spec: if the server type changes from a
+    * known type to Unknown its RTT is set to null. */
+   sd->round_trip_time_msec = -1;
 }
 
 
