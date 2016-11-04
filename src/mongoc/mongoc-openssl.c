@@ -178,6 +178,7 @@ _mongoc_openssl_hostcheck (const char *pattern,
    size_t prefixlen;
    size_t suffixlen;
 
+   TRACE("Comparing '%s' == '%s'", pattern, hostname);
    pattern_wildcard = strchr (pattern, '*');
 
    if (pattern_wildcard == NULL) {
@@ -248,11 +249,12 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
    STACK_OF (GENERAL_NAME) * sans = NULL;
 
+   ENTRY;
    BSON_ASSERT (ssl);
    BSON_ASSERT (host);
 
    if (allow_invalid_hostname) {
-      return true;
+      RETURN (true);
    }
 
    /** if the host looks like an IP address, match that, otherwise we assume we
@@ -269,7 +271,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
    if (!peer) {
       MONGOC_WARNING ("SSL Certification verification failed: %s", ERR_error_string(ERR_get_error(), NULL));
-      return false;
+      RETURN (false);
    }
 
    verify_status = SSL_get_verify_result (ssl);
@@ -358,7 +360,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    }
 
    X509_free (peer);
-   return r;
+   RETURN (r);
 }
 
 
