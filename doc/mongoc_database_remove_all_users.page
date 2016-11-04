@@ -36,7 +36,7 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
 
   <section id="return">
     <title>Returns</title>
-    <p><code>true</code> if successful, otherise <code>false</code> and <code>error</code> is set.</p>
+    <p><code>true</code> if successful, otherwise <code>false</code> and <code>error</code> is set.</p>
   </section>
 
 </page>
