@@ -1,4 +1,6 @@
-usr/include/*/*.{h,def,defs}
+usr/include/*/*.h
+usr/include/*/*.def
+usr/include/*/*.defs
 usr/lib/*/libmongoc-[0-9]*.so
 usr/lib/*/pkgconfig/libmongoc-[0-9]*
 usr/lib/*/pkgconfig/libmongoc-ssl-[0-9]*
