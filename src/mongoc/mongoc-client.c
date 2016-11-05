@@ -1784,8 +1784,11 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    int64_t started;
    mongoc_rpc_t rpc = { { 0 } };
    bson_error_t error;
+   bool has_ns;
    bool r;
 
+   /* called by old mongoc_client_kill_cursor without db/collection? */
+   has_ns = (db && collection);
    started = bson_get_monotonic_time ();
 
    ++cluster->request_id;
@@ -1798,26 +1801,24 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id,
-                                          operation_id, db, collection);
+   if (has_ns) {
+      _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id,
+                                             operation_id, db, collection);
+   }
 
    r = mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
                                        NULL, &error);
 
-   if (r) {
-      _mongoc_client_monitor_op_killcursors_succeeded (
-         cluster,
-         bson_get_monotonic_time () - started,
-         server_stream,
-         cursor_id,
-         operation_id);
-   } else {
-      _mongoc_client_monitor_op_killcursors_failed (
-         cluster,
-         bson_get_monotonic_time () - started,
-         server_stream,
-         &error,
-         operation_id);
+   if (has_ns) {
+      if (r) {
+         _mongoc_client_monitor_op_killcursors_succeeded (
+            cluster, bson_get_monotonic_time () - started, server_stream,
+            cursor_id, operation_id);
+      } else {
+         _mongoc_client_monitor_op_killcursors_failed (
+            cluster, bson_get_monotonic_time () - started, server_stream,
+            &error, operation_id);
+      }
    }
 }
 

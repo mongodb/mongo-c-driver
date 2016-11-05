@@ -1497,7 +1497,7 @@ set_cmd_test_callbacks (mongoc_client_t *client,
    mongoc_apm_set_command_started_cb (callbacks, cmd_started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, cmd_succeeded_cb);
    mongoc_apm_set_command_failed_cb (callbacks, cmd_failed_cb);
-   mongoc_client_set_apm_callbacks (client, callbacks, context);
+   ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, context));
    mongoc_apm_callbacks_destroy (callbacks);
 }
 
@@ -1585,6 +1585,36 @@ test_client_cmd_simple (void)
 }
 
 
+static void
+test_killcursors_deprecated (void)
+{
+   cmd_test_t test;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+
+   cmd_test_init (&test);
+   client = test_framework_client_new ();
+
+   /* connect */
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   set_cmd_test_callbacks (client, (void *) &test);
+
+   /* deprecated function without "db" or "collection", skips APM */
+   mongoc_client_kill_cursor (client, 123);
+
+   ASSERT_CMPINT (0, ==, test.started_calls);
+   ASSERT_CMPINT (0, ==, test.succeeded_calls);
+   ASSERT_CMPINT (0, ==, test.failed_calls);
+
+   mongoc_client_destroy (client);
+   cmd_test_cleanup (&test);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -1617,4 +1647,6 @@ test_command_monitoring_install (TestSuite *suite)
                   test_client_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple",
                   test_client_cmd_simple);
+   TestSuite_AddLive (suite, "/command_monitoring/killcursors_deprecated",
+                      test_killcursors_deprecated);
 }
