@@ -29,6 +29,8 @@ New features and bug fixes:
     * mongoc_collection_read_command_with_opts
     * mongoc_collection_write_command_with_opts
     * mongoc_collection_read_write_command_with_opts
+    * mongoc_gridfs_find_with_opts
+    * mongoc_gridfs_find_one_with_opts
   * New helper function to include read concern in one of the above function's
     options parameter: mongoc_read_concern_append.
   * New function mongoc_cursor_sent returns true after the first call to

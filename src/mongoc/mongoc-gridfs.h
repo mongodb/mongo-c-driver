@@ -44,11 +44,24 @@ mongoc_gridfs_file_t      *mongoc_gridfs_create_file             (mongoc_gridfs_
                                                                   mongoc_gridfs_file_opt_t *opt);
 BSON_API
 mongoc_gridfs_file_list_t *mongoc_gridfs_find                    (mongoc_gridfs_t          *gridfs,
-                                                                  const bson_t             *query);
+                                                                  const bson_t             *query)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_with_opts);
 BSON_API
 mongoc_gridfs_file_t      *mongoc_gridfs_find_one                (mongoc_gridfs_t          *gridfs,
                                                                   const bson_t             *query,
-                                                                  bson_error_t             *error);
+                                                                  bson_error_t             *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_one_with_opts);
+BSON_API
+mongoc_gridfs_file_list_t *mongoc_gridfs_find_with_opts          (mongoc_gridfs_t          *gridfs,
+                                                                  const bson_t             *filter,
+                                                                  const bson_t             *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+BSON_API
+mongoc_gridfs_file_t      *mongoc_gridfs_find_one_with_opts      (mongoc_gridfs_t          *gridfs,
+                                                                  const bson_t             *filter,
+                                                                  const bson_t             *opts,
+                                                                  bson_error_t             *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 BSON_API
 mongoc_gridfs_file_t      *mongoc_gridfs_find_one_by_filename    (mongoc_gridfs_t          *gridfs,
                                                                   const char               *filename,

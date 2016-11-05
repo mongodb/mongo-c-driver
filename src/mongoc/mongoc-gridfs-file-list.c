@@ -58,6 +58,28 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
 }
 
 
+mongoc_gridfs_file_list_t *
+_mongoc_gridfs_file_list_new_with_opts (mongoc_gridfs_t *gridfs,
+                                        const bson_t    *filter,
+                                        const bson_t    *opts)
+{
+   mongoc_gridfs_file_list_t *list;
+   mongoc_cursor_t *cursor;
+
+   cursor = mongoc_collection_find_with_opts (gridfs->files, filter, opts,
+                                              NULL /* read prefs */);
+
+   BSON_ASSERT (cursor);
+
+   list = (mongoc_gridfs_file_list_t *) bson_malloc0 (sizeof *list);
+
+   list->cursor = cursor;
+   list->gridfs = gridfs;
+
+   return list;
+}
+
+
 mongoc_gridfs_file_t *
 mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
 {

@@ -11,7 +11,8 @@ int main (int argc, char *argv[])
    mongoc_gridfs_file_opt_t opt = { 0 };
    mongoc_client_t *client;
    mongoc_stream_t *stream;
-   bson_t query;
+   bson_t filter;
+   bson_t opts;
    bson_t child;
    bson_error_t error;
    ssize_t r;
@@ -72,16 +73,17 @@ int main (int argc, char *argv[])
       mongoc_stream_destroy (stream);
       mongoc_gridfs_file_destroy (file);
    } else if (strcmp(command, "list") == 0) {
-      bson_init (&query);
-      bson_append_document_begin (&query, "$orderby", -1, &child);
-      bson_append_int32 (&child, "filename", -1, 1);
-      bson_append_document_end (&query, &child);
-      bson_append_document_begin (&query, "$query", -1, &child);
-      bson_append_document_end (&query, &child);
+      bson_init (&filter);
 
-      list = mongoc_gridfs_find (gridfs, &query);
+      bson_init (&opts);
+      bson_append_document_begin (&opts, "sort", -1, &child);
+      BSON_APPEND_INT32 (&child, "filename", 1);
+      bson_append_document_end (&opts, &child);
 
-      bson_destroy (&query);
+      list = mongoc_gridfs_find_with_opts (gridfs, &filter, &opts);
+
+      bson_destroy (&filter);
+      bson_destroy (&opts);
 
       while ((file = mongoc_gridfs_file_list_next (list))) {
          const char * name = mongoc_gridfs_file_get_filename(file);
