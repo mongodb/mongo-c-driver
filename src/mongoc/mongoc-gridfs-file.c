@@ -598,7 +598,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
       }
    }
 
-   BSON_ASSERT (file->length = target_length);
+   file->length = target_length;
    file->is_dirty = true;
 
    RETURN (diff);
@@ -699,6 +699,14 @@ _mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
 }
 
 
+static int64_t
+divide_round_up (int64_t num,
+                 int64_t denom)
+{
+   return (num + denom - 1) / denom;
+}
+
+
 /**
  * _mongoc_gridfs_file_refresh_page:
  *
@@ -714,8 +722,9 @@ _mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
  *
  *    file->page is loaded with the appropriate buffer, fetched from the
  *    database. If the file position is at the end of the file and on a new
- *    chunk boundary, a new page is created. We currently DO NOT handle the case
- *    of the file position being far past the end-of-file.
+ *    chunk boundary, a new page is created. If the position is far past the
+ *    end of the file, _mongoc_gridfs_file_extend is responsible for creating
+ *    chunks to file the gap.
  *
  *    file->n is set based on file->pos. file->error is set on error.
  */
@@ -728,6 +737,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    const bson_t *chunk;
    const char *key;
    bson_iter_t iter;
+   int64_t existing_chunks;
+   int64_t required_chunks;
 
    const uint8_t *data = NULL;
    uint32_t len;
@@ -743,10 +754,11 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       file->page = NULL;
    }
 
-   /* if the file pointer is past the end of the current file (I.e. pointing to
-    * a new chunk) and we're on a chunk boundary, we'll pass the page
-    * constructor a new empty page */
-   if ((int64_t)file->pos >= file->length && !(file->pos % file->chunk_size)) {
+   /* if the file pointer is past the end of the current file (i.e. pointing to
+    * a new chunk), we'll pass the page constructor a new empty page. */
+   existing_chunks = divide_round_up (file->length, file->chunk_size);
+   required_chunks = divide_round_up (file->pos + 1, file->chunk_size);
+   if (required_chunks > existing_chunks) {
       data = (uint8_t *)"";
       len = 0;
    } else {

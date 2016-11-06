@@ -496,8 +496,27 @@ test_read (void)
 
 
 static void
-test_write (void)
+_check_chunk_count (mongoc_gridfs_t *gridfs,
+                    int64_t          len,
+                    int64_t          chunk_size)
 {
+   int64_t expected_chunks;
+   int64_t cnt;
+   bson_error_t error;
+
+   /* division, rounding up */
+   expected_chunks = (len + chunk_size - 1) / chunk_size;
+   cnt = mongoc_collection_count (mongoc_gridfs_get_chunks (gridfs),
+                                  MONGOC_QUERY_NONE, tmp_bson (NULL), 0, 0,
+                                  NULL, &error);
+
+   ASSERT_CMPINT64 (expected_chunks, ==, cnt);
+}
+
+static void
+_test_write (bool at_boundary)
+{
+   ssize_t seek_len = at_boundary ? 5 : 6;
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
    mongoc_client_t *client;
@@ -506,6 +525,7 @@ test_write (void)
    char buf[] = "foo bar";
    char buf2[] = " baz";
    char buf3[1000];
+   char expected[1000] = { 0 };
    mongoc_gridfs_file_opt_t opt = { 0 };
    mongoc_iovec_t iov[2];
    mongoc_iovec_t riov;
@@ -542,7 +562,6 @@ test_write (void)
    ASSERT_CMPSSIZE_T (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "foo bar baz", len), ==, 0);
 
-   /* Test a write starting and ending exactly on chunk boundaries */
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size));
 
@@ -555,25 +574,32 @@ test_write (void)
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
    ASSERT_CMPSSIZE_T (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "fo bazr baz", len), ==, 0);
+   _check_chunk_count (gridfs, len, file->chunk_size);
 
    /* Test writing beyond the end of the file */
-   assert (mongoc_gridfs_file_seek (file, 5, SEEK_END) == 0);
-   assert (mongoc_gridfs_file_tell (file) == file->length + 5);
+   assert (mongoc_gridfs_file_seek (file, seek_len, SEEK_END) == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->length + seek_len);
 
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
    assert (r == len);
-   assert (mongoc_gridfs_file_tell (file) == 2*len + 5);
-   assert (file->length == 2*len + 5);
+   assert (mongoc_gridfs_file_tell (file) == 2 * len + seek_len);
+   assert (file->length == 2 * len + seek_len);
    assert (mongoc_gridfs_file_save (file));
+   _check_chunk_count (gridfs, 2 * len + seek_len, file->chunk_size);
 
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
 
-   r = mongoc_gridfs_file_readv (file, &riov, 1, 2*len + 5, 0);
-   assert (r == 2*len + 5);
-   assert (memcmp (buf3, "fo bazr baz\0\0\0\0\0foo bar baz", 2*len + 5) == 0);
-   assert (mongoc_gridfs_file_save (file));
+   r = mongoc_gridfs_file_readv (file, &riov, 1, 2 * len + seek_len, 0);
+   assert (r == 2 * len + seek_len);
 
+   /* expect file to be like "fo bazr baz\0\0\0\0\0\0foo bar baz" */
+   snprintf (expected, sizeof (expected), "fo bazr baz");
+   snprintf (expected + strlen ("fo bazr baz") + seek_len,
+             sizeof (expected), "foo bar baz");
+
+   assert (memcmp (buf3, expected, (size_t) (2 * len + seek_len)) == 0);
+   assert (mongoc_gridfs_file_save (file));
 
    mongoc_gridfs_file_destroy (file);
 
@@ -582,6 +608,91 @@ test_write (void)
 
    mongoc_client_destroy (client);
 }
+
+
+static void
+test_write (void)
+{
+   _test_write (false /* at_boundary */);
+}
+
+
+/* Test a write starting and ending exactly on chunk boundaries */
+static void
+test_write_at_boundary (void)
+{
+   _test_write (true /* at_boundary */);
+}
+
+
+static void
+test_write_past_end (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_client_t *client;
+   bson_error_t error;
+   ssize_t r;
+   char buf[] = "foo";
+   char read_buf[2000];
+   mongoc_gridfs_file_opt_t opt = { 0 };
+   mongoc_iovec_t iov[1];
+   mongoc_iovec_t riov;
+   const size_t len = sizeof (buf) - 1;
+   const int64_t delta = 35;
+   const uint32_t chunk_sz = 10;
+   /* division, rounding up */
+   const int64_t expected_chunks = ((delta + len) + (chunk_sz - 1)) / chunk_sz;
+   int64_t cnt;
+
+   iov [0].iov_base = buf;
+   iov [0].iov_len = sizeof (buf) - 1;
+
+   riov.iov_base = read_buf;
+   riov.iov_len = sizeof (read_buf);
+
+   opt.chunk_size = chunk_sz;
+   opt.filename = "foo";
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   gridfs = get_test_gridfs (client, "write_past_end", &error);
+   ASSERT_OR_PRINT (gridfs, error);
+
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   ASSERT (file);
+
+   r = mongoc_gridfs_file_writev (file, iov, 1, 0);
+   ASSERT_CMPSSIZE_T (r, ==, len);
+
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, delta, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t) delta);
+
+   r = mongoc_gridfs_file_writev (file, iov, 1, 0);
+   ASSERT_CMPSSIZE_T (r, ==, len);
+   mongoc_gridfs_file_save (file);
+
+   cnt = mongoc_collection_count (mongoc_gridfs_get_chunks (gridfs),
+                                  MONGOC_QUERY_NONE, tmp_bson (NULL), 0, 0,
+                                  NULL, &error);
+
+   ASSERT_OR_PRINT (cnt != -1, error);
+   ASSERT_CMPINT64 (expected_chunks, ==, cnt);
+
+   mongoc_gridfs_file_destroy (file);
+   file = mongoc_gridfs_find_one (gridfs, tmp_bson (NULL), &error);
+   ASSERT_OR_PRINT (file, error);
+
+   r = mongoc_gridfs_file_readv (file, &riov, 1, delta + len, 0);
+   ASSERT_CMPSSIZE_T (r, ==, (ssize_t) (delta + len));
+
+   mongoc_gridfs_file_destroy (file);
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
 
 static void
 test_empty (void)
@@ -1055,6 +1166,9 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/GridFS/stream", test_stream);
    TestSuite_AddLive (suite, "/GridFS/remove", test_remove);
    TestSuite_AddLive (suite, "/GridFS/write", test_write);
+   TestSuite_AddLive (suite, "/GridFS/write_at_boundary",
+                      test_write_at_boundary);
+   TestSuite_AddLive (suite, "/GridFS/write_past_end", test_write_past_end);
    TestSuite_AddFull (suite, "/GridFS/test_long_seek", test_long_seek, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
    TestSuite_AddFull (suite, "/GridFS/missing_chunk", test_missing_chunk, NULL, NULL, test_framework_skip_if_slow_or_live);
