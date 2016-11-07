@@ -18,6 +18,8 @@ Package: libmongoc-dev
 Section: libdevel
 Architecture: any
 Depends: libmongoc-1.0-0 (= ${binary:Version}),
+         libbson-dev (>= ${binary:Version}),
+         libssl-dev
          ${misc:Depends}
 Description: MongoDB C client library - dev files
  libmongoc is the officially supported MongoDB client library for C
