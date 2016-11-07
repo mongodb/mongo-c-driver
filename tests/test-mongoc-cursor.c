@@ -893,14 +893,18 @@ test_hint_pooled_primary (void)
 
 mongoc_read_mode_t modes[] = {
    MONGOC_READ_PRIMARY,
-   MONGOC_READ_SECONDARY_PREFERRED,
+   MONGOC_READ_PRIMARY_PREFERRED,
    MONGOC_READ_SECONDARY,
+   MONGOC_READ_SECONDARY_PREFERRED,
+   MONGOC_READ_NEAREST,
 };
 
 mongoc_query_flags_t expected_flag[] = {
    MONGOC_QUERY_NONE,
    MONGOC_QUERY_SLAVE_OK,
-   MONGOC_QUERY_NONE,
+   MONGOC_QUERY_SLAVE_OK,
+   MONGOC_QUERY_SLAVE_OK,
+   MONGOC_QUERY_SLAVE_OK,
 };
 
 /* test that mongoc_cursor_set_hint sets slaveok for mongos only if read pref
@@ -923,7 +927,7 @@ test_cursor_hint_mongos (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   for (i = 0; i < sizeof (prefs) / sizeof (mongoc_read_prefs_t *); i++) {
+   for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
       prefs = mongoc_read_prefs_new (modes[i]);
       cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                        tmp_bson (NULL), NULL, prefs);
@@ -969,7 +973,7 @@ test_cursor_hint_mongos_cmd (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   for (i = 0; i < sizeof (prefs) / sizeof (mongoc_read_prefs_t *); i++) {
+   for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
       prefs = mongoc_read_prefs_new (modes[i]);
       cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                        tmp_bson (NULL), NULL, prefs);

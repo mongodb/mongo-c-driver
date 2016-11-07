@@ -921,18 +921,11 @@ _mongoc_cursor_flags (mongoc_cursor_t        *cursor,
 
    if (cursor->slave_ok) {
       *flags |= MONGOC_QUERY_SLAVE_OK;
-   } else if (cursor->server_id_set) {
-      /* mongoc_cursor_set_hint sets slaveok according to Server Selection Spec:
-       * if server is secondary, or a mongos with read mode secondaryPreferred.
-       */
-      if (stream->sd->type == MONGOC_SERVER_MONGOS &&
-          cursor->read_prefs->mode == MONGOC_READ_SECONDARY_PREFERRED) {
-         *flags |= MONGOC_QUERY_SLAVE_OK;
-      } else if ((stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-                  stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-                 stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-         *flags |= MONGOC_QUERY_SLAVE_OK;
-      }
+   } else if (cursor->server_id_set &&
+              (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
+               stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
+              stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
+      *flags |= MONGOC_QUERY_SLAVE_OK;
    }
 
    return true;
