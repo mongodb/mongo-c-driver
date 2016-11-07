@@ -117,8 +117,9 @@ _get_os_type (void)
 {
 #ifdef MONGOC_OS_TYPE
    return bson_strndup (MONGOC_OS_TYPE, HANDSHAKE_OS_TYPE_MAX);
-#endif
+#else
    return bson_strndup ("unknown", HANDSHAKE_OS_TYPE_MAX);
+#endif
 }
 
 static char *
