@@ -39,19 +39,19 @@ main (int   argc,
 
    mongoc_init ();
 
-   bson_init (&roles);
-   bson_init (&query);
-
    client = mongoc_client_new (uristr);
 
    if (!client) {
       fprintf (stderr, "Failed to parse URI.\n");
-      goto CLEANUP;
+      return EXIT_FAILURE;
    }
 
    mongoc_client_set_error_api (client, 2);
 
    database = mongoc_client_get_database (client, "test");
+
+   bson_init (&roles);
+   bson_init (&query);
 
    BCON_APPEND (&roles,
                 "0", "{", "role", "root", "db", "admin", "}");
@@ -59,7 +59,6 @@ main (int   argc,
    mongoc_database_add_user (database, "user,=", "pass", &roles, NULL, &error);
 
    mongoc_database_destroy (database);
-   database = NULL;
 
    mongoc_client_destroy (client);
 
@@ -90,10 +89,6 @@ CLEANUP:
 
    if (collection) {
       mongoc_collection_destroy (collection);
-   }
-
-   if (database) {
-      mongoc_database_destroy (database);
    }
 
    if (client) {
