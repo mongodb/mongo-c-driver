@@ -24,14 +24,7 @@ c_driver_variables:
   ## Common sets of CFLAGS
   cflags:
     standard: &cflags_64
-      cflags: "-m64 -march=x86-64 -Werror"
-    standard_no_werror: &cflags_64_no_werror
       cflags: "-m64 -march=x86-64"
-
-  ## Extra $PATH entries
-  paths:
-    unix_path: &unix_path
-      extra_path:
 
   ## Scripts that are shared between buildvariants
   scripts:
@@ -45,7 +38,7 @@ c_driver_variables:
           make install
           git clone https://github.com/mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
-          # Temp fix for cmake issue
+          # Temp fix for cmake issue - BUILD-2350 installs cmak on the RHEL6.2 distro
           curl -s https://cmake.org/files/v3.6/cmake-3.6.2-Linux-x86_64.tar.gz --output cmake.tar.gz
           tar -zxf cmake.tar.gz
           #PKG_CONFIG_PATH=../mongoc/lib/pkgconfig /opt/cmake/bin/cmake .
@@ -64,7 +57,6 @@ c_driver_variables:
   benchmark_common: &benchmark_common
     <<: *compile_unix
     <<: *start_mongod_command
-    <<: *unix_path
 
 #######################################
 #            Functions                #
@@ -94,10 +86,8 @@ functions:
         set -o verbose
         set -o errexit
         rm -rf mongo-c-driver*
-        pwd
-        ls -la
         curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/c-driver-benchmark-compile/${revision}/artifacts/c-perf-binaries.tar.gz -o c-perf-binaries.tar.gz --silent --max-time 120
-        tar zxf c-perf-binaries.tar.gz
+        ${decompress} c-perf-binaries.tar.gz
         rm c-perf-binaries.tar.gz
 
   "fetch mongodb" :
@@ -190,6 +180,14 @@ functions:
       file: mongo-c-driver/results.json
 
 pre:
+  # Remove and recreate old directory
+  - command: shell.exec
+    params:
+      script: |
+        rm -rf mongo-c-driver
+        mkdir mongo-c-driver
+
+post:
   # Remove and recreate old directory
   - command: shell.exec
     params:
