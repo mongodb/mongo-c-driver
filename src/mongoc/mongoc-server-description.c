@@ -18,6 +18,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs.h"
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-uri.h"
@@ -693,13 +694,13 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         int64_t                       heartbeat_frequency_ms,
                                         const mongoc_read_prefs_t    *read_prefs)
 {
-   int64_t max_staleness_seconds;
+   double max_staleness_seconds;
    size_t i;
 
    int64_t heartbeat_frequency_usec;
-   int64_t max_staleness_usec;
    int64_t max_last_write_date_usec;
    int64_t staleness_usec;
+   double max_staleness_usec;
 
    if (!read_prefs) {
       /* NULL read_prefs is PRIMARY, no maxStalenessSeconds to filter by */
@@ -709,13 +710,11 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
    max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
       read_prefs);
 
-   BSON_ASSERT (max_staleness_seconds >= 0);
-
-   if (max_staleness_seconds == 0) {
-      /* 0 means "no max staleness" */
+   if (max_staleness_seconds == NO_MAX_STALENESS) {
       return;
    }
 
+   BSON_ASSERT (max_staleness_seconds >= 0);
    max_staleness_usec = max_staleness_seconds * 1000 * 1000;
    heartbeat_frequency_usec = heartbeat_frequency_ms * 1000;
 

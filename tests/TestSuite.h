@@ -20,6 +20,7 @@
 
 
 #include <stdio.h>
+#include <math.h>
 
 
 #ifdef __cplusplus
@@ -167,6 +168,22 @@ void test_error (const char *format, ...) BSON_GNUC_PRINTF(1, 2);
                          " not within 20%% of %" PRId64 "\n" \
                          "%s:%d  %s()\n", \
                          _a, _b, \
+                         __FILE__, __LINE__, BSON_FUNC); \
+         abort(); \
+      } \
+   } while (0)
+
+#ifdef ASSERT_EQUAL_DOUBLE
+# undef ASSERT_EQUAL_DOUBLE
+#endif
+#define ASSERT_EQUAL_DOUBLE(a, b) \
+   do { \
+      double _a = fabs ((double) a); \
+      double _b = fabs ((double) b); \
+      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
+                         "%s:%d  %s()\n", \
+                         (double) a, (double) b, \
                          __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \

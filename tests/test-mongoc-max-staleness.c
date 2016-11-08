@@ -13,30 +13,60 @@
 #define MONGOC_LOG_DOMAIN "client-test-max-staleness"
 
 
+static double
+get_max_staleness (const mongoc_client_t *client)
+{
+   const mongoc_read_prefs_t *prefs;
+
+   prefs = mongoc_client_get_read_prefs (client);
+
+   return mongoc_read_prefs_get_max_staleness_seconds (prefs);
+}
+
+
 /* the next few tests are from max-staleness-tests.rst */
 static void
 test_mongoc_client_max_staleness (void)
 {
    mongoc_client_t *client;
-   int32_t max_staleness_seconds;
+
+   client = mongoc_client_new (NULL);
+   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new ("mongodb://a/?readPreference=secondary");
+   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   mongoc_client_destroy (client);
 
    /* no maxStalenessSeconds with primary mode */
    ASSERT (!mongoc_client_new ("mongodb://a/?maxStalenessSeconds=120"));
    ASSERT (!mongoc_client_new (
               "mongodb://a/?readPreference=primary&maxStalenessSeconds=120"));
 
+   capture_logs (true);
+
+   /* zero is prohibited */
+   ASSERT (!mongoc_client_new (
+      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0"));
+
+   ASSERT_CAPTURED_LOG ("maxStalenessSeconds=0", MONGOC_LOG_LEVEL_WARNING,
+                        "cannot be zero");
+
    client = mongoc_client_new (
       "mongodb://host/?readPreference=secondary&maxStalenessSeconds=120");
-   max_staleness_seconds = mongoc_uri_get_option_as_int32 (
-      mongoc_client_get_uri (client), "maxStalenessSeconds", 0);
-   ASSERT_CMPINT32 (120, ==, max_staleness_seconds);
+
+   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 120);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (
+      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=10.5");
+
+   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 10.5);
    mongoc_client_destroy (client);
 
    client = mongoc_client_new (
       "mongodb://a/?readPreference=secondary&maxStalenessSeconds=1");
-   max_staleness_seconds = mongoc_uri_get_option_as_int32 (
-      mongoc_client_get_uri (client), "maxStalenessSeconds", 0);
-   ASSERT_CMPINT32 (1, ==, max_staleness_seconds);
+   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 1);
    mongoc_client_destroy (client);
 }
 

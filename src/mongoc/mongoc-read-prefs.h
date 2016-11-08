@@ -61,10 +61,10 @@ BSON_API
 void                 mongoc_read_prefs_add_tag                   (mongoc_read_prefs_t       *read_prefs,
                                                                   const bson_t              *tag);
 BSON_API
-int32_t              mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
+double               mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
 BSON_API
 void                 mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t       *read_prefs,
-                                                                  int32_t                    max_staleness_seconds);
+                                                                  double                     max_staleness_seconds);
 BSON_API
 bool                 mongoc_read_prefs_is_valid                  (const mongoc_read_prefs_t *read_prefs);
 

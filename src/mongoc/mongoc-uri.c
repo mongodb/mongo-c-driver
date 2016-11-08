@@ -569,7 +569,6 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
        !strcasecmp(key, "minpoolsize") ||
-       !strcasecmp(key, "maxStalenessSeconds") ||
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
@@ -612,6 +611,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
                          const char   *str)
 {
    int32_t v_int;
+   double v_double;
    const char *end_key;
    char *key = NULL;
    char *value = NULL;
@@ -662,6 +662,19 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       if (!mongoc_uri_set_appname (uri, value)) {
          MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
          goto CLEANUP;
+      }
+   } else if (!strcasecmp (key, "maxstalenessseconds")) {
+      errno = 0;
+      v_double = strtod (value, NULL);
+      if (errno) {
+         MONGOC_WARNING ("Invalid maxStalenessSeconds: \"%s\"\n", value);
+         goto CLEANUP;
+      } else if (v_double == 0) {
+         MONGOC_WARNING ("Invalid: maxStalenessSeconds cannot be zero\n");
+         goto CLEANUP;
+      } else {
+         mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs,
+                                                      v_double);
       }
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
@@ -952,13 +965,12 @@ mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
-   int32_t max_staleness_seconds;
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
    bson_init(&uri->credentials);
 
-   /* Initialize read_prefs since tag parsing may add to it */
+   /* Initialize read_prefs, since parsing may add to it */
    uri->read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    /* Initialize empty read_concern */
@@ -976,8 +988,6 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
-   max_staleness_seconds = mongoc_uri_get_option_as_int32 (uri, "maxStalenessSeconds", 0);
-   mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs, max_staleness_seconds);
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
