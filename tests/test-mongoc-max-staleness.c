@@ -18,25 +18,25 @@ static void
 test_mongoc_client_max_staleness (void)
 {
    mongoc_client_t *client;
-   int32_t max_staleness_ms;
+   int32_t max_staleness_seconds;
 
-   /* no maxStalenessMS with primary mode */
-   ASSERT (!mongoc_client_new ("mongodb://a/?maxStalenessMS=120000"));
+   /* no maxStalenessSeconds with primary mode */
+   ASSERT (!mongoc_client_new ("mongodb://a/?maxStalenessSeconds=120"));
    ASSERT (!mongoc_client_new (
-              "mongodb://a/?readPreference=primary&maxStalenessMS=120000"));
+              "mongodb://a/?readPreference=primary&maxStalenessSeconds=120"));
 
    client = mongoc_client_new (
-      "mongodb://host/?readPreference=secondary&maxStalenessMS=120000");
-   max_staleness_ms = mongoc_uri_get_option_as_int32 (
-      mongoc_client_get_uri (client), "maxstalenessms", 0);
-   ASSERT_CMPINT32 (120000, ==, max_staleness_ms);
+      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=120");
+   max_staleness_seconds = mongoc_uri_get_option_as_int32 (
+      mongoc_client_get_uri (client), "maxStalenessSeconds", 0);
+   ASSERT_CMPINT32 (120, ==, max_staleness_seconds);
    mongoc_client_destroy (client);
 
    client = mongoc_client_new (
-      "mongodb://a/?readPreference=secondary&maxStalenessMS=1");
-   max_staleness_ms = mongoc_uri_get_option_as_int32 (
-      mongoc_client_get_uri (client), "maxstalenessms", 0);
-   ASSERT_CMPINT32 (1, ==, max_staleness_ms);
+      "mongodb://a/?readPreference=secondary&maxStalenessSeconds=1");
+   max_staleness_seconds = mongoc_uri_get_option_as_int32 (
+      mongoc_client_get_uri (client), "maxStalenessSeconds", 0);
+   ASSERT_CMPINT32 (1, ==, max_staleness_seconds);
    mongoc_client_destroy (client);
 }
 
@@ -57,7 +57,7 @@ test_mongos_max_staleness_read_pref (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   /* count command with mode "secondary", no maxStalenessMS */
+   /* count command with mode "secondary", no maxStalenessSeconds */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (collection, MONGOC_QUERY_NONE,
@@ -65,7 +65,7 @@ test_mongos_max_staleness_read_pref (void)
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'$readPreference': {'mode': 'secondary', "
-      "                     'maxStalenessMS': {'$exists': false}}}");
+      "                     'maxStalenessSeconds': {'$exists': false}}}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -73,8 +73,8 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* count command with mode "secondary", maxStalenessMS = 120 seconds */
-   mongoc_read_prefs_set_max_staleness_ms (prefs, 120000);
+   /* count command with mode "secondary", maxStalenessSeconds = 120 */
+   mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
@@ -82,7 +82,7 @@ test_mongos_max_staleness_read_pref (void)
                                      NULL, 0, 0, NULL, &error);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK,
-      "{'$readPreference': {'mode': 'secondary', 'maxStalenessMS': 120000}}");
+      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 120}}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);

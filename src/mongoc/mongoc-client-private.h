@@ -60,7 +60,7 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_FAM_WRITE_CONCERN 4
 /* first version to support readConcern */
 #define WIRE_VERSION_READ_CONCERN 4
-/* first version to support maxStalenessMS */
+/* first version to support maxStalenessSeconds */
 #define WIRE_VERSION_MAX_STALENESS 5
 /* first version to support writeConcern */
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5

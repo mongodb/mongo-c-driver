@@ -365,7 +365,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t           *read_prefs,
                             bson_error_t                        *error)
 {
-   int32_t max_staleness;
+   int32_t max_staleness_seconds;
    int32_t max_wire_version;
 
    if (!read_prefs) {
@@ -373,16 +373,17 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
       return true;
    }
 
-   max_staleness = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
+   max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
+      read_prefs);
 
-   if (max_staleness) {
+   if (max_staleness_seconds) {
       max_wire_version = mongoc_topology_description_lowest_max_wire_version (
          td);
 
       if (max_wire_version < WIRE_VERSION_MAX_STALENESS) {
          bson_set_error (error, MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Not all servers support maxStalenessMS");
+                         "Not all servers support maxStalenessSeconds");
          return false;
       }
 
@@ -396,10 +397,10 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
 
       if ((td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
            td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-          max_staleness < 2 * td->heartbeat_msec) {
+          max_staleness_seconds * 1000 < 2 * td->heartbeat_msec) {
          bson_set_error (error, MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "maxStalenessMS must be at least twice "
+                         "maxStalenessSeconds must be at least twice "
                          "heartbeatFrequencyMS");
          return false;
       }

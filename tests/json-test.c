@@ -425,8 +425,8 @@ test_server_selection_logic_cb (bson_t *test)
    }
 
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
-                            "maxStalenessMS")) {
-      mongoc_read_prefs_set_max_staleness_ms (
+                            "maxStalenessSeconds")) {
+      mongoc_read_prefs_set_max_staleness_seconds (
          read_prefs,
          (int32_t) bson_iter_as_int64 (&read_pref_iter));
    }

@@ -5,7 +5,7 @@ It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support
-    * MaxStalenessMS
+    * New URI and read preference option, "maxStalenessSeconds"
     * MongoDB Handshake
     * writeConcern, readConcern, and collation enhancements
   * mongoc_collection_count_with_opts uses the collection's read preference if

@@ -693,26 +693,33 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         int64_t                       heartbeat_frequency_ms,
                                         const mongoc_read_prefs_t    *read_prefs)
 {
-   int64_t max_staleness_ms;
-   int64_t max_last_write_date_ms;
+   int64_t max_staleness_seconds;
    size_t i;
 
+   int64_t heartbeat_frequency_usec;
+   int64_t max_staleness_usec;
+   int64_t max_last_write_date_usec;
+   int64_t staleness_usec;
+
    if (!read_prefs) {
-      /* NULL read_prefs is PRIMARY, no maxStalenessMS to filter by */
+      /* NULL read_prefs is PRIMARY, no maxStalenessSeconds to filter by */
       return;
    }
 
-   max_staleness_ms = mongoc_read_prefs_get_max_staleness_ms (read_prefs);
-   BSON_ASSERT (max_staleness_ms >= 0);
+   max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
+      read_prefs);
 
-   if (max_staleness_ms == 0) {
+   BSON_ASSERT (max_staleness_seconds >= 0);
+
+   if (max_staleness_seconds == 0) {
       /* 0 means "no max staleness" */
       return;
    }
 
-   if (primary) {
-      int64_t staleness_usec;
+   max_staleness_usec = max_staleness_seconds * 1000 * 1000;
+   heartbeat_frequency_usec = heartbeat_frequency_ms * 1000;
 
+   if (primary) {
       for (i = 0; i < sds_len; i++) {
          if (!sds[i] || sds[i]->type != MONGOC_SERVER_RS_SECONDARY) {
             continue;
@@ -723,22 +730,22 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
             primary->last_write_date_ms * 1000 +
             (sds[i]->last_update_time_usec - primary->last_update_time_usec) -
             sds[i]->last_write_date_ms * 1000 +
-            heartbeat_frequency_ms * 1000;
+            heartbeat_frequency_usec;
 
-         if (staleness_usec > max_staleness_ms * 1000) {
-            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
+         if (staleness_usec > max_staleness_usec) {
+            TRACE ("Rejected stale RSSecondary [%s]",
+                   sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }
    } else {
-      int64_t staleness_ms;
-
       /* find max last_write_date */
-      max_last_write_date_ms = 0;
+      max_last_write_date_usec = 0;
       for (i = 0; i < sds_len; i++) {
-         if (sds[i] && sds[i]->type == MONGOC_SERVER_RS_SECONDARY &&
-             sds[i]->last_write_date_ms > max_last_write_date_ms) {
-            max_last_write_date_ms = sds[i]->last_write_date_ms;
+         if (sds[i] && sds[i]->type == MONGOC_SERVER_RS_SECONDARY) {
+            max_last_write_date_usec = BSON_MAX (
+               max_last_write_date_usec,
+               sds[i]->last_write_date_ms * 1000);
          }
       }
 
@@ -748,12 +755,13 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
             continue;
          }
 
-         staleness_ms = max_last_write_date_ms -
-                        sds[i]->last_write_date_ms +
-                        heartbeat_frequency_ms;
+         staleness_usec = max_last_write_date_usec -
+                          sds[i]->last_write_date_ms * 1000 +
+                          heartbeat_frequency_usec;
 
-         if (staleness_ms > max_staleness_ms) {
-            TRACE ("Rejected stale RSSecondary [%s]", sds[i]->host.host_and_port);
+         if (staleness_usec > max_staleness_usec) {
+            TRACE ("Rejected stale RSSecondary [%s]",
+                   sds[i]->host.host_and_port);
             sds[i] = NULL;
          }
       }

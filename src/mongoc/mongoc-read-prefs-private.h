@@ -33,7 +33,7 @@ struct _mongoc_read_prefs_t
 {
    mongoc_read_mode_t mode;
    bson_t             tags;
-   int32_t            max_staleness_ms;
+   int32_t            max_staleness_seconds;
 };
 
 

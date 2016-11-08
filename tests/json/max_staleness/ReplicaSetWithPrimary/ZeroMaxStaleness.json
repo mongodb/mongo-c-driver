@@ -14,7 +14,7 @@
         }
     ],
     "read_preference": {
-        "maxStalenessMS": 0,
+        "maxStalenessSeconds": 0,
         "mode": "Nearest"
     },
     "suitable_servers": [

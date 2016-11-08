@@ -4,16 +4,16 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_read_prefs_get_max_staleness_ms">
+      id="mongoc_read_prefs_get_max_staleness_seconds">
   <info>
     <link type="guide" xref="mongoc_read_prefs_t" group="function"/>
   </info>
-  <title>mongoc_read_prefs_get_max_staleness_ms()</title>
+  <title>mongoc_read_prefs_get_max_staleness_seconds()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[int32_t
-mongoc_read_prefs_get_max_staleness_ms (const mongoc_read_prefs_t *read_prefs);
+mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
   </section>
 
@@ -26,7 +26,7 @@ mongoc_read_prefs_get_max_staleness_ms (const mongoc_read_prefs_t *read_prefs);
 
   <section id="description">
     <title>Description</title>
-    <p>Clients estimate the staleness of each secondary, and select for reads only those secondaries whose estimated staleness is less than or equal to maxStalenessMS.</p>
+    <p>Clients estimate the staleness of each secondary, and select for reads only those secondaries whose estimated staleness is less than or equal to maxStalenessSeconds.</p>
   </section>
 
 </page>
