@@ -99,6 +99,12 @@ bool
 mongoc_topology_description_all_sds_have_write_date (
    const mongoc_topology_description_t *td);
 
+bool
+_mongoc_topology_description_validate_max_staleness (
+   const mongoc_topology_description_t *td,
+   double                               max_staleness_seconds,
+   bson_error_t                        *error);
+
 void
 mongoc_topology_description_suitable_servers (
    mongoc_array_t                *set, /* OUT */

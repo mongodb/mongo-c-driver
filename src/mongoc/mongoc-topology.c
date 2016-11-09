@@ -395,13 +395,8 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
          return false;
       }
 
-      if ((td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
-           td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
-          max_staleness_seconds * 1000 < 2 * td->heartbeat_msec) {
-         bson_set_error (error, MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "maxStalenessSeconds must be at least twice "
-                         "heartbeatFrequencyMS");
+      if (!_mongoc_topology_description_validate_max_staleness (
+         td, max_staleness_seconds, error)) {
          return false;
       }
    }

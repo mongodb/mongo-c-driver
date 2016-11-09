@@ -63,6 +63,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
    sd->last_write_date_ms = -1;
+   sd->idle_write_period_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
@@ -119,6 +120,8 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   sd->last_write_date_ms = -1;
+   sd->idle_write_period_ms = -1;
 
    bson_init_static (&sd->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&sd->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
@@ -586,6 +589,8 @@ mongoc_server_description_handle_ismaster (
          }
 
          sd->last_write_date_ms = bson_iter_date_time (&child);
+      } else if (strcmp ("idleWritePeriodMillis", bson_iter_key (&iter)) == 0) {
+         sd->last_write_date_ms = bson_iter_as_int64 (&iter);
       }
    }
 
