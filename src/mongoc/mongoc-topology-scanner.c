@@ -127,9 +127,10 @@ _begin_ismaster_cmd (mongoc_topology_scanner_t      *ts,
 
 
 mongoc_topology_scanner_t *
-mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
-                             mongoc_topology_scanner_cb_t cb,
-                             void                        *data)
+mongoc_topology_scanner_new (const mongoc_uri_t                     *uri,
+                             mongoc_topology_scanner_setup_err_cb_t  setup_err_cb,
+                             mongoc_topology_scanner_cb_t            cb,
+                             void                                   *data)
 {
    mongoc_topology_scanner_t *ts = (mongoc_topology_scanner_t *)bson_malloc0 (sizeof (*ts));
 
@@ -139,6 +140,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
    _add_ismaster (&ts->ismaster_cmd);
    bson_init (&ts->ismaster_cmd_with_handshake);
 
+   ts->setup_err_cb = setup_err_cb;
    ts->cb = cb;
    ts->cb_data = data;
    ts->uri = uri;
@@ -396,6 +398,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
    ts->cb (node->id, ismaster_response, rtt_msec, ts->cb_data, error);
 }
 
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -598,8 +601,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
       _mongoc_topology_scanner_monitor_heartbeat_failed (node->ts, &node->host,
                                                          error);
 
-      /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
-      node->ts->cb (node->id, NULL, -1, node->ts->cb_data, error);
+      node->ts->setup_err_cb (node->id, node->ts->cb_data, error);
       return false;
    }
 

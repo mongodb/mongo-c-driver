@@ -57,7 +57,7 @@ _test_topology_scanner(bool with_ssl)
 #endif
 
    topology_scanner = mongoc_topology_scanner_new (
-         NULL, &test_topology_scanner_helper, &finished);
+         NULL, NULL, &test_topology_scanner_helper, &finished);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {

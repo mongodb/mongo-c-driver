@@ -102,6 +102,36 @@ _mongoc_topology_update_no_lock (uint32_t            id,
 /*
  *-------------------------------------------------------------------------
  *
+ * _mongoc_topology_scanner_setup_err_cb --
+ *
+ *       Callback method to handle errors during topology scanner node
+ *       setup, typically DNS or SSL errors.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_scanner_setup_err_cb (uint32_t id,
+                                       void *data,
+                                       const bson_error_t *error /* IN */)
+{
+   mongoc_topology_t *topology;
+
+   BSON_ASSERT (data);
+
+   topology = (mongoc_topology_t *) data;
+
+   mongoc_topology_description_handle_ismaster (&topology->description,
+                                                id,
+                                                NULL /* ismaster reply */,
+                                                -1 /* rtt_msec */,
+                                                error);
+}
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
  * _mongoc_topology_scanner_cb --
  *
  *       Callback method to handle ismaster responses received by async
@@ -125,22 +155,12 @@ _mongoc_topology_scanner_cb (uint32_t            id,
 
    topology = (mongoc_topology_t *)data;
 
-   if (rtt_msec >= 0) {
-      /* If the scanner failed to create a socket for this server, that means
-       * we're in scanner_start, which means we're under the mutex.  So don't
-       * take the mutex for rtt < 0 */
-
-      mongoc_mutex_lock (&topology->mutex);
-   }
-
+   mongoc_mutex_lock (&topology->mutex);
    _mongoc_topology_update_no_lock (id, ismaster_response, rtt_msec, topology,
                                     error);
 
    mongoc_cond_broadcast (&topology->cond_client);
-
-   if (rtt_msec >= 0) {
-      mongoc_mutex_unlock (&topology->mutex);
-   }
+   mongoc_mutex_unlock (&topology->mutex);
 }
 
 /*
@@ -206,8 +226,10 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    topology->uri = mongoc_uri_copy (uri);
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
    topology->scanner = mongoc_topology_scanner_new (topology->uri,
+                                                    _mongoc_topology_scanner_setup_err_cb,
                                                     _mongoc_topology_scanner_cb,
                                                     topology);
+
    topology->single_threaded = single_threaded;
    if (single_threaded) {
       /* Server Selection Spec:

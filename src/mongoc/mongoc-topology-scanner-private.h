@@ -35,6 +35,10 @@
 
 BSON_BEGIN_DECLS
 
+typedef void (*mongoc_topology_scanner_setup_err_cb_t)(uint32_t            id,
+                                                       void               *data,
+                                                       const bson_error_t *error /* IN */);
+
 typedef void (*mongoc_topology_scanner_cb_t)(uint32_t            id,
                                              const bson_t       *bson,
                                              int64_t             rtt,
@@ -74,14 +78,15 @@ typedef struct mongoc_topology_scanner
    bool                            handshake_ok_to_send;
    const char                     *appname;
 
-   mongoc_topology_scanner_cb_t    cb;
-   void                           *cb_data;
-   bool                            in_progress;
-   const mongoc_uri_t             *uri;
-   mongoc_async_cmd_setup_t        setup;
-   mongoc_stream_initiator_t       initiator;
-   void                           *initiator_context;
-   bson_error_t                    error;
+   mongoc_topology_scanner_setup_err_cb_t  setup_err_cb;
+   mongoc_topology_scanner_cb_t            cb;
+   void                                   *cb_data;
+   bool                                    in_progress;
+   const mongoc_uri_t                     *uri;
+   mongoc_async_cmd_setup_t                setup;
+   mongoc_stream_initiator_t               initiator;
+   void                                   *initiator_context;
+   bson_error_t                            error;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -92,9 +97,10 @@ typedef struct mongoc_topology_scanner
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
-mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
-                             mongoc_topology_scanner_cb_t cb,
-                             void                        *data);
+mongoc_topology_scanner_new (const mongoc_uri_t                     *uri,
+                             mongoc_topology_scanner_setup_err_cb_t  setup_err_cb,
+                             mongoc_topology_scanner_cb_t            cb,
+                             void                                   *data);
 
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);

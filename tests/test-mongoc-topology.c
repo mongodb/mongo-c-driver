@@ -929,6 +929,61 @@ test_rtt (void *ctx)
 }
 
 
+/* mongoc_topology_scanner_add_and_scan is called within the topology mutex, it
+ * adds a discovered node and calls getaddrinfo on its host immediately - test
+ * that this doesn't cause a recursive acquire on the topology mutex */
+static void
+test_add_and_scan_failure (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   /* client will discover "fake" host and fail to connect */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s', 'fake:1']}",
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   future = future_client_command_simple (client, "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, NULL, &error);
+
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_NONE,
+                                           "{'ping': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   ASSERT (sd);
+   ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+   mongoc_server_description_destroy (sd);
+
+   sd = mongoc_topology_server_by_id (client->topology, 2, NULL);
+   ASSERT (sd);
+   ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+   mongoc_server_description_destroy (sd);
+
+   future_destroy (future);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -967,4 +1022,6 @@ test_topology_install (TestSuite *suite)
                   test_server_removed_during_handshake_pooled);
    TestSuite_AddFull (suite, "/Topology/rtt", test_rtt, NULL, NULL,
                       test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/Topology/add_and_scan_failure",
+                      test_add_and_scan_failure);
 }
