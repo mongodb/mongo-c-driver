@@ -28,6 +28,7 @@ echo-server
 example-command-monitoring
 example-command-with-opts
 example-client
+example-pool
 example-scram
 example-gridfs
 example-matcher

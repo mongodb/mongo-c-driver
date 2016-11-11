@@ -37,6 +37,11 @@ example_client_SOURCES = examples/example-client.c
 example_client_CFLAGS = $(EXAMPLE_CFLAGS)
 example_client_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-pool
+example_pool_SOURCES = examples/example-pool.c
+example_pool_CFLAGS = $(EXAMPLE_CFLAGS)
+example_pool_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += example-command-with-opts
 example_command_with_opts_SOURCES = examples/example-command-with-opts.c
 example_command_with_opts_CFLAGS = $(EXAMPLE_CFLAGS)

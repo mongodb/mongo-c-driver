@@ -21,72 +21,7 @@
 
   <section id="example">
     <title>Example</title>
-    <screen><code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
-#include <pthread.h>
-
-static pthread_mutex_t mutex;
-static bool in_shutdown = false;
-
-static void *
-worker (void *data)
-{
-   mongoc_client_pool_t *pool = data;
-   mongoc_client_t *client;
-
-   while (true) {
-      client = mongoc_client_pool_pop (pool);
-      /*
-       * Do something with client. If you are writing an HTTP server, you
-       * probably only want to hold onto the client for the portion of the
-       * request performing database queries.
-       */
-      mongoc_client_pool_push (pool, client);
-
-      pthread_mutex_lock (&mutex);
-      if (in_shutdown) {
-         pthread_mutex_unlock (&mutex);
-         return NULL;
-      }
-
-      pthread_mutex_unlock (&mutex);
-   }
-}
-
-int main (int argc, char *argv[])
-{
-   mongoc_client_pool_t *pool;
-   mongoc_uri_t *uri;
-   pthread_t threads[10];
-   unsigned i;
-   void *ret;
-
-   pthread_mutex_init (&mutex, NULL);
-   mongoc_init ();
-
-   uri = mongoc_uri_new ("mongodb://localhost/?minPoolSize=16");
-   pool = mongoc_client_pool_new (uri);
-
-   for (i = 0; i < 10; i++) {
-      pthread_create (&threads[i], NULL, worker, pool);
-   }
-
-   sleep (10);
-   pthread_mutex_lock (&mutex);
-   in_shutdown = true;
-   pthread_mutex_unlock (&mutex);
-
-   for (i = 0; i < 10; i++) {
-      pthread_join (threads[i], &ret);
-   }
-
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-
-   mongoc_cleanup ();
-
-   return 0;
-}
-]]></code></screen>
+    <screen><code mime="text/x-csrc"><include parse="text" href="../examples/example-pool.c" xmlns="http://www.w3.org/2001/XInclude" /></code></screen>
   </section>
 
   <links type="topic" groups="function" style="2column">

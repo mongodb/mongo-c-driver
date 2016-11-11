@@ -858,55 +858,7 @@ C:\> executing
     <title>6. Threading</title>
     <p>The MongoDB C Driver is thread-unaware in the vast majority of its operations. This means it is up to the programmer to guarantee thread-safety.</p>
     <p>However, <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> is thread-safe and is used to fetch a <code>mongoc_client_t</code> in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.</p>
-
-    <screen><code><![CDATA[#include <mongoc.h>
-#include <pthread.h>
-
-#define N_THREADS 10
-
-static void *
-worker (void *data) {
-   mongoc_client_pool_t *pool = data;
-   mongoc_client_t      *client;
-
-   client = mongoc_client_pool_pop (pool);
-
-   /* Do something... */
-
-   mongoc_client_pool_push (pool, client);
-
-   return NULL;
-}
-
-int
-main (int   argc,
-      char *argv[])
-{
-   mongoc_client_pool_t *pool;
-   mongoc_uri_t         *uri;
-   pthread_t             threads[N_THREADS];
-   int i;
-
-   mongoc_init ();
-
-   uri = mongoc_uri_new ("mongodb://localhost/?appname=pool-example");
-   pool = mongoc_client_pool_new (uri);
-
-   for (i = 0; i < N_THREADS; i++) {
-      pthread_create (&threads[i], NULL, worker, pool);
-   }
-
-   for (i = 0; i < N_THREADS; i++) {
-      pthread_join (threads[i], NULL);
-   }
-
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-   mongoc_cleanup ();
-
-   return 0;
-}
-]]></code></screen>
+    <screen><code mime="text/x-csrc"><include parse="text" href="../examples/example-pool.c" xmlns="http://www.w3.org/2001/XInclude" /></code></screen>
   </section>
 
   <section id="next-steps">
