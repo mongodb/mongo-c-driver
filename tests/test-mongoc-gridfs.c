@@ -23,7 +23,8 @@ get_test_gridfs (mongoc_client_t *client,
    bson_snprintf (n, sizeof n, "%s_%s", gen, name);
    bson_free (gen);
 
-   return mongoc_client_get_gridfs (client, "test", n, error);
+   mongoc_database_drop (mongoc_client_get_database (client, "test"), NULL);
+   return mongoc_client_get_gridfs (client, "test", NULL, error);
 }
 
 bool
@@ -594,9 +595,9 @@ _test_write (bool at_boundary)
    assert (r == 2 * len + seek_len);
 
    /* expect file to be like "fo bazr baz\0\0\0\0\0\0foo bar baz" */
-   snprintf (expected, sizeof (expected), "fo bazr baz");
-   snprintf (expected + strlen ("fo bazr baz") + seek_len,
-             sizeof (expected), "foo bar baz");
+   bson_snprintf (expected, sizeof (expected), "fo bazr baz");
+   bson_snprintf (expected + strlen ("fo bazr baz") + seek_len,
+                  strlen ("foo bar baz") + 1, "foo bar baz");
 
    assert (memcmp (buf3, expected, (size_t) (2 * len + seek_len)) == 0);
    assert (mongoc_gridfs_file_save (file));
