@@ -7,7 +7,12 @@ New features and bug fixes:
   * MongoDB 3.4 Support
     * New URI and read preference option, "maxStalenessSeconds"
     * MongoDB Handshake
-    * writeConcern, readConcern, and collation enhancements
+    * writeConcern and readConcern enhancements
+    * Collation allows users to specify language-specific rules for string
+      comparison when sorting documents. See the code examples for
+      mongoc_client_read_command_with_opts, mongoc_collection_count_with_opts,
+      mongoc_collection_find_with_opts, and mongoc_index_opt_t, as well as the
+      "Setting Collation Order" section of the "Bulk Write Operations" guide.
   * mongoc_collection_count_with_opts uses the collection's read preference if
     none is passed in
   * Improved TLS support
