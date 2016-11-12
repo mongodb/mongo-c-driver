@@ -38,8 +38,6 @@ New features and bug fixes:
     * mongoc_gridfs_find_one_with_opts
   * New helper function to include read concern in one of the above function's
     options parameter: mongoc_read_concern_append.
-  * New function mongoc_cursor_sent returns true after the first call to
-    mongoc_cursor_next.
   * mongoc_client_command no longer applies the client's read preference and
     read concern by default. Same change for mongoc_database_command and
     mongoc_collection_command.

@@ -1471,30 +1471,6 @@ test_n_return_find_cmd_with_opts (void)
 }
 
 
-static void
-test_cursor_sent (void)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bson_error_t error;
-
-   client = test_framework_client_new ();
-   collection = get_test_collection (client, "test_cursor_sent");
-   cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
-                                              NULL, NULL);
-   ASSERT (!mongoc_cursor_sent (cursor));
-   mongoc_cursor_next (cursor, &doc);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   ASSERT (mongoc_cursor_sent (cursor));
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -1560,5 +1536,4 @@ test_cursor_install (TestSuite *suite)
                   test_n_return_find_cmd);
    TestSuite_Add (suite, "/Cursor/n_return/find_cmd/with_opts",
                   test_n_return_find_cmd_with_opts);
-   TestSuite_AddLive (suite, "/Cursor/sent", test_cursor_sent);
 }
