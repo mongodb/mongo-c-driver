@@ -532,6 +532,7 @@ _test_write (bool at_boundary)
    mongoc_iovec_t riov;
    ssize_t len = sizeof buf + sizeof buf2 - 2;
 
+#ifndef _MSC_VER
    iov [0].iov_base = buf;
    iov [0].iov_len = sizeof (buf) - 1;
    iov [1].iov_base = buf2;
@@ -615,6 +616,7 @@ _test_write (bool at_boundary)
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
+#endif // _MSC_VER
 }
 
 
