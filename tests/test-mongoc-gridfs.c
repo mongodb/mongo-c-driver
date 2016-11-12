@@ -591,6 +591,13 @@ _test_write (bool at_boundary)
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
 
+   /* necessary on MSVC, possibly because memcmp compares more bytes than the
+    * provided length argument:
+    * randomascii.wordpress.com/2012/10/31/comparing-memory-is-still-tricky
+    */
+   memset (buf3, 0, sizeof (buf3));
+   memset (expected, 0, sizeof (expected));
+
    r = mongoc_gridfs_file_readv (file, &riov, 1, 2 * len + seek_len, 0);
    assert (r == 2 * len + seek_len);
 
