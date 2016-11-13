@@ -532,7 +532,6 @@ _test_write (bool at_boundary)
    mongoc_iovec_t riov;
    ssize_t len = sizeof buf + sizeof buf2 - 2;
 
-#ifndef _MSC_VER
    iov [0].iov_base = buf;
    iov [0].iov_len = sizeof (buf) - 1;
    iov [1].iov_base = buf2;
@@ -592,20 +591,13 @@ _test_write (bool at_boundary)
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
 
-   /* necessary on MSVC, possibly because memcmp compares more bytes than the
-    * provided length argument:
-    * randomascii.wordpress.com/2012/10/31/comparing-memory-is-still-tricky
-    */
-   memset (buf3, 0, sizeof (buf3));
-   memset (expected, 0, sizeof (expected));
-
    r = mongoc_gridfs_file_readv (file, &riov, 1, 2 * len + seek_len, 0);
    assert (r == 2 * len + seek_len);
 
    /* expect file to be like "fo bazr baz\0\0\0\0\0\0foo bar baz" */
-   bson_snprintf (expected, sizeof (expected), "fo bazr baz");
+   bson_snprintf (expected, strlen ("fo bazr baz") + 1, "fo bazr baz");
    bson_snprintf (expected + strlen ("fo bazr baz") + seek_len,
-                  strlen ("foo bar baz") + 1, "foo bar baz");
+                  strlen ("foo bar baz") + 1,"foo bar baz");
 
    assert (memcmp (buf3, expected, (size_t) (2 * len + seek_len)) == 0);
    assert (mongoc_gridfs_file_save (file));
@@ -616,7 +608,6 @@ _test_write (bool at_boundary)
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
-#endif // _MSC_VER
 }
 
 
