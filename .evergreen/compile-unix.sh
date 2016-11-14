@@ -122,6 +122,9 @@ case "$MARCH" in
          CFLAGS="$CFLAGS -Werror"
       fi
    ;;
+   s390x)
+      CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
+   ;;
    x86_64)
       CFLAGS="$CFLAGS -m64 -march=x86-64"
       if [ "$CC" = "gcc" ]; then
