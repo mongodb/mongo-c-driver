@@ -533,12 +533,14 @@ mongoc_add_example(
    example-sdam-monitoring TRUE
    ${SOURCE_DIR}/examples/example-sdam-monitoring.c)
 mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
-mongoc_add_example(example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
 mongoc_add_example(example-command-with-opts TRUE ${SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
+if (NOT MSVC)
+   mongoc_add_example(example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
+endif ()
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
