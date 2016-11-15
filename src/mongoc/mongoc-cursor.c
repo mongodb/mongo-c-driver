@@ -886,6 +886,18 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t        *cursor,
       BSON_APPEND_DOCUMENT (query, "$" #_legacy_name, &subdocument); \
 } while (false)
 
+#define ADD_FLAG(_flags, _value) do { \
+      if (!BSON_ITER_HOLDS_BOOL(&iter)) { \
+         bson_set_error (&cursor->error, \
+               MONGOC_ERROR_COMMAND, \
+               MONGOC_ERROR_COMMAND_INVALID_ARG, \
+               "invalid option %s, should be type bool", key); \
+         return false; \
+      } \
+      if (bson_iter_as_bool (&iter)) { \
+         *_flags |= _value; \
+      } \
+} while (false);
 
 static bool
 _mongoc_cursor_flags (mongoc_cursor_t        *cursor,
@@ -907,17 +919,17 @@ _mongoc_cursor_flags (mongoc_cursor_t        *cursor,
       key = bson_iter_key (&iter);
 
       if (!strcmp (key, ALLOW_PARTIAL_RESULTS)) {
-         OPT_FLAG (MONGOC_QUERY_PARTIAL);
+         ADD_FLAG (flags, MONGOC_QUERY_PARTIAL);
       } else if (!strcmp (key, AWAIT_DATA)) {
-         OPT_FLAG (MONGOC_QUERY_AWAIT_DATA);
+         ADD_FLAG (flags, MONGOC_QUERY_AWAIT_DATA);
       } else if (!strcmp (key, EXHAUST)) {
-         OPT_FLAG (MONGOC_QUERY_EXHAUST);
+         ADD_FLAG (flags, MONGOC_QUERY_EXHAUST);
       } else if (!strcmp (key, NO_CURSOR_TIMEOUT)) {
-         OPT_FLAG (MONGOC_QUERY_NO_CURSOR_TIMEOUT);
+         ADD_FLAG (flags, MONGOC_QUERY_NO_CURSOR_TIMEOUT);
       } else if (!strcmp (key, OPLOG_REPLAY)) {
-         OPT_FLAG (MONGOC_QUERY_OPLOG_REPLAY);
+         ADD_FLAG (flags, MONGOC_QUERY_OPLOG_REPLAY);
       } else if (!strcmp (key, TAILABLE)) {
-         OPT_FLAG (MONGOC_QUERY_TAILABLE_CURSOR);
+         ADD_FLAG (flags, MONGOC_QUERY_TAILABLE_CURSOR);
       }
    }
 
