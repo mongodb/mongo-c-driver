@@ -646,9 +646,9 @@ test_mongoc_uri_read_prefs (void)
       /* readPreference should take priority over slaveOk */
       { "mongodb://localhost/?slaveOk=false&readPreference=secondary", true, MONGOC_READ_SECONDARY, NULL },
       /* readPreferenceTags conflict with primary mode */
-      { "mongodb://localhost/?readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
-      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
-      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?readPreferenceTags=", false, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", false, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", false, MONGOC_READ_PRIMARY, NULL, conflicts },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=", true, MONGOC_READ_SECONDARY_PREFERRED, tags_empty },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=dc:ny", true, MONGOC_READ_SECONDARY_PREFERRED, tags_dcny },
       { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcny_empty },
