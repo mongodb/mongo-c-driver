@@ -898,7 +898,9 @@ _mongoc_cursor_flags (mongoc_cursor_t        *cursor,
    *flags = MONGOC_QUERY_NONE;
 
    if (!bson_iter_init (&iter, &cursor->opts)) {
-      OPT_BSON_ERR ("Invalid 'opts' parameter.");
+      bson_set_error (&cursor->error, MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID, "Invalid 'opts' parameter.");
+      return false;
    }
 
    while (bson_iter_next (&iter)) {
