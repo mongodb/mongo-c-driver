@@ -118,23 +118,18 @@ LSAN_OPTIONS="log_pointers=true"
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
-      if [ "$CC" = "gcc" ]; then
-         CFLAGS="$CFLAGS -Werror"
-      fi
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
    ;;
    x86_64)
       CFLAGS="$CFLAGS -m64 -march=x86-64"
-      if [ "$CC" = "gcc" ]; then
-         CFLAGS="$CFLAGS -Werror"
-      fi
    ;;
    ppc64le)
       CFLAGS="$CFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
    ;;
 esac
+CFLAGS="$CFLAGS -Werror"
 
 
 case "$OS" in
