@@ -734,6 +734,36 @@ test_cursor_new_invalid (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_cursor_new_static (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   client = test_framework_client_new ();
+
+   char *j = "{ \"ok\":1, \"cursor\":{ \"id\":0, \"ns\":\"test.foo\", \"firstBatch\":[ { \"x\":1 }, {\"x\":2 } ] } }";
+   bson_t* b = bson_new_from_json((uint8_t*) j, strlen(j), &error);
+   ASSERT_OR_PRINT (b, error);
+
+   bson_t bs;
+   ASSERT (bson_init_static(&bs, bson_get_data(b), b->len));
+
+   /* verify that original works */
+   cursor = mongoc_cursor_new_from_command_reply (client, bson_copy(b), 0);
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error(cursor, &error));
+
+   /* then test static bson */
+   cursor = mongoc_cursor_new_from_command_reply (client, &bs, 0);
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error(cursor, &error));
+
+   bson_destroy(b);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
 
 static void
 test_cursor_hint_errors (void)
@@ -1516,6 +1546,7 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_find_batches, NULL, NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_Add (suite, "/Cursor/new_static", test_cursor_new_static);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
    TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
    TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
