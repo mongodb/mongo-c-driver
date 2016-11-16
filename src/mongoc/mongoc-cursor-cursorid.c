@@ -373,7 +373,9 @@ _mongoc_cursor_cursorid_init_with_reply (mongoc_cursor_t *cursor,
    BSON_ASSERT (cid);
 
    bson_destroy (&cid->array);
-   bson_steal (&cid->array, reply);
+   if (!bson_steal (&cid->array, reply)) {
+      bson_steal (&cid->array, bson_copy (reply));
+   }
 
    if (!_mongoc_cursor_cursorid_start_batch (cursor)) {
       bson_set_error (&cursor->error,
