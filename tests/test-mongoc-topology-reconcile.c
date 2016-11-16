@@ -45,7 +45,7 @@ get_node (mongoc_topology_t *topology,
 void
 rs_response_to_ismaster (mock_server_t *server,
                          bool primary,
-                         bool has_tags,
+                         int has_tags,
                          ...)
 {
    va_list ap;
