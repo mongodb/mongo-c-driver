@@ -24,6 +24,10 @@
 #include <bson.h>
 #include "mongoc.h"
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+
 /* string comparison functions for Windows */
 #ifdef _WIN32
 # define strcasecmp  _stricmp
