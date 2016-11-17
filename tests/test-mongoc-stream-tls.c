@@ -26,6 +26,7 @@ test_mongoc_tls_no_certs (void)
 }
 
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 test_mongoc_tls_password (void)
 {
@@ -77,6 +78,7 @@ test_mongoc_tls_bad_password (void)
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SUCCESS);
    ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
 }
+#endif
 
 
 static void
@@ -336,6 +338,7 @@ test_mongoc_tls_wild (void)
 }
 
 
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
 static void
 test_mongoc_tls_ip (void)
 {
@@ -354,9 +357,10 @@ test_mongoc_tls_ip (void)
    ASSERT_CMPINT (cr.result, ==, SSL_TEST_SUCCESS);
    ASSERT_CMPINT (sr.result, ==, SSL_TEST_SUCCESS);
 }
+#endif
 
 
-#if !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL)
+#if !defined(__APPLE__) && !defined(_WIN32) && defined(MONGOC_ENABLE_SSL_OPENSSL)
 static void
 test_mongoc_tls_trust_dir (void)
 {
