@@ -1467,18 +1467,17 @@ stream_not_found (mongoc_topology_t *topology,
 {
    mongoc_server_description_t *sd;
 
-   BSON_ASSERT (error);
-
    sd = mongoc_topology_server_by_id (topology, server_id, error);
 
-   if (sd && sd->error.code) {
-      memcpy (error, &sd->error, sizeof *error);
-   } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                      "Could not find stream for node %s",
-                      connection_address);
+   if (error) {
+      if (sd && sd->error.code) {
+         memcpy (error, &sd->error, sizeof *error);
+      } else {
+         bson_set_error (error, MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not find stream for node %s",
+                         connection_address);
+      }
    }
 
    if (sd) {
