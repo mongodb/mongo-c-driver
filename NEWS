@@ -36,6 +36,8 @@ New features and bug fixes:
     * mongoc_collection_read_write_command_with_opts
     * mongoc_gridfs_find_with_opts
     * mongoc_gridfs_find_one_with_opts
+  * mongoc_collection_find is now deprecated in favor of
+    mongoc_collection_find_with_opts.
   * New helper function to include read concern in one of the above function's
     options parameter: mongoc_read_concern_append.
   * mongoc_client_command no longer applies the client's read preference and
