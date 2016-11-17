@@ -433,7 +433,7 @@ _mongoc_cursor_new (mongoc_client_t             *client,
    }
 
    if (limit) {
-      bson_append_int64 (&opts, LIMIT, LIMIT_LEN, labs (limit));
+      bson_append_int64 (&opts, LIMIT, LIMIT_LEN, llabs (limit));
 
       if (limit < 0) {
          bson_append_bool (&opts, SINGLE_BATCH, SINGLE_BATCH_LEN, true);
@@ -1769,7 +1769,7 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     */
    limit = mongoc_cursor_get_limit (cursor);
 
-   if (limit && cursor->count >= labs (limit)) {
+   if (limit && cursor->count >= llabs (limit)) {
       cursor->done = true;
       RETURN (false);
    }
