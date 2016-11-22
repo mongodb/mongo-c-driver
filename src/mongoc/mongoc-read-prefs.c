@@ -29,7 +29,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
    read_prefs = (mongoc_read_prefs_t *)bson_malloc0(sizeof *read_prefs);
    read_prefs->mode = mode;
    bson_init(&read_prefs->tags);
-   read_prefs->max_staleness_seconds = NO_MAX_STALENESS;
+   read_prefs->max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
 
    return read_prefs;
 }
@@ -98,7 +98,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 }
 
 
-double
+int64_t
 mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (read_prefs);
@@ -109,7 +109,7 @@ mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_pre
 
 void
 mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
-                                             double               max_staleness_seconds)
+                                             int64_t              max_staleness_seconds)
 {
    BSON_ASSERT (read_prefs);
 
@@ -127,13 +127,13 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
     */
    if (read_prefs->mode == MONGOC_READ_PRIMARY) {
       if (!bson_empty(&read_prefs->tags) ||
-          read_prefs->max_staleness_seconds != NO_MAX_STALENESS) {
+          read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
          return false;
       }
    }
 
-   if (read_prefs->max_staleness_seconds != NO_MAX_STALENESS &&
-       read_prefs->max_staleness_seconds <= 0.0) {
+   if (read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS &&
+       read_prefs->max_staleness_seconds <= 0) {
       return false;
    }
 
@@ -198,7 +198,7 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
    const bson_t *tags = NULL;
    bson_t child;
    const char *mode_str;
-   double max_staleness_seconds;
+   int64_t max_staleness_seconds;
 
    mode = mongoc_read_prefs_get_mode (read_prefs);
    if (read_prefs) {
@@ -257,9 +257,9 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
       max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
          read_prefs);
 
-      if (max_staleness_seconds != NO_MAX_STALENESS) {
-         bson_append_double (&child, "maxStalenessSeconds", 19,
-                             max_staleness_seconds);
+      if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
+         bson_append_int64 (&child, "maxStalenessSeconds", 19,
+                            max_staleness_seconds);
       }
 
       bson_append_document_end (result->query_with_read_prefs, &child);

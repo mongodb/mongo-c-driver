@@ -29,13 +29,11 @@
 
 BSON_BEGIN_DECLS
 
-#define NO_MAX_STALENESS (-1.0)
-
 struct _mongoc_read_prefs_t
 {
    mongoc_read_mode_t mode;
    bson_t             tags;
-   double             max_staleness_seconds;
+   int64_t            max_staleness_seconds;
 };
 
 

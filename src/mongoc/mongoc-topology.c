@@ -387,7 +387,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t           *read_prefs,
                             bson_error_t                        *error)
 {
-   double max_staleness_seconds;
+   int64_t max_staleness_seconds;
    int32_t max_wire_version;
 
    if (!read_prefs) {
@@ -398,7 +398,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
    max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
       read_prefs);
 
-   if (max_staleness_seconds != NO_MAX_STALENESS) {
+   if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
       max_wire_version = mongoc_topology_description_lowest_max_wire_version (
          td);
 

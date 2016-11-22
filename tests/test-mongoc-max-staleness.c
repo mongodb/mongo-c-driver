@@ -13,7 +13,7 @@
 #define MONGOC_LOG_DOMAIN "client-test-max-staleness"
 
 
-static double
+static int64_t
 get_max_staleness (const mongoc_client_t *client)
 {
    const mongoc_read_prefs_t *prefs;
@@ -31,11 +31,22 @@ test_mongoc_client_max_staleness (void)
    mongoc_client_t *client;
 
    client = mongoc_client_new (NULL);
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    client = mongoc_client_new ("mongodb://a/?readPreference=secondary");
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
+   mongoc_client_destroy (client);
+
+   /* -1 is the default, means "no max staleness" */
+   client = mongoc_client_new ("mongodb://a/?maxStalenessSeconds=-1");
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (
+      "mongodb://a/?readPreference=primary&maxStalenessSeconds=-1");
+
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    /* no maxStalenessSeconds with primary mode */
@@ -46,26 +57,33 @@ test_mongoc_client_max_staleness (void)
    capture_logs (true);
 
    /* zero is prohibited */
-   ASSERT (!mongoc_client_new (
-      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0"));
+   client = mongoc_client_new (
+      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0");
 
    ASSERT_CAPTURED_LOG ("maxStalenessSeconds=0", MONGOC_LOG_LEVEL_WARNING,
                         "cannot be zero");
 
-   client = mongoc_client_new (
-      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=120");
-
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 120);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    client = mongoc_client_new (
-      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=10.5");
+      "mongodb://a/?maxStalenessSeconds=120&readPreference=secondary");
 
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 10.5);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) 120);
    mongoc_client_destroy (client);
 
+   /* float is ignored */
+   capture_logs (true);
+   ASSERT (!mongoc_client_new (
+      "mongodb://a/?readPreference=secondary&maxStalenessSeconds=10.5"));
+
+   ASSERT_CAPTURED_LOG ("maxStalenessSeconds=10.5", MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid maxStalenessSeconds");
+
+   /* 1 is allowed, it'll be rejected once we begin server selection */
    client = mongoc_client_new (
       "mongodb://a/?readPreference=secondary&maxStalenessSeconds=1");
+
    ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 1);
    mongoc_client_destroy (client);
 }
@@ -103,8 +121,9 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* count command with mode "secondary", maxStalenessSeconds = 120 */
-   mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
+   /* count command with mode "secondary". maxStalenessSeconds=1 is allowed by
+    * client, although in real life mongos will reject it */
+   mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
@@ -112,7 +131,7 @@ test_mongos_max_staleness_read_pref (void)
                                      NULL, 0, 0, NULL, &error);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK,
-      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 120}}");
+      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);

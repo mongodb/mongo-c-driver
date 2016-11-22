@@ -102,7 +102,7 @@ mongoc_topology_description_all_sds_have_write_date (
 bool
 _mongoc_topology_description_validate_max_staleness (
    const mongoc_topology_description_t *td,
-   double                               max_staleness_seconds,
+   int64_t                              max_staleness_seconds,
    bson_error_t                        *error);
 
 void

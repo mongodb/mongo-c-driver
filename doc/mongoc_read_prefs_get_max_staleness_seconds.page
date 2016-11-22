@@ -12,7 +12,7 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[double
+    <synopsis><code mime="text/x-csrc"><![CDATA[int64_t
 mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
   </section>
@@ -26,7 +26,7 @@ mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_pre
 
   <section id="description">
     <title>Description</title>
-    <p>Clients estimate the staleness of each secondary, and select for reads only those secondaries whose estimated staleness is less than or equal to maxStalenessSeconds. The default is -1, meaning no maximum staleness.</p>
+    <p>Clients estimate the staleness of each secondary, and select for reads only those secondaries whose estimated staleness is less than or equal to maxStalenessSeconds. The default is <code>MONGOC_NO_MAX_STALENESS</code>.</p>
   </section>
 
 </page>
