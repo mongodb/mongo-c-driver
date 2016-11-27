@@ -6,8 +6,9 @@ It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
 New features and bug fixes:
   * MongoDB 3.4 Support
     * New URI and read preference option, "maxStalenessSeconds"
-    * MongoDB Handshake
-    * writeConcern and readConcern enhancements
+    * Set MongoDB client handshake data with mongoc_client_set_appname or
+      mongoc_client_pool_set_appname.
+    * writeConcern and readConcern enhancements.
     * Collation allows users to specify language-specific rules for string
       comparison when sorting documents. See the code examples for
       mongoc_client_read_command_with_opts, mongoc_collection_count_with_opts,
@@ -23,6 +24,10 @@ New features and bug fixes:
   * Additional features for Application Performance Monitoring:
     * mongoc_topology_description_has_writable_server
     * mongoc_topology_description_has_readable_server
+    * Notifications when a server or topology description changes, and when a
+      monitoring heartbeat begins and succeeds or fails.
+    * mongoc_client_set_apm_callbacks can be used repeatedly to change or clear
+      the list of monitoring callbacks.
   * New functions accept flexible options as a BSON document:
     * mongoc_collection_find_with_opts
     * mongoc_client_read_command_with_opts
@@ -36,6 +41,11 @@ New features and bug fixes:
     * mongoc_collection_read_write_command_with_opts
     * mongoc_gridfs_find_with_opts
     * mongoc_gridfs_find_one_with_opts
+    * mongoc_bulk_operation_remove_one_with_opts
+    * mongoc_bulk_operation_remove_many_with_opts
+    * mongoc_bulk_operation_replace_one_with_opts
+    * mongoc_bulk_operation_update_one_with_opts
+    * mongoc_bulk_operation_update_many_with_opts
   * mongoc_collection_find is now deprecated in favor of
     mongoc_collection_find_with_opts.
   * New helper function to include read concern in one of the above function's
@@ -73,7 +83,10 @@ New features and bug fixes:
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
   * Bugfixes: The random number generator used to select servers is now properly
     seeded, and secondary queries are now properly distributed according to
-    localThresholdMS, not just to the lowest-latency secondary.
+    localThresholdMS, not just to the lowest-latency secondary. The latency
+    estimate is reset after a connection error.
+  * Fix crashes in mongoc_topology_invalidate_server and
+    mongoc_client_kill_cursor.
   * mongoc_collection_insert, mongoc_collection_update, mongoc_collection_remove
     consistently use domain MONGOC_ERROR_BSON, code MONGOC_ERROR_BSON_INVALID
     if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.
@@ -83,9 +96,8 @@ New features and bug fixes:
     it logs and aborts instead of silently continuing, then failing to connect.
   * The driver now updates its view of the whole topology with information from
     each new connection handshake.
-  * mongoc_client_set_apm_callbacks can be used repeatedly to change or clear
-    the list of monitoring callbacks.
-  * Improved error reporting when the driver fails to reach the server.
+  * Improved error reporting when the driver fails to reach the server, and
+    correctly distinguish "connection error" and "connection timeout".
 
 Deprecations:
   * mongoc_collection_find is deprecated for mongoc_collection_find_with_opts.
