@@ -1,7 +1,7 @@
 mongo-c-driver 1.5.0
 ====================
 
-It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
+It is my pleasure to announce the release of mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support
