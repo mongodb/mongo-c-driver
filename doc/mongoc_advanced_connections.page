@@ -88,12 +88,10 @@ main (int   argc,
   <section id="unix-socket">
     <info><link type="guide" xref="index#advanced-connections" /></info>
     <title>Connecting to a UNIX Domain Socket</title>
-    <p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Simply pass the path to the socket, which <em>must</em> be suffixed with <code>.sock</code>.</p>
-
-    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb:///tmp/mysocket.sock");]]></code></screen>
-    <note style="warning">
-      <p>Connecting directly to a UNIX domain socket is not a common practice.</p>
-    </note>
+    <p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Pass the URL-encoded path to the socket, which <em>must</em> be suffixed with <code>.sock</code>. For example, to connect to a domain socket at <code>/tmp/mongodb-27017.sock</code>:</p>
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongodb-27017.sock");]]></code></screen>
+    <p>Include username and password like so:</p>
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock");]]></code></screen>
   </section>
    
   <section id="SSL">
