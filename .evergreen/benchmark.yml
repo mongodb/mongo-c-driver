@@ -38,11 +38,7 @@ c_driver_variables:
           make install
           git clone https://github.com/mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
-          # Temp fix for cmake issue - BUILD-2350 installs cmak on the RHEL6.2 distro
-          curl -s https://cmake.org/files/v3.6/cmake-3.6.2-Linux-x86_64.tar.gz --output cmake.tar.gz
-          tar -zxf cmake.tar.gz
-          #PKG_CONFIG_PATH=../mongoc/lib/pkgconfig /opt/cmake/bin/cmake .
-          PKG_CONFIG_PATH=../mongoc/lib/pkgconfig ./cmake-3.6.2-Linux-x86_64/bin/cmake .
+          PKG_CONFIG_PATH=../mongoc/lib/pkgconfig /opt/cmake/bin/cmake .
           make
 
     mongodb:
