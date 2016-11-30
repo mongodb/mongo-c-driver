@@ -13,7 +13,7 @@ Libbson will automatically be built if you do not have it installed on your syst
 Documentation / Support / Feedback
 ==================================
 
-The documentation is available at http://api.mongodb.org/c/current/.
+The documentation is available at http://mongoc.org/.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
@@ -87,7 +87,7 @@ Building the Driver from Source
 ===============================
 
 Detailed installation instructions are in the manual:
-http://api.mongodb.org/c/current/installing.html
+http://mongoc.org/libmongoc/current/installing.html
 
 From a tarball
 --------------
