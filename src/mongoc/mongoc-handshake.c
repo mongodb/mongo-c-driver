@@ -203,13 +203,13 @@ _get_os_version (void)
    if (GetVersionEx (&osvi)) {
       bson_snprintf (ret,
                      HANDSHAKE_OS_VERSION_MAX,
-                     "%d.%d (%d)",
+                     "%lu.%lu (%lu)",
                      osvi.dwMajorVersion,
                      osvi.dwMinorVersion,
                      osvi.dwBuildNumber);
       found = true;
    } else {
-      MONGOC_WARNING ("Error with GetVersionEx(): %d",
+      MONGOC_WARNING ("Error with GetVersionEx(): %lu",
                       GetLastError ());
    }
 
