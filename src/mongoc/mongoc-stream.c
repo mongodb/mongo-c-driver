@@ -286,7 +286,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           int              level,
                           int              optname,
                           void            *optval,
-                          socklen_t        optlen)
+                          mongoc_socklen_t        optlen)
 {
    BSON_ASSERT (stream);
 

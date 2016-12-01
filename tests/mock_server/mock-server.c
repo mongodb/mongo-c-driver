@@ -1429,7 +1429,7 @@ static uint16_t
 get_port (mongoc_socket_t *sock)
 {
    struct sockaddr_in bound_addr = { 0 };
-   socklen_t addr_len = (socklen_t) sizeof bound_addr;
+   mongoc_socklen_t addr_len = (mongoc_socklen_t) sizeof bound_addr;
 
    if (mongoc_socket_getsockname (sock,
                                   (struct sockaddr *) &bound_addr,

@@ -31,7 +31,7 @@ ssl_error_server (void *ptr)
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *listen_sock;
    mongoc_socket_t *conn_sock;
-   socklen_t sock_len;
+   mongoc_socklen_t sock_len;
    char buf;
    ssize_t r;
    mongoc_iovec_t iov;

@@ -46,7 +46,13 @@ struct _mongoc_cursor_interface_t
    void             (*get_host) (mongoc_cursor_t        *cursor,
                                  mongoc_host_list_t     *host);
 };
+#ifdef MIN
+#undef MIN
+#endif
 
+#ifdef MAX
+#undef MAX
+#endif
 #define ALLOW_PARTIAL_RESULTS "allowPartialResults"
 #define ALLOW_PARTIAL_RESULTS_LEN 19
 #define AWAIT_DATA "awaitData"

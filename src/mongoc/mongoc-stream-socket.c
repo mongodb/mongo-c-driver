@@ -95,11 +95,11 @@ _mongoc_stream_socket_failed (mongoc_stream_t *stream)
 
 
 static int
-_mongoc_stream_socket_setsockopt (mongoc_stream_t *stream,
-                                  int              level,
-                                  int              optname,
-                                  void            *optval,
-                                  socklen_t        optlen)
+_mongoc_stream_socket_setsockopt (mongoc_stream_t   *stream,
+                                  int                level,
+                                  int                optname,
+                                  void              *optval,
+                                  mongoc_socklen_t   optlen)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
    int ret;

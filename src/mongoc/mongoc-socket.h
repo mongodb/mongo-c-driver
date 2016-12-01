@@ -38,6 +38,12 @@
 # include <sys/un.h>
 #endif
 
+#ifdef __hpux__
+typedef int       mongoc_socklen_t;
+#else
+typedef socklen_t mongoc_socklen_t;
+#endif
+
 #include "mongoc-iovec.h"
 
 
@@ -59,13 +65,13 @@ mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
 BSON_API
 int              mongoc_socket_bind       (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
-                                           socklen_t              addrlen);
+                                           mongoc_socklen_t       addrlen);
 BSON_API
 int              mongoc_socket_close      (mongoc_socket_t       *socket);
 BSON_API
 int              mongoc_socket_connect    (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
-                                           socklen_t              addrlen,
+                                           mongoc_socklen_t       addrlen,
                                            int64_t                expire_at);
 BSON_API
 char            *mongoc_socket_getnameinfo(mongoc_socket_t       *sock);
@@ -76,7 +82,7 @@ int              mongoc_socket_errno      (mongoc_socket_t       *sock);
 BSON_API
 int              mongoc_socket_getsockname(mongoc_socket_t       *sock,
                                            struct sockaddr       *addr,
-                                           socklen_t             *addrlen);
+                                           mongoc_socklen_t      *addrlen);
 BSON_API
 int              mongoc_socket_listen     (mongoc_socket_t       *sock,
                                            unsigned int           backlog);
@@ -95,7 +101,7 @@ int              mongoc_socket_setsockopt (mongoc_socket_t       *sock,
                                            int                    level,
                                            int                    optname,
                                            const void            *optval,
-                                           socklen_t              optlen);
+                                           mongoc_socklen_t       optlen);
 BSON_API
 ssize_t          mongoc_socket_send       (mongoc_socket_t       *sock,
                                            const void            *buf,
