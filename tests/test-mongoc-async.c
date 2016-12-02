@@ -1,80 +1,72 @@
 #include <mongoc.h>
 
-#include "mock_server/mock-server.h"
-#include "mock_server/future-functions.h"
-#include "test-conveniences.h"
+#include "mongoc-async-private.h"
+#include "mongoc-async-cmd-private.h"
 #include "TestSuite.h"
+#include "mock_server/mock-server.h"
+#include "mongoc-errno-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
 
+#define TIMEOUT 10000  /* milliseconds */
 #define NSERVERS 10
-#define SPECIAL_SERVER 5
+
+struct result {
+   int32_t  max_wire_version;
+   bool     finished;
+};
 
 
-static mongoc_uri_t *
-uri_for_ports (uint16_t ports[NSERVERS])
+static void
+test_ismaster_helper (mongoc_async_cmd_result_t result,
+                      const bson_t             *bson,
+                      int64_t                   rtt_msec,
+                      void                     *data,
+                      bson_error_t             *error)
 {
-   bson_string_t *str = bson_string_new ("mongodb://");
-   int i;
-   mongoc_uri_t *uri;
+   struct result *r = (struct result *)data;
+   bson_iter_t iter;
 
-   bson_string_append_printf (str, "localhost:%hu", ports[0]);
-
-   for (i = 1; i < NSERVERS; i++) {
-      bson_string_append_printf (str, ",localhost:%hu", ports[i]);
+   if (result != MONGOC_ASYNC_CMD_SUCCESS) {
+      fprintf(stderr, "error: %s\n", error->message);
    }
+   ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
-   bson_string_append_printf (str, "/?replicaSet=rs");
-   uri = mongoc_uri_new (str->str);
-   assert (uri);
-
-   bson_string_free (str, true);
-
-   return uri;
+   assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   r->max_wire_version = bson_iter_int32 (&iter);
+   r->finished = true;
 }
 
 
 static void
-shuffle (mock_server_t *servers[NSERVERS])
+test_ismaster_impl (bool with_ssl)
 {
-   size_t i;
-   mock_server_t *s;
-
-   for (i = 0; i < NSERVERS - 1; i++) {
-      size_t j = i + rand () / (RAND_MAX / (NSERVERS - i) + 1);
-      s = servers[j];
-      servers[j] = servers[i];
-      servers[i] = s;
-   }
-}
-
-
-static void
-_test_ismaster (bool with_ssl,
-                bool pooled)
-{
-   const char *secondary_reply = "{'ok': 1, 'ismaster': false,"
-                                 " 'secondary': true, 'setName': 'rs'}";
-
    mock_server_t *servers[NSERVERS];
-   mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   mongoc_read_prefs_t *read_prefs;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
+   mongoc_async_t *async;
+   mongoc_stream_t *sock_streams[NSERVERS];
+   mongoc_socket_t *conn_sock;
+   mongoc_async_cmd_setup_t setup = NULL;
+   void *setup_ctx = NULL;
+   struct sockaddr_in server_addr = { 0 };
    uint16_t ports[NSERVERS];
+   struct result results[NSERVERS];
+   int r;
    int i;
+   int errcode;
+   bson_t q = BSON_INITIALIZER;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = { 0 };
    mongoc_ssl_opt_t copt = { 0 };
 #endif
 
+   assert(bson_append_int32 (&q, "isMaster", 8, 1));
+
    for (i = 0; i < NSERVERS; i++) {
-      servers[i] = mock_server_new ();
+      /* use max wire versions just to distinguish among responses */
+      servers[i] = mock_server_with_autoismaster (i);
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
@@ -87,82 +79,75 @@ _test_ismaster (bool with_ssl,
 #endif
 
       ports[i] = mock_server_run (servers[i]);
-      assert (ports[i]);
    }
 
-   uri = uri_for_ports (ports);
-
-   if (with_ssl) {
-#ifdef MONGOC_ENABLE_SSL
-      copt.ca_file = CERT_CA;
-      copt.weak_cert_validation = 1;
-      if (pooled) {
-         pool = mongoc_client_pool_new (uri);
-         mongoc_client_pool_set_ssl_opts (pool, &copt);
-         client = mongoc_client_pool_pop (pool);
-      } else {
-         client = mongoc_client_new_from_uri (uri);
-         mongoc_client_set_ssl_opts (client, &copt);
-      }
-#endif
-   } else {
-      if (pooled) {
-         pool = mongoc_client_pool_new (uri);
-         client = mongoc_client_pool_pop (pool);
-      } else {
-         client = mongoc_client_new_from_uri (uri);
-      }
-   }
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-
-   future = future_client_command_simple (client, "test",
-                                          tmp_bson ("{'ping': 1}"),
-                                          read_prefs, NULL, &error);
-
-   /* prove scanner is async: we can respond to ismaster in any order */
-   shuffle (servers);
+   async = mongoc_async_new ();
 
    for (i = 0; i < NSERVERS; i++) {
-      request = mock_server_receives_ismaster (servers[i]);
-      assert (request);
+      conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+      assert (conn_sock);
 
-      /* only one server in the list is a suitable secondary */
-      if (i == SPECIAL_SERVER) {
-         mock_server_replies_simple (request, secondary_reply);
-         request_destroy (request);
-      } else {
-         /* replies "ok", is marked as type "standalone" and removed */
-         mock_server_replies_ok_and_destroys (request);
+      server_addr.sin_family = AF_INET;
+      server_addr.sin_port = htons (ports[i]);
+      server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+      r = mongoc_socket_connect (conn_sock,
+                                 (struct sockaddr *)&server_addr,
+                                 sizeof (server_addr),
+                                 0);
+
+      errcode = mongoc_socket_errno (conn_sock);
+      if (!(r == 0 || MONGOC_ERRNO_IS_AGAIN (errcode))) {
+         fprintf (stderr, "mongoc_socket_connect unexpected return: "
+                          "%d (errno: %d)\n", r, errcode);
+         fflush (stderr);
+         abort ();
       }
+
+      sock_streams[i] = mongoc_stream_socket_new (conn_sock);
+
+#ifdef MONGOC_ENABLE_SSL
+      if (with_ssl) {
+         copt.ca_file = CERT_CA;
+         copt.weak_cert_validation = 1;
+
+         sock_streams[i] = mongoc_stream_tls_new_with_hostname (sock_streams[i], NULL, &copt, 1);
+         setup = mongoc_async_cmd_tls_setup;
+         setup_ctx = (void *)"127.0.0.1";
+      }
+#endif
+
+      results[i].finished = false;
+
+      mongoc_async_cmd (async,
+                        sock_streams[i],
+                        setup,
+                        setup_ctx,
+                        "admin",
+                        &q,
+                        &test_ismaster_helper,
+                        (void *)&results[i],
+                        TIMEOUT);
    }
 
-   if (pooled) {
-      /* client opens new connection and calls isMaster on it */
-      request = mock_server_receives_ismaster (servers[SPECIAL_SERVER]);
-      mock_server_replies_simple (request, secondary_reply);
-      request_destroy (request);
+   mongoc_async_run (async, TIMEOUT);
+
+   for (i = 0; i < NSERVERS; i++) {
+      if (!results[i].finished) {
+         fprintf (stderr, "command %d not finished\n", i);
+         abort ();
+      }
+
+      /* received the maxWireVersion configured above */
+      ASSERT_CMPINT (i, ==, results[i].max_wire_version);
    }
 
-   request = mock_server_receives_command (
-      servers[SPECIAL_SERVER], "test", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   mongoc_async_destroy (async);
 
-   mock_server_replies_ok_and_destroys (request);
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-   future_destroy (future);
-
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_uri_destroy (uri);
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
+   bson_destroy (&q);
 
    for (i = 0; i < NSERVERS; i++) {
       mock_server_destroy (servers[i]);
+      mongoc_stream_destroy (sock_streams[i]);
    }
 }
 
@@ -170,14 +155,7 @@ _test_ismaster (bool with_ssl,
 static void
 test_ismaster (void)
 {
-   _test_ismaster (false, false);
-}
-
-
-static void
-test_ismaster_pooled (void)
-{
-   _test_ismaster (false, true);
+   test_ismaster_impl(false);
 }
 
 
@@ -185,14 +163,7 @@ test_ismaster_pooled (void)
 static void
 test_ismaster_ssl (void)
 {
-   _test_ismaster (true, false);
-}
-
-
-static void
-test_ismaster_ssl_pooled (void)
-{
-   _test_ismaster (true, true);
+   test_ismaster_impl(true);
 }
 #endif
 
@@ -201,12 +172,7 @@ void
 test_async_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-   TestSuite_Add (suite, "/Async/ismaster/pooled",
-                  test_ismaster_pooled);
-
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
-   TestSuite_Add (suite, "/Async/ismaster_ssl/pooled",
-                  test_ismaster_ssl_pooled);
 #endif
 }

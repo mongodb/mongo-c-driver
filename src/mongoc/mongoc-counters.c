@@ -169,7 +169,7 @@ mongoc_counters_alloc (size_t size)
    pid = getpid ();
    bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
 
-   if (-1 == (fd = shm_open (name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
+   if (-1 == (fd = shm_open (name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR|O_NOFOLLOW))) {
       goto fail_noclean;
    }
 

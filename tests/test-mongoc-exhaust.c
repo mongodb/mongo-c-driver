@@ -140,7 +140,7 @@ test_exhaust_cursor (bool pooled)
    }
 
    /* ensure even a 1 ms-resolution clock advances significantly */
-   _mongoc_usleep (10 * 1000);
+   _mongoc_usleep (1000 * 1000);
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
@@ -156,7 +156,7 @@ test_exhaust_cursor (bool pooled)
       }
       assert (r);
       assert (doc);
-      assert (timestamp1 < get_timestamp (client, cursor2));
+      ASSERT_CMPINT64 (timestamp1, <, get_timestamp (client, cursor2));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
@@ -178,8 +178,8 @@ test_exhaust_cursor (bool pooled)
       assert (!doc);
 
       mongoc_cursor_error(cursor2, &error);
-      assert (error.domain == MONGOC_ERROR_CLIENT);
-      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
+      ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
 
       mongoc_cursor_destroy (cursor2);
    }
@@ -192,8 +192,8 @@ test_exhaust_cursor (bool pooled)
       END_IGNORE_DEPRECATIONS;
 
       assert (!r);
-      assert (error.domain == MONGOC_ERROR_CLIENT);
-      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
+      ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
    }
 
    /* we're still in exhaust.
@@ -385,7 +385,7 @@ _check_error (mongoc_client_t     *client,
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
                              MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to read");
+                             "socket error or timeout");
 
       /* socket was discarded */
       ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
@@ -396,7 +396,7 @@ _check_error (mongoc_client_t     *client,
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
                              MONGOC_ERROR_STREAM_SOCKET,
-                             "Failed to read");
+                             "socket error or timeout");
    } else {
       /* query failure */
       ASSERT_ERROR_CONTAINS (error,

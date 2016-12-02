@@ -39,8 +39,8 @@ bool map_reduce_basic (mongoc_database_t* database)
    /* Now we'll query outCollection to see what the results are */
    out_collection = mongoc_database_get_collection (database,
                                                     out_collection_name);
-   cursor = mongoc_collection_find (out_collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    &find_query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (out_collection, &find_query,
+                                              NULL, NULL);
    query_done = true;
 
    /* Do something with the results */

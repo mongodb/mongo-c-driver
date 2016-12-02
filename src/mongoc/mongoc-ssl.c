@@ -25,6 +25,8 @@
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #  include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#  include "mongoc-libressl-private.h"
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 #  include "mongoc-secure-transport-private.h"
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
@@ -75,6 +77,9 @@ mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 	retval = _mongoc_openssl_extract_subject (filename, passphrase);
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+    MONGOC_WARNING ("libtls doesn't support automatically extracting subject from "
+                    "certificate to use with authentication");
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 	retval = _mongoc_secure_transport_extract_subject (filename, passphrase);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)

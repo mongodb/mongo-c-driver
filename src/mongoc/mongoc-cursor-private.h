@@ -47,12 +47,72 @@ struct _mongoc_cursor_interface_t
                                  mongoc_host_list_t     *host);
 };
 
+#define ALLOW_PARTIAL_RESULTS "allowPartialResults"
+#define ALLOW_PARTIAL_RESULTS_LEN 19
+#define AWAIT_DATA "awaitData"
+#define AWAIT_DATA_LEN 9
+#define BATCH_SIZE "batchSize"
+#define BATCH_SIZE_LEN 9
+#define COLLATION "collation"
+#define COLLATION_LEN 9
+#define COMMENT "comment"
+#define COMMENT_LEN 7
+#define EXHAUST "exhaust"
+#define EXHAUST_LEN 7
+#define FILTER "filter"
+#define FILTER_LEN 6
+#define FIND "find"
+#define FIND_LEN 4
+#define HINT "hint"
+#define HINT_LEN 4
+#define LIMIT "limit"
+#define LIMIT_LEN 5
+#define MAX "max"
+#define MAX_LEN 3
+#define MAX_AWAIT_TIME_MS "maxAwaitTimeMS"
+#define MAX_AWAIT_TIME_MS_LEN 14
+#define MAX_SCAN "maxScan"
+#define MAX_SCAN_LEN 7
+#define MAX_TIME_MS "maxTimeMS"
+#define MAX_TIME_MS_LEN 9
+#define MIN "min"
+#define MIN_LEN 3
+#define NO_CURSOR_TIMEOUT "noCursorTimeout"
+#define NO_CURSOR_TIMEOUT_LEN 15
+#define OPLOG_REPLAY "oplogReplay"
+#define OPLOG_REPLAY_LEN 11
+#define ORDERBY "orderby"
+#define ORDERBY_LEN 7
+#define PROJECTION "projection"
+#define PROJECTION_LEN 10
+#define QUERY "query"
+#define QUERY_LEN 5
+#define READ_CONCERN "readConcern"
+#define READ_CONCERN_LEN 11
+#define RETURN_KEY "returnKey"
+#define RETURN_KEY_LEN 9
+#define SHOW_DISK_LOC "showDiskLoc"
+#define SHOW_DISK_LOC_LEN 11
+#define SHOW_RECORD_ID "showRecordId"
+#define SHOW_RECORD_ID_LEN 12
+#define SINGLE_BATCH "singleBatch"
+#define SINGLE_BATCH_LEN 11
+#define SKIP "skip"
+#define SKIP_LEN 4
+#define SNAPSHOT "snapshot"
+#define SNAPSHOT_LEN 8
+#define SORT "sort"
+#define SORT_LEN 4
+#define TAILABLE "tailable"
+#define TAILABLE_LEN 8
 
 struct _mongoc_cursor_t
 {
    mongoc_client_t           *client;
 
    uint32_t                   server_id;
+   bool                       server_id_set;
+   bool                       slave_ok;
 
    unsigned                   is_command      : 1;
    unsigned                   sent            : 1;
@@ -61,18 +121,15 @@ struct _mongoc_cursor_t
    unsigned                   has_fields      : 1;
    unsigned                   in_exhaust      : 1;
 
-   bson_t                     query;
-   bson_t                     fields;
+   bson_t                     filter;
+   bson_t                     opts;
 
    mongoc_read_concern_t     *read_concern;
    mongoc_read_prefs_t       *read_prefs;
 
-   mongoc_query_flags_t       flags;
-   uint32_t                   skip;
-   int64_t                    limit;
+   mongoc_write_concern_t    *write_concern;
+
    uint32_t                   count;
-   uint32_t                   batch_size;
-   uint32_t                   max_await_time_ms;
 
    char                       ns [140];
    uint32_t                   nslen;
@@ -97,7 +154,16 @@ int32_t                   _mongoc_n_return            (mongoc_cursor_t          
 void                      _mongoc_set_cursor_ns       (mongoc_cursor_t              *cursor,
                                                        const char                   *ns,
                                                        uint32_t                      nslen);
-mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t              *client,
+bool                      _mongoc_cursor_get_opt_bool (const mongoc_cursor_t        *cursor,
+                                                       const char                   *option);
+mongoc_cursor_t         *_mongoc_cursor_new_with_opts (mongoc_client_t              *client,
+                                                       const char                   *db_and_collection,
+                                                       bool                          is_command,
+                                                       const bson_t                 *filter,
+                                                       const bson_t                 *opts,
+                                                       const mongoc_read_prefs_t    *read_prefs,
+                                                       const mongoc_read_concern_t  *read_concern);
+mongoc_cursor_t         *_mongoc_cursor_new           (mongoc_client_t              *client,
                                                        const char                   *db_and_collection,
                                                        mongoc_query_flags_t          flags,
                                                        uint32_t                      skip,

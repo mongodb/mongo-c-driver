@@ -20,6 +20,45 @@ MONGOC_DEF_FILES = \
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
 	src/mongoc/mongoc-apm.h \
+	src/mongoc/mongoc-bulk-operation.h \
+	src/mongoc/mongoc-client-pool.h \
+	src/mongoc/mongoc-client.h \
+	src/mongoc/mongoc-collection.h \
+	src/mongoc/mongoc-cursor.h \
+	src/mongoc/mongoc-database.h \
+	src/mongoc/mongoc-error.h \
+	src/mongoc/mongoc-find-and-modify.h \
+	src/mongoc/mongoc-flags.h \
+	src/mongoc/mongoc-gridfs-file-list.h \
+	src/mongoc/mongoc-gridfs-file-page.h \
+	src/mongoc/mongoc-gridfs-file.h \
+	src/mongoc/mongoc-gridfs.h \
+	src/mongoc/mongoc-handshake.h \
+	src/mongoc/mongoc-host-list.h \
+	src/mongoc/mongoc-index.h \
+	src/mongoc/mongoc-init.h \
+	src/mongoc/mongoc-iovec.h \
+	src/mongoc/mongoc-log.h \
+	src/mongoc/mongoc-matcher.h \
+	src/mongoc/mongoc-opcode.h \
+	src/mongoc/mongoc-read-concern.h \
+	src/mongoc/mongoc-read-prefs.h \
+	src/mongoc/mongoc-server-description.h \
+	src/mongoc/mongoc-socket.h \
+	src/mongoc/mongoc-stream-buffered.h \
+	src/mongoc/mongoc-stream-file.h \
+	src/mongoc/mongoc-stream-gridfs.h \
+	src/mongoc/mongoc-stream-socket.h \
+	src/mongoc/mongoc-stream.h \
+	src/mongoc/mongoc-topology-description.h \
+	src/mongoc/mongoc-uri.h \
+	src/mongoc/mongoc-version.h \
+	src/mongoc/mongoc-version-functions.h \
+	src/mongoc/mongoc-write-concern.h \
+	src/mongoc/utlist.h
+
+
+NOINST_H_FILES = \
 	src/mongoc/mongoc-apm-private.h \
 	src/mongoc/mongoc-array-private.h \
 	src/mongoc/mongoc-async-private.h \
@@ -27,114 +66,81 @@ INST_H_FILES = \
 	src/mongoc/mongoc-b64-private.h \
 	src/mongoc/mongoc-buffer-private.h \
 	src/mongoc/mongoc-bulk-operation-private.h \
-	src/mongoc/mongoc-bulk-operation.h \
-	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-client-pool-private.h \
 	src/mongoc/mongoc-client-private.h \
-	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-cluster-private.h \
 	src/mongoc/mongoc-collection-private.h \
-	src/mongoc/mongoc-collection.h \
 	src/mongoc/mongoc-counters-private.h \
 	src/mongoc/mongoc-cursor-array-private.h \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
 	src/mongoc/mongoc-cursor-transform-private.h \
 	src/mongoc/mongoc-cursor-private.h \
-	src/mongoc/mongoc-cursor.h \
 	src/mongoc/mongoc-crypto-private.h \
 	src/mongoc/mongoc-database-private.h \
-	src/mongoc/mongoc-database.h \
 	src/mongoc/mongoc-errno-private.h \
-	src/mongoc/mongoc-error.h \
 	src/mongoc/mongoc-find-and-modify-private.h \
-	src/mongoc/mongoc-find-and-modify.h \
-	src/mongoc/mongoc-flags.h \
 	src/mongoc/mongoc-gridfs-file-list-private.h \
-	src/mongoc/mongoc-gridfs-file-list.h \
 	src/mongoc/mongoc-gridfs-file-page-private.h \
-	src/mongoc/mongoc-gridfs-file-page.h \
 	src/mongoc/mongoc-gridfs-file-private.h \
-	src/mongoc/mongoc-gridfs-file.h \
 	src/mongoc/mongoc-gridfs-private.h \
-	src/mongoc/mongoc-gridfs.h \
+	src/mongoc/mongoc-handshake-compiler-private.h \
+	src/mongoc/mongoc-handshake-os-private.h \
+	src/mongoc/mongoc-handshake-private.h \
 	src/mongoc/mongoc-host-list-private.h \
-	src/mongoc/mongoc-host-list.h \
-	src/mongoc/mongoc-index.h \
-	src/mongoc/mongoc-init.h \
-	src/mongoc/mongoc-iovec.h \
+	src/mongoc/mongoc-linux-distro-scanner-private.h \
 	src/mongoc/mongoc-list-private.h \
-	src/mongoc/mongoc-log.h \
 	src/mongoc/mongoc-log-private.h \
 	src/mongoc/mongoc-matcher-op-private.h \
 	src/mongoc/mongoc-matcher-private.h \
-	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-memcmp-private.h \
-	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-opcode-private.h \
 	src/mongoc/mongoc-queue-private.h \
 	src/mongoc/mongoc-read-concern-private.h \
-	src/mongoc/mongoc-read-concern.h \
 	src/mongoc/mongoc-read-prefs-private.h \
-	src/mongoc/mongoc-read-prefs.h \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
-	src/mongoc/mongoc-server-description.h \
 	src/mongoc/mongoc-server-description-private.h \
 	src/mongoc/mongoc-server-stream-private.h \
 	src/mongoc/mongoc-set-private.h \
-	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-socket-private.h \
-	src/mongoc/mongoc-stream-buffered.h \
-	src/mongoc/mongoc-stream-file.h \
-	src/mongoc/mongoc-stream-gridfs.h \
 	src/mongoc/mongoc-stream-private.h \
-	src/mongoc/mongoc-stream-socket.h \
-	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-thread-private.h \
+	src/mongoc/mongoc-topology-description-apm-private.h \
 	src/mongoc/mongoc-topology-description-private.h \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
-	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-trace-private.h \
-	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
-	src/mongoc/mongoc-version.h \
-	src/mongoc/mongoc-version-functions.h \
 	src/mongoc/mongoc-write-command-private.h \
-	src/mongoc/mongoc-write-concern-private.h \
-	src/mongoc/mongoc-write-concern.h \
-	src/mongoc/utlist.h
-
-if ENABLE_EXPERIMENTAL_FEATURES
-INST_H_FILES += \
-	src/mongoc/mongoc-linux-distro-scanner-private.h \
-	src/mongoc/mongoc-metadata.h \
-	src/mongoc/mongoc-metadata-os-private.h \
-	src/mongoc/mongoc-metadata-private.h
-endif
+	src/mongoc/mongoc-write-concern-private.h
 
 if ENABLE_SSL
 INST_H_FILES += \
+	src/mongoc/mongoc-rand.h \
+	src/mongoc/mongoc-ssl.h \
+	src/mongoc/mongoc-stream-tls.h \
+	src/mongoc/mongoc-stream-tls-libressl.h \
+	src/mongoc/mongoc-stream-tls-openssl.h \
+	src/mongoc/mongoc-stream-tls-secure-channel.h \
+	src/mongoc/mongoc-stream-tls-secure-transport.h
+
+NOINST_H_FILES += \
 	src/mongoc/mongoc-crypto-cng-private.h \
 	src/mongoc/mongoc-crypto-common-crypto-private.h \
 	src/mongoc/mongoc-crypto-openssl-private.h \
+	src/mongoc/mongoc-libressl-private.h \
 	src/mongoc/mongoc-openssl-private.h \
-	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \
 	src/mongoc/mongoc-secure-channel-private.h \
 	src/mongoc/mongoc-secure-transport-private.h \
-	src/mongoc/mongoc-ssl.h \
 	src/mongoc/mongoc-ssl-private.h \
-	src/mongoc/mongoc-stream-tls.h \
+	src/mongoc/mongoc-stream-tls-libressl-private.h \
 	src/mongoc/mongoc-stream-tls-openssl-bio-private.h \
-	src/mongoc/mongoc-stream-tls-openssl.h \
 	src/mongoc/mongoc-stream-tls-openssl-private.h \
 	src/mongoc/mongoc-stream-tls-private.h \
-	src/mongoc/mongoc-stream-tls-secure-channel.h \
 	src/mongoc/mongoc-stream-tls-secure-channel-private.h \
-	src/mongoc/mongoc-stream-tls-secure-transport.h \
 	src/mongoc/mongoc-stream-tls-secure-transport-private.h
 endif
 
@@ -164,7 +170,9 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-gridfs-file.c \
 	src/mongoc/mongoc-gridfs-file-page.c \
 	src/mongoc/mongoc-gridfs-file-list.c \
+	src/mongoc/mongoc-handshake.c \
 	src/mongoc/mongoc-index.c \
+	src/mongoc/mongoc-linux-distro-scanner.c \
 	src/mongoc/mongoc-list.c \
 	src/mongoc/mongoc-log.c \
 	src/mongoc/mongoc-matcher-op.c \
@@ -186,6 +194,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-socket.c \
 	src/mongoc/mongoc-topology.c \
 	src/mongoc/mongoc-topology-description.c \
+	src/mongoc/mongoc-topology-description-apm.c \
 	src/mongoc/mongoc-topology-scanner.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
@@ -215,17 +224,16 @@ MONGOC_SOURCES_SHARED += \
 endif
 endif
 
-if ENABLE_EXPERIMENTAL_FEATURES
-MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-linux-distro-scanner.c \
-	src/mongoc/mongoc-metadata.c
-endif
-
 if ENABLE_SSL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
 
+if ENABLE_SSL_LIBRESSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-libressl.c \
+	src/mongoc/mongoc-stream-tls-libressl.c
+endif
 if ENABLE_SSL_OPENSSL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-openssl.c \
@@ -248,5 +256,5 @@ if ENABLE_SASL
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
 endif
 
-EXTRA_DIST += $(MONGOC_DEF_FILES)
+EXTRA_DIST += $(MONGOC_DEF_FILES) $(NOINST_H_FILES)
 

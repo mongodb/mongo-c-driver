@@ -57,6 +57,7 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
   <section id="return">
     <title>Returns</title>
     <p>Returns either the document before or after modification based on the <code>_new</code> parameter.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
   </section>
 
   <section id="example">

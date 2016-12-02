@@ -21,9 +21,10 @@
 #include <bson.h>
 
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-ssl.h"
 #include "mongoc-stream-tls.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-secure-channel-private.h"
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-errno-private.h"
@@ -751,7 +752,10 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
          case SEC_E_NO_CREDENTIALS:
          case SEC_E_TARGET_UNKNOWN:
          case SEC_E_UNSUPPORTED_FUNCTION:
+#ifdef SEC_E_APPLICATION_PROTOCOL_MISMATCH
+         /* Not available in VS2010 */
          case SEC_E_APPLICATION_PROTOCOL_MISMATCH:
+#endif
 
 
          default: {

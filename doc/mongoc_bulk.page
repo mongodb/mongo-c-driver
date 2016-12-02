@@ -9,7 +9,6 @@
   <section id="bulk-insert">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Bulk Insert</title>
-    <p><em>New in MongoDB C driver 0.94.2.</em></p>
     <p>First we need to fetch a bulk operation handle from the <code xref="mongoc_collection_t">mongoc_collection_t</code>. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.</p>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);]]></code></synopsis>
     <p>We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.</p>
@@ -30,7 +29,6 @@
   <section id="mixed-bulk-write">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Mixed Bulk Write Operations</title>
-    <p><em>New in MongoDB C driver 0.94.2</em></p>
     <p>MongoDB C driver also supports executing mixed bulk write operations. A batch of insert, update, and remove operations can be executed together using the bulk write operations API.</p>
     <note style="tip"><p>Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions &gt;= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk()</code> method.</p></note>
   </section>
@@ -85,10 +83,24 @@ Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></co
     <p>By default bulk operations are validated against the schema, if any is defined. In certain cases however it may be necessary to bypass the document validation.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk5.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
       <p>Running the above example will result in:</p>
-      <synopsis><code mime="text/x-csrc"><![CDATA[ { "nInserted" : 0, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : [ { "index" : 0, "code" : 121, "errmsg" : "Document failed validation" } ] }
+      <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 0,
+  "nMatched" : 0,
+  "nModified" : 0,
+  "nRemoved" : 0,
+  "nUpserted" : 0,
+  "writeErrors" : [
+    { "index" : 0,
+      "code" : 121,
+      "errmsg" : "Document failed validation" } ] }
+
 Error: Document failed validation
-{ "nInserted" : 2, "nMatched" : 0, "nModified" : 0, "nRemoved" : 0, "nUpserted" : 0, "writeErrors" : [  ] }
-]]></code></synopsis>
+
+{ "nInserted" : 2,
+  "nMatched" : 0,
+  "nModified" : 0,
+  "nRemoved" : 0,
+  "nUpserted" : 0,
+  "writeErrors" : [] }]]></code></synopsis>
     <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_COMMAND</code>.</p>
   </section>
 
@@ -111,6 +123,21 @@ Error: Document failed validation
 
 Error: waiting for replication timed out]]></code></synopsis>
     <p>The <code xref="errors">bson_error_t</code> domain is <code>MONGOC_ERROR_WRITE_CONCERN</code> if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied <em>yet</em>.</p>
+  </section>
+
+  <section id="bulk-write-collation">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Setting Collation Order</title>
+    <note style="tip"><p>This feature is only available when using MongoDB 3.4 and later.</p></note>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk-collation.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+      <p>Running the above example will result in:</p>
+      <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 2,
+   "nMatched" : 1,
+   "nModified" : 1,
+   "nRemoved" : 0,
+   "nUpserted" : 0,
+   "writeErrors" : [  ]
+}]]></code></synopsis>
   </section>
 
   <section id="bulk-unacknowledged">

@@ -70,15 +70,22 @@ typedef struct
    mongoc_index_opt_geo_t     *geo_options;
    mongoc_index_opt_storage_t *storage_options;
    const bson_t               *partial_filter_expression;
-   void                       *padding[5];
+   const bson_t               *collation;
+   void                       *padding[4];
 } mongoc_index_opt_t;
 
 
+BSON_API
 const mongoc_index_opt_t     *mongoc_index_opt_get_default     (void) BSON_GNUC_CONST;
+BSON_API
 const mongoc_index_opt_geo_t *mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
+BSON_API
 const mongoc_index_opt_wt_t  *mongoc_index_opt_wt_get_default  (void) BSON_GNUC_CONST;
+BSON_API
 void                          mongoc_index_opt_init            (mongoc_index_opt_t *opt);
+BSON_API
 void                          mongoc_index_opt_geo_init        (mongoc_index_opt_geo_t *opt);
+BSON_API
 void                          mongoc_index_opt_wt_init         (mongoc_index_opt_wt_t *opt);
 
 BSON_END_DECLS

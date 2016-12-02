@@ -25,10 +25,15 @@
 
 #include "bson.h"  /* for "bool" */
 
+BSON_API
 int mongoc_get_major_version (void);
+BSON_API
 int mongoc_get_minor_version (void);
+BSON_API
 int mongoc_get_micro_version (void);
+BSON_API
 const char *mongoc_get_version (void);
+BSON_API
 bool mongoc_check_version (int required_major,
                            int required_minor,
                            int required_micro);

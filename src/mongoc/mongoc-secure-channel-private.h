@@ -24,6 +24,7 @@
 #include <bson.h>
 
 #include "mongoc-ssl.h"
+#include "mongoc-stream-tls.h"
 #include "mongoc-stream-tls-secure-channel-private.h"
 
 #define SECURITY_WIN32
@@ -41,6 +42,13 @@ _mongoc_secure_channel_extract_subject      (const char                         
 bool
 mongoc_secure_channel_setup_ca              (mongoc_stream_tls_secure_channel_t *secure_channel,
                                              mongoc_ssl_opt_t                   *opt);
+bool
+mongoc_secure_channel_setup_crl             (mongoc_stream_tls_secure_channel_t *secure_channel,
+                                             mongoc_ssl_opt_t                   *opt);
+size_t
+mongoc_secure_channel_read                  (mongoc_stream_tls_t *tls,
+                                             void                *data,
+                                             size_t               data_length);
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate     (mongoc_stream_tls_secure_channel_t *secure_channel,
                                              mongoc_ssl_opt_t                   *opt);
@@ -63,6 +71,15 @@ _mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc                      
                                              SecBuffer                          *buffer_array,
                                              unsigned long                       buffer_count);
 
+bool
+mongoc_secure_channel_handshake_step_1      (mongoc_stream_tls_t *tls,
+                                             char                *hostname);
+bool
+mongoc_secure_channel_handshake_step_2      (mongoc_stream_tls_t *tls,
+                                             char                *hostname);
+bool
+mongoc_secure_channel_handshake_step_3      (mongoc_stream_tls_t *tls,
+                                             char                *hostname);
 
 
 BSON_END_DECLS

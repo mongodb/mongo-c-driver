@@ -27,10 +27,11 @@
 #include "mongoc-errno-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-tls-openssl-bio-private.h"
 #include "mongoc-stream-tls-openssl-private.h"
 #include "mongoc-openssl-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 
 
@@ -38,7 +39,7 @@
 #define MONGOC_LOG_DOMAIN "stream-tls-openssl-bio"
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 
 /* Magic vtable to make our BIO shim */
 static BIO_METHOD gMongocStreamTlsOpenSslRawMethods = {

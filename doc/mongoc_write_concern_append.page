@@ -16,10 +16,9 @@
 mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
                              bson_t                 *command);    
 ]]></code></synopsis>                                            
-  </section>                                                    
-                                                               
-                                                              
-  <section id="parameters">                                  
+  </section>
+
+  <section id="parameters">
     <title>Parameters</title>                               
     <table>                                                
       <tr><td><p>write_concern</p></td><td><p>A pointer to a <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
@@ -28,14 +27,18 @@ mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
   </section>                                                           
                                                                       
   <section id="description">                                         
-    <title>Description</title>                                      
-    <p>This function appends a valid write concern to a command. It is useful for appending a write concern to a command before passing it to a generic command function like <code xref="mongoc_client_command_simple">mongoc_client_command_simple</code>.</p>
+    <title>Description</title>
+    <p>This function appends a write concern to command options. It is useful for appending a write concern to command options before passing them to <code xref="mongoc_client_write_command_with_opts">mongoc_client_write_command_with_opts</code> or a related function that takes an options document.</p>
   </section>                                                  
                                                              
   <section id="return">                                     
     <title>Returns</title>                                 
     <p>Returns true on success, and false otherwise.</p>
-  </section>                                              
-                                                         
-                                                        
+  </section>
+
+  <section id="example">
+    <title>Example</title>
+    <p>See the example code for <code xref="mongoc_client_read_command_with_opts">mongoc_client_read_command_with_opts</code>.</p>
+  </section>
+
 </page> 

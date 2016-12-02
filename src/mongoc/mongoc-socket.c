@@ -23,7 +23,6 @@
 #include "mongoc-socket-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-socket-private.h"
-#include "mongoc-trace.h"
 #include "mongoc-trace-private.h"
 
 #undef MONGOC_LOG_DOMAIN
@@ -412,7 +411,7 @@ mongoc_socket_accept_ex (mongoc_socket_t *sock,      /* IN */
                          uint16_t *port)             /* OUT */
 {
    mongoc_socket_t *client;
-   struct sockaddr_in addr;
+   struct sockaddr_in addr = { 0 };
    socklen_t addrlen = sizeof addr;
    bool try_again = false;
    bool failed = false;

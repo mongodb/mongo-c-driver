@@ -24,7 +24,7 @@
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl-private.h"
@@ -44,9 +44,11 @@ struct _mongoc_client_pool_t
    bool                    ssl_opts_set;
    mongoc_ssl_opt_t        ssl_opts;
 #endif
+   bool                    apm_callbacks_set;
    mongoc_apm_callbacks_t  apm_callbacks;
    void                   *apm_context;
    int32_t                 error_api_version;
+   bool                    error_api_set;
 };
 
 
@@ -83,9 +85,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    mongoc_client_pool_t *pool;
    const bson_t *b;
    bson_iter_t iter;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    const char *appname;
-#endif
 
 
    ENTRY;
@@ -126,13 +126,11 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
       }
    }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    appname = mongoc_uri_get_option_as_utf8 (pool->uri, "appname", NULL);
    if (appname) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_pool_set_appname (pool, appname));
    }
-#endif
 
    mongoc_counter_client_pools_active_inc();
 
@@ -201,6 +199,13 @@ again:
    if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
+
+         /* for tests */
+         mongoc_client_set_stream_initiator (
+            client,
+            pool->topology->scanner->initiator,
+            pool->topology->scanner->initiator_context);
+
          client->error_api_version = pool->error_api_version;
          _mongoc_client_set_apm_callbacks_private (client,
                                                    &pool->apm_callbacks,
@@ -285,6 +290,18 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    EXIT;
 }
 
+/* for tests */
+void
+_mongoc_client_pool_set_stream_initiator (mongoc_client_pool_t      *pool,
+                                          mongoc_stream_initiator_t  si,
+                                          void                      *context)
+{
+   mongoc_topology_scanner_set_stream_initiator (pool->topology->scanner,
+                                                 si,
+                                                 context);
+}
+
+/* for tests */
 size_t
 mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
 {
@@ -313,6 +330,14 @@ mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
 
    RETURN (num_pushed);
 }
+
+
+mongoc_topology_description_t *
+_mongoc_client_pool_get_topology_description (mongoc_client_pool_t *pool)
+{
+   return &pool->topology->description;
+}
+
 
 void
 mongoc_client_pool_max_size(mongoc_client_pool_t *pool,
@@ -345,20 +370,30 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
                                       mongoc_apm_callbacks_t *callbacks,
                                       void                   *context)
 {
+   mongoc_topology_t *topology;
 
-   if (pool->apm_callbacks.started ||
-       pool->apm_callbacks.succeeded ||
-       pool->apm_callbacks.failed ||
-       pool->apm_context) {
+   topology = pool->topology;
+
+   if (pool->apm_callbacks_set) {
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
 
+   mongoc_mutex_lock (&topology->mutex);
+
    if (callbacks) {
-      memcpy (&pool->apm_callbacks, callbacks, sizeof pool->apm_callbacks);
+      memcpy (&topology->description.apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
+      memcpy (&pool->apm_callbacks, callbacks,
+              sizeof (mongoc_apm_callbacks_t));
    }
 
+   mongoc_topology_set_apm_callbacks (topology, callbacks, context);
+   topology->description.apm_context = context;
    pool->apm_context = context;
+   pool->apm_callbacks_set = true;
+
+   mongoc_mutex_unlock (&topology->mutex);
 
    return true;
 }
@@ -373,12 +408,17 @@ mongoc_client_pool_set_error_api (mongoc_client_pool_t *pool,
       return false;
    }
 
+   if (pool->error_api_set) {
+      MONGOC_ERROR ("Can only set Error API Version once");
+      return false;
+   }
+
    pool->error_api_version = version;
+   pool->error_api_set = true;
 
    return true;
 }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 bool
 mongoc_client_pool_set_appname (mongoc_client_pool_t *pool,
                                 const char           *appname)
@@ -392,4 +432,3 @@ mongoc_client_pool_set_appname (mongoc_client_pool_t *pool,
 
    return ret;
 }
-#endif

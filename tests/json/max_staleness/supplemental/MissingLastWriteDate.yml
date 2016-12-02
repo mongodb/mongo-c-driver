@@ -12,5 +12,5 @@ topology_description:
     maxWireVersion: 5
 read_preference:
   mode: Nearest
-  maxStalenessMS: 120000
+  maxStalenessSeconds: 120
 error: true

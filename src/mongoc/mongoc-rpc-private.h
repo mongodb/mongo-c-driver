@@ -77,8 +77,7 @@ typedef union
 
 
 BSON_STATIC_ASSERT (sizeof (mongoc_rpc_header_t) == 16);
-BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
-                    offsetof (mongoc_rpc_reply_t, opcode));
+BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) == offsetof (mongoc_rpc_reply_t, opcode));
 BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 
 

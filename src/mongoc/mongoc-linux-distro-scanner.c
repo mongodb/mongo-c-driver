@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-metadata-os-private.h"
+#include "mongoc-handshake-os-private.h"
 
 #ifdef MONGOC_OS_IS_LINUX
 
@@ -24,8 +24,8 @@
 #include "mongoc-error.h"
 #include "mongoc-linux-distro-scanner-private.h"
 #include "mongoc-log.h"
-#include "mongoc-metadata-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-handshake-private.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-version.h"
 
@@ -36,9 +36,9 @@
  * Return 0 on failure or EOF.
  */
 static size_t
-_fgets_wrapper (char   *buffer,
-                size_t  buffer_size,
-                FILE   *f)
+_fgets_wrapper (char  *buffer,
+                size_t buffer_size,
+                FILE  *f)
 {
    char *fgets_res;
    size_t len;
@@ -90,6 +90,7 @@ _process_line (const char  *name_key,
    const char *equal_sign;
    const char *value;
    const char *needle = "=";
+   size_t value_len = 0;
 
    ENTRY;
 
@@ -108,18 +109,23 @@ _process_line (const char  *name_key,
 
    key_len = equal_sign - line;
    value = equal_sign + strlen (needle);
+   value_len = strlen (value);
+   if (value_len > 2 && value[0] == '"' && value[value_len-1] == '"') {
+      value_len -= 2;
+      value++;
+   }
 
    /* If we find two copies of either key, the *name == NULL check will fail
     * so we will just keep the first value encountered. */
    if (name_key_len == key_len &&
        strncmp (line, name_key, key_len) == 0 &&
        !(*name)) {
-      *name = bson_strdup (value);
+      *name = bson_strndup (value, value_len);
       TRACE ("Found name: %s", *name);
    } else if (version_key_len == key_len &&
               strncmp (line, version_key, key_len) == 0 &&
               !(*version)) {
-      *version = bson_strdup (value);
+      *version = bson_strndup (value, value_len);
       TRACE ("Found version: %s", *version);
    }
 
@@ -387,7 +393,7 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
    *version = NULL;
 
    _mongoc_linux_distro_scanner_read_key_value_file ("/etc/os-release",
-                                                     "ID", -1,
+                                                     "NAME", -1,
                                                      name,
                                                      "VERSION_ID", -1,
                                                      version);
@@ -402,7 +408,8 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
                                                      "DISTRIB_RELEASE", -1,
                                                      &new_version);
 
-   if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
+   if (_set_name_and_version_if_needed (name, version, new_name,
+                                        new_version)) {
       RETURN (true);
    }
 
@@ -410,7 +417,8 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
    _mongoc_linux_distro_scanner_read_generic_release_file (
       generic_release_paths, &new_name, &new_version);
 
-   if (_set_name_and_version_if_needed (name, version, new_name, new_version)) {
+   if (_set_name_and_version_if_needed (name, version, new_name,
+                                        new_version)) {
       RETURN (true);
    }
 
@@ -424,6 +432,9 @@ _mongoc_linux_distro_scanner_get_distro (char **name,
 
    bson_free (*name);
    bson_free (*version);
+
+   *name = NULL;
+   *version = NULL;
 
    RETURN (false);
 }

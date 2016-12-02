@@ -22,6 +22,11 @@
 #endif
 
 #include <bson.h>
+#include "mongoc.h"
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 /* string comparison functions for Windows */
 #ifdef _WIN32
@@ -36,6 +41,13 @@
 # define _ignore_value(x) ((void) (x))
 #endif
 
+#define COALESCE(x, y) ((x == 0) ? (y) : (x))
+
+#ifdef _WIN32
+# define MONGOC_RAND_R rand_s
+#else
+# define MONGOC_RAND_R rand_r
+#endif
 
 BSON_BEGIN_DECLS
 
@@ -53,7 +65,14 @@ void _mongoc_bson_destroy_if_set (bson_t *bson);
 
 size_t
 _mongoc_strlen_or_zero (const char *s);
-BSON_END_DECLS
 
+bool
+_mongoc_get_server_id_from_opts (const bson_t          *opts,
+                                 mongoc_error_domain_t  domain,
+                                 mongoc_error_code_t    code,
+                                 uint32_t              *server_id,
+                                 bson_error_t          *error);
+
+BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */

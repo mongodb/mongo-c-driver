@@ -46,7 +46,10 @@ mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t     *crypto,
                                   const size_t         input_len,
                                   unsigned char       *output /* OUT */)
 {
-   return CC_SHA1 (input, input_len, output);
+   if (CC_SHA1 (input, input_len, output)) {
+      return true;
+   }
+   return false;
 }
 
 

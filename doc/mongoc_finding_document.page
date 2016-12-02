@@ -7,8 +7,8 @@
   </info>
 
   <title>Finding a Document</title>
-  <p>To query a MongoDB collection with the C driver, use the function <code xref="mongoc_collection_find">mongoc_collection_find()</code>. This returns a <link xref="mongoc_cursor_t">cursor</link> to the matching documents. The following examples iterate through the result cursors and print the matches to <code>stdout</code> as JSON strings.</p>
-  <p>Note that <code>mongoc_collection_find</code> uses a document as a query specifier; for example,</p>
+  <p>To query a MongoDB collection with the C driver, use the function <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts()</code>. This returns a <link xref="mongoc_cursor_t">cursor</link> to the matching documents. The following examples iterate through the result cursors and print the matches to <code>stdout</code> as JSON strings.</p>
+  <p>Use a document as a query specifier; for example,</p>
 
   <screen><code mime="x-js">{ "color" : "red" }</code></screen>
 
@@ -37,7 +37,7 @@ main (int   argc,
   client = mongoc_client_new ("mongodb://localhost:27017/");
   collection = mongoc_client_get_collection (client, "mydb", "mycoll");
   query = bson_new ();
-  cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+  cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
   while (mongoc_cursor_next (cursor, &doc)) {
      str = bson_as_json (doc, NULL);
@@ -92,7 +92,7 @@ C:\> find
       query = bson_new ();
       BSON_APPEND_UTF8 (query, "hello", "world");
 
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
       while (mongoc_cursor_next (cursor, &doc)) {
           str = bson_as_json (doc, NULL);

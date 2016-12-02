@@ -23,7 +23,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -93,7 +93,7 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
 
    BSON_ASSERT (arr);
 
-   if (_mongoc_cursor_run_command (cursor, &cursor->query, &arr->array) &&
+   if (_mongoc_cursor_run_command (cursor, &cursor->filter, &arr->array) &&
        bson_iter_init_find (&iter, &arr->array, arr->field_name) &&
        BSON_ITER_HOLDS_ARRAY (&iter) &&
        bson_iter_recurse (&iter, &arr->iter)) {
@@ -148,7 +148,7 @@ _mongoc_cursor_array_clone (const mongoc_cursor_t *cursor)
    arr = (mongoc_cursor_array_t *)cursor->iface_data;
 
    clone_ = _mongoc_cursor_clone (cursor);
-   _mongoc_cursor_array_init (clone_, &cursor->query, arr->field_name);
+   _mongoc_cursor_array_init (clone_, &cursor->filter, arr->field_name);
 
    RETURN (clone_);
 }
@@ -213,8 +213,8 @@ _mongoc_cursor_array_init (mongoc_cursor_t *cursor,
 
 
    if (command) {
-      bson_destroy (&cursor->query);
-      bson_copy_to (command, &cursor->query);
+      bson_destroy (&cursor->filter);
+      bson_copy_to (command, &cursor->filter);
    }
 
    cursor->iface_data = _mongoc_cursor_array_new (field_name);

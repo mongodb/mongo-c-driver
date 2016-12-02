@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
 #define WIRE_VERSION_MIN 0
-#define WIRE_VERSION_MAX 4
+#define WIRE_VERSION_MAX 5
 
 /* first version that supported aggregation cursors */
 #define WIRE_VERSION_AGG_CURSOR 1
@@ -60,15 +60,16 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_FAM_WRITE_CONCERN 4
 /* first version to support readConcern */
 #define WIRE_VERSION_READ_CONCERN 4
-/* first version to support maxStalenessMS */
+/* first version to support maxStalenessSeconds */
 #define WIRE_VERSION_MAX_STALENESS 5
 /* first version to support writeConcern */
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5
+/* first version to support collation */
+#define WIRE_VERSION_COLLATION 5
 
 
 struct _mongoc_client_t
 {
-   mongoc_list_t             *conns;
    mongoc_uri_t              *uri;
    mongoc_cluster_t           cluster;
    bool                       in_exhaust;
@@ -93,6 +94,20 @@ struct _mongoc_client_t
    int32_t                    error_api_version;
    bool                       error_api_set;
 };
+
+
+/* Defines whether _mongoc_client_command_with_opts() is acting as a read
+ * command helper for a command like "distinct", or a write command helper for
+ * a command like "createRole", or both, like "aggregate" with "$out".
+ */
+typedef enum
+{
+   MONGOC_CMD_READ = 1,
+   MONGOC_CMD_WRITE = 2,
+   MONGOC_CMD_RW = 3,
+} mongoc_command_mode_t;
+
+BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 
 mongoc_client_t *
@@ -135,6 +150,23 @@ _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          int64_t          operation_id,
                                          const char      *db,
                                          const char      *collection);
+bool
+_mongoc_client_command_with_opts (mongoc_client_t              *client,
+                                  const char                   *db_name,
+                                  const bson_t                 *command,
+                                  mongoc_command_mode_t         mode,
+                                  const bson_t                 *opts,
+                                  mongoc_query_flags_t          flags,
+                                  const mongoc_read_prefs_t    *default_prefs,
+                                  mongoc_read_concern_t        *default_rc,
+                                  mongoc_write_concern_t       *default_wc,
+                                  bson_t                       *reply,
+                                  bson_error_t                 *error);
+bool
+_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t  *iter,
+                                                        int           max_wire_version,
+                                                        bson_t       *command,
+                                                        bson_error_t *error);
 
 BSON_END_DECLS
 

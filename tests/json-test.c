@@ -19,6 +19,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -29,6 +30,10 @@
 #include <io.h>
 #else
 #include <dirent.h>
+#endif
+
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
 #endif
 
 
@@ -79,29 +84,6 @@ server_type_from_test(const char *type)
    return 0;
 }
 
-const char *
-topology_type_to_string(mongoc_topology_description_type_t type)
-{
-   switch(type) {
-   case MONGOC_TOPOLOGY_UNKNOWN:
-      return "Unknown";
-   case MONGOC_TOPOLOGY_SHARDED:
-      return "Sharded";
-   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
-      return "ReplicaSetNoPrimary";
-   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
-      return "ReplicaSetWithPrimary";
-   case MONGOC_TOPOLOGY_SINGLE:
-      return "Single";
-   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
-   default:
-      fprintf(stderr, "ERROR: Unknown topology state\n");
-      assert(0);
-   }
-
-   return NULL;
-}
-
 
 static mongoc_read_mode_t
 read_mode_from_test (const char *mode)
@@ -132,6 +114,165 @@ optype_from_test (const char *op)
    }
 
    return MONGOC_SS_READ;
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * server_description_by_hostname --
+ *
+ *      Return a reference to a mongoc_server_description_t or NULL.
+ *
+ *-----------------------------------------------------------------------
+ */
+mongoc_server_description_t *
+server_description_by_hostname (mongoc_topology_description_t *topology,
+                                const char                    *address)
+{
+   mongoc_set_t *set = topology->servers;
+   mongoc_server_description_t *server_iter;
+   int i;
+
+   for (i = 0; i < set->items_len; i++) {
+      server_iter = (mongoc_server_description_t *) mongoc_set_get_item (
+         topology->servers, i);
+
+      if (strcasecmp (address, server_iter->connection_address) == 0) {
+         return server_iter;
+      }
+   }
+
+   return NULL;
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * process_sdam_test_ismaster_responses --
+ *
+ *      Update a topology description with the ismaster responses in a "phase"
+ *      from an SDAM or SDAM Monitoring test, like:
+ *
+ *      [
+ *          [
+ *              "a:27017",
+ *              {
+ *                  "ok": 1,
+ *                  "ismaster": false
+ *              }
+ *          ]
+ *      ]
+ *
+ * See:
+ * https://github.com/mongodb/specifications/tree/master/source/server-discovery-and-monitoring/tests
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+process_sdam_test_ismaster_responses (bson_t                        *phase,
+                                      mongoc_topology_description_t *td)
+{
+   mongoc_server_description_t *sd;
+   bson_t ismasters;
+   bson_t ismaster;
+   bson_t response;
+   bson_iter_t phase_field_iter;
+   bson_iter_t ismaster_iter;
+   bson_iter_t ismaster_field_iter;
+   const char *hostname;
+
+   /* grab ismaster responses out and feed them to topology */
+   assert (bson_iter_init_find (&phase_field_iter, phase, "responses"));
+   bson_iter_bson (&phase_field_iter, &ismasters);
+   bson_iter_init (&ismaster_iter, &ismasters);
+
+   while (bson_iter_next (&ismaster_iter)) {
+      bson_iter_bson (&ismaster_iter, &ismaster);
+
+      bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
+      hostname = bson_iter_utf8 (&ismaster_field_iter, NULL);
+      sd = server_description_by_hostname (td, hostname);
+
+      /* if server has been removed from topology, skip */
+      if (!sd) { continue; }
+
+      bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
+      bson_iter_bson (&ismaster_field_iter, &response);
+
+      /* send ismaster through the topology description's handler */
+      mongoc_topology_description_handle_ismaster (td, sd->id, &response, 1,
+                                                   NULL);
+   }
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * check_json_apm_events --
+ *
+ *      Compare actual APM events with expected sequence. The two docs
+ *      are like:
+ *
+ * [
+ *   {
+ *     "command_started_event": {
+ *       "command": { ... },
+ *       "command_name": "count",
+ *       "database_name": "command-monitoring-tests"
+ *     }
+ *   },
+ *   {
+ *     "command_failed_event": {
+ *       "command_name": "count"
+ *     }
+ *   }
+ * ]
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+check_json_apm_events (const bson_t *events,
+                       const bson_t *expectations)
+{
+   char errmsg[1000] = { 0 };
+   match_ctx_t ctx = { 0 };
+   uint32_t expected_keys;
+   uint32_t actual_keys;
+
+   /* Old mongod returns a double for "count", newer returns int32.
+    * Ignore this and other insignificant type differences. */
+   ctx.strict_numeric_types = false;
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof errmsg;
+
+   expected_keys = bson_count_keys (expectations);
+   actual_keys = bson_count_keys (events);
+
+   if (expected_keys != actual_keys) {
+      test_error ("command monitoring test failed expectations:\n\n"
+                     "%s\n\n"
+                     "events:\n%s\n\n"
+                     "expected %"PRIu32" events, got %"PRIu32,
+                  bson_as_json (expectations, NULL),
+                  bson_as_json (events, NULL),
+                  expected_keys, actual_keys);
+
+      abort ();
+   }
+
+   if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
+      test_error ("command monitoring test failed expectations:\n\n"
+                     "%s\n\n"
+                     "events:\n%s\n\n%s",
+                  bson_as_json (expectations, NULL),
+                  bson_as_json (events, NULL),
+                  errmsg);
+
+      abort ();
+   }
 }
 
 
@@ -198,9 +339,11 @@ test_server_selection_logic_cb (bson_t *test)
    type = bson_iter_utf8 (&topology_iter, NULL);
 
    if (strcmp (type, "Single") == 0) {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_SINGLE);
+      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_SINGLE,
+                                        heartbeat_msec);
    } else {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_UNKNOWN);
+      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_UNKNOWN,
+                                        heartbeat_msec);
       topology.type =
          topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
    }
@@ -222,9 +365,9 @@ test_server_selection_logic_cb (bson_t *test)
       sd->type = server_type_from_test (bson_iter_utf8 (&sd_iter, NULL));
 
       if (bson_iter_init_find (&sd_iter, &server, "avg_rtt_ms")) {
-         sd->round_trip_time = bson_iter_int32 (&sd_iter);
+         sd->round_trip_time_msec = bson_iter_int32 (&sd_iter);
       } else if (sd->type != MONGOC_SERVER_UNKNOWN) {
-         MONGOC_ERROR ("%s has no avg_rtt_ms", sd->host.host_and_port);
+         test_error ("%s has no avg_rtt_ms", sd->host.host_and_port);
          abort ();
       }
 
@@ -281,14 +424,11 @@ test_server_selection_logic_cb (bson_t *test)
       }
    }
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
-                            "maxStalenessMS")) {
-      mongoc_read_prefs_set_max_staleness_ms (
-         read_prefs,
-         (int32_t) bson_iter_as_int64 (&read_pref_iter));
+                            "maxStalenessSeconds")) {
+      mongoc_read_prefs_set_max_staleness_seconds (
+         read_prefs, bson_iter_as_int64 (&read_pref_iter));
    }
-#endif
 
    /* get operation type */
    op = MONGOC_SS_READ;
@@ -299,19 +439,13 @@ test_server_selection_logic_cb (bson_t *test)
 
    if (expected_error) {
       assert (!mongoc_read_prefs_is_valid (read_prefs) ||
-              !mongoc_topology_compatible (&topology,
-                                           read_prefs,
-                                           heartbeat_msec,
-                                           &error));
+              !mongoc_topology_compatible (&topology, read_prefs, &error));
       goto DONE;
    }
 
    /* no expected error */
    assert (mongoc_read_prefs_is_valid (read_prefs));
-   assert (mongoc_topology_compatible (&topology,
-                                       read_prefs,
-                                       heartbeat_msec,
-                                       &error));
+   assert (mongoc_topology_compatible (&topology, read_prefs, &error));
 
    /* read in latency window servers */
    assert (bson_iter_init_find (&iter, test, "in_latency_window"));
@@ -321,8 +455,7 @@ test_server_selection_logic_cb (bson_t *test)
                                                  op,
                                                  &topology,
                                                  read_prefs,
-                                                 15,
-                                                 heartbeat_msec);
+                                                 15);
 
    /* check each server in expected_servers is in selected_servers */
    memset (matched_servers, 0, sizeof (matched_servers));
@@ -346,8 +479,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       if (!found) {
-         MONGOC_ERROR ("Should have been selected but wasn't: %s",
-                       bson_iter_utf8 (&host, NULL));
+         test_error ("Should have been selected but wasn't: %s",
+                     bson_iter_utf8 (&host, NULL));
          abort ();
       }
 
@@ -360,8 +493,8 @@ test_server_selection_logic_cb (bson_t *test)
          sd = _mongoc_array_index (&selected_servers,
                                    mongoc_server_description_t *, i);
 
-         MONGOC_ERROR ("Shouldn't have been selected but was: %s",
-                       sd->host.host_and_port);
+         test_error ("Shouldn't have been selected but was: %s",
+                     sd->host.host_and_port);
          abort ();
       }
    }

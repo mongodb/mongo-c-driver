@@ -390,7 +390,7 @@ test_dollar_query (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1}, {'_id': 2}]";
    test_data.query_input = "{'$query': {'_id': 1}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_op_query = "{'_id': 1}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'_id': 1}}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
@@ -419,60 +419,53 @@ test_key_named_filter (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1, 'filter': 1}, {'_id': 2, 'filter': 2}]";
-   test_data.query_input = "{'$query': {'filter': 2}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.query_input = "{'filter': 2}";
+   test_data.expected_op_query = "{'filter': 2}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': 2}}";
    test_data.expected_result = "[{'_id': 2, 'filter': 2}]";
    _test_collection_find (&test_data);
 }
 
+
+/* test that we can query for a document by a key named "filter" using $query */
+static void
+test_key_named_filter_with_dollar_query (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1, 'filter': 1}, {'_id': 2, 'filter': 2}]";
+   test_data.query_input = "{'$query': {'filter': 2}}";
+   test_data.expected_op_query = "{'filter': 2}";
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': 2}}";
+   test_data.expected_result = "[{'_id': 2, 'filter': 2}]";
+   _test_collection_find (&test_data);
+}
+
+
+/* test 'filter': {'i': 2} */
+static void
+test_subdoc_named_filter (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
+   test_data.query_input = "{'filter': {'i': 2}}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
+   test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
+
+   _test_collection_find (&test_data);
+}
+
+
 /* test '$query': {'filter': {'i': 2}} */
 static void
-test_op_query_subdoc_named_filter (void)
+test_subdoc_named_filter_with_dollar_query (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
    test_data.query_input = "{'$query': {'filter': {'i': 2}}}";
-   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_op_query = "{'filter': {'i': 2}}";
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
    test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
-   _test_collection_find (&test_data);
-}
-
-
-/* test new-style 'filter': {'filter': {'i': 2}} */
-static void
-test_find_cmd_subdoc_named_filter (void)
-{
-   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-   test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
-   test_data.query_input = "{'filter': {'filter': {'i': 2}}}";
-   test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}}";
-   test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
-
-   /* this only works if you know you're talking wire version 4 */
-   test_data.requires_wire_version_4 = true;
-
-   _test_collection_find (&test_data);
-}
-
-
-/* test new-style 'filter': {'filter': {'i': 2}}, 'singleBatch': true
- * we just use singleBatch to prove that a new-style option can be passed
- * alongside 'filter'
- */
-static void
-test_find_cmd_subdoc_named_filter_with_option (void)
-{
-   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-   test_data.docs = "[{'_id': 1, 'filter': {'i': 1}}, {'_id': 2, 'filter': {'i': 2}}]";
-   test_data.query_input = "{'filter': {'filter': {'i': 2}}, 'singleBatch': true}";
-   test_data.expected_find_command = "{'find': 'collection', 'filter': {'filter': {'i': 2}}, 'singleBatch': true}";
-   test_data.expected_result = "[{'_id': 2, 'filter': {'i': 2}}]";
-
-   /* this only works if you know you're talking wire version 4 */
-   test_data.requires_wire_version_4 = true;
-
    _test_collection_find (&test_data);
 }
 
@@ -482,12 +475,12 @@ static void
 test_newoption (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-   test_data.query_input = "{'filter': {'_id': 1}, 'newOption': true}";
+   test_data.query_input = "{'$query': {'_id': 1}, '$newOption': true}";
+   test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command = "{'find': 'collection', 'filter': {'_id': 1}, 'newOption': true}";
 
    /* won't work today */
    test_data.do_live = false;
-   test_data.requires_wire_version_4 = true;
 
    _test_collection_find (&test_data);
 }
@@ -715,10 +708,10 @@ test_unrecognized_dollar_option (void)
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
 
    test_data.query_input = "{'$query': {'a': 1}, '$dumb': 1}";
+   test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command =
-      "{'find': 'collection', 'filter': {'a': 1}, '$dumb': 1}";
+      "{'find': 'collection', 'filter': {'a': 1}, 'dumb': 1}";
 
-   test_data.requires_wire_version_4 = true;
    test_data.do_live = false;
    _test_collection_find (&test_data);
 }
@@ -733,33 +726,96 @@ test_query_flags (void)
 
    typedef struct
    {
-      mongoc_query_flags_t flag;
-      const char          *name;
+      mongoc_query_flags_t  flag;
+      const char           *json_fragment;
    } flag_and_name_t;
 
-   /* slaveok is still in the wire protocol header, exhaust is not supported */
-   flag_and_name_t flags_and_names[] = {
-      { MONGOC_QUERY_TAILABLE_CURSOR,   "tailable"            },
-      { MONGOC_QUERY_OPLOG_REPLAY,      "oplogReplay"         },
-      { MONGOC_QUERY_NO_CURSOR_TIMEOUT, "noCursorTimeout"     },
-      { MONGOC_QUERY_AWAIT_DATA,        "awaitData"           },
-      { MONGOC_QUERY_PARTIAL,           "allowPartialResults" },
+   /* slaveok is not supported as an option, exhaust is tested separately */
+   flag_and_name_t flags_and_frags[] = {
+      {
+         MONGOC_QUERY_TAILABLE_CURSOR,
+         "'tailable': true"
+      },
+      {
+         MONGOC_QUERY_OPLOG_REPLAY,
+         "'oplogReplay': true"
+      },
+      {
+         MONGOC_QUERY_NO_CURSOR_TIMEOUT,
+         "'noCursorTimeout': true"
+      },
+      {
+         MONGOC_QUERY_PARTIAL,
+         "'allowPartialResults': true"
+      },
+      {
+         MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
+         "'tailable': true, 'awaitData': true"
+      },
    };
 
    test_data.expected_result = test_data.docs = "[{'_id': 1}]";
 
-   for (i = 0; i < (sizeof flags_and_names) / (sizeof (flag_and_name_t)); i++) {
+   for (i = 0; i < (sizeof flags_and_frags) / (sizeof (flag_and_name_t)); i++) {
       find_cmd = bson_strdup_printf (
-         "{'find': 'collection', 'filter': {}, '%s': true}",
-         flags_and_names[i].name);
+         "{'find': 'collection', 'filter': {}, %s}",
+         flags_and_frags[i].json_fragment);
 
-      test_data.flags = flags_and_names[i].flag;
+      test_data.flags = flags_and_frags[i].flag;
       test_data.expected_find_command = find_cmd;
 
       _test_collection_find (&test_data);
 
       bson_free (find_cmd);
    }
+}
+
+
+static void
+test_exhaust (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   request_t *request;
+   future_t *future;
+   const bson_t *doc;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_EXHAUST,
+                                    0,
+                                    0,
+                                    0,
+                                    tmp_bson (NULL),
+                                    NULL,
+                                    NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* Find, getMore and killCursors commands spec: "The find command does not
+    * support the exhaust flag from OP_QUERY. Drivers that support exhaust MUST
+    * fallback to existing OP_QUERY wire protocol messages."
+    */
+   request = mock_server_receives_request (server);
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+      0, 0, "db.collection", "{}", false /* is_command */);
+
+      ASSERT (future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -943,9 +999,12 @@ test_getmore_await (void)
       future = future_cursor_next (cursor, &doc);
 
       /* only the slave ok bit is still in the query header */
-      request = mock_server_receives_command (server, "db",
-                                              MONGOC_QUERY_SLAVE_OK,
-                                              "{'find': 'collection'}");
+      request = mock_server_receives_command (
+         server, "db",
+         MONGOC_QUERY_SLAVE_OK,
+         "{'find': 'collection',"
+         " 'maxTimeMS': {'$exists': false},"
+         " 'maxAwaitTimeMS': {'$exists': false}}");
 
       /* reply with cursor id 1 */
       mock_server_replies_simple (request, "{'ok': 1,"
@@ -975,6 +1034,7 @@ test_getmore_await (void)
          MONGOC_QUERY_SLAVE_OK,
          "{'getMore': {'$numberLong': '1'},"
          " 'collection': 'collection',"
+         " 'maxAwaitTimeMS': {'$exists': false},"
          " 'maxTimeMS': %s}",
          max_time_json);
 
@@ -1098,14 +1158,14 @@ test_collection_find_install (TestSuite *suite)
                       test_dollar_or);
    TestSuite_AddLive (suite, "/Collection/find/key_named_filter",
                       test_key_named_filter);
-   TestSuite_AddLive (suite, "/Collection/find/cmd/subdoc_named_filter",
-                      test_find_cmd_subdoc_named_filter);
-   TestSuite_AddLive  (suite, "/Collection/find/query/subdoc_named_filter",
-                      test_op_query_subdoc_named_filter);
+   TestSuite_AddLive (suite, "/Collection/find/key_named_filter/$query",
+                      test_key_named_filter_with_dollar_query);
+   TestSuite_AddLive (suite, "/Collection/find/subdoc_named_filter",
+                      test_subdoc_named_filter);
+   TestSuite_AddLive  (suite, "/Collection/find/subdoc_named_filter/$query",
+                      test_subdoc_named_filter_with_dollar_query);
    TestSuite_AddLive  (suite, "/Collection/find/newoption",
                       test_newoption);
-   TestSuite_AddLive  (suite, "/Collection/find/cmd/subdoc_named_filter_with_option",
-                      test_find_cmd_subdoc_named_filter_with_option);
    TestSuite_AddLive  (suite, "/Collection/find/orderby",
                       test_orderby);
    TestSuite_AddLive  (suite, "/Collection/find/fields",
@@ -1136,6 +1196,8 @@ test_collection_find_install (TestSuite *suite)
                   test_unrecognized_dollar_option);
    TestSuite_AddLive  (suite, "/Collection/find/flags",
                       test_query_flags);
+   TestSuite_AddLive  (suite, "/Collection/find/exhaust",
+                      test_exhaust);
    TestSuite_AddLive  (suite, "/Collection/getmore/batch_size",
                       test_getmore_batch_size);
    TestSuite_AddFull (suite, "/Collection/getmore/invalid_reply",

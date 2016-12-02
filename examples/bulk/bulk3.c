@@ -62,7 +62,8 @@ main (int argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost/");
+   client = mongoc_client_new ("mongodb://localhost/?appname=bulk3-example");
+   mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk3 (collection);

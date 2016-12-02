@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_client_pool_set_appname">
+  <info>
+    <link type="guide" xref="mongoc_client_pool_t" group="function"/>
+  </info>
+  <title>mongoc_client_pool_set_appname()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_client_pool_set_appname       (mongoc_client_pool_t   *pool,
+                                      const char             *appname)
+]]></code></synopsis>
+    <p>This function is identical to <code xref="mongoc_client_set_appname">mongoc_client_set_appname()</code> except for client pools.</p>
+    <p>This function can only be called once on a pool, and must be called before the first <code xref="mongoc_client_pool_pop">mongoc_client_pool_pop</code>.</p>
+    <p>Also note that <code xref="mongoc_client_set_appname">mongoc_client_set_appname()</code> cannot be called on a client retrieved from a client pool.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>pool</p></td><td><p>A <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>.</p></td></tr>
+      <tr><td><p>appname</p></td><td><p>The application name, of length at most <code>MONGOC_HANDSHAKE_APPNAME_MAX</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>true if the appname is set successfully. Otherwise, false.</p>
+  </section>
+
+</page>

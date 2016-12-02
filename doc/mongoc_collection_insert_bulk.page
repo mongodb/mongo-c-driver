@@ -49,6 +49,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t          *collection,
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via the <code>error</code> parameter.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
   </section>
 
   <section id="return">

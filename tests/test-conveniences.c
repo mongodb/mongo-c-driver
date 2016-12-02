@@ -20,8 +20,13 @@
 #include "mongoc-array-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
+#include "mongoc-write-concern.h"
+#include "mongoc-write-concern-private.h"
+#include "mongoc-cluster-private.h"
+#include "mongoc-client-private.h"
 
 #include "test-conveniences.h"
+#include "TestSuite.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -30,6 +35,10 @@
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
+
+static char *gHugeString;
+static size_t gHugeStringLength;
+static char *gFourMBString;
 
 static void test_conveniences_cleanup ();
 
@@ -59,20 +68,29 @@ test_conveniences_cleanup ()
 
       _mongoc_array_destroy (&gTmpBsonArray);
    }
+
+   bson_free (gHugeString);
 }
 
 
 bson_t *
-tmp_bson (const char *json)
+tmp_bson (const char *json,
+          ...)
 {
+   va_list args;
    bson_error_t error;
+   char *formatted;
    char *double_quoted;
    bson_t *doc;
 
    test_conveniences_init ();
 
    if (json) {
-      double_quoted = single_quotes_to_double (json);
+      va_start (args, json);
+      formatted = bson_strdupv_printf (json, args);
+      va_end (args);
+
+      double_quoted = single_quotes_to_double (formatted);
       doc = bson_new_from_json ((const uint8_t *) double_quoted,
                                 -1, &error);
 
@@ -81,6 +99,7 @@ tmp_bson (const char *json)
          abort ();
       }
 
+      bson_free (formatted);
       bson_free (double_quoted);
 
    } else {
@@ -295,7 +314,7 @@ bson_lookup_read_prefs (const bson_t *b,
    } else if (0 == strcasecmp("nearest", str)) {
       mode = MONGOC_READ_NEAREST;
    } else {
-      MONGOC_ERROR ("Bad readPreference: {\"mode\": \"%s\"}.", str);
+      test_error ("Bad readPreference: {\"mode\": \"%s\"}.", str);
       abort ();
    }
 
@@ -477,7 +496,7 @@ match_err (match_ctx_t *ctx,
       bson_snprintf (ctx->errmsg, ctx->errmsg_len, "%s: %s",
                      ctx->path, formatted);
    } else {
-      MONGOC_ERROR ("%s: %s", ctx->path, formatted);
+      test_error ("%s: %s", ctx->path, formatted);
    }
 
    bson_free (formatted);
@@ -582,7 +601,7 @@ match_bson_with_ctx (const bson_t *doc,
 
       if (is_exists_operator) {
          if (exists != found) {
-            match_err (&derived, "%s found", exists ? "" : " not");
+            match_err (&derived, "%s found", found ? "" : "not");
             return false;
          }
       } else if (!found) {
@@ -824,9 +843,7 @@ bson_type_to_str (bson_type_t t)
    case BSON_TYPE_INT64: return "INT64";
    case BSON_TYPE_MAXKEY: return "MAXKEY";
    case BSON_TYPE_MINKEY: return "MINKEY";
-#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
    case BSON_TYPE_DECIMAL128: return "DECIMAL128";
-#endif
    default: return "Unknown";
    }
 }
@@ -853,8 +870,8 @@ bson_value_as_int64 (const bson_value_t *value)
    } else if (value->value_type == BSON_TYPE_INT64) {
       return value->value.v_int64;
    } else {
-      MONGOC_ERROR ("bson_value_as_int64 called on value of type %d",
-                    value->value_type);
+      test_error ("bson_value_as_int64 called on value of type %d",
+                  value->value_type);
       abort ();
    }
 }
@@ -960,7 +977,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId64 ", got %" PRId64,
-                    ctx->path, pattern->value.v_datetime,
+                    pattern->value.v_datetime,
                     doc->value.v_datetime);
       }
 
@@ -971,7 +988,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %f, got %f",
-                    ctx->path, pattern->value.v_double, doc->value.v_double);
+                    pattern->value.v_double, doc->value.v_double);
       }
 
       return ret;
@@ -981,7 +998,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId32 ", got %" PRId32,
-                    ctx->path, pattern->value.v_int32, doc->value.v_int32);
+                    pattern->value.v_int32, doc->value.v_int32);
       }
 
       return ret;
@@ -991,7 +1008,7 @@ match_bson_value (const bson_value_t *doc,
 
       if (!ret) {
          match_err (ctx, "expected %" PRId64 ", got %" PRId64,
-                    ctx->path, pattern->value.v_int64, doc->value.v_int64);
+                    pattern->value.v_int64, doc->value.v_int64);
       }
 
       return ret;
@@ -1047,16 +1064,14 @@ match_bson_value (const bson_value_t *doc,
       return true;
 
    case BSON_TYPE_DBPOINTER:
-      MONGOC_ERROR ("DBPointer comparison not implemented");
+      test_error ("DBPointer comparison not implemented");
       abort ();
-#if defined (BSON_EXPERIMENTAL_FEATURES) && defined (MONGOC_EXPERIMENTAL_FEATURES)
    case BSON_TYPE_DECIMAL128:
-      MONGOC_ERROR ("Decimal128 comparison not implemented");
+      test_error ("Decimal128 comparison not implemented");
       abort ();
-#endif
    default:
-      MONGOC_ERROR ("unexpected value type %d: %s",
-                    doc->value_type, bson_type_to_str (doc->value_type));
+      test_error ("unexpected value type %d: %s",
+                  doc->value_type, bson_type_to_str (doc->value_type));
       abort ();
    }
 
@@ -1066,4 +1081,76 @@ match_bson_value (const bson_value_t *doc,
    }
 
    return ret;
+}
+
+bool
+mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
+                                 bson_t                 *command)
+{
+   mongoc_write_concern_t *wc = mongoc_write_concern_copy (write_concern);
+
+   if (!bson_append_document (command, "writeConcern", 12,
+                              _mongoc_write_concern_get_bson (wc))) {
+      MONGOC_ERROR ("Could not append writeConcern to command.");
+      mongoc_write_concern_destroy (wc);
+      return false;
+   }
+
+   mongoc_write_concern_destroy (wc);
+   return true;
+}
+
+
+static void
+init_huge_string (mongoc_client_t *client)
+{
+   int32_t max_bson_size;
+
+   assert (client);
+
+   if (!gHugeString) {
+      max_bson_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster);
+      assert (max_bson_size > 0);
+      gHugeStringLength = (size_t) max_bson_size - 37;
+      gHugeString = (char *) bson_malloc (gHugeStringLength);
+      assert (gHugeString);
+      memset (gHugeString, 'a', gHugeStringLength - 1);
+      gHugeString[gHugeStringLength - 1] = '\0';
+   }
+}
+
+
+const char *
+huge_string (mongoc_client_t *client)
+{
+   init_huge_string (client);
+   return gHugeString;
+}
+
+
+size_t
+huge_string_length (mongoc_client_t *client)
+{
+   init_huge_string (client);
+   return gHugeStringLength;
+}
+
+
+static void
+init_four_mb_string ()
+{
+   if (!gFourMBString) {
+      gFourMBString = (char *)bson_malloc (FOUR_MB);
+      assert (gFourMBString);
+      memset (gFourMBString, 'a', FOUR_MB - 1);
+      gFourMBString[FOUR_MB - 1] = '\0';
+   }
+}
+
+
+const char *
+four_mb_string ()
+{
+   init_four_mb_string ();
+   return gFourMBString;
 }

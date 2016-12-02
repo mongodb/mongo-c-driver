@@ -36,6 +36,44 @@ future_client_command_simple (
 
 
 future_t *
+future_client_read_command_with_opts (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_client_write_command_with_opts (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_client_read_write_command_with_opts (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_client_kill_cursor (
 
    mongoc_client_ptr client,
@@ -77,6 +115,18 @@ future_collection_count_with_opts (
    int64_t limit,
    const_bson_ptr opts,
    const_mongoc_read_prefs_ptr read_prefs,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_create_index_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr keys,
+   const_mongoc_index_opt_t opt,
+   bson_ptr opts,
+   bson_ptr reply,
    bson_error_ptr error
 );
 

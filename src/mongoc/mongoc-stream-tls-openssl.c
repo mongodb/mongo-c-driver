@@ -25,15 +25,17 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/x509v3.h>
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-tls-openssl-bio-private.h"
 #include "mongoc-stream-tls-openssl-private.h"
 #include "mongoc-openssl-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 #include "mongoc-error.h"
 
@@ -43,7 +45,7 @@
 
 #define MONGOC_STREAM_TLS_OPENSSL_BUFFER_SIZE 4096
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 static void
 BIO_meth_free(BIO_METHOD *meth)
 {
@@ -535,20 +537,34 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
+   SSL *ssl;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (host);
    ENTRY;
 
-   if (BIO_do_handshake (openssl->bio) == 1) {
-      SSL *ssl;
+   BIO_get_ssl (openssl->bio, &ssl);
 
-      BIO_get_ssl (openssl->bio, &ssl);
+/* Added in OpenSSL 0.9.8f, as a build time option */
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+   /* Set the SNI hostname we are expecting certificate for */
+   if (!tls->ssl_opts.allow_invalid_hostname) {
+      SSL_set_tlsext_host_name (ssl, host);
+   }
+#endif
+
+   if (BIO_do_handshake (openssl->bio) == 1) {
+
       if (_mongoc_openssl_check_cert (ssl, host, tls->ssl_opts.allow_invalid_hostname)) {
          RETURN (true);
       }
 
       *events = 0;
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: Failed certificate verification");
+
       RETURN (false);
    }
 
@@ -627,10 +643,9 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
       struct in_addr addr;
       X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new();
 
-#ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
       X509_VERIFY_PARAM_set_hostflags (param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-#endif
-      if (inet_pton (AF_INET, host, &addr)) {
+      if (inet_pton (AF_INET, host, &addr) ||
+          inet_pton (AF_INET6, host, &addr)) {
          X509_VERIFY_PARAM_set1_ip_asc (param, host);
       } else {
          X509_VERIFY_PARAM_set1_host (param, host, 0);

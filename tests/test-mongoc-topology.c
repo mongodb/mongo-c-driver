@@ -305,10 +305,15 @@ _test_topology_invalidate_server (bool pooled)
            sd->type == MONGOC_SERVER_RS_PRIMARY ||
            sd->type == MONGOC_SERVER_MONGOS);
 
-   mongoc_topology_invalidate_server (client->topology, id, NULL);
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, !=, (int64_t) -1);
+
+   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                   "error");
+   mongoc_topology_invalidate_server (client->topology, id, &error);
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
 
    fake_sd = (mongoc_server_description_t *)bson_malloc0 (sizeof (*fake_sd));
 
@@ -329,6 +334,7 @@ _test_topology_invalidate_server (bool pooled)
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
    assert (sd->error.domain != 0);
+   ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
 
    mongoc_server_stream_cleanup (server_stream);
 
@@ -621,182 +627,6 @@ test_cooldown_rs (void *ctx)
 
 
 static void
-_test_connect_timeout (bool pooled, bool try_once)
-{
-   const int32_t connect_timeout_ms = 200;
-   const int32_t server_selection_timeout_ms = 10 * 1000;  /* 10 seconds */
-   const int64_t min_heartbeat_ms = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
-
-   mock_server_t *servers[2];
-   int i;
-   char *secondary_response;
-   char *uri_str;
-   mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   mongoc_read_prefs_t *primary_pref;
-   future_t *future;
-   int64_t start;
-   int64_t server0_last_ismaster;
-   int64_t duration_usec;
-   int64_t expected_duration_usec;
-   bool server0_in_cooldown;
-   bson_error_t error;
-   request_t *request;
-
-   assert (!(pooled && try_once));  /* not supported */
-
-   for (i = 0; i < 2; i++) {
-      servers[i] = mock_server_new ();
-      mock_server_run (servers[i]);
-   };
-
-   secondary_response = bson_strdup_printf ("{'ok': 1,"
-                                            " 'ismaster': false,"
-                                            " 'secondary': true,"
-                                            " 'setName': 'rs'}");
-
-   uri_str = bson_strdup_printf (
-      "mongodb://localhost:%hu,localhost:%hu/"
-         "?replicaSet=rs&connectTimeoutMS=%d&serverSelectionTimeoutMS=%d",
-      mock_server_get_port (servers[0]),
-      mock_server_get_port (servers[1]),
-      connect_timeout_ms,
-      server_selection_timeout_ms);
-
-   uri = mongoc_uri_new (uri_str);
-   assert (uri);
-
-   if (!pooled && !try_once) {
-      /* override default */
-      mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
-   }
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-   }
-
-   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
-   /* start waiting for a server */
-   future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, &error);
-
-   server0_last_ismaster = start = bson_get_monotonic_time ();
-
-   if (mock_server_get_verbose (servers[0])) {
-      printf ("server on port %hu down, server on port %hu secondary\n",
-              mock_server_get_port (servers[0]),
-              mock_server_get_port (servers[1]));
-   }
-
-   /* server 0 doesn't respond */
-   request = mock_server_receives_ismaster (servers[0]);
-   assert (request);
-   request_destroy (request);
-
-   /* server 1 is a secondary */
-   request = mock_server_receives_ismaster (servers[1]);
-   assert (request);
-   mock_server_replies_simple (request, secondary_response);
-   request_destroy (request);
-
-   if (!try_once) {
-      /* driver retries every minHeartbeatFrequencyMS + connectTimeoutMS */
-      server0_in_cooldown = true;
-      expected_duration_usec = 0;
-
-      if (!pooled) {
-         /* single-threaded client starts counting minHeartbeatFrequencyMS
-          * AFTER each connection timeout */
-         expected_duration_usec = 1000 * connect_timeout_ms;
-      }
-
-      while (expected_duration_usec / 1000 + min_heartbeat_ms
-             < server_selection_timeout_ms) {
-         request = mock_server_receives_ismaster (servers[1]);
-         assert (request);
-         mock_server_replies_simple (request, secondary_response);
-         request_destroy (request);
-
-         duration_usec = bson_get_monotonic_time () - start;
-         expected_duration_usec += 1000 * min_heartbeat_ms;
-
-         /* single client puts server 0 in cooldown for 5 sec */
-         if (pooled || !server0_in_cooldown) {
-            request = mock_server_receives_ismaster (servers[0]);
-            assert (request);
-            server0_last_ismaster = bson_get_monotonic_time ();
-            request_destroy (request);  /* don't respond */
-            expected_duration_usec += 1000 * connect_timeout_ms;
-         }
-
-         if (!test_suite_valgrind ()) {
-            ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
-         }
-
-         server0_in_cooldown =
-            (bson_get_monotonic_time () - server0_last_ismaster) <
-            5 * 1000 * 1000;
-      }
-   }
-
-   /* selection fails */
-   assert (!future_get_mongoc_server_description_ptr (future));
-   future_destroy (future);
-
-   duration_usec = bson_get_monotonic_time () - start;
-
-   if (!test_suite_valgrind ()) {
-      if (try_once) {
-         ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
-      } else {
-         ASSERT_ALMOST_EQUAL (duration_usec / 1000, server_selection_timeout_ms);
-      }
-   }
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-
-   mongoc_read_prefs_destroy (primary_pref);
-   mongoc_uri_destroy (uri);
-   bson_free (uri_str);
-   bson_free (secondary_response);
-
-   for (i = 0; i < 2; i++) {
-      mock_server_destroy (servers[i]);
-   };
-}
-
-
-static void
-test_connect_timeout_pooled (void *ctx)
-{
-   _test_connect_timeout (true, false);
-}
-
-static void
-test_connect_timeout_single(void *ctx)
-{
-   _test_connect_timeout (false, true);
-}
-
-
-static void
-test_connect_timeout_try_once_false(void *ctx)
-{
-   _test_connect_timeout (false, false);
-}
-
-
-static void
 _test_select_succeed (bool try_once)
 {
    const int32_t connect_timeout_ms = 200;
@@ -828,8 +658,7 @@ _test_select_succeed (bool try_once)
 
    uri_str = bson_strdup_printf (
       "mongodb://localhost:%hu,localhost:%hu/"
-         "?replicaSet=rs&connectTimeoutMS=%d"
-         "&serverSelectionTryOnce=false",
+         "?replicaSet=rs&connectTimeoutMS=%d",
       mock_server_get_port (primary),
       mock_server_get_port (secondary),
       connect_timeout_ms);
@@ -861,10 +690,6 @@ _test_select_succeed (bool try_once)
    duration_usec = bson_get_monotonic_time () - start;
 
    if (!test_suite_valgrind ()) {
-      if (mock_server_get_verbose (primary)) {
-         printf ("expected duration %" PRId32 "ms, actual %" PRId64 "ms\n",
-                 connect_timeout_ms, duration_usec / 1000);
-      }
       ASSERT_ALMOST_EQUAL (duration_usec / 1000, connect_timeout_ms);
    }
 
@@ -913,12 +738,14 @@ test_multiple_selection_errors (void *context)
 
    /* Like:
     * "No suitable servers found (`serverselectiontryonce` set):
-    *  [Failed to resolve 'doesntexist'] [connection error]"
+    *  [Failed to resolve 'doesntexist']
+    *  [connection error calling ismaster on 'example.com:2']"
     */
    ASSERT_CONTAINS (error.message,
                     "No suitable servers found");
+   /* either "connection error" or "connection timeout" calling ismaster */
    ASSERT_CONTAINS (error.message,
-                    "[connection error calling ismaster on 'example.com:2']");
+                    "calling ismaster on 'example.com:2'");
    ASSERT_CONTAINS (error.message,
                     "[Failed to resolve 'doesntexist']");
 
@@ -941,11 +768,225 @@ test_invalid_server_id (void)
 }
 
 
+static bool
+auto_ping (request_t *request,
+           void *data)
+{
+   if (!request->is_command || strcasecmp (request->command_name, "ping")) {
+      return false;
+   }
+
+   mock_server_replies_ok_and_destroys (request);
+
+   return true;
+}
+
+
+/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+ * must update topology description with the server response.
+ */
+static void
+_test_server_removed_during_handshake (bool pooled)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   mongoc_server_description_t **sds;
+   size_t n;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_autoresponds (server, auto_ping, NULL, NULL);
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* no auto heartbeat */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+   }
+
+   /* initial connection, discover one-node replica set */
+   r = mongoc_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"),
+                                     NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   ASSERT_CMPINT (_mongoc_topology_get_type (client->topology), ==,
+                  MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+   sd = mongoc_client_get_server_description (client, 1);
+   ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
+   mongoc_server_description_destroy (sd);
+
+   /* primary changes setName */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'BAD NAME',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
+
+   /* pretend to close a connection. does NOT affect server description yet */
+   mongoc_cluster_disconnect_node (&client->cluster, 1);
+   sd = mongoc_client_get_server_description (client, 1);
+   /* still primary */
+   ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
+   mongoc_server_description_destroy (sd);
+
+   /* opens new stream and runs ismaster again, discovers bad setName. */
+   r = mongoc_client_command_simple (client, "db", tmp_bson ("{'ping': 1}"),
+                                     NULL, NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                          "removed from topology");
+
+   sds = mongoc_client_get_server_descriptions (client, &n);
+   ASSERT_CMPSIZE_T (n, ==, (size_t) 0);
+   ASSERT_CMPINT (_mongoc_topology_get_type (client->topology), ==,
+                  MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+   
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_server_removed_during_handshake_single (void)
+{
+   _test_server_removed_during_handshake (false);
+}
+
+
+static void
+test_server_removed_during_handshake_pooled (void)
+{
+   _test_server_removed_during_handshake (true);
+}
+
+
+static void
+test_rtt (void *ctx)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   int64_t rtt_msec;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   future = future_client_command_simple (client, "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, NULL, &error);
+
+   request = mock_server_receives_ismaster (server);
+   _mongoc_usleep (1000 * 1000);  /* one second */
+   mock_server_replies_ok_and_destroys (request);
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
+                                           "{'ping': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   ASSERT (sd);
+
+   /* assert, with plenty of slack, that rtt was calculated in ms, not usec */
+   rtt_msec = mongoc_server_description_round_trip_time (sd);
+   ASSERT_CMPINT64 (rtt_msec, >, (int64_t) 900);   /* 900 ms */
+   ASSERT_CMPINT64 (rtt_msec, <, (int64_t) 9000);  /* 9 seconds */
+
+   mongoc_server_description_destroy (sd);
+   future_destroy (future);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+/* mongoc_topology_scanner_add_and_scan is called within the topology mutex, it
+ * adds a discovered node and calls getaddrinfo on its host immediately - test
+ * that this doesn't cause a recursive acquire on the topology mutex */
+static void
+test_add_and_scan_failure (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   /* client will discover "fake" host and fail to connect */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s', 'fake:1']}",
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   future = future_client_command_simple (client, "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, NULL, &error);
+
+   request = mock_server_receives_command (server, "db", MONGOC_QUERY_NONE,
+                                           "{'ping': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   ASSERT (sd);
+   ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
+   mongoc_server_description_destroy (sd);
+
+   sd = mongoc_topology_server_by_id (client->topology, 2, NULL);
+   ASSERT (sd);
+   ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
+   mongoc_server_description_destroy (sd);
+
+   future_destroy (future);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
-   bool windows;
-
    TestSuite_AddLive (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_AddLive (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_AddFull (suite, "/Topology/server_selection_try_once_option",
@@ -957,43 +998,30 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
    TestSuite_AddLive (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
    TestSuite_AddFull (suite, "/Topology/invalid_cluster_node",
-                      test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow);
+                      test_invalid_cluster_node, NULL, NULL, test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite, "/Topology/max_wire_version_race_condition",
                       test_max_wire_version_race_condition,
                       NULL, NULL, test_framework_skip_if_no_auth);
-
-   /* CDRIVER-1305: disable tests that hang on 32-bit Unix */
-#ifdef _MSC_VER
-   windows = true;
-#else
-   windows = false;
-#endif
-
-   if (sizeof (int *) == 4 && !windows) {
-      TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
-                         test_cooldown_standalone, NULL, NULL,
-                         test_framework_skip_if_slow);
-      TestSuite_AddFull (suite, "/Topology/cooldown/rs",
-                         test_cooldown_rs, NULL, NULL,
-                         test_framework_skip_if_slow);
-      TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled",
-                         test_connect_timeout_pooled, NULL, NULL,
-                         test_framework_skip_if_slow);
-      TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once",
-                         test_connect_timeout_single, NULL, NULL,
-                         test_framework_skip_if_slow);
-      TestSuite_AddFull (suite,
-                         "/Topology/connect_timeout/single/try_once_false",
-                         test_connect_timeout_try_once_false, NULL, NULL,
-                         test_framework_skip_if_slow);
-      TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
-                         test_multiple_selection_errors,
-                         NULL, NULL, test_framework_skip_if_offline);
-      TestSuite_Add (suite, "/Topology/connect_timeout/succeed",
-                     test_select_after_timeout);
-      TestSuite_Add (suite, "/Topology/try_once/succeed",
-                     test_select_after_try_once);
-   }
-
+   TestSuite_AddFull (suite, "/Topology/cooldown/standalone",
+                      test_cooldown_standalone, NULL, NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/cooldown/rs",
+                      test_cooldown_rs, NULL, NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddFull (suite, "/Topology/multiple_selection_errors",
+                      test_multiple_selection_errors,
+                      NULL, NULL, test_framework_skip_if_offline);
+   TestSuite_Add (suite, "/Topology/connect_timeout/succeed",
+                  test_select_after_timeout);
+   TestSuite_Add (suite, "/Topology/try_once/succeed",
+                  test_select_after_try_once);
    TestSuite_AddLive (suite, "/Topology/invalid_server_id", test_invalid_server_id);
+   TestSuite_Add (suite, "/Topology/server_removed/single",
+                  test_server_removed_during_handshake_single);
+   TestSuite_Add (suite, "/Topology/server_removed/pooled",
+                  test_server_removed_during_handshake_pooled);
+   TestSuite_AddFull (suite, "/Topology/rtt", test_rtt, NULL, NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddLive (suite, "/Topology/add_and_scan_failure",
+                      test_add_and_scan_failure);
 }

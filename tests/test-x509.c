@@ -3,7 +3,7 @@
 
 #include "TestSuite.h"
 
-#ifdef MONGOC_ENABLE_SSL
+#if defined(MONGOC_ENABLE_SSL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 static void
 test_extract_subject (void)
 {
@@ -23,7 +23,7 @@ test_extract_subject (void)
 void
 test_x509_install (TestSuite *suite)
 {
-#ifdef MONGOC_ENABLE_SSL
+#if defined(MONGOC_ENABLE_SSL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
    TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
 #endif
 }

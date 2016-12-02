@@ -33,7 +33,7 @@ struct _mongoc_read_prefs_t
 {
    mongoc_read_mode_t mode;
    bson_t             tags;
-   int32_t            max_staleness_ms;
+   int64_t            max_staleness_seconds;
 };
 
 
@@ -45,6 +45,9 @@ typedef struct _mongoc_apply_read_prefs_result_t {
 
 
 #define READ_PREFS_RESULT_INIT { NULL, false, MONGOC_QUERY_NONE }
+
+const char *
+_mongoc_read_mode_as_str (mongoc_read_mode_t mode);
 
 void
 apply_read_preferences (const mongoc_read_prefs_t *read_prefs,

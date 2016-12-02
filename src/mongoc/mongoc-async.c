@@ -20,6 +20,7 @@
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "utlist.h"
+#include "mongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
@@ -33,7 +34,7 @@ mongoc_async_cmd (mongoc_async_t           *async,
                   const bson_t             *cmd,
                   mongoc_async_cmd_cb_t     cb,
                   void                     *cb_data,
-                  int32_t                   timeout_msec)
+                  int64_t                   timeout_msec)
 {
    return mongoc_async_cmd_new (async, stream, setup, setup_ctx, dbname, cmd, cb,
                                 cb_data, timeout_msec);
@@ -60,54 +61,31 @@ mongoc_async_destroy (mongoc_async_t *async)
    bson_free (async);
 }
 
-bool
+void
 mongoc_async_run (mongoc_async_t *async,
-                  int32_t         timeout_msec)
+                  int64_t         timeout_msec)
 {
    mongoc_async_cmd_t *acmd, *tmp;
    mongoc_stream_poll_t *poller = NULL;
    int i;
-   ssize_t nactive = 0;
+   ssize_t nactive;
    int64_t now;
-   int64_t expire_at = 0;
+   int64_t expire_at;
+   int64_t poll_timeout_msec;
+   size_t poll_size;
 
-   size_t poll_size = 0;
+   BSON_ASSERT (timeout_msec > 0);
 
-   for (;;) {
-      now = bson_get_monotonic_time ();
+   now = bson_get_monotonic_time ();
+   expire_at = now + timeout_msec * 1000;
+   poll_size = 0;
 
-      if (expire_at == 0) {
-         if (timeout_msec >= 0) {
-            expire_at = now + ((int64_t) timeout_msec * 1000);
-         } else {
-            expire_at = -1;
-         }
-      } else if (timeout_msec >= 0) {
-         timeout_msec = (expire_at - now) / 1000;
-      }
-
-      if (now > expire_at) {
-         break;
-      }
-
-      DL_FOREACH_SAFE (async->cmds, acmd, tmp)
-      {
-         /* async commands are sorted by expire_at */
-         if (now > acmd->expire_at) {
-            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time), acmd->data,
-                      &acmd->error);
-            mongoc_async_cmd_destroy (acmd);
-         } else {
-            break;
-         }
-      }
-
-      if (!async->ncmds) {
-         break;
-      }
-
+   while (async->ncmds) {
+      /* ncmds grows if we discover a replica & start calling ismaster on it */
       if (poll_size < async->ncmds) {
-         poller = (mongoc_stream_poll_t *)bson_realloc (poller, sizeof (*poller) * async->ncmds);
+         poller = (mongoc_stream_poll_t *) bson_realloc (
+            poller, sizeof (*poller) * async->ncmds);
+
          poll_size = async->ncmds;
       }
 
@@ -120,13 +98,10 @@ mongoc_async_run (mongoc_async_t *async,
          i++;
       }
 
-      if (timeout_msec >= 0) {
-         timeout_msec = BSON_MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
-      } else {
-         timeout_msec = (async->cmds->expire_at - now) / 1000;
-      }
-
-      nactive = mongoc_stream_poll (poller, async->ncmds, timeout_msec);
+      poll_timeout_msec = (expire_at - now) / 1000;
+      BSON_ASSERT (poll_timeout_msec < INT32_MAX);
+      nactive = mongoc_stream_poll (poller, async->ncmds,
+                                    (int32_t) poll_timeout_msec);
 
       if (nactive) {
          i = 0;
@@ -134,6 +109,21 @@ mongoc_async_run (mongoc_async_t *async,
          DL_FOREACH_SAFE (async->cmds, acmd, tmp)
          {
             if (poller[i].revents & (POLLERR | POLLHUP)) {
+               int hup = poller[i].revents & POLLHUP;
+               if (acmd->state == MONGOC_ASYNC_CMD_SEND) {
+                  bson_set_error (
+                     &acmd->error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
+                     hup ? "connection refused" : "unknown connection error");
+               } else {
+                  bson_set_error (
+                     &acmd->error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
+                     hup ? "connection closed" : "unknown socket error");
+               }
+
                acmd->state = MONGOC_ASYNC_CMD_ERROR_STATE;
             }
 
@@ -151,11 +141,29 @@ mongoc_async_run (mongoc_async_t *async,
             i++;
          }
       }
+
+      now = bson_get_monotonic_time ();
+      if (now > expire_at) {
+         break;
+      }
    }
 
    if (poll_size) {
       bson_free (poller);
    }
 
-   return async->ncmds;
+   /* commands that succeeded or failed already have been removed from the
+    * list and freed. therefore, all remaining commands have timed out. */
+   DL_FOREACH_SAFE (async->cmds, acmd, tmp) {
+      bson_set_error (&acmd->error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      acmd->state == MONGOC_ASYNC_CMD_SEND ?
+                      "connection timeout" :
+                      "socket timeout");
+
+      acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time) / 1000,
+                acmd->data, &acmd->error);
+      mongoc_async_cmd_destroy (acmd);
+   }
 }

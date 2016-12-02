@@ -43,6 +43,12 @@ mongoc_collection_create_bulk_operation (
     <p><code>write_concern</code> contains the write concern for all operations in the bulk operation. If <code>NULL</code>, the collection's write concern is used. The global default is acknowledged writes: MONGOC_WRITE_CONCERN_W_DEFAULT.</p>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><code xref="bulk">Bulk Write Operations</code></p>
+    <p><code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code></p>
+  </section>
+
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated when executing the bulk operation.</p>

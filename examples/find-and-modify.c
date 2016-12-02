@@ -17,7 +17,8 @@ main (int   argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://127.0.0.1:27017/");
+   client = mongoc_client_new ("mongodb://127.0.0.1:27017/?appname=find-and-modify-example");
+   mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /*

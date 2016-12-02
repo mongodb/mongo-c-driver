@@ -75,16 +75,6 @@ AC_ARG_ENABLE([maintainer-flags],
               [],
               [enable_maintainer_flags=maintainer_flags_default])
 
-# Experimental future BSON and MongoDB features
-AC_ARG_ENABLE(experimental-features,
-   AC_HELP_STRING([--enable-experimental-features=@<:@no/yes@:>@],
-                  [Experimental future BSON and MongoDB features [default=no]]),
-   [enable_experimental_features=$enableval])
-
-AS_IF([test "$enable_experimental_features" = "yes"],
-      [AC_SUBST(MONGOC_EXPERIMENTAL_FEATURES, 1)],
-      [AC_SUBST(MONGOC_EXPERIMENTAL_FEATURES, 0)])
-
 # Check if we should use the bundled (git submodule) libbson
 AC_ARG_WITH(libbson,
     AC_HELP_STRING([--with-libbson=@<:@auto/system/bundled@:>@],
