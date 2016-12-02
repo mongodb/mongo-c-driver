@@ -1013,7 +1013,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t        *cursor,
          } else {
             OPT_ERR ("Wrong type for 'hint' field in 'opts'.");
          }
-      } else if (!strcmp (key, MAX)) {
+      } else if (!strcmp (key, MAX_STRING)) {
          PUSH_DOLLAR_QUERY ();
          OPT_SUBDOCUMENT (max, max);
       } else if (!strcmp (key, MAX_SCAN)) {
@@ -1024,7 +1024,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t        *cursor,
          OPT_CHECK_INT ();
          PUSH_DOLLAR_QUERY ();
          BSON_APPEND_INT64 (query, "$maxTimeMS", bson_iter_as_int64 (&iter));
-      } else if (!strcmp (key, MIN)) {
+      } else if (!strcmp (key, MIN_STRING)) {
          PUSH_DOLLAR_QUERY ();
          OPT_SUBDOCUMENT (min, min);
       } else if (!strcmp (key, READ_CONCERN)) {
@@ -1351,12 +1351,12 @@ _translate_query_opt (const char *query_field,
    } else if (!strcmp (MAX_TIME_MS, query_field)) {
       *cmd_field = MAX_TIME_MS;
       *len = MAX_TIME_MS_LEN;
-   } else if (!strcmp (MAX, query_field)) {
-      *cmd_field = MAX;
-      *len = MAX_LEN;
-   } else if (!strcmp (MIN, query_field)) {
-      *cmd_field = MIN;
-      *len = MIN_LEN;
+   } else if (!strcmp (MAX_STRING, query_field)) {
+      *cmd_field = MAX_STRING;
+      *len = MAX_STRING_LEN;
+   } else if (!strcmp (MIN_STRING, query_field)) {
+      *cmd_field = MIN_STRING;
+      *len = MIN_STRING_LEN;
    } else if (!strcmp (RETURN_KEY, query_field)) {
       *cmd_field = RETURN_KEY;
       *len = RETURN_KEY_LEN;

@@ -46,13 +46,7 @@ struct _mongoc_cursor_interface_t
    void             (*get_host) (mongoc_cursor_t        *cursor,
                                  mongoc_host_list_t     *host);
 };
-#ifdef MIN
-#undef MIN
-#endif
 
-#ifdef MAX
-#undef MAX
-#endif
 #define ALLOW_PARTIAL_RESULTS "allowPartialResults"
 #define ALLOW_PARTIAL_RESULTS_LEN 19
 #define AWAIT_DATA "awaitData"
@@ -73,16 +67,16 @@ struct _mongoc_cursor_interface_t
 #define HINT_LEN 4
 #define LIMIT "limit"
 #define LIMIT_LEN 5
-#define MAX "max"
-#define MAX_LEN 3
+#define MAX_STRING "max"
+#define MAX_STRING_LEN 3
 #define MAX_AWAIT_TIME_MS "maxAwaitTimeMS"
 #define MAX_AWAIT_TIME_MS_LEN 14
 #define MAX_SCAN "maxScan"
 #define MAX_SCAN_LEN 7
 #define MAX_TIME_MS "maxTimeMS"
 #define MAX_TIME_MS_LEN 9
-#define MIN "min"
-#define MIN_LEN 3
+#define MIN_STRING "min"
+#define MIN_STRING_LEN 3
 #define NO_CURSOR_TIMEOUT "noCursorTimeout"
 #define NO_CURSOR_TIMEOUT_LEN 15
 #define OPLOG_REPLAY "oplogReplay"
