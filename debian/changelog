@@ -1,3 +1,14 @@
+libmongoc (1.5.0-1) unstable; urgency=medium
+
+  [ A. Jesse Jiryu Davis ]
+  * 1.5.0 Release
+
+  [ Ondřej Surý ]
+  * Update gbp branch
+  * Update libbson-dev Build-Depends to >= 1.5.0
+
+ -- Ondřej Surý <ondrej@debian.org>  Fri, 02 Dec 2016 13:05:34 +0100
+
 libmongoc (1.4.2-1) unstable; urgency=low
 
   * Upstream release
