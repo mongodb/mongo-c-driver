@@ -606,6 +606,15 @@ _use_find_command (const mongoc_cursor_t *cursor,
 }
 
 
+bool
+_use_getmore_command (const mongoc_cursor_t        *cursor,
+                      const mongoc_server_stream_t *server_stream)
+{
+   return server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
+          !_mongoc_cursor_get_opt_bool (cursor, EXHAUST);
+}
+
+
 static const bson_t *
 _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
 {

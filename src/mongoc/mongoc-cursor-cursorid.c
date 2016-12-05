@@ -239,7 +239,7 @@ _mongoc_cursor_cursorid_get_more (mongoc_cursor_t *cursor)
       RETURN (false);
    }
 
-   if (_use_find_command (cursor, server_stream)) {
+   if (_use_getmore_command (cursor, server_stream)) {
       if (!_mongoc_cursor_prepare_getmore_command (cursor, &command)) {
          mongoc_server_stream_cleanup (server_stream);
          RETURN (false);
