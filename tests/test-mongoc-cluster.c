@@ -101,23 +101,18 @@ test_get_max_msg_size (void)
 
 
 #define ASSERT_CURSOR_ERR() do { \
-      char *error_message = bson_strdup_printf ( \
-         "Failed to read 4 bytes from socket within %d milliseconds.", \
-         socket_timeout_ms); \
       assert (!future_get_bool (future)); \
       assert (mongoc_cursor_error (cursor, &error)); \
-      ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM); \
-      ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET); \
-      ASSERT_CMPSTR (error.message, error_message); \
-      bson_free (error_message); \
+      ASSERT_ERROR_CONTAINS(error, \
+                            MONGOC_ERROR_STREAM, \
+                            MONGOC_ERROR_STREAM_SOCKET, \
+                            "Failed to read 4 bytes: socket error or timeout");\
    } while (0)
 
 
 #define START_QUERY(client_port_variable) do { \
-      cursor = mongoc_collection_find (collection, \
-                                       MONGOC_QUERY_NONE, \
-                                       0, 0, 0, tmp_bson ("{}"), \
-                                       NULL, NULL); \
+      cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), \
+                                                 NULL, NULL); \
       future = future_cursor_next (cursor, &doc); \
       request = mock_server_receives_query (server, "test.test", \
                                             MONGOC_QUERY_SLAVE_OK, 0, 0, \
@@ -250,6 +245,8 @@ _test_cluster_command_timeout (bool pooled)
                           MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
                           "Failed to send \"foo\" command with database \"db\"");
 
+   /* late response */
+   mock_server_replies_simple (request, "{'ok': 1, 'bar': 1}");
    request_destroy (request);
    future_destroy (future);
 

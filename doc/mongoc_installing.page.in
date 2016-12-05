@@ -11,8 +11,7 @@
 
     <title>Supported Platforms</title>
 
-    <p>The MongoDB C Driver is continuously tested on GNU/Linux, Windows 7, Mac OS X 10.10, and Solaris 11 (Intel and Sparc), with GCC, Clang, and Visual Studio 2010, 2013, and 2015.</p>
-    <p>The driver supports the following operating systems and CPU architectures:</p>
+    <p>The MongoDB C Driver is <link href="https://evergreen.mongodb.com/waterfall/mongo-c-driver">continuously tested</link> on variety of platforms including:</p>
 
     <table>
       <tr>
@@ -24,10 +23,9 @@
         <td>
           <list>
             <item><p>GNU/Linux</p></item>
-            <item><p>Solaris 11</p></item>
-            <item><p>Mac OS X 10.6 and newer</p></item>
-            <item><p>Windows Vista, 7, and 8</p></item>
-            <item><p>FreeBSD</p></item>
+            <item><p>Solaris</p></item>
+            <item><p>Mac OS X</p></item>
+            <item><p>Microsoft Windows</p></item>
           </list>
         </td>
         <td>
@@ -36,6 +34,9 @@
             <item><p>ARM</p></item>
             <item><p>PPC</p></item>
             <item><p>SPARC</p></item>
+            <item><p>aarch64</p></item>
+            <item><p>s390x</p></item>
+            <item><p>ppc64le</p></item>
           </list>
         </td>
         <td>
@@ -50,6 +51,8 @@
       </tr>
     </table>
 
+    <p>The driver is also known to work on FreeBSD, and should work on any POSIX compatible platform with a working c89 (or later) compiler.</p>
+
   </section>
 
   <section id="package-manager">
@@ -57,13 +60,15 @@
     <title>Install with a Package Manager</title>
     <p>The libmongoc package is available on recent versions of Debian and Ubuntu.</p>
     <screen><output style="prompt">$ </output><input>apt-get install libmongoc-1.0-0</input></screen>
-    <p>For RedHat-like systems, use Remi Collet's well-maintained RPMs. Commands to enable Remi's repository and install libmongoc depend on your exact system. For example, on CentOS 6:</p>
-    <screen><output style="prompt">$ </output><input>yum install http://rpms.remirepo.net/enterprise/remi-release-6.rpm</input>
-<output style="prompt">$ </output><input>yum install yum-utils</input>
-<output style="prompt">$ </output><input>yum-config-manager --enable remi</input>
-<output style="prompt">$ </output><input>yum update</input>
-<output style="prompt">$ </output><input>yum install mongo-c-driver</input></screen>
-    <p>The <link href="http://rpms.remirepo.net/wizard/">Configuration Wizard for Remi's RPM Repository</link> generates detailed instructions for your system.</p>
+    <p>On Fedora, a mongo-c-driver package is available in the default repositories and can be installed with:</p>
+    <screen><output style="prompt">$ </output><input>dnf install mongo-c-driver</input></screen>
+    <p>On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package
+      is available in the <link
+      href="https://fedoraproject.org/wiki/EPEL">EPEL</link> repository. To check
+      version available, see <link
+      href="https://apps.fedoraproject.org/packages/mongo-c-driver">https://apps.fedoraproject.org/packages/mongo-c-driver</link>.
+      The package can be installed with:</p>
+    <screen><output style="prompt">$ </output><input>yum install mongo-c-driver</input></screen>
   </section>
 
   <section id="installing-unix">
@@ -77,7 +82,7 @@
         <p>On Debian / Ubuntu:</p>
         <screen>$ sudo apt-get install pkg-config libssl-dev libsasl2-dev</screen>
         <p>On FreeBSD:</p>
-        <screen>$ su -c 'pkg install pkgconf openssl cyrus-sasl2'</screen>
+        <screen>$ su -c 'pkg install pkgconf openssl cyrus-sasl'</screen>
     </section>
     <section id="unix-build">
       <title>Building from a release tarball</title>
@@ -97,7 +102,6 @@ Build configuration:
 Enable debugging (slow)                          : no
 Compile with debug symbols (slow)                : no
 Enable GCC build optimization                    : yes
-Enable automatic binary hardening                : yes
 Code coverage support                            : no
 Cross Compiling                                  : no
 Fast counters                                    : no
@@ -158,6 +162,23 @@ $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 $ export CPPFLAGS="-I/usr/local/opt/openssl/include"</screen>
       </section>
     </section>
+    <section id="nativetls-macos">
+      <title>Native TLS Support on Mac OS X / Darwin (Secure Transport)</title>
+      <p>
+	The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
+	Using the native libraries there is no need to install OpenSSL. By
+	default however, the driver will compile against OpenSSL if it
+	detects it being available. If OpenSSL is not available, it will
+	fallback on the native libraries.
+      </p>
+      <p>
+	To compile against the Darwin native TLS and crypto libraries, even when
+	OpenSSL is available, configure the driver like so:
+      </p>
+      <screen>
+$ ./configure --enable-ssl=darwin
+      </screen>
+    </section>
     <section id="building-osx">
       <title>Building on OS X</title>
       <p>Download the latest release tarball:</p>
@@ -217,7 +238,24 @@ cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>
 
+
     <p>All of the MongoDB C Driver's components will now be found in <code>C:\mongo-c-driver</code>.</p>
+
+    <section id="nativetls-windows">
+      <title>Native TLS Support on Windows (Secure Channel)</title>
+      <p>
+	The MongoDB C Driver supports the Windows native TLS and crypto libraries.
+	Using the native libraries there is no need to install OpenSSL. By
+	default however, the driver will compile against OpenSSL if it
+	detects it being available. If OpenSSL is not available, it will
+	fallback on the native libraries.
+      </p>
+      <p>
+	To compile against the Windows native TLS and crypto libraries, even when
+	OpenSSL is available, configure the driver like so:
+      </p>
+      <screen>cmake -G "Visual Studio 14 2015 Win64" "-DENABLE_SSL=WINDOWS" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"</screen>
+    </section>
   </section>
 
 </page>

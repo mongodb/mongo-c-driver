@@ -28,6 +28,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
+#include "mongoc-handshake-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
@@ -78,13 +79,19 @@ mongoc_uri_lowercase_hostname (const char *src,
    }
 }
 
-void
+bool
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
                         uint16_t       port)
 {
    mongoc_host_list_t *iter;
    mongoc_host_list_t *link_;
+
+   if (strlen (host) > BSON_HOST_NAME_MAX) {
+      MONGOC_ERROR ("Hostname provided in URI is too long, max is %d chars",
+                    BSON_HOST_NAME_MAX);
+      return false;
+   }
 
    link_ = (mongoc_host_list_t *)bson_malloc0(sizeof *link_);
    mongoc_uri_lowercase_hostname(host, link_->host, sizeof link_->host);
@@ -106,6 +113,8 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    } else {
       uri->hosts = link_;
    }
+
+   return true;
 }
 
 /*
@@ -233,6 +242,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    const char *portstr;
    const char *end_host;
    char *hostname;
+   bool r;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
       if (!mongoc_uri_parse_port(&port, portstr + 1)) {
@@ -247,10 +257,10 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
       return false;
    }
 
-   mongoc_uri_append_host (uri, hostname, port);
+   r = mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
-   return true;
+   return r;
 }
 
 
@@ -261,6 +271,7 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
    uint16_t port;
    const char *end_host;
    char *hostname;
+   bool r;
 
    if (*str == '[' && strchr (str, ']')) {
       return mongoc_uri_parse_host6 (uri, str);
@@ -284,10 +295,10 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
       return false;
    }
 
-   mongoc_uri_append_host(uri, hostname, port);
+   r = mongoc_uri_append_host (uri, hostname, port);
    bson_free(hostname);
 
-   return true;
+   return r;
 }
 
 
@@ -451,7 +462,7 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri,
    return true;
 }
 
-static void
+static bool
 mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
                        const char   *str) /* IN */
 {
@@ -465,22 +476,33 @@ mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
 
 again:
    if ((keyval = scan_to_unichar(str, ',', "", &end_keyval))) {
-      if ((key = scan_to_unichar(keyval, ':', "", &end_key))) {
-         bson_append_utf8(&b, key, -1, end_key + 1, -1);
-         bson_free(key);
+      if (!(key = scan_to_unichar(keyval, ':', "", &end_key))) {
+         bson_free (keyval);
+         goto fail;
       }
+
+      bson_append_utf8(&b, key, -1, end_key + 1, -1);
+      bson_free(key);
       bson_free(keyval);
       str = end_keyval + 1;
       goto again;
-   } else {
-       if ((key = scan_to_unichar(str, ':', "", &end_key))) {
-         bson_append_utf8(&b, key, -1, end_key + 1, -1);
-         bson_free(key);
-      }
+   } else if ((key = scan_to_unichar(str, ':', "", &end_key))) {
+      bson_append_utf8(&b, key, -1, end_key + 1, -1);
+      bson_free(key);
+   } else if (strlen (str)) {
+      /* we're not finished but we couldn't parse the string */
+      goto fail;
    }
 
    mongoc_read_prefs_add_tag(uri->read_prefs, &b);
    bson_destroy(&b);
+
+   return true;
+
+fail:
+   MONGOC_WARNING ("invalid readPreferenceTags: \"%s\"", str);
+   bson_destroy (&b);
+   return false;
 }
 
 
@@ -546,10 +568,8 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "sockettimeoutms") ||
        !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
+       !strcasecmp(key, "maxstalenessseconds") ||
        !strcasecmp(key, "minpoolsize") ||
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-       !strcasecmp(key, "maxstalenessms") ||
-#endif
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
@@ -588,6 +608,30 @@ mongoc_uri_option_is_utf8 (const char *key)
 }
 
 static bool
+mongoc_uri_parse_int32 (const char *key,
+                        const char *value,
+                        int32_t    *result)
+{
+   char *endptr;
+   int64_t i;
+
+   errno = 0;
+   i = bson_ascii_strtoll (value, &endptr, 10);
+   if (errno || endptr < value + strlen (value)) {
+      MONGOC_WARNING ("Invalid %s: cannot parse integer\n", key);
+      return false;
+   }
+
+   if (i > INT32_MAX || i < INT32_MIN) {
+      MONGOC_WARNING ("Invalid %s: cannot fit in int32\n", key);
+      return false;
+   }
+
+   *result = (int32_t) i;
+   return true;
+}
+
+static bool
 mongoc_uri_parse_option (mongoc_uri_t *uri,
                          const char   *str)
 {
@@ -609,7 +653,10 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    }
 
    if (mongoc_uri_option_is_int32(key)) {
-      v_int = (int) strtol (value, NULL, 10);
+      if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
+         goto CLEANUP;
+      }
+
       BSON_APPEND_INT32 (&uri->options, key, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
@@ -626,7 +673,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
                         (0 == strcasecmp (value, "t")) ||
                         (0 == strcmp (value, "1")));
    } else if (!strcasecmp(key, "readpreferencetags")) {
-      mongoc_uri_parse_tags(uri, value);
+      if (!mongoc_uri_parse_tags(uri, value)) {
+         goto CLEANUP;
+      }
    } else if (!strcasecmp(key, "authmechanism") ||
               !strcasecmp(key, "authsource")) {
       bson_append_utf8(&uri->credentials, key, -1, value, -1);
@@ -634,9 +683,12 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp(key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
-         bson_free(key);
-         bson_free(value);
-         return false;
+         goto CLEANUP;
+      }
+   } else if (!strcasecmp (key, "appname")) {
+      if (!mongoc_uri_set_appname (uri, value)) {
+         MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
+         goto CLEANUP;
       }
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
@@ -922,20 +974,42 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    uri->write_concern = write_concern;
 }
 
+/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
+static int32_t
+_mongoc_uri_get_max_staleness_option (const mongoc_uri_t *uri)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   int32_t retval = MONGOC_NO_MAX_STALENESS;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, "maxstalenessseconds") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+
+      retval = bson_iter_int32 (&iter);
+      if (retval == 0) {
+         MONGOC_WARNING ("Invalid: maxStalenessSeconds cannot be zero");
+         retval = -1;
+      } else if (retval < 0 && retval != -1) {
+         MONGOC_WARNING ("Invalid maxStalenessSeconds: %d", retval);
+         retval = MONGOC_NO_MAX_STALENESS;
+      }
+   }
+
+   return retval;
+}
 
 mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   int32_t max_staleness_ms;
-#endif
+   int32_t max_staleness_seconds;
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
    bson_init(&uri->credentials);
 
-   /* Initialize read_prefs since tag parsing may add to it */
+   /* Initialize read_prefs, since parsing may add to it */
    uri->read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    /* Initialize empty read_concern */
@@ -953,10 +1027,9 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   max_staleness_ms = mongoc_uri_get_option_as_int32 (uri, "maxstalenessms", 0);
-   mongoc_read_prefs_set_max_staleness_ms (uri->read_prefs, max_staleness_ms);
-#endif
+   max_staleness_seconds = _mongoc_uri_get_max_staleness_option (uri);
+   mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs,
+                                                max_staleness_seconds);
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
@@ -1114,6 +1187,35 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
    return true;
 }
 
+
+const char *
+mongoc_uri_get_appname (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT (uri);
+
+   return mongoc_uri_get_option_as_utf8 (uri, "appname", NULL);
+}
+
+
+bool
+mongoc_uri_set_appname (mongoc_uri_t *uri,
+                        const char   *value)
+{
+   BSON_ASSERT (value);
+
+   if (!bson_utf8_validate (value, strlen (value), false)) {
+      return false;
+   }
+
+   if (!_mongoc_handshake_appname_is_valid (value)) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, "appname", value);
+
+   return true;
+}
+
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
 {
@@ -1165,7 +1267,10 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    copy->write_concern = mongoc_write_concern_copy (uri->write_concern);
 
    for (iter = uri->hosts; iter; iter = iter->next) {
-      mongoc_uri_append_host (copy, iter->host, iter->port);
+      if (!mongoc_uri_append_host (copy, iter->host, iter->port)) {
+         mongoc_uri_destroy (copy);
+         return NULL;
+      }
    }
 
    bson_copy_to (&uri->options, &copy->options);

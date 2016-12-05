@@ -18,20 +18,22 @@
 
 #ifdef MONGOC_ENABLE_SSL
 
-#include <bson.h>
-
 #include <errno.h>
 #include <string.h>
-#include "mongoc-stream-tls.h"
-#include "mongoc-stream-tls-private.h"
-#include "mongoc-stream-private.h"
+#include <bson.h>
+
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-error.h"
 
+#include "mongoc-stream-tls-private.h"
+#include "mongoc-stream-private.h"
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 # include "mongoc-stream-tls-openssl.h"
 # include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+# include "mongoc-libressl-private.h"
+# include "mongoc-stream-tls-libressl.h"
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 # include "mongoc-secure-transport-private.h"
 # include "mongoc-stream-tls-secure-transport.h"
@@ -39,6 +41,7 @@
 # include "mongoc-secure-channel-private.h"
 # include "mongoc-stream-tls-secure-channel.h"
 #endif
+#include "mongoc-stream-tls.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
@@ -210,6 +213,8 @@ mongoc_stream_tls_new_with_hostname (mongoc_stream_t  *base_stream,
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
    return mongoc_stream_tls_openssl_new (base_stream, host, opt, client);
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   return mongoc_stream_tls_libressl_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    return mongoc_stream_tls_secure_transport_new (base_stream, host, opt, client);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)

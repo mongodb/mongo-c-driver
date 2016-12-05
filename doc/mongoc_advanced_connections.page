@@ -88,18 +88,16 @@ main (int   argc,
   <section id="unix-socket">
     <info><link type="guide" xref="index#advanced-connections" /></info>
     <title>Connecting to a UNIX Domain Socket</title>
-    <p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Simply pass the path to the socket, which <em>must</em> be suffixed with <code>.sock</code>.</p>
-
-    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb:///tmp/mysocket.sock");]]></code></screen>
-    <note style="warning">
-      <p>Connecting directly to a UNIX domain socket is not a common practice.</p>
-    </note>
+    <p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Pass the URL-encoded path to the socket, which <em>must</em> be suffixed with <code>.sock</code>. For example, to connect to a domain socket at <code>/tmp/mongodb-27017.sock</code>:</p>
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongodb-27017.sock");]]></code></screen>
+    <p>Include username and password like so:</p>
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock");]]></code></screen>
   </section>
    
   <section id="SSL">
     <info><link type="guide" xref="index#advanced-connections" /></info>
-    <title>Connecting to a server that requires SSL</title> 
-<p>These are instructions for configuring TLS/SSL connections.</p>
+    <title>Connecting to a server over SSL</title>
+    <p>These are instructions for configuring TLS/SSL connections.</p>
    <listing> 
    <title>Basic Configuration</title>
     <p>To run a server locally (on port 27017, for example):</p>
@@ -107,19 +105,19 @@ main (int   argc,
     <p>Add <code>/?ssl=true</code> to the end of a client URI.</p>
     <screen><code>mongoc_client_t *client = NULL;
 client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");</code></screen></listing>
-   <listing><title>Specifying Client Certificates and CA Files</title>
-   <p>The C Driver can be configured to present a client certificate using a <code>mongoc_ssl_opt_t</code>:</p>
+   <listing><title>Specifying Client Certificate</title>
+   <p>MongoDB requires client certificates by default, unless the <code>--sslAllowConnectionsWithoutCertificates</code> is provided. The C Driver can be configured to present a client certificate using a <code>mongoc_ssl_opt_t</code>:</p>
 <screen><code>const mongoc_ssl_opt_t *ssl_default = mongoc_ssl_opt_get_default ();
-mongoc_ssl_opts_t ssl_opts = { 0 };
-mongoc_client_t client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");
+mongoc_ssl_opt_t ssl_opts = { 0 };
 
 /* optionally copy in a custom trust directory or file; otherwise the default is used. */
 memcpy (&amp;ssl_opts, ssl_default, sizeof ssl_opts);
 ssl_opts.pem_file = "client.pem" 
-ssl_opts.ca_file = "ca.pem" 
-ssl_weak.weak_cert_validation = false; 
 
-mongoc_client_set_ssl_opts (client, &amp;ssl_opts);</code></screen></listing>
+mongoc_client_set_ssl_opts (client, &amp;ssl_opts);</code></screen></listing>.
+<p>The client certificate provided by <code>pem_file</code> must be issued by one of the server trusted Certificate Authorities listed in <code>--sslCAFile</code>, or issued by a CA in the native certificate store on the server when omitted.</p>
+<p>To verify the server certificate against a specific CA, provide a PEM armored file with a CA certificate, or contatinated list of CA certificates using the <code>ca_file</code> option, or <code>c_rehash</code> directory structure of CAs, pointed to using the <code>ca_dir</code> option. When no <code>ca_file</code> or <code>ca_dir</code> is provided, the driver will use CAs provided by the native platform certificate store.</p>
+    <p>See <link type="seealso" xref="mongoc_ssl_opt_t"><code>mongoc_ssl_opt_t</code></link> for more information on the various SSL related options.</p>
   </section>
 
 

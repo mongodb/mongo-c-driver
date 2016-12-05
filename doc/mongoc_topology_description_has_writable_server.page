@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_topology_description_has_writable_server">
+
+  <info>
+    <link type="guide" xref="mongoc_topology_description_t" group="function"/>
+  </info>
+  <title>mongoc_topology_description_has_writable_server()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_topology_description_has_writable_server (mongoc_topology_description_t *td);]]></code></synopsis>
+    <p>Determines if the topology has a writable server available, such as a primary, mongos, or standalone. This function uses the driver's current knowledge of the state of the MongoDB server or servers it is connected to; it does no I/O and it does not block.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>td</p></td><td><p>A <code xref="mongoc_topology_description_t">mongoc_topology_description_t</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>True if there is a known writable server.</p>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
+  </section>
+</page>

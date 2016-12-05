@@ -28,11 +28,16 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
     <title>Parameters</title>
     <table>
       <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
-      <tr><td><p>selector</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the selector to query.</p></td></tr>
+      <tr><td><p>selector</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> that selects which document to remove.</p></td></tr>
       <tr><td><p>document</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the replacement document.</p></td></tr>
       <tr><td><p>upsert</p></td><td><p><code>true</code> if this should be an <code>upsert</code>.</p></td></tr>
     </table>
     <note style="warning"><p><code>document</code> may not contain fields with keys containing <code>.</code> or <code>$</code>.</p></note>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><code xref="mongoc_bulk_operation_replace_one_with_opts">mongoc_bulk_operation_replace_one_with_opts()</code></p>
   </section>
 
   <section id="errors">

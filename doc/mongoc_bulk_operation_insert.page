@@ -28,6 +28,11 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
     </table>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><code xref="bulk-insert">Bulk Insert</code></p>
+  </section>
+
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>

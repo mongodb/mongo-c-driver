@@ -14,9 +14,7 @@ option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
-option(ENABLE_EXPERIMENTAL_FEATURES
-        "Experimental future BSON and MongoDB features."
-        OFF)
+option(ENABLE_TRACING "Turn on verbose debug output" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -37,6 +35,10 @@ if (NOT ENABLE_SSL STREQUAL OFF)
    if (ENABLE_SSL STREQUAL AUTO OR ENABLE_SSL STREQUAL OPENSSL)
       # Sets OPENSSL_FOUND on success.
       include (FindOpenSSL)
+   endif ()
+
+   if (ENABLE_SSL STREQUAL LIBRESSL)
+      set (LIBRESSL 1)
    endif ()
 
    if (ENABLE_SSL STREQUAL DARWIN)
@@ -63,7 +65,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       set (SECURE_CHANNEL 1)
    endif ()
 
-   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL)
+   if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL AND NOT LIBRESSL)
       if (ENABLE_SSL STREQUAL AUTO)
          set (ENABLE_SSL OFF)
       else ()
@@ -75,6 +77,7 @@ endif ()
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_SSL_OPENSSL 0)
+set (MONGOC_ENABLE_SSL_LIBRESSL 0)
 set (MONGOC_ENABLE_SSL_SECURE_TRANSPORT 0)
 set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 0)
 
@@ -100,6 +103,11 @@ elseif (SECURE_CHANNEL)
    set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
    set (MONGOC_ENABLE_CRYPTO_CNG 1)
+elseif (LIBRESSL)
+   set (MONGOC_ENABLE_SSL 1)
+   set (MONGOC_ENABLE_SSL_LIBRESSL 1)
+   set (MONGOC_ENABLE_CRYPTO 1)
+   set (MONGOC_ENABLE_CRYPTO_LIBCRYPTO 1)
 endif ()
 
 if (ENABLE_CRYPTO_SYSTEM_PROFILE)
@@ -124,12 +132,6 @@ if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
 else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
-endif ()
-
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set (MONGOC_EXPERIMENTAL_FEATURES 1)
-else ()
-   set (MONGOC_EXPERIMENTAL_FEATURES 0)
 endif ()
 
 include(CheckIncludeFiles)
@@ -161,6 +163,14 @@ include (CPack)
 
 set (MONGOC_HAVE_WEAK_SYMBOLS 0)
 
+set (MONGOC_CC ${CMAKE_C_COMPILER})
+set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
+set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
+
+if (ENABLE_TRACING)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
+endif ()
+
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -191,6 +201,7 @@ endif ()
 
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
+add_definitions(-D_DEFAULT_SOURCE)
 if (APPLE)
    # Until CDRIVER-520.
    add_definitions(-Wno-deprecated-declarations)
@@ -222,10 +233,12 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake.c
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
@@ -247,6 +260,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
@@ -260,7 +274,6 @@ set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
    ${SOURCE_DIR}/src/mongoc/mongoc.h
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-apm-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
@@ -274,6 +287,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-handshake.h
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${SOURCE_DIR}/src/mongoc/mongoc-init.h
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
@@ -281,35 +295,27 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio-private.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-trace.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-trace-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
 )
 
 if (NOT ENABLE_SSL STREQUAL OFF)
-   set (HEADERS ${HEADERS}
-        ${SOURCE_DIR}/src/mongoc/mongoc-rand.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-ssl-private.h
-   )
    set (SOURCES ${SOURCES}
         ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
         ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
@@ -346,57 +352,34 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
       )
       set(LIBS ${LIBS} secur32.lib crypt32.lib Bcrypt.lib)
+   elseif (LIBRESSL)
+      set (SOURCES ${SOURCES}
+              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
+              ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
+      )
+      set(LIBS ${LIBS} "-ltls -lcrypto")
    endif ()
 endif () # ENABLE_SSL
 
 
 if (MONGOC_ENABLE_SASL)
-   set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
    set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
    set(LIBS ${LIBS} ${SASL2_LIBRARY})
    include_directories(${SASL2_INCLUDE_DIR})
 endif()
 
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set(HEADERS ${HEADERS}
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
-   )
-   set(SOURCES ${SOURCES}
-        ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
-   )
-endif ()
-
-if (MSVC)
-   # Export the functions listed in a definitions file.
-   if (MONGOC_ENABLE_SSL)
-      if (ENABLE_EXPERIMENTAL_FEATURES)
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl-experimental.def)
-      else ()
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
-      endif ()
-   else ()
-      if (ENABLE_EXPERIMENTAL_FEATURES)
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-experimental.def)
-      else ()
-         set (MONGOC_DEF_FILE ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
-      endif ()
-   endif ()
-
-   set(MONGOC_SHARED_SOURCES ${SOURCES} ${MONGOC_DEF_FILE})
-else()
-   set(MONGOC_SHARED_SOURCES ${SOURCES})
-endif()
-
-add_library(mongoc_shared SHARED ${MONGOC_SHARED_SOURCES} ${HEADERS})
+add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
 add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
+
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 target_link_libraries(mongoc_shared ${LIBS})
 target_link_libraries(mongoc_static ${LIBS})
 
-set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
-set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
 
 set_target_properties(mongoc_shared PROPERTIES VERSION ${MONGOC_VERSION} SOVERSION ${MONGOC_MAJOR_VERSION})
 set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION} SOVERSION ${MONGOC_MAJOR_VERSION})
@@ -407,10 +390,14 @@ set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONG
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
+      if (NOT MSVC)
+         # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
+         set_source_files_properties(${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+      endif()
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
       else()
-         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
          target_link_libraries(${test} mongoc_static)
       endif()
       if(WIN32)
@@ -425,7 +412,7 @@ function(mongoc_add_example example use_shared)
       if (${use_shared})
          target_link_libraries(${example} mongoc_shared)
       else()
-         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
          target_link_libraries(${example} mongoc_static)
       endif()
       if(WIN32)
@@ -458,6 +445,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-collection-find.c
+   ${SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
    ${SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
@@ -466,13 +454,17 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
+   ${SOURCE_DIR}/tests/test-mongoc-handshake.c
+   ${SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
    ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
+   ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
@@ -480,6 +472,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-thread.c
    ${SOURCE_DIR}/tests/test-mongoc-topology.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology-description.c
    ${SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
@@ -510,13 +503,6 @@ if (MONGOC_ENABLE_SASL)
    )
 endif ()
 
-if (ENABLE_EXPERIMENTAL_FEATURES)
-   set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
-      ${SOURCE_DIR}/tests/test-mongoc-metadata.c
-   )
-endif ()
-
 mongoc_add_test(test-load FALSE
    ${SOURCE_DIR}/tests/test-load.c
    ${SOURCE_DIR}/tests/mongoc-tests.c)
@@ -536,21 +522,30 @@ mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 
 if (ENABLE_TESTS)
    enable_testing()
-   add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+   add_test(NAME test-libmongoc COMMAND test-libmongoc --no-fork -d)
 endif ()
 
 mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
 mongoc_add_example(
-   example-application-performance-monitoring TRUE
-   ${SOURCE_DIR}/examples/example-application-performance-monitoring.c)
+   example-command-monitoring TRUE
+   ${SOURCE_DIR}/examples/example-command-monitoring.c)
+mongoc_add_example(
+   example-sdam-monitoring TRUE
+   ${SOURCE_DIR}/examples/example-sdam-monitoring.c)
 mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
+mongoc_add_example(example-command-with-opts TRUE ${SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
+if (NOT MSVC)
+   mongoc_add_example(example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
+endif ()
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
+file(COPY ${SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
+file(COPY ${SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 install(
   TARGETS mongoc_shared mongoc_static ${EXAMPLES}

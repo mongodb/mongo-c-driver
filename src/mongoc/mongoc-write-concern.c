@@ -71,6 +71,7 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
       ret->wtimeout = write_concern->wtimeout;
       ret->frozen = false;
       ret->wtag = bson_strdup (write_concern->wtag);
+      ret->is_default = write_concern->is_default;
    }
 
    return ret;
@@ -357,8 +358,8 @@ _mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern) {
  *
  */
 bool
-_mongoc_write_concern_is_default (mongoc_write_concern_t *write_concern) {
-   return write_concern->is_default;
+_mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern) {
+   return !write_concern || write_concern->is_default;
 }
 
 
@@ -548,3 +549,107 @@ mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
    }
    return true;
 }
+
+/**
+ * _mongoc_write_concern_new_from_iter:
+ *
+ * Create a new mongoc_write_concern_t from an iterator positioned on
+ * a "writeConcern" document.
+ *
+ * Returns: A newly allocated mongoc_write_concern_t. This should be freed
+ *    with mongoc_write_concern_destroy().
+ */
+mongoc_write_concern_t *
+_mongoc_write_concern_new_from_iter (bson_iter_t *iter)
+{
+   bson_iter_t inner;
+   mongoc_write_concern_t *write_concern;
+
+   BSON_ASSERT (iter);
+   write_concern = (mongoc_write_concern_t *)bson_malloc0(sizeof *write_concern);
+   write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
+   write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
+   write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+
+   BSON_ASSERT (bson_iter_recurse (iter, &inner));
+   while (bson_iter_next (&inner)) {
+      if (BSON_ITER_IS_KEY (&inner, "w")) {
+         if (BSON_ITER_HOLDS_INT32 (&inner)) {
+            write_concern->w = bson_iter_int32 (&inner);
+         } else if (BSON_ITER_HOLDS_UTF8 (&inner)) {
+            if (!strcmp (bson_iter_utf8 (&inner, NULL), "majority")) {
+               write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
+            } else {
+               write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
+               write_concern->wtag = bson_iter_dup_utf8 (&inner, NULL);
+            }
+         }
+      }
+      else if (BSON_ITER_IS_KEY (&inner, "fsync") && BSON_ITER_HOLDS_BOOL (&inner)) {
+         write_concern->fsync_ = bson_iter_bool (&inner);
+      } else if (BSON_ITER_IS_KEY (&inner, "j") && BSON_ITER_HOLDS_BOOL (&inner)) {
+         write_concern->journal = bson_iter_bool (&inner);
+      } else if (BSON_ITER_IS_KEY (&inner, "wtimeout") && BSON_ITER_HOLDS_INT32(&inner)) {
+         write_concern->wtimeout = bson_iter_bool (&inner);
+      }
+   }
+
+   return write_concern;
+}
+
+/**
+ * _mongoc_write_concern_iter_is_valid:
+ * @iter: (in): A bson_iter_t positioned on a "writeConcern" BSON document.
+ *
+ * Checks to see if @write_concern is valid and does not contain conflicting
+ * options.
+ *
+ * Returns: true if the write concern is valid; otherwise false.
+ */
+bool
+_mongoc_write_concern_iter_is_valid (bson_iter_t *iter)
+{
+   bson_iter_t inner;
+   bool has_fsync = false;
+   bool w0 = false;
+   bool j = false;
+
+   BSON_ASSERT (iter);
+   BSON_ASSERT (bson_iter_recurse (iter, &inner));
+   while (bson_iter_next (&inner)) {
+      if (BSON_ITER_IS_KEY (&inner, "fsync")) {
+         if (!BSON_ITER_HOLDS_BOOL (&inner)) {
+            return false;
+         }
+         has_fsync = bson_iter_bool (&inner);
+      }
+      else if (BSON_ITER_IS_KEY (&inner, "w")) {
+         if (BSON_ITER_HOLDS_INT32 (&inner)) {
+            if (bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
+                  bson_iter_int32 (&inner) == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
+               w0 = true;
+            }
+         } else if (!(BSON_ITER_HOLDS_UTF8 (&inner))) {
+            return false;
+         }
+      }
+      else if (BSON_ITER_IS_KEY (&inner, "j")) {
+         if (!BSON_ITER_HOLDS_BOOL (&inner)) {
+            return false;
+         }
+         j = bson_iter_bool (&inner);
+      }
+      else if (BSON_ITER_IS_KEY (&inner, "wtimeout")) {
+         if (!BSON_ITER_HOLDS_INT32 (&inner) || bson_iter_int32 (&inner) < 0) {
+            return false;
+         }
+      }
+   }
+
+   if ((has_fsync || j) && w0) {
+      return false;
+   }
+
+   return true;
+}
+

@@ -381,7 +381,7 @@ test_mongoc_tls_trust_dir (void)
 void
 test_stream_tls_install (TestSuite *suite)
 {
-#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
    TestSuite_Add (suite, "/TLS/commonName", test_mongoc_tls_common_name);
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);

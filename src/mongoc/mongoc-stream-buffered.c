@@ -22,7 +22,7 @@
 #include "mongoc-log.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -242,9 +242,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
                                   total_bytes,
                                   timeout_msec,
                                   &error)) {
-      MONGOC_WARNING ("Failure to buffer %u bytes: %s",
-                      (unsigned)total_bytes,
-                      error.message);
+      MONGOC_WARNING ("%s", error.message);
       RETURN (-1);
    }
 

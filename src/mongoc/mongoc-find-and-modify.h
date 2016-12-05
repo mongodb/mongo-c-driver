@@ -35,30 +35,39 @@ typedef enum
 
 typedef struct _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t ;
 
+BSON_API
 mongoc_find_and_modify_opts_t*
 mongoc_find_and_modify_opts_new               (void);
 
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_sort          (mongoc_find_and_modify_opts_t        *opts,
                                                const bson_t                         *sort);
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_update        (mongoc_find_and_modify_opts_t        *opts,
                                                const bson_t                         *update);
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_fields        (mongoc_find_and_modify_opts_t        *opts,
                                                const bson_t                         *fields);
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_flags         (mongoc_find_and_modify_opts_t        *opts,
                                                const mongoc_find_and_modify_flags_t  flags);
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
                                                             bool                           bypass);
+BSON_API
 bool
 mongoc_find_and_modify_opts_set_max_time_ms   (mongoc_find_and_modify_opts_t        *opts,
                                                uint32_t                              max_time_ms);
+BSON_API
 bool
 mongoc_find_and_modify_opts_append            (mongoc_find_and_modify_opts_t        *opts,
                                                const bson_t                         *extra);
+BSON_API
 void
 mongoc_find_and_modify_opts_destroy           (mongoc_find_and_modify_opts_t        *opts);
 

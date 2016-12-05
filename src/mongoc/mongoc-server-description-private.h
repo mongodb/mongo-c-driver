@@ -24,6 +24,7 @@
 #define MONGOC_DEFAULT_WRITE_BATCH_SIZE 1000
 #define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
 #define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
+#define MONGOC_IDLE_WRITE_PERIOD_MS 10 * 1000
 
 /* represent a server or topology with no replica set config version */
 #define MONGOC_NO_SET_VERSION -1
@@ -46,7 +47,7 @@ struct _mongoc_server_description_t
 {
    uint32_t                         id;
    mongoc_host_list_t               host;
-   int64_t                          round_trip_time;
+   int64_t                          round_trip_time_msec;
    int64_t                          last_update_time_usec;
    bson_t                           last_is_master;
    bool                             has_is_master;
@@ -108,13 +109,13 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
                                            const bson_oid_t            *election_id);
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t                      new_time);
+                                      int64_t                      rtt_msec);
 
 void
 mongoc_server_description_handle_ismaster (mongoc_server_description_t   *sd,
                                            const bson_t                  *reply,
                                            int64_t                        rtt_msec,
-                                           bson_error_t                  *error);
+                                           const bson_error_t            *error /* IN */);
 
 void
 mongoc_server_description_filter_stale (mongoc_server_description_t **sds,

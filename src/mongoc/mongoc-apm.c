@@ -345,6 +345,259 @@ mongoc_apm_command_failed_get_context (const mongoc_apm_command_failed_t *event)
 }
 
 
+/* server-changed event fields */
+
+const mongoc_host_list_t *
+mongoc_apm_server_changed_get_host (const mongoc_apm_server_changed_t *event)
+{
+   return event->host;
+}
+
+
+void
+mongoc_apm_server_changed_get_topology_id (
+   const mongoc_apm_server_changed_t *event,
+   bson_oid_t                        *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+const mongoc_server_description_t *
+mongoc_apm_server_changed_get_previous_description (
+   const mongoc_apm_server_changed_t *event)
+{
+   return event->previous_description;
+}
+
+
+const mongoc_server_description_t *
+mongoc_apm_server_changed_get_new_description (
+   const mongoc_apm_server_changed_t *event)
+{
+   return event->new_description;
+}
+
+
+void *
+mongoc_apm_server_changed_get_context (const mongoc_apm_server_changed_t *event)
+{
+   return event->context;
+}
+
+
+/* server-opening event fields */
+
+const mongoc_host_list_t *
+mongoc_apm_server_opening_get_host (const mongoc_apm_server_opening_t *event)
+{
+   return event->host;
+}
+
+
+void
+mongoc_apm_server_opening_get_topology_id (
+   const mongoc_apm_server_opening_t *event,
+   bson_oid_t                        *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_server_opening_get_context (
+   const mongoc_apm_server_opening_t *event)
+{
+   return event->context;
+}
+
+
+/* server-closed event fields */
+
+const mongoc_host_list_t *
+mongoc_apm_server_closed_get_host (const mongoc_apm_server_closed_t *event)
+{
+   return event->host;
+}
+
+
+void
+mongoc_apm_server_closed_get_topology_id (
+   const mongoc_apm_server_closed_t *event,
+   bson_oid_t                       *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_server_closed_get_context (
+   const mongoc_apm_server_closed_t *event)
+{
+   return event->context;
+}
+
+
+/* topology-changed event fields */
+
+void
+mongoc_apm_topology_changed_get_topology_id (
+   const mongoc_apm_topology_changed_t *event,
+   bson_oid_t                          *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+const mongoc_topology_description_t *
+mongoc_apm_topology_changed_get_previous_description (
+   const mongoc_apm_topology_changed_t *event)
+{
+   return event->previous_description;
+}
+
+
+const mongoc_topology_description_t *
+mongoc_apm_topology_changed_get_new_description (
+   const mongoc_apm_topology_changed_t *event)
+{
+   return event->new_description;
+}
+
+
+void *
+mongoc_apm_topology_changed_get_context (
+   const mongoc_apm_topology_changed_t *event)
+{
+   return event->context;
+}
+
+
+/* topology-opening event field */
+
+void
+mongoc_apm_topology_opening_get_topology_id (
+   const mongoc_apm_topology_opening_t *event,
+   bson_oid_t                          *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_topology_opening_get_context (
+   const mongoc_apm_topology_opening_t *event)
+{
+   return event->context;
+}
+
+
+/* topology-closed event field */
+
+void
+mongoc_apm_topology_closed_get_topology_id (
+   const mongoc_apm_topology_closed_t *event,
+   bson_oid_t                         *topology_id)
+{
+   bson_oid_copy (&event->topology_id, topology_id);
+}
+
+
+void *
+mongoc_apm_topology_closed_get_context (
+   const mongoc_apm_topology_closed_t *event)
+{
+   return event->context;
+}
+
+
+/* heartbeat-started event field */
+
+const mongoc_host_list_t *
+mongoc_apm_server_heartbeat_started_get_host (
+   const mongoc_apm_server_heartbeat_started_t *event)
+{
+   return event->host;
+}
+
+
+void *
+mongoc_apm_server_heartbeat_started_get_context (
+   const mongoc_apm_server_heartbeat_started_t *event)
+{
+   return event->context;
+}
+
+
+/* heartbeat-succeeded event fields */
+
+int64_t
+mongoc_apm_server_heartbeat_succeeded_get_duration (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->duration_usec;
+}
+
+
+const bson_t *
+mongoc_apm_server_heartbeat_succeeded_get_reply (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->reply;
+}
+
+
+const mongoc_host_list_t *
+mongoc_apm_server_heartbeat_succeeded_get_host (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->host;
+}
+
+
+void *
+mongoc_apm_server_heartbeat_succeeded_get_context (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->context;
+}
+
+
+/* heartbeat-failed event fields */
+
+int64_t
+mongoc_apm_server_heartbeat_failed_get_duration (
+   const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   return event->duration_usec;
+}
+
+
+void
+mongoc_apm_server_heartbeat_failed_get_error (
+   const mongoc_apm_server_heartbeat_failed_t *event,
+   bson_error_t                               *error)
+{
+   memcpy (error, event->error, sizeof *event->error);
+}
+
+
+const mongoc_host_list_t *
+mongoc_apm_server_heartbeat_failed_get_host (
+   const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   return event->host;
+}
+
+
+void *
+mongoc_apm_server_heartbeat_failed_get_context (
+   const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   return event->context;
+}
+
+
 /*
  * registering callbacks
  */
@@ -389,4 +642,84 @@ mongoc_apm_set_command_failed_cb (
    mongoc_apm_command_failed_cb_t  cb)
 {
    callbacks->failed = cb;
+}
+
+void
+mongoc_apm_set_server_changed_cb (
+   mongoc_apm_callbacks_t         *callbacks,
+   mongoc_apm_server_changed_cb_t  cb)
+{
+   callbacks->server_changed = cb;
+}
+
+
+void
+mongoc_apm_set_server_opening_cb (
+   mongoc_apm_callbacks_t         *callbacks,
+   mongoc_apm_server_opening_cb_t  cb)
+{
+   callbacks->server_opening = cb;
+}
+
+
+void
+mongoc_apm_set_server_closed_cb (
+   mongoc_apm_callbacks_t        *callbacks,
+   mongoc_apm_server_closed_cb_t  cb)
+{
+   callbacks->server_closed = cb;
+}
+
+
+void
+mongoc_apm_set_topology_changed_cb (
+   mongoc_apm_callbacks_t           *callbacks,
+   mongoc_apm_topology_changed_cb_t  cb)
+{
+   callbacks->topology_changed = cb;
+}
+
+
+void
+mongoc_apm_set_topology_opening_cb (
+   mongoc_apm_callbacks_t           *callbacks,
+   mongoc_apm_topology_opening_cb_t  cb)
+{
+   callbacks->topology_opening = cb;
+}
+
+
+void
+mongoc_apm_set_topology_closed_cb (
+   mongoc_apm_callbacks_t          *callbacks,
+   mongoc_apm_topology_closed_cb_t  cb)
+{
+   callbacks->topology_closed = cb;
+}
+
+
+void
+mongoc_apm_set_server_heartbeat_started_cb (
+   mongoc_apm_callbacks_t                   *callbacks,
+   mongoc_apm_server_heartbeat_started_cb_t  cb)
+{
+   callbacks->server_heartbeat_started = cb;
+}
+
+
+void
+mongoc_apm_set_server_heartbeat_succeeded_cb (
+   mongoc_apm_callbacks_t                     *callbacks,
+   mongoc_apm_server_heartbeat_succeeded_cb_t  cb)
+{
+   callbacks->server_heartbeat_succeeded = cb;
+}
+
+
+void
+mongoc_apm_set_server_heartbeat_failed_cb (
+   mongoc_apm_callbacks_t                  *callbacks,
+   mongoc_apm_server_heartbeat_failed_cb_t  cb)
+{
+   callbacks->server_heartbeat_failed = cb;
 }

@@ -27,6 +27,7 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-config.h"
 
 
 #ifndef MONGOC_DEFAULT_PORT
@@ -40,65 +41,107 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_uri_t mongoc_uri_t;
 
 
+BSON_API
 mongoc_uri_t                 *mongoc_uri_copy                     (const mongoc_uri_t           *uri);
+BSON_API
 void                          mongoc_uri_destroy                  (mongoc_uri_t                 *uri);
+BSON_API
 mongoc_uri_t                 *mongoc_uri_new                      (const char                   *uri_string)
    BSON_GNUC_WARN_UNUSED_RESULT;
+BSON_API
 mongoc_uri_t                 *mongoc_uri_new_for_host_port        (const char                   *hostname,
                                                                    uint16_t                      port)
    BSON_GNUC_WARN_UNUSED_RESULT;
+BSON_API
 const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_uri_t           *uri);
+BSON_API
 const char                   *mongoc_uri_get_database             (const mongoc_uri_t           *uri);
+BSON_API
 bool                          mongoc_uri_set_database             (mongoc_uri_t                 *uri,
                                                                    const char                   *database);
+BSON_API
 const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t           *uri);
+BSON_API
 const char                   *mongoc_uri_get_password             (const mongoc_uri_t           *uri);
+BSON_API
 bool                          mongoc_uri_set_password             (mongoc_uri_t                 *uri,
                                                                    const char                   *password);
+BSON_API
 bool                          mongoc_uri_option_is_int32          (const char                   *key);
+BSON_API
 bool                          mongoc_uri_option_is_bool           (const char                   *key);
+BSON_API
 bool                          mongoc_uri_option_is_utf8           (const char                   *key);
+BSON_API
 int32_t                       mongoc_uri_get_option_as_int32      (const mongoc_uri_t           *uri,
                                                                    const char                   *option,
                                                                    int32_t                       fallback);
+BSON_API
 bool                          mongoc_uri_get_option_as_bool       (const mongoc_uri_t           *uri,
                                                                    const char                   *option,
                                                                    bool                          fallback);
+BSON_API
 const char*                   mongoc_uri_get_option_as_utf8       (const mongoc_uri_t           *uri,
                                                                    const char                   *option,
                                                                    const char                   *fallback);
+BSON_API
 bool                          mongoc_uri_set_option_as_int32      (mongoc_uri_t                 *uri,
                                                                    const char                   *option,
                                                                    int32_t                       value);
+BSON_API
 bool                          mongoc_uri_set_option_as_bool       (mongoc_uri_t                 *uri,
                                                                    const char                   *option,
                                                                    bool                          value);
+BSON_API
 bool                          mongoc_uri_set_option_as_utf8       (mongoc_uri_t                 *uri,
                                                                    const char                   *option,
                                                                    const char                   *value);
+BSON_API
 const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t           *uri)
    BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
+BSON_API
 const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t           *uri);
+BSON_API
 const char                   *mongoc_uri_get_string               (const mongoc_uri_t           *uri);
+BSON_API
 const char                   *mongoc_uri_get_username             (const mongoc_uri_t           *uri);
+BSON_API
 bool                          mongoc_uri_set_username             (mongoc_uri_t                 *uri,
                                                                    const char                   *username);
+BSON_API
 const bson_t                 *mongoc_uri_get_credentials          (const mongoc_uri_t           *uri);
+BSON_API
 const char                   *mongoc_uri_get_auth_source          (const mongoc_uri_t           *uri);
+BSON_API
 bool                          mongoc_uri_set_auth_source          (mongoc_uri_t                 *uri,
                                                                    const char                   *value);
+BSON_API
+const char                   *mongoc_uri_get_appname              (const mongoc_uri_t           *uri);
+BSON_API
+bool                          mongoc_uri_set_appname              (mongoc_uri_t                 *uri,
+                                                                   const char                   *value);
+BSON_API
 const char                   *mongoc_uri_get_auth_mechanism       (const mongoc_uri_t           *uri);
+BSON_API
 bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t           *uri,
                                                                    bson_t                       *properties);
+BSON_API
 bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t           *uri);
+BSON_API
 char                         *mongoc_uri_unescape                 (const char                   *escaped_string);
+BSON_API
 const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t           *uri);
+BSON_API
 void                          mongoc_uri_set_read_prefs_t         (mongoc_uri_t                 *uri,
                                                                    const mongoc_read_prefs_t    *prefs);
+BSON_API
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t           *uri);
+BSON_API
 void                          mongoc_uri_set_write_concern        (mongoc_uri_t                 *uri,
                                                                    const mongoc_write_concern_t *wc);
+BSON_API
 const mongoc_read_concern_t  *mongoc_uri_get_read_concern         (const mongoc_uri_t           *uri);
+BSON_API
 void                          mongoc_uri_set_read_concern         (mongoc_uri_t                 *uri,
                                                                    const mongoc_read_concern_t  *rc);
 

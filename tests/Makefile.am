@@ -24,9 +24,14 @@ TEST_CFLAGS += \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
-	-I$(top_builddir)/src/mongoc
+	-I$(top_builddir)/src/mongoc \
+	-DBINARY_DIR="\"$(top_srcdir)/tests/binary\"" \
+	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
+	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
+	-DOS_RELEASE_FILE_DIR="\"$(top_srcdir)/tests/release_files\""
 
 TEST_LIBS = \
+	$(COVERAGE_LDFLAGS) \
 	libmongoc-priv.la \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
@@ -100,6 +105,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-cluster.c \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-collection-find.c \
+	tests/test-mongoc-collection-find-with-opts.c \
 	tests/test-mongoc-command-monitoring.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
@@ -108,14 +114,18 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-find-and-modify.c \
 	tests/test-mongoc-gridfs.c \
 	tests/test-mongoc-gridfs-file-page.c \
+	tests/test-mongoc-handshake.c \
 	tests/test-mongoc-log.c \
+	tests/test-mongoc-linux-distro-scanner.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
+	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sdam.c \
+	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
@@ -124,6 +134,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-topology-reconcile.c \
 	tests/test-mongoc-topology-scanner.c \
 	tests/test-mongoc-topology.c \
+	tests/test-mongoc-topology-description.c \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-usleep.c \
 	tests/test-mongoc-util.c \
@@ -133,12 +144,6 @@ test_libmongoc_SOURCES = \
 	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
-
-if ENABLE_EXPERIMENTAL_FEATURES
-test_libmongoc_SOURCES += \
-	tests/test-mongoc-max-staleness.c \
-	tests/test-mongoc-metadata.c
-endif
 
 if ENABLE_SSL
 test_libmongoc_SOURCES += \
@@ -165,7 +170,7 @@ test_sharded_cluster_SOURCES = \
 test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
 test_sharded_cluster_LDADD = $(TEST_LIBS)
 
-check: test abicheck
+check: test
 
 TEST_ARGS = "--no-fork"
 
@@ -175,17 +180,14 @@ test: $(TEST_PROGS)
 	done
 
 valgrind: $(TEST_PROGS)
-	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc $(TEST_ARGS)
+	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
 
-if OS_LINUX
-abicheck:
-	@ $(srcdir)/tests/abicheck.sh "$(srcdir)/src/libmongoc.symbols"
-else
-abicheck:
-endif
+local-check: $(TEST_PROGS)
+	@ export MONGOC_TEST_SKIP_LIVE=on
+	@ for TEST_PROG in $(TEST_PROGS) ; do \
+		./$$TEST_PROG $(TEST_ARGS) -F test-results.json; \
+	done
 
-# TODO: run tests that do not need to talk to a server
-local-check:
 
 DISTCLEANFILES += \
 	test-results.json
@@ -193,7 +195,6 @@ DISTCLEANFILES += \
 .PHONY: valgrind debug
 
 EXTRA_DIST += \
-	tests/abicheck.sh \
 	tests/binary/delete1.dat \
 	tests/binary/empty.dat \
 	tests/binary/get_more1.dat \
@@ -222,10 +223,12 @@ EXTRA_DIST += \
 	tests/mongoc-tests.h \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
+	$(wildcard tests/release_files/*.txt) \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
-	$(wildcard tests/json/server_selection/server_selection/*/*/*.json)
+	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \
+	$(wildcard tests/json/max_staleness/*/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --
@@ -234,4 +237,4 @@ DEBUGGER = gdb --args
 endif
 
 debug: test-libmongoc
-	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc $(TEST_ARGS)
+	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc $(TEST_ARGS) --no-fork

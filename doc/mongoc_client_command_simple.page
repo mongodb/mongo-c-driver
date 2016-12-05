@@ -23,7 +23,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_t                    *reply,
                               bson_error_t              *error);
 ]]></code></synopsis>
-    <p>This is a simplified interface to <code xref="mongoc_client_command">mongoc_client_command()</code>. It returns the first document from the result cursor into <code>reply</code>.</p>
+    <p>This is a simplified interface to <code xref="mongoc_client_command">mongoc_client_command()</code>. It returns the first document from the result cursor into <code>reply</code>. The client's read preference, read concern, and write concern are not applied to the command.</p>
     <note style="warning"><p><code>reply</code> is always set, and should be released with <code xref="bson:bson_destroy">bson_destroy()</code>.</p></note>
   </section>
 
@@ -48,6 +48,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
   <section id="return">
     <title>Returns</title>
     <p><code>true</code> if successful; otherwise <code>false</code> and <code>error</code> is set.</p>
+    <p>This function does not check the server response for a write concern error or write concern timeout.</p>
   </section>
 
 </page>

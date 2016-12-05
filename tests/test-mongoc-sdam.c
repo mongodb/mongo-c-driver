@@ -1,44 +1,15 @@
 #include <mongoc.h>
 
-#include <stdio.h>
 #include <mongoc-set-private.h>
 
 #include "json-test.h"
 
 #include "mongoc-client-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-util-private.h"
-
-#include "TestSuite.h"
-#include "test-conveniences.h"
-
-#include <limits.h>
-#include <stdlib.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
-#define MAX_NUM_TESTS 100
 
-/* caller must clean up the returned description */
-static mongoc_server_description_t *
-_server_description_by_hostname(mongoc_topology_description_t *topology,
-                                const char *address)
-{
-   mongoc_set_t *set = topology->servers;
-   mongoc_server_description_t *server_iter;
-   int i;
-
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = (mongoc_server_description_t *)mongoc_set_get_item (topology->servers, i);
-      if (strcasecmp(address, server_iter->connection_address) == 0) {
-         return server_iter;
-      }
-   }
-   return NULL;
-}
 
 static void
 _topology_has_description(mongoc_topology_description_t *topology,
@@ -49,7 +20,7 @@ _topology_has_description(mongoc_topology_description_t *topology,
    bson_iter_t server_iter;
    const char *set_name;
 
-   sd = _server_description_by_hostname(topology, address);
+   sd = server_description_by_hostname (topology, address);
    assert (sd);
 
    bson_iter_init(&server_iter, server);
@@ -98,21 +69,14 @@ _topology_has_description(mongoc_topology_description_t *topology,
 static void
 test_sdam_cb (bson_t *test)
 {
-   mongoc_server_description_t *sd;
    mongoc_client_t *client;
-   bson_error_t error;
-   bson_t ismasters;
    bson_t phase;
    bson_t phases;
-   bson_t ismaster;
-   bson_t response;
    bson_t servers;
    bson_t server;
    bson_t outcome;
    bson_iter_t phase_iter;
    bson_iter_t phase_field_iter;
-   bson_iter_t ismaster_iter;
-   bson_iter_t ismaster_field_iter;
    bson_iter_t servers_iter;
    bson_iter_t outcome_iter;
    bson_iter_t iter;
@@ -131,33 +95,8 @@ test_sdam_cb (bson_t *test)
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
-      /* grab ismaster responses out and feed them to topology */
-      assert (bson_iter_init_find(&phase_field_iter, &phase, "responses"));
-      bson_iter_bson (&phase_field_iter, &ismasters);
-      bson_iter_init (&ismaster_iter, &ismasters);
-
-      while (bson_iter_next (&ismaster_iter)) {
-         bson_iter_bson (&ismaster_iter, &ismaster);
-
-         /* fetch server description for this server based on its hostname */
-         bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
-         sd = _server_description_by_hostname(&client->topology->description,
-                                              bson_iter_utf8(&ismaster_field_iter, NULL));
-
-         /* if server has been removed from topology, skip */
-         /* TODO: ASSURE that the manager has the same behavior */
-         if (!sd) continue;
-
-         bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
-         bson_iter_bson (&ismaster_field_iter, &response);
-
-         /* send ismaster through the topology description's handler */
-         mongoc_topology_description_handle_ismaster(&client->topology->description,
-                                                     sd,
-                                                     &response,
-                                                     15,
-                                                     &error);
-      }
+      process_sdam_test_ismaster_responses (&phase,
+                                            &client->topology->description);
 
       /* parse out "outcome" and validate */
       assert (bson_iter_init_find(&phase_field_iter, &phase, "outcome"));
@@ -191,7 +130,7 @@ test_sdam_cb (bson_t *test)
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) == 0) {
             ASSERT_CMPSTR (
-               topology_type_to_string(client->topology->description.type),
+               mongoc_topology_description_type (&client->topology->description),
                bson_iter_utf8(&outcome_iter, NULL));
          } else {
             fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
@@ -215,24 +154,20 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    /* Single */
-   if (realpath ("tests/json/server_discovery_and_monitoring/single", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/single", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Replica set */
-   if (realpath ("tests/json/server_discovery_and_monitoring/rs", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/rs", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Sharded */
-   if (realpath ("tests/json/server_discovery_and_monitoring/sharded", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   if (realpath ("tests/json/server_discovery_and_monitoring/supplemental", resolved)) {
-      install_json_test_suite(suite, resolved, &test_sdam_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental", resolved));
+   install_json_test_suite(suite, resolved, &test_sdam_cb);
 }
 
 void

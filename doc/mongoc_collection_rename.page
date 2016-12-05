@@ -34,18 +34,7 @@ mongoc_collection_rename (mongoc_collection_t *collection,
 
   <section id="description">
     <title>Description</title>
-    <p>This function is a helper to rename an existing collection on a MongoDB server. The name of the collection will also be updated internally so it is safe to continue using this collection after the rename. Additional operations will occur on renamed collection.</p>
-  </section>
-
-
-  <section id="errors">
-    <title>Errors</title>
-    <p>Errors are propagated via the <code>error</code> parameter.</p>
-  </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>true if the command executed successfully, otherwise false and error is set.</p>
+    <p>For more information, see <code xref="mongoc_collection_rename_with_opts">mongoc_collection_rename_with_opts()</code>. This function is a thin wrapper, passing <code>NULL</code> in as <code xref="bson:bson_t">opts</code> parameter.</p>
   </section>
 
 </page>

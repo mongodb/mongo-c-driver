@@ -25,8 +25,8 @@ mongoc_database_command (mongoc_database_t         *database,
                          const bson_t              *fields,
                          const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
+    <p>This function creates a cursor which will execute the command when <code xref="mongoc_cursor_next">mongoc_cursor_next</code> is called on it. The database's read preference, read concern, and write concern are not applied to the command, and <code xref="mongoc_cursor_next">mongoc_cursor_next</code> will not check the server response for a write concern error or write concern timeout.</p>
   </section>
-
 
   <section id="parameters">
     <title>Parameters</title>
@@ -42,17 +42,10 @@ mongoc_database_command (mongoc_database_t         *database,
     </table>
   </section>
 
-  <section id="description">
-    <p>The <code>mongoc_database_command()</code> function shall execute a command on a database. This is performed lazily after calling <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> on the resulting cursor structure.</p>
-  </section>
-
   <section id="return">
     <title>Returns</title>
-    <p>This command returns a <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use.</p>
+    <p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p>
+    <p>The cursor should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code>.</p>
   </section>
 
-  <section id="seealso">
-    <title>See Also</title>
-    <p><code xref="mongoc_cursor_next">mongoc_cursor_next()</code></p>
-  </section>
 </page>

@@ -50,7 +50,6 @@ typedef struct _mongoc_topology_t
    int64_t                            local_threshold_msec;
    int64_t                            connect_timeout_msec;
    int64_t                            server_selection_timeout_msec;
-   int64_t                            heartbeat_msec;
 
    mongoc_mutex_t                     mutex;
    mongoc_cond_t                      cond_client;
@@ -59,8 +58,6 @@ typedef struct _mongoc_topology_t
 
    mongoc_topology_scanner_state_t    scanner_state;
    bool                               scan_requested;
-   bool                               scanning;
-   bool                               got_ismaster;
    bool                               shutdown_requested;
    bool                               single_threaded;
    bool                               stale;
@@ -71,12 +68,16 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                      bool                single_threaded);
 
 void
+mongoc_topology_set_apm_callbacks (mongoc_topology_t      *topology,
+                                   mongoc_apm_callbacks_t *callbacks,
+                                   void                   *context);
+
+void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t           *read_prefs,
-                            int64_t                              heartbeat_msec,
                             bson_error_t                        *error);
 
 mongoc_server_description_t *
@@ -85,19 +86,37 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                         const mongoc_read_prefs_t *read_prefs,
                         bson_error_t              *error);
 
+uint32_t
+mongoc_topology_select_server_id (mongoc_topology_t         *topology,
+                                  mongoc_ss_optype_t         optype,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_error_t              *error);
+
 mongoc_server_description_t *
 mongoc_topology_server_by_id (mongoc_topology_t *topology,
                               uint32_t           id,
                               bson_error_t      *error);
+
+mongoc_host_list_t *
+_mongoc_topology_host_by_id (mongoc_topology_t *topology,
+                             uint32_t id,
+                             bson_error_t *error);
 
 void
 mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
                                    uint32_t            id,
                                    const bson_error_t *error);
 
+bool
+_mongoc_topology_update_from_handshake (mongoc_topology_t                 *topology,
+                                        const mongoc_server_description_t *sd);
+
 int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology,
                                   uint32_t           id);
+
+mongoc_topology_description_type_t
+_mongoc_topology_get_type (mongoc_topology_t *topology);
 
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology);

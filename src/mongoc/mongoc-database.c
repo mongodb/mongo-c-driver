@@ -27,8 +27,9 @@
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-write-concern-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -203,6 +204,53 @@ mongoc_database_command_simple (mongoc_database_t         *database,
                                         command, read_prefs, reply, error);
 }
 
+
+bool
+mongoc_database_read_command_with_opts (mongoc_database_t         *database,
+                                        const bson_t              *command,
+                                        const mongoc_read_prefs_t *read_prefs,
+                                        const bson_t              *opts,
+                                        bson_t                    *reply,
+                                        bson_error_t              *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_READ, opts,
+      MONGOC_QUERY_NONE, COALESCE (read_prefs, database->read_prefs),
+      database->read_concern, database->write_concern, reply, error);
+}
+
+
+bool
+mongoc_database_write_command_with_opts (mongoc_database_t      *database,
+                                         const bson_t           *command,
+                                         const bson_t           *opts,
+                                         bson_t                 *reply,
+                                         bson_error_t           *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_WRITE, opts,
+      MONGOC_QUERY_NONE, database->read_prefs, database->read_concern,
+      database->write_concern, reply, error);
+}
+
+
+bool
+mongoc_database_read_write_command_with_opts (
+   mongoc_database_t         *database,
+   const bson_t              *command,
+   const mongoc_read_prefs_t *read_prefs,
+   const bson_t              *opts,
+   bson_t                    *reply,
+   bson_error_t              *error)
+{
+   return _mongoc_client_command_with_opts (
+      database->client, database->name, command, MONGOC_CMD_RW, opts,
+      MONGOC_QUERY_NONE, COALESCE (read_prefs, database->read_prefs),
+      database->read_concern, database->write_concern,
+      reply, error);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -226,6 +274,15 @@ bool
 mongoc_database_drop (mongoc_database_t *database,
                       bson_error_t      *error)
 {
+   return mongoc_database_drop_with_opts (database, NULL, error);
+}
+
+
+bool
+mongoc_database_drop_with_opts (mongoc_database_t      *database,
+                                const bson_t           *opts,
+                                bson_error_t           *error)
+{
    bool ret;
    bson_t cmd;
 
@@ -233,7 +290,18 @@ mongoc_database_drop (mongoc_database_t *database,
 
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
-   ret = mongoc_database_command_simple(database, &cmd, NULL, NULL, error);
+
+   ret = _mongoc_client_command_with_opts (database->client,
+                                           database->name,
+                                           &cmd,
+                                           MONGOC_CMD_WRITE,
+                                           opts,
+                                           MONGOC_QUERY_NONE,
+                                           database->read_prefs,
+                                           database->read_concern,
+                                           database->write_concern,
+                                           NULL, /* reply */
+                                           error);
    bson_destroy(&cmd);
 
    return ret;
@@ -268,6 +336,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
    const bson_t *doc;
    bool ret = false;
    bson_t query;
+   bson_t opts;
    bson_t user;
    char *input;
    char *pwd = NULL;
@@ -299,8 +368,12 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
     */
    bson_init(&query);
    bson_append_utf8(&query, "user", 4, username, -1);
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &query, NULL, NULL);
+
+   bson_init (&opts);
+   bson_append_int64 (&opts, "limit", 5, 1);
+   bson_append_bool (&opts, "singleBatch", 11, true);
+
+   cursor = mongoc_collection_find_with_opts (collection, &query, &opts, NULL);
    if (!mongoc_cursor_next(cursor, &doc)) {
       if (mongoc_cursor_error(cursor, error)) {
          GOTO (failure);
@@ -330,6 +403,7 @@ failure:
    }
    mongoc_collection_destroy(collection);
    bson_destroy(&query);
+   bson_destroy(&opts);
    bson_free(pwd);
 
    RETURN (ret);
@@ -837,10 +911,12 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
       filter = &legacy_filter;
    }
 
+   /* Enumerate Collections Spec: "run listCollections on the primary node in
+    * replicaset mode" */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    filter ? filter : &q, NULL, read_prefs);
+   cursor = mongoc_collection_find_with_opts (col, filter ? filter : &q, NULL,
+                                              read_prefs);
 
    _mongoc_cursor_transform_init (
       cursor,
@@ -863,7 +939,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
                                   bson_error_t      *error)
 {
    mongoc_cursor_t *cursor;
-   mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
    bson_t child;
    bson_error_t lerror;
@@ -878,11 +953,11 @@ mongoc_database_find_collections (mongoc_database_t *database,
       bson_append_document_end (&cmd, &child);
    }
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
-   cursor = _mongoc_cursor_new (database->client, database->name,
-                                MONGOC_QUERY_SLAVE_OK, 0, 0, 0, true,
-                                NULL, NULL, NULL, NULL);
+   /* Enumerate Collections Spec: "run listCollections on the primary node in
+    * replicaset mode" */
+   cursor = _mongoc_cursor_new_with_opts (database->client, database->name,
+                                          true /* is_command */, NULL,
+                                          NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
@@ -905,7 +980,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
    }
 
    bson_destroy (&cmd);
-   mongoc_read_prefs_destroy (read_prefs);
 
    return cursor;
 }
@@ -963,7 +1037,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 mongoc_collection_t *
 mongoc_database_create_collection (mongoc_database_t *database,
                                    const char        *name,
-                                   const bson_t      *options,
+                                   const bson_t      *opts,
                                    bson_error_t      *error)
 {
    mongoc_collection_t *collection = NULL;
@@ -983,8 +1057,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
       return NULL;
    }
 
-   if (options) {
-      if (bson_iter_init_find (&iter, options, "capped")) {
+   if (opts) {
+      if (bson_iter_init_find (&iter, opts, "capped")) {
          if (!BSON_ITER_HOLDS_BOOL (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
@@ -995,16 +1069,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
          capped = bson_iter_bool (&iter);
       }
 
-      if (bson_iter_init_find (&iter, options, "autoIndexId") &&
-          !BSON_ITER_HOLDS_BOOL (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The argument \"autoIndexId\" must be a boolean.");
-         return NULL;
-      }
-
-      if (bson_iter_init_find (&iter, options, "size")) {
+      if (bson_iter_init_find (&iter, opts, "size")) {
          if (!BSON_ITER_HOLDS_INT32 (&iter) &&
              !BSON_ITER_HOLDS_INT64 (&iter)) {
             bson_set_error (error,
@@ -1022,7 +1087,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
          }
       }
 
-      if (bson_iter_init_find (&iter, options, "max")) {
+      if (bson_iter_init_find (&iter, opts, "max")) {
          if (!BSON_ITER_HOLDS_INT32 (&iter) &&
              !BSON_ITER_HOLDS_INT64 (&iter)) {
             bson_set_error (error,
@@ -1040,22 +1105,22 @@ mongoc_database_create_collection (mongoc_database_t *database,
          }
       }
 
-      if (bson_iter_init_find (&iter, options, "storage")) {
+      if (bson_iter_init_find (&iter, opts, "storageEngine")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"storage\" parameter must be a document");
+                            "The \"storageEngine\" parameter must be a document");
 
             return NULL;
          }
 
-         if (bson_iter_find (&iter, "wiredtiger")) {
+         if (bson_iter_find (&iter, "wiredTiger")) {
             if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
                bson_set_error (error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredtiger\" option must take a document argument with a \"configString\" field");
+                               "The \"wiredTiger\" option must take a document argument with a \"configString\" field");
                return NULL;
             }
 
@@ -1071,41 +1136,28 @@ mongoc_database_create_collection (mongoc_database_t *database,
                bson_set_error (error,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                               "The \"wiredtiger\" option must take a document argument with a \"configString\" field");
+                               "The \"wiredTiger\" option must take a document argument with a \"configString\" field");
                return NULL;
             }
          }
       }
-
    }
 
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "create", name);
 
-   if (options) {
-      if (!bson_iter_init (&iter, options)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The argument \"options\" is corrupt or invalid.");
-         bson_destroy (&cmd);
-         return NULL;
-      }
-
-      while (bson_iter_next (&iter)) {
-         if (!bson_append_iter (&cmd, bson_iter_key (&iter), -1, &iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Failed to append \"options\" to create command.");
-            bson_destroy (&cmd);
-            return NULL;
-         }
-      }
-   }
-
-   if (mongoc_database_command_simple (database, &cmd, NULL, NULL, error)) {
+   if (_mongoc_client_command_with_opts (database->client,
+                                         database->name,
+                                         &cmd,
+                                         MONGOC_CMD_WRITE,
+                                         opts,
+                                         MONGOC_QUERY_NONE,
+                                         database->read_prefs,
+                                         database->read_concern,
+                                         database->write_concern,
+                                         NULL, /* reply */
+                                         error)) {
       collection = _mongoc_collection_new (database->client,
                                            database->name,
                                            name,

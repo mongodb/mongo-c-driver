@@ -37,7 +37,7 @@ connecting to: localhost:27017/test
     <title>2. Making a Connection</title>
     <p>The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a <code xref="mongoc_client_t">mongoc_client_t</code>. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs <code xref="mongoc_database_t">mongoc_database_t</code> and <code xref="mongoc_collection_t">mongoc_collection_t</code>, respectively. MongoDB operations can then be performed through these handles.</p>
     <p>At the start of an application, call <link xref="mongoc_init">mongoc_init()</link> before any other libmongoc functions and call <link xref="mongoc_cleanup">mongoc_cleanup()</link> before exiting. When creating handles to clients, databases and servers, call the appropriate destroy functions when finished.</p>
-    <p>The example below establishes a connection to a standalone server on <code>localhost</code> and performs a simple command. More information about database operations can be found in the <link xref="tutorial#crud-operations">CRUD Operations</link> and <link xref="tutorial#executing-commands">Executing Commands</link> sections. Examples of connecting to replica sets and sharded clusters can be found on the <link xref="advanced-connections">Advanced Connections</link> page.</p>
+    <p>The example below establishes a connection to a standalone server on <code>localhost</code>, registers the client application as "connect-example," and performs a simple command. More information about database operations can be found in the <link xref="tutorial#crud-operations">CRUD Operations</link> and <link xref="tutorial#executing-commands">Executing Commands</link> sections. Examples of connecting to replica sets and sharded clusters can be found on the <link xref="advanced-connections">Advanced Connections</link> page.</p>
 
     <listing>
       <title><file>connect.c</file></title>
@@ -68,6 +68,12 @@ main (int   argc,
     * Create a new client instance
     */
    client = mongoc_client_new ("mongodb://localhost:27017");
+
+   /*
+    * Register the application name so we can track it in the profile logs
+    * on the server. This can also be done from the URI (see other examples).
+    */
+   mongoc_client_set_appname (client, "connect-example");
 
    /*
     * Get a handle on the database "db_name" and collection "coll_name"
@@ -383,7 +389,7 @@ main (int   argc,
 
     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/");
+    client = mongoc_client_new ("mongodb://localhost:27017/?appname=insert-example");
     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
     doc = bson_new ();
@@ -431,8 +437,8 @@ switched to db mydb
       </info>
 
       <title>Finding a Document</title>
-      <p>To query a MongoDB collection with the C driver, use the function <link xref="mongoc_collection_find">mongoc_collection_find()</link>. This returns a <link xref="mongoc_cursor_t">cursor</link> to the matching documents. The following examples iterate through the result cursors and print the matches to <code>stdout</code> as JSON strings.</p>
-      <p>Note that <code>mongoc_collection_find</code> uses a document as a query specifier; for example,</p>
+      <p>To query a MongoDB collection with the C driver, use the function <link xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts()</link>. This returns a <link xref="mongoc_cursor_t">cursor</link> to the matching documents. The following examples iterate through the result cursors and print the matches to <code>stdout</code> as JSON strings.</p>
+      <p>Use a document as a query specifier; for example,</p>
 
       <screen><code mime="x-js">{ "color" : "red" }</code></screen>
 
@@ -458,10 +464,10 @@ main (int   argc,
 
   mongoc_init ();
 
-  client = mongoc_client_new ("mongodb://localhost:27017/");
+  client = mongoc_client_new ("mongodb://localhost:27017/?appname=find-example");
   collection = mongoc_client_get_collection (client, "mydb", "mycoll");
   query = bson_new ();
-  cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+  cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
   while (mongoc_cursor_next (cursor, &doc)) {
      str = bson_as_json (doc, NULL);
@@ -511,12 +517,12 @@ main (int   argc,
 
     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/");
+    client = mongoc_client_new ("mongodb://localhost:27017/?appname=find-specific-example");
     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
     query = bson_new ();
     BSON_APPEND_UTF8 (query, "hello", "world");
 
-    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+    cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
     while (mongoc_cursor_next (cursor, &doc)) {
         str = bson_as_json (doc, NULL);
@@ -575,7 +581,7 @@ main (int   argc,
 
     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/");
+    client = mongoc_client_new ("mongodb://localhost:27017/?appname=update-example");
     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
     bson_oid_init (&oid, NULL);
@@ -663,7 +669,7 @@ main (int   argc,
 
     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/");
+    client = mongoc_client_new ("mongodb://localhost:27017/?appname=delete-example");
     collection = mongoc_client_get_collection (client, "test", "test");
 
     doc = bson_new ();
@@ -740,7 +746,7 @@ main (int   argc,
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost:27017/");
+   client = mongoc_client_new ("mongodb://localhost:27017/?appname=count-example");
    collection = mongoc_client_get_collection (client, "mydb", "mycoll");
    doc = bson_new_from_json ((const uint8_t *)"{\"hello\" : \"world\"}", -1, &error);
 
@@ -809,7 +815,7 @@ main (int   argc,
 
     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/");
+    client = mongoc_client_new ("mongodb://localhost:27017/?appname=executing-example");
     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
     command = BCON_NEW ("collStats", BCON_UTF8 ("mycoll"));
@@ -852,54 +858,7 @@ C:\> executing
     <title>6. Threading</title>
     <p>The MongoDB C Driver is thread-unaware in the vast majority of its operations. This means it is up to the programmer to guarantee thread-safety.</p>
     <p>However, <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> is thread-safe and is used to fetch a <code>mongoc_client_t</code> in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.</p>
-
-    <screen><code><![CDATA[#include <mongoc.h>
-#include <pthread.h>
-
-#define N_THREADS 10
-
-static void *
-worker (void *data) {
-   mongoc_client_pool_t *pool = data;
-   mongoc_client_t      *client;
-
-   client = mongoc_client_pool_pop (pool);
-
-   /* Do something... */
-
-   mongoc_client_pool_push (pool, client);
-
-   return NULL;
-}
-
-int
-main (int   argc,
-      char *argv[])
-{
-   mongoc_client_pool_t *pool;
-   mongoc_uri_t         *uri;
-   pthread_t             threads[N_THREADS];
-
-   mongoc_init ();
-
-   uri = mongoc_uri_new ("mongodb://localhost/");
-   pool = mongoc_client_pool_new (uri);
-
-   for (i = 0; i < N_THREADS; i++) {
-      pthread_create (&threads[i], NULL, worker, pool);
-   }
-
-   for (i = 0; i < N_THREADS; i++) {
-      pthread_join (threads[i], NULL);
-   }
-
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-   mongoc_cleanup ();
-
-   return 0;
-}
-]]></code></screen>
+    <screen><code mime="text/x-csrc"><include parse="text" href="../examples/example-pool.c" xmlns="http://www.w3.org/2001/XInclude" /></code></screen>
   </section>
 
   <section id="next-steps">

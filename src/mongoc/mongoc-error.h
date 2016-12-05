@@ -108,6 +108,8 @@ typedef enum
    MONGOC_ERROR_PROTOCOL_ERROR = 17,
 
    MONGOC_ERROR_WRITE_CONCERN_ERROR = 64,
+
+   MONGOC_ERROR_DUPLICATE_KEY = 11000,
 } mongoc_error_code_t;
 
 

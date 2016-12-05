@@ -23,7 +23,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

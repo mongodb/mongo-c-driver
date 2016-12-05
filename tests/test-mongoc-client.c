@@ -1,14 +1,14 @@
 #include <fcntl.h>
 #include <mongoc.h>
 #include <mongoc-host-list-private.h>
+#include <mongoc-write-concern-private.h>
+#include <mongoc-read-concern-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-util-private.h"
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-#include "mongoc-metadata-private.h"
-#endif
+#include "mongoc-handshake-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -16,6 +16,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/mock-rs.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -23,6 +24,208 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
+
+
+static void
+test_client_cmd_w_server_id (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *opts;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
+                                   true /* has primary */,
+                                   1    /* secondary   */,
+                                   0    /* arbiters    */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+
+   /* use serverId instead of prefs to select the secondary */
+   opts = tmp_bson ("{'serverId': 2, 'readConcern': {'level': 'local'}}");
+   future = future_client_read_command_with_opts (client, "db",
+                                                  tmp_bson ("{'ping': 1}"),
+                                                  NULL /* prefs */, opts,
+                                                  &reply, &error);
+
+   /* recognized that wire version is recent enough for readConcern */
+   request = mock_rs_receives_command (
+      rs, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'ping': 1,"
+      " 'readConcern': {'level': 'local'},"
+      " 'serverId': {'$exists': false}}");
+
+   ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+
+static void
+test_client_cmd_w_server_id_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *opts;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   opts = tmp_bson ("{'serverId': 1}");
+   future = future_client_read_command_with_opts (client, "db",
+                                                  tmp_bson ("{'ping': 1}"),
+                                                  NULL /* prefs */, opts,
+                                                  &reply, &error);
+
+   /* does NOT set slave ok, since this is a sharded topology */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'ping': 1, 'serverId': {'$exists': false}}");
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_server_id_option (void *ctx)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *cmd;
+   bool r;
+
+   client = test_framework_client_new ();
+   cmd = tmp_bson ("{'ping': 1}");
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 'foo'}"),
+      NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be an integer");
+
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 0}"),
+      NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must be >= 1");
+
+   r = mongoc_client_read_command_with_opts (
+      client, "test", cmd, NULL /* prefs */, tmp_bson ("{'serverId': 1}"),
+      NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_client_cmd_w_write_concern (void *context)
+{
+   mongoc_write_concern_t *good_wc;
+   mongoc_write_concern_t *bad_wc;
+   mongoc_client_t *client;
+   bson_t *command = tmp_bson ("{'insert' : 'test', "
+                               "'documents' : [{'hello' : 'world'}]}");
+   bson_t reply;
+   bson_t *opts = NULL;
+   bson_error_t error;
+   bool wire_version_5;
+
+   wire_version_5 = test_framework_max_wire_version_at_least (5);
+
+   opts = bson_new ();
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+
+   good_wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (good_wc, 1);
+
+   bad_wc = mongoc_write_concern_new ();
+   /* writeConcern that will not pass mongoc_write_concern_is_valid */
+   bad_wc->wtimeout = -10;
+
+   mongoc_write_concern_append (good_wc, opts);
+   ASSERT_OR_PRINT (mongoc_client_write_command_with_opts (client,
+                                                           "test",
+                                                           command,
+                                                           opts,
+                                                           &reply,
+                                                           &error), error);
+
+   bson_reinit (opts);
+
+   mongoc_write_concern_append_bad (bad_wc, opts);
+   ASSERT (!mongoc_client_write_command_with_opts (client,
+                                                   "test",
+                                                   command,
+                                                   opts,
+                                                   &reply,
+                                                   &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+   bad_wc->wtimeout = 0;
+   bson_destroy (&reply);
+   error.code = 0;
+   error.domain = 0;
+
+   if (!test_framework_is_mongos ()) {
+      if (wire_version_5) {
+         mongoc_write_concern_set_w (bad_wc, 99);
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+
+         /* bad write concern in opts */
+         ASSERT (!mongoc_client_write_command_with_opts (client,
+                                                         "test",
+                                                         command,
+                                                         opts,
+                                                         &reply,
+                                                         &error));
+         if (test_framework_is_replset ()) { /* replset */
+            ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100,
+                                   "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
+      }
+   }
+
+   mongoc_write_concern_destroy (good_wc);
+   mongoc_write_concern_destroy (bad_wc);
+   bson_destroy (opts);
+   mongoc_client_destroy (client);
+}
 
 
 /*
@@ -188,8 +391,7 @@ test_mongoc_client_authenticate (void *context)
    auth_client = mongoc_client_new (uri_str_auth);
    test_framework_set_ssl_opts (auth_client);
    collection = mongoc_client_get_collection (auth_client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &q, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r) {
       r = mongoc_cursor_error(cursor, &error);
@@ -246,8 +448,7 @@ test_mongoc_client_authenticate_failure (void *context)
    test_framework_set_ssl_opts (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   &q, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
@@ -316,13 +517,12 @@ test_mongoc_client_authenticate_timeout (void *context)
 
    /* don't reply */
    assert (!future_get_bool (future));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
-   ASSERT_STARTSWITH (
-      error.message,
-      "Failed to send \"saslStart\" command with database \"admin\"");
-
-   ASSERT_CONTAINS (error.message, "within 10 milliseconds");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+      "Failed to send \"saslStart\" command with database \"admin\":"
+         " socket error or timeout");
 
    bson_destroy (&reply);
    future_destroy (future);
@@ -358,15 +558,7 @@ test_wire_version (void)
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    1,
-                                    0,
-                                    &q,
-                                    NULL,
-                                    NULL);
-
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
 
@@ -411,6 +603,45 @@ test_mongoc_client_command (void)
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
+}
+
+
+static void
+test_mongoc_client_command_defaults (void)
+{
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_read_concern_t *read_concern;
+   mongoc_cursor_t *cursor;
+
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "majority");
+
+   client = test_framework_client_new ();
+   mongoc_client_set_read_prefs (client, read_prefs);
+   mongoc_client_set_read_concern (client, read_concern);
+
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 0, 0,
+                                   tmp_bson ("{'ping': 1}"), NULL, NULL);
+
+   /* Read and Write Concern spec: "If your driver offers a generic RunCommand
+    * method on your database object, ReadConcern MUST NOT be applied
+    * automatically to any command. A user wishing to use a ReadConcern in a
+    * generic command must supply it manually." Server Selection Spec: "The
+    * generic command method MUST ignore any default read preference from
+    * client, database or collection configuration. The generic command method
+    * SHOULD allow an optional read preference argument."
+    */
+   ASSERT (cursor->read_concern->level == NULL);
+   ASSERT (cursor->read_prefs->mode == MONGOC_READ_PRIMARY);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_client_destroy (client);
 }
 
 
@@ -626,6 +857,230 @@ test_command_not_found_simple (void)
 
 
 static void
+test_command_with_opts_read_prefs (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *read_prefs;
+   bson_t *cmd;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, read_prefs);
+
+   /* read prefs omitted for command that writes */
+   cmd = tmp_bson ("{'create': 'db'}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE, "{'create': 'db'}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* read prefs are included for read command */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
+
+   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the slaveOK
+    * wire protocol flag and MUST also use $readPreference".
+    */
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'count': 'collection'},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_command_with_opts_legacy (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_t *opts;
+   mongoc_read_concern_t *read_concern;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* writeConcern is omitted */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'writeConcern': {'w': 1}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'$exists': false}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* readConcern causes error */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "local");
+   opts = tmp_bson (NULL);
+   mongoc_read_concern_append (read_concern, opts);
+   ASSERT (!mongoc_client_read_command_with_opts (
+      client, "db", cmd, NULL, opts, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "does not support readConcern");
+
+   /* collation causes error */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'collation': {'locale': 'en_US'}}");
+   ASSERT (!mongoc_client_read_command_with_opts (
+      client, "db", cmd, NULL, opts, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "does not support collation");
+
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_command_with_opts_modern (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_t *opts;
+   mongoc_write_concern_t *wc;
+   mongoc_read_concern_t *read_concern;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (5);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* collation allowed */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'collation': {'locale': 'en_US'}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'collation': {'locale': 'en_US'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* writeConcern included */
+   cmd = tmp_bson ("{'create': 'db'}");
+   opts = tmp_bson ("{'writeConcern': {'w': 1}}");
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 1}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* apply client's write concern by default */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_client_set_write_concern (client, wc);
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 1}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* apply write concern from opts, not client */
+   opts = tmp_bson ("{'writeConcern': {'w': 2}}");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 4);
+   mongoc_client_set_write_concern (client, wc);
+   future = future_client_write_command_with_opts (
+      client, "admin", cmd, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'create': 'db', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* readConcern allowed */
+   cmd = tmp_bson ("{'count': 'collection'}");
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "local");
+   opts = tmp_bson (NULL);
+   mongoc_read_concern_append (read_concern, opts);
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, opts, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'count': 'collection', 'readConcern': {'level': 'local'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* apply client's readConcern by default */
+   mongoc_client_set_read_concern (client, read_concern);
+   future = future_client_read_command_with_opts (
+      client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE,
+      "{'count': 'collection', 'readConcern': {'level': 'local'}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_unavailable_seeds (void)
 {
    mock_server_t *servers[2];
@@ -637,14 +1092,14 @@ test_unavailable_seeds (void)
    bson_t query = BSON_INITIALIZER;
    const bson_t *doc;
    bson_error_t error;
-   
+
    int i;
 
    for (i = 0; i < 2; i++) {
       servers[i] = mock_server_down ();  /* hangs up on all requests */
       mock_server_run (servers[i]);
    }
-   
+
    uri_str = uri_strs = bson_malloc0 (7 * sizeof (char *));
    *(uri_str++) = bson_strdup_printf (
       "mongodb://%s",
@@ -679,16 +1134,9 @@ test_unavailable_seeds (void)
       assert (client);
 
       collection = mongoc_client_get_collection (client, "test", "test");
-      cursor = mongoc_collection_find (collection,
-                                       MONGOC_QUERY_NONE,
-                                       0,
-                                       0,
-                                       0,
-                                       &query,
-                                       NULL,
-                                       NULL);
-
-      assert (! mongoc_cursor_next (cursor, &doc));
+      cursor = mongoc_collection_find_with_opts (collection, &query, NULL,
+                                                 NULL);
+      assert (!mongoc_cursor_next (cursor, &doc));
       assert (mongoc_cursor_error (cursor, &error));
       ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
       ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
@@ -743,7 +1191,7 @@ host_equals (void *item,
 
 
 /* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
-static void 
+static void
 test_seed_list (bool rs,
                 connection_option_t connection_option,
                 bool pooled)
@@ -759,8 +1207,6 @@ test_seed_list (bool rs,
    mongoc_topology_description_t *td;
    mongoc_read_prefs_t *primary_pref;
    uint32_t discovered_nodes_len;
-   int64_t start;
-   int64_t duration_usec;
    bson_t reply;
    bson_error_t error;
    uint32_t id;
@@ -824,17 +1270,11 @@ test_seed_list (bool rs,
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    if (connection_option == CONNECT || connection_option == RECONNECT) {
-      start = bson_get_monotonic_time ();
-
       /* only localhost:port responds to initial discovery. the other seeds are
        * discarded from replica set topology, but remain for sharded. */
       ASSERT_OR_PRINT (mongoc_client_command_simple (
          client, "test", tmp_bson("{'foo': 1}"),
          primary_pref, &reply, &error), error);
-
-      /* discovery should be quick despite down servers, say < 100ms */
-      duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000), 100);
 
       bson_destroy (&reply);
 
@@ -857,7 +1297,9 @@ test_seed_list (bool rs,
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
-      mongoc_topology_invalidate_server (topology, id, NULL);
+      bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                      "err");
+      mongoc_topology_invalidate_server (topology, id, &error);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
@@ -867,12 +1309,6 @@ test_seed_list (bool rs,
       ASSERT_OR_PRINT (mongoc_client_command_simple (
          client, "test", tmp_bson("{'foo': 1}"),
          primary_pref, &reply, &error), error);
-
-      /* client waited for min heartbeat to pass before reconnecting, then
-       * reconnected quickly despite down servers, say < 100ms later */
-      duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPTIME ((int) (duration_usec / 1000),
-                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
 
       bson_destroy (&reply);
 
@@ -1334,8 +1770,8 @@ _test_mongoc_client_get_description (bool pooled)
    ASSERT (NULL == mongoc_client_get_server_description (client, 1234));
 
    collection = get_test_collection (client, "test_mongoc_client_description");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL,
+                                              NULL);
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    server_id = mongoc_cursor_get_hint (cursor);
    ASSERT (0 != server_id);
@@ -1416,8 +1852,8 @@ test_mongoc_client_descriptions (void)
    do {
       _mongoc_usleep (1000);
       if (bson_get_monotonic_time() - start > 1000 * 1000) {
-         MONGOC_ERROR (
-            "still have %zu descriptions, not expected %zu, after 1 sec\n",
+         test_error (
+            "still have %zu descriptions, not expected %zu, after 1 sec",
             n, expected_n);
          abort ();
       }
@@ -1623,7 +2059,8 @@ _cmd (mock_server_t   *server,
    return r;
 }
 
-static void test_client_set_ssl_copies_args (bool pooled)
+static void
+test_client_set_ssl_copies_args (bool pooled)
 {
    mongoc_uri_t *uri;
    mock_server_t *server;
@@ -1666,7 +2103,6 @@ static void test_client_set_ssl_copies_args (bool pooled)
 
    ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
                     error);
-
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -1742,9 +2178,7 @@ _test_ssl_reconnect (bool pooled)
    if (pooled) {
       ASSERT_CAPTURED_LOG (
          "failed to write data because server closed the connection",
-         MONGOC_LOG_LEVEL_WARNING,
-         "Failure to buffer 36 bytes: Failed to buffer 36 bytes"
-         " within 10000 milliseconds");
+         MONGOC_LOG_LEVEL_WARNING, "Failed to buffer 36 bytes");
    }
 
    /* next operation comes on a new connection, server verification fails */
@@ -1785,37 +2219,38 @@ test_ssl_reconnect_pooled (void)
 #endif  /* OpenSSL or Secure Transport */
 
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
 static void
-test_mongoc_client_application_metadata (void)
+test_mongoc_client_application_handshake (void)
 {
-   enum { BUFFER_SIZE = METADATA_MAX_SIZE };
+   enum { BUFFER_SIZE = HANDSHAKE_MAX_SIZE };
    char big_string[BUFFER_SIZE];
    const char *short_string = "hallo thar";
    mongoc_client_t *client;
-   mock_server_t *server;
-   mongoc_uri_t *uri;
 
-   server = mock_server_new ();
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new ("mongodb://example");
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
 
    /* Check that setting too long a name causes failure */
+   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, big_string));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "is invalid");
+   clear_captured_logs ();
 
    /* Success case */
    ASSERT (mongoc_client_set_appname (client, short_string));
 
    /* Make sure we can't set it twice */
    ASSERT (!mongoc_client_set_appname (client, "a"));
+   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot set appname more than once");
+   capture_logs (false);
 
    mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
 }
 
 static void
@@ -1828,7 +2263,7 @@ _assert_ismaster_valid (request_t *request,
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
    ASSERT (bson_has_field (request_doc, "isMaster"));
-   ASSERT (bson_has_field (request_doc, METADATA_FIELD) == needs_meta);
+   ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD) == needs_meta);
 }
 
 /* For single threaded clients, to cause an isMaster to be sent, we must wait
@@ -1875,7 +2310,7 @@ _respond_to_ping (future_t      *future,
 }
 
 static void
-_test_client_sends_metadata (bool pooled)
+_test_client_sends_handshake (bool pooled)
 {
    mock_server_t *server;
    request_t *request;
@@ -1971,24 +2406,107 @@ _test_client_sends_metadata (bool pooled)
 }
 
 static void
-test_client_sends_metadata_single (void)
+test_client_sends_handshake_single (void *ctx)
 {
-   _test_client_sends_metadata (false);
+   _test_client_sends_handshake (false);
 }
 
 static void
-test_client_sends_metadata_pooled (void)
+test_client_sends_handshake_pooled (void)
 {
-   _test_client_sends_metadata (true);
+   _test_client_sends_handshake (true);
 }
-#endif
+
+static void
+test_client_appname (bool pooled,
+                     bool use_uri)
+{
+   mock_server_t *server;
+   request_t *request;
+   mongoc_uri_t *uri;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   const int heartbeat_ms = 500;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
+
+   if (use_uri) {
+      mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
+   }
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      if (!use_uri) {
+         ASSERT (mongoc_client_pool_set_appname (pool, "testapp"));
+      }
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      if (!use_uri) {
+         ASSERT (mongoc_client_set_appname (client, "testapp"));
+      }
+      future = _force_ismaster_with_ping (client, heartbeat_ms);
+   }
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK,
+      "{'isMaster': 1,"
+      " 'client': {"
+      "    'application': {"
+      "       'name': 'testapp'}}}");
+
+   mock_server_replies_simple (request, server_reply);
+   if (!pooled) {
+      _respond_to_ping (future, server);
+   }
+
+   request_destroy (request);
+
+   /* cleanup */
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+static void
+test_client_appname_single_uri (void)
+{
+   test_client_appname (false, true);
+}
+
+static void
+test_client_appname_single_no_uri (void)
+{
+   test_client_appname (false, false);
+}
+
+static void
+test_client_appname_pooled_uri (void)
+{
+   test_client_appname (true, true);
+}
+
+static void
+test_client_appname_pooled_no_uri (void)
+{
+   test_client_appname (true, false);
+}
+
 
 void
 test_client_install (TestSuite *suite)
 {
-#ifdef TODO_CDRIVER_689
-   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
-#endif
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
@@ -2004,8 +2522,15 @@ test_client_install (TestSuite *suite)
                       test_mongoc_client_authenticate_timeout, NULL, NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
+   TestSuite_AddLive (suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
    TestSuite_AddLive (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
-   TestSuite_Add (suite, "/Client/cmd_w_write_concern",
+   TestSuite_Add (suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
+   TestSuite_Add (suite, "/Client/command_w_server_id/sharded", test_client_cmd_w_server_id_sharded);
+   TestSuite_AddFull (suite, "/Client/command_w_server_id/option", test_server_id_option, NULL, NULL, test_framework_skip_if_auth);
+   TestSuite_AddFull (suite, "/Client/command_w_write_concern",
+                      test_client_cmd_w_write_concern, NULL, NULL,
+                      test_framework_skip_if_max_wire_version_less_than_2);
+   TestSuite_Add (suite, "/Client/command/write_concern",
                   test_client_cmd_write_concern);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
    TestSuite_Add (suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);
@@ -2013,6 +2538,9 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command/read_prefs/pooled", test_command_read_prefs_pooled);
    TestSuite_AddLive (suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_AddLive (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/read_prefs", test_command_with_opts_read_prefs);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
+   TestSuite_AddLive (suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
@@ -2032,13 +2560,19 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   TestSuite_Add (suite, "/Client/application_metadata", test_mongoc_client_application_metadata);
-   TestSuite_Add (suite, "/Client/sends_metadata_single",
-                  test_client_sends_metadata_single);
-   TestSuite_Add (suite, "/Client/sends_metadata_pooled",
-                  test_client_sends_metadata_pooled);
-#endif
+   TestSuite_Add (suite, "/Client/application_handshake", test_mongoc_client_application_handshake);
+   TestSuite_AddFull (suite, "/Client/sends_handshake_single",
+                      test_client_sends_handshake_single, NULL, NULL, test_framework_skip_if_slow);
+   TestSuite_Add (suite, "/Client/sends_handshake_pooled",
+                  test_client_sends_handshake_pooled);
+   TestSuite_Add (suite, "/Client/appname_single_uri",
+                  test_client_appname_single_uri);
+   TestSuite_Add (suite, "/Client/appname_single_no_uri",
+                  test_client_appname_single_no_uri);
+   TestSuite_Add (suite, "/Client/appname_pooled_uri",
+                  test_client_appname_pooled_uri);
+   TestSuite_Add (suite, "/Client/appname_pooled_no_uri",
+                  test_client_appname_pooled_no_uri);
 
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);

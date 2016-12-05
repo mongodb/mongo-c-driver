@@ -19,7 +19,7 @@ typedef struct _mongoc_gridfs_file_list_t mongoc_gridfs_file_list_t;]]></code></
 
   <section id="description">
     <title>Description</title>
-    <p><code>mongoc_gridfs_file_list_t</code> provides a gridfs file list abstraction.  It provides iteration and basic marshalling on top of a regular <code xref="mongoc_collection_find">mongoc_collection_find()</code> style query. In interface, it's styled after <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p>
+    <p><code>mongoc_gridfs_file_list_t</code> provides a gridfs file list abstraction.  It provides iteration and basic marshalling on top of a regular <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts()</code> style query. In interface, it's styled after <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p>
   </section>
 
   <section id="example">

@@ -5,8 +5,10 @@
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/mock-rs.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
@@ -15,11 +17,11 @@
 #define NSERVERS 10
 
 static void
-test_topology_scanner_helper (uint32_t      id,
-                              const bson_t *bson,
-                              int64_t       rtt_msec,
-                              void         *data,
-                              bson_error_t *error)
+test_topology_scanner_helper (uint32_t            id,
+                              const bson_t       *bson,
+                              int64_t             rtt_msec,
+                              void               *data,
+                              const bson_error_t *error /* IN */)
 {
    bson_iter_t iter;
    int *finished = (int*)data;
@@ -48,7 +50,6 @@ _test_topology_scanner(bool with_ssl)
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
-   bool more_to_do;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = { 0 };
@@ -56,7 +57,7 @@ _test_topology_scanner(bool with_ssl)
 #endif
 
    topology_scanner = mongoc_topology_scanner_new (
-         NULL, &test_topology_scanner_helper, &finished);
+         NULL, NULL, &test_topology_scanner_helper, &finished);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -91,11 +92,7 @@ _test_topology_scanner(bool with_ssl)
 
    for (i = 0; i < 3; i++) {
       mongoc_topology_scanner_start (topology_scanner, TIMEOUT, false);
-
-      more_to_do = mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
-
-      assert(! more_to_do);
-
+      mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
       mongoc_topology_scanner_reset (topology_scanner);
    }
 
@@ -112,7 +109,7 @@ _test_topology_scanner(bool with_ssl)
 
 
 void
-test_topology_scanner ()
+test_topology_scanner (void)
 {
    _test_topology_scanner (false);
 }
@@ -120,7 +117,7 @@ test_topology_scanner ()
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 void
-test_topology_scanner_ssl ()
+test_topology_scanner_ssl (void)
 {
    _test_topology_scanner (true);
 }
@@ -131,14 +128,13 @@ test_topology_scanner_ssl ()
  * Servers discovered by a scan should be checked during that scan, CDRIVER-751. 
  */
 void
-test_topology_scanner_discovery ()
+test_topology_scanner_discovery (void)
 {
    mock_server_t *primary;
    mock_server_t *secondary;
    char *primary_response;
    char *secondary_response;
    mongoc_client_t *client;
-   mongoc_topology_scanner_t *scanner;
    char *uri_str;
    mongoc_read_prefs_t *secondary_pref;
    bson_error_t error;
@@ -171,14 +167,12 @@ test_topology_scanner_discovery ()
    uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
                                  mock_server_get_host_and_port (primary));
    client = mongoc_client_new (uri_str);
-   scanner = client->topology->scanner;
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
-   AWAIT (scanner->async->ncmds == 1);
    request = mock_server_receives_ismaster (primary);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
@@ -187,12 +181,10 @@ test_topology_scanner_discovery ()
    _mongoc_usleep (250 * 1000);
 
    /* a check of the secondary is scheduled in this scan */
-   AWAIT (scanner->async->ncmds == 1);
-
    request = mock_server_receives_ismaster (secondary);
    mock_server_replies_simple (request, secondary_response);
+
    /* scan completes */
-   AWAIT (scanner->async->ncmds == 0);
    ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)),
                     error);
 
@@ -214,7 +206,7 @@ test_topology_scanner_discovery ()
 
 /* scanner shouldn't spin if two primaries point at each other */
 void
-test_topology_scanner_oscillate ()
+test_topology_scanner_oscillate (void)
 {
    mock_server_t *server0;
    mock_server_t *server1;
@@ -267,14 +259,12 @@ test_topology_scanner_oscillate ()
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
-   AWAIT (scanner->async->ncmds == 1);
 
    request = mock_server_receives_ismaster (server1);
    mock_server_replies_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
    _mongoc_usleep (250 * 1000);
-   AWAIT (scanner->async->ncmds == 0);
 
    assert (!future_get_mongoc_server_description_ptr (future));
    assert (scanner->async->ncmds == 0);
@@ -291,6 +281,126 @@ test_topology_scanner_oscillate ()
 }
 
 
+/* skip on Windows: https://daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken/ */
+#ifndef _WIN32
+void
+test_topology_scanner_connection_error (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   /* assuming nothing is listening on this port */
+   client = mongoc_client_new (
+      "mongodb://localhost:9876/?connectTimeoutMS=10");
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "connection refused calling ismaster on "
+                          "'localhost:9876'");
+
+   mongoc_client_destroy (client);
+}
+#endif
+
+
+void
+test_topology_scanner_socket_timeout (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+   char *expected_msg;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10);
+   client = mongoc_client_new_from_uri (uri);
+
+   ASSERT (!mongoc_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
+                                          NULL, NULL, &error));
+
+   /* the mock server did accept connection, but never replied */
+   expected_msg = bson_strdup_printf (
+      "socket timeout calling ismaster on '%s'",
+      mongoc_uri_get_hosts (uri)->host_and_port);
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          expected_msg);
+
+   bson_free (expected_msg);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
+typedef struct
+{
+   uint16_t         slow_port;
+   mongoc_client_t *client;
+} initiator_data_t;
+
+
+static mongoc_stream_t *
+slow_initiator (const mongoc_uri_t       *uri,
+                const mongoc_host_list_t *host,
+                void                     *user_data,
+                bson_error_t             *err)
+{
+   initiator_data_t *data;
+
+   data = (initiator_data_t *) user_data;
+
+   if (host->port == data->slow_port) {
+      _mongoc_usleep (500 * 1000);  /* 500 ms is longer than connectTimeoutMS */
+   }
+
+   return mongoc_client_default_stream_initiator (uri, host, data->client, err);
+}
+
+
+static void
+test_topology_scanner_blocking_initiator (void)
+{
+   mock_rs_t *rs;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   initiator_data_t data;
+   bson_error_t error;
+
+   rs = mock_rs_with_autoismaster (0,    /* wire version   */
+                                   true, /* has primary    */
+                                   1,    /* n_secondaries  */
+                                   0     /* n_arbiters     */);
+
+   mock_rs_run (rs);
+   uri = mongoc_uri_copy (mock_rs_get_uri (rs));
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* pretend last host in linked list is slow */
+   data.slow_port = mongoc_uri_get_hosts (uri)->next->port;
+   data.client = client;
+   mongoc_client_set_stream_initiator (client, slow_initiator, &data);
+
+   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin",
+                                                  tmp_bson ("{'ismaster': 1}"),
+                                                  NULL,
+                                                  NULL, &error), error);
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_rs_destroy (rs);
+}
+
+
 void
 test_topology_scanner_install (TestSuite *suite)
 {
@@ -302,4 +412,12 @@ test_topology_scanner_install (TestSuite *suite)
                   test_topology_scanner_discovery);
    TestSuite_Add (suite, "/TOPOLOGY/scanner_oscillate",
                   test_topology_scanner_oscillate);
+#ifndef _WIN32
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_connection_error",
+                  test_topology_scanner_connection_error);
+#endif
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_socket_timeout",
+                  test_topology_scanner_socket_timeout);
+   TestSuite_Add (suite, "/TOPOLOGY/blocking_initiator",
+                  test_topology_scanner_blocking_initiator);
 }

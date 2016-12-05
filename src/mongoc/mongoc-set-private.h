@@ -69,6 +69,11 @@ void *
 mongoc_set_get_item (mongoc_set_t *set,
                      int           idx);
 
+void *
+mongoc_set_get_item_and_id (mongoc_set_t *set,
+                            int           idx,
+                            uint32_t     *id /* OUT */);
+
 void
 mongoc_set_destroy (mongoc_set_t *set);
 

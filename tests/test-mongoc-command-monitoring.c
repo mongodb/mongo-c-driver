@@ -5,7 +5,6 @@
 #include <mongoc-cursor-private.h>
 
 #include "json-test.h"
-#include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
@@ -153,33 +152,6 @@ insert_data (mongoc_collection_t *collection,
    ASSERT_OR_PRINT (r, error);
 
    mongoc_bulk_operation_destroy (bulk);
-}
-
-
-static void
-check_expectations (const bson_t *events,
-                    const bson_t *expectations)
-{
-   char errmsg[1000];
-   match_ctx_t ctx = { 0 };
-
-   /* Old mongod returns a double for "count", newer returns int32.
-    * Ignore this and other insignificant type differences. */
-   ctx.strict_numeric_types = false;
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
-
-   if (bson_count_keys (expectations) != bson_count_keys (events) ||
-       !match_bson_with_ctx (events, expectations, false, &ctx)) {
-      MONGOC_ERROR ("command monitoring test failed expectations:\n\n"
-                    "%s\n\n"
-                    "events:\n%s\n\n%s\n",
-                    bson_as_json (expectations, NULL),
-                    bson_as_json (events, NULL),
-                    errmsg);
-
-      abort ();
-   }
 }
 
 
@@ -485,7 +457,7 @@ one_bulk_op (mongoc_bulk_operation_t *bulk,
       mongoc_bulk_operation_update_one (bulk, &filter, &update,
                                         false /* upsert */);
    } else {
-      MONGOC_ERROR ("unrecognized request name %s\n", request_name);
+      test_error ("unrecognized request name %s", request_name);
       abort ();
    }
 }
@@ -765,12 +737,12 @@ one_test (mongoc_collection_t *collection,
    } else if (!strcmp (op_name, "updateOne")) {
       test_update_one (collection, &arguments);
    } else {
-      MONGOC_ERROR ("unrecognized operation name %s\n", op_name);
+      test_error ("unrecognized operation name %s", op_name);
       abort ();
    }
 
    bson_lookup_doc (test, "expectations", &expectations);
-   check_expectations (&context.events, &expectations);
+   check_json_apm_events (&context.events, &expectations);
 
 done:
    mongoc_apm_callbacks_destroy (callbacks);
@@ -836,9 +808,8 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   if (realpath ("tests/json/command_monitoring", resolved)) {
-      install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
-   }
+   ASSERT (realpath (JSON_DIR "/command_monitoring", resolved));
+   install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
 }
 
 
@@ -884,6 +855,170 @@ test_get_error (void)
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+
+static void
+insert_200_docs (mongoc_collection_t *collection)
+{
+   int i;
+   bson_t *doc;
+   bool r;
+   bson_error_t error;
+
+   /* insert 200 docs so we have a couple batches */
+   doc = tmp_bson (NULL);
+   for (i = 0; i < 200; i++) {
+      r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL,
+                                    &error);
+
+      ASSERT_OR_PRINT (r, error);
+   }
+}
+
+
+static void
+increment (const mongoc_apm_command_started_t *event)
+{
+   int *i = (int *) mongoc_apm_command_started_get_context (event);
+
+   ++(*i);
+}
+
+
+static mongoc_apm_callbacks_t *
+increment_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, increment);
+
+   return callbacks;
+}
+
+
+static void
+decrement (const mongoc_apm_command_started_t *event)
+{
+   int *i = (int *) mongoc_apm_command_started_get_context (event);
+
+   --(*i);
+}
+
+
+static mongoc_apm_callbacks_t *
+decrement_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, decrement);
+
+   return callbacks;
+}
+
+
+static void
+test_change_callbacks (void *ctx)
+{
+   mongoc_apm_callbacks_t *inc_callbacks;
+   mongoc_apm_callbacks_t *dec_callbacks;
+   int incremented = 0;
+   int decremented = 0;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+
+   inc_callbacks = increment_callbacks ();
+   dec_callbacks = decrement_callbacks ();
+
+   client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+
+   collection = get_test_collection (client, "test_change_callbacks");
+
+   insert_200_docs (collection);
+   ASSERT_CMPINT (incremented, ==, 200);
+
+   mongoc_client_set_apm_callbacks (client, dec_callbacks, &decremented);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE,
+                                         tmp_bson (NULL), NULL, NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &b));
+   ASSERT_CMPINT (decremented, ==, -1);
+
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+   while (mongoc_cursor_next (cursor, &b)) { }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (incremented, ==, 201);
+
+   mongoc_collection_drop (collection, NULL);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (inc_callbacks);
+   mongoc_apm_callbacks_destroy (dec_callbacks);
+}
+
+
+static void
+test_reset_callbacks (void *ctx)
+{
+   mongoc_apm_callbacks_t *inc_callbacks;
+   mongoc_apm_callbacks_t *dec_callbacks;
+   int incremented = 0;
+   int decremented = 0;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bool r;
+   bson_t *cmd;
+   bson_t cmd_reply;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+
+   inc_callbacks = increment_callbacks ();
+   dec_callbacks = decrement_callbacks ();
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_reset_apm_callbacks");
+
+   /* insert 200 docs so we have a couple batches */
+   insert_200_docs (collection);
+
+   mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
+   cmd = tmp_bson ("{'aggregate': '%s', 'pipeline': [], 'cursor': {}}",
+                   collection->collection);
+
+   r = mongoc_client_command_simple (client, "test", cmd, NULL, &cmd_reply,
+                                     &error);
+
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (incremented, ==, 1);
+
+   /* reset callbacks */
+   mongoc_client_set_apm_callbacks (client, NULL, NULL);
+   /* destroys cmd_reply */
+   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, 1);
+   ASSERT (mongoc_cursor_next (cursor, &b));
+   ASSERT_CMPINT (incremented, ==, 1);  /* same value as before */
+
+   mongoc_client_set_apm_callbacks (client, dec_callbacks, &decremented);
+   while (mongoc_cursor_next (cursor, &b)) { }
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (decremented, ==, -1);
+
+   mongoc_collection_drop (collection, NULL);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (inc_callbacks);
+   mongoc_apm_callbacks_destroy (dec_callbacks);
 }
 
 
@@ -940,11 +1075,8 @@ _test_set_callbacks (bool pooled)
                            MONGOC_LOG_LEVEL_ERROR,
                            "Cannot set callbacks on a pooled client");
    } else {
-      ASSERT (!mongoc_client_set_apm_callbacks (client, NULL,
-                                                (void *) &n_calls));
-      ASSERT_CAPTURED_LOG ("mongoc_client_set_apm_callbacks",
-                           MONGOC_LOG_LEVEL_ERROR,
-                           "Can only set callbacks once");
+      /* repeated calls ok, null is ok */
+      ASSERT (mongoc_client_set_apm_callbacks (client, NULL, NULL));
    }
 
    if (pooled) {
@@ -1365,7 +1497,7 @@ set_cmd_test_callbacks (mongoc_client_t *client,
    mongoc_apm_set_command_started_cb (callbacks, cmd_started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, cmd_succeeded_cb);
    mongoc_apm_set_command_failed_cb (callbacks, cmd_failed_cb);
-   mongoc_client_set_apm_callbacks (client, callbacks, context);
+   ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, context));
    mongoc_apm_callbacks_destroy (callbacks);
 }
 
@@ -1453,6 +1585,36 @@ test_client_cmd_simple (void)
 }
 
 
+static void
+test_killcursors_deprecated (void)
+{
+   cmd_test_t test;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+
+   cmd_test_init (&test);
+   client = test_framework_client_new ();
+
+   /* connect */
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   set_cmd_test_callbacks (client, (void *) &test);
+
+   /* deprecated function without "db" or "collection", skips APM */
+   mongoc_client_kill_cursor (client, 123);
+
+   ASSERT_CMPINT (0, ==, test.started_calls);
+   ASSERT_CMPINT (0, ==, test.succeeded_calls);
+   ASSERT_CMPINT (0, ==, test.failed_calls);
+
+   mongoc_client_destroy (client);
+   cmd_test_cleanup (&test);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -1462,6 +1624,13 @@ test_command_monitoring_install (TestSuite *suite)
                   test_set_callbacks_single);
    TestSuite_AddLive (suite, "/command_monitoring/set_callbacks/pooled",
                   test_set_callbacks_pooled);
+   /* require aggregation cursor */
+   TestSuite_AddFull (suite, "/command_monitoring/set_callbacks/change",
+                      test_change_callbacks, NULL, NULL,
+                      test_framework_skip_if_max_wire_version_less_than_1);
+   TestSuite_AddFull (suite, "/command_monitoring/set_callbacks/reset",
+                      test_reset_callbacks, NULL, NULL,
+                      test_framework_skip_if_max_wire_version_less_than_1);
    TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/single",
                   test_bulk_operation_id_single);
    TestSuite_AddLive (suite, "/command_monitoring/operation_id/bulk/pooled",
@@ -1478,4 +1647,6 @@ test_command_monitoring_install (TestSuite *suite)
                   test_client_cmd);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd_simple",
                   test_client_cmd_simple);
+   TestSuite_AddLive (suite, "/command_monitoring/killcursors_deprecated",
+                      test_killcursors_deprecated);
 }

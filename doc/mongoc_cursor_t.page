@@ -24,7 +24,6 @@ At that point we can:</p>
 <list>
   <item><p>Determine which host we've connected to with <code xref="mongoc_cursor_get_host">mongoc_cursor_get_host()</code>.</p></item>
   <item><p>Retrieve more records with repeated calls to <code xref="mongoc_cursor_next">mongoc_cursor_next()</code>.</p></item>
-  <item><p>Test for more records with <code xref="mongoc_cursor_more">mongoc_cursor_more()</code></p></item>
   <item><p>Clone a query to repeat execution at a later point with <code xref="mongoc_cursor_clone">mongoc_cursor_clone()</code>.</p></item>
   <item><p>Test for errors with <code xref="mongoc_cursor_error">mongoc_cursor_error()</code>.</p></item>
 </list>

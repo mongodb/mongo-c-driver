@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_collection_find_with_opts">
+
+
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
+  <title>mongoc_collection_find_with_opts()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
+                                  const bson_t              *filter,
+                                  const bson_t              *opts,
+                                  const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+]]></code></synopsis>
+  </section>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
+      <tr><td><p>filter</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the query to execute.</p></td></tr>
+      <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> query options, including sort order and which fields to return. Can be <code>NULL</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>Query on <code>collection</code>, passing arbitrary query options to the server in <code>opts</code>.</p>
+    <p>To target a specific server, include an integer "serverId" field in <code>opts</code> with an id obtained first by calling <code xref="mongoc_client_select_server">mongoc_client_select_server</code>, then <code xref="mongoc_server_description_id">mongoc_server_description_id</code> on its return value.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>A newly allocated <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that must be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code>.</p>
+  </section>
+
+  <section id="examples">
+    <title>Examples</title>
+    <listing>
+      <title>Print First Ten Documents in a Collection</title>
+      <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+#include <stdio.h>
+
+static void
+print_ten_documents (mongoc_collection_t *collection)
+{
+   bson_t *filter;
+   bson_t *opts;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   char *str;
+
+   /* filter by "foo": 1, order by "bar" descending */
+   filter = BCON_NEW ("foo", BCON_INT32 (1));
+   opts = BCON_NEW ("limit", BCON_INT64 (10),
+                    "sort", "{", "bar", BCON_INT32 (-1), "}");
+
+   cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      str = bson_as_json (doc, NULL);
+      printf ("%s\n", str);
+      bson_free (str);
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "An error occurred: %s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (filter);
+   bson_destroy (opts);
+}]]></code>
+    </listing>
+    <listing>
+      <title>Other Options</title>
+      <p>More examples of modifying the query with <code>opts</code>:</p>
+      <code mime="text/x-csrc"><![CDATA[bson_t *filter;
+bson_t *opts;
+mongoc_read_prefs_t *read_prefs;
+
+filter = BCON_NEW ("foo", BCON_INT32 (1));
+
+/* Include "field_name_one" and "field_name_two" in "projection", omit
+ * others. "_id" must be specifically removed or it is included by default.
+ */
+opts = BCON_NEW ("projection", "{",
+                    "field_name_one", BCON_BOOL (true),
+                    "field_name_two", BCON_BOOL (true),
+                    "_id", BCON_BOOL (false),
+                 "}",
+                 "tailable", BCON_BOOL (true),
+                 "awaitData", BCON_BOOL (true),
+                 "sort", "{", "bar", BCON_INT32 (-1), "}",
+                 "collation", "{",
+                    "locale", BCON_UTF8("en_US"),
+                    "caseFirst", BCON_UTF8 ("lower"),
+                 "}");
+
+read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+cursor = mongoc_collection_find_with_opts (collection, filter, opts, read_prefs);]]></code>
+    </listing>
+
+    <p>The following options are supported.</p>
+    <table shade="rows" rules="colgroups" frame="all">
+      <colgroup><col/><col/></colgroup>
+      <colgroup><col/><col/></colgroup>
+      <thead>
+        <tr><td><p>Option</p></td> <td><p>BSON type</p></td><td><p>Option</p></td> <td><p>BSON type</p></td></tr>
+      </thead>
+      <tbody>
+      <!-- common options at the top -->
+       <tr><td><p><code>projection</code></p></td><td><p>document</p> <!-- downgraded to "fields" --> </td><td><p><code>max</code></p></td><td><p>document</p></td> </tr>
+       <tr><td><p><code>sort</code></p></td><td><p>document</p> <!-- downgraded to $orderby --> </td><td><p><code>maxScan</code></p></td><td><p>non-negative int64</p></td> </tr>
+       <tr><td><p><code>skip</code></p></td><td><p>non-negative int64</p></td><td><p><code>maxTimeMS</code></p></td><td><p>non-negative int64</p></td> </tr>
+       <tr><td><p><code>limit</code></p></td><td><p>non-negative int64</p></td><td><p><code>min</code></p></td><td><p>document</p></td> </tr>
+       <!-- less-used options alphabetically -->
+       <tr><td><p><code>batchSize</code></p></td><td><p>non-negative int64</p></td><td><p><code>noCursorTimeout</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>exhaust</code></p></td><td><p>bool</p></td><td><p><code>oplogReplay</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>hint</code></p></td><td><p>string or document</p></td><td><p><code>returnKey</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>allowPartialResults</code></p></td><td><p>bool</p></td><td><p><code>showRecordId</code></p></td><td><p>bool</p></td> <!-- downgraded to showDiskLoc --> </tr>
+       <tr><td><p><code>awaitData</code></p></td><td><p>bool</p></td><td><p><code>singleBatch</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>collation</code></p></td><td><p>document</p></td><td><p><code>snapshot</code></p></td><td><p>bool</p></td> </tr>
+       <tr><td><p><code>comment</code></p></td><td><p>string</p></td><td><p><code>tailable</code></p></td><td><p>bool</p></td> </tr>
+      </tbody>
+    </table>
+    <p>
+      For some options like "collation", the driver returns an error if the server version is too old to support the feature.
+      Any fields in <code>opts</code> that are not listed here are passed to the server unmodified.
+    </p>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p>
+      <link href="https://docs.mongodb.org/master/reference/command/find/">The "find" command</link> in the MongoDB Manual. All options listed there are supported by the C Driver.
+      For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
+    </p>
+  </section>
+
+  <section id="explain-command">
+    <title>The "explain" command</title>
+    <p>With MongoDB before 3.2, a query with option <code>$explain: true</code> returns information about the query plan, instead of the query results. Beginning in MongoDB 3.2, there is a separate "explain" command. The driver will not convert "$explain" queries to "explain" commands, you must call the "explain" command explicitly:</p>
+    <code mime="text/x-csrc"><![CDATA[/* MongoDB 3.2+, "explain" command syntax */
+command = BCON_NEW ("explain", "{",
+                    "find", BCON_UTF8 ("collection_name"),
+                    "filter", "{", "foo", BCON_INT32 (1), "}",
+                    "}");
+
+mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
+]]></code>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link href="https://docs.mongodb.org/master/reference/command/explain/">The "explain" command</link> in the MongoDB Manual.</p>
+  </section>
+
+</page>

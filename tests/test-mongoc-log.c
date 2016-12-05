@@ -17,7 +17,7 @@
 #include <mongoc.h>
 
 #include "mongoc-log-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "TestSuite.h"
 
 

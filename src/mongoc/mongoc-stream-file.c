@@ -22,7 +22,7 @@
 
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-file.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 /*

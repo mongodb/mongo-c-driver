@@ -30,10 +30,13 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_file_t mongoc_stream_file_t;
 
 
+BSON_API
 mongoc_stream_t *mongoc_stream_file_new          (int                   fd);
+BSON_API
 mongoc_stream_t *mongoc_stream_file_new_for_path (const char           *path,
                                                   int                   flags,
                                                   int                   mode);
+BSON_API
 int              mongoc_stream_file_get_fd       (mongoc_stream_file_t *stream);
 
 

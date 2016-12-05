@@ -54,9 +54,10 @@
 
 #include <bson.h>
 
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-tls.h"
+#include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-secure-channel-private.h"
@@ -227,10 +228,6 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_channel_t *secure_channel = (mongoc_stream_tls_secure_channel_t *)tls->ctx;
-
-   BSON_ASSERT (secure_channel);
-   ENTRY;
-
    ssize_t written = -1;
    size_t data_len = 0;
    unsigned char *data = NULL;
@@ -238,6 +235,9 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
    SecBufferDesc outbuf_desc;
    SECURITY_STATUS sspi_status = SEC_E_OK;
 
+   ENTRY;
+
+   BSON_ASSERT (secure_channel);
    TRACE ("The entire buffer is: %d", buf_len);
 
    /* check if the maximum stream sizes were queried */
@@ -839,10 +839,6 @@ _mongoc_stream_tls_secure_channel_check_closed (mongoc_stream_t *stream) /* IN *
 
    ENTRY;
    BSON_ASSERT (secure_channel);
-   if (secure_channel->recv_connection_closed) {
-      RETURN (true);
-   }
-
    RETURN (mongoc_stream_check_closed (tls->base_stream));
 }
 
@@ -961,8 +957,11 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
    schannel_cred.dwVersion = SCHANNEL_CRED_VERSION;
 
    /* SCHANNEL_CRED:
+    * SCH_USE_STRONG_CRYPTO is not available in VS2010
     *   https://msdn.microsoft.com/en-us/library/windows/desktop/aa379810.aspx */
+#ifdef SCH_USE_STRONG_CRYPTO
    schannel_cred.dwFlags = SCH_USE_STRONG_CRYPTO;
+#endif
    if (opt->weak_cert_validation) {
       schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK |

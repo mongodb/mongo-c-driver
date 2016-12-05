@@ -18,7 +18,6 @@
 mongoc_apm_command_succeeded_get_operation_id (const mongoc_apm_command_succeeded_t *event);
 ]]></code></synopsis>
     <p>Returns this event's operation id. This number correlates all the commands in a bulk operation, or all the "find" and "getMore" commands required to stream a large query result.</p>
-    <p>See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.</p>
   </section>
 
   <section id="parameters">
@@ -31,6 +30,11 @@ mongoc_apm_command_succeeded_get_operation_id (const mongoc_apm_command_succeede
   <section id="return">
     <title>Returns</title>
     <p>The event's operation id.</p>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
   </section>
 
 </page>

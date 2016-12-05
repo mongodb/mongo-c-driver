@@ -32,7 +32,7 @@
 #include "mongoc-socket.h"
 #include "mongoc-ssl.h"
 #include "mongoc-openssl-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-util-private.h"
 
@@ -125,7 +125,7 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE*
    }
 
    while ((cert = CertEnumCertificatesInStore (cert_store, cert)) != NULL) {
-      X509* x509Obj = d2i_X509 (NULL, &cert->pbCertEncoded, cert->cbCertEncoded);
+      X509* x509Obj = d2i_X509 (NULL, (const unsigned char **)&cert->pbCertEncoded, cert->cbCertEncoded);
 
       if (x509Obj == NULL) {
          MONGOC_WARNING ("Error parsing X509 object from Windows certificate store");
@@ -178,6 +178,7 @@ _mongoc_openssl_hostcheck (const char *pattern,
    size_t prefixlen;
    size_t suffixlen;
 
+   TRACE("Comparing '%s' == '%s'", pattern, hostname);
    pattern_wildcard = strchr (pattern, '*');
 
    if (pattern_wildcard == NULL) {
@@ -240,38 +241,43 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    long verify_status;
 
    size_t addrlen = 0;
-   struct in_addr addr;
+   unsigned char addr4[sizeof(struct in_addr)];
+   unsigned char addr6[sizeof(struct in6_addr)];
    int i;
    int n_sans = -1;
    int target = GEN_DNS;
 
    STACK_OF (GENERAL_NAME) * sans = NULL;
 
+   ENTRY;
    BSON_ASSERT (ssl);
    BSON_ASSERT (host);
 
    if (allow_invalid_hostname) {
-      return true;
+      RETURN (true);
    }
 
    /** if the host looks like an IP address, match that, otherwise we assume we
     * have a DNS name */
-   if (inet_pton (AF_INET, host, &addr)) {
+   if (inet_pton (AF_INET, host, &addr4)) {
       target = GEN_IPADD;
-      addrlen = sizeof (struct in_addr);
+      addrlen = sizeof addr4;
+   } else if (inet_pton (AF_INET6, host, &addr6)) {
+      target = GEN_IPADD;
+      addrlen = sizeof addr6;
    }
 
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
       MONGOC_WARNING ("SSL Certification verification failed: %s", ERR_error_string(ERR_get_error(), NULL));
-      return false;
+      RETURN (false);
    }
 
    verify_status = SSL_get_verify_result (ssl);
 
    if (verify_status == X509_V_OK) {
-      /* get's a stack of alt names that we can iterate through */
+      /* gets a stack of alt names that we can iterate through */
       sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
          (X509 *)peer, NID_subject_alt_name, NULL, NULL);
 
@@ -299,9 +305,12 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
                   break;
                case GEN_IPADD:
-
-                  if ((length == addrlen) && !memcmp (check, &addr, length)) {
-                     r = 1;
+                  if (length == addrlen) {
+                      if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
+                         r = 1;
+                      } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
+                         r = 1;
+                      }
                   }
 
                   break;
@@ -316,7 +325,6 @@ _mongoc_openssl_check_cert (SSL        *ssl,
          subject_name = X509_get_subject_name (peer);
 
          if (subject_name) {
-            idx = -1;
             i = -1;
 
             /* skip to the last common name */
@@ -352,7 +360,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    }
 
    X509_free (peer);
-   return r;
+   RETURN (r);
 }
 
 
