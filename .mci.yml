@@ -228,7 +228,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -236,7 +236,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=darwin --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -244,7 +244,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -253,16 +253,16 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           prefix=`pwd`/openssl
-          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
+          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
           tar zxvf openssl.tar.gz
-          cd openssl-1.1.0-pre6
+          cd openssl-1.1.0-pre5
           ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
           make && make install
           cd ..
           export LDFLAGS="-L$prefix/lib -lssl -lcrypto"
           export SSL_LIBS="-L$prefix/lib -lssl -lcrypto"
           export SSL_CFLAGS="-I$prefix/include"
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -270,7 +270,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-html-docs=no --enable-man-pages=no --enable-yelp=no --enable-examples=no --enable-sasl --enable-ssl=openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -289,7 +289,7 @@ c_driver_variables:
           sudo /opt/csw/bin/pkgutil -y -i sasl_dev
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -297,7 +297,7 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./autogen.sh --enable-experimental-features --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
           make abicheck
           (cd src/libbson && make test TEST_ARGS="--no-fork -d")
@@ -365,9 +365,9 @@ c_driver_variables:
       unix_openssl11: &run_integration_tests_unix_openssl11
         run_integration_tests: |
           prefix=`pwd`/openssl
-          curl -s https://openssl.org/source/openssl-1.1.0-pre6.tar.gz --output openssl.tar.gz
+          curl -s https://openssl.org/source/openssl-1.1.0-pre5.tar.gz --output openssl.tar.gz
           tar zxvf openssl.tar.gz
-          cd openssl-1.1.0-pre6
+          cd openssl-1.1.0-pre5
           ./config no-zlib no-weak-ssl-ciphers no-ssl3-method no-ssl3 --prefix=$prefix/ --openssldir=$prefix
           make && make install
           cd ..
@@ -799,7 +799,7 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+                ./autogen.sh --enable-experimental-features --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
                 ls -la
@@ -1699,7 +1699,7 @@ buildvariants:
   expansions:
     CFLAGS: "-m64 -march=x86-64"
     CC: clang
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - debian81-build
   tasks: *compile_unix_variants
@@ -1709,7 +1709,7 @@ buildvariants:
   expansions:
     CFLAGS: "-m64 -march=x86-64"
     CC: clang
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - archlinux-build
   tasks: *compile_unix_variants
@@ -1719,7 +1719,7 @@ buildvariants:
   expansions:
     CFLAGS: "-m64 -march=x86-64"
     CC: clang
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - ubuntu1604-build
   tasks: *compile_unix_variants
@@ -1728,7 +1728,7 @@ buildvariants:
   display_name: "RHEL 7.0 (GCC 4.8)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - rhel70
   tasks: *compile_unix_variants
@@ -1737,7 +1737,7 @@ buildvariants:
   display_name: "Debian 8.1 (GCC 4.9)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - debian81-build
   tasks: *compile_unix_variants
@@ -1746,7 +1746,7 @@ buildvariants:
   display_name: "Ubuntu 16.04 (GCC 5.3)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - ubuntu1604-build
   tasks: *compile_unix_variants
@@ -1755,7 +1755,7 @@ buildvariants:
   display_name: "Archlinux (GCC)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - archlinux-build
   tasks: *compile_unix_variants
@@ -1764,7 +1764,7 @@ buildvariants:
   display_name: "RHEL 7.0 (GCC)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - rhel70
   tasks: *compile_unix_variants
@@ -1773,7 +1773,7 @@ buildvariants:
   display_name: "Ubuntu 12.04 (GCC)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - ubuntu1204-build
   tasks: *compile_most_unix_variants
@@ -1782,7 +1782,7 @@ buildvariants:
   display_name: "Ubuntu 14.04 (GCC)"
   expansions:
     CFLAGS: "-m64 -march=x86-64 -Werror"
-    <<: *configure_flags_no_experimental
+    <<: *configure_flags_default
   run_on:
   - ubuntu1404-build
   tasks: *compile_unix_variants

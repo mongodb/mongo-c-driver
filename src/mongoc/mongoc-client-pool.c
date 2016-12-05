@@ -83,10 +83,6 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    mongoc_client_pool_t *pool;
    const bson_t *b;
    bson_iter_t iter;
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   const char *appname;
-#endif
-
 
    ENTRY;
 
@@ -125,14 +121,6 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
          pool->max_pool_size = BSON_MAX(1, bson_iter_int32(&iter));
       }
    }
-
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   appname = mongoc_uri_get_option_as_utf8 (pool->uri, "appname", NULL);
-   if (appname) {
-      /* the appname should have already been validated */
-      BSON_ASSERT (mongoc_client_pool_set_appname (pool, appname));
-   }
-#endif
 
    mongoc_counter_client_pools_active_inc();
 
@@ -266,18 +254,16 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    BSON_ASSERT (client);
 
    mongoc_mutex_lock(&pool->mutex);
-   _mongoc_queue_push_head (&pool->queue, client);
-
-   if (pool->min_pool_size &&
-       _mongoc_queue_get_length (&pool->queue) > pool->min_pool_size) {
-
+   if (pool->min_pool_size && pool->size > pool->min_pool_size) {
       mongoc_client_t *old_client;
-      old_client = (mongoc_client_t *)_mongoc_queue_pop_tail (&pool->queue);
+      old_client = (mongoc_client_t *)_mongoc_queue_pop_head (&pool->queue);
       if (old_client) {
           mongoc_client_destroy (old_client);
           pool->size--;
       }
    }
+
+   _mongoc_queue_push_head (&pool->queue, client);
 
    mongoc_cond_signal(&pool->cond);
    mongoc_mutex_unlock(&pool->mutex);
@@ -297,21 +283,6 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
    mongoc_mutex_unlock (&pool->mutex);
 
    RETURN (size);
-}
-
-
-size_t
-mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
-{
-   size_t num_pushed = 0;
-
-   ENTRY;
-
-   mongoc_mutex_lock (&pool->mutex);
-   num_pushed = pool->queue.length;
-   mongoc_mutex_unlock (&pool->mutex);
-
-   RETURN (num_pushed);
 }
 
 void

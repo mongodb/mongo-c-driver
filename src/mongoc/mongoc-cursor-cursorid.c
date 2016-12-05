@@ -298,11 +298,8 @@ again:
    }
 
 done:
-   if (!*bson && mongoc_cursor_get_id (cursor) == 0) {
-      cursor->done = 1;
-   }
-
-   RETURN (*bson != NULL);
+   cursor->done = *bson ? false : true;
+   RETURN (!cursor->done);
 }
 
 

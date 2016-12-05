@@ -396,10 +396,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bulk->executed = true;
 
-   if (reply) {
-      bson_init (reply);
-   }
-
    if (!bulk->client) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
@@ -421,6 +417,10 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                       "mongoc_bulk_operation_execute() requires a collection "
                       "and one has not been set.");
       RETURN (false);
+   }
+
+   if (reply) {
+      bson_init (reply);
    }
 
    if (!bulk->commands.len) {

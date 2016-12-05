@@ -22,7 +22,6 @@
 #endif
 
 #include "mongoc-error.h"
-#include "mongoc-log.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
@@ -964,8 +963,6 @@ _mongoc_topology_set_appname (mongoc_topology_t *topology,
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
       ret = _mongoc_topology_scanner_set_appname (topology->scanner,
                                                   appname);
-   } else {
-      MONGOC_ERROR ("Cannot set appname after handshake initiated");
    }
    mongoc_mutex_unlock (&topology->mutex);
    return ret;

@@ -20,8 +20,7 @@
    const char *ca_dir;
    const char *crl_file;
    bool        weak_cert_validation;
-   bool        allow_invalid_hostname;
-   void       *padding [7];
+   void       *padding [8];
 } mongoc_ssl_opt_t;
 ]]></code>
   </section>
@@ -29,67 +28,7 @@
   <section id="desc">
     <title>Description</title>
     <p>This structure is used to set the SSL options for a <code xref="mongoc_client_t">mongoc_client_t</code> or <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>.</p>
-    <p>Beginning in version 1.2.0, once a pool or client has any SSL options set, all connections use SSL, even if <code>ssl=true</code> is omitted from the MongoDB URI. Before, SSL options were ignored unless <code>ssl=true</code> was included in the URI.</p>
-    <p>As of 1.4.0, the <code xref="mongoc_client_pool_set_ssl_opts">mongoc_client_pool_set_ssl_opts</code> and <code xref="mongoc_client_set_ssl_opts">mongoc_client_set_ssl_opts</code> will not only shallow copy the struct, but will also copy the <code>const char*</code>. It is therefore no longer needed to make sure the values remain valid after setting them.</p>.
-  </section>
-
-  <section id="client-authentication">
-    <title>Client Authentication</title>
-    <p>When MongoDB is started with SSL enabled, it will by default require the client o provide a client certificate issued by a certificate authority specified by <code>--sslCAFile</code>, or an authority trusted by the native certificate store in use on the server.</p>
-    <p>To provide the client certificate, the user must configure the <code>pem_file</code> to point at a PEM armored certificate.</p>
-    <screen><code mime="text/x-csrc"><![CDATA[mongoc_ssl_opts_t ssl_opts = { 0 };
-
-ssl_opts.pem_file = "/path/to/client-certificate.pem"
-
-/* Then set the client ssl_opts, when using a single client mongoc_client_t */
-mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
-/* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t */
-mongoc_client_set_ssl_opts (client, &ssl_opts);]]></code></screen>
-  </section>
-
-  <section id="certificate-verification">
-    <title>Server Certificate Verification</title>
-    <p>The MongoDB C Driver will automatically verify the validity of the server certificate, such as issued by configured Certificate Authority, hostname validation, and expiration.</p>
-    <p>To overwrite this behaviour, it is possible to disable hostname validation, and/or allow otherwise invalid certificates. This behaviour is controlled using the <code>allow_invalid_hostname</code> and <code>weak_cert_validation</code> fields. By default, both are set to <code>false</code>. It is not recommended to change these defaults as it exposes the client to <em>Man In The Middle</em> attacks (when <code>allow_invalid_hostname</code> is set) and otherwise invalid certificates when <code>weak_cert_validation</code> is set to <code>true</code>.</p>
-  </section>
-
-  <section id="nativetls-linux">
-    <title>Native TLS Support on Linux (OpenSSL)</title>
-    <p>The MongoDB C Driver supports the dominating TLS library (OpenSSL) and crypto libraries (OpenSSL's libcrypto) on Linux and Unix platforms.</p>
-    <p>Support for OpenSSL 1.1 and later was added in 1.4.0.</p>
-    <p>When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution, if the <code>ca_file</code> and <code>ca_dir</code> are not set.</p>
-  </section>
-
-  <section id="nativetls-windows">
-    <title>Native TLS Support on Windows (Secure Channel)</title>
-    <p>The MongoDB C Driver supports the Windows native TLS library (Secure
-      Channel, or SChannel), and its native crypto library (Cryptography API:
-      Next Generation, or CNG).</p>
-    <p>When compiled against the Windows native libraries, the <code>ca_dir</code>
-      option is not supported, and will issue an error if used.</p>
-    <p>Encrypted PEM files (e.g., requiring <code>pem_pwd</code>) are also not
-      supported, and will result in error when attempting to load them.</p>
-    <p>When <code>ca_file</code> is provided, the driver will only allow server
-      certificates issued by the authority (or authorities) provided. When no
-      <code>ca_file</code> is provided, the driver will look up the Certificate
-      Authority using the <sys>System Local Machine Root</sys> certificate
-      store to confirm the provided certificate.</p>
-    <p>When <code>crl_file</code> is provided, the driver will import the
-      revocation list to the <sys>System Local Machine Root</sys> certificate
-      store.</p>
-  </section>
-
-  <section id="nativetls-darwin">
-    <title>Native TLS Support on Mac OS X / Darwin (Secure Transport)</title>
-    <p>The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native
-      TLS library (Secure Transport), and its native crypto library (Common
-      Crypto, or CC).</p>
-    <p>When compiled against Secure Transport, the <code>ca_dir</code>
-      option is not supported, and will issue an error if used.</p>
-    <p>When <code>ca_file</code> is provided, the driver will only allow server
-      certificates issued by the authority (or authorities) provided. When no
-      <code>ca_file</code> is provided, the driver will use the Certificate
-      Authorities in the currently unlocked keychains.</p>
+    <p>Beginning in version 1.2.0, once a pool or client has any SSL options set, all connections use SSL, even if "ssl=true" is omitted from the MongoDB URI. Before, SSL options were ignored unless "ssl=true" was included in the URI.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">

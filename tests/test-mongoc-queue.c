@@ -26,32 +26,8 @@ test_mongoc_queue_basic (void)
 }
 
 
-static void
-test_mongoc_queue_pop_tail (void)
-{
-   mongoc_queue_t q = MONGOC_QUEUE_INITIALIZER;
-
-   _mongoc_queue_push_head(&q, (void *) 1);
-   ASSERT_CMPUINT32 (_mongoc_queue_get_length (&q), ==, (uint32_t) 1);
-   ASSERT_CMPVOID (_mongoc_queue_pop_tail (&q), ==, (void *) 1);
-
-   ASSERT_CMPUINT32 (_mongoc_queue_get_length (&q), ==, (uint32_t) 0);
-   ASSERT_CMPVOID (_mongoc_queue_pop_tail (&q), ==, (void *) NULL);
-
-   _mongoc_queue_push_tail(&q, (void *)2);
-   _mongoc_queue_push_head(&q, (void *)3);
-   ASSERT_CMPUINT32 (_mongoc_queue_get_length (&q), ==, (uint32_t) 2);
-   ASSERT_CMPVOID (_mongoc_queue_pop_tail (&q), ==, (void *) 2);
-   ASSERT_CMPUINT32 (_mongoc_queue_get_length (&q), ==, (uint32_t) 1);
-   ASSERT_CMPVOID (_mongoc_queue_pop_tail (&q), ==, (void *) 3);
-   ASSERT_CMPUINT32 (_mongoc_queue_get_length (&q), ==, (uint32_t) 0);
-   ASSERT_CMPVOID (_mongoc_queue_pop_tail (&q), ==, (void *) NULL);
-}
-
-
 void
 test_queue_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Queue/basic", test_mongoc_queue_basic);
-   TestSuite_Add (suite, "/Queue/pop_tail", test_mongoc_queue_pop_tail);
 }

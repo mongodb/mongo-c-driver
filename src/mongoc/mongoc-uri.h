@@ -27,7 +27,6 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-config.h"
 
 
 #ifndef MONGOC_DEFAULT_PORT
@@ -88,11 +87,6 @@ const bson_t                 *mongoc_uri_get_credentials          (const mongoc_
 const char                   *mongoc_uri_get_auth_source          (const mongoc_uri_t           *uri);
 bool                          mongoc_uri_set_auth_source          (mongoc_uri_t                 *uri,
                                                                    const char                   *value);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-const char                   *mongoc_uri_get_appname              (const mongoc_uri_t           *uri);
-bool                          mongoc_uri_set_appname              (mongoc_uri_t                 *uri,
-                                                                   const char                   *value);
-#endif
 const char                   *mongoc_uri_get_auth_mechanism       (const mongoc_uri_t           *uri);
 bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t           *uri,
                                                                    bson_t                       *properties);

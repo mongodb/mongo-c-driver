@@ -86,7 +86,6 @@ main (int   argc,
       return EXIT_FAILURE;
    }
 
-   mongoc_client_set_error_api (client, 2);
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, command_started);
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded );

@@ -1805,22 +1805,13 @@ test_mongoc_client_application_metadata (void)
    big_string[BUFFER_SIZE - 1] = '\0';
 
    /* Check that setting too long a name causes failure */
-   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, big_string));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "is invalid");
-   clear_captured_logs ();
 
    /* Success case */
    ASSERT (mongoc_client_set_appname (client, short_string));
 
    /* Make sure we can't set it twice */
    ASSERT (!mongoc_client_set_appname (client, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
-   capture_logs (false);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
@@ -1990,93 +1981,6 @@ test_client_sends_metadata_pooled (void)
 {
    _test_client_sends_metadata (true);
 }
-
-static void
-test_client_appname (bool pooled,
-                     bool use_uri)
-{
-   mock_server_t *server;
-   request_t *request;
-   mongoc_uri_t *uri;
-   future_t *future;
-   mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
-   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
-   const int heartbeat_ms = 500;
-
-   server = mock_server_new ();
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
-
-   if (use_uri) {
-      mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
-   }
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      if (!use_uri) {
-         ASSERT (mongoc_client_pool_set_appname (pool, "testapp"));
-      }
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      if (!use_uri) {
-         ASSERT (mongoc_client_set_appname (client, "testapp"));
-      }
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
-   }
-
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK,
-      "{'isMaster': 1,"
-      " 'client': {"
-      "    'application': {"
-      "       'name': 'testapp'}}}");
-
-   mock_server_replies_simple (request, server_reply);
-   if (!pooled) {
-      _respond_to_ping (future, server);
-   }
-
-   request_destroy (request);
-
-   /* cleanup */
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
-}
-
-static void
-test_client_appname_single_uri (void)
-{
-   test_client_appname (false, true);
-}
-
-static void
-test_client_appname_single_no_uri (void)
-{
-   test_client_appname (false, false);
-}
-
-static void
-test_client_appname_pooled_uri (void)
-{
-   test_client_appname (true, true);
-}
-
-static void
-test_client_appname_pooled_no_uri (void)
-{
-   test_client_appname (true, false);
-}
-
 #endif
 
 void
@@ -2134,14 +2038,6 @@ test_client_install (TestSuite *suite)
                   test_client_sends_metadata_single);
    TestSuite_Add (suite, "/Client/sends_metadata_pooled",
                   test_client_sends_metadata_pooled);
-   TestSuite_Add (suite, "/Client/appname_single_uri",
-                  test_client_appname_single_uri);
-   TestSuite_Add (suite, "/Client/appname_single_no_uri",
-                  test_client_appname_single_no_uri);
-   TestSuite_Add (suite, "/Client/appname_pooled_uri",
-                  test_client_appname_pooled_uri);
-   TestSuite_Add (suite, "/Client/appname_pooled_no_uri",
-                  test_client_appname_pooled_no_uri);
 #endif
 
 #ifdef TODO_CDRIVER_689

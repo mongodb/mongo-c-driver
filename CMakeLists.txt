@@ -359,13 +359,11 @@ endif()
 
 if (ENABLE_EXPERIMENTAL_FEATURES)
    set(HEADERS ${HEADERS}
-        ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner-private.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata-os-private.h
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata-private.h
    )
    set(SOURCES ${SOURCES}
-        ${SOURCE_DIR}/src/mongoc/mongoc-linux-distro-scanner.c
         ${SOURCE_DIR}/src/mongoc/mongoc-metadata.c
    )
 endif ()
@@ -514,7 +512,6 @@ endif ()
 
 if (ENABLE_EXPERIMENTAL_FEATURES)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
       ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
       ${SOURCE_DIR}/tests/test-mongoc-metadata.c
    )

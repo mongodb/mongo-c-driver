@@ -40,7 +40,6 @@ struct _mongoc_queue_t
 {
    mongoc_queue_item_t *head;
    mongoc_queue_item_t *tail;
-   uint32_t             length;
 };
 
 
@@ -53,7 +52,6 @@ struct _mongoc_queue_item_t
 
 void      _mongoc_queue_init      (mongoc_queue_t        *queue);
 void     *_mongoc_queue_pop_head  (mongoc_queue_t        *queue);
-void     *_mongoc_queue_pop_tail  (mongoc_queue_t        *queue);
 void      _mongoc_queue_push_head (mongoc_queue_t        *queue,
                                     void                 *data);
 void      _mongoc_queue_push_tail  (mongoc_queue_t       *queue,

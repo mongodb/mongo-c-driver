@@ -136,7 +136,6 @@ test_libmongoc_SOURCES = \
 
 if ENABLE_EXPERIMENTAL_FEATURES
 test_libmongoc_SOURCES += \
-	tests/test-mongoc-linux-distro-scanner.c \
 	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-metadata.c
 endif

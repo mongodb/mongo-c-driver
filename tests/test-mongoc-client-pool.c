@@ -79,59 +79,47 @@ test_mongoc_client_pool_min_size_dispose (void)
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-   mongoc_client_t *c0, *c1, *c2, *c3;
+   mongoc_array_t conns;
+   int i;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?minpoolsize=2");
+   _mongoc_array_init (&conns, sizeof client);
+
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
    pool = mongoc_client_pool_new (uri);
 
-   c0 = mongoc_client_pool_pop (pool);
-   assert (c0);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 1);
+   for (i = 0; i < 10; i++) {
+      client = mongoc_client_pool_pop (pool);
+      assert (client);
+      _mongoc_array_append_val (&conns, client);
+      assert (mongoc_client_pool_get_size (pool) == i + 1);
+   }
 
-   c1 = mongoc_client_pool_pop (pool);
-   assert (c1);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
+   for (i = 0; i < 10; i++) {
+      client = _mongoc_array_index (&conns, mongoc_client_t *, i);
+      assert (client);
+      mongoc_client_pool_push (pool, client);
+   }
 
-   c2 = mongoc_client_pool_pop (pool);
-   assert (c2);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 3);
+   assert (mongoc_client_pool_get_size (pool) == 3);
 
-   c3 = mongoc_client_pool_pop (pool);
-   assert (c3);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
-
-   mongoc_client_pool_push (pool, c0);  /* queue is [c0] */
-   ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 1);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
-
-   mongoc_client_pool_push (pool, c1);  /* queue is [c1, c0] */
-   ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
-
-   mongoc_client_pool_push (pool, c2);  /* queue is [c2, c1] */
-   ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 3);
-
-   mongoc_client_pool_push (pool, c3);  /* queue is [c3, c2] */
-   ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
-
-   /* assert oldest client was destroyed, newest were stored */
-   client = mongoc_client_pool_pop (pool);
-   assert (client);
-   assert (client == c3);
-
-   client = mongoc_client_pool_pop (pool);
-   assert (client);
-   assert (client == c2);
-
-   ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
+   /* assert oldest clients were destroyed, newest were stored */
+   for (i = 9; i >= 7; i--) {
+      client = mongoc_client_pool_pop (pool);
+      assert (client);
+      assert (client == _mongoc_array_index (&conns, mongoc_client_t *, i));
+   }
 
    /* clean up */
-   mongoc_client_pool_push (pool, c2);
-   mongoc_client_pool_push (pool, c3);
-   mongoc_client_pool_destroy (pool);
+   for (i = 7; i < 10; i++) {
+      client = _mongoc_array_index (&conns, mongoc_client_t *, i);
+      assert (client);
+      mongoc_client_pool_push (pool, client);
+   }
+
+   _mongoc_array_clear (&conns);
+   _mongoc_array_destroy (&conns);
    mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
 }
 
 static void
@@ -236,13 +224,7 @@ test_mongoc_client_pool_metadata (void)
 
    ASSERT (mongoc_client_pool_set_appname (pool, "some application"));
    /* Be sure we can't set it twice */
-   capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
-   capture_logs (false);
-
    mongoc_client_pool_destroy (pool);
 
    /* Make sure that after we pop a client we can't set metadata anymore */
@@ -251,23 +233,13 @@ test_mongoc_client_pool_metadata (void)
    client = mongoc_client_pool_pop (pool);
 
    /* Be sure a client can't set it now that we've popped them */
-   capture_logs (true);
    ASSERT (!mongoc_client_set_appname (client, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot call set_appname on a client from a pool");
-   capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
 
    /* even now that we pushed the client back we shouldn't be able to set
-    * the metadata */
-   capture_logs (true);
+      the metadata */
    ASSERT (!mongoc_client_pool_set_appname (pool, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname after handshake initiated");
-   capture_logs (false);
 
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);

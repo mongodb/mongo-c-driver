@@ -60,7 +60,6 @@ bool               _mongoc_metadata_build_doc_with_application (bson_t     *doc,
                                                                 const char *application);
 void               _mongoc_metadata_freeze                     (void);
 mongoc_metadata_t *_mongoc_metadata_get                        (void);
-bool               _mongoc_metadata_appname_is_valid           (const char *appname);
 BSON_END_DECLS
 
 #endif

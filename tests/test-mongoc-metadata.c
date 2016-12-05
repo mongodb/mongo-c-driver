@@ -27,7 +27,7 @@
 #include "mock_server/mock-server.h"
 
 /*
- * Call this before any test which uses mongoc_handshake_data_append, to
+ * Call this before any test which uses mongoc_metadata_append, to
  * reset the global state and unfreeze the metadata struct. Call it
  * after a test so later tests don't have a weird metadata document
  *
@@ -41,88 +41,7 @@ _reset_metadata (void)
 }
 
 static void
-test_mongoc_metadata_appname_in_uri (void)
-{
-   char long_string[MONGOC_METADATA_APPNAME_MAX + 2];
-   char *uri_str;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
-   mongoc_uri_t *uri;
-   const char *appname = "mongodump";
-   const char *value;
-
-   memset (long_string, 'a', MONGOC_METADATA_APPNAME_MAX + 1);
-   long_string[MONGOC_METADATA_APPNAME_MAX + 1] = '\0';
-
-   /* Shouldn't be able to set with appname really long */
-   capture_logs (true);
-   uri_str = bson_strdup_printf ("mongodb://a/?appname=%s", long_string);
-   ASSERT (!mongoc_client_new (uri_str));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "is invalid");
-   capture_logs (false);
-
-   uri = mongoc_uri_new (good_uri);
-   ASSERT (uri);
-   value = mongoc_uri_get_appname (uri);
-   ASSERT (value);
-   ASSERT_CMPSTR (appname, value);
-   mongoc_uri_destroy (uri);
-
-   uri = mongoc_uri_new (NULL);
-   ASSERT (uri);
-   ASSERT (!mongoc_uri_set_appname (uri, long_string));
-   ASSERT (mongoc_uri_set_appname (uri, appname));
-   value = mongoc_uri_get_appname (uri);
-   ASSERT (value);
-   ASSERT_CMPSTR (appname, value);
-   mongoc_uri_destroy (uri);
-
-   bson_free (uri_str);
-}
-
-static void
-test_mongoc_metadata_appname_frozen_single (void)
-{
-   mongoc_client_t *client;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
-
-   client = mongoc_client_new (good_uri);
-
-   /* Shouldn't be able to set appname again */
-   capture_logs (true);
-   ASSERT (!mongoc_client_set_appname (client, "a"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
-   capture_logs (false);
-
-   mongoc_client_destroy (client);
-}
-
-static void
-test_mongoc_metadata_appname_frozen_pooled (void)
-{
-   mongoc_client_pool_t *pool;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
-   mongoc_uri_t *uri;
-
-   uri = mongoc_uri_new (good_uri);
-
-   pool = mongoc_client_pool_new (uri);
-   capture_logs (true);
-   ASSERT (!mongoc_client_pool_set_appname (pool, "test"));
-   ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set appname more than once");
-   capture_logs (false);
-
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-}
-
-static void
-test_mongoc_handshake_data_append_success (void)
+test_mongoc_metadata_append_success (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -146,13 +65,12 @@ test_mongoc_handshake_data_append_success (void)
 
    _reset_metadata ();
    /* Make sure setting the metadata works */
-   ASSERT (mongoc_handshake_data_append (driver_name, driver_version, platform));
+   ASSERT (mongoc_metadata_append (driver_name, driver_version, platform));
 
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
-   mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
    pool = mongoc_client_pool_new (uri);
 
    /* Force topology scanner to start */
@@ -167,14 +85,6 @@ test_mongoc_handshake_data_append_success (void)
 
    ASSERT (bson_iter_init_find (&iter, request_doc, METADATA_FIELD));
    ASSERT (bson_iter_recurse (&iter, &md_iter));
-
-   ASSERT (bson_iter_find (&md_iter, "application"));
-   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
-   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
-   ASSERT (bson_iter_find (&inner_iter, "name"));
-   val = bson_iter_utf8 (&inner_iter, NULL);
-   ASSERT (val);
-   ASSERT_CMPSTR (val, "testapp");
 
    /* Make sure driver.name and driver.version and platform are all right */
    ASSERT (bson_iter_find (&md_iter, "driver"));
@@ -226,7 +136,7 @@ test_mongoc_handshake_data_append_success (void)
 }
 
 static void
-test_mongoc_handshake_data_append_after_cmd (void)
+test_mongoc_metadata_append_after_cmd (void)
 {
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
@@ -242,12 +152,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    client = mongoc_client_pool_pop (pool);
 
-   capture_logs (true);
-   ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
-   ASSERT_CAPTURED_LOG ("mongoc_metadata_append",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set metadata more than once");
-   capture_logs (false);
+   ASSERT (!mongoc_metadata_append ("a", "a", "a"));
 
    mongoc_client_pool_push (pool, client);
 
@@ -284,7 +189,7 @@ test_mongoc_metadata_too_big (void)
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
-   ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
+   ASSERT (mongoc_metadata_append (NULL, NULL, big_string));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    client = mongoc_client_new_from_uri (uri);
@@ -416,17 +321,10 @@ test_mongoc_metadata_cannot_send (void)
 void
 test_metadata_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ClientMetadata/appname_in_uri",
-                  test_mongoc_metadata_appname_in_uri);
-   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_single",
-                  test_mongoc_metadata_appname_frozen_single);
-   TestSuite_Add (suite, "/ClientMetadata/appname_frozen_pooled",
-                  test_mongoc_metadata_appname_frozen_pooled);
-
    TestSuite_Add (suite, "/ClientMetadata/success",
-                  test_mongoc_handshake_data_append_success);
+                  test_mongoc_metadata_append_success);
    TestSuite_Add (suite, "/ClientMetadata/failure",
-                  test_mongoc_handshake_data_append_after_cmd);
+                  test_mongoc_metadata_append_after_cmd);
    TestSuite_Add (suite, "/ClientMetadata/too_big",
                   test_mongoc_metadata_too_big);
    TestSuite_Add (suite, "/ClientMetadata/cannot_send",

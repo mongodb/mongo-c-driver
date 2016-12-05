@@ -11,7 +11,8 @@
 
     <title>Supported Platforms</title>
 
-    <p>The MongoDB C Driver is <link href="https://evergreen.mongodb.com/waterfall/mongo-c-driver">continuously tested</link> on variety of platforms including:</p>
+    <p>The MongoDB C Driver is continuously tested on GNU/Linux, Windows 7, Mac OS X 10.10, and Solaris 11 (Intel and Sparc), with GCC, Clang, and Visual Studio 2010, 2013, and 2015.</p>
+    <p>The driver supports the following operating systems and CPU architectures:</p>
 
     <table>
       <tr>
@@ -23,9 +24,10 @@
         <td>
           <list>
             <item><p>GNU/Linux</p></item>
-            <item><p>Solaris</p></item>
-            <item><p>Mac OS X</p></item>
-            <item><p>Microsoft Windows</p></item>
+            <item><p>Solaris 11</p></item>
+            <item><p>Mac OS X 10.6 and newer</p></item>
+            <item><p>Windows Vista, 7, and 8</p></item>
+            <item><p>FreeBSD</p></item>
           </list>
         </td>
         <td>
@@ -34,9 +36,6 @@
             <item><p>ARM</p></item>
             <item><p>PPC</p></item>
             <item><p>SPARC</p></item>
-            <item><p>aarch64</p></item>
-            <item><p>s390x</p></item>
-            <item><p>ppc64le</p></item>
           </list>
         </td>
         <td>
@@ -50,8 +49,6 @@
         </td>
       </tr>
     </table>
-
-    <p>The driver is also known to work on FreeBSD, and should work on any POSIX compatible platform with a working c89 (or later) compiler.</p>
 
   </section>
 
@@ -161,23 +158,6 @@ $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
 $ export CPPFLAGS="-I/usr/local/opt/openssl/include"</screen>
       </section>
     </section>
-    <section id="nativetls-macos">
-      <title>Native TLS Support on Mac OS X / Darwin (Secure Transport)</title>
-      <p>
-	The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
-	Using the native libraries there is no need to install OpenSSL. By
-	default however, the driver will compile against OpenSSL if it
-	detects it being available. If OpenSSL is not available, it will
-	fallback on the native libraries.
-      </p>
-      <p>
-	To compile against the Darwin native TLS and crypto libraries, even when
-	OpenSSL is available, configure the driver like so:
-      </p>
-      <screen>
-$ ./configure --enable-ssl=darwin
-      </screen>
-    </section>
     <section id="building-osx">
       <title>Building on OS X</title>
       <p>Download the latest release tarball:</p>
@@ -237,24 +217,7 @@ cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>
 
-
     <p>All of the MongoDB C Driver's components will now be found in <code>C:\mongo-c-driver</code>.</p>
-
-    <section id="nativetls-windows">
-      <title>Native TLS Support on Windows (Secure Channel)</title>
-      <p>
-	The MongoDB C Driver supports the Windows native TLS and crypto libraries.
-	Using the native libraries there is no need to install OpenSSL. By
-	default however, the driver will compile against OpenSSL if it
-	detects it being available. If OpenSSL is not available, it will
-	fallback on the native libraries.
-      </p>
-      <p>
-	To compile against the Windows native TLS and crypto libraries, even when
-	OpenSSL is available, configure the driver like so:
-      </p>
-      <screen>cmake -G "Visual Studio 14 2015 Win64" "-DENABLE_SSL=WINDOWS" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"</screen>
-    </section>
   </section>
 
 </page>

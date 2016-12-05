@@ -280,14 +280,13 @@ _append_and_truncate (char       **s,
  * All arguments are optional.
  */
 bool
-mongoc_handshake_data_append (const char *driver_name,
-                              const char *driver_version,
-                              const char *platform)
+mongoc_metadata_append (const char *driver_name,
+                        const char *driver_version,
+                        const char *platform)
 {
    int max_size = 0;
 
    if (gMongocMetadata.frozen) {
-      MONGOC_ERROR ("Cannot set metadata more than once");
       return false;
    }
 
@@ -314,10 +313,4 @@ mongoc_metadata_t *
 _mongoc_metadata_get (void)
 {
    return &gMongocMetadata;
-}
-
-bool
-_mongoc_metadata_appname_is_valid (const char *appname)
-{
-   return strlen (appname) <= MONGOC_METADATA_APPNAME_MAX;
 }

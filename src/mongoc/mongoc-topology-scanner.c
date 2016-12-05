@@ -623,6 +623,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       return;
    }
 
+   memset (&ts->error, 0, sizeof (bson_error_t));
 
    if (obey_cooldown) {
       /* when current cooldown period began */
@@ -659,7 +660,7 @@ mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
    bson_error_t *error = &ts->error;
    bson_string_t *msg;
 
-   memset (&ts->error, 0, sizeof (bson_error_t));
+   BSON_ASSERT (!error->code);  /* cleared by scanner_start */
 
    msg = bson_string_new (NULL);
 
@@ -763,13 +764,12 @@ bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char                *appname)
 {
-   if (!_mongoc_metadata_appname_is_valid (appname)) {
-      MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
+   if (strlen (appname) > MONGOC_METADATA_APPNAME_MAX) {
       return false;
    }
 
    if (ts->appname != NULL) {
-      MONGOC_ERROR ("Cannot set appname more than once");
+      /* We've already set it */
       return false;
    }
 

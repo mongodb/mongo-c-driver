@@ -1,37 +1,7 @@
-mongo-c-driver 1.4.2
-====================
+mongo-c-driver 1.4.0-beta1
+==========================
 
-It is my pleasure to announce mongo-c-driver 1.4.2. This release fixes bugs in
-"minPoolSize" logic, see CDRIVER-1558 for details.
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.4.1
-====================
-
-It is my pleasure to announce mongo-c-driver 1.4.1. This is a bugfix release:
-
-  * mongoc_client_get_server_descriptions could return a list including NULLs
-  * Tailable cursors on MongoDB 3.2 only worked with MONGOC_QUERY_AWAIT_DATA
-  * Spurious warnings with MONGOC_DISABLE_SHM
-
-Thanks to everyone who contributed to the development of this release.
-
-  * A. Jesse Jiryu Davis
-  * Hannes Magnusson
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.4.0
-====================
-
-It is my pleasure to announce mongo-c-driver 1.4.0.
+It is my pleasure to announce the beta release of mongo-c-driver 1.4.0.
 
 TLS
 ---
@@ -59,8 +29,6 @@ fields, including "pem_file", are supported by all implementations.
 A new field, "allow_invalid_hostname", has been added to mongoc_ssl_opt_t and is
 preferred over the existing "allow_invalid_certificate" to disable hostname
 verification.
-
-See the documentation for mongoc_ssl_opt_t for details.
 
 The driver now supports the latest OpenSSL 1.1 in addition to past versions.
 
@@ -164,7 +132,7 @@ Other Features
 --------------
 
   * New connection string option "localThresholdMS".
-  * zSeries, POWER8, and ARM 64-bit platform support.
+  * zSeries and POWER8 platform support.
   * Performance enhancements, reduce allocation and copying in command code.
   * All man page names now begin with "mongoc_" to avoid install conflicts.
   * New function mongoc_gridfs_file_set_id.
@@ -192,7 +160,6 @@ Deprecated functions:
 Notable Bug Fixes
 -----------------
 
-  * Logic bugs using tag sets to select replica set members with complex configs
   * mongoc_client_get_database_names no longer filters out a replica set
     member's "local" database.
   * mongoc_client_get_gridfs now ensures the proper indexes on the files and
@@ -210,8 +177,6 @@ Notable Bug Fixes
   * The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now
     properly parsed from the URI, see the "Authentication" doc for details.
   * Comprehensive compatibility with various C standards and compilers.
-  * mongoc_bulk_operation_execute didn't initialize "reply" if it was passed
-    invalid arguments.
 
 Acknowledgments
 ---------------
@@ -224,12 +189,12 @@ Thanks to everyone who contributed to the development of this release.
   * Fiona Rowan
   * Jeremy Mikola
   * Christoph Schwarz
-  * Remi Collet
-  * Derick Rethans
   * Mike Lloyd
-  * David Hatch
-  * Brian Samek
+  * Remi Collet
   * Jean-Bernard Jansen
+  * David Hatch
+  * Derick Rethans
+  * Brian Samek
 
 Peace,
 

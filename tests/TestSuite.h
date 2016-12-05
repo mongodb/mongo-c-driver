@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-#define OS_RELEASE_FILE_DIR "tests/release_files"
-
 
 #ifndef BINARY_DIR
 # define BINARY_DIR "tests/binary"
@@ -133,7 +131,6 @@ extern "C" {
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zd")
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zx")
-#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "p")
 
 #define ASSERT_MEMCMP(a, b, n) \
    do { \

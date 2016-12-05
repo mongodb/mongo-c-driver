@@ -28,7 +28,6 @@
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
-#include "mongoc-metadata-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
@@ -635,15 +634,10 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp(key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
-         goto CLEANUP;
+         bson_free(key);
+         bson_free(value);
+         return false;
       }
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   } else if (!strcasecmp (key, "appname")) {
-      if (!mongoc_uri_set_appname (uri, value)) {
-         MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
-         goto CLEANUP;
-      }
-#endif
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
    }
@@ -1119,37 +1113,6 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 
    return true;
 }
-
-
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-const char *
-mongoc_uri_get_appname (const mongoc_uri_t *uri)
-{
-   BSON_ASSERT (uri);
-
-   return mongoc_uri_get_option_as_utf8 (uri, "appname", NULL);
-}
-
-
-bool
-mongoc_uri_set_appname (mongoc_uri_t *uri,
-                        const char   *value)
-{
-   BSON_ASSERT (value);
-
-   if (!bson_utf8_validate (value, strlen (value), false)) {
-      return false;
-   }
-
-   if (!_mongoc_metadata_appname_is_valid (value)) {
-      return false;
-   }
-
-   mongoc_uri_bson_append_or_replace_key (&uri->options, "appname", value);
-
-   return true;
-}
-#endif
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)

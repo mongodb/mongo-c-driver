@@ -32,9 +32,6 @@ static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
 static bson_oid_t kObjectIdZero = { {0} };
 
-static bool _match_tag_set (const mongoc_server_description_t *sd,
-                            bson_iter_t                       *tag_set_iter);
-
 /* Destroy allocated resources within @description, but don't free it */
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd)
@@ -737,10 +734,10 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
  *
  * mongoc_server_description_filter_tags --
  *
- * Given a set of server descriptions, set to NULL any that don't
- * match the the read preference's tag sets.
- *
- * https://github.com/mongodb/specifications/blob/master/source/server-selection/server-selection.rst#tag-set
+ *       Given a set of server descriptions, determine have the correct tags
+ *       as per the Server Selection spec. Determines the number of
+ *       eligible servers, and sets any servers that are NOT eligible to
+ *       NULL in the descriptions set.
  *
  *-------------------------------------------------------------------------
  */
@@ -752,9 +749,14 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
 {
    const bson_t *rp_tags;
    bson_iter_t rp_tagset_iter;
-   bson_iter_t tag_set_iter;
+   bson_iter_t rp_iter;
+   bson_iter_t sd_iter;
+   uint32_t rp_len;
+   uint32_t sd_len;
+   const char *rp_val;
+   const char *sd_val;
    bool *sd_matched = NULL;
-   bool found;
+   size_t found;
    size_t i;
 
    if (!read_prefs) {
@@ -775,7 +777,7 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
 
    /* for each read preference tag set */
    while (bson_iter_next (&rp_tagset_iter)) {
-      found = false;
+      found = description_len;
 
       for (i = 0; i < description_len; i++) {
          if (!descriptions[i]) {
@@ -783,10 +785,29 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
             continue;
          }
 
-         bson_iter_recurse (&rp_tagset_iter, &tag_set_iter);
-         sd_matched[i] = _match_tag_set (descriptions[i], &tag_set_iter);
-         if (sd_matched[i]) {
-            found = true;
+         sd_matched[i] = true;
+
+         bson_iter_recurse (&rp_tagset_iter, &rp_iter);
+
+         while (bson_iter_next (&rp_iter)) {
+            rp_val = bson_iter_utf8 (&rp_iter, &rp_len);
+
+            if (bson_iter_init_find (&sd_iter, &descriptions[i]->tags, bson_iter_key (&rp_iter))) {
+
+               /* If the server description has that key */
+               sd_val = bson_iter_utf8 (&sd_iter, &sd_len);
+
+               if (! (sd_len == rp_len && (0 == memcmp(rp_val, sd_val, rp_len)))) {
+                  /* If the key value doesn't match, no match */
+                  sd_matched[i] = false;
+                  found--;
+               }
+            } else {
+               /* If the server description doesn't have that key, no match */
+               sd_matched[i] = false;
+               found--;
+               break;
+            }
          }
       }
 
@@ -801,7 +822,6 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
       }
    }
 
-   /* tried each */
    for (i = 0; i < description_len; i++) {
       if (! sd_matched[i]) {
          descriptions[i] = NULL;
@@ -810,47 +830,4 @@ mongoc_server_description_filter_tags (mongoc_server_description_t **description
 
 CLEANUP:
    bson_free (sd_matched);
-}
-
-
-/*
- *-------------------------------------------------------------------------
- *
- * _match_tag_set --
- *
- *       Check if a server's tags match one tag set, like
- *       {'tag1': 'value1', 'tag2': 'value2'}.
- *
- *-------------------------------------------------------------------------
- */
-static bool _match_tag_set (const mongoc_server_description_t *sd,
-                            bson_iter_t                       *tag_set_iter)
-{
-   bson_iter_t sd_iter;
-   uint32_t read_pref_tag_len;
-   uint32_t sd_len;
-   const char *read_pref_tag;
-   const char *read_pref_val;
-   const char *server_val;
-
-   while (bson_iter_next (tag_set_iter)) {
-      /* one {'tag': 'value'} pair from the read preference's tag set */
-      read_pref_tag = bson_iter_key (tag_set_iter);
-      read_pref_val = bson_iter_utf8 (tag_set_iter, &read_pref_tag_len);
-
-      if (bson_iter_init_find (&sd_iter, &sd->tags, read_pref_tag)) {
-         /* The server has this tag - does it have the right value? */
-         server_val = bson_iter_utf8 (&sd_iter, &sd_len);
-         if (sd_len != read_pref_tag_len ||
-             memcmp(read_pref_val, server_val, read_pref_tag_len)) {
-            /* If the values don't match, no match */
-            return false;
-         }
-      } else {
-         /* If the server description doesn't have that key, no match */
-         return false;
-      }
-   }
-
-   return true;
 }

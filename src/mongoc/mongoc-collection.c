@@ -295,12 +295,28 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *--------------------------------------------------------------------------
  */
 
+
 mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              mongoc_query_flags_t       flags,      /* IN */
                              const bson_t              *pipeline,   /* IN */
                              const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
+{
+   return mongoc_collection_aggregate_with_write_concern (collection, flags,
+                                                          pipeline, options,
+                                                          read_prefs, NULL);
+}
+
+
+mongoc_cursor_t *
+mongoc_collection_aggregate_with_write_concern (
+        mongoc_collection_t       *collection, /* IN */
+        mongoc_query_flags_t       flags,      /* IN */
+        const bson_t              *pipeline,   /* IN */
+        const bson_t              *options,    /* IN */
+        const mongoc_read_prefs_t *read_prefs,
+        mongoc_write_concern_t    *write_concern) /* IN */
 {
    mongoc_server_description_t *selected_server = NULL;
    mongoc_cursor_t *cursor;
@@ -325,6 +341,10 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
       GOTO (done); 
+   }
+
+   if (!_mongoc_write_concern_validate (write_concern, &cursor->error)) {
+      GOTO (done);
    }
 
    selected_server = mongoc_topology_select(collection->client->topology,
@@ -405,6 +425,13 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
       read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
       BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
+   }
+
+   if (write_concern &&
+       !_mongoc_write_concern_is_default (write_concern) &&
+       selected_server->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+      bson_append_document (&command, "writeConcern", 12,
+                            _mongoc_write_concern_get_bson (write_concern));
    }
 
    if (use_cursor) {
@@ -956,6 +983,23 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
                                 const mongoc_index_opt_t *opt,
                                 bson_error_t             *error)
 {
+   bson_t reply;
+   bool ret;
+
+   ret = mongoc_collection_create_index_2 (collection, keys, opt,
+                                           &reply, error);
+
+   bson_destroy (&reply);
+   return ret;
+}
+
+bool
+mongoc_collection_create_index_2 (mongoc_collection_t      *collection,
+                                  const bson_t             *keys,
+                                  const mongoc_index_opt_t *opt,
+                                  bson_t                   *reply,
+                                  bson_error_t             *error)
+{
    const mongoc_index_opt_t *def_opt;
    const mongoc_index_opt_geo_t *def_geo;
    bson_error_t local_error;
@@ -963,7 +1007,6 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
    bson_t doc;
-   bson_t reply;
    bson_t storage_doc;
    bson_t wt_doc;
    const mongoc_index_opt_geo_t *geo_opt;
@@ -971,6 +1014,9 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    const mongoc_index_opt_wt_t *wt_opt;
    char *alloc_name = NULL;
    bool ret = false;
+   bool reply_initialized = false;
+
+   ENTRY;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (keys);
@@ -993,7 +1039,7 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
                          "Cannot generate index name from invalid `keys` argument"
                          );
          bson_destroy (&cmd);
-         return false;
+         GOTO (done);
       }
    }
 
@@ -1074,8 +1120,9 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   ret = mongoc_collection_command_simple (collection, &cmd, NULL, &reply,
+   ret = mongoc_collection_command_simple (collection, &cmd, NULL, reply,
                                            &local_error);
+   reply_initialized = true;
 
    /*
     * If we failed due to the command not being found, then use the legacy
@@ -1085,16 +1132,24 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
       if (local_error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
          ret = _mongoc_collection_create_index_legacy (collection, keys, opt,
                                                        error);
+         /* Clear the error reply from the first request */
+         if (reply) {
+            bson_reinit (reply);
+         }
       } else if (error) {
          memcpy (error, &local_error, sizeof *error);
       }
    }
 
    bson_destroy (&cmd);
-   bson_destroy (&reply);
    bson_free (alloc_name);
 
-   return ret;
+done:
+   if (!reply_initialized && reply) {
+      bson_init (reply);
+   }
+
+   RETURN (ret);
 }
 
 

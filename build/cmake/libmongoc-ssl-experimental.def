@@ -92,6 +92,7 @@ mongoc_client_set_ssl_opts
 mongoc_client_set_stream_initiator
 mongoc_client_set_write_concern
 mongoc_collection_aggregate
+mongoc_collection_aggregate_with_write_concern
 mongoc_collection_command
 mongoc_collection_command_simple
 mongoc_collection_copy
@@ -99,6 +100,7 @@ mongoc_collection_count
 mongoc_collection_count_with_opts
 mongoc_collection_create_bulk_operation
 mongoc_collection_create_index
+mongoc_collection_create_index_2
 mongoc_collection_delete
 mongoc_collection_destroy
 mongoc_collection_drop
@@ -212,7 +214,6 @@ mongoc_gridfs_find_one_by_filename
 mongoc_gridfs_get_chunks
 mongoc_gridfs_get_files
 mongoc_gridfs_remove_by_filename
-mongoc_handshake_data_append
 mongoc_index_opt_geo_get_default
 mongoc_index_opt_geo_init
 mongoc_index_opt_get_default
@@ -229,6 +230,7 @@ mongoc_log_trace_enable
 mongoc_matcher_destroy
 mongoc_matcher_match
 mongoc_matcher_new
+mongoc_metadata_append
 mongoc_rand_add
 mongoc_rand_seed
 mongoc_rand_status
@@ -340,9 +342,6 @@ mongoc_write_concern_get_w
 mongoc_write_concern_get_wmajority
 mongoc_write_concern_get_wtag
 mongoc_write_concern_get_wtimeout
-mongoc_write_concern_is_acknowledged
-mongoc_write_concern_is_valid
-mongoc_write_concern_journal_is_set
 mongoc_write_concern_new
 mongoc_write_concern_set_fsync
 mongoc_write_concern_set_journal

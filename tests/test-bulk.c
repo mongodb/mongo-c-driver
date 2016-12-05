@@ -368,22 +368,6 @@ test_bulk (void)
 
 
 static void
-test_bulk_error (void)
-{
-   bson_t reply = { 0 };
-   bson_error_t error;
-   mongoc_bulk_operation_t *bulk;
-
-   bulk = mongoc_bulk_operation_new (true);
-   assert (!mongoc_bulk_operation_execute (bulk, &reply, &error));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
-
-   /* reply was initialized */
-   ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
-}
-
-static void
 test_insert (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
@@ -3098,8 +3082,6 @@ test_bulk_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/BulkOperation/basic",
                       test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/error",
-                  test_bulk_error);
    TestSuite_AddLive  (suite, "/BulkOperation/insert_ordered",
                        test_insert_ordered);
    TestSuite_AddLive  (suite, "/BulkOperation/insert_unordered",

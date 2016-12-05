@@ -163,14 +163,14 @@ mongoc_counters_alloc (size_t size)
    int fd;
 
    if (!mongoc_counters_use_shm ()) {
-      goto skip_shm;
+      goto use_malloc;
    }
 
    pid = getpid ();
    bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
 
    if (-1 == (fd = shm_open (name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
-      goto fail_noclean;
+      goto use_malloc;
    }
 
    /*
@@ -180,12 +180,12 @@ mongoc_counters_alloc (size_t size)
     * do write() of zeroes to initialize the shared memory area.
     */
    if (-1 == ftruncate (fd, size)) {
-      goto fail_cleanup;
+      goto failure;
    }
 
    mem = mmap (NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
    if (mem == MAP_FAILED) {
-      goto fail_cleanup;
+      goto failure;
    }
 
    close (fd);
@@ -193,14 +193,12 @@ mongoc_counters_alloc (size_t size)
 
    return mem;
 
-fail_cleanup:
+failure:
    shm_unlink (name);
    close (fd);
 
-fail_noclean:
+use_malloc:
    MONGOC_WARNING("Falling back to malloc for counters.");
-
-skip_shm:
 #endif
 
    gCounterFallback = (void *)bson_malloc0 (size);
