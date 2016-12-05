@@ -17,7 +17,7 @@
 
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

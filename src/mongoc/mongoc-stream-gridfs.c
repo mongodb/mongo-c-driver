@@ -22,7 +22,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-stream-gridfs.h"
 
 

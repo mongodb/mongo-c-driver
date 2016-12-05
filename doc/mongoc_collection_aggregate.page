@@ -16,11 +16,12 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
-mongoc_collection_aggregate (mongoc_collection_t       *collection,
-                             mongoc_query_flags_t       flags,
-                             const bson_t              *pipeline,
-                             const bson_t              *options,
-                             const mongoc_read_prefs_t *read_prefs)
+mongoc_collection_aggregate (
+            mongoc_collection_t       *collection,
+            mongoc_query_flags_t       flags,
+            const bson_t              *pipeline,
+            const bson_t              *opts,
+            const mongoc_read_prefs_t *read_prefs)
    BSON_GNUC_WARN_UNUSED_RESULT;
 ]]></code></synopsis>
   </section>
@@ -31,8 +32,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
       <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>flags</p></td><td><p>A <code xref="mongoc_query_flags_t">mongoc_query_flags_t</code>.</p></td></tr>
       <tr><td><p>pipeline</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the pipeline array.</p></td></tr>
-      <tr><td><p>options</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing options for the pipeline, or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>opts</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing options for the command, or <code>NULL</code>.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code>.</p></td></tr>
+
     </table>
   </section>
 
@@ -45,12 +47,13 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
 
     <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
     <note style="info"><p>The <code>pipeline</code> parameter should contain a field named <code>pipeline</code> containing a BSON array of pipeline stages.</p></note>
-    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
+    <p>To target a specific server, include an integer "serverId" field in <code>opts</code> with an id obtained first by calling <code xref="mongoc_client_select_server">mongoc_client_select_server</code>, then <code xref="mongoc_server_description_id">mongoc_server_description_id</code> on its return value.</p>
+    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> and the <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>This function returns a newly allocated <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use. <code>NULL</code> may be returned if parameters are invalid.</p>
+    <p>This function returns a newly allocated <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use. The returned <code xref="mongoc_cursor_t">mongoc_cursor_t</code> is never <code>NULL</code>; if the parameters are invalid, the <code xref="bson:bson_error_t">bson_error_t</code> in the <code xref="mongoc_cursor_t">mongoc_cursor_t</code> is filled out, and the <code xref="mongoc_cursor_t">mongoc_cursor_t</code> is returned before the server is selected.</p>
     <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
   </section>
 
@@ -77,6 +80,7 @@ pipeline_query (mongoc_collection_t *collection)
                                          MONGOC_QUERY_NONE,
                                          pipeline,
                                          NULL,
+                                         NULL,
                                          NULL);
 
    bson_destroy (pipeline);
@@ -86,20 +90,25 @@ pipeline_query (mongoc_collection_t *collection)
     </listing>
   </section>
 
-  <section id="options">
+  <section id="opts">
     <title>Other Parameters</title>
-    <p>Pass any parameters to the <code>aggregate</code> command, besides <code>pipeline</code>, as fields in <code>options</code>:</p>
+    <p>When using <code>$out</code>, the pipeline stage that writes, the write_concern field of the <code xref="mongoc_cursor_t">mongoc_cursor_t</code> will be set to the <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> parameter, if it is valid, and applied to the write command when <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> is called. Pass any other parameters to the <code>aggregate</code> command, besides <code>pipeline</code>, as fields in <code>opts</code>:</p>
     <listing>
       <code mime="text/x-csrc"><![CDATA[
+mongoc_write_concern_t *write_concern = mongoc_write_concern_new ();
+mongoc_write_concern_set_w (write_concern, 3);
+
 pipeline = BCON_NEW ("pipeline", "[",
                         "{", "$out", BCON_UTF8 ("collection2"), "}",
                      "]");
 
-options = BCON_NEW ("bypassDocumentValidation", BCON_BOOL (true));
+opts = BCON_NEW ("bypassDocumentValidation", BCON_BOOL (true));
+mongoc_write_concern_append (write_concern, opts);
+
 cursor = mongoc_collection_aggregate (collection1,
                                       MONGOC_QUERY_NONE,
                                       pipeline,
-                                      options,
+                                      opts,
                                       NULL);
 ]]></code>
     </listing>

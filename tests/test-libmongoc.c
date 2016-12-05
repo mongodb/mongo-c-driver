@@ -34,61 +34,60 @@
 #include <strings.h>
 #endif
 
-extern void test_array_install                   (TestSuite *suite);
-extern void test_async_install                   (TestSuite *suite);
-extern void test_buffer_install                  (TestSuite *suite);
-extern void test_bulk_install                    (TestSuite *suite);
-extern void test_client_install                  (TestSuite *suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-extern void test_client_max_staleness_install    (TestSuite *suite);
-#endif
-extern void test_client_pool_install             (TestSuite *suite);
-extern void test_cluster_install                 (TestSuite *suite);
-extern void test_collection_install              (TestSuite *suite);
-extern void test_collection_find_install         (TestSuite *suite);
-extern void test_command_monitoring_install      (TestSuite *suite);
-extern void test_cursor_install                  (TestSuite *suite);
-extern void test_database_install                (TestSuite *suite);
-extern void test_error_install                   (TestSuite *suite);
-extern void test_exhaust_install                 (TestSuite *suite);
-extern void test_find_and_modify_install         (TestSuite *suite);
-extern void test_gridfs_file_page_install        (TestSuite *suite);
-extern void test_gridfs_install                  (TestSuite *suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-extern void test_linux_distro_scanner_install    (TestSuite *suite);
-#endif
-extern void test_list_install                    (TestSuite *suite);
-extern void test_log_install                     (TestSuite *suite);
-extern void test_matcher_install                 (TestSuite *suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-extern void test_metadata_install                (TestSuite *suite);
-#endif
-extern void test_queue_install                   (TestSuite *suite);
-extern void test_read_prefs_install              (TestSuite *suite);
-extern void test_rpc_install                     (TestSuite *suite);
-extern void test_sdam_install                    (TestSuite *suite);
-extern void test_server_selection_install        (TestSuite *suite);
+extern void test_array_install                     (TestSuite *suite);
+extern void test_async_install                     (TestSuite *suite);
+extern void test_buffer_install                    (TestSuite *suite);
+extern void test_bulk_install                      (TestSuite *suite);
+extern void test_client_install                    (TestSuite *suite);
+extern void test_client_max_staleness_install      (TestSuite *suite);
+extern void test_client_pool_install               (TestSuite *suite);
+extern void test_cluster_install                   (TestSuite *suite);
+extern void test_collection_install                (TestSuite *suite);
+extern void test_collection_find_install           (TestSuite *suite);
+extern void test_collection_find_with_opts_install (TestSuite *suite);
+extern void test_command_monitoring_install        (TestSuite *suite);
+extern void test_cursor_install                    (TestSuite *suite);
+extern void test_database_install                  (TestSuite *suite);
+extern void test_error_install                     (TestSuite *suite);
+extern void test_exhaust_install                   (TestSuite *suite);
+extern void test_find_and_modify_install           (TestSuite *suite);
+extern void test_gridfs_file_page_install          (TestSuite *suite);
+extern void test_gridfs_install                    (TestSuite *suite);
+extern void test_linux_distro_scanner_install      (TestSuite *suite);
+extern void test_list_install                      (TestSuite *suite);
+extern void test_log_install                       (TestSuite *suite);
+extern void test_matcher_install                   (TestSuite *suite);
+extern void test_handshake_install                 (TestSuite *suite);
+extern void test_queue_install                     (TestSuite *suite);
+extern void test_read_prefs_install                (TestSuite *suite);
+extern void test_rpc_install                       (TestSuite *suite);
+extern void test_sdam_install                      (TestSuite *suite);
+extern void test_sdam_monitoring_install           (TestSuite *suite);
+extern void test_server_selection_install          (TestSuite *suite);
+#if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
-extern void test_set_install                     (TestSuite *suite);
-extern void test_socket_install                  (TestSuite *suite);
-extern void test_stream_install                  (TestSuite *suite);
-extern void test_thread_install                  (TestSuite *suite);
-extern void test_topology_install                (TestSuite *suite);
-extern void test_topology_reconcile_install      (TestSuite *suite);
-extern void test_topology_scanner_install        (TestSuite *suite);
-extern void test_uri_install                     (TestSuite *suite);
-extern void test_usleep_install                  (TestSuite *suite);
-extern void test_util_install                    (TestSuite *suite);
-extern void test_version_install                 (TestSuite *suite);
-extern void test_write_command_install           (TestSuite *suite);
-extern void test_write_concern_install           (TestSuite *suite);
+#endif
+extern void test_set_install                       (TestSuite *suite);
+extern void test_socket_install                    (TestSuite *suite);
+extern void test_stream_install                    (TestSuite *suite);
+extern void test_thread_install                    (TestSuite *suite);
+extern void test_topology_install                  (TestSuite *suite);
+extern void test_topology_description_install      (TestSuite *suite);
+extern void test_topology_reconcile_install        (TestSuite *suite);
+extern void test_topology_scanner_install          (TestSuite *suite);
+extern void test_uri_install                       (TestSuite *suite);
+extern void test_usleep_install                    (TestSuite *suite);
+extern void test_util_install                      (TestSuite *suite);
+extern void test_version_install                   (TestSuite *suite);
+extern void test_write_command_install             (TestSuite *suite);
+extern void test_write_concern_install             (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
-extern void test_stream_tls_install              (TestSuite *suite);
-extern void test_x509_install                    (TestSuite *suite);
-extern void test_stream_tls_error_install        (TestSuite *suite);
+extern void test_stream_tls_install                (TestSuite *suite);
+extern void test_x509_install                      (TestSuite *suite);
+extern void test_stream_tls_error_install          (TestSuite *suite);
 #endif
 #ifdef MONGOC_ENABLE_SASL
-extern void test_sasl_install                    (TestSuite *suite);
+extern void test_sasl_install                      (TestSuite *suite);
 #endif
 
 
@@ -260,7 +259,7 @@ gen_collection_name (const char *str)
 {
    return bson_strdup_printf ("%s_%u_%u",
                               str,
-                              (unsigned)time(NULL),
+                              (unsigned)bson_get_monotonic_time(),
                               (unsigned)gettestpid());
 
 }
@@ -604,7 +603,23 @@ test_framework_get_host_list (mongoc_host_list_t *host_list)
 char *
 test_framework_get_admin_user (void)
 {
-   return test_framework_getenv ("MONGOC_TEST_USER");
+   char *retval = NULL;
+   mongoc_uri_t *env_uri = _uri_from_env ();
+
+   /* MONGOC_TEST_URI takes precedence */
+   if (env_uri) {
+      const char *tmp = mongoc_uri_get_username (env_uri);
+
+      if (tmp) {
+         retval = bson_strdup (tmp);
+      }
+      mongoc_uri_destroy (env_uri);
+   }
+   if (!retval) {
+      retval = test_framework_getenv ("MONGOC_TEST_USER");
+   }
+
+   return retval;
 }
 
 /*
@@ -625,7 +640,23 @@ test_framework_get_admin_user (void)
 char *
 test_framework_get_admin_password (void)
 {
-   return test_framework_getenv ("MONGOC_TEST_PASSWORD");
+   char *retval = NULL;
+   mongoc_uri_t *env_uri = _uri_from_env ();
+
+   /* MONGOC_TEST_URI takes precedence */
+   if (env_uri) {
+      const char *tmp = mongoc_uri_get_password (env_uri);
+
+      if (tmp) {
+         retval = bson_strdup (tmp);
+      }
+      mongoc_uri_destroy (env_uri);
+   }
+   if (!retval) {
+      retval = test_framework_getenv ("MONGOC_TEST_PASSWORD");
+   }
+
+   return retval;
 }
 
 
@@ -850,7 +881,7 @@ call_ismaster_with_host_and_port (char *host,
    assert (uri);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
-   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", true);
+   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
 
    client = mongoc_client_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
@@ -909,6 +940,21 @@ set_name (bson_t *ismaster_response)
    } else {
       return NULL;
    }
+}
+
+
+static void
+add_option_to_uri_str (bson_string_t *uri_string,
+                       const char    *option,
+                       const char    *value)
+{
+   if (strchr (uri_string->str, '?')) {
+      bson_string_append_c (uri_string, '&');
+   } else {
+      bson_string_append_c (uri_string, '?');
+   }
+
+   bson_string_append_printf (uri_string, "%s=%s", option, value);
 }
 
 
@@ -984,7 +1030,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
             bson_string_append (uri_string, database_name);
          }
 
-         bson_string_append_printf (uri_string, "?replicaSet=%s", name);
+         add_option_to_uri_str (uri_string, "replicaSet", name);
          bson_free (name);
       } else {
          host = test_framework_get_host ();
@@ -999,19 +1045,14 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       }
 
       if (test_framework_get_ssl ()) {
-         if (strchr (uri_string->str, '?')) {
-            /* string ends with "?replicaSet=name" */
-            bson_string_append (uri_string, "&ssl=true");
-         } else {
-            /* string ends with "/" or "/dbname" */
-            bson_string_append (uri_string, "?ssl=true");
-         }
+         add_option_to_uri_str (uri_string, "ssl", "true");
       }
 
       bson_destroy (&ismaster_response);
    }
 
-
+   /* make tests a little more resilient to transient errors */
+   add_option_to_uri_str (uri_string, "serverSelectionTryOnce", "false");
 
    return bson_string_free (uri_string, false);
 }
@@ -1404,6 +1445,21 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 }
 
 
+int test_framework_skip_if_auth (void)
+{
+   char *user;
+
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   /* run tests if the MONGOC_TEST_USER env var is not set */
+   user = test_framework_get_admin_user ();
+   bson_free (user);
+   return user ? 0 : 1;
+}
+
+
 int test_framework_skip_if_no_auth (void)
 {
    char *user;
@@ -1438,6 +1494,12 @@ test_framework_skip_if_slow (void)
    return test_framework_getenv_bool ("MONGOC_TEST_SKIP_SLOW") ? 0 : 1;
 }
 
+
+int
+test_framework_skip_if_slow_or_live (void)
+{
+   return test_framework_skip_if_slow () && TestSuite_CheckLive ();
+}
 
 int
 test_framework_skip_if_windows (void)
@@ -1661,7 +1723,7 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
-int test_framework_skip_if_max_version_version_less_than_2 (void)
+int test_framework_skip_if_max_wire_version_less_than_1 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1669,7 +1731,15 @@ int test_framework_skip_if_max_version_version_less_than_2 (void)
    return test_framework_max_wire_version_at_least (2);
 }
 
-int test_framework_skip_if_max_version_version_less_than_4 (void)
+int test_framework_skip_if_max_wire_version_less_than_2 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return test_framework_max_wire_version_at_least (2);
+}
+
+int test_framework_skip_if_max_wire_version_less_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1677,15 +1747,15 @@ int test_framework_skip_if_max_version_version_less_than_4 (void)
    return test_framework_max_wire_version_at_least (4);
 }
 
-int test_framework_skip_if_max_version_version_more_than_4 (void)
+int test_framework_skip_if_max_wire_version_more_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_max_wire_version_at_least (4) ? 0 : 1;
+   return test_framework_max_wire_version_at_least (5) ? 0 : 1;
 }
 
-int test_framework_skip_if_max_version_version_less_than_5 (void)
+int test_framework_skip_if_max_wire_version_less_than_5 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1742,15 +1812,14 @@ main (int   argc,
    test_async_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
    test_client_max_staleness_install (&suite);
-#endif
    test_client_pool_install (&suite);
    test_write_command_install (&suite);
    test_bulk_install (&suite);
    test_cluster_install (&suite);
    test_collection_install (&suite);
    test_collection_find_install (&suite);
+   test_collection_find_with_opts_install (&suite);
    test_command_monitoring_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
@@ -1759,15 +1828,11 @@ main (int   argc,
    test_find_and_modify_install (&suite);
    test_gridfs_install (&suite);
    test_gridfs_file_page_install (&suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   test_handshake_install (&suite);
    test_linux_distro_scanner_install (&suite);
-#endif
    test_list_install (&suite);
    test_log_install (&suite);
    test_matcher_install (&suite);
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-   test_metadata_install (&suite);
-#endif
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
@@ -1775,12 +1840,16 @@ main (int   argc,
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
    test_sdam_install (&suite);
+   test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);
+#if 0
    test_server_selection_errors_install (&suite);
+#endif
    test_set_install (&suite);
    test_stream_install (&suite);
    test_thread_install (&suite);
    test_topology_install (&suite);
+   test_topology_description_install (&suite);
    test_uri_install (&suite);
    test_usleep_install (&suite);
    test_util_install (&suite);

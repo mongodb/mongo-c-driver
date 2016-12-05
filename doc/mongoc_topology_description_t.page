@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<page id="mongoc_topology_description_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+
+  <info>
+    <link type="guide" xref="index#api-reference" />
+  </info>
+
+  <title>mongoc_topology_description_t</title>
+  <subtitle>Status of MongoDB Servers</subtitle>
+
+  <section id="description">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_topology_description_t mongoc_topology_description_t;]]></code></synopsis>
+    <p>
+      <code>mongoc_topology_description_t</code> is an opaque type representing the driver's knowledge of the MongoDB server or servers it is connected to.
+      Its API conforms to the <link href="https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst">SDAM Monitoring Specification</link>.
+    </p>
+    <p>Applications receive a temporary reference to a <code>mongoc_topology_description_t</code> as a parameter to an SDAM Monitoring callback. See <link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link>.
+    </p>
+  </section>
+
+  <links type="topic" groups="function" style="2column">
+    <title>Functions</title>
+  </links>
+
+</page>

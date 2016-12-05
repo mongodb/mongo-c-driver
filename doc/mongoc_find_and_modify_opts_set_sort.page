@@ -28,6 +28,7 @@ mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t  *opts,
   <section id="description">
     <title>Description</title>
     <p>Adds sort argument to the builder.</p>
+    <p><code>sort</code> does not have to remain valid after calling this function.</p>
   </section>
 
 

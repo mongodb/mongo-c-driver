@@ -36,6 +36,7 @@ void future_start (future_t *future,
 void future_resolve (future_t *future, future_value_t return_value);
 
 bool future_wait (future_t *future);
+bool future_wait_max (future_t *future, int64_t timeout_ms);
 
 void future_get_void (future_t *future);
 
@@ -109,6 +110,9 @@ future_get_mongoc_iovec_ptr (future_t *future);
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
+const_mongoc_index_opt_t
+future_get_const_mongoc_index_opt_t (future_t *future);
+
 mongoc_server_description_ptr
 future_get_mongoc_server_description_ptr (future_t *future);
 
@@ -117,6 +121,9 @@ future_get_mongoc_ss_optype_t (future_t *future);
 
 mongoc_topology_ptr
 future_get_mongoc_topology_ptr (future_t *future);
+
+mongoc_write_concern_ptr
+future_get_mongoc_write_concern_ptr (future_t *future);
 
 const_mongoc_find_and_modify_opts_ptr
 future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future);

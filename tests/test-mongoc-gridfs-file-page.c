@@ -194,17 +194,18 @@ test_memset0 (void)
    ASSERT (page->len == len);
    ASSERT (!page->buf);
 
-   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 1));
+   ASSERT_CMPUINT32 (1, ==, _mongoc_gridfs_file_page_memset0 (page, 1));
    ASSERT (page->buf);
    ASSERT (memcmp (page->buf, "\0xyz", 4) == 0);
    ASSERT (page->offset == 1);
 
-   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 10));
+   ASSERT_CMPUINT32 (4, ==, _mongoc_gridfs_file_page_memset0 (page, 10));
    ASSERT (page->buf);
    ASSERT (memcmp (page->buf, "\0\0\0\0\0", 5) == 0);
    ASSERT (page->offset == 5);
 
-   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 10));
+   /* file position is already at the end */
+   ASSERT_CMPUINT32 (0, ==, _mongoc_gridfs_file_page_memset0 (page, 10));
 
    _mongoc_gridfs_file_page_destroy (page);
 }

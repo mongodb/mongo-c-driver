@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_topology_description_has_readable_server">
+
+  <info>
+    <link type="guide" xref="mongoc_topology_description_t" group="function"/>
+  </info>
+  <title>mongoc_topology_description_has_readable_server()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_topology_description_has_readable_server (mongoc_topology_description_t *td,
+                                                 const mongoc_read_prefs_t     *prefs);]]></code></synopsis>
+    <p>
+      Determines if the topology has a readable server available.
+      Servers are filtered by the given read preferences only if the driver is connected to a replica set, otherwise the read preferences are ignored.
+      This function uses the driver's current knowledge of the state of the MongoDB server or servers it is connected to; it does no I/O and it does not block.</p>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>td</p></td><td><p>A <code xref="mongoc_topology_description_t">mongoc_topology_description_t</code>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> or <code>NULL</code> for default read preferences.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>True if there is a known server matching <code>prefs</code>.</p>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link xref="application-performance-monitoring">Introduction to Application Performance Monitoring</link></p>
+  </section>
+</page>

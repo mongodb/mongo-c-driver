@@ -604,6 +604,7 @@ typedef struct
    bool                parses;
    mongoc_read_mode_t  mode;
    bson_t             *tags;
+   const char         *log_msg;
 } read_prefs_test;
 
 
@@ -631,6 +632,8 @@ test_mongoc_uri_read_prefs (void)
       "0", "{", "}"
    );
 
+   const char *conflicts = "Primary read preference mode conflicts with tags";
+
    const read_prefs_test tests [] = {
       { "mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL },
       { "mongodb://localhost/?slaveOk=false", true, MONGOC_READ_PRIMARY, NULL },
@@ -643,13 +646,19 @@ test_mongoc_uri_read_prefs (void)
       /* readPreference should take priority over slaveOk */
       { "mongodb://localhost/?slaveOk=false&readPreference=secondary", true, MONGOC_READ_SECONDARY, NULL },
       /* readPreferenceTags conflict with primary mode */
-      { "mongodb://localhost/?readPreferenceTags=", false },
-      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", false },
-      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", false },
+      { "mongodb://localhost/?readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
+      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", NULL, MONGOC_READ_PRIMARY, NULL, conflicts },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=", true, MONGOC_READ_SECONDARY_PREFERRED, tags_empty },
       { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=dc:ny", true, MONGOC_READ_SECONDARY_PREFERRED, tags_dcny },
       { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcny_empty },
       { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny,use:ssd&readPreferenceTags=dc:sf&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcnyusessd_dcsf_empty },
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"foo\""},
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo,bar", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"foo,bar\""},
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=1", false, MONGOC_READ_NEAREST, NULL,
+        "invalid readPreferenceTags: \"1\""},
       { NULL }
    };
 
@@ -663,9 +672,10 @@ test_mongoc_uri_read_prefs (void)
          ASSERT_NO_CAPTURED_LOGS (t->uri);
       } else {
          assert(!uri);
-         ASSERT_CAPTURED_LOG (
-            t->uri, MONGOC_LOG_LEVEL_WARNING,
-            "Primary read preference mode conflicts with tags");
+         if (t->log_msg) {
+            ASSERT_CAPTURED_LOG (t->uri, MONGOC_LOG_LEVEL_WARNING, t->log_msg);
+         }
+
          continue;
       }
 
@@ -788,6 +798,11 @@ test_mongoc_uri_read_concern (void)
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
    mongoc_uri_destroy (uri);
 
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "linearizable");
+   mongoc_uri_destroy (uri);
+
 
    uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=local");
    rc = mongoc_uri_get_read_concern (uri);
@@ -818,6 +833,55 @@ test_mongoc_uri_read_concern (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_mongoc_uri_long_hostname (void)
+{
+   char *host;
+   char *host_and_port;
+   size_t len = BSON_HOST_NAME_MAX;
+   char *uri_str;
+   mongoc_uri_t *uri;
+
+   /* hostname of exactly maximum length */
+   host = bson_malloc (len + 1);
+   memset (host, 'a', len);
+   host[len] = '\0';
+   host_and_port = bson_strdup_printf ("%s:12345", host);
+   uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
+   uri = mongoc_uri_new (uri_str);
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, host_and_port);
+
+   mongoc_uri_destroy (uri);
+   uri = mongoc_uri_new_for_host_port (host, 12345);
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, host_and_port);
+
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+   bson_free (host_and_port);
+   bson_free (host);
+
+   /* hostname length exceeds maximum by one */
+   len++;
+   host = bson_malloc (len + 1);
+   memset (host, 'a', len);
+   host[len] = '\0';
+   host_and_port = bson_strdup_printf ("%s:12345", host);
+   uri_str = bson_strdup_printf ("mongodb://%s", host_and_port);
+
+   capture_logs (true);
+   ASSERT (!mongoc_uri_new (uri_str));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+
+   clear_captured_logs ();
+   ASSERT (!mongoc_uri_new_for_host_port (host, 12345));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_new", MONGOC_LOG_LEVEL_ERROR, "too long");
+
+   bson_free (uri_str);
+   bson_free (host_and_port);
+   bson_free (host);
+}
 
 void
 test_uri_install (TestSuite *suite)
@@ -831,4 +895,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add (suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
+   TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
 }

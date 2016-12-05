@@ -14,6 +14,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # package maintainers to append CFLAGS
 #export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
 # package maintainers to append LDFLAGS
+export DEB_LDFLAGS_MAINT_APPEND := -lpthread
 
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
@@ -23,7 +24,7 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-	--prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info --enable-debug-symbols=yes --enable-html-docs=yes --enable-man-pages=yes --enable-maintainer-flags=yes --with-libbson=system --enable-tests=no
+	--prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info --enable-debug-symbols=yes --enable-html-docs=yes --enable-man-pages=yes --enable-maintainer-flags=yes --with-libbson=system --enable-tests=no --disable-automatic-init-and-cleanup
 	# Upstream's autogen.sh creates this symlink, but dh-autoreconf doesn't
 	[ -f README ] || /bin/cp README.rst README
 

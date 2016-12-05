@@ -26,27 +26,26 @@ query_collection (mongoc_collection_t *collection,
    mongoc_cursor_t *cursor;
    bson_t query;
    bson_t gt;
-   int fflags = (MONGOC_QUERY_TAILABLE_CURSOR
-         | MONGOC_QUERY_AWAIT_DATA
-         | MONGOC_QUERY_SLAVE_OK);
+   bson_t opts;
 
    BSON_ASSERT(collection);
 
    bson_init(&query);
-   bson_append_document_begin(&query, "ts", 2, &gt);
-   bson_append_timestamp(&gt, "$gt", 3, last_time, 0);
+   BSON_APPEND_DOCUMENT_BEGIN(&query, "ts", &gt);
+   BSON_APPEND_TIMESTAMP(&gt, "$gt", last_time, 0);
    bson_append_document_end(&query, &gt);
 
-   cursor = mongoc_collection_find(collection,
-                                   (mongoc_query_flags_t)fflags,
-                                   0,
-                                   0,
-                                   0,
-                                   &query,
-                                   NULL,
-                                   NULL);
+   bson_init(&opts);
+   BSON_APPEND_BOOL(&opts, "tailable", true);
+   BSON_APPEND_BOOL(&opts, "awaitData", true);
+
+   cursor = mongoc_collection_find_with_opts(collection,
+                                              &query,
+                                              &opts,
+                                              NULL);
 
    bson_destroy(&query);
+   bson_destroy(&opts);
 
    return cursor;
 }

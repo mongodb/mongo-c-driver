@@ -19,6 +19,7 @@
 
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
+#include "mongoc-trace-private.h"
 
 
 char *
@@ -134,4 +135,44 @@ size_t
 _mongoc_strlen_or_zero (const char *s)
 {
    return s ? strlen (s) : 0;
+}
+
+
+/* Get "serverId" from opts. Sets *server_id to the serverId from "opts" or 0
+ * if absent. On error, fills out *error with domain and code and return false.
+ */
+bool
+_mongoc_get_server_id_from_opts (const bson_t          *opts,
+                                 mongoc_error_domain_t  domain,
+                                 mongoc_error_code_t    code,
+                                 uint32_t              *server_id,
+                                 bson_error_t          *error)
+{
+   bson_iter_t iter;
+
+   ENTRY;
+
+   BSON_ASSERT (server_id);
+
+   *server_id = 0;
+
+   if (!opts || !bson_iter_init_find (&iter, opts, "serverId")) {
+      RETURN (true);
+   }
+
+   if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+      bson_set_error (error, domain, code,
+                      "The serverId option must be an integer");
+      RETURN (false);
+   }
+
+   if (bson_iter_as_int64 (&iter) <= 0) {
+      bson_set_error (error, domain, code,
+                      "The serverId option must be >= 1");
+      RETURN (false);
+   }
+
+   *server_id = (uint32_t) bson_iter_as_int64 (&iter);
+
+   RETURN (true);
 }

@@ -21,7 +21,7 @@
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-gridfs-file-page-private.h"
 
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 /** create a new page from a buffer
@@ -143,13 +143,13 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
  *      regards to the page buffer.
  *
  * Returns:
- *      True on success; false otherwise.
+ *      Number of bytes set.
  */
-bool
+uint32_t
 _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
                                   uint32_t len)
 {
-   int32_t bytes_set;
+   uint32_t bytes_set;
 
    ENTRY;
 
@@ -170,7 +170,7 @@ _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
    /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
-   RETURN (true);
+   RETURN (bytes_set);
 }
 
 

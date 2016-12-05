@@ -9,7 +9,7 @@
 
 
   <info>
-    <link type="guide" xref="" group="function"/>
+    <link type="guide" xref="init-cleanup" group="function"/>
   </info>
   <title>mongoc_cleanup()</title>
 

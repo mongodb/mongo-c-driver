@@ -1,4 +1,4 @@
-/* gcc example.c -o example $(pkg-config --cflags --libs libmongoc-1.0) */
+/* gcc example-client.c -o example-client $(pkg-config --cflags --libs libmongoc-1.0) */
 
 /* ./example-client [CONNECTION_STRING [COLLECTION_NAME]] */
 
@@ -15,7 +15,7 @@ main (int   argc,
    mongoc_cursor_t *cursor;
    bson_error_t error;
    const bson_t *doc;
-   const char *uristr = "mongodb://127.0.0.1/";
+   const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
    const char *collection_name = "test";
    bson_t query;
    char *str;
@@ -46,14 +46,10 @@ main (int   argc,
 #endif
 
    collection = mongoc_client_get_collection (client, "test", collection_name);
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    0,
-                                    0,
-                                    &query,
-                                    NULL,  /* Fields, NULL for all. */
-                                    NULL); /* Read Prefs, NULL for default */
+   cursor = mongoc_collection_find_with_opts (collection,
+                                              &query,
+                                              NULL,  /* additional options */
+                                              NULL); /* read prefs, NULL for default */
 
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_json (doc, NULL);

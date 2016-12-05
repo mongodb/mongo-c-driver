@@ -21,7 +21,8 @@
 
 #include "mongoc.h"
 
-bson_t *tmp_bson (const char *json);
+bson_t *tmp_bson (const char *json,
+                  ...);
 
 void bson_iter_bson (const bson_iter_t *iter,
                      bson_t            *bson);
@@ -81,6 +82,17 @@ bool match_json (const bson_t *doc,
                  const char   *funcname,
                  const char   *json_pattern,
                  ...);
+
+bool mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
+                                      bson_t                 *command);
+
+#define FOUR_MB 1024 * 1024 * 4
+
+const char *huge_string (mongoc_client_t *client);
+
+size_t huge_string_length (mongoc_client_t *client);
+
+const char *four_mb_string ();
 
 #define ASSERT_MATCH(doc, ...) \
    do { \

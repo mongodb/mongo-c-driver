@@ -41,7 +41,9 @@ mongocdocdir = ${docdir}
 mongocdoc_DATA = \
 	COPYING \
 	NEWS \
-	README.rst
+	README.rst \
+	THIRD_PARTY_NOTICES
+
 EXTRA_DIST += $(mongocdoc_DATA)
 
 EXTRA_DIST += \
@@ -53,15 +55,16 @@ EXTRA_DIST += \
 EXTRA_DIST += $(wildcard orchestration_configs/*/*)
 
 dist-hook:
-	@if test -d "$(srcdir)/.git"; then                              \
-          (cd "$(srcdir)" &&                                            \
-           $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
-           && mv -f ChangeLog.tmp $(top_distdir)/ChangeLog              \
-           || (rm -f ChangeLog.tmp;                                     \
-               echo Failed to generate ChangeLog >&2);                  \
-	else                                                            \
-	  echo A git checkout is required to generate a ChangeLog >&2;  \
+	@if test -d "$(srcdir)/.git"; then                                              \
+		(cd "$(srcdir)" &&                                                           \
+      $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
+		&& mv -f ChangeLog.tmp $(top_distdir)/ChangeLog                              \
+		|| (rm -f ChangeLog.tmp;                                                     \
+		echo Failed to generate ChangeLog >&2);                                      \
+	else                                                                            \
+	  echo A git checkout is required to generate a ChangeLog >&2;                  \
 	fi
 
 uninstall-local:
+	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
 	-rm -r $(mongocdocdir)

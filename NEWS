@@ -1,3 +1,131 @@
+mongo-c-driver 1.5.0
+====================
+
+It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
+
+New features and bug fixes:
+  * MongoDB 3.4 Support
+    * New URI and read preference option, "maxStalenessSeconds"
+    * Set MongoDB client handshake data with mongoc_client_set_appname or
+      mongoc_client_pool_set_appname.
+    * writeConcern and readConcern enhancements.
+    * Collation allows users to specify language-specific rules for string
+      comparison when sorting documents. See the code examples for
+      mongoc_client_read_command_with_opts, mongoc_collection_count_with_opts,
+      mongoc_collection_find_with_opts, and mongoc_index_opt_t, as well as the
+      "Setting Collation Order" section of the "Bulk Write Operations" guide.
+  * mongoc_collection_count_with_opts uses the collection's read preference if
+    none is passed in
+  * Improved TLS support
+    * Fixed LibreSSL (libssl) support
+    * Added LibreSSL (libtls) support
+    * Fixed Secure Channel build on VS 2010
+    * OpenSSL now supports SNI (all others already do)
+  * Additional features for Application Performance Monitoring:
+    * mongoc_topology_description_has_writable_server
+    * mongoc_topology_description_has_readable_server
+    * Notifications when a server or topology description changes, and when a
+      monitoring heartbeat begins and succeeds or fails.
+    * mongoc_client_set_apm_callbacks can be used repeatedly to change or clear
+      the list of monitoring callbacks.
+  * New functions accept flexible options as a BSON document:
+    * mongoc_collection_find_with_opts
+    * mongoc_client_read_command_with_opts
+    * mongoc_client_write_command_with_opts
+    * mongoc_client_read_write_command_with_opts
+    * mongoc_database_read_command_with_opts
+    * mongoc_database_write_command_with_opts
+    * mongoc_database_read_write_command_with_opts
+    * mongoc_collection_read_command_with_opts
+    * mongoc_collection_write_command_with_opts
+    * mongoc_collection_read_write_command_with_opts
+    * mongoc_gridfs_find_with_opts
+    * mongoc_gridfs_find_one_with_opts
+    * mongoc_bulk_operation_remove_one_with_opts
+    * mongoc_bulk_operation_remove_many_with_opts
+    * mongoc_bulk_operation_replace_one_with_opts
+    * mongoc_bulk_operation_update_one_with_opts
+    * mongoc_bulk_operation_update_many_with_opts
+  * mongoc_collection_find is now deprecated in favor of
+    mongoc_collection_find_with_opts.
+  * New helper function to include read concern in one of the above function's
+    options parameter: mongoc_read_concern_append.
+  * mongoc_client_command no longer applies the client's read preference and
+    read concern by default. Same change for mongoc_database_command and
+    mongoc_collection_command.
+  * mongoc_collection_count_with_opts now applies the collection's read
+    preference if no read preference is provided
+  * mongoc_collection_create_index and mongoc_collection_drop_index now apply
+    the collection's write concern.
+  * mongoc_collection_create_index_with_opts now applies the collection's
+    write concern if none is specified in "opts"
+  * connectTimeoutMS timer now begins after DNS resolution, and resets
+    for each interface attempted (e.g., if the driver first tries IPv6,
+    then IPv4).
+  * New error code MONGOC_ERROR_DUPLICATE_KEY.
+  * mongoc_collection_find no longer treats the "filter" key specially in
+    queries - querying for a document with a key named "filter" is the same
+    now as any other key.
+  * The server description parameter to the following functions is "const":
+    * mongoc_server_description_host
+    * mongoc_server_description_id
+    * mongoc_server_description_ismaster
+    * mongoc_server_description_round_trip_time
+    * mongoc_server_description_type
+  * Exported symbols are no longer declared in seperate export files.
+    This could break ABI with applications using clang, which previously
+    exported symbols from the internal private ABI.
+  * mongoc no longer crashes when multi roundtrip bulk operation fails.
+  * Added support for the new readConcernLevel "linearizable".
+  * Clients now check for misformatted "readPreferenceTags" in URI.
+  * New CMake option ENABLE_TRACING allows debug output, which before had only
+    been available with "configure --enable-tracing".
+  * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
+  * Bugfixes: The random number generator used to select servers is now properly
+    seeded, and secondary queries are now properly distributed according to
+    localThresholdMS, not just to the lowest-latency secondary. The latency
+    estimate is reset after a connection error.
+  * Fix crashes in mongoc_topology_invalidate_server and
+    mongoc_client_kill_cursor.
+  * mongoc_collection_insert, mongoc_collection_update, mongoc_collection_remove
+    consistently use domain MONGOC_ERROR_BSON, code MONGOC_ERROR_BSON_INVALID
+    if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.
+    mongoc_bulk_operation_execute continues to use MONGOC_ERROR_COMMAND for
+    all errors.
+  * If mongoc_client_pool_t fails to start its scanner thread in the background,
+    it logs and aborts instead of silently continuing, then failing to connect.
+  * The driver now updates its view of the whole topology with information from
+    each new connection handshake.
+  * Improved error reporting when the driver fails to reach the server, and
+    correctly distinguish "connection error" and "connection timeout".
+
+Deprecations:
+  * mongoc_collection_find is deprecated for mongoc_collection_find_with_opts.
+
+Removed configure flags:
+  * --enable-experimental has been removed. All previously experimental
+    features are now always on.
+  * The configure option "--enable-hardening" had had no effect. It is removed
+    in favor of system-wide compiler configuration.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Fiona Rowan
+  * Ian Boros
+  * Remi Collet
+  * Brian McCarthy
+  * Jeroen Ooms
+  * J. Rassi
+  * Christoph Schwarz
+  * Alexey Vorobeyev
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.4.2
 ====================
 
@@ -31,7 +159,7 @@ Peace,
 mongo-c-driver 1.4.0
 ====================
 
-It is my pleasure to announce mongo-c-driver 1.4.0.
+It is my pleasure to announce the release of mongo-c-driver 1.4.0.
 
 TLS
 ---
@@ -59,8 +187,6 @@ fields, including "pem_file", are supported by all implementations.
 A new field, "allow_invalid_hostname", has been added to mongoc_ssl_opt_t and is
 preferred over the existing "allow_invalid_certificate" to disable hostname
 verification.
-
-See the documentation for mongoc_ssl_opt_t for details.
 
 The driver now supports the latest OpenSSL 1.1 in addition to past versions.
 
@@ -164,7 +290,7 @@ Other Features
 --------------
 
   * New connection string option "localThresholdMS".
-  * zSeries, POWER8, and ARM 64-bit platform support.
+  * zSeries and POWER8 platform support.
   * Performance enhancements, reduce allocation and copying in command code.
   * All man page names now begin with "mongoc_" to avoid install conflicts.
   * New function mongoc_gridfs_file_set_id.
@@ -210,8 +336,6 @@ Notable Bug Fixes
   * The GSSAPI properties SERVICE_NAME and CANONICALIZE_HOST_NAME are now
     properly parsed from the URI, see the "Authentication" doc for details.
   * Comprehensive compatibility with various C standards and compilers.
-  * mongoc_bulk_operation_execute didn't initialize "reply" if it was passed
-    invalid arguments.
 
 Acknowledgments
 ---------------
@@ -224,12 +348,12 @@ Thanks to everyone who contributed to the development of this release.
   * Fiona Rowan
   * Jeremy Mikola
   * Christoph Schwarz
-  * Remi Collet
-  * Derick Rethans
   * Mike Lloyd
-  * David Hatch
-  * Brian Samek
+  * Remi Collet
   * Jean-Bernard Jansen
+  * David Hatch
+  * Derick Rethans
+  * Brian Samek
 
 Peace,
 

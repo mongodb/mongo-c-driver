@@ -45,6 +45,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
   <section id="return">
     <title>Returns</title>
     <p>Returns true on success; false on failure.</p>
+    <p>A write concern timeout or write concern error is considered a failure.</p>
   </section>
 
   <section id="example">

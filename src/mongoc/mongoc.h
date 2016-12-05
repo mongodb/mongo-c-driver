@@ -40,9 +40,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-init.h"
 #include "mongoc-matcher.h"
-#ifdef MONGOC_EXPERIMENTAL_FEATURES
-#include "mongoc-metadata.h"
-#endif
+#include "mongoc-handshake.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
@@ -51,7 +49,6 @@
 #include "mongoc-stream-file.h"
 #include "mongoc-stream-gridfs.h"
 #include "mongoc-stream-socket.h"
-#include "mongoc-trace.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"

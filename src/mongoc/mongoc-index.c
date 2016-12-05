@@ -16,7 +16,7 @@
 
 
 #include "mongoc-index.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -38,6 +38,7 @@ static mongoc_index_opt_t gMongocIndexOptDefault = {
    NULL,                  /* mongoc_index_opt_geo_t geo_options */
    NULL,                  /* mongoc_index_opt_storage_t storage_options */
    NULL,                  /* partial_filter_expression */
+   NULL,                  /* collation */
    {NULL}                 /* struct padding */
 };
 

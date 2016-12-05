@@ -27,11 +27,11 @@ main (int   argc,
    }
 
    if (strcmp(argv[1], "implicit") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/test";
+      authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example";
    } else if (strcmp(argv[1], "scram") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/test?authMechanism=SCRAM-SHA-1";
+      authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example&authMechanism=SCRAM-SHA-1";
    } else if (strcmp(argv[1], "cr") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/test?authMechanism=MONGODB-CR";
+      authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example&authMechanism=MONGODB-CR";
    } else {
       printf("%s - [implicit|scram|cr]\n", argv[0]);
       return 1;
@@ -39,19 +39,19 @@ main (int   argc,
 
    mongoc_init ();
 
-   bson_init (&roles);
-   bson_init (&query);
-
    client = mongoc_client_new (uristr);
 
    if (!client) {
       fprintf (stderr, "Failed to parse URI.\n");
-      goto CLEANUP;
+      return EXIT_FAILURE;
    }
 
    mongoc_client_set_error_api (client, 2);
 
    database = mongoc_client_get_database (client, "test");
+
+   bson_init (&roles);
+   bson_init (&query);
 
    BCON_APPEND (&roles,
                 "0", "{", "role", "root", "db", "admin", "}");
@@ -59,7 +59,6 @@ main (int   argc,
    mongoc_database_add_user (database, "user,=", "pass", &roles, NULL, &error);
 
    mongoc_database_destroy (database);
-   database = NULL;
 
    mongoc_client_destroy (client);
 
@@ -74,7 +73,7 @@ main (int   argc,
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection, (mongoc_query_flags_t)0, 0, 0, 0, &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
 
    mongoc_cursor_next (cursor, &doc);
 
@@ -90,10 +89,6 @@ CLEANUP:
 
    if (collection) {
       mongoc_collection_destroy (collection);
-   }
-
-   if (database) {
-      mongoc_database_destroy (database);
    }
 
    if (client) {

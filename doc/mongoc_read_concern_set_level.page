@@ -22,7 +22,7 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
     <title>Parameters</title>
     <table>
       <tr><td><p>read_concern</p></td><td><p>A <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code>.</p></td></tr>
-      <tr><td><p>level</p></td><td><p>The readConcern level to use. Should be either MONGOC_READ_CONCERN_LEVEL_LOCAL or MONGOC_READ_CONCERN_LEVEL_MAJORITY.</p></td></tr>
+      <tr><td><p>level</p></td><td><p>The readConcern level to use. Should be one of the <code xref="mongoc_read_concern_t#levels">MONGOC_READ_CONCERN_LEVEL_*</code> macros.</p></td></tr>
     </table>
   </section>
 

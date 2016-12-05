@@ -28,8 +28,6 @@ mock_rs_t *mock_rs_with_autoismaster (int32_t max_wire_version,
                                       int n_secondaries,
                                       int n_arbiters);
 
-void mock_rs_set_verbose (mock_rs_t *rs, bool verbose);
-
 int64_t mock_rs_get_request_timeout_msec (mock_rs_t *rs);
 
 void mock_rs_set_request_timeout_msec (mock_rs_t *rs,
@@ -45,7 +43,7 @@ request_t *mock_rs_receives_query (mock_rs_t *rs,
                                    const char *ns,
                                    mongoc_query_flags_t flags,
                                    uint32_t skip,
-                                   uint32_t n_return,
+                                   int32_t n_return,
                                    const char *query_json,
                                    const char *fields_json);
 
@@ -62,7 +60,7 @@ request_t *mock_rs_receives_insert (mock_rs_t *rs,
 
 request_t *mock_rs_receives_getmore (mock_rs_t *rs,
                                      const char *ns,
-                                     uint32_t n_return,
+                                     int32_t n_return,
                                      int64_t cursor_id);
 
 request_t *mock_rs_receives_kill_cursors (mock_rs_t *rs,

@@ -13,8 +13,8 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[void
-mongoc_uri_set_read_prefs_t (mongoc_uri_t         *uri,
-                             const mongoc_prefs_t *prefs);
+mongoc_uri_set_read_prefs_t (mongoc_uri_t              *uri,
+                             const mongoc_read_prefs_t *prefs);
 ]]></code></synopsis>
   </section>
 
@@ -22,7 +22,7 @@ mongoc_uri_set_read_prefs_t (mongoc_uri_t         *uri,
     <title>Parameters</title>
     <table>
       <tr><td><p>uri</p></td><td><p>A <code xref="mongoc_uri_t">mongoc_uri_t</code>.</p></td></tr>
-      <tr><td><p>rc</p></td><td><p>A <code xref="mongoc_prefs_t">mongoc_prefs_t</code>.</p></td></tr>
+      <tr><td><p>rc</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
     </table>
   </section>
 

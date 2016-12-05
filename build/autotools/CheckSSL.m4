@@ -14,7 +14,7 @@ AC_ARG_ENABLE(crypto-system-profile,
 AC_MSG_RESULT([$enable_crypto_system_profile])
 
 AS_IF([test "$enable_ssl" != "no"],[
-   AS_IF([test "$enable_ssl" != "darwin"],[
+   AS_IF([test "$enable_ssl" != "darwin" -a "$enable_ssl" != "libressl"],[
       PKG_CHECK_MODULES(SSL, [openssl], [enable_openssl=auto], [
          AC_CHECK_LIB([ssl],[SSL_library_init],[have_ssl_lib=yes],[have_ssl_lib=no])
          AC_CHECK_LIB([crypto],[EVP_DigestInit_ex],[have_crypto_lib=yes],[have_crypto_lib=no])
@@ -33,6 +33,13 @@ AS_IF([test "$enable_ssl" != "no"],[
          fi
       ])
    ])
+   AS_IF([test "$enable_ssl" = "libressl"],[
+      AC_CHECK_LIB([tls],[tls_init],[
+         SSL_LIBS="-ltls -lcrypto"
+         enable_ssl=libressl
+      ])
+   ])
+
    dnl PKG_CHECK_MODULES() doesn't check for headers
    dnl OSX for example has the lib, but not headers, so double confirm if OpenSSL works
    AS_IF([test "$enable_ssl" = "openssl" -o "$enable_openssl" = "auto"], [
@@ -44,6 +51,7 @@ AS_IF([test "$enable_ssl" != "no"],[
       elif test "$enable_ssl" = "openssl"; then
          AC_MSG_ERROR([You must install the OpenSSL development headers to enable OpenSSL support.])
       else
+         SSL_LIBS=""
          enable_ssl=auto
       fi
    ])
@@ -70,22 +78,31 @@ dnl Disable Windows SSL+Crypto
 AC_SUBST(MONGOC_ENABLE_SSL_SECURE_CHANNEL, 0)
 AC_SUBST(MONGOC_ENABLE_CRYPTO_CNG, 0)
 
-if test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"; then
+if test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl" -o "$enable_ssl" = "libressl"; then
    AC_SUBST(MONGOC_ENABLE_SSL, 1)
    AC_SUBST(MONGOC_ENABLE_CRYPTO, 1)
    if test "$enable_ssl" = "darwin"; then
       AC_SUBST(MONGOC_ENABLE_SSL_OPENSSL, 0)
+      AC_SUBST(MONGOC_ENABLE_SSL_LIBRESSL, 0)
       AC_SUBST(MONGOC_ENABLE_SSL_SECURE_TRANSPORT, 1)
       AC_SUBST(MONGOC_ENABLE_CRYPTO_LIBCRYPTO, 0)
       AC_SUBST(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO, 1)
    elif test "$enable_ssl" = "openssl"; then
       AC_SUBST(MONGOC_ENABLE_SSL_OPENSSL, 1)
+      AC_SUBST(MONGOC_ENABLE_SSL_LIBRESSL, 0)
+      AC_SUBST(MONGOC_ENABLE_SSL_SECURE_TRANSPORT, 0)
+      AC_SUBST(MONGOC_ENABLE_CRYPTO_LIBCRYPTO, 1)
+      AC_SUBST(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO, 0)
+   elif test "$enable_ssl" = "libressl"; then
+      AC_SUBST(MONGOC_ENABLE_SSL_LIBRESSL, 1)
+      AC_SUBST(MONGOC_ENABLE_SSL_OPENSSL, 0)
       AC_SUBST(MONGOC_ENABLE_SSL_SECURE_TRANSPORT, 0)
       AC_SUBST(MONGOC_ENABLE_CRYPTO_LIBCRYPTO, 1)
       AC_SUBST(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO, 0)
    fi
 else
    AC_SUBST(MONGOC_ENABLE_SSL, 0)
+   AC_SUBST(MONGOC_ENABLE_SSL_LIBRESSL, 0)
    AC_SUBST(MONGOC_ENABLE_SSL_OPENSSL, 0)
    AC_SUBST(MONGOC_ENABLE_SSL_SECURE_TRANSPORT, 0)
    AC_SUBST(MONGOC_ENABLE_CRYPTO, 0)
@@ -102,12 +119,13 @@ else
     AC_SUBST(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE, 0)
 fi
 
-AM_CONDITIONAL([ENABLE_SSL],                  [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"])
+AM_CONDITIONAL([ENABLE_SSL],                  [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl" -o "$enable_ssl" = "libressl"])
+AM_CONDITIONAL([ENABLE_SSL_LIBRESSL],         [test "$enable_ssl" = "libressl"])
 AM_CONDITIONAL([ENABLE_SSL_OPENSSL],          [test "$enable_ssl" = "openssl"])
 AM_CONDITIONAL([ENABLE_SSL_SECURE_TRANSPORT], [test "$enable_ssl" = "darwin"])
 AM_CONDITIONAL([ENABLE_SSL_SECURE_CHANNEL],    false)
-AM_CONDITIONAL([ENABLE_CRYPTO],               [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl"])
-AM_CONDITIONAL([ENABLE_CRYPTO_LIBCRYPTO],     [test "$enable_ssl" = "openssl"])
+AM_CONDITIONAL([ENABLE_CRYPTO],               [test "$enable_ssl" = "darwin" -o "$enable_ssl" = "openssl" -o "$enable_ssl" = "libressl"])
+AM_CONDITIONAL([ENABLE_CRYPTO_LIBCRYPTO],     [test "$enable_ssl" = "openssl" -o "$enable_ssl" = "libressl"])
 AM_CONDITIONAL([ENABLE_CRYPTO_CNG],            false)
 AM_CONDITIONAL([ENABLE_CRYPTO_COMMON_CRYPTO], [test "$enable_ssl" = "darwin"])
 

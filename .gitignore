@@ -10,6 +10,7 @@ bulk3
 bulk4
 bulk5
 bulk6
+bulk-collation
 ChangeLog
 cluster1
 CMakeCache.txt
@@ -24,11 +25,14 @@ depcomp
 .dirstamp
 .DS_Store
 echo-server
-example-application-performance-monitoring
+example-command-monitoring
+example-command-with-opts
 example-client
+example-pool
 example-scram
 example-gridfs
 example-matcher
+example-sdam-monitoring
 filter-bsondump
 find-and-modify
 fam

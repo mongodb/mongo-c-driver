@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
 
 #include "mongoc-rand.h"
 #include "mongoc-rand-private.h"

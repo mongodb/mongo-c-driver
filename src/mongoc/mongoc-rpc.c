@@ -19,7 +19,7 @@
 
 #include "mongoc.h"
 #include "mongoc-rpc-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 #define RPC(_name, _code) \
@@ -165,7 +165,7 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-#include "op-reply-header.def"
+/* Don't process generate _mongoc_rpc_swab_to_le_reply_header from op-reply-header.def */
 #include "op-update.def"
 
 #undef RPC
@@ -195,9 +195,8 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-#include "op-reply-header.def"
+/* Don't process generate _mongoc_rpc_swab_from_le_reply_header from op-reply-header.def */
 #include "op-update.def"
-
 
 #undef RPC
 #undef ENUM_FIELD
@@ -827,7 +826,10 @@ _mongoc_populate_query_error (const bson_t *doc,
 }
 
 
-/* returns true if the reply is a server error */
+/* returns true if the reply is a server error
+ *
+ * note we deliberately do *not* check for writeConcernError
+ */
 static bool
 _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          bool          is_command,

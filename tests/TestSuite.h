@@ -20,17 +20,24 @@
 
 
 #include <stdio.h>
+#include <math.h>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define OS_RELEASE_FILE_DIR "tests/release_files"
+#ifndef OS_RELEASE_FILE_DIR
+# define OS_RELEASE_FILE_DIR "tests/release_files"
+#endif
 
 
 #ifndef BINARY_DIR
 # define BINARY_DIR "tests/binary"
+#endif
+
+#ifndef JSON_DIR
+# define JSON_DIR "tests/json"
 #endif
 
 #ifndef CERT_TEST_DIR
@@ -48,6 +55,8 @@ extern "C" {
 #define CERT_PASSWORD            "qwerty"
 #define CERT_PASSWORD_PROTECTED  CERT_TEST_DIR "/password_protected.pem"
 
+
+void test_error (const char *format, ...) BSON_GNUC_PRINTF(1, 2);
 
 #ifdef ASSERT
 # undef ASSERT
@@ -164,6 +173,22 @@ extern "C" {
       } \
    } while (0)
 
+#ifdef ASSERT_EQUAL_DOUBLE
+# undef ASSERT_EQUAL_DOUBLE
+#endif
+#define ASSERT_EQUAL_DOUBLE(a, b) \
+   do { \
+      double _a = fabs ((double) a); \
+      double _b = fabs ((double) b); \
+      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
+                         "%s:%d  %s()\n", \
+                         (double) a, (double) b, \
+                         __FILE__, __LINE__, BSON_FUNC); \
+         abort(); \
+      } \
+   } while (0)
+
 
 #define ASSERT_CMPSTR(a, b) \
    do { \
@@ -209,19 +234,6 @@ extern "C" {
                  a, b); \
          abort(); \
       } \
-   } while (0)
-
-#define AWAIT(_condition) \
-   do { \
-      int64_t _start = bson_get_monotonic_time (); \
-      while (! (_condition)) { \
-         if (bson_get_monotonic_time() - _start > 1000 * 1000) { \
-            fprintf (stderr, \
-                     "%s:%d %s(): \"%s\" still false after 1 second\n", \
-                     __FILE__, __LINE__, BSON_FUNC, #_condition); \
-            abort (); \
-         } \
-      }  \
    } while (0)
 
 #define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
@@ -338,6 +350,8 @@ struct _TestSuite
    FILE *outfile;
    int flags;
    int silent;
+   bson_string_t *mock_server_log_buf;
+   FILE *mock_server_log;
 };
 
 
@@ -368,6 +382,8 @@ void TestSuite_Destroy (TestSuite *suite);
 
 int test_suite_debug_output (void);
 int test_suite_valgrind (void);
+void test_suite_mock_server_log (const char *msg,
+                                 ...);
 
 #ifdef __cplusplus
 }

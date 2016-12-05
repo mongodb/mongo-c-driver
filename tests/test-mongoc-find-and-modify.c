@@ -380,6 +380,76 @@ test_find_and_modify_opts (void)
 }
 
 
+static void
+test_find_and_modify_collation (int wire)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_find_and_modify_opts_t *opts;
+   future_t *future;
+   request_t *request;
+   bson_t *collation;
+
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+
+   collation = BCON_NEW ("collation", "{",
+         "locale", BCON_UTF8 ("en_US"),
+         "caseFirst", BCON_UTF8 ("lower"),
+   "}");
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_append (opts, collation);
+
+   if (wire >= WIRE_VERSION_COLLATION) {
+      future = future_collection_find_and_modify_with_opts (
+         collection, tmp_bson ("{}"), opts, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE,
+         "{'findAndModify': 'collection',"
+         " 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}"
+         "}");
+      mock_server_replies_ok_and_destroys (request);
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+   } else {
+      bool ok = mongoc_collection_find_and_modify_with_opts (
+         collection, tmp_bson ("{}"), opts, NULL, &error);
+
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "The selected server does not support collation");
+      ASSERT (!ok);
+   }
+
+   bson_destroy (collation);
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+
+   mock_server_destroy (server);
+}
+
+static void
+test_find_and_modify_collation_ok (void)
+{
+   test_find_and_modify_collation (WIRE_VERSION_COLLATION);
+}
+
+
+static void
+test_find_and_modify_collation_fail (void)
+{
+   test_find_and_modify_collation (WIRE_VERSION_COLLATION-1);
+}
+
 void
 test_find_and_modify_install (TestSuite *suite)
 {
@@ -396,4 +466,6 @@ test_find_and_modify_install (TestSuite *suite)
                   test_find_and_modify_write_concern_wire_32_failure, NULL, NULL,
                   should_run_fam_wc);
    TestSuite_Add (suite, "/find_and_modify/opts", test_find_and_modify_opts);
+   TestSuite_Add (suite, "/find_and_modify/collation/ok", test_find_and_modify_collation_ok);
+   TestSuite_Add (suite, "/find_and_modify/collation/fail", test_find_and_modify_collation_fail);
 }

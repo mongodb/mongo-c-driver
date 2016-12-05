@@ -45,6 +45,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cluster_node_t
 {
    mongoc_stream_t *stream;
+   char            *connection_address;
 
    int32_t          max_wire_version;
    int32_t          min_wire_version;

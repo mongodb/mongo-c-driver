@@ -17,7 +17,7 @@
 #include <mongoc.h>
 #include "mongoc-client-private.h"
 #include "mongoc-linux-distro-scanner-private.h"
-#include "mongoc-metadata-os-private.h"
+#include "mongoc-handshake-os-private.h"
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -117,10 +117,10 @@ test_read_key_value_file (void)
 
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "ID", -1, &name,
+      "NAME", -1, &name,
       "VERSION_ID", -1, &version);
 
-   ASSERT_CMPSTR (name, "fedora");
+   ASSERT_CMPSTR (name, "Fedora");
    ASSERT_CMPSTR (version, "17");
 
    bson_free (name);
@@ -146,21 +146,33 @@ test_read_key_value_file (void)
    /* Test case where we get one but not the other */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "ID", -1, &name,
+      "NAME", -1, &name,
       "VERSION_", -1, &version);
 
-   ASSERT_CMPSTR (name, "fedora");
+   ASSERT_CMPSTR (name, "Fedora");
    ASSERT (version == NULL);
    bson_free (name);
 
    /* Case where we say the key is the whole line */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "ID", -1, &name,
+      "NAME", -1, &name,
       "VERSION_ID=17", -1, &version);
-   ASSERT_CMPSTR (name, "fedora");
+   ASSERT_CMPSTR (name, "Fedora");
    ASSERT (version == NULL);
    bson_free (name);
+
+   _mongoc_linux_distro_scanner_read_key_value_file (
+         OS_RELEASE_FILE_DIR "/example-etc-os-release-ubuntu1604.txt",
+         "NAME", -1,
+         &name,
+         "VERSION_ID", -1,
+         &version);
+   ASSERT_CMPSTR ("Ubuntu", name);
+   ASSERT_CMPSTR ("16.04", version);
+   bson_free (name);
+   bson_free (version);
+
 
    /* Case where the key is duplicated, make sure we keep first version */
    _mongoc_linux_distro_scanner_read_key_value_file (
@@ -223,6 +235,8 @@ test_distro_scanner_reads (void)
    ASSERT (version);
    ASSERT (strlen (version));
 #endif
+   bson_free (name);
+   bson_free (version);
 }
 #endif
 

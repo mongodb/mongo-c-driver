@@ -15,13 +15,25 @@
         }
     ],
     "read_preference": {
-        "maxStalenessMS": 1,
+        "maxStalenessSeconds": 1,
         "mode": "Nearest"
     },
     "suitable_servers": [
         {
             "address": "a:27017",
             "avg_rtt_ms": 5,
+            "lastUpdateTime": 0,
+            "lastWrite": {
+                "lastWriteDate": {
+                    "$numberLong": "1"
+                }
+            },
+            "maxWireVersion": 5,
+            "type": "Mongos"
+        },
+        {
+            "address": "b:27017",
+            "avg_rtt_ms": 50,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
@@ -37,6 +49,18 @@
             {
                 "address": "a:27017",
                 "avg_rtt_ms": 5,
+                "lastUpdateTime": 0,
+                "lastWrite": {
+                    "lastWriteDate": {
+                        "$numberLong": "1"
+                    }
+                },
+                "maxWireVersion": 5,
+                "type": "Mongos"
+            },
+            {
+                "address": "b:27017",
+                "avg_rtt_ms": 50,
                 "lastUpdateTime": 0,
                 "lastWrite": {
                     "lastWriteDate": {
