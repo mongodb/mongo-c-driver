@@ -2,6 +2,7 @@ libmongoc (1.5.0-1) unstable; urgency=medium
 
   [ A. Jesse Jiryu Davis ]
   * 1.5.0 Release
+  * Remove symbols file
 
   [ Ondřej Surý ]
   * Update gbp branch

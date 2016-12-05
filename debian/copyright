@@ -32,13 +32,6 @@ License: BSD-1-clause
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Files: build/autotools/LDVersionScript.m4
-Copyright: 2008-2013 Free Software Foundation, Inc.
-License: Other-FSF
- This file is free software; the Free Software Foundation
- gives unlimited permission to copy and/or distribute it,
- with or without modifications, as long as this notice is preserved.
-
 Files: build/autotools/m4/ax_pthread.m4
 Copyright: 2008 Steven G. Johnson <stevenj@alum.mit.edu>
            2011 Daniel Richard G. <skunk@iSKUNK.ORG>

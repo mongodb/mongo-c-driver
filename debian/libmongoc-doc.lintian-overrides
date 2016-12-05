@@ -1,2 +1,6 @@
 # yelp-build embeds jQuery and jQuery.Syntax, so we can't use libjs-jquery
 libmongoc-doc: embedded-javascript-library
+
+# Chosen not to maintain a symbols file, we'll check ABI stability with other
+# tools.
+libmongoc-1.0-0: no-symbols-control-file
