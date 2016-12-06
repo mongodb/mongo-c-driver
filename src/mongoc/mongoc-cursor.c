@@ -593,7 +593,7 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 
 
 bool
-_use_find_command (const mongoc_cursor_t *cursor,
+_use_find_command (const mongoc_cursor_t        *cursor,
                    const mongoc_server_stream_t *server_stream)
 {
    /* Find, getMore And killCursors Commands Spec: "the find command cannot be
