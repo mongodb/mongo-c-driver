@@ -7,6 +7,7 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
+#include "test-conveniences.h"
 
 
 static void
@@ -371,6 +372,33 @@ test_mongoc_uri_new (void)
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "SCRAM-SHA1");
    mongoc_uri_destroy(uri);
+}
+
+
+static void
+test_mongoc_uri_authmechanismproperties (void)
+{
+   mongoc_uri_t *uri;
+   bson_t props;
+
+   uri = mongoc_uri_new ("mongodb://user@localhost/?authMechanism=SCRAM-SHA1"
+                         "&authmechanismproperties=a:one,b:two");
+   ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
+   ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+   ASSERT_MATCH (&props, "{'a': 'one', 'b': 'two'}");
+
+   /* prohibited */
+   ASSERT (!mongoc_uri_set_option_as_utf8 (uri, "authMechanismProperties",
+                                           "a:three"));
+
+   ASSERT (mongoc_uri_set_mechanism_properties (uri,
+                                                tmp_bson ("{'a': 'four'}")));
+
+   ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+   ASSERT_MATCH (&props, "{'a': 'four', 'b': {'$exists': false}}");
+
+   mongoc_uri_destroy (uri);
 }
 
 
@@ -893,6 +921,8 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/read_concern", test_mongoc_uri_read_concern);
    TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
+   TestSuite_Add (suite, "/Uri/auth_mechanism_properties",
+                  test_mongoc_uri_authmechanismproperties);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add (suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);

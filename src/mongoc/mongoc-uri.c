@@ -845,13 +845,13 @@ mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri)
 
 
 bool
-mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties)
+mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
+                                     bson_t             *properties /* OUT */)
 {
    bson_iter_t iter;
 
-   if (!uri) {
-      return false;
-   }
+   BSON_ASSERT (uri);
+   BSON_ASSERT (properties);
 
    if (bson_iter_init_find_case (&iter, &uri->credentials, "mechanismProperties") &&
       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -865,6 +865,40 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties
    }
 
    return false;
+}
+
+
+bool
+mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
+                                     const bson_t *properties)
+{
+   bson_iter_t iter;
+   bson_t tmp = BSON_INITIALIZER;
+   bool r;
+
+   BSON_ASSERT (uri);
+   BSON_ASSERT (properties);
+
+   if (bson_iter_init_find (&iter, &uri->credentials, "mechanismProperties")) {
+      /* copy all elements to tmp besides mechanismProperties */
+      bson_copy_to_excluding_noinit (&uri->credentials, &tmp,
+                                     "mechanismProperties", NULL);
+
+      r = BSON_APPEND_DOCUMENT (&tmp, "mechanismProperties", properties);
+      if (!r) {
+         bson_destroy (&tmp);
+         return false;
+      }
+
+      bson_destroy (&uri->credentials);
+      bson_copy_to (&tmp, &uri->credentials);
+      bson_destroy (&tmp);
+
+      return true;
+   } else {
+      return BSON_APPEND_DOCUMENT (&uri->credentials, "mechanismProperties",
+                                   properties);
+   }
 }
 
 

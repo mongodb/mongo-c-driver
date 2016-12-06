@@ -126,6 +126,9 @@ BSON_API
 bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t           *uri,
                                                                    bson_t                       *properties);
 BSON_API
+bool                          mongoc_uri_set_mechanism_properties (mongoc_uri_t                 *uri,
+                                                                   const bson_t                 *properties);
+BSON_API
 bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t           *uri);
 BSON_API
 char                         *mongoc_uri_unescape                 (const char                   *escaped_string);
