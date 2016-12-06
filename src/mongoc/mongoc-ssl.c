@@ -80,6 +80,7 @@ mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
     MONGOC_WARNING ("libtls doesn't support automatically extracting subject from "
                     "certificate to use with authentication");
+    retval = NULL;
 #elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 	retval = _mongoc_secure_transport_extract_subject (filename, passphrase);
 #elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
