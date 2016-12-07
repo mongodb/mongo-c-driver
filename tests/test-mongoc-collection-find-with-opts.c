@@ -298,7 +298,7 @@ test_fields (void)
    test_collection_find_with_opts_t test_data = { 0 };
 
    test_data.opts = "{'projection': {'_id': 0, 'b': 1}}";
-   test_data.expected_op_query_projection = "{'_id': 0, 'b': 1}}";
+   test_data.expected_op_query_projection = "{'_id': 0, 'b': 1}";
    test_data.expected_find_command =
       "{'find': 'collection', 'filter': {}, 'projection': {'_id': 0, 'b': 1}}";
    _test_collection_find_with_opts (&test_data);
@@ -708,7 +708,7 @@ test_getmore_cmd_await (void)
       "{'getMore': {'$numberLong': '123'},"
       " 'collection': 'collection',"
       " 'maxAwaitTimeMS': {'$exists': false},"
-      " 'maxTimeMS': {'$numberLong': '9999'}}}");
+      " 'maxTimeMS': {'$numberLong': '9999'}}");
 
    ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1,"

@@ -2904,8 +2904,8 @@ test_aggregate_legacy (void *data)
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'aggregate': 'collection',"
-      " 'pipeline': [{'a': 1}]},"
-      " 'cursor': {'$exists': false} %s",
+      " 'pipeline': [{'a': 1}],"
+      " 'cursor': {'$exists': false} %s}",
       context->with_options ? ", 'foo': 1" : "");
 
    mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
@@ -4366,8 +4366,8 @@ test_aggregate_with_collation (int wire)
       request = mock_server_receives_command (
          server, "db", MONGOC_QUERY_SLAVE_OK,
          "{'aggregate': 'collection',"
-         " 'pipeline': [{'a': 1}]},"
-         " 'collation': {'locale': 'en'}");
+         " 'pipeline': [{'a': 1}],"
+         " 'collation': {'locale': 'en'}}");
 
       mock_server_replies_simple (request,
                                   "{'ok': 1,"
