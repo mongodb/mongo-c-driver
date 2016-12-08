@@ -167,9 +167,10 @@ mongoc_set_for_each (mongoc_set_t            *set,
 
    items_len = set->items_len;
 
-   // prevent undefined behavior of memcpy(NULL)
-   if(items_len == 0)
-    return;
+   /* prevent undefined behavior of memcpy(NULL) */
+   if (items_len == 0) {
+      return;
+   }
 
    old_set = (mongoc_set_item_t *)bson_malloc (sizeof (*old_set) * items_len);
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
