@@ -1554,6 +1554,7 @@ _reply_destroy (reply_t *reply)
       bson_destroy (&reply->docs[i]);
    }
 
+   bson_free (reply->docs);
    bson_free (reply);
 }
 

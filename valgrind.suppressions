@@ -53,11 +53,3 @@
    ...
    fun:_mongoc_do_init
 }
-{
-   test_framework_reply_leaks
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:calloc
-   fun:bson_malloc0
-   fun:mock_server_reply_multi
-}
