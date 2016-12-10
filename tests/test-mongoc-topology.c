@@ -870,6 +870,7 @@ _test_server_removed_during_handshake (bool pooled)
    
    mongoc_server_descriptions_destroy_all (sds, n);
    mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
 }
 
 
