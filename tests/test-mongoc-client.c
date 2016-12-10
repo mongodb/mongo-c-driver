@@ -1081,6 +1081,41 @@ test_command_with_opts_modern (void)
 
 
 static void
+test_command_no_errmsg (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_error_api (client, 2);
+
+   cmd = tmp_bson ("{'command': 1}");
+   future = future_client_command_simple (client, "admin", cmd, NULL, NULL,
+                                          &error);
+
+   request = mock_server_receives_command (server, "admin",
+                                           MONGOC_QUERY_SLAVE_OK, NULL);
+
+   /* auth errors have $err, not errmsg. we'd raised "Unknown command error",
+    * see CDRIVER-1928 */
+   mock_server_replies_simple (request, "{'ok': 0, 'code': 7, '$err': 'bad!'}");
+   ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 7, "bad!");
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_unavailable_seeds (void)
 {
    mock_server_t *servers[2];
@@ -2618,6 +2653,7 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/command_with_opts/read_prefs", test_command_with_opts_read_prefs);
    TestSuite_AddLive (suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddLive (suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
+   TestSuite_AddLive (suite, "/Client/command/no_errmsg", test_command_no_errmsg);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
