@@ -623,6 +623,7 @@ test_cooldown_rs (void *ctx)
    bson_free (primary_response);
    bson_free (uri_str);
    mock_server_destroy (servers[0]);
+   mock_server_destroy (servers[1]);
 }
 
 
