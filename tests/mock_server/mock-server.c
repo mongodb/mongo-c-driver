@@ -1596,6 +1596,8 @@ worker_thread (void *data)
                                               TIMEOUT, &error)) {
          mongoc_stream_close (client_stream);
          mongoc_stream_destroy (client_stream);
+         bson_free (closure);
+         q_destroy (replies);
          RETURN (NULL);
       }
    }
