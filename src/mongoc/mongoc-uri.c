@@ -882,7 +882,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
    if (bson_iter_init_find (&iter, &uri->credentials, "mechanismProperties")) {
       /* copy all elements to tmp besides mechanismProperties */
       bson_copy_to_excluding_noinit (&uri->credentials, &tmp,
-                                     "mechanismProperties", NULL);
+                                     "mechanismProperties", (char *) NULL);
 
       r = BSON_APPEND_DOCUMENT (&tmp, "mechanismProperties", properties);
       if (!r) {
