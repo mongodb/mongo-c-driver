@@ -3488,8 +3488,8 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/opts/collation/w1/wire5", test_bulk_collation_w1_wire5);
    TestSuite_Add (suite, "/BulkOperation/opts/collation/w1/wire4", test_bulk_collation_w1_wire4);
    TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire5", test_bulk_collation_multi_w0_wire5);
-   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire5", test_bulk_collation_multi_w0_wire4);
-   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire5);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w0/wire4", test_bulk_collation_multi_w0_wire4);
+   TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire5", test_bulk_collation_multi_w1_wire5);
    TestSuite_Add (suite, "/BulkOperation/opts/collation/multi/w1/wire4", test_bulk_collation_multi_w1_wire4);
    TestSuite_Add (suite, "/BulkOperation/update_one/error_message", test_bulk_update_one_error_message);
 }
