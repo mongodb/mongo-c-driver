@@ -785,6 +785,9 @@ _mongoc_populate_cmd_error (const bson_t *doc,
    if (bson_iter_init_find (&iter, doc, "errmsg") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       msg = bson_iter_utf8 (&iter, NULL);
+   } else if (bson_iter_init_find (&iter, doc, "$err") &&
+              BSON_ITER_HOLDS_UTF8 (&iter)) {
+      msg = bson_iter_utf8 (&iter, NULL);
    }
 
    bson_set_error (error, domain, code, "%s", msg);
