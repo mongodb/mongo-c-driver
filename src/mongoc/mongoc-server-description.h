@@ -24,34 +24,27 @@
 
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
 
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_server_description_destroy (mongoc_server_description_t *description);
 
-BSON_API
-mongoc_server_description_t *
+BSON_EXPORT (mongoc_server_description_t *)
 mongoc_server_description_new_copy (
    const mongoc_server_description_t *description);
 
-BSON_API
-uint32_t
+BSON_EXPORT (uint32_t)
 mongoc_server_description_id (const mongoc_server_description_t *description);
 
-BSON_API
-mongoc_host_list_t *
+BSON_EXPORT (mongoc_host_list_t *)
 mongoc_server_description_host (const mongoc_server_description_t *description);
 
-BSON_API
-int64_t
+BSON_EXPORT (int64_t)
 mongoc_server_description_round_trip_time (
    const mongoc_server_description_t *description);
 
-BSON_API
-const char *
+BSON_EXPORT (const char *)
 mongoc_server_description_type (const mongoc_server_description_t *description);
 
-BSON_API
-const bson_t *
+BSON_EXPORT (const bson_t *)
 mongoc_server_description_ismaster (
    const mongoc_server_description_t *description);
 

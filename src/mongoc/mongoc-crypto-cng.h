@@ -30,8 +30,7 @@
 
 BSON_BEGIN_DECLS
 
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              const void *key,
                              int key_len,
@@ -39,8 +38,7 @@ mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              int n,
                              unsigned char *md /* OUT */);
 
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
                         const unsigned char *input,
                         const size_t input_len,

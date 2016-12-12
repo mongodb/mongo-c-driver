@@ -27,11 +27,9 @@
 BSON_BEGIN_DECLS
 
 
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_init (void);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_cleanup (void);
 
 

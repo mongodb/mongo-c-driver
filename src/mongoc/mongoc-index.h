@@ -70,23 +70,17 @@ typedef struct {
 } mongoc_index_opt_t;
 
 
-BSON_API
-const mongoc_index_opt_t *
+BSON_EXPORT (const mongoc_index_opt_t *)
 mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
-BSON_API
-const mongoc_index_opt_geo_t *
+BSON_EXPORT (const mongoc_index_opt_geo_t *)
 mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
-BSON_API
-const mongoc_index_opt_wt_t *
+BSON_EXPORT (const mongoc_index_opt_wt_t *)
 mongoc_index_opt_wt_get_default (void) BSON_GNUC_CONST;
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_index_opt_init (mongoc_index_opt_t *opt);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_index_opt_geo_init (mongoc_index_opt_geo_t *opt);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_index_opt_wt_init (mongoc_index_opt_wt_t *opt);
 
 BSON_END_DECLS

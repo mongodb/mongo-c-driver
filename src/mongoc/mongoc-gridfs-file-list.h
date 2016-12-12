@@ -32,14 +32,11 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_gridfs_file_list_t mongoc_gridfs_file_list_t;
 
 
-BSON_API
-mongoc_gridfs_file_t *
+BSON_EXPORT (mongoc_gridfs_file_t *)
 mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
                                bson_error_t *error);
 

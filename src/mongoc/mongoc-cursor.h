@@ -34,63 +34,45 @@ typedef struct _mongoc_cursor_t mongoc_cursor_t;
 /* forward decl */
 struct _mongoc_client_t;
 
-BSON_API
-mongoc_cursor_t *
+BSON_EXPORT (mongoc_cursor_t *)
 mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    BSON_GNUC_WARN_UNUSED_RESULT;
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_cursor_destroy (mongoc_cursor_t *cursor);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_more (mongoc_cursor_t *cursor);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_is_alive (const mongoc_cursor_t *cursor);
-BSON_API
-const bson_t *
+BSON_EXPORT (const bson_t *)
 mongoc_cursor_current (const mongoc_cursor_t *cursor);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size);
-BSON_API
-uint32_t
+BSON_EXPORT (uint32_t)
 mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_set_limit (mongoc_cursor_t *cursor, int64_t limit);
-BSON_API
-int64_t
+BSON_EXPORT (int64_t)
 mongoc_cursor_get_limit (const mongoc_cursor_t *cursor);
 /* These names include the term "hint" for backward compatibility, should be
  * mongoc_cursor_get_server_id, mongoc_cursor_set_server_id. */
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id);
-BSON_API
-uint32_t
+BSON_EXPORT (uint32_t)
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor);
-BSON_API
-int64_t
+BSON_EXPORT (int64_t)
 mongoc_cursor_get_id (const mongoc_cursor_t *cursor);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t *cursor,
                                      uint32_t max_await_time_ms);
-BSON_API
-uint32_t
+BSON_EXPORT (uint32_t)
 mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor);
-BSON_API
-mongoc_cursor_t *
+BSON_EXPORT (mongoc_cursor_t *)
 mongoc_cursor_new_from_command_reply (struct _mongoc_client_t *client,
                                       bson_t *reply,
                                       uint32_t server_id)

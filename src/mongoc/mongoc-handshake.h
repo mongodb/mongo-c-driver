@@ -85,8 +85,7 @@ BSON_BEGIN_DECLS
  *  }
  *
  */
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
                               const char *platform);

@@ -97,22 +97,17 @@ typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (
    bson_error_t *error);
 
 
-BSON_API
-mongoc_client_t *
+BSON_EXPORT (mongoc_client_t *)
 mongoc_client_new (const char *uri_string);
-BSON_API
-mongoc_client_t *
+BSON_EXPORT (mongoc_client_t *)
 mongoc_client_new_from_uri (const mongoc_uri_t *uri);
-BSON_API
-const mongoc_uri_t *
+BSON_EXPORT (const mongoc_uri_t *)
 mongoc_client_get_uri (const mongoc_client_t *client);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_set_stream_initiator (mongoc_client_t *client,
                                     mongoc_stream_initiator_t initiator,
                                     void *user_data);
-BSON_API
-mongoc_cursor_t *
+BSON_EXPORT (mongoc_cursor_t *)
 mongoc_client_command (mongoc_client_t *client,
                        const char *db_name,
                        mongoc_query_flags_t flags,
@@ -122,20 +117,17 @@ mongoc_client_command (mongoc_client_t *client,
                        const bson_t *query,
                        const bson_t *fields,
                        const mongoc_read_prefs_t *read_prefs);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_kill_cursor (mongoc_client_t *client,
                            int64_t cursor_id) BSON_GNUC_DEPRECATED;
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_command_simple (mongoc_client_t *client,
                               const char *db_name,
                               const bson_t *command,
                               const mongoc_read_prefs_t *read_prefs,
                               bson_t *reply,
                               bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_read_command_with_opts (mongoc_client_t *client,
                                       const char *db_name,
                                       const bson_t *command,
@@ -143,16 +135,14 @@ mongoc_client_read_command_with_opts (mongoc_client_t *client,
                                       const bson_t *opts,
                                       bson_t *reply,
                                       bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_write_command_with_opts (mongoc_client_t *client,
                                        const char *db_name,
                                        const bson_t *command,
                                        const bson_t *opts,
                                        bson_t *reply,
                                        bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_read_write_command_with_opts (
    mongoc_client_t *client,
    const char *db_name,
@@ -161,8 +151,7 @@ mongoc_client_read_write_command_with_opts (
    const bson_t *opts,
    bson_t *reply,
    bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_command_simple_with_server_id (
    mongoc_client_t *client,
    const char *db_name,
@@ -171,100 +160,76 @@ mongoc_client_command_simple_with_server_id (
    uint32_t server_id,
    bson_t *reply,
    bson_error_t *error);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_destroy (mongoc_client_t *client);
-BSON_API
-mongoc_database_t *
+BSON_EXPORT (mongoc_database_t *)
 mongoc_client_get_database (mongoc_client_t *client, const char *name);
-BSON_API
-mongoc_database_t *
+BSON_EXPORT (mongoc_database_t *)
 mongoc_client_get_default_database (mongoc_client_t *client);
-BSON_API
-mongoc_gridfs_t *
+BSON_EXPORT (mongoc_gridfs_t *)
 mongoc_client_get_gridfs (mongoc_client_t *client,
                           const char *db,
                           const char *prefix,
                           bson_error_t *error);
-BSON_API
-mongoc_collection_t *
+BSON_EXPORT (mongoc_collection_t *)
 mongoc_client_get_collection (mongoc_client_t *client,
                               const char *db,
                               const char *collection);
-BSON_API
-char **
+BSON_EXPORT (char **)
 mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error);
-BSON_API
-mongoc_cursor_t *
+BSON_EXPORT (mongoc_cursor_t *)
 mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_get_server_status (mongoc_client_t *client,
                                  mongoc_read_prefs_t *read_prefs,
                                  bson_t *reply,
                                  bson_error_t *error);
-BSON_API
-int32_t
+BSON_EXPORT (int32_t)
 mongoc_client_get_max_message_size (mongoc_client_t *client)
    BSON_GNUC_DEPRECATED;
-BSON_API
-int32_t
+BSON_EXPORT (int32_t)
 mongoc_client_get_max_bson_size (mongoc_client_t *client) BSON_GNUC_DEPRECATED;
-BSON_API
-const mongoc_write_concern_t *
+BSON_EXPORT (const mongoc_write_concern_t *)
 mongoc_client_get_write_concern (const mongoc_client_t *client);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_set_write_concern (mongoc_client_t *client,
                                  const mongoc_write_concern_t *write_concern);
-BSON_API
-const mongoc_read_concern_t *
+BSON_EXPORT (const mongoc_read_concern_t *)
 mongoc_client_get_read_concern (const mongoc_client_t *client);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_set_read_concern (mongoc_client_t *client,
                                 const mongoc_read_concern_t *read_concern);
-BSON_API
-const mongoc_read_prefs_t *
+BSON_EXPORT (const mongoc_read_prefs_t *)
 mongoc_client_get_read_prefs (const mongoc_client_t *client);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_set_read_prefs (mongoc_client_t *client,
                               const mongoc_read_prefs_t *read_prefs);
 #ifdef MONGOC_ENABLE_SSL
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_client_set_ssl_opts (mongoc_client_t *client,
                             const mongoc_ssl_opt_t *opts);
 #endif
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_set_apm_callbacks (mongoc_client_t *client,
                                  mongoc_apm_callbacks_t *callbacks,
                                  void *context);
-BSON_API
-mongoc_server_description_t *
+BSON_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_server_description (mongoc_client_t *client,
                                       uint32_t server_id);
-BSON_API
-mongoc_server_description_t **
+BSON_EXPORT (mongoc_server_description_t **)
 mongoc_client_get_server_descriptions (const mongoc_client_t *client,
                                        size_t *n);
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
                                         size_t n);
-BSON_API
-mongoc_server_description_t *
+BSON_EXPORT (mongoc_server_description_t *)
 mongoc_client_select_server (mongoc_client_t *client,
                              bool for_writes,
                              const mongoc_read_prefs_t *prefs,
                              bson_error_t *error);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_set_error_api (mongoc_client_t *client, int32_t version);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_client_set_appname (mongoc_client_t *client, const char *appname);
 BSON_END_DECLS
 

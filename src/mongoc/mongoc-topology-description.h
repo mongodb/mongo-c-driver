@@ -23,19 +23,15 @@
 
 typedef struct _mongoc_topology_description_t mongoc_topology_description_t;
 
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_topology_description_has_readable_server (
    mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs);
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_topology_description_has_writable_server (
    mongoc_topology_description_t *td);
-BSON_API
-const char *
+BSON_EXPORT (const char *)
 mongoc_topology_description_type (const mongoc_topology_description_t *td);
-BSON_API
-mongoc_server_description_t **
+BSON_EXPORT (mongoc_server_description_t **)
 mongoc_topology_description_get_servers (
    const mongoc_topology_description_t *td, size_t *n);
 

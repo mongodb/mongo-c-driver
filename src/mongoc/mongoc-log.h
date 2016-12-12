@@ -81,8 +81,7 @@ typedef void (*mongoc_log_func_t) (mongoc_log_level_t log_level,
  *
  * Sets the function to be called to handle logging.
  */
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
 
 
@@ -99,16 +98,14 @@ mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
  * does not re-enter the logging system or deadlock will occur.
  *
  */
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_log (mongoc_log_level_t log_level,
             const char *log_domain,
             const char *format,
             ...) BSON_GNUC_PRINTF (3, 4);
 
 
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_log_default_handler (mongoc_log_level_t log_level,
                             const char *log_domain,
                             const char *message,
@@ -121,8 +118,7 @@ mongoc_log_default_handler (mongoc_log_level_t log_level,
  *
  * Returns: The string representation of log_level
  */
-BSON_API
-const char *
+BSON_EXPORT (const char *)
 mongoc_log_level_str (mongoc_log_level_t log_level);
 
 
@@ -131,8 +127,7 @@ mongoc_log_level_str (mongoc_log_level_t log_level);
  *
  * Enables tracing at runtime (if it has been enabled at compile time).
  */
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_log_trace_enable (void);
 
 
@@ -141,8 +136,7 @@ mongoc_log_trace_enable (void);
  *
  * Disables tracing at runtime (if it has been enabled at compile time).
  */
-BSON_API
-void
+BSON_EXPORT (void)
 mongoc_log_trace_disable (void);
 
 

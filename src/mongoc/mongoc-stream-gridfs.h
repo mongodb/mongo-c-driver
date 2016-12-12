@@ -30,8 +30,7 @@
 BSON_BEGIN_DECLS
 
 
-BSON_API
-mongoc_stream_t *
+BSON_EXPORT (mongoc_stream_t *)
 mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
 
 
