@@ -346,11 +346,11 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
 }
 
 static int
-_mongoc_stream_tls_secure_transport_setsockopt (mongoc_stream_t *stream,
-                                                int              level,
-                                                int              optname,
-                                                void            *optval,
-                                                socklen_t        optlen)
+_mongoc_stream_tls_secure_transport_setsockopt (mongoc_stream_t  *stream,
+                                                int               level,
+                                                int               optname,
+                                                void             *optval,
+                                                mongoc_socklen_t  optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;

@@ -356,11 +356,11 @@ _mongoc_stream_tls_libressl_readv (mongoc_stream_t *stream,
 }
 
 static int
-_mongoc_stream_tls_libressl_setsockopt (mongoc_stream_t *stream,
-                                        int              level,
-                                        int              optname,
-                                        void            *optval,
-                                        socklen_t        optlen)
+_mongoc_stream_tls_libressl_setsockopt (mongoc_stream_t  *stream,
+                                        int               level,
+                                        int               optname,
+                                        void             *optval,
+                                        mongoc_socklen_t  optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    mongoc_stream_tls_libressl_t *libressl = (mongoc_stream_tls_libressl_t *) tls->ctx;

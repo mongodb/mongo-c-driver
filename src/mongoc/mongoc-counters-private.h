@@ -35,6 +35,9 @@
 # include <sys/param.h>
 #endif
 
+#ifdef __hpux__
+#include <sys/pstat.h>
+#endif
 
 BSON_BEGIN_DECLS
 
@@ -48,6 +51,13 @@ _mongoc_get_cpu_count (void)
 {
 #if defined(__linux__)
    return get_nprocs ();
+#elif defined(__hpux__)
+  struct pst_dynamic psd;
+  if (pstat_getdynamic (&psd, sizeof (psd), (size_t) 1, 0) != -1) {
+     return psd.psd_max_proc_cnt;
+  }
+
+  return 1;
 #elif defined(__FreeBSD__) || \
       defined(__NetBSD__) || \
       defined(__DragonFly__) || \
