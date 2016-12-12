@@ -21,11 +21,11 @@
 #include "mongoc-log.h"
 #include "mongoc-crypto-private.h"
 #if defined(MONGOC_ENABLE_CRYPTO_LIBCRYPTO)
-# include "mongoc-crypto-openssl-private.h"
+#include "mongoc-crypto-openssl-private.h"
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
-# include "mongoc-crypto-common-crypto-private.h"
+#include "mongoc-crypto-common-crypto-private.h"
 #elif defined(MONGOC_ENABLE_CRYPTO_CNG)
-# include "mongoc-crypto-cng-private.h"
+#include "mongoc-crypto-cng-private.h"
 #endif
 
 void
@@ -44,23 +44,22 @@ mongoc_crypto_init (mongoc_crypto_t *crypto)
 }
 
 void
-mongoc_crypto_hmac_sha1 (mongoc_crypto_t     *crypto,
-                         const void          *key,
-                         int                  key_len,
+mongoc_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
+                         const void *key,
+                         int key_len,
                          const unsigned char *d,
-                         int                  n,
-                         unsigned char       *md /* OUT */)
+                         int n,
+                         unsigned char *md /* OUT */)
 {
    crypto->hmac_sha1 (crypto, key, key_len, d, n, md);
 }
 
 bool
-mongoc_crypto_sha1      (mongoc_crypto_t     *crypto,
-                         const unsigned char *input,
-                         const size_t         input_len,
-                         unsigned char       *output /* OUT */)
+mongoc_crypto_sha1 (mongoc_crypto_t *crypto,
+                    const unsigned char *input,
+                    const size_t input_len,
+                    unsigned char *output /* OUT */)
 {
    return crypto->sha1 (crypto, input, input_len, output);
 }
 #endif
-

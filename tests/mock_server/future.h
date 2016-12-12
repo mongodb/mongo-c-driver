@@ -14,31 +14,36 @@
  *
  *************************************************/
 
-typedef struct
-{
-   bool             resolved;
-   bool             awaited;
-   future_value_t   return_value;
-   int              argc;
-   future_value_t  *argv;
-   mongoc_cond_t    cond;
-   mongoc_mutex_t   mutex;
-   mongoc_thread_t  thread;
+typedef struct {
+   bool resolved;
+   bool awaited;
+   future_value_t return_value;
+   int argc;
+   future_value_t *argv;
+   mongoc_cond_t cond;
+   mongoc_mutex_t mutex;
+   mongoc_thread_t thread;
 } future_t;
 
-future_t *future_new (future_value_type_t return_type, int argc);
+future_t *
+future_new (future_value_type_t return_type, int argc);
 
-future_value_t *future_get_param (future_t *future, int i);
+future_value_t *
+future_get_param (future_t *future, int i);
 
-void future_start (future_t *future,
-                   void *(*start_routine)(void *));
+void
+future_start (future_t *future, void *(*start_routine) (void *) );
 
-void future_resolve (future_t *future, future_value_t return_value);
+void
+future_resolve (future_t *future, future_value_t return_value);
 
-bool future_wait (future_t *future);
-bool future_wait_max (future_t *future, int64_t timeout_ms);
+bool
+future_wait (future_t *future);
+bool
+future_wait_max (future_t *future, int64_t timeout_ms);
 
-void future_get_void (future_t *future);
+void
+future_get_void (future_t *future);
 
 
 bool
@@ -135,6 +140,7 @@ const_mongoc_write_concern_ptr
 future_get_const_mongoc_write_concern_ptr (future_t *future);
 
 
-void future_destroy (future_t *future);
+void
+future_destroy (future_t *future);
 
 #endif /* FUTURE_H */

@@ -16,7 +16,8 @@ WriteResult({ "nInserted" : 1 })
 
 Build and run the example:
 
-gcc example-command-with-opts.c -o example-command-with-opts $(pkg-config --cflags --libs libmongoc-1.0)
+gcc example-command-with-opts.c -o example-command-with-opts $(pkg-config
+--cflags --libs libmongoc-1.0)
 ./example-command-with-opts [CONNECTION_STRING]
 cloneCollectionAsCapped: { "ok" : 1 }
 distinct: { "values" : [ 1, 2 ], "ok" : 1 }
@@ -28,8 +29,7 @@ distinct: { "values" : [ 1, 2 ], "ok" : 1 }
 #include <stdlib.h>
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
@@ -45,7 +45,7 @@ main (int   argc,
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv [1];
+      uristr = argv[1];
    }
 
    client = mongoc_client_new (uristr);
@@ -57,9 +57,12 @@ main (int   argc,
 
    mongoc_client_set_error_api (client, 2);
 
-   cmd = BCON_NEW ("cloneCollectionAsCapped", BCON_UTF8 ("my_collection"),
-                   "toCollection", BCON_UTF8 ("my_capped_collection"),
-                   "size", BCON_INT64 (1024 * 1024));
+   cmd = BCON_NEW ("cloneCollectionAsCapped",
+                   BCON_UTF8 ("my_collection"),
+                   "toCollection",
+                   BCON_UTF8 ("my_capped_collection"),
+                   "size",
+                   BCON_INT64 (1024 * 1024));
 
    /* include write concern "majority" in command options */
    write_concern = mongoc_write_concern_new ();
@@ -67,12 +70,8 @@ main (int   argc,
    opts = bson_new ();
    mongoc_write_concern_append (write_concern, opts);
 
-   if (mongoc_client_write_command_with_opts (client,
-                                              "test",
-                                              cmd,
-                                              opts,
-                                              &reply,
-                                              &error)) {
+   if (mongoc_client_write_command_with_opts (
+          client, "test", cmd, opts, &reply, &error)) {
       json = bson_as_json (&reply, NULL);
       printf ("cloneCollectionAsCapped: %s\n", json);
       bson_free (json);
@@ -84,16 +83,28 @@ main (int   argc,
    bson_free (opts);
 
    /* distinct values of "x" in "my_collection" where "y" sorts after "one" */
-   cmd = BCON_NEW ("distinct", BCON_UTF8 ("my_collection"),
-                   "key", BCON_UTF8 ("x"),
-                   "query", "{", "y", "{", "$gt", BCON_UTF8 ("one"), "}", "}");
+   cmd = BCON_NEW ("distinct",
+                   BCON_UTF8 ("my_collection"),
+                   "key",
+                   BCON_UTF8 ("x"),
+                   "query",
+                   "{",
+                   "y",
+                   "{",
+                   "$gt",
+                   BCON_UTF8 ("one"),
+                   "}",
+                   "}");
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* "One" normally sorts before "one"; make "One" sort after "one" */
-   opts = BCON_NEW ("collation", "{",
-                    "locale", BCON_UTF8 ("en_US"),
-                    "caseFirst", BCON_UTF8 ("lower"),
+   opts = BCON_NEW ("collation",
+                    "{",
+                    "locale",
+                    BCON_UTF8 ("en_US"),
+                    "caseFirst",
+                    BCON_UTF8 ("lower"),
                     "}");
 
    /* add a read concern to "opts" */
@@ -103,13 +114,8 @@ main (int   argc,
 
    mongoc_read_concern_append (read_concern, opts);
 
-   if (mongoc_client_read_command_with_opts (client,
-                                             "test",
-                                             cmd,
-                                             read_prefs,
-                                             opts,
-                                             &reply,
-                                             &error)) {
+   if (mongoc_client_read_command_with_opts (
+          client, "test", cmd, read_prefs, opts, &reply, &error)) {
       json = bson_as_json (&reply, NULL);
       printf ("distinct: %s\n", json);
       bson_free (json);

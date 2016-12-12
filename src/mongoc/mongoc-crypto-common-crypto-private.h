@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -31,21 +31,20 @@
 BSON_BEGIN_DECLS
 
 void
-mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t     *crypto,
-                                       const void          *key,
-                                       int                  key_len,
+mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
+                                       const void *key,
+                                       int key_len,
                                        const unsigned char *d,
-                                       int                  n,
-                                       unsigned char       *md /* OUT */);
+                                       int n,
+                                       unsigned char *md /* OUT */);
 
 bool
-mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t     *crypto,
+mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t *crypto,
                                   const unsigned char *input,
-                                  const size_t         input_len,
-                                  unsigned char       *output /* OUT */);
+                                  const size_t input_len,
+                                  unsigned char *output /* OUT */);
 
 BSON_END_DECLS
 
 #endif /* MONGOC_CRYPTO_COMMON_CRYPTO_PRIVATE_H */
 #endif /* MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO */
-

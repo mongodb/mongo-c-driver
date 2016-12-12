@@ -17,7 +17,7 @@
 #ifndef MONGOC_CURSOR_FILTER_PRIVATE_H
 #define MONGOC_CURSOR_FILTER_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -28,29 +28,27 @@
 
 BSON_BEGIN_DECLS
 
-typedef enum
-{
+typedef enum {
    MONGO_CURSOR_TRANSFORM_DROP,
    MONGO_CURSOR_TRANSFORM_PASS,
    MONGO_CURSOR_TRANSFORM_MUTATE,
 } mongoc_cursor_transform_mode_t;
 
-typedef mongoc_cursor_transform_mode_t
-(*mongoc_cursor_transform_filter_t)(const bson_t *bson,
-                                    void         *ctx);
+typedef mongoc_cursor_transform_mode_t (*mongoc_cursor_transform_filter_t) (
+   const bson_t *bson, void *ctx);
 
-typedef void (*mongoc_cursor_transform_mutate_t)(const bson_t *bson,
-                                                 bson_t       *out,
-                                                 void         *ctx);
+typedef void (*mongoc_cursor_transform_mutate_t) (const bson_t *bson,
+                                                  bson_t *out,
+                                                  void *ctx);
 
-typedef void (*mongoc_cursor_transform_dtor_t)(void *ctx);
+typedef void (*mongoc_cursor_transform_dtor_t) (void *ctx);
 
 void
-_mongoc_cursor_transform_init (mongoc_cursor_t                 *cursor,
+_mongoc_cursor_transform_init (mongoc_cursor_t *cursor,
                                mongoc_cursor_transform_filter_t filter,
                                mongoc_cursor_transform_mutate_t mutate,
-                               mongoc_cursor_transform_dtor_t   dtor,
-                               void                            *ctx);
+                               mongoc_cursor_transform_dtor_t dtor,
+                               void *ctx);
 
 
 BSON_END_DECLS

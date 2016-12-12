@@ -37,7 +37,7 @@ mongoc_read_concern_new (void)
 {
    mongoc_read_concern_t *read_concern;
 
-   read_concern = (mongoc_read_concern_t *)bson_malloc0 (sizeof *read_concern);
+   read_concern = (mongoc_read_concern_t *) bson_malloc0 (sizeof *read_concern);
 
    return read_concern;
 }
@@ -105,7 +105,7 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  */
 bool
 mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
-                               const char            *level)
+                               const char *level)
 {
    BSON_ASSERT (read_concern);
 
@@ -131,7 +131,7 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
  */
 bool
 mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
-                            bson_t                *command)
+                            bson_t *command)
 {
    BSON_ASSERT (read_concern);
 
@@ -139,7 +139,9 @@ mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
       return true;
    }
 
-   if (!bson_append_document (command, "readConcern", 11,
+   if (!bson_append_document (command,
+                              "readConcern",
+                              11,
                               _mongoc_read_concern_get_bson (read_concern))) {
       MONGOC_ERROR ("Could not append readConcern to command.");
       return false;
@@ -158,7 +160,8 @@ mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
  * Returns true when read_concern has not been modified.
  */
 bool
-_mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern) {
+_mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern)
+{
    return !read_concern || !read_concern->level;
 }
 
@@ -178,9 +181,10 @@ _mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern) {
  *    the mongoc_read_concern_t instance.
  */
 const bson_t *
-_mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern) {
+_mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern)
+{
    if (!read_concern->frozen) {
-       _mongoc_read_concern_freeze (read_concern);
+      _mongoc_read_concern_freeze (read_concern);
    }
 
    return &read_concern->compiled;

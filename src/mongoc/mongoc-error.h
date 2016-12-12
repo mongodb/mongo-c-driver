@@ -17,20 +17,19 @@
 #ifndef MONGOC_ERRORS_H
 #define MONGOC_ERRORS_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
 
 #define MONGOC_ERROR_API_VERSION_LEGACY 1
-#define MONGOC_ERROR_API_VERSION_2      2
+#define MONGOC_ERROR_API_VERSION_2 2
 
 BSON_BEGIN_DECLS
 
 
-typedef enum
-{
+typedef enum {
    MONGOC_ERROR_CLIENT = 1,
    MONGOC_ERROR_STREAM,
    MONGOC_ERROR_PROTOCOL,
@@ -51,8 +50,7 @@ typedef enum
 } mongoc_error_domain_t;
 
 
-typedef enum
-{
+typedef enum {
    MONGOC_ERROR_STREAM_INVALID_TYPE = 1,
    MONGOC_ERROR_STREAM_INVALID_STATE,
    MONGOC_ERROR_STREAM_NAME_RESOLUTION,
@@ -102,7 +100,7 @@ typedef enum
    MONGOC_ERROR_SERVER_SELECTION_INVALID_ID,
 
    MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-   MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,                       
+   MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
 
    /* Dup with query failure. */
    MONGOC_ERROR_PROTOCOL_ERROR = 17,

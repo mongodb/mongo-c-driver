@@ -23,15 +23,14 @@
 #include <stdio.h>
 #include <time.h>
 #ifdef _WIN32
-# include <process.h>
+#include <process.h>
 #endif
 
 
 BSON_BEGIN_DECLS
 
 void
-run_test (const char *name,
-          void (*func) (void));
+run_test (const char *name, void (*func) (void));
 
 BSON_END_DECLS
 

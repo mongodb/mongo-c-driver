@@ -22,14 +22,19 @@
 
 typedef struct _sync_queue_t sync_queue_t;
 
-sync_queue_t *q_new ();
+sync_queue_t *
+q_new ();
 
-void q_put (sync_queue_t *q, void *item);
+void
+q_put (sync_queue_t *q, void *item);
 
-void *q_get (sync_queue_t *q, int64_t timeout_msec);
+void *
+q_get (sync_queue_t *q, int64_t timeout_msec);
 
-void *q_get_nowait (sync_queue_t *q);
+void *
+q_get_nowait (sync_queue_t *q);
 
-void q_destroy (sync_queue_t *q);
+void
+q_destroy (sync_queue_t *q);
 
-#endif  /* SYNC_QUEUE_H */
+#endif /* SYNC_QUEUE_H */

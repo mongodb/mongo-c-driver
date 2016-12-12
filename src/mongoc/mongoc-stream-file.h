@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_FILE_H
 #define MONGOC_STREAM_FILE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include "mongoc-stream.h"
@@ -31,13 +31,14 @@ typedef struct _mongoc_stream_file_t mongoc_stream_file_t;
 
 
 BSON_API
-mongoc_stream_t *mongoc_stream_file_new          (int                   fd);
+mongoc_stream_t *
+mongoc_stream_file_new (int fd);
 BSON_API
-mongoc_stream_t *mongoc_stream_file_new_for_path (const char           *path,
-                                                  int                   flags,
-                                                  int                   mode);
+mongoc_stream_t *
+mongoc_stream_file_new_for_path (const char *path, int flags, int mode);
 BSON_API
-int              mongoc_stream_file_get_fd       (mongoc_stream_file_t *stream);
+int
+mongoc_stream_file_get_fd (mongoc_stream_file_t *stream);
 
 
 BSON_END_DECLS

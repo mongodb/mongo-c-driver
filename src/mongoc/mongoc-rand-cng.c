@@ -27,17 +27,19 @@
 #include <stdio.h>
 #include <bcrypt.h>
 
-#define NT_SUCCESS(Status)          (((NTSTATUS)(Status)) >= 0)
-#define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
+#define NT_SUCCESS(Status) (((NTSTATUS) (Status)) >= 0)
+#define STATUS_UNSUCCESSFUL ((NTSTATUS) 0xC0000001L)
 
-int _mongoc_rand_bytes (uint8_t * buf, int num)
+int
+_mongoc_rand_bytes (uint8_t *buf, int num)
 {
    static BCRYPT_ALG_HANDLE algorithm = 0;
    NTSTATUS status = 0;
 
    if (!algorithm) {
-      status = BCryptOpenAlgorithmProvider (&algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
-      if (! NT_SUCCESS (status)) {
+      status = BCryptOpenAlgorithmProvider (
+         &algorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
+      if (!NT_SUCCESS (status)) {
          MONGOC_ERROR ("BCryptOpenAlgorithmProvider(): %d", status);
          return 0;
       }
@@ -52,20 +54,22 @@ int _mongoc_rand_bytes (uint8_t * buf, int num)
    return 0;
 }
 
-void mongoc_rand_seed (const void* buf, int num)
+void
+mongoc_rand_seed (const void *buf, int num)
 {
    /* N/A - OS Does not need entropy seed */
 }
 
-void mongoc_rand_add (const void* buf, int num, double entropy)
+void
+mongoc_rand_add (const void *buf, int num, double entropy)
 {
    /* N/A - OS Does not need entropy seed */
 }
 
-int mongoc_rand_status (void)
+int
+mongoc_rand_status (void)
 {
-    return 1;
+   return 1;
 }
 
 #endif
-

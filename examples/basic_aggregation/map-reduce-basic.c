@@ -1,17 +1,18 @@
-bool map_reduce_basic (mongoc_database_t* database)
+bool
+map_reduce_basic (mongoc_database_t *database)
 {
    bson_t reply;
-   bson_t* command;
+   bson_t *command;
    bool res;
    bson_error_t error;
-   mongoc_cursor_t* cursor;
-   const bson_t* doc;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
 
    bool map_reduce_done = false;
    bool query_done = false;
 
-   const char* out_collection_name = "outCollection";
-   mongoc_collection_t* out_collection;
+   const char *out_collection_name = "outCollection";
+   mongoc_collection_t *out_collection;
 
    /* Empty find query */
    bson_t find_query = BSON_INITIALIZER;
@@ -20,12 +21,16 @@ bool map_reduce_basic (mongoc_database_t* database)
 
    /* Other arguments can also be specified here, like "query" or
       "limit" and so on */
-   command = BCON_NEW ("mapReduce", BCON_UTF8 (COLLECTION_NAME),
-                       "map", BCON_CODE (MAPPER),
-                       "reduce", BCON_CODE (REDUCER),
-                       "out", BCON_UTF8 (out_collection_name));
-   res = mongoc_database_command_simple (database, command, NULL,
-                                        &reply, &error);
+   command = BCON_NEW ("mapReduce",
+                       BCON_UTF8 (COLLECTION_NAME),
+                       "map",
+                       BCON_CODE (MAPPER),
+                       "reduce",
+                       BCON_CODE (REDUCER),
+                       "out",
+                       BCON_UTF8 (out_collection_name));
+   res =
+      mongoc_database_command_simple (database, command, NULL, &reply, &error);
    map_reduce_done = true;
 
    if (!res) {
@@ -37,10 +42,10 @@ bool map_reduce_basic (mongoc_database_t* database)
    print_res (&reply);
 
    /* Now we'll query outCollection to see what the results are */
-   out_collection = mongoc_database_get_collection (database,
-                                                    out_collection_name);
-   cursor = mongoc_collection_find_with_opts (out_collection, &find_query,
-                                              NULL, NULL);
+   out_collection =
+      mongoc_database_get_collection (database, out_collection_name);
+   cursor = mongoc_collection_find_with_opts (
+      out_collection, &find_query, NULL, NULL);
    query_done = true;
 
    /* Do something with the results */

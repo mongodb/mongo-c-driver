@@ -4,7 +4,7 @@
 #include <mongoc-stream-tls.h>
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-# include <openssl/err.h>
+#include <openssl/err.h>
 #endif
 
 #include "ssl-test.h"
@@ -25,7 +25,7 @@
 static void *
 ssl_error_server (void *ptr)
 {
-   ssl_test_data_t *data = (ssl_test_data_t *)ptr;
+   ssl_test_data_t *data = (ssl_test_data_t *) ptr;
 
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
@@ -35,7 +35,7 @@ ssl_error_server (void *ptr)
    char buf;
    ssize_t r;
    mongoc_iovec_t iov;
-   struct sockaddr_in server_addr = { 0 };
+   struct sockaddr_in server_addr = {0};
    bson_error_t error;
 
    iov.iov_base = &buf;
@@ -48,14 +48,13 @@ ssl_error_server (void *ptr)
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
    server_addr.sin_port = htons (0);
 
-   r = mongoc_socket_bind (listen_sock,
-                           (struct sockaddr *)&server_addr,
-                           sizeof server_addr);
+   r = mongoc_socket_bind (
+      listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
    assert (r == 0);
 
    sock_len = sizeof (server_addr);
-   r = mongoc_socket_getsockname (listen_sock, (struct sockaddr *)&server_addr,
-                                  &sock_len);
+   r = mongoc_socket_getsockname (
+      listen_sock, (struct sockaddr *) &server_addr, &sock_len);
    assert (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
@@ -72,7 +71,8 @@ ssl_error_server (void *ptr)
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->server, 0);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (
+      sock_stream, data->host, data->server, 0);
    assert (ssl_stream);
 
    switch (data->behavior) {
@@ -80,7 +80,8 @@ ssl_error_server (void *ptr)
       _mongoc_usleep (data->handshake_stall_ms * 1000);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
-      r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
+      r = mongoc_stream_tls_handshake_block (
+         ssl_stream, data->host, TIMEOUT, &error);
       assert (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
@@ -116,7 +117,7 @@ ssl_error_server (void *ptr)
 static void *
 ssl_hangup_client (void *ptr)
 {
-   ssl_test_data_t *data = (ssl_test_data_t *)ptr;
+   ssl_test_data_t *data = (ssl_test_data_t *) ptr;
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *conn_sock;
@@ -124,7 +125,7 @@ ssl_hangup_client (void *ptr)
    ssize_t r;
    mongoc_iovec_t riov;
    mongoc_iovec_t wiov;
-   struct sockaddr_in server_addr = { 0 };
+   struct sockaddr_in server_addr = {0};
    int64_t start_time;
    bson_error_t error;
 
@@ -141,25 +142,27 @@ ssl_hangup_client (void *ptr)
    server_addr.sin_port = htons (data->server_port);
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 
-   r = mongoc_socket_connect (conn_sock, (struct sockaddr *)&server_addr,
-                              sizeof (server_addr), -1);
+   r = mongoc_socket_connect (
+      conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
    assert (r == 0);
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert (sock_stream);
 
-   ssl_stream = mongoc_stream_tls_new_with_hostname (sock_stream, data->host, data->client, 1);
+   ssl_stream = mongoc_stream_tls_new_with_hostname (
+      sock_stream, data->host, data->client, 1);
    assert (ssl_stream);
 
-   r = mongoc_stream_tls_handshake_block (ssl_stream, data->host, TIMEOUT, &error);
+   r = mongoc_stream_tls_handshake_block (
+      ssl_stream, data->host, TIMEOUT, &error);
    assert (r);
 
-   wiov.iov_base = (void *)&buf;
+   wiov.iov_base = (void *) &buf;
    wiov.iov_len = 1;
    r = mongoc_stream_writev (ssl_stream, &wiov, 1, TIMEOUT);
    assert (r == 1);
 
-   riov.iov_base = (void *)&buf;
+   riov.iov_base = (void *) &buf;
    riov.iov_len = 1;
 
    /* we should notice promptly that the server hangs up */
@@ -176,11 +179,11 @@ ssl_hangup_client (void *ptr)
 static void
 test_mongoc_tls_hangup (void)
 {
-   mongoc_ssl_opt_t sopt = { 0 };
-   mongoc_ssl_opt_t copt = { 0 };
+   mongoc_ssl_opt_t sopt = {0};
+   mongoc_ssl_opt_t copt = {0};
    ssl_test_result_t sr;
    ssl_test_result_t cr;
-   ssl_test_data_t data = { 0 };
+   ssl_test_data_t data = {0};
    mongoc_thread_t threads[2];
    int i, r;
 
@@ -231,7 +234,7 @@ test_mongoc_tls_hangup (void)
 static void *
 handshake_stall_client (void *ptr)
 {
-   ssl_test_data_t *data = (ssl_test_data_t *)ptr;
+   ssl_test_data_t *data = (ssl_test_data_t *) ptr;
    char *uri_str;
    mongoc_client_t *client;
    bson_t reply;
@@ -247,23 +250,22 @@ handshake_stall_client (void *ptr)
    }
    mongoc_mutex_unlock (&data->cond_mutex);
 
-   uri_str = bson_strdup_printf (
-      "mongodb://localhost:%u/?ssl=true&serverselectiontimeoutms=200&connecttimeoutms=%" PRId64,
-      data->server_port, connect_timeout_ms);
+   uri_str = bson_strdup_printf ("mongodb://localhost:%u/"
+                                 "?ssl=true&serverselectiontimeoutms=200&"
+                                 "connecttimeoutms=%" PRId64,
+                                 data->server_port,
+                                 connect_timeout_ms);
 
    client = mongoc_client_new (uri_str);
 
    /* we should time out after about 200ms */
    start_time = bson_get_monotonic_time ();
-   mongoc_client_get_server_status (client,
-                                    NULL,
-                                    &reply,
-                                    &error);
+   mongoc_client_get_server_status (client, NULL, &reply, &error);
 
    /* time is in microseconds */
    duration_ms = (bson_get_monotonic_time () - start_time) / 1000;
 
-   if (llabs(duration_ms - connect_timeout_ms) > 100) {
+   if (llabs (duration_ms - connect_timeout_ms) > 100) {
       fprintf (stderr,
                "expected timeout after about 200ms, not %" PRId64 "\n",
                duration_ms);
@@ -283,11 +285,11 @@ handshake_stall_client (void *ptr)
 static void
 test_mongoc_tls_handshake_stall (void)
 {
-   mongoc_ssl_opt_t sopt = { 0 };
-   mongoc_ssl_opt_t copt = { 0 };
+   mongoc_ssl_opt_t sopt = {0};
+   mongoc_ssl_opt_t copt = {0};
    ssl_test_result_t sr;
    ssl_test_result_t cr;
-   ssl_test_data_t data = { 0 };
+   ssl_test_data_t data = {0};
    mongoc_thread_t threads[2];
    int i, r;
 
@@ -327,13 +329,14 @@ test_mongoc_tls_handshake_stall (void)
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
-   /* TLS stream doesn't detect hangup promptly on Solaris for some reason */
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+/* TLS stream doesn't detect hangup promptly on Solaris for some reason */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 #if !defined(__sun) && !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
-   TestSuite_Add (suite, "/TLS/handshake_stall",
-                  test_mongoc_tls_handshake_stall);
+   TestSuite_Add (
+      suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
 }

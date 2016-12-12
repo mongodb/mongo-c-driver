@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -32,36 +32,35 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_crypto_t mongoc_crypto_t;
 
-struct _mongoc_crypto_t
-{
-   void (*hmac_sha1) (mongoc_crypto_t     *crypto,
-                      const void          *key,
-                      int                  key_len,
+struct _mongoc_crypto_t {
+   void (*hmac_sha1) (mongoc_crypto_t *crypto,
+                      const void *key,
+                      int key_len,
                       const unsigned char *d,
-                      int                  n,
-                      unsigned char       *md /* OUT */);
-   bool (*sha1)      (mongoc_crypto_t     *crypto,
-                      const unsigned char *input,
-                      const size_t         input_len,
-                      unsigned char       *output /* OUT */);
+                      int n,
+                      unsigned char *md /* OUT */);
+   bool (*sha1) (mongoc_crypto_t *crypto,
+                 const unsigned char *input,
+                 const size_t input_len,
+                 unsigned char *output /* OUT */);
 };
 
 void
 mongoc_crypto_init (mongoc_crypto_t *crypto);
 
 void
-mongoc_crypto_hmac_sha1 (mongoc_crypto_t     *crypto,
-                         const void          *key,
-                         int                  key_len,
+mongoc_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
+                         const void *key,
+                         int key_len,
                          const unsigned char *d,
-                         int                  n,
-                         unsigned char       *md /* OUT */);
+                         int n,
+                         unsigned char *md /* OUT */);
 
 bool
-mongoc_crypto_sha1      (mongoc_crypto_t     *crypto,
-                         const unsigned char *input,
-                         const size_t         input_len,
-                         unsigned char       *output /* OUT */);
+mongoc_crypto_sha1 (mongoc_crypto_t *crypto,
+                    const unsigned char *input,
+                    const size_t input_len,
+                    unsigned char *output /* OUT */);
 
 
 BSON_END_DECLS

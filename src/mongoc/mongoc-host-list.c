@@ -36,8 +36,8 @@ bool
 _mongoc_host_list_equal (const mongoc_host_list_t *host_a,
                          const mongoc_host_list_t *host_b)
 {
-   return (!strcasecmp (host_a->host_and_port, host_b->host_and_port)
-           && host_a->family == host_b->family);
+   return (!strcasecmp (host_a->host_and_port, host_b->host_and_port) &&
+           host_a->family == host_b->family);
 }
 
 

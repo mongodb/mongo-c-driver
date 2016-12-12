@@ -1,6 +1,7 @@
-bool distinct (mongoc_database_t* database)
+bool
+distinct (mongoc_database_t *database)
 {
-   bson_t* command;
+   bson_t *command;
    bson_t reply;
    bson_error_t error;
    bool res;
@@ -8,14 +9,20 @@ bool distinct (mongoc_database_t* database)
    bson_iter_t array_iter;
    double val;
 
-   command = BCON_NEW ("distinct", BCON_UTF8 (COLLECTION_NAME),
-                       "key", BCON_UTF8 ("x"),
-                       "query", "{",
-                       "x", "{", "$gt", BCON_DOUBLE (1.0), "}",
-                       "}"
-      );
-   res = mongoc_database_command_simple (database, command, NULL,
-                                         &reply, &error);
+   command = BCON_NEW ("distinct",
+                       BCON_UTF8 (COLLECTION_NAME),
+                       "key",
+                       BCON_UTF8 ("x"),
+                       "query",
+                       "{",
+                       "x",
+                       "{",
+                       "$gt",
+                       BCON_DOUBLE (1.0),
+                       "}",
+                       "}");
+   res =
+      mongoc_database_command_simple (database, command, NULL, &reply, &error);
    if (!res) {
       fprintf (stderr, "Error with distinct: %s\n", error.message);
       goto cleanup;

@@ -17,7 +17,7 @@
 #ifndef MONGOC_OPENSSL_PRIVATE_H
 #define MONGOC_OPENSSL_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -32,14 +32,18 @@
 BSON_BEGIN_DECLS
 
 
-bool     _mongoc_openssl_check_cert      (SSL              *ssl,
-                                          const char       *host,
-                                          bool              allow_invalid_hostname);
-SSL_CTX *_mongoc_openssl_ctx_new         (mongoc_ssl_opt_t *opt);
-char    *_mongoc_openssl_extract_subject (const char       *filename,
-                                          const char *passphrase);
-void     _mongoc_openssl_init            (void);
-void     _mongoc_openssl_cleanup         (void);
+bool
+_mongoc_openssl_check_cert (SSL *ssl,
+                            const char *host,
+                            bool allow_invalid_hostname);
+SSL_CTX *
+_mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt);
+char *
+_mongoc_openssl_extract_subject (const char *filename, const char *passphrase);
+void
+_mongoc_openssl_init (void);
+void
+_mongoc_openssl_cleanup (void);
 
 
 BSON_END_DECLS

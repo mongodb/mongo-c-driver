@@ -33,54 +33,54 @@
 #endif
 
 #ifdef HAVE_STRINGS_H
-# include <strings.h>
+#include <strings.h>
 #endif
 
 
 mongoc_topology_description_type_t
-topology_type_from_test(const char *type)
+topology_type_from_test (const char *type)
 {
-   if (strcmp(type, "ReplicaSetWithPrimary") == 0) {
+   if (strcmp (type, "ReplicaSetWithPrimary") == 0) {
       return MONGOC_TOPOLOGY_RS_WITH_PRIMARY;
-   } else if (strcmp(type, "ReplicaSetNoPrimary") == 0) {
+   } else if (strcmp (type, "ReplicaSetNoPrimary") == 0) {
       return MONGOC_TOPOLOGY_RS_NO_PRIMARY;
-   } else if (strcmp(type, "Unknown") == 0) {
+   } else if (strcmp (type, "Unknown") == 0) {
       return MONGOC_TOPOLOGY_UNKNOWN;
-   } else if (strcmp(type, "Single") == 0) {
+   } else if (strcmp (type, "Single") == 0) {
       return MONGOC_TOPOLOGY_SINGLE;
-   } else if (strcmp(type, "Sharded") == 0) {
+   } else if (strcmp (type, "Sharded") == 0) {
       return MONGOC_TOPOLOGY_SHARDED;
    }
 
-   fprintf(stderr, "can't parse this: %s", type);
-   assert(0);
+   fprintf (stderr, "can't parse this: %s", type);
+   assert (0);
    return 0;
 }
 
 mongoc_server_description_type_t
-server_type_from_test(const char *type)
+server_type_from_test (const char *type)
 {
-   if (strcmp(type, "RSPrimary") == 0) {
+   if (strcmp (type, "RSPrimary") == 0) {
       return MONGOC_SERVER_RS_PRIMARY;
-   } else if (strcmp(type, "RSSecondary") == 0) {
+   } else if (strcmp (type, "RSSecondary") == 0) {
       return MONGOC_SERVER_RS_SECONDARY;
-   } else if (strcmp(type, "Standalone") == 0) {
+   } else if (strcmp (type, "Standalone") == 0) {
       return MONGOC_SERVER_STANDALONE;
-   } else if (strcmp(type, "Mongos") == 0) {
+   } else if (strcmp (type, "Mongos") == 0) {
       return MONGOC_SERVER_MONGOS;
-   } else if (strcmp(type, "PossiblePrimary") == 0) {
+   } else if (strcmp (type, "PossiblePrimary") == 0) {
       return MONGOC_SERVER_POSSIBLE_PRIMARY;
-   } else if (strcmp(type, "RSArbiter") == 0) {
+   } else if (strcmp (type, "RSArbiter") == 0) {
       return MONGOC_SERVER_RS_ARBITER;
-   } else if (strcmp(type, "RSOther") == 0) {
+   } else if (strcmp (type, "RSOther") == 0) {
       return MONGOC_SERVER_RS_OTHER;
-   } else if (strcmp(type, "RSGhost") == 0) {
+   } else if (strcmp (type, "RSGhost") == 0) {
       return MONGOC_SERVER_RS_GHOST;
-   } else if (strcmp(type, "Unknown") == 0) {
+   } else if (strcmp (type, "Unknown") == 0) {
       return MONGOC_SERVER_UNKNOWN;
    }
-   fprintf(stderr, "ERROR: Unknown server type %s\n", type);
-   assert(0);
+   fprintf (stderr, "ERROR: Unknown server type %s\n", type);
+   assert (0);
    return 0;
 }
 
@@ -128,7 +128,7 @@ optype_from_test (const char *op)
  */
 mongoc_server_description_t *
 server_description_by_hostname (mongoc_topology_description_t *topology,
-                                const char                    *address)
+                                const char *address)
 {
    mongoc_set_t *set = topology->servers;
    mongoc_server_description_t *server_iter;
@@ -171,7 +171,7 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
  *-----------------------------------------------------------------------
  */
 void
-process_sdam_test_ismaster_responses (bson_t                        *phase,
+process_sdam_test_ismaster_responses (bson_t *phase,
                                       mongoc_topology_description_t *td)
 {
    mongoc_server_description_t *sd;
@@ -196,14 +196,16 @@ process_sdam_test_ismaster_responses (bson_t                        *phase,
       sd = server_description_by_hostname (td, hostname);
 
       /* if server has been removed from topology, skip */
-      if (!sd) { continue; }
+      if (!sd) {
+         continue;
+      }
 
       bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
       bson_iter_bson (&ismaster_field_iter, &response);
 
       /* send ismaster through the topology description's handler */
-      mongoc_topology_description_handle_ismaster (td, sd->id, &response, 1,
-                                                   NULL);
+      mongoc_topology_description_handle_ismaster (
+         td, sd->id, &response, 1, NULL);
    }
 }
 
@@ -234,11 +236,10 @@ process_sdam_test_ismaster_responses (bson_t                        *phase,
  *-----------------------------------------------------------------------
  */
 void
-check_json_apm_events (const bson_t *events,
-                       const bson_t *expectations)
+check_json_apm_events (const bson_t *events, const bson_t *expectations)
 {
-   char errmsg[1000] = { 0 };
-   match_ctx_t ctx = { 0 };
+   char errmsg[1000] = {0};
+   match_ctx_t ctx = {0};
    uint32_t expected_keys;
    uint32_t actual_keys;
 
@@ -253,20 +254,21 @@ check_json_apm_events (const bson_t *events,
 
    if (expected_keys != actual_keys) {
       test_error ("command monitoring test failed expectations:\n\n"
-                     "%s\n\n"
-                     "events:\n%s\n\n"
-                     "expected %"PRIu32" events, got %"PRIu32,
+                  "%s\n\n"
+                  "events:\n%s\n\n"
+                  "expected %" PRIu32 " events, got %" PRIu32,
                   bson_as_json (expectations, NULL),
                   bson_as_json (events, NULL),
-                  expected_keys, actual_keys);
+                  expected_keys,
+                  actual_keys);
 
       abort ();
    }
 
    if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
       test_error ("command monitoring test failed expectations:\n\n"
-                     "%s\n\n"
-                     "events:\n%s\n\n%s",
+                  "%s\n\n"
+                  "events:\n%s\n\n%s",
                   bson_as_json (expectations, NULL),
                   bson_as_json (events, NULL),
                   errmsg);
@@ -321,8 +323,8 @@ test_server_selection_logic_cb (bson_t *test)
 
    BSON_ASSERT (test);
 
-   expected_error = bson_iter_init_find (&iter, test, "error") &&
-                    bson_iter_as_bool (&iter);
+   expected_error =
+      bson_iter_init_find (&iter, test, "error") && bson_iter_as_bool (&iter);
 
    heartbeat_msec = MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED;
 
@@ -339,11 +341,11 @@ test_server_selection_logic_cb (bson_t *test)
    type = bson_iter_utf8 (&topology_iter, NULL);
 
    if (strcmp (type, "Single") == 0) {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_SINGLE,
-                                        heartbeat_msec);
+      mongoc_topology_description_init (
+         &topology, MONGOC_TOPOLOGY_SINGLE, heartbeat_msec);
    } else {
-      mongoc_topology_description_init (&topology, MONGOC_TOPOLOGY_UNKNOWN,
-                                        heartbeat_msec);
+      mongoc_topology_description_init (
+         &topology, MONGOC_TOPOLOGY_UNKNOWN, heartbeat_msec);
       topology.type =
          topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
    }
@@ -416,7 +418,7 @@ test_server_selection_logic_cb (bson_t *test)
           bson_iter_next (&tag_sets_iter) &&
           BSON_ITER_HOLDS_DOCUMENT (&tag_sets_iter)) {
          bson_iter_bson (&tag_sets_iter, &first_tag_set);
-         if (! bson_empty (&first_tag_set)) {
+         if (!bson_empty (&first_tag_set)) {
             /* not empty */
             bson_iter_bson (&read_pref_iter, &test_tag_sets);
             mongoc_read_prefs_set_tags (read_prefs, &test_tag_sets);
@@ -424,8 +426,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
    }
 
-   if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
-                            "maxStalenessSeconds")) {
+   if (bson_iter_init_find (
+          &read_pref_iter, &test_read_pref, "maxStalenessSeconds")) {
       mongoc_read_prefs_set_max_staleness_seconds (
          read_prefs, bson_iter_as_int64 (&read_pref_iter));
    }
@@ -451,11 +453,8 @@ test_server_selection_logic_cb (bson_t *test)
    assert (bson_iter_init_find (&iter, test, "in_latency_window"));
 
    /* TODO: use topology_select instead? */
-   mongoc_topology_description_suitable_servers (&selected_servers,
-                                                 op,
-                                                 &topology,
-                                                 read_prefs,
-                                                 15);
+   mongoc_topology_description_suitable_servers (
+      &selected_servers, op, &topology, read_prefs, 15);
 
    /* check each server in expected_servers is in selected_servers */
    memset (matched_servers, 0, sizeof (matched_servers));
@@ -468,11 +467,11 @@ test_server_selection_logic_cb (bson_t *test)
       assert (bson_iter_find (&host, "address"));
 
       for (i = 0; i < selected_servers.len; i++) {
-         sd = _mongoc_array_index (&selected_servers,
-                                   mongoc_server_description_t *, i);
+         sd = _mongoc_array_index (
+            &selected_servers, mongoc_server_description_t *, i);
 
-         if (strcmp (sd->host.host_and_port,
-                     bson_iter_utf8 (&host, NULL)) == 0) {
+         if (strcmp (sd->host.host_and_port, bson_iter_utf8 (&host, NULL)) ==
+             0) {
             found = true;
             break;
          }
@@ -490,8 +489,8 @@ test_server_selection_logic_cb (bson_t *test)
    /* check each server in selected_servers is in expected_servers */
    for (i = 0; i < selected_servers.len; i++) {
       if (!matched_servers[i]) {
-         sd = _mongoc_array_index (&selected_servers,
-                                   mongoc_server_description_t *, i);
+         sd = _mongoc_array_index (
+            &selected_servers, mongoc_server_description_t *, i);
 
          test_error ("Shouldn't have been selected but was: %s",
                      sd->host.host_and_port);
@@ -518,17 +517,17 @@ DONE:
 void
 assemble_path (const char *parent_path,
                const char *child_name,
-               char       *dst /* OUT */)
+               char *dst /* OUT */)
 {
-   int path_len = (int)strlen(parent_path);
-   int name_len = (int)strlen(child_name);
+   int path_len = (int) strlen (parent_path);
+   int name_len = (int) strlen (child_name);
 
-   assert(path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
+   assert (path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
 
-   memset(dst, '\0', MAX_TEST_NAME_LENGTH * sizeof(char));
-   strncat(dst, parent_path, path_len);
-   strncat(dst, "/", 1);
-   strncat(dst, child_name, name_len);
+   memset (dst, '\0', MAX_TEST_NAME_LENGTH * sizeof (char));
+   strncat (dst, parent_path, path_len);
+   strncat (dst, "/", 1);
+   strncat (dst, child_name, name_len);
 }
 
 /*
@@ -554,34 +553,33 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 
    char child_path[MAX_TEST_NAME_LENGTH];
 
-   handle = _findfirst(dir_path, &info);
+   handle = _findfirst (dir_path, &info);
 
    if (handle == -1) {
       return 0;
    }
 
    while (1) {
-      assert(paths_index < max_paths);
+      assert (paths_index < max_paths);
 
-      if (_findnext(handle, &info) == -1) {
+      if (_findnext (handle, &info) == -1) {
          break;
       }
 
       if (info.attrib & _A_SUBDIR) {
          /* recursively call on child directories */
-         if (strcmp (info.name, "..") != 0 &&
-             strcmp (info.name, ".") != 0) {
-
-            assemble_path(dir_path, info.name, child_path);
-            paths_index = collect_tests_from_dir(paths, child_path, paths_index, max_paths);
+         if (strcmp (info.name, "..") != 0 && strcmp (info.name, ".") != 0) {
+            assemble_path (dir_path, info.name, child_path);
+            paths_index = collect_tests_from_dir (
+               paths, child_path, paths_index, max_paths);
          }
-      } else if (strstr(info.name, ".json")) {
+      } else if (strstr (info.name, ".json")) {
          /* if this is a JSON test, collect its path */
-         assemble_path(dir_path, info.name, paths[paths_index++]);
+         assemble_path (dir_path, info.name, paths[paths_index++]);
       }
    }
 
-   _findclose(handle);
+   _findclose (handle);
 
    return paths_index;
 #else
@@ -590,28 +588,28 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
    char child_path[MAX_TEST_NAME_LENGTH];
    DIR *dir;
 
-   dir = opendir(dir_path);
+   dir = opendir (dir_path);
    assert (dir);
-   while ((entry = readdir(dir))) {
-      assert(paths_index < max_paths);
+   while ((entry = readdir (dir))) {
+      assert (paths_index < max_paths);
       if (strcmp (entry->d_name, "..") == 0 ||
           strcmp (entry->d_name, ".") == 0) {
          continue;
       }
 
-      assemble_path(dir_path, entry->d_name, child_path);
+      assemble_path (dir_path, entry->d_name, child_path);
 
-      if (0 == stat(child_path, &dir_stat) && dir_stat.st_mode & S_IFDIR) {
+      if (0 == stat (child_path, &dir_stat) && dir_stat.st_mode & S_IFDIR) {
          /* recursively call on child directories */
-         paths_index = collect_tests_from_dir(paths, child_path, paths_index,
-                                              max_paths);
-      } else if (strstr(entry->d_name, ".json")) {
+         paths_index =
+            collect_tests_from_dir (paths, child_path, paths_index, max_paths);
+      } else if (strstr (entry->d_name, ".json")) {
          /* if this is a JSON test, collect its path */
-         assemble_path(dir_path, entry->d_name, paths[paths_index++]);
+         assemble_path (dir_path, entry->d_name, paths[paths_index++]);
       }
    }
 
-   closedir(dir);
+   closedir (dir);
 
    return paths_index;
 #endif
@@ -631,7 +629,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
  *-----------------------------------------------------------------------
  */
 bson_t *
-get_bson_from_json_file(char *filename)
+get_bson_from_json_file (char *filename)
 {
    FILE *file;
    long length;
@@ -639,38 +637,38 @@ get_bson_from_json_file(char *filename)
    bson_error_t error;
    const char *buffer;
 
-   file = fopen(filename, "rb");
+   file = fopen (filename, "rb");
    if (!file) {
       return NULL;
    }
 
    /* get file length */
-   fseek(file, 0, SEEK_END);
-   length = ftell(file);
-   fseek(file, 0, SEEK_SET);
+   fseek (file, 0, SEEK_END);
+   length = ftell (file);
+   fseek (file, 0, SEEK_SET);
    if (length < 1) {
       return NULL;
    }
 
    /* read entire file into buffer */
-   buffer = (const char *)bson_malloc0(length);
-   if (fread((void *)buffer, 1, length, file) != length) {
-      abort();
+   buffer = (const char *) bson_malloc0 (length);
+   if (fread ((void *) buffer, 1, length, file) != length) {
+      abort ();
    }
 
-   fclose(file);
+   fclose (file);
    if (!buffer) {
       return NULL;
    }
 
    /* convert to bson */
-   data = bson_new_from_json((const uint8_t*)buffer, length, &error);
+   data = bson_new_from_json ((const uint8_t *) buffer, length, &error);
    if (!data) {
       fprintf (stderr, "Cannot parse %s: %s\n", filename, error.message);
-      abort();
+      abort ();
    }
 
-   bson_free((void *)buffer);
+   bson_free ((void *) buffer);
 
    return data;
 }
@@ -690,7 +688,9 @@ get_bson_from_json_file(char *filename)
  *-----------------------------------------------------------------------
  */
 void
-install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callback)
+install_json_test_suite (TestSuite *suite,
+                         const char *dir_path,
+                         test_hook callback)
 {
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
@@ -699,18 +699,22 @@ install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callba
    char *skip_json;
    char *ext;
 
-   num_tests = collect_tests_from_dir(&test_paths[0],
-                                      dir_path,
-                                      0, MAX_NUM_TESTS);
+   num_tests =
+      collect_tests_from_dir (&test_paths[0], dir_path, 0, MAX_NUM_TESTS);
 
    for (i = 0; i < num_tests; i++) {
-      test = get_bson_from_json_file(test_paths[i]);
-      skip_json = strstr(test_paths[i], "/json") + strlen("/json");
-      assert(skip_json);
+      test = get_bson_from_json_file (test_paths[i]);
+      skip_json = strstr (test_paths[i], "/json") + strlen ("/json");
+      assert (skip_json);
       ext = strstr (skip_json, ".json");
-      assert(ext);
+      assert (ext);
       ext[0] = '\0';
 
-      TestSuite_AddFull(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test, TestSuite_CheckLive);
+      TestSuite_AddFull (suite,
+                         skip_json,
+                         (void (*) (void *)) callback,
+                         (void (*) (void *)) bson_destroy,
+                         test,
+                         TestSuite_CheckLive);
    }
 }

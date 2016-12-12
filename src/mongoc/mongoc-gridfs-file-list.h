@@ -17,8 +17,8 @@
 #ifndef MONGOC_GRIDFS_FILE_LIST_H
 #define MONGOC_GRIDFS_FILE_LIST_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -33,12 +33,15 @@ typedef struct _mongoc_gridfs_file_list_t mongoc_gridfs_file_list_t;
 
 
 BSON_API
-mongoc_gridfs_file_t *mongoc_gridfs_file_list_next    (mongoc_gridfs_file_list_t *list);
+mongoc_gridfs_file_t *
+mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
 BSON_API
-void                  mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
+void
+mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
 BSON_API
-bool                  mongoc_gridfs_file_list_error   (mongoc_gridfs_file_list_t *list,
-                                                       bson_error_t              *error);
+bool
+mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
+                               bson_error_t *error);
 
 
 BSON_END_DECLS

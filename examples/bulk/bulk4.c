@@ -16,7 +16,7 @@ bulk4 (mongoc_collection_t *collection)
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 4);
-   mongoc_write_concern_set_wtimeout (wc, 100);  /* milliseconds */
+   mongoc_write_concern_set_wtimeout (wc, 100); /* milliseconds */
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
 
@@ -45,8 +45,7 @@ bulk4 (mongoc_collection_t *collection)
 }
 
 int
-main (int argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;

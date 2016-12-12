@@ -1,4 +1,5 @@
-/* gcc example-client.c -o example-client $(pkg-config --cflags --libs libmongoc-1.0) */
+/* gcc example-client.c -o example-client $(pkg-config --cflags --libs
+ * libmongoc-1.0) */
 
 /* ./example-client [CONNECTION_STRING [COLLECTION_NAME]] */
 
@@ -7,8 +8,7 @@
 #include <stdlib.h>
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -23,11 +23,11 @@ main (int   argc,
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv [1];
+      uristr = argv[1];
    }
 
    if (argc > 2) {
-      collection_name = argv [2];
+      collection_name = argv[2];
    }
 
    client = mongoc_client_new (uristr);
@@ -46,10 +46,11 @@ main (int   argc,
 #endif
 
    collection = mongoc_client_get_collection (client, "test", collection_name);
-   cursor = mongoc_collection_find_with_opts (collection,
-                                              &query,
-                                              NULL,  /* additional options */
-                                              NULL); /* read prefs, NULL for default */
+   cursor = mongoc_collection_find_with_opts (
+      collection,
+      &query,
+      NULL,  /* additional options */
+      NULL); /* read prefs, NULL for default */
 
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_json (doc, NULL);

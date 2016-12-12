@@ -29,68 +29,68 @@
 /* represent a server or topology with no replica set config version */
 #define MONGOC_NO_SET_VERSION -1
 
-typedef enum
-   {
-      MONGOC_SERVER_UNKNOWN,
-      MONGOC_SERVER_STANDALONE,
-      MONGOC_SERVER_MONGOS,
-      MONGOC_SERVER_POSSIBLE_PRIMARY,
-      MONGOC_SERVER_RS_PRIMARY,
-      MONGOC_SERVER_RS_SECONDARY,
-      MONGOC_SERVER_RS_ARBITER,
-      MONGOC_SERVER_RS_OTHER,
-      MONGOC_SERVER_RS_GHOST,
-      MONGOC_SERVER_DESCRIPTION_TYPES,
-   } mongoc_server_description_type_t;
+typedef enum {
+   MONGOC_SERVER_UNKNOWN,
+   MONGOC_SERVER_STANDALONE,
+   MONGOC_SERVER_MONGOS,
+   MONGOC_SERVER_POSSIBLE_PRIMARY,
+   MONGOC_SERVER_RS_PRIMARY,
+   MONGOC_SERVER_RS_SECONDARY,
+   MONGOC_SERVER_RS_ARBITER,
+   MONGOC_SERVER_RS_OTHER,
+   MONGOC_SERVER_RS_GHOST,
+   MONGOC_SERVER_DESCRIPTION_TYPES,
+} mongoc_server_description_type_t;
 
-struct _mongoc_server_description_t
-{
-   uint32_t                         id;
-   mongoc_host_list_t               host;
-   int64_t                          round_trip_time_msec;
-   int64_t                          last_update_time_usec;
-   bson_t                           last_is_master;
-   bool                             has_is_master;
-   const char                      *connection_address;
-   const char                      *me;
+struct _mongoc_server_description_t {
+   uint32_t id;
+   mongoc_host_list_t host;
+   int64_t round_trip_time_msec;
+   int64_t last_update_time_usec;
+   bson_t last_is_master;
+   bool has_is_master;
+   const char *connection_address;
+   const char *me;
 
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */
-   const char                      *set_name;
-   bson_error_t                     error;
+   const char *set_name;
+   bson_error_t error;
    mongoc_server_description_type_t type;
 
-   int32_t                          min_wire_version;
-   int32_t                          max_wire_version;
-   int32_t                          max_msg_size;
-   int32_t                          max_bson_obj_size;
-   int32_t                          max_write_batch_size;
+   int32_t min_wire_version;
+   int32_t max_wire_version;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
+   int32_t max_write_batch_size;
 
-   bson_t                           hosts;
-   bson_t                           passives;
-   bson_t                           arbiters;
+   bson_t hosts;
+   bson_t passives;
+   bson_t arbiters;
 
-   bson_t                           tags;
-   const char                      *current_primary;
-   int64_t                          set_version;
-   bson_oid_t                       election_id;
-   int64_t                          last_write_date_ms;
+   bson_t tags;
+   const char *current_primary;
+   int64_t set_version;
+   bson_oid_t election_id;
+   int64_t last_write_date_ms;
 };
 
 void
 mongoc_server_description_init (mongoc_server_description_t *sd,
-                                const char                  *address,
-                                uint32_t                     id);
+                                const char *address,
+                                uint32_t id);
 bool
-mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
-                                         const char                  *address);
+mongoc_server_description_has_rs_member (
+   mongoc_server_description_t *description, const char *address);
 
 
 bool
-mongoc_server_description_has_set_version (mongoc_server_description_t *description);
+mongoc_server_description_has_set_version (
+   mongoc_server_description_t *description);
 
 bool
-mongoc_server_description_has_election_id (mongoc_server_description_t *description);
+mongoc_server_description_has_election_id (
+   mongoc_server_description_t *description);
 
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
@@ -99,34 +99,35 @@ void
 mongoc_server_description_reset (mongoc_server_description_t *sd);
 
 void
-mongoc_server_description_set_state (mongoc_server_description_t     *description,
+mongoc_server_description_set_state (mongoc_server_description_t *description,
                                      mongoc_server_description_type_t type);
 void
-mongoc_server_description_set_set_version (mongoc_server_description_t *description,
-                                           int64_t                      set_version);
+mongoc_server_description_set_set_version (
+   mongoc_server_description_t *description, int64_t set_version);
 void
-mongoc_server_description_set_election_id (mongoc_server_description_t *description,
-                                           const bson_oid_t            *election_id);
+mongoc_server_description_set_election_id (
+   mongoc_server_description_t *description, const bson_oid_t *election_id);
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                      int64_t                      rtt_msec);
+                                      int64_t rtt_msec);
 
 void
-mongoc_server_description_handle_ismaster (mongoc_server_description_t   *sd,
-                                           const bson_t                  *reply,
-                                           int64_t                        rtt_msec,
-                                           const bson_error_t            *error /* IN */);
+mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
+                                           const bson_t *reply,
+                                           int64_t rtt_msec,
+                                           const bson_error_t *error /* IN */);
 
 void
 mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
-                                        size_t                        sds_len,
-                                        mongoc_server_description_t  *primary,
-                                        int64_t                       heartbeat_frequency_ms,
-                                        const mongoc_read_prefs_t    *read_prefs);
+                                        size_t sds_len,
+                                        mongoc_server_description_t *primary,
+                                        int64_t heartbeat_frequency_ms,
+                                        const mongoc_read_prefs_t *read_prefs);
 
 void
-mongoc_server_description_filter_tags (mongoc_server_description_t **descriptions,
-                                       size_t                        description_len,
-                                       const mongoc_read_prefs_t    *read_prefs);
+mongoc_server_description_filter_tags (
+   mongoc_server_description_t **descriptions,
+   size_t description_len,
+   const mongoc_read_prefs_t *read_prefs);
 
 #endif

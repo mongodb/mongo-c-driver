@@ -17,8 +17,8 @@
 #ifndef MONGOC_GRIDFS_FILE_PAGE_H
 #define MONGOC_GRIDFS_FILE_PAGE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>

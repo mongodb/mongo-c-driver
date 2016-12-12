@@ -35,21 +35,27 @@
 
 mongoc_gridfs_file_list_t *
 _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
-                              const bson_t    *query,
-                              uint32_t         limit)
+                              const bson_t *query,
+                              uint32_t limit)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
 
-   cursor = _mongoc_cursor_new (gridfs->client, gridfs->files->ns,
-                                MONGOC_QUERY_NONE, 0, limit, 0,
+   cursor = _mongoc_cursor_new (gridfs->client,
+                                gridfs->files->ns,
+                                MONGOC_QUERY_NONE,
+                                0,
+                                limit,
+                                0,
                                 false /* is command */,
-                                query, NULL, gridfs->files->read_prefs,
+                                query,
+                                NULL,
+                                gridfs->files->read_prefs,
                                 gridfs->files->read_concern);
 
    BSON_ASSERT (cursor);
 
-   list = (mongoc_gridfs_file_list_t *)bson_malloc0 (sizeof *list);
+   list = (mongoc_gridfs_file_list_t *) bson_malloc0 (sizeof *list);
 
    list->cursor = cursor;
    list->gridfs = gridfs;
@@ -60,14 +66,14 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
 
 mongoc_gridfs_file_list_t *
 _mongoc_gridfs_file_list_new_with_opts (mongoc_gridfs_t *gridfs,
-                                        const bson_t    *filter,
-                                        const bson_t    *opts)
+                                        const bson_t *filter,
+                                        const bson_t *opts)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
 
-   cursor = mongoc_collection_find_with_opts (gridfs->files, filter, opts,
-                                              NULL /* read prefs */);
+   cursor = mongoc_collection_find_with_opts (
+      gridfs->files, filter, opts, NULL /* read prefs */);
 
    BSON_ASSERT (cursor);
 
@@ -97,9 +103,9 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
 
 bool
 mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
-                               bson_error_t              *error)
+                               bson_error_t *error)
 {
-   return mongoc_cursor_error(list->cursor, error);
+   return mongoc_cursor_error (list->cursor, error);
 }
 
 

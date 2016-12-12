@@ -17,7 +17,7 @@
 #ifndef MONGOC_RPC_PRIVATE_H
 #define MONGOC_RPC_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -33,17 +33,29 @@
 BSON_BEGIN_DECLS
 
 
-#define RPC(_name, _code)                typedef struct { _code } mongoc_rpc_##_name##_t;
-#define ENUM_FIELD(_name)                uint32_t _name;
-#define INT32_FIELD(_name)               int32_t _name;
-#define INT64_FIELD(_name)               int64_t _name;
-#define INT64_ARRAY_FIELD(_len, _name)   int32_t _len; int64_t *_name;
-#define CSTRING_FIELD(_name)             const char *_name;
-#define BSON_FIELD(_name)                const uint8_t *_name;
-#define BSON_ARRAY_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
-#define IOVEC_ARRAY_FIELD(_name)         const mongoc_iovec_t *_name; int32_t n_##_name; mongoc_iovec_t _name##_recv;
-#define RAW_BUFFER_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
-#define BSON_OPTIONAL(_check, _code)     _code
+#define RPC(_name, _code) \
+   typedef struct {       \
+      _code               \
+   } mongoc_rpc_##_name##_t;
+#define ENUM_FIELD(_name) uint32_t _name;
+#define INT32_FIELD(_name) int32_t _name;
+#define INT64_FIELD(_name) int64_t _name;
+#define INT64_ARRAY_FIELD(_len, _name) \
+   int32_t _len;                       \
+   int64_t *_name;
+#define CSTRING_FIELD(_name) const char *_name;
+#define BSON_FIELD(_name) const uint8_t *_name;
+#define BSON_ARRAY_FIELD(_name) \
+   const uint8_t *_name;        \
+   int32_t _name##_len;
+#define IOVEC_ARRAY_FIELD(_name) \
+   const mongoc_iovec_t *_name;  \
+   int32_t n_##_name;            \
+   mongoc_iovec_t _name##_recv;
+#define RAW_BUFFER_FIELD(_name) \
+   const uint8_t *_name;        \
+   int32_t _name##_len;
+#define BSON_OPTIONAL(_check, _code) _code
 
 
 #pragma pack(1)
@@ -61,23 +73,23 @@ BSON_BEGIN_DECLS
 #pragma pack()
 
 
-typedef union
-{
-   mongoc_rpc_delete_t       delete_;
-   mongoc_rpc_get_more_t     get_more;
-   mongoc_rpc_header_t       header;
-   mongoc_rpc_insert_t       insert;
+typedef union {
+   mongoc_rpc_delete_t delete_;
+   mongoc_rpc_get_more_t get_more;
+   mongoc_rpc_header_t header;
+   mongoc_rpc_insert_t insert;
    mongoc_rpc_kill_cursors_t kill_cursors;
-   mongoc_rpc_msg_t          msg;
-   mongoc_rpc_query_t        query;
-   mongoc_rpc_reply_t        reply;
+   mongoc_rpc_msg_t msg;
+   mongoc_rpc_query_t query;
+   mongoc_rpc_reply_t reply;
    mongoc_rpc_reply_header_t reply_header;
-   mongoc_rpc_update_t       update;
+   mongoc_rpc_update_t update;
 } mongoc_rpc_t;
 
 
 BSON_STATIC_ASSERT (sizeof (mongoc_rpc_header_t) == 16);
-BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) == offsetof (mongoc_rpc_reply_t, opcode));
+BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
+                    offsetof (mongoc_rpc_reply_t, opcode));
 BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 
 
@@ -94,34 +106,42 @@ BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 #undef RAW_BUFFER_FIELD
 
 
-void _mongoc_rpc_gather                    (mongoc_rpc_t                 *rpc,
-                                            mongoc_array_t               *array);
-bool _mongoc_rpc_needs_gle                 (mongoc_rpc_t                 *rpc,
-                                            const mongoc_write_concern_t *write_concern);
-void _mongoc_rpc_swab_to_le                (mongoc_rpc_t                 *rpc);
-void _mongoc_rpc_swab_from_le              (mongoc_rpc_t                 *rpc);
-void _mongoc_rpc_printf                    (mongoc_rpc_t                 *rpc);
-bool _mongoc_rpc_scatter                   (mongoc_rpc_t                 *rpc,
-                                            const uint8_t                *buf,
-                                            size_t                        buflen);
-bool _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t                 *rpc,
-                                            const uint8_t                *buf,
-                                            size_t                        buflen);
-bool _mongoc_rpc_reply_get_first           (mongoc_rpc_reply_t           *reply,
-                                            bson_t                       *bson);
-void _mongoc_rpc_prep_command              (mongoc_rpc_t                 *rpc,
-                                            const char                   *cmd_ns,
-                                            const bson_t                 *command,
-                                            mongoc_query_flags_t          flags);
-bool _mongoc_rpc_parse_command_error       (mongoc_rpc_t                 *rpc,
-                                            int32_t                       error_api_version,
-                                            bson_error_t                 *error);
-bool _mongoc_rpc_parse_query_error         (mongoc_rpc_t                 *rpc,
-                                            int32_t                       error_api_version,
-                                            bson_error_t                 *error);
-bool _mongoc_populate_cmd_error            (const bson_t                 *doc,
-                                            int32_t                       error_api_version,
-                                            bson_error_t                 *error);
+void
+_mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array);
+bool
+_mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
+                       const mongoc_write_concern_t *write_concern);
+void
+_mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc);
+void
+_mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc);
+void
+_mongoc_rpc_printf (mongoc_rpc_t *rpc);
+bool
+_mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen);
+bool
+_mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
+                                       const uint8_t *buf,
+                                       size_t buflen);
+bool
+_mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);
+void
+_mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
+                          const char *cmd_ns,
+                          const bson_t *command,
+                          mongoc_query_flags_t flags);
+bool
+_mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
+                                 int32_t error_api_version,
+                                 bson_error_t *error);
+bool
+_mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
+                               int32_t error_api_version,
+                               bson_error_t *error);
+bool
+_mongoc_populate_cmd_error (const bson_t *doc,
+                            int32_t error_api_version,
+                            bson_error_t *error);
 
 BSON_END_DECLS
 

@@ -3,8 +3,7 @@
 char *TEST_RESULT;
 
 void
-run_test (const char *name,
-          void (*func) (void))
+run_test (const char *name, void (*func) (void))
 {
    struct timeval begin;
    struct timeval end;
@@ -13,12 +12,12 @@ run_test (const char *name,
 
    TEST_RESULT = "PASS";
 
-   fprintf(stdout, "%-42s : ", name);
-   fflush(stdout);
-   bson_gettimeofday(&begin);
-   func();
-   bson_gettimeofday(&end);
-   fprintf(stdout, "%s", TEST_RESULT);
+   fprintf (stdout, "%-42s : ", name);
+   fflush (stdout);
+   bson_gettimeofday (&begin);
+   func ();
+   bson_gettimeofday (&end);
+   fprintf (stdout, "%s", TEST_RESULT);
 
    diff.tv_sec = end.tv_sec - begin.tv_sec;
    diff.tv_usec = end.tv_usec - begin.tv_usec;
@@ -29,5 +28,5 @@ run_test (const char *name,
    }
 
    format = diff.tv_sec + (diff.tv_usec / 1000000.0);
-   fprintf(stdout, " : %lf\n", format);
+   fprintf (stdout, " : %lf\n", format);
 }

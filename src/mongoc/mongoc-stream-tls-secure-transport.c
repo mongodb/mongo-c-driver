@@ -42,8 +42,9 @@
 static void
 _mongoc_stream_tls_secure_transport_destroy (mongoc_stream_t *stream)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -64,8 +65,8 @@ _mongoc_stream_tls_secure_transport_destroy (mongoc_stream_t *stream)
    bson_free (secure_transport);
    bson_free (stream);
 
-   mongoc_counter_streams_active_dec();
-   mongoc_counter_streams_disposed_inc();
+   mongoc_counter_streams_active_dec ();
+   mongoc_counter_streams_disposed_inc ();
    EXIT;
 }
 
@@ -81,8 +82,9 @@ static int
 _mongoc_stream_tls_secure_transport_close (mongoc_stream_t *stream)
 {
    int ret = 0;
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -94,8 +96,9 @@ _mongoc_stream_tls_secure_transport_close (mongoc_stream_t *stream)
 static int
 _mongoc_stream_tls_secure_transport_flush (mongoc_stream_t *stream)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -104,12 +107,13 @@ _mongoc_stream_tls_secure_transport_flush (mongoc_stream_t *stream)
 
 static ssize_t
 _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
-                                           char            *buf,
-                                           size_t           buf_len)
+                                           char *buf,
+                                           size_t buf_len)
 {
    OSStatus status;
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
    ssize_t write_ret;
    int64_t now;
    int64_t expire = 0;
@@ -121,18 +125,19 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
       expire = bson_get_monotonic_time () + (tls->timeout_msec * 1000UL);
    }
 
-   status = SSLWrite (secure_transport->ssl_ctx_ref, buf, buf_len, (size_t *)&write_ret);
+   status = SSLWrite (
+      secure_transport->ssl_ctx_ref, buf, buf_len, (size_t *) &write_ret);
 
    switch (status) {
-      case errSSLWouldBlock:
-      case noErr:
-         break;
+   case errSSLWouldBlock:
+   case noErr:
+      break;
 
-      case errSSLClosedAbort:
-         errno = ECONNRESET;
+   case errSSLClosedAbort:
+      errno = ECONNRESET;
 
-      default:
-         RETURN(-1);
+   default:
+      RETURN (-1);
    }
 
    if (expire) {
@@ -140,7 +145,7 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
 
       if ((expire - now) < 0) {
          if (write_ret < buf_len) {
-            mongoc_counter_streams_timeout_inc();
+            mongoc_counter_streams_timeout_inc ();
          }
 
          tls->timeout_msec = 0;
@@ -149,19 +154,20 @@ _mongoc_stream_tls_secure_transport_write (mongoc_stream_t *stream,
       }
    }
 
-   RETURN(write_ret);
+   RETURN (write_ret);
 }
 
 /* This is copypasta from _mongoc_stream_tls_openssl_writev */
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 static ssize_t
 _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
-                                            mongoc_iovec_t  *iov,
-                                            size_t           iovcnt,
-                                            int32_t          timeout_msec)
+                                            mongoc_iovec_t *iov,
+                                            size_t iovcnt,
+                                            int32_t timeout_msec)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
    char buf[MONGOC_STREAM_TLS_BUFFER_SIZE];
    ssize_t ret = 0;
    ssize_t child_ret;
@@ -224,7 +230,7 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
          } else {
             /* Didn't buffer, so just write it through */
 
-            to_write = (char *)iov[i].iov_base + iov_pos;
+            to_write = (char *) iov[i].iov_base + iov_pos;
             to_write_len = iov[i].iov_len - iov_pos;
 
             iov_pos += to_write_len;
@@ -234,7 +240,8 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
             /* We get here if we buffered some bytes and filled the buffer, or
              * if we didn't buffer and have to send out of the iovec */
 
-            child_ret = _mongoc_stream_tls_secure_transport_write (stream, to_write, to_write_len);
+            child_ret = _mongoc_stream_tls_secure_transport_write (
+               stream, to_write, to_write_len);
 
             if (child_ret < 0) {
                RETURN (ret);
@@ -256,7 +263,8 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
-      child_ret = _mongoc_stream_tls_secure_transport_write (stream, buf_head, buf_tail - buf_head);
+      child_ret = _mongoc_stream_tls_secure_transport_write (
+         stream, buf_head, buf_tail - buf_head);
 
       if (child_ret < 0) {
          RETURN (child_ret);
@@ -269,20 +277,21 @@ _mongoc_stream_tls_secure_transport_writev (mongoc_stream_t *stream,
       mongoc_counter_streams_egress_add (ret);
    }
 
-   TRACE("Returning %zu", ret);
+   TRACE ("Returning %zu", ret);
    RETURN (ret);
 }
 
 /* This function is copypasta of _mongoc_stream_tls_openssl_readv */
 static ssize_t
 _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
-                                           mongoc_iovec_t  *iov,
-                                           size_t           iovcnt,
-                                           size_t           min_bytes,
-                                           int32_t          timeout_msec)
+                                           mongoc_iovec_t *iov,
+                                           size_t iovcnt,
+                                           size_t min_bytes,
+                                           int32_t timeout_msec)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
    ssize_t ret = 0;
    size_t i;
    size_t read_ret;
@@ -305,10 +314,13 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
-         OSStatus status = SSLRead (secure_transport->ssl_ctx_ref, (char *)iov[i].iov_base + iov_pos, (int)(iov[i].iov_len - iov_pos), &read_ret);
+         OSStatus status = SSLRead (secure_transport->ssl_ctx_ref,
+                                    (char *) iov[i].iov_base + iov_pos,
+                                    (int) (iov[i].iov_len - iov_pos),
+                                    &read_ret);
 
          if (status != noErr) {
-            RETURN(-1);
+            RETURN (-1);
          }
 
          if (expire) {
@@ -316,7 +328,7 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
 
             if ((expire - now) < 0) {
                if (read_ret == 0) {
-                  mongoc_counter_streams_timeout_inc();
+                  mongoc_counter_streams_timeout_inc ();
                   errno = ETIMEDOUT;
                   RETURN (-1);
                }
@@ -329,8 +341,8 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
 
          ret += read_ret;
 
-         if ((size_t)ret >= min_bytes) {
-            mongoc_counter_streams_ingress_add(ret);
+         if ((size_t) ret >= min_bytes) {
+            mongoc_counter_streams_ingress_add (ret);
             RETURN (ret);
          }
 
@@ -339,7 +351,7 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
    }
 
    if (ret >= 0) {
-      mongoc_counter_streams_ingress_add(ret);
+      mongoc_counter_streams_ingress_add (ret);
    }
 
    RETURN (ret);
@@ -347,28 +359,27 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
 
 static int
 _mongoc_stream_tls_secure_transport_setsockopt (mongoc_stream_t *stream,
-                                                int              level,
-                                                int              optname,
-                                                void            *optval,
-                                                socklen_t        optlen)
+                                                int level,
+                                                int optname,
+                                                void *optval,
+                                                socklen_t optlen)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
-   RETURN (mongoc_stream_setsockopt (tls->base_stream,
-                                     level,
-                                     optname,
-                                     optval,
-                                     optlen));
+   RETURN (mongoc_stream_setsockopt (
+      tls->base_stream, level, optname, optval, optlen));
 }
 
 static mongoc_stream_t *
 _mongoc_stream_tls_secure_transport_get_base_stream (mongoc_stream_t *stream)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -377,10 +388,12 @@ _mongoc_stream_tls_secure_transport_get_base_stream (mongoc_stream_t *stream)
 
 
 static bool
-_mongoc_stream_tls_secure_transport_check_closed (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_secure_transport_check_closed (
+   mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -389,13 +402,14 @@ _mongoc_stream_tls_secure_transport_check_closed (mongoc_stream_t *stream) /* IN
 
 bool
 mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
-                                              const char      *host,
-                                              int             *events,
-                                              bson_error_t    *error)
+                                              const char *host,
+                                              int *events,
+                                              bson_error_t *error)
 {
    OSStatus ret = 0;
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_secure_transport_t *secure_transport = (mongoc_stream_tls_secure_transport_t *) tls->ctx;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_transport_t *secure_transport =
+      (mongoc_stream_tls_secure_transport_t *) tls->ctx;
 
    ENTRY;
    BSON_ASSERT (secure_transport);
@@ -418,40 +432,43 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: %d", ret);
+                      "TLS handshake failed: %d",
+                      ret);
    }
 
    RETURN (false);
 }
 
 mongoc_stream_t *
-mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
-                                        const char       *host,
+mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
+                                        const char *host,
                                         mongoc_ssl_opt_t *opt,
-                                        int               client)
+                                        int client)
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_secure_transport_t *secure_transport;
 
    ENTRY;
-   BSON_ASSERT(base_stream);
-   BSON_ASSERT(opt);
+   BSON_ASSERT (base_stream);
+   BSON_ASSERT (opt);
 
    if (opt->ca_dir) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.ca_dir has no effect when built "
-                   "against Secure Transport");
+      MONGOC_ERROR ("Setting mongoc_ssl_opt_t.ca_dir has no effect when built "
+                    "against Secure Transport");
       RETURN (false);
    }
    if (opt->crl_file) {
-      MONGOC_ERROR("Setting mongoc_ssl_opt_t.crl_file has no effect when built "
-                   "against Secure Transport");
+      MONGOC_ERROR (
+         "Setting mongoc_ssl_opt_t.crl_file has no effect when built "
+         "against Secure Transport");
       RETURN (false);
    }
 
 
-   secure_transport = (mongoc_stream_tls_secure_transport_t *)bson_malloc0 (sizeof *secure_transport);
+   secure_transport = (mongoc_stream_tls_secure_transport_t *) bson_malloc0 (
+      sizeof *secure_transport);
 
-   tls = (mongoc_stream_tls_t *)bson_malloc0 (sizeof *tls);
+   tls = (mongoc_stream_tls_t *) bson_malloc0 (sizeof *tls);
    tls->parent.type = MONGOC_STREAM_TLS;
    tls->parent.destroy = _mongoc_stream_tls_secure_transport_destroy;
    tls->parent.failed = _mongoc_stream_tls_secure_transport_failed;
@@ -460,17 +477,19 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    tls->parent.writev = _mongoc_stream_tls_secure_transport_writev;
    tls->parent.readv = _mongoc_stream_tls_secure_transport_readv;
    tls->parent.setsockopt = _mongoc_stream_tls_secure_transport_setsockopt;
-   tls->parent.get_base_stream = _mongoc_stream_tls_secure_transport_get_base_stream;
+   tls->parent.get_base_stream =
+      _mongoc_stream_tls_secure_transport_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_transport_check_closed;
    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_secure_transport_handshake;
-   tls->ctx = (void *)secure_transport;
+   tls->ctx = (void *) secure_transport;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;
 
-   secure_transport->ssl_ctx_ref = SSLCreateContext (kCFAllocatorDefault,
-                                                     client ? kSSLClientSide : kSSLServerSide,
-                                                     kSSLStreamType);
+   secure_transport->ssl_ctx_ref =
+      SSLCreateContext (kCFAllocatorDefault,
+                        client ? kSSLClientSide : kSSLServerSide,
+                        kSSLStreamType);
 
    SSLSetIOFuncs (secure_transport->ssl_ctx_ref,
                   mongoc_secure_transport_read,
@@ -481,10 +500,13 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    mongoc_secure_transport_setup_ca (secure_transport, opt);
 
    if (client) {
-      SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, opt->weak_cert_validation);
+      SSLSetSessionOption (secure_transport->ssl_ctx_ref,
+                           kSSLSessionOptionBreakOnServerAuth,
+                           opt->weak_cert_validation);
    } else if (!opt->allow_invalid_hostname) {
       /* used only in mock_server_t tests */
-      SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref, kAlwaysAuthenticate);
+      SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref,
+                                    kAlwaysAuthenticate);
    }
 
    if (!opt->allow_invalid_hostname) {
@@ -493,8 +515,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
    SSLSetConnection (secure_transport->ssl_ctx_ref, tls);
 
 
-   mongoc_counter_streams_active_inc();
-   RETURN((mongoc_stream_t *)tls);
+   mongoc_counter_streams_active_inc ();
+   RETURN ((mongoc_stream_t *) tls);
 }
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
-

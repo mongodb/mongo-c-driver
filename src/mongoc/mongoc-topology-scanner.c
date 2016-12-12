@@ -40,25 +40,28 @@
 
 /* forward declarations */
 static void
-mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
-                                          const bson_t             *ismaster_response,
-                                          int64_t                   rtt_msec,
-                                          void                     *data,
-                                          bson_error_t             *error);
+mongoc_topology_scanner_ismaster_handler (
+   mongoc_async_cmd_result_t async_status,
+   const bson_t *ismaster_response,
+   int64_t rtt_msec,
+   void *data,
+   bson_error_t *error);
 
 static void
-_mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts,
-                                                    const mongoc_host_list_t        *host);
+_mongoc_topology_scanner_monitor_heartbeat_started (
+   const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host);
 
 static void
-_mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
-                                                      const mongoc_host_list_t        *host,
-                                                      const bson_t                    *reply);
+_mongoc_topology_scanner_monitor_heartbeat_succeeded (
+   const mongoc_topology_scanner_t *ts,
+   const mongoc_host_list_t *host,
+   const bson_t *reply);
 
 static void
-_mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
-                                                   const mongoc_host_list_t        *host,
-                                                   const bson_error_t              *error);
+_mongoc_topology_scanner_monitor_heartbeat_failed (
+   const mongoc_topology_scanner_t *ts,
+   const mongoc_host_list_t *host,
+   const bson_error_t *error);
 
 static void
 _add_ismaster (bson_t *cmd)
@@ -85,7 +88,7 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
 }
 
 static bson_t *
-_get_ismaster_doc (mongoc_topology_scanner_t      *ts,
+_get_ismaster_doc (mongoc_topology_scanner_t *ts,
                    mongoc_topology_scanner_node_t *node)
 {
    if (node->last_used != -1 && node->last_failed == -1) {
@@ -111,28 +114,33 @@ _get_ismaster_doc (mongoc_topology_scanner_t      *ts,
 }
 
 static void
-_begin_ismaster_cmd (mongoc_topology_scanner_t      *ts,
+_begin_ismaster_cmd (mongoc_topology_scanner_t *ts,
                      mongoc_topology_scanner_node_t *node,
-                     int64_t                         timeout_msec)
+                     int64_t timeout_msec)
 {
    const bson_t *ismaster_cmd_to_send = _get_ismaster_doc (ts, node);
 
-   node->cmd = mongoc_async_cmd (
-      ts->async, node->stream, ts->setup,
-      node->host.host, "admin",
-      ismaster_cmd_to_send,
-      &mongoc_topology_scanner_ismaster_handler,
-      node, timeout_msec);
+   node->cmd = mongoc_async_cmd (ts->async,
+                                 node->stream,
+                                 ts->setup,
+                                 node->host.host,
+                                 "admin",
+                                 ismaster_cmd_to_send,
+                                 &mongoc_topology_scanner_ismaster_handler,
+                                 node,
+                                 timeout_msec);
 }
 
 
 mongoc_topology_scanner_t *
-mongoc_topology_scanner_new (const mongoc_uri_t                     *uri,
-                             mongoc_topology_scanner_setup_err_cb_t  setup_err_cb,
-                             mongoc_topology_scanner_cb_t            cb,
-                             void                                   *data)
+mongoc_topology_scanner_new (
+   const mongoc_uri_t *uri,
+   mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
+   mongoc_topology_scanner_cb_t cb,
+   void *data)
 {
-   mongoc_topology_scanner_t *ts = (mongoc_topology_scanner_t *)bson_malloc0 (sizeof (*ts));
+   mongoc_topology_scanner_t *ts =
+      (mongoc_topology_scanner_t *) bson_malloc0 (sizeof (*ts));
 
    ts->async = mongoc_async_new ();
 
@@ -153,7 +161,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t                     *uri,
 #ifdef MONGOC_ENABLE_SSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
-                                      mongoc_ssl_opt_t          *opts)
+                                      mongoc_ssl_opt_t *opts)
 {
    ts->ssl_opts = opts;
    ts->setup = mongoc_async_cmd_tls_setup;
@@ -162,8 +170,8 @@ mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
 
 void
 mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
-                                              mongoc_stream_initiator_t  si,
-                                              void                      *ctx)
+                                              mongoc_stream_initiator_t si,
+                                              void *ctx)
 {
    ts->initiator = si;
    ts->initiator_context = ctx;
@@ -175,7 +183,8 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
-   DL_FOREACH_SAFE (ts->nodes, ele, tmp) {
+   DL_FOREACH_SAFE (ts->nodes, ele, tmp)
+   {
       mongoc_topology_scanner_node_destroy (ele, false);
    }
 
@@ -191,8 +200,8 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
-                             const mongoc_host_list_t  *host,
-                             uint32_t                   id)
+                             const mongoc_host_list_t *host,
+                             uint32_t id)
 {
    mongoc_topology_scanner_node_t *node;
 
@@ -205,16 +214,16 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
    node->last_failed = -1;
    node->last_used = -1;
 
-   DL_APPEND(ts->nodes, node);
+   DL_APPEND (ts->nodes, node);
 
    return node;
 }
 
 void
 mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
-                                      const mongoc_host_list_t  *host,
-                                      uint32_t                   id,
-                                      int64_t                    timeout_msec)
+                                      const mongoc_host_list_t *host,
+                                      uint32_t id,
+                                      int64_t timeout_msec)
 {
    mongoc_topology_scanner_node_t *node;
 
@@ -268,7 +277,8 @@ mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
 }
 
 void
-mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
+                                      bool failed)
 {
    DL_DELETE (node->ts->nodes, node);
    mongoc_topology_scanner_node_disconnect (node, failed);
@@ -285,8 +295,7 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
  *--------------------------------------------------------------------------
  */
 mongoc_topology_scanner_node_t *
-mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
-                                  uint32_t                   id)
+mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
@@ -315,7 +324,7 @@ mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
  */
 bool
 mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
-                                           mongoc_host_list_t        *host)
+                                           mongoc_host_list_t *host)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
@@ -339,11 +348,12 @@ mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
  */
 
 static void
-mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
-                                          const bson_t             *ismaster_response,
-                                          int64_t                   rtt_msec,
-                                          void                     *data,
-                                          bson_error_t             *error)
+mongoc_topology_scanner_ismaster_handler (
+   mongoc_async_cmd_result_t async_status,
+   const bson_t *ismaster_response,
+   int64_t rtt_msec,
+   void *data,
+   bson_error_t *error)
 {
    mongoc_topology_scanner_node_t *node;
    mongoc_topology_scanner_t *ts;
@@ -363,8 +373,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
    now = bson_get_monotonic_time ();
 
    /* if no ismaster response, async cmd had an error or timed out */
-   if (!ismaster_response ||
-       async_status == MONGOC_ASYNC_CMD_ERROR ||
+   if (!ismaster_response || async_status == MONGOC_ASYNC_CMD_ERROR ||
        async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
       mongoc_stream_failed (node->stream);
       node->stream = NULL;
@@ -385,13 +394,13 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                       "%s calling ismaster on \'%s\'",
                       message,
                       node->host.host_and_port);
-      
-      _mongoc_topology_scanner_monitor_heartbeat_failed (ts, &node->host,
-                                                         &node->last_error);
+
+      _mongoc_topology_scanner_monitor_heartbeat_failed (
+         ts, &node->host, &node->last_error);
    } else {
       node->last_failed = -1;
-      _mongoc_topology_scanner_monitor_heartbeat_succeeded (ts, &node->host,
-                                                            ismaster_response);
+      _mongoc_topology_scanner_monitor_heartbeat_succeeded (
+         ts, &node->host, ismaster_response);
    }
 
    node->last_used = now;
@@ -415,12 +424,12 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
 
 static mongoc_stream_t *
 mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
-                                          bson_error_t                   *error)
+                                          bson_error_t *error)
 {
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *rp;
-   char portstr [8];
+   char portstr[8];
    mongoc_host_list_t *host;
    int s;
 
@@ -461,13 +470,12 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
       /*
        * Create a new non-blocking socket.
        */
-      if (!(sock = mongoc_socket_new (rp->ai_family,
-                                      rp->ai_socktype,
-                                      rp->ai_protocol))) {
+      if (!(sock = mongoc_socket_new (
+               rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
          continue;
       }
 
-      mongoc_socket_connect (sock, rp->ai_addr, (socklen_t)rp->ai_addrlen, 0);
+      mongoc_socket_connect (sock, rp->ai_addr, (socklen_t) rp->ai_addrlen, 0);
 
       break;
    }
@@ -489,7 +497,7 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
 
 static mongoc_stream_t *
 mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
-                                           bson_error_t                   *error)
+                                           bson_error_t *error)
 {
 #ifdef _WIN32
    ENTRY;
@@ -510,8 +518,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1,
-                  "%s", host->host);
+   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1, "%s", host->host);
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
@@ -523,14 +530,12 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
       RETURN (NULL);
    }
 
-   if (-1 == mongoc_socket_connect (sock,
-                                    (struct sockaddr *)&saddr,
-                                    sizeof saddr,
-                                    -1)) {
+   if (-1 == mongoc_socket_connect (
+                sock, (struct sockaddr *) &saddr, sizeof saddr, -1)) {
       char buf[128];
       char *errstr;
 
-      errstr = bson_strerror_r(mongoc_socket_errno(sock), buf, sizeof(buf));
+      errstr = bson_strerror_r (mongoc_socket_errno (sock), buf, sizeof (buf));
 
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
@@ -563,19 +568,21 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 
 bool
 mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
-                                    bson_error_t                   *error)
+                                    bson_error_t *error)
 {
    mongoc_stream_t *sock_stream;
 
    _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
 
-   if (node->stream) { return true; }
+   if (node->stream) {
+      return true;
+   }
 
    BSON_ASSERT (!node->retired);
 
    if (node->ts->initiator) {
-      sock_stream = node->ts->initiator (node->ts->uri, &node->host,
-                                         node->ts->initiator_context, error);
+      sock_stream = node->ts->initiator (
+         node->ts->uri, &node->host, node->ts->initiator_context, error);
    } else {
       if (node->host.family == AF_UNIX) {
          sock_stream = mongoc_topology_scanner_node_connect_unix (node, error);
@@ -587,9 +594,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
       if (sock_stream && node->ts->ssl_opts) {
          mongoc_stream_t *original = sock_stream;
 
-         sock_stream = mongoc_stream_tls_new_with_hostname (sock_stream,
-                                                            node->host.host,
-                                                            node->ts->ssl_opts, 1);
+         sock_stream = mongoc_stream_tls_new_with_hostname (
+            sock_stream, node->host.host, node->ts->ssl_opts, 1);
          if (!sock_stream) {
             mongoc_stream_destroy (original);
          }
@@ -598,8 +604,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    }
 
    if (!sock_stream) {
-      _mongoc_topology_scanner_monitor_heartbeat_failed (node->ts, &node->host,
-                                                         error);
+      _mongoc_topology_scanner_monitor_heartbeat_failed (
+         node->ts, &node->host, error);
 
       node->ts->setup_err_cb (node->id, node->ts->cb_data, error);
       return false;
@@ -652,8 +658,8 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 
    if (obey_cooldown) {
       /* when current cooldown period began */
-      cooldown = bson_get_monotonic_time ()
-                 - 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS;
+      cooldown =
+         bson_get_monotonic_time () - 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS;
    }
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
@@ -689,7 +695,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 
    msg = bson_string_new (NULL);
 
-   DL_FOREACH_SAFE (ts->nodes, node, tmp) {
+   DL_FOREACH_SAFE (ts->nodes, node, tmp)
+   {
       if (node->last_error.code) {
          if (msg->len) {
             bson_string_append_c (msg, ' ');
@@ -724,7 +731,7 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 
 void
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
-                              int64_t                    timeout_msec)
+                              int64_t timeout_msec)
 {
    mongoc_async_run (ts->async, timeout_msec);
 }
@@ -741,7 +748,7 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 
 void
 mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,
-                                   bson_error_t              *error)
+                                   bson_error_t *error)
 {
    BSON_ASSERT (ts);
    BSON_ASSERT (error);
@@ -765,7 +772,8 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
 
-   DL_FOREACH_SAFE (ts->nodes, node, tmp) {
+   DL_FOREACH_SAFE (ts->nodes, node, tmp)
+   {
       if (node->retired) {
          mongoc_topology_scanner_node_destroy (node, true);
       }
@@ -777,7 +785,7 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
  */
 bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
-                                      const char                *appname)
+                                      const char *appname)
 {
    if (!_mongoc_handshake_appname_is_valid (appname)) {
       MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
@@ -795,8 +803,8 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
 
 /* SDAM Monitoring Spec: send HeartbeatStartedEvent */
 static void
-_mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanner_t *ts,
-                                                    const mongoc_host_list_t        *host)
+_mongoc_topology_scanner_monitor_heartbeat_started (
+   const mongoc_topology_scanner_t *ts, const mongoc_host_list_t *host)
 {
    if (ts->apm_callbacks.server_heartbeat_started) {
       mongoc_apm_server_heartbeat_started_t event;
@@ -808,9 +816,10 @@ _mongoc_topology_scanner_monitor_heartbeat_started (const mongoc_topology_scanne
 
 /* SDAM Monitoring Spec: send HeartbeatSucceededEvent */
 static void
-_mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scanner_t *ts,
-                                                      const mongoc_host_list_t        *host,
-                                                      const bson_t                    *reply)
+_mongoc_topology_scanner_monitor_heartbeat_succeeded (
+   const mongoc_topology_scanner_t *ts,
+   const mongoc_host_list_t *host,
+   const bson_t *reply)
 {
    if (ts->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
@@ -823,9 +832,10 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (const mongoc_topology_scan
 
 /* SDAM Monitoring Spec: send HeartbeatFailedEvent */
 static void
-_mongoc_topology_scanner_monitor_heartbeat_failed (const mongoc_topology_scanner_t *ts,
-                                                   const mongoc_host_list_t        *host,
-                                                   const bson_error_t              *error)
+_mongoc_topology_scanner_monitor_heartbeat_failed (
+   const mongoc_topology_scanner_t *ts,
+   const mongoc_host_list_t *host,
+   const bson_error_t *error)
 {
    if (ts->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;

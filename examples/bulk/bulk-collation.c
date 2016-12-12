@@ -26,19 +26,19 @@ bulk_collation (mongoc_collection_t *collection)
    bson_destroy (doc);
 
    /* "One" normally sorts before "one"; make "one" come first */
-   opts = BCON_NEW ("collation", "{",
-                    "locale", BCON_UTF8 ("en_US"),
-                    "caseFirst", BCON_UTF8 ("lower"),
+   opts = BCON_NEW ("collation",
+                    "{",
+                    "locale",
+                    BCON_UTF8 ("en_US"),
+                    "caseFirst",
+                    BCON_UTF8 ("lower"),
                     "}");
 
    /* set x=1 on the document with _id "One", which now sorts after "one" */
    update = BCON_NEW ("$set", "{", "x", BCON_INT64 (1), "}");
    selector = BCON_NEW ("_id", "{", "$gt", BCON_UTF8 ("one"), "}");
-   mongoc_bulk_operation_update_one_with_opts (bulk,
-                                               selector,
-                                               update,
-                                               opts,
-                                               &error);
+   mongoc_bulk_operation_update_one_with_opts (
+      bulk, selector, update, opts, &error);
 
    ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
 
@@ -58,8 +58,7 @@ bulk_collation (mongoc_collection_t *collection)
 }
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -78,4 +77,3 @@ main (int   argc,
 
    return 0;
 }
-

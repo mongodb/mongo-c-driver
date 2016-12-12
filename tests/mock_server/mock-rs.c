@@ -73,7 +73,7 @@ hosts (mongoc_array_t *servers)
       }
    }
 
-   return bson_string_free (hosts_str, false);  /* detach buffer */
+   return bson_string_free (hosts_str, false); /* detach buffer */
 }
 
 
@@ -126,7 +126,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
                            int n_secondaries,
                            int n_arbiters)
 {
-   mock_rs_t *rs = (mock_rs_t *)bson_malloc0 (sizeof (mock_rs_t));
+   mock_rs_t *rs = (mock_rs_t *) bson_malloc0 (sizeof (mock_rs_t));
 
    rs->max_wire_version = max_wire_version;
    rs->has_primary = has_primary;
@@ -135,7 +135,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->request_timeout_msec = 10 * 1000;
    rs->q = q_new ();
 
-   return rs;   
+   return rs;
 }
 
 
@@ -166,22 +166,20 @@ mock_rs_get_request_timeout_msec (mock_rs_t *rs)
  */
 
 void
-mock_rs_set_request_timeout_msec (mock_rs_t *rs,
-                                  int64_t request_timeout_msec)
+mock_rs_set_request_timeout_msec (mock_rs_t *rs, int64_t request_timeout_msec)
 {
    rs->request_timeout_msec = request_timeout_msec;
 }
 
 
 static bool
-rs_q_append (request_t *request,
-             void *data)
+rs_q_append (request_t *request, void *data)
 {
-   mock_rs_t *rs = (mock_rs_t *)data;
+   mock_rs_t *rs = (mock_rs_t *) data;
 
-   q_put (rs->q, (void *)request);
+   q_put (rs->q, (void *) request);
 
-   return true;  /* handled */
+   return true; /* handled */
 }
 
 
@@ -216,7 +214,7 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* start secondaries */
-   _mongoc_array_init (&rs->secondaries, sizeof(mock_server_t *));
+   _mongoc_array_init (&rs->secondaries, sizeof (mock_server_t *));
 
    for (i = 0; i < rs->n_secondaries; i++) {
       server = mock_server_new ();
@@ -225,7 +223,7 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* start arbiters */
-   _mongoc_array_init (&rs->arbiters, sizeof(mock_server_t *));
+   _mongoc_array_init (&rs->arbiters, sizeof (mock_server_t *));
 
    for (i = 0; i < rs->n_arbiters; i++) {
       server = mock_server_new ();
@@ -234,7 +232,7 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* add all servers to replica set */
-   _mongoc_array_init (&rs->servers, sizeof(mock_server_t *));
+   _mongoc_array_init (&rs->servers, sizeof (mock_server_t *));
    if (rs->has_primary) {
       _mongoc_array_append_val (&rs->servers, rs->primary);
    }
@@ -247,10 +245,8 @@ mock_rs_run (mock_rs_t *rs)
     * runs last, after auto_ismaster.
     */
    for (i = 0; i < rs->servers.len; i++) {
-      mock_server_autoresponds (get_server (&rs->servers, i),
-                                rs_q_append,
-                                (void *) rs,
-                                NULL);
+      mock_server_autoresponds (
+         get_server (&rs->servers, i), rs_q_append, (void *) rs, NULL);
    }
 
 
@@ -260,9 +256,12 @@ mock_rs_run (mock_rs_t *rs)
 
    if (rs->has_primary) {
       /* primary's ismaster response */
-      ismaster_json = bson_strdup_printf (
-         "{'ok': 1, 'ismaster': true, 'secondary': false, 'maxWireVersion': %d, "
-            "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
+      ismaster_json =
+         bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'secondary': false, "
+                             "'maxWireVersion': %d, "
+                             "'setName': 'rs', 'hosts': [%s]}",
+                             rs->max_wire_version,
+                             hosts_str);
 
       mock_server_auto_ismaster (rs->primary, ismaster_json);
       bson_free (ismaster_json);
@@ -271,10 +270,13 @@ mock_rs_run (mock_rs_t *rs)
    /* secondaries' ismaster response */
    ismaster_json = bson_strdup_printf (
       "{'ok': 1, 'ismaster': false, 'secondary': true, 'maxWireVersion': %d, "
-      "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
+      "'setName': 'rs', 'hosts': [%s]}",
+      rs->max_wire_version,
+      hosts_str);
 
    for (i = 0; i < rs->n_secondaries; i++) {
-      mock_server_auto_ismaster (get_server (&rs->secondaries, i), ismaster_json);
+      mock_server_auto_ismaster (get_server (&rs->secondaries, i),
+                                 ismaster_json);
    }
 
    bson_free (ismaster_json);
@@ -282,7 +284,9 @@ mock_rs_run (mock_rs_t *rs)
    /* arbiters' ismaster response */
    ismaster_json = bson_strdup_printf (
       "{'ok': 1, 'ismaster': true, 'arbiterOnly': true, 'maxWireVersion': %d, "
-      "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
+      "'setName': 'rs', 'hosts': [%s]}",
+      rs->max_wire_version,
+      hosts_str);
 
    for (i = 0; i < rs->n_arbiters; i++) {
       mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_json);
@@ -333,7 +337,7 @@ mock_rs_get_uri (mock_rs_t *rs)
 request_t *
 mock_rs_receives_request (mock_rs_t *rs)
 {
-   return (request_t *)q_get (rs->q, rs->request_timeout_msec);
+   return (request_t *) q_get (rs->q, rs->request_timeout_msec);
 }
 
 
@@ -369,14 +373,9 @@ mock_rs_receives_query (mock_rs_t *rs,
 
    request = mock_rs_receives_request (rs);
 
-   if (request && !request_matches_query (request,
-                                          ns,
-                                          flags,
-                                          skip,
-                                          n_return,
-                                          query_json,
-                                          fields_json,
-                                          false)) {
+   if (request &&
+       !request_matches_query (
+          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
       request_destroy (request);
       return NULL;
    }
@@ -460,14 +459,9 @@ mock_rs_receives_command (mock_rs_t *rs,
 
    request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (request && ! request_matches_query (request,
-                                           ns,
-                                           flags,
-                                           0,
-                                           1,
-                                           formatted_command_json,
-                                           NULL,
-                                           true)) {
+   if (request &&
+       !request_matches_query (
+          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
       bson_free (formatted_command_json);
       request_destroy (request);
       return NULL;
@@ -507,10 +501,7 @@ mock_rs_receives_insert (mock_rs_t *rs,
 
    request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (request && !request_matches_insert (request,
-                                           ns,
-                                           flags,
-                                           doc_json)) {
+   if (request && !request_matches_insert (request, ns, flags, doc_json)) {
       request_destroy (request);
       return NULL;
    }
@@ -547,10 +538,7 @@ mock_rs_receives_getmore (mock_rs_t *rs,
 
    request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (request && !request_matches_getmore (request,
-                                            ns,
-                                            n_return,
-                                            cursor_id)) {
+   if (request && !request_matches_getmore (request, ns, n_return, cursor_id)) {
       request_destroy (request);
       return NULL;
    }
@@ -603,8 +591,7 @@ mock_rs_hangs_up (request_t *request)
  */
 
 request_t *
-mock_rs_receives_kill_cursors (mock_rs_t *rs,
-                               int64_t cursor_id)
+mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id)
 {
    request_t *request;
 
@@ -642,14 +629,13 @@ mock_rs_replies (request_t *request,
                  int32_t number_returned,
                  const char *docs_json)
 {
-   mock_server_replies (request, flags, cursor_id, starting_from,
-                        number_returned, docs_json);
+   mock_server_replies (
+      request, flags, cursor_id, starting_from, number_returned, docs_json);
 }
 
 
 static mongoc_server_description_type_t
-_mock_rs_server_type (mock_rs_t *rs,
-                      uint16_t port)
+_mock_rs_server_type (mock_rs_t *rs, uint16_t port)
 {
    int i;
 
@@ -689,8 +675,7 @@ _mock_rs_server_type (mock_rs_t *rs,
  */
 
 void
-mock_rs_replies_simple (request_t *request,
-                        const char *docs_json)
+mock_rs_replies_simple (request_t *request, const char *docs_json)
 {
    mock_rs_replies (request, 0, 0, 0, 1, docs_json);
 }
@@ -713,16 +698,17 @@ mock_rs_replies_simple (request_t *request,
  *--------------------------------------------------------------------------
  */
 
-void mock_rs_replies_to_find (request_t           *request,
-                              mongoc_query_flags_t flags,
-                              int64_t              cursor_id,
-                              int32_t              number_returned,
-                              const char          *ns,
-                              const char          *reply_json,
-                              bool                 is_command)
+void
+mock_rs_replies_to_find (request_t *request,
+                         mongoc_query_flags_t flags,
+                         int64_t cursor_id,
+                         int32_t number_returned,
+                         const char *ns,
+                         const char *reply_json,
+                         bool is_command)
 {
-   mock_server_replies_to_find (request, flags, cursor_id, number_returned,
-                                ns, reply_json, is_command);
+   mock_server_replies_to_find (
+      request, flags, cursor_id, number_returned, ns, reply_json, is_command);
 }
 
 
@@ -743,13 +729,12 @@ void mock_rs_replies_to_find (request_t           *request,
  */
 
 bool
-mock_rs_request_is_to_primary (mock_rs_t *rs,
-                               request_t *request)
+mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request)
 {
    assert (request);
 
-   return MONGOC_SERVER_RS_PRIMARY == _mock_rs_server_type (
-      rs, request_get_server_port (request));
+   return MONGOC_SERVER_RS_PRIMARY ==
+          _mock_rs_server_type (rs, request_get_server_port (request));
 }
 
 
@@ -770,13 +755,12 @@ mock_rs_request_is_to_primary (mock_rs_t *rs,
  */
 
 bool
-mock_rs_request_is_to_secondary (mock_rs_t *rs,
-                                 request_t *request)
+mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request)
 {
    assert (request);
 
-   return MONGOC_SERVER_RS_SECONDARY == _mock_rs_server_type (
-      rs, request_get_server_port (request));
+   return MONGOC_SERVER_RS_SECONDARY ==
+          _mock_rs_server_type (rs, request_get_server_port (request));
 }
 
 

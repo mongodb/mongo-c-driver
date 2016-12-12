@@ -17,26 +17,25 @@
 #ifndef MONGOC_LOG_PRIVATE_H
 #define MONGOC_LOG_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include "mongoc-iovec.h"
 
 /* just for testing */
-void _mongoc_log_get_handler (mongoc_log_func_t  *log_func,
-                              void              **user_data);
+void
+_mongoc_log_get_handler (mongoc_log_func_t *log_func, void **user_data);
 
-bool _mongoc_log_trace_is_enabled (void);
+bool
+_mongoc_log_trace_is_enabled (void);
 
 void
-mongoc_log_trace_bytes       (const char *domain,
-                              const uint8_t *_b,
-                              size_t _l);
+mongoc_log_trace_bytes (const char *domain, const uint8_t *_b, size_t _l);
 
 void
-mongoc_log_trace_iovec       (const char *domain,
-                              const mongoc_iovec_t *_iov,
-                              size_t _iovcnt);
+mongoc_log_trace_iovec (const char *domain,
+                        const mongoc_iovec_t *_iov,
+                        size_t _iovcnt);
 
 #endif /* MONGOC_LOG_PRIVATE_H */

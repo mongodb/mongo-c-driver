@@ -20,8 +20,8 @@ test_cond_wait (void)
    mongoc_mutex_unlock (&mutex);
 
    if (!((50 * 1000 < duration_usec) && (150 * 1000 > duration_usec))) {
-      fprintf (stderr, "expected to wait 100ms, waited %" PRId64 "\n",
-               duration_usec);
+      fprintf (
+         stderr, "expected to wait 100ms, waited %" PRId64 "\n", duration_usec);
    }
 
    mongoc_cond_destroy (&cond);

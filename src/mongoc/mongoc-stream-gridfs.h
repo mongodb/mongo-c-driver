@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_GRIDFS_H
 #define MONGOC_STREAM_GRIDFS_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -31,7 +31,8 @@ BSON_BEGIN_DECLS
 
 
 BSON_API
-mongoc_stream_t *mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
+mongoc_stream_t *
+mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
 
 
 BSON_END_DECLS

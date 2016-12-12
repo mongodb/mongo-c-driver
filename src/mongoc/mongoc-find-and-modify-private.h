@@ -17,8 +17,8 @@
 #ifndef MONGOC_FIND_AND_MODIFY_PRIVATE_H
 #define MONGOC_FIND_AND_MODIFY_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -26,15 +26,14 @@
 
 BSON_BEGIN_DECLS
 
-struct _mongoc_find_and_modify_opts_t
-{
-   bson_t                                    *sort;
-   bson_t                                    *update;
-   bson_t                                    *fields;
-   mongoc_find_and_modify_flags_t             flags;
-   mongoc_write_bypass_document_validation_t  bypass_document_validation;
-   uint32_t                                   max_time_ms;
-   bson_t                                     extra;
+struct _mongoc_find_and_modify_opts_t {
+   bson_t *sort;
+   bson_t *update;
+   bson_t *fields;
+   mongoc_find_and_modify_flags_t flags;
+   mongoc_write_bypass_document_validation_t bypass_document_validation;
+   uint32_t max_time_ms;
+   bson_t extra;
 };
 
 

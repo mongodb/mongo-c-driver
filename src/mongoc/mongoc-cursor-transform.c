@@ -30,27 +30,26 @@
 #define MONGOC_LOG_DOMAIN "cursor-transform"
 
 
-typedef struct
-{
+typedef struct {
    mongoc_cursor_transform_filter_t filter;
    mongoc_cursor_transform_mutate_t mutate;
-   mongoc_cursor_transform_dtor_t   dtor;
-   void                            *ctx;
-   bson_t                           tmp;
+   mongoc_cursor_transform_dtor_t dtor;
+   void *ctx;
+   bson_t tmp;
 } mongoc_cursor_transform_t;
 
 
 static void *
 _mongoc_cursor_transform_new (mongoc_cursor_transform_filter_t filter,
                               mongoc_cursor_transform_mutate_t mutate,
-                              mongoc_cursor_transform_dtor_t   dtor,
-                              void                            *ctx)
+                              mongoc_cursor_transform_dtor_t dtor,
+                              void *ctx)
 {
    mongoc_cursor_transform_t *transform;
 
    ENTRY;
 
-   transform = (mongoc_cursor_transform_t *)bson_malloc0 (sizeof *transform);
+   transform = (mongoc_cursor_transform_t *) bson_malloc0 (sizeof *transform);
 
    transform->filter = filter;
    transform->mutate = mutate;
@@ -69,7 +68,7 @@ _mongoc_cursor_transform_destroy (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *) cursor->iface_data;
 
    if (transform->dtor) {
       transform->dtor (transform->ctx);
@@ -85,16 +84,15 @@ _mongoc_cursor_transform_destroy (mongoc_cursor_t *cursor)
 
 
 static bool
-_mongoc_cursor_transform_next (mongoc_cursor_t *cursor,
-                               const bson_t   **bson)
+_mongoc_cursor_transform_next (mongoc_cursor_t *cursor, const bson_t **bson)
 {
    mongoc_cursor_transform_t *transform;
 
    ENTRY;
 
-   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *) cursor->iface_data;
 
-   for (;; ) {
+   for (;;) {
       if (!_mongoc_cursor_next (cursor, bson)) {
          RETURN (false);
       }
@@ -129,11 +127,14 @@ _mongoc_cursor_transform_clone (const mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *) cursor->iface_data;
 
    clone_ = _mongoc_cursor_clone (cursor);
-   _mongoc_cursor_transform_init (clone_, transform->filter, transform->mutate,
-                                  transform->dtor, transform->ctx);
+   _mongoc_cursor_transform_init (clone_,
+                                  transform->filter,
+                                  transform->mutate,
+                                  transform->dtor,
+                                  transform->ctx);
 
    RETURN (clone_);
 }
@@ -148,18 +149,19 @@ static mongoc_cursor_interface_t gMongocCursorArray = {
 
 
 void
-_mongoc_cursor_transform_init (mongoc_cursor_t                 *cursor,
+_mongoc_cursor_transform_init (mongoc_cursor_t *cursor,
                                mongoc_cursor_transform_filter_t filter,
                                mongoc_cursor_transform_mutate_t mutate,
-                               mongoc_cursor_transform_dtor_t   dtor,
-                               void                            *ctx)
+                               mongoc_cursor_transform_dtor_t dtor,
+                               void *ctx)
 {
    ENTRY;
 
-   cursor->iface_data = _mongoc_cursor_transform_new (filter, mutate, dtor, ctx);
+   cursor->iface_data =
+      _mongoc_cursor_transform_new (filter, mutate, dtor, ctx);
 
-   memcpy (&cursor->iface, &gMongocCursorArray,
-           sizeof (mongoc_cursor_interface_t));
+   memcpy (
+      &cursor->iface, &gMongocCursorArray, sizeof (mongoc_cursor_interface_t));
 
    EXIT;
 }

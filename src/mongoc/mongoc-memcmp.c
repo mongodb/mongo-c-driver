@@ -18,38 +18,36 @@
 #include "mongoc-memcmp-private.h"
 
 #ifdef MONGOC_HAVE_WEAK_SYMBOLS
-__attribute__((weak)) void
-_mongoc_dummy_symbol_to_prevent_memcmp_lto(const unsigned char *b1,
-                                           const unsigned char *b2,
-                                           const size_t len)
+__attribute__ ((weak)) void
+_mongoc_dummy_symbol_to_prevent_memcmp_lto (const unsigned char *b1,
+                                            const unsigned char *b2,
+                                            const size_t len)
 {
-    (void) b1;
-    (void) b2;
-    (void) len;
+   (void) b1;
+   (void) b2;
+   (void) len;
 }
 #endif
 
 /* See: http://doc.libsodium.org/helpers/index.html#constant-time-comparison */
 int
-mongoc_memcmp(const void * const b1_, const void * const b2_, size_t len)
+mongoc_memcmp (const void *const b1_, const void *const b2_, size_t len)
 {
 #ifdef MONGOC_HAVE_WEAK_SYMBOLS
-    const unsigned char *b1 = (const unsigned char *) b1_;
-    const unsigned char *b2 = (const unsigned char *) b2_;
+   const unsigned char *b1 = (const unsigned char *) b1_;
+   const unsigned char *b2 = (const unsigned char *) b2_;
 #else
-    const volatile unsigned char *b1 = (const volatile unsigned char *) b1_;
-    const volatile unsigned char *b2 = (const volatile unsigned char *) b2_;
+   const volatile unsigned char *b1 = (const volatile unsigned char *) b1_;
+   const volatile unsigned char *b2 = (const volatile unsigned char *) b2_;
 #endif
-    size_t               i;
-    unsigned char        d = (unsigned char) 0U;
+   size_t i;
+   unsigned char d = (unsigned char) 0U;
 
 #if MONGOC_HAVE_WEAK_SYMBOLS
-    _mongoc_dummy_symbol_to_prevent_memcmp_lto(b1, b2, len);
+   _mongoc_dummy_symbol_to_prevent_memcmp_lto (b1, b2, len);
 #endif
-    for (i = 0U; i < len; i++) {
-        d |= b1[i] ^ b2[i];
-    }
-    return (int) ((1 & ((d - 1) >> 8)) - 1);
+   for (i = 0U; i < len; i++) {
+      d |= b1[i] ^ b2[i];
+   }
+   return (int) ((1 & ((d - 1) >> 8)) - 1);
 }
-
-

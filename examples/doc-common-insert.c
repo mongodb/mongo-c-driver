@@ -2,11 +2,12 @@
    by example code */
 
 /* Insert some sample data */
-bool insert_data (mongoc_collection_t* collection)
+bool
+insert_data (mongoc_collection_t *collection)
 {
    mongoc_bulk_operation_t *bulk;
    enum N { ndocs = 4 };
-   bson_t* docs[ndocs];
+   bson_t *docs[ndocs];
    bson_error_t error;
    int i = 0;
    bool ret;
@@ -15,8 +16,8 @@ bool insert_data (mongoc_collection_t* collection)
 
    docs[0] = BCON_NEW ("x", BCON_DOUBLE (1.0), "tags", "[", "dog", "cat", "]");
    docs[1] = BCON_NEW ("x", BCON_DOUBLE (2.0), "tags", "[", "cat", "]");
-   docs[2] = BCON_NEW ("x", BCON_DOUBLE (2.0), "tags",
-                       "[", "mouse", "cat", "dog", "]");
+   docs[2] = BCON_NEW (
+      "x", BCON_DOUBLE (2.0), "tags", "[", "mouse", "cat", "dog", "]");
    docs[3] = BCON_NEW ("x", BCON_DOUBLE (3.0), "tags", "[", "]");
 
    for (i = 0; i < ndocs; i++) {
@@ -36,7 +37,8 @@ bool insert_data (mongoc_collection_t* collection)
 }
 
 /* A helper which we'll use a lot later on */
-void print_res (const bson_t* reply)
+void
+print_res (const bson_t *reply)
 {
    BSON_ASSERT (reply);
    char *str = bson_as_json (reply, NULL);

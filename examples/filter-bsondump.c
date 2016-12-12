@@ -28,8 +28,7 @@
 
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_matcher_t *matcher;
    bson_reader_t *reader;

@@ -17,7 +17,7 @@
 #ifndef MONGOC_HOST_LIST_PRIVATE_H
 #define MONGOC_HOST_LIST_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -27,13 +27,16 @@
 BSON_BEGIN_DECLS
 
 
-bool _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
-                                    const char         *host_and_port);
+bool
+_mongoc_host_list_from_string (mongoc_host_list_t *host_list,
+                               const char *host_and_port);
 
-bool _mongoc_host_list_equal (const mongoc_host_list_t *host_a,
-                              const mongoc_host_list_t *host_b);
+bool
+_mongoc_host_list_equal (const mongoc_host_list_t *host_a,
+                         const mongoc_host_list_t *host_b);
 
-void _mongoc_host_list_destroy_all (mongoc_host_list_t *host);
+void
+_mongoc_host_list_destroy_all (mongoc_host_list_t *host);
 
 BSON_END_DECLS
 

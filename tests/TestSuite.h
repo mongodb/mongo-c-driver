@@ -28,308 +28,358 @@ extern "C" {
 #endif
 
 #ifndef OS_RELEASE_FILE_DIR
-# define OS_RELEASE_FILE_DIR "tests/release_files"
+#define OS_RELEASE_FILE_DIR "tests/release_files"
 #endif
 
 
 #ifndef BINARY_DIR
-# define BINARY_DIR "tests/binary"
+#define BINARY_DIR "tests/binary"
 #endif
 
 #ifndef JSON_DIR
-# define JSON_DIR "tests/json"
+#define JSON_DIR "tests/json"
 #endif
 
 #ifndef CERT_TEST_DIR
-# define CERT_TEST_DIR "tests/x509gen"
+#define CERT_TEST_DIR "tests/x509gen"
 #endif
 
-#define CERT_CA                  CERT_TEST_DIR "/ca.pem"
-#define CERT_CRL                 CERT_TEST_DIR "/crl.pem"
-#define CERT_SERVER              CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */
-#define CERT_CLIENT              CERT_TEST_DIR "/client.pem"
-#define CERT_ALTNAME             CERT_TEST_DIR "/altname.pem" /* alternative.mongodb.org */
-#define CERT_WILD                CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
-#define CERT_COMMONNAME          CERT_TEST_DIR "/commonName.pem" /* 127.0.0.1 & localhost */
-#define CERT_EXPIRED             CERT_TEST_DIR "/expired.pem" /* 127.0.0.1 & localhost */
-#define CERT_PASSWORD            "qwerty"
-#define CERT_PASSWORD_PROTECTED  CERT_TEST_DIR "/password_protected.pem"
+#define CERT_CA CERT_TEST_DIR "/ca.pem"
+#define CERT_CRL CERT_TEST_DIR "/crl.pem"
+#define CERT_SERVER CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */
+#define CERT_CLIENT CERT_TEST_DIR "/client.pem"
+#define CERT_ALTNAME CERT_TEST_DIR "/altname.pem" /* alternative.mongodb.org \
+                                                     */
+#define CERT_WILD CERT_TEST_DIR "/wild.pem"       /* *.mongodb.org */
+#define CERT_COMMONNAME \
+   CERT_TEST_DIR "/commonName.pem"                /* 127.0.0.1 & localhost */
+#define CERT_EXPIRED CERT_TEST_DIR "/expired.pem" /* 127.0.0.1 & localhost */
+#define CERT_PASSWORD "qwerty"
+#define CERT_PASSWORD_PROTECTED CERT_TEST_DIR "/password_protected.pem"
 
 
-void test_error (const char *format, ...) BSON_GNUC_PRINTF(1, 2);
+void
+test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
 #ifdef ASSERT
-# undef ASSERT
+#undef ASSERT
 #endif
 #define ASSERT assert
 
 
 #ifdef ASSERT_OR_PRINT
-# undef ASSERT_OR_PRINT
+#undef ASSERT_OR_PRINT
 #endif
 
-#define ASSERT_OR_PRINT(_statement, _err) \
-   do { \
-      if (! (_statement)) { \
-         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
-                         __FILE__, __LINE__, BSON_FUNC, \
-                         #_statement, _err.message); \
-         fflush(stderr); \
-         abort(); \
-      } \
+#define ASSERT_OR_PRINT(_statement, _err)             \
+   do {                                               \
+      if (!(_statement)) {                            \
+         fprintf (stderr,                             \
+                  "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
+                  __FILE__,                           \
+                  __LINE__,                           \
+                  BSON_FUNC,                          \
+                  #_statement,                        \
+                  _err.message);                      \
+         fflush (stderr);                             \
+         abort ();                                    \
+      }                                               \
    } while (0)
 
-#define ASSERT_CURSOR_NEXT(_cursor, _doc) \
-   do { \
-      bson_error_t _err; \
-      if (! mongoc_cursor_next ((_cursor), (_doc))) { \
+#define ASSERT_CURSOR_NEXT(_cursor, _doc)              \
+   do {                                                \
+      bson_error_t _err;                               \
+      if (!mongoc_cursor_next ((_cursor), (_doc))) {   \
          if (mongoc_cursor_error ((_cursor), &_err)) { \
-            fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
-                            __FILE__, __LINE__, BSON_FUNC, \
-                            _err.message); \
-          } else { \
-             fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
-                            __FILE__, __LINE__, BSON_FUNC, \
-                            "empty cursor"); \
-          } \
-          fflush(stderr); \
-          abort(); \
-      } \
+            fprintf (stderr,                           \
+                     "FAIL:%s:%d  %s()\n  %s\n\n",     \
+                     __FILE__,                         \
+                     __LINE__,                         \
+                     BSON_FUNC,                        \
+                     _err.message);                    \
+         } else {                                      \
+            fprintf (stderr,                           \
+                     "FAIL:%s:%d  %s()\n  %s\n\n",     \
+                     __FILE__,                         \
+                     __LINE__,                         \
+                     BSON_FUNC,                        \
+                     "empty cursor");                  \
+         }                                             \
+         fflush (stderr);                              \
+         abort ();                                     \
+      }                                                \
    } while (0)
 
 
-#define ASSERT_CURSOR_DONE(_cursor) \
-   do { \
-      bson_error_t _err; \
-      const bson_t *_doc; \
-      if (mongoc_cursor_next ((_cursor), &_doc)) { \
-         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
-                         __FILE__, __LINE__, BSON_FUNC, \
-                         "non-empty cursor"); \
-         fflush(stderr); \
-         abort(); \
-      } \
+#define ASSERT_CURSOR_DONE(_cursor)                 \
+   do {                                             \
+      bson_error_t _err;                            \
+      const bson_t *_doc;                           \
+      if (mongoc_cursor_next ((_cursor), &_doc)) {  \
+         fprintf (stderr,                           \
+                  "FAIL:%s:%d  %s()\n  %s\n\n",     \
+                  __FILE__,                         \
+                  __LINE__,                         \
+                  BSON_FUNC,                        \
+                  "non-empty cursor");              \
+         fflush (stderr);                           \
+         abort ();                                  \
+      }                                             \
       if (mongoc_cursor_error ((_cursor), &_err)) { \
-         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n\n", \
-                         __FILE__, __LINE__, BSON_FUNC, \
-                         _err.message); \
-         fflush(stderr); \
-         abort(); \
-      } \
+         fprintf (stderr,                           \
+                  "FAIL:%s:%d  %s()\n  %s\n\n",     \
+                  __FILE__,                         \
+                  __LINE__,                         \
+                  BSON_FUNC,                        \
+                  _err.message);                    \
+         fflush (stderr);                           \
+         abort ();                                  \
+      }                                             \
    } while (0)
 
 
-#define ASSERT_CMPINT_HELPER(a, eq, b, fmt) \
-   do { \
-      if (!((a) eq (b))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
-                         "%s:%d  %s()\n", \
-                         a, #eq, b, \
-                         __FILE__, __LINE__, BSON_FUNC); \
-         abort(); \
-      } \
+#define ASSERT_CMPINT_HELPER(a, eq, b, fmt)                        \
+   do {                                                            \
+      if (!((a) eq (b))) {                                         \
+         fprintf (stderr,                                          \
+                  "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
+                  "%s:%d  %s()\n",                                 \
+                  a,                                               \
+                  #eq,                                             \
+                  b,                                               \
+                  __FILE__,                                        \
+                  __LINE__,                                        \
+                  BSON_FUNC);                                      \
+         abort ();                                                 \
+      }                                                            \
    } while (0)
 
 
-#define ASSERT_CMPINT(a, eq, b)    ASSERT_CMPINT_HELPER(a, eq, b, "d")
-#define ASSERT_CMPUINT(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "u")
-#define ASSERT_CMPLONG(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "ld")
-#define ASSERT_CMPULONG(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, "lu")
-#define ASSERT_CMPINT32(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId32)
-#define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
-#define ASSERT_CMPUINT16(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "hu")
-#define ASSERT_CMPUINT32(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, PRIu32)
-#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
-#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zd")
-#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zx")
-#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "p")
+#define ASSERT_CMPINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "d")
+#define ASSERT_CMPUINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "u")
+#define ASSERT_CMPLONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "ld")
+#define ASSERT_CMPULONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "lu")
+#define ASSERT_CMPINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId32)
+#define ASSERT_CMPINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId64)
+#define ASSERT_CMPUINT16(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "hu")
+#define ASSERT_CMPUINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu32)
+#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu64)
+#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd")
+#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zx")
+#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p")
 
-#define ASSERT_MEMCMP(a, b, n) \
-   do { \
-      if (0 != memcmp(a, b, n)) { \
-         fprintf (stderr, \
+#define ASSERT_MEMCMP(a, b, n)                                       \
+   do {                                                              \
+      if (0 != memcmp (a, b, n)) {                                   \
+         fprintf (stderr,                                            \
                   "Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", \
-                  n, n, (char *) a, n, (char *) b); \
-         abort (); \
-      }\
+                  n,                                                 \
+                  n,                                                 \
+                  (char *) a,                                        \
+                  n,                                                 \
+                  (char *) b);                                       \
+         abort ();                                                   \
+      }                                                              \
    } while (0)
 
 
 #ifdef ASSERT_ALMOST_EQUAL
-# undef ASSERT_ALMOST_EQUAL
+#undef ASSERT_ALMOST_EQUAL
 #endif
-#define ASSERT_ALMOST_EQUAL(a, b) \
-   do { \
-      /* evaluate once */ \
-      int64_t _a = (a); \
-      int64_t _b = (b); \
+#define ASSERT_ALMOST_EQUAL(a, b)                        \
+   do {                                                  \
+      /* evaluate once */                                \
+      int64_t _a = (a);                                  \
+      int64_t _b = (b);                                  \
       if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %" PRId64 \
-                         " not within 20%% of %" PRId64 "\n" \
-                         "%s:%d  %s()\n", \
-                         _a, _b, \
-                         __FILE__, __LINE__, BSON_FUNC); \
-         abort(); \
-      } \
+         fprintf (stderr,                                \
+                  "FAIL\n\nAssert Failure: %" PRId64     \
+                  " not within 20%% of %" PRId64 "\n"    \
+                  "%s:%d  %s()\n",                       \
+                  _a,                                    \
+                  _b,                                    \
+                  __FILE__,                              \
+                  __LINE__,                              \
+                  BSON_FUNC);                            \
+         abort ();                                       \
+      }                                                  \
    } while (0)
 
 #ifdef ASSERT_EQUAL_DOUBLE
-# undef ASSERT_EQUAL_DOUBLE
+#undef ASSERT_EQUAL_DOUBLE
 #endif
-#define ASSERT_EQUAL_DOUBLE(a, b) \
-   do { \
-      double _a = fabs ((double) a); \
-      double _b = fabs ((double) b); \
-      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
-                         "%s:%d  %s()\n", \
-                         (double) a, (double) b, \
-                         __FILE__, __LINE__, BSON_FUNC); \
-         abort(); \
-      } \
+#define ASSERT_EQUAL_DOUBLE(a, b)                                      \
+   do {                                                                \
+      double _a = fabs ((double) a);                                   \
+      double _b = fabs ((double) b);                                   \
+      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) {               \
+         fprintf (stderr,                                              \
+                  "FAIL\n\nAssert Failure: %f not within 20%% of %f\n" \
+                  "%s:%d  %s()\n",                                     \
+                  (double) a,                                          \
+                  (double) b,                                          \
+                  __FILE__,                                            \
+                  __LINE__,                                            \
+                  BSON_FUNC);                                          \
+         abort ();                                                     \
+      }                                                                \
    } while (0)
 
 
-#define ASSERT_CMPSTR(a, b) \
-   do { \
-      if (((a) != (b)) && !!strcmp((a), (b))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", \
-                         a, b); \
-         abort(); \
-      } \
+#define ASSERT_CMPSTR(a, b)                                                    \
+   do {                                                                        \
+      if (((a) != (b)) && !!strcmp ((a), (b))) {                               \
+         fprintf (stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", a, b); \
+         abort ();                                                             \
+      }                                                                        \
    } while (0)
 
 
-#define ASSERT_CMPOID(a, b) \
-   do { \
-      if (bson_oid_compare ((a), (b))) { \
-         char oid_a[25]; \
-         char oid_b[25]; \
-         bson_oid_to_string ((a), oid_a); \
-         bson_oid_to_string ((b), oid_b); \
-         fprintf(stderr, \
-                 "FAIL\n\nAssert Failure: " \
-                 "ObjectId(\"%s\") != ObjectId(\"%s\")\n", \
-                 oid_a, oid_b); \
-         abort(); \
-      } \
+#define ASSERT_CMPOID(a, b)                                 \
+   do {                                                     \
+      if (bson_oid_compare ((a), (b))) {                    \
+         char oid_a[25];                                    \
+         char oid_b[25];                                    \
+         bson_oid_to_string ((a), oid_a);                   \
+         bson_oid_to_string ((b), oid_b);                   \
+         fprintf (stderr,                                   \
+                  "FAIL\n\nAssert Failure: "                \
+                  "ObjectId(\"%s\") != ObjectId(\"%s\")\n", \
+                  oid_a,                                    \
+                  oid_b);                                   \
+         abort ();                                          \
+      }                                                     \
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b) \
-   do { \
-      if (NULL == strstr ((a), (b))) { \
-         fprintf(stderr, \
-                 "FAIL\n\nAssert Failure: \"%s\" does not contain \"%s\"\n", \
-                 a, b); \
-         abort(); \
-      } \
+#define ASSERT_CONTAINS(a, b)                                                 \
+   do {                                                                       \
+      if (NULL == strstr ((a), (b))) {                                        \
+         fprintf (stderr,                                                     \
+                  "FAIL\n\nAssert Failure: \"%s\" does not contain \"%s\"\n", \
+                  a,                                                          \
+                  b);                                                         \
+         abort ();                                                            \
+      }                                                                       \
    } while (0)
 
-#define ASSERT_STARTSWITH(a, b) \
-   do { \
-      if ((a) != strstr ((a), (b))) { \
-         fprintf(stderr, \
-                 "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n", \
-                 a, b); \
-         abort(); \
-      } \
+#define ASSERT_STARTSWITH(a, b)                                            \
+   do {                                                                    \
+      if ((a) != strstr ((a), (b))) {                                      \
+         fprintf (                                                         \
+            stderr,                                                        \
+            "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n", \
+            a,                                                             \
+            b);                                                            \
+         abort ();                                                         \
+      }                                                                    \
    } while (0)
 
 #define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
-   do { \
-      ASSERT_CMPINT (error.domain, ==, _domain); \
-      ASSERT_CMPINT (error.code, ==, _code); \
-      ASSERT_CONTAINS (error.message, _message); \
+   do {                                                        \
+      ASSERT_CMPINT (error.domain, ==, _domain);               \
+      ASSERT_CMPINT (error.code, ==, _code);                   \
+      ASSERT_CONTAINS (error.message, _message);               \
    } while (0);
 
-#define ASSERT_CAPTURED_LOG(_info, _level, _msg) \
-   do { \
-      if (!has_captured_log (_level, _msg)) { \
-         fprintf (stderr, \
+#define ASSERT_CAPTURED_LOG(_info, _level, _msg)                \
+   do {                                                         \
+      if (!has_captured_log (_level, _msg)) {                   \
+         fprintf (stderr,                                       \
                   "%s:%d %s(): testing %s didn't log \"%s\"\n", \
-                  __FILE__, __LINE__, BSON_FUNC, _info, _msg); \
-         print_captured_logs ("\t"); \
-         abort (); \
-      } \
+                  __FILE__,                                     \
+                  __LINE__,                                     \
+                  BSON_FUNC,                                    \
+                  _info,                                        \
+                  _msg);                                        \
+         print_captured_logs ("\t");                            \
+         abort ();                                              \
+      }                                                         \
    } while (0);
 
-#define ASSERT_NO_CAPTURED_LOGS(_info) \
-   do { \
-      if (has_captured_logs ()) { \
-         fprintf (stderr, \
+#define ASSERT_NO_CAPTURED_LOGS(_info)                               \
+   do {                                                              \
+      if (has_captured_logs ()) {                                    \
+         fprintf (stderr,                                            \
                   "%s:%d %s(): testing %s shouldn't have logged:\n", \
-                  __FILE__, __LINE__, BSON_FUNC, _info); \
-         print_captured_logs ("\t"); \
-         abort (); \
-      } \
+                  __FILE__,                                          \
+                  __LINE__,                                          \
+                  BSON_FUNC,                                         \
+                  _info);                                            \
+         print_captured_logs ("\t");                                 \
+         abort ();                                                   \
+      }                                                              \
    } while (0);
 
-#define ASSERT_HAS_FIELD(_bson, _field) \
-   do { \
-      if (!bson_has_field ((_bson), (_field))) { \
-         fprintf(stderr, \
-                 "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
-                 (_field), bson_as_json (_bson, NULL)); \
-         abort(); \
-      } \
+#define ASSERT_HAS_FIELD(_bson, _field)                                  \
+   do {                                                                  \
+      if (!bson_has_field ((_bson), (_field))) {                         \
+         fprintf (stderr,                                                \
+                  "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
+                  (_field),                                              \
+                  bson_as_json (_bson, NULL));                           \
+         abort ();                                                       \
+      }                                                                  \
    } while (0)
 
 /* don't check durations when testing with valgrind */
-#define ASSERT_CMPTIME(actual, maxduration) \
-   do { \
-      if (!test_suite_valgrind ()) { \
+#define ASSERT_CMPTIME(actual, maxduration)      \
+   do {                                          \
+      if (!test_suite_valgrind ()) {             \
          ASSERT_CMPINT (actual, <, maxduration); \
-      }\
+      }                                          \
    } while (0)
 
 
 #ifdef _WIN32
-# define gettestpid _getpid
+#define gettestpid _getpid
 #else
-# define gettestpid getpid
+#define gettestpid getpid
 #endif
 
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-# define BEGIN_IGNORE_DEPRECATIONS \
+#define BEGIN_IGNORE_DEPRECATIONS  \
    _Pragma ("GCC diagnostic push") \
-   _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-# define END_IGNORE_DEPRECATIONS \
-   _Pragma ("GCC diagnostic pop")
+      _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
 #elif defined(__clang__)
-# define BEGIN_IGNORE_DEPRECATIONS \
+#define BEGIN_IGNORE_DEPRECATIONS    \
    _Pragma ("clang diagnostic push") \
-   _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
-# define END_IGNORE_DEPRECATIONS \
-   _Pragma ("clang diagnostic pop")
+      _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+#define END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
 #else
-# define BEGIN_IGNORE_DEPRECATIONS
-# define END_IGNORE_DEPRECATIONS
+#define BEGIN_IGNORE_DEPRECATIONS
+#define END_IGNORE_DEPRECATIONS
 #endif
 
-#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode) \
-   do { \
-      if (! (_statement)) { \
-         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
-                         __FILE__, __LINE__, BSON_FUNC, \
-                         #_statement, _errcode, strerror(_errcode)); \
-         fflush(stderr); \
-         abort(); \
-      } \
+#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                          \
+   do {                                                                      \
+      if (!(_statement)) {                                                   \
+         fprintf (                                                           \
+            stderr,                                                          \
+            "FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
+            __FILE__,                                                        \
+            __LINE__,                                                        \
+            BSON_FUNC,                                                       \
+            #_statement,                                                     \
+            _errcode,                                                        \
+            strerror (_errcode));                                            \
+         fflush (stderr);                                                    \
+         abort ();                                                           \
+      }                                                                      \
    } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
 
 
 typedef void (*TestFunc) (void);
-typedef void (*TestFuncWC) (void*);
-typedef void (*TestFuncDtor) (void*);
+typedef void (*TestFuncWC) (void *);
+typedef void (*TestFuncDtor) (void *);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
 
 
-struct _Test
-{
+struct _Test {
    Test *next;
    char *name;
    TestFuncWC func;
@@ -341,8 +391,7 @@ struct _Test
 };
 
 
-struct _TestSuite
-{
+struct _TestSuite {
    char *prgname;
    char *name;
    char *testname;
@@ -355,35 +404,38 @@ struct _TestSuite
 };
 
 
-void TestSuite_Init    (TestSuite *suite,
-                        const char *name,
-                        int argc,
-                        char **argv);
-void TestSuite_Add     (TestSuite *suite,
-                        const char *name,
-                        TestFunc func);
-int TestSuite_CheckLive (void);
-void TestSuite_AddLive (TestSuite *suite,
-                        const char *name,
-                        TestFunc func);
-void TestSuite_AddWC   (TestSuite *suite,
-                        const char *name,
-                        TestFuncWC func,
-                        TestFuncDtor dtor,
-                        void *ctx);
-void TestSuite_AddFull (TestSuite *suite,
-                        const char *name,
-                        TestFuncWC func,
-                        TestFuncDtor dtor,
-                        void *ctx,
-                        int (*check) (void));
-int  TestSuite_Run     (TestSuite *suite);
-void TestSuite_Destroy (TestSuite *suite);
+void
+TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv);
+void
+TestSuite_Add (TestSuite *suite, const char *name, TestFunc func);
+int
+TestSuite_CheckLive (void);
+void
+TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
+void
+TestSuite_AddWC (TestSuite *suite,
+                 const char *name,
+                 TestFuncWC func,
+                 TestFuncDtor dtor,
+                 void *ctx);
+void
+TestSuite_AddFull (TestSuite *suite,
+                   const char *name,
+                   TestFuncWC func,
+                   TestFuncDtor dtor,
+                   void *ctx,
+                   int (*check) (void));
+int
+TestSuite_Run (TestSuite *suite);
+void
+TestSuite_Destroy (TestSuite *suite);
 
-int test_suite_debug_output (void);
-int test_suite_valgrind (void);
-void test_suite_mock_server_log (const char *msg,
-                                 ...);
+int
+test_suite_debug_output (void);
+int
+test_suite_valgrind (void);
+void
+test_suite_mock_server_log (const char *msg, ...);
 
 #ifdef __cplusplus
 }

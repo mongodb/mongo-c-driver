@@ -17,59 +17,59 @@
 #ifndef MONGOC_FIND_AND_MODIFY_H
 #define MONGOC_FIND_AND_MODIFY_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
 
 BSON_BEGIN_DECLS
 
-typedef enum
-{
-   MONGOC_FIND_AND_MODIFY_NONE   = 0,
+typedef enum {
+   MONGOC_FIND_AND_MODIFY_NONE = 0,
    MONGOC_FIND_AND_MODIFY_REMOVE = 1 << 0,
    MONGOC_FIND_AND_MODIFY_UPSERT = 1 << 1,
    MONGOC_FIND_AND_MODIFY_RETURN_NEW = 1 << 2,
 } mongoc_find_and_modify_flags_t;
 
-typedef struct _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t ;
+typedef struct _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t;
 
 BSON_API
-mongoc_find_and_modify_opts_t*
-mongoc_find_and_modify_opts_new               (void);
+mongoc_find_and_modify_opts_t *
+mongoc_find_and_modify_opts_new (void);
 
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_sort          (mongoc_find_and_modify_opts_t        *opts,
-                                               const bson_t                         *sort);
+mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
+                                      const bson_t *sort);
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_update        (mongoc_find_and_modify_opts_t        *opts,
-                                               const bson_t                         *update);
+mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
+                                        const bson_t *update);
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_fields        (mongoc_find_and_modify_opts_t        *opts,
-                                               const bson_t                         *fields);
+mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
+                                        const bson_t *fields);
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_flags         (mongoc_find_and_modify_opts_t        *opts,
-                                               const mongoc_find_and_modify_flags_t  flags);
+mongoc_find_and_modify_opts_set_flags (
+   mongoc_find_and_modify_opts_t *opts,
+   const mongoc_find_and_modify_flags_t flags);
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
-                                                            bool                           bypass);
+mongoc_find_and_modify_opts_set_bypass_document_validation (
+   mongoc_find_and_modify_opts_t *opts, bool bypass);
 BSON_API
 bool
-mongoc_find_and_modify_opts_set_max_time_ms   (mongoc_find_and_modify_opts_t        *opts,
-                                               uint32_t                              max_time_ms);
+mongoc_find_and_modify_opts_set_max_time_ms (
+   mongoc_find_and_modify_opts_t *opts, uint32_t max_time_ms);
 BSON_API
 bool
-mongoc_find_and_modify_opts_append            (mongoc_find_and_modify_opts_t        *opts,
-                                               const bson_t                         *extra);
+mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
+                                    const bson_t *extra);
 BSON_API
 void
-mongoc_find_and_modify_opts_destroy           (mongoc_find_and_modify_opts_t        *opts);
+mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *opts);
 
 BSON_END_DECLS
 

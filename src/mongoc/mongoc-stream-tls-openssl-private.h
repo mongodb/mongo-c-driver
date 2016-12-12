@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_OPENSSL_PRIVATE_H
 #define MONGOC_STREAM_TLS_OPENSSL_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -32,11 +32,10 @@ BSON_BEGIN_DECLS
  *
  * Private storage for handling callbacks from mongoc_stream and BIO_*
  */
-typedef struct
-{
-   BIO                *bio;
-   BIO_METHOD         *meth;
-   SSL_CTX            *ctx;
+typedef struct {
+   BIO *bio;
+   BIO_METHOD *meth;
+   SSL_CTX *ctx;
 } mongoc_stream_tls_openssl_t;
 
 

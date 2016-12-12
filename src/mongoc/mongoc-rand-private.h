@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -29,7 +29,8 @@
 
 BSON_BEGIN_DECLS
 
-int _mongoc_rand_bytes(uint8_t * buf, int num);
+int
+_mongoc_rand_bytes (uint8_t *buf, int num);
 
 BSON_END_DECLS
 

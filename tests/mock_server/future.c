@@ -316,7 +316,8 @@ mongoc_server_description_ptr
 future_get_mongoc_server_description_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_mongoc_server_description_ptr (&future->return_value);
+      return future_value_get_mongoc_server_description_ptr (
+         &future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
@@ -364,7 +365,8 @@ const_mongoc_find_and_modify_opts_ptr
 future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_const_mongoc_find_and_modify_opts_ptr (&future->return_value);
+      return future_value_get_const_mongoc_find_and_modify_opts_ptr (
+         &future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
@@ -376,7 +378,8 @@ const_mongoc_read_prefs_ptr
 future_get_const_mongoc_read_prefs_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_const_mongoc_read_prefs_ptr (&future->return_value);
+      return future_value_get_const_mongoc_read_prefs_ptr (
+         &future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
@@ -388,7 +391,8 @@ const_mongoc_write_concern_ptr
 future_get_const_mongoc_write_concern_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_const_mongoc_write_concern_ptr (&future->return_value);
+      return future_value_get_const_mongoc_write_concern_ptr (
+         &future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
@@ -402,10 +406,11 @@ future_new (future_value_type_t return_type, int argc)
 {
    future_t *future;
 
-   future = (future_t *)bson_malloc0 (sizeof *future);
+   future = (future_t *) bson_malloc0 (sizeof *future);
    future->return_value.type = return_type;
    future->argc = argc;
-   future->argv = (future_value_t *)bson_malloc0 ((size_t) argc * sizeof(future_value_t));
+   future->argv =
+      (future_value_t *) bson_malloc0 ((size_t) argc * sizeof (future_value_t));
    mongoc_cond_init (&future->cond);
    mongoc_mutex_init (&future->mutex);
 
@@ -419,12 +424,10 @@ future_get_param (future_t *future, int i)
 }
 
 void
-future_start (future_t *future,
-              void *(*start_routine)(void *))
+future_start (future_t *future, void *(*start_routine) (void *) )
 {
-   int r = mongoc_thread_create (&future->thread,
-                                 start_routine,
-                                 (void *) future);
+   int r =
+      mongoc_thread_create (&future->thread, start_routine, (void *) future);
 
    assert (!r);
 }
@@ -451,9 +454,8 @@ future_wait_max (future_t *future, int64_t timeout_ms)
 
    mongoc_mutex_lock (&future->mutex);
    while (!future->resolved && bson_get_monotonic_time () <= deadline) {
-      mongoc_cond_timedwait (&future->cond,
-                             &future->mutex,
-                             get_future_timeout_ms ());
+      mongoc_cond_timedwait (
+         &future->cond, &future->mutex, get_future_timeout_ms ());
    }
    resolved = future->resolved;
    mongoc_mutex_unlock (&future->mutex);

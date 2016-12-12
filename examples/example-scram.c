@@ -7,8 +7,7 @@
 #include <stdlib.h>
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client = NULL;
    mongoc_database_t *database = NULL;
@@ -22,18 +21,20 @@ main (int   argc,
    const bson_t *doc;
 
    if (argc != 2) {
-      printf("%s - [implicit|scram|cr]\n", argv[0]);
+      printf ("%s - [implicit|scram|cr]\n", argv[0]);
       return 1;
    }
 
-   if (strcmp(argv[1], "implicit") == 0) {
+   if (strcmp (argv[1], "implicit") == 0) {
       authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example";
-   } else if (strcmp(argv[1], "scram") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example&authMechanism=SCRAM-SHA-1";
-   } else if (strcmp(argv[1], "cr") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/test?appname=scram-example&authMechanism=MONGODB-CR";
+   } else if (strcmp (argv[1], "scram") == 0) {
+      authuristr = "mongodb://user,=:pass@127.0.0.1/"
+                   "test?appname=scram-example&authMechanism=SCRAM-SHA-1";
+   } else if (strcmp (argv[1], "cr") == 0) {
+      authuristr = "mongodb://user,=:pass@127.0.0.1/"
+                   "test?appname=scram-example&authMechanism=MONGODB-CR";
    } else {
-      printf("%s - [implicit|scram|cr]\n", argv[0]);
+      printf ("%s - [implicit|scram|cr]\n", argv[0]);
       return 1;
    }
 
@@ -53,8 +54,7 @@ main (int   argc,
    bson_init (&roles);
    bson_init (&query);
 
-   BCON_APPEND (&roles,
-                "0", "{", "role", "root", "db", "admin", "}");
+   BCON_APPEND (&roles, "0", "{", "role", "root", "db", "admin", "}");
 
    mongoc_database_add_user (database, "user,=", "pass", &roles, NULL, &error);
 

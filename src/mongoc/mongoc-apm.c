@@ -29,14 +29,14 @@
 
 void
 mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
-                                 const bson_t                 *command,
-                                 const char                   *database_name,
-                                 const char                   *command_name,
-                                 int64_t                       request_id,
-                                 int64_t                       operation_id,
-                                 const mongoc_host_list_t     *host,
-                                 uint32_t                      server_id,
-                                 void                         *context)
+                                 const bson_t *command,
+                                 const char *database_name,
+                                 const char *command_name,
+                                 int64_t request_id,
+                                 int64_t operation_id,
+                                 const mongoc_host_list_t *host,
+                                 uint32_t server_id,
+                                 void *context)
 {
    bson_iter_t iter;
    uint32_t len;
@@ -89,14 +89,14 @@ mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event)
 
 void
 mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
-                                   int64_t                         duration,
-                                   const bson_t                   *reply,
-                                   const char                     *command_name,
-                                   int64_t                         request_id,
-                                   int64_t                         operation_id,
-                                   const mongoc_host_list_t       *host,
-                                   uint32_t                        server_id,
-                                   void                           *context)
+                                   int64_t duration,
+                                   const bson_t *reply,
+                                   const char *command_name,
+                                   int64_t request_id,
+                                   int64_t operation_id,
+                                   const mongoc_host_list_t *host,
+                                   uint32_t server_id,
+                                   void *context)
 {
    BSON_ASSERT (reply);
 
@@ -120,14 +120,14 @@ mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event)
 
 void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
-                                int64_t                      duration,
-                                const char                  *command_name,
-                                const bson_error_t          *error,
-                                int64_t                      request_id,
-                                int64_t                      operation_id,
-                                const mongoc_host_list_t    *host,
-                                uint32_t                     server_id,
-                                void                        *context)
+                                int64_t duration,
+                                const char *command_name,
+                                const bson_error_t *error,
+                                int64_t request_id,
+                                int64_t operation_id,
+                                const mongoc_host_list_t *host,
+                                uint32_t server_id,
+                                void *context)
 {
    event->duration = duration;
    event->command_name = command_name;
@@ -201,7 +201,8 @@ mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event)
 
 
 uint32_t
-mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_server_id (
+   const mongoc_apm_command_started_t *event)
 {
    return event->server_id;
 }
@@ -300,9 +301,8 @@ mongoc_apm_command_failed_get_command_name (
 
 
 void
-mongoc_apm_command_failed_get_error (
-   const mongoc_apm_command_failed_t *event,
-   bson_error_t                      *error)
+mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
+                                     bson_error_t *error)
 {
    memcpy (error, event->error, sizeof *event->error);
 }
@@ -332,7 +332,8 @@ mongoc_apm_command_failed_get_host (const mongoc_apm_command_failed_t *event)
 
 
 uint32_t
-mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_server_id (
+   const mongoc_apm_command_failed_t *event)
 {
    return event->server_id;
 }
@@ -356,8 +357,7 @@ mongoc_apm_server_changed_get_host (const mongoc_apm_server_changed_t *event)
 
 void
 mongoc_apm_server_changed_get_topology_id (
-   const mongoc_apm_server_changed_t *event,
-   bson_oid_t                        *topology_id)
+   const mongoc_apm_server_changed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -397,16 +397,14 @@ mongoc_apm_server_opening_get_host (const mongoc_apm_server_opening_t *event)
 
 void
 mongoc_apm_server_opening_get_topology_id (
-   const mongoc_apm_server_opening_t *event,
-   bson_oid_t                        *topology_id)
+   const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 void *
-mongoc_apm_server_opening_get_context (
-   const mongoc_apm_server_opening_t *event)
+mongoc_apm_server_opening_get_context (const mongoc_apm_server_opening_t *event)
 {
    return event->context;
 }
@@ -423,16 +421,14 @@ mongoc_apm_server_closed_get_host (const mongoc_apm_server_closed_t *event)
 
 void
 mongoc_apm_server_closed_get_topology_id (
-   const mongoc_apm_server_closed_t *event,
-   bson_oid_t                       *topology_id)
+   const mongoc_apm_server_closed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
 
 
 void *
-mongoc_apm_server_closed_get_context (
-   const mongoc_apm_server_closed_t *event)
+mongoc_apm_server_closed_get_context (const mongoc_apm_server_closed_t *event)
 {
    return event->context;
 }
@@ -442,8 +438,7 @@ mongoc_apm_server_closed_get_context (
 
 void
 mongoc_apm_topology_changed_get_topology_id (
-   const mongoc_apm_topology_changed_t *event,
-   bson_oid_t                          *topology_id)
+   const mongoc_apm_topology_changed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -477,8 +472,7 @@ mongoc_apm_topology_changed_get_context (
 
 void
 mongoc_apm_topology_opening_get_topology_id (
-   const mongoc_apm_topology_opening_t *event,
-   bson_oid_t                          *topology_id)
+   const mongoc_apm_topology_opening_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -496,8 +490,7 @@ mongoc_apm_topology_opening_get_context (
 
 void
 mongoc_apm_topology_closed_get_topology_id (
-   const mongoc_apm_topology_closed_t *event,
-   bson_oid_t                         *topology_id)
+   const mongoc_apm_topology_closed_t *event, bson_oid_t *topology_id)
 {
    bson_oid_copy (&event->topology_id, topology_id);
 }
@@ -575,8 +568,7 @@ mongoc_apm_server_heartbeat_failed_get_duration (
 
 void
 mongoc_apm_server_heartbeat_failed_get_error (
-   const mongoc_apm_server_heartbeat_failed_t *event,
-   bson_error_t                               *error)
+   const mongoc_apm_server_heartbeat_failed_t *event, bson_error_t *error)
 {
    memcpy (error, event->error, sizeof *event->error);
 }
@@ -619,80 +611,71 @@ mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks)
 
 
 void
-mongoc_apm_set_command_started_cb (
-   mongoc_apm_callbacks_t          *callbacks,
-   mongoc_apm_command_started_cb_t  cb)
+mongoc_apm_set_command_started_cb (mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_command_started_cb_t cb)
 {
    callbacks->started = cb;
 }
 
 
 void
-mongoc_apm_set_command_succeeded_cb (
-   mongoc_apm_callbacks_t            *callbacks,
-   mongoc_apm_command_succeeded_cb_t  cb)
+mongoc_apm_set_command_succeeded_cb (mongoc_apm_callbacks_t *callbacks,
+                                     mongoc_apm_command_succeeded_cb_t cb)
 {
    callbacks->succeeded = cb;
 }
 
 
 void
-mongoc_apm_set_command_failed_cb (
-   mongoc_apm_callbacks_t         *callbacks,
-   mongoc_apm_command_failed_cb_t  cb)
+mongoc_apm_set_command_failed_cb (mongoc_apm_callbacks_t *callbacks,
+                                  mongoc_apm_command_failed_cb_t cb)
 {
    callbacks->failed = cb;
 }
 
 void
-mongoc_apm_set_server_changed_cb (
-   mongoc_apm_callbacks_t         *callbacks,
-   mongoc_apm_server_changed_cb_t  cb)
+mongoc_apm_set_server_changed_cb (mongoc_apm_callbacks_t *callbacks,
+                                  mongoc_apm_server_changed_cb_t cb)
 {
    callbacks->server_changed = cb;
 }
 
 
 void
-mongoc_apm_set_server_opening_cb (
-   mongoc_apm_callbacks_t         *callbacks,
-   mongoc_apm_server_opening_cb_t  cb)
+mongoc_apm_set_server_opening_cb (mongoc_apm_callbacks_t *callbacks,
+                                  mongoc_apm_server_opening_cb_t cb)
 {
    callbacks->server_opening = cb;
 }
 
 
 void
-mongoc_apm_set_server_closed_cb (
-   mongoc_apm_callbacks_t        *callbacks,
-   mongoc_apm_server_closed_cb_t  cb)
+mongoc_apm_set_server_closed_cb (mongoc_apm_callbacks_t *callbacks,
+                                 mongoc_apm_server_closed_cb_t cb)
 {
    callbacks->server_closed = cb;
 }
 
 
 void
-mongoc_apm_set_topology_changed_cb (
-   mongoc_apm_callbacks_t           *callbacks,
-   mongoc_apm_topology_changed_cb_t  cb)
+mongoc_apm_set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks,
+                                    mongoc_apm_topology_changed_cb_t cb)
 {
    callbacks->topology_changed = cb;
 }
 
 
 void
-mongoc_apm_set_topology_opening_cb (
-   mongoc_apm_callbacks_t           *callbacks,
-   mongoc_apm_topology_opening_cb_t  cb)
+mongoc_apm_set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks,
+                                    mongoc_apm_topology_opening_cb_t cb)
 {
    callbacks->topology_opening = cb;
 }
 
 
 void
-mongoc_apm_set_topology_closed_cb (
-   mongoc_apm_callbacks_t          *callbacks,
-   mongoc_apm_topology_closed_cb_t  cb)
+mongoc_apm_set_topology_closed_cb (mongoc_apm_callbacks_t *callbacks,
+                                   mongoc_apm_topology_closed_cb_t cb)
 {
    callbacks->topology_closed = cb;
 }
@@ -700,8 +683,8 @@ mongoc_apm_set_topology_closed_cb (
 
 void
 mongoc_apm_set_server_heartbeat_started_cb (
-   mongoc_apm_callbacks_t                   *callbacks,
-   mongoc_apm_server_heartbeat_started_cb_t  cb)
+   mongoc_apm_callbacks_t *callbacks,
+   mongoc_apm_server_heartbeat_started_cb_t cb)
 {
    callbacks->server_heartbeat_started = cb;
 }
@@ -709,8 +692,8 @@ mongoc_apm_set_server_heartbeat_started_cb (
 
 void
 mongoc_apm_set_server_heartbeat_succeeded_cb (
-   mongoc_apm_callbacks_t                     *callbacks,
-   mongoc_apm_server_heartbeat_succeeded_cb_t  cb)
+   mongoc_apm_callbacks_t *callbacks,
+   mongoc_apm_server_heartbeat_succeeded_cb_t cb)
 {
    callbacks->server_heartbeat_succeeded = cb;
 }
@@ -718,8 +701,8 @@ mongoc_apm_set_server_heartbeat_succeeded_cb (
 
 void
 mongoc_apm_set_server_heartbeat_failed_cb (
-   mongoc_apm_callbacks_t                  *callbacks,
-   mongoc_apm_server_heartbeat_failed_cb_t  cb)
+   mongoc_apm_callbacks_t *callbacks,
+   mongoc_apm_server_heartbeat_failed_cb_t cb)
 {
    callbacks->server_heartbeat_failed = cb;
 }

@@ -3,8 +3,7 @@
 #include <stdio.h>
 
 static void
-log_query (const bson_t *doc,
-           const bson_t *query)
+log_query (const bson_t *doc, const bson_t *query)
 {
    char *str1;
    char *str2;
@@ -19,8 +18,7 @@ log_query (const bson_t *doc,
 }
 
 static void
-check_match (const bson_t *doc,
-             const bson_t *query)
+check_match (const bson_t *doc, const bson_t *query)
 {
    bson_error_t error;
    mongoc_matcher_t *matcher = mongoc_matcher_new (query, &error);
@@ -54,9 +52,23 @@ example (void)
    bson_destroy (query);
 
    /* i is > 1 or i < -1. */
-   query = BCON_NEW ("$or", "[",
-                     "{", "i", "{", "$gt", BCON_INT32 (1), "}", "}",
-                     "{", "i", "{", "$lt", BCON_INT32 (-1), "}", "}", "]");
+   query = BCON_NEW ("$or",
+                     "[",
+                     "{",
+                     "i",
+                     "{",
+                     "$gt",
+                     BCON_INT32 (1),
+                     "}",
+                     "}",
+                     "{",
+                     "i",
+                     "{",
+                     "$lt",
+                     BCON_INT32 (-1),
+                     "}",
+                     "}",
+                     "]");
 
    doc = BCON_NEW ("i", BCON_INT32 (2));
    log_query (doc, query);
@@ -73,8 +85,7 @@ example (void)
 }
 
 int
-main (int argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_init ();
    example ();

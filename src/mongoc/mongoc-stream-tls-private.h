@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_PRIVATE_H
 #define MONGOC_STREAM_TLS_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -33,19 +33,18 @@ BSON_BEGIN_DECLS
  *
  * Overloaded mongoc_stream_t with additional TLS handshake and verification
  * callbacks.
- * 
+ *
  */
-struct _mongoc_stream_tls_t
-{
-   mongoc_stream_t  parent;      /* The TLS stream wrapper */
+struct _mongoc_stream_tls_t {
+   mongoc_stream_t parent;       /* The TLS stream wrapper */
    mongoc_stream_t *base_stream; /* The underlying actual stream */
-   void            *ctx;         /* TLS lib specific configuration or wrappers */
-   int32_t          timeout_msec;
+   void *ctx; /* TLS lib specific configuration or wrappers */
+   int32_t timeout_msec;
    mongoc_ssl_opt_t ssl_opts;
-   bool (*handshake)    (mongoc_stream_t *stream,
-                         const char      *host,
-                         int             *events /* OUT*/,
-                         bson_error_t    *error);
+   bool (*handshake) (mongoc_stream_t *stream,
+                      const char *host,
+                      int *events /* OUT*/,
+                      bson_error_t *error);
 };
 
 

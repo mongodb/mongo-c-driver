@@ -22,17 +22,17 @@
 
 struct _sync_queue_t {
    mongoc_array_t array;
-   mongoc_cond_t      cond;
-   mongoc_mutex_t     mutex;
+   mongoc_cond_t cond;
+   mongoc_mutex_t mutex;
 };
 
 
 sync_queue_t *
 q_new ()
 {
-   sync_queue_t *q = (sync_queue_t *)bson_malloc (sizeof(sync_queue_t));
+   sync_queue_t *q = (sync_queue_t *) bson_malloc (sizeof (sync_queue_t));
 
-   _mongoc_array_init (&q->array, sizeof(void *));
+   _mongoc_array_init (&q->array, sizeof (void *));
    mongoc_cond_init (&q->cond);
    mongoc_mutex_init (&q->mutex);
 
@@ -58,7 +58,7 @@ _get (sync_queue_t *q)
    size_t i;
 
    if (q->array.len) {
-      data = (void **)q->array.data;
+      data = (void **) q->array.data;
       item = data[0];
 
       /* shift the queue left */

@@ -17,7 +17,7 @@
 #ifndef MONGOC_SET_PRIVATE_H
 #define MONGOC_SET_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -25,54 +25,41 @@
 
 BSON_BEGIN_DECLS
 
-typedef void (*mongoc_set_item_dtor)(void *item,
-                                     void *ctx);
+typedef void (*mongoc_set_item_dtor) (void *item, void *ctx);
 
 /* return true to continue iteration, false to stop */
-typedef bool (*mongoc_set_for_each_cb_t)(void *item,
-                                         void *ctx);
+typedef bool (*mongoc_set_for_each_cb_t) (void *item, void *ctx);
 
-typedef struct
-{
+typedef struct {
    uint32_t id;
-   void    *item;
+   void *item;
 } mongoc_set_item_t;
 
-typedef struct
-{
-   mongoc_set_item_t   *items;
-   size_t               items_len;
-   size_t               items_allocated;
+typedef struct {
+   mongoc_set_item_t *items;
+   size_t items_len;
+   size_t items_allocated;
    mongoc_set_item_dtor dtor;
-   void                *dtor_ctx;
+   void *dtor_ctx;
 } mongoc_set_t;
 
 mongoc_set_t *
-mongoc_set_new (size_t               nitems,
-                mongoc_set_item_dtor dtor,
-                void                *dtor_ctx);
+mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx);
 
 void
-mongoc_set_add (mongoc_set_t *set,
-                uint32_t      id,
-                void         *item);
+mongoc_set_add (mongoc_set_t *set, uint32_t id, void *item);
 
 void
-mongoc_set_rm (mongoc_set_t *set,
-               uint32_t      id);
+mongoc_set_rm (mongoc_set_t *set, uint32_t id);
 
 void *
-mongoc_set_get (mongoc_set_t *set,
-                uint32_t      id);
+mongoc_set_get (mongoc_set_t *set, uint32_t id);
 
 void *
-mongoc_set_get_item (mongoc_set_t *set,
-                     int           idx);
+mongoc_set_get_item (mongoc_set_t *set, int idx);
 
 void *
-mongoc_set_get_item_and_id (mongoc_set_t *set,
-                            int           idx,
-                            uint32_t     *id /* OUT */);
+mongoc_set_get_item_and_id (mongoc_set_t *set, int idx, uint32_t *id /* OUT */);
 
 void
 mongoc_set_destroy (mongoc_set_t *set);
@@ -85,21 +72,17 @@ mongoc_set_destroy (mongoc_set_t *set);
  *     you may see it later in the iteration
  */
 void
-mongoc_set_for_each (mongoc_set_t            *set,
-                     mongoc_set_for_each_cb_t cb,
-                     void                    *ctx);
+mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx);
 
 /* first item in set for which "cb" returns true */
 void *
-mongoc_set_find_item (mongoc_set_t            *set,
+mongoc_set_find_item (mongoc_set_t *set,
                       mongoc_set_for_each_cb_t cb,
-                      void                    *ctx);
+                      void *ctx);
 
 /* id of first item in set for which "cb" returns true, or 0. */
 uint32_t
-mongoc_set_find_id (mongoc_set_t            *set,
-                    mongoc_set_for_each_cb_t cb,
-                    void                    *ctx);
+mongoc_set_find_id (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx);
 
 BSON_END_DECLS
 

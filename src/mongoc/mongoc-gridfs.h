@@ -17,8 +17,8 @@
 #ifndef MONGOC_GRIDFS_H
 #define MONGOC_GRIDFS_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -36,49 +36,58 @@ typedef struct _mongoc_gridfs_t mongoc_gridfs_t;
 
 
 BSON_API
-mongoc_gridfs_file_t      *mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
-                                                                  mongoc_stream_t          *stream,
-                                                                  mongoc_gridfs_file_opt_t *opt);
+mongoc_gridfs_file_t *
+mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
+                                       mongoc_stream_t *stream,
+                                       mongoc_gridfs_file_opt_t *opt);
 BSON_API
-mongoc_gridfs_file_t      *mongoc_gridfs_create_file             (mongoc_gridfs_t          *gridfs,
-                                                                  mongoc_gridfs_file_opt_t *opt);
+mongoc_gridfs_file_t *
+mongoc_gridfs_create_file (mongoc_gridfs_t *gridfs,
+                           mongoc_gridfs_file_opt_t *opt);
 BSON_API
-mongoc_gridfs_file_list_t *mongoc_gridfs_find                    (mongoc_gridfs_t          *gridfs,
-                                                                  const bson_t             *query)
+mongoc_gridfs_file_list_t *
+mongoc_gridfs_find (mongoc_gridfs_t *gridfs, const bson_t *query)
    BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_with_opts);
 BSON_API
-mongoc_gridfs_file_t      *mongoc_gridfs_find_one                (mongoc_gridfs_t          *gridfs,
-                                                                  const bson_t             *query,
-                                                                  bson_error_t             *error)
+mongoc_gridfs_file_t *
+mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
+                        const bson_t *query,
+                        bson_error_t *error)
    BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_one_with_opts);
 BSON_API
-mongoc_gridfs_file_list_t *mongoc_gridfs_find_with_opts          (mongoc_gridfs_t          *gridfs,
-                                                                  const bson_t             *filter,
-                                                                  const bson_t             *opts)
+mongoc_gridfs_file_list_t *
+mongoc_gridfs_find_with_opts (mongoc_gridfs_t *gridfs,
+                              const bson_t *filter,
+                              const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
+BSON_API
+mongoc_gridfs_file_t *
+mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
+                                  const bson_t *filter,
+                                  const bson_t *opts,
+                                  bson_error_t *error)
    BSON_GNUC_WARN_UNUSED_RESULT;
 BSON_API
-mongoc_gridfs_file_t      *mongoc_gridfs_find_one_with_opts      (mongoc_gridfs_t          *gridfs,
-                                                                  const bson_t             *filter,
-                                                                  const bson_t             *opts,
-                                                                  bson_error_t             *error)
-   BSON_GNUC_WARN_UNUSED_RESULT;
+mongoc_gridfs_file_t *
+mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
+                                    const char *filename,
+                                    bson_error_t *error);
 BSON_API
-mongoc_gridfs_file_t      *mongoc_gridfs_find_one_by_filename    (mongoc_gridfs_t          *gridfs,
-                                                                  const char               *filename,
-                                                                  bson_error_t             *error);
+bool
+mongoc_gridfs_drop (mongoc_gridfs_t *gridfs, bson_error_t *error);
 BSON_API
-bool                       mongoc_gridfs_drop                    (mongoc_gridfs_t          *gridfs,
-                                                                  bson_error_t             *error);
+void
+mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs);
 BSON_API
-void                       mongoc_gridfs_destroy                 (mongoc_gridfs_t          *gridfs);
+mongoc_collection_t *
+mongoc_gridfs_get_files (mongoc_gridfs_t *gridfs);
 BSON_API
-mongoc_collection_t       *mongoc_gridfs_get_files               (mongoc_gridfs_t          *gridfs);
+mongoc_collection_t *
+mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs);
 BSON_API
-mongoc_collection_t       *mongoc_gridfs_get_chunks              (mongoc_gridfs_t          *gridfs);
-BSON_API
-bool                       mongoc_gridfs_remove_by_filename      (mongoc_gridfs_t          *gridfs,
-                                                                  const char               *filename,
-                                                                  bson_error_t             *error);
+bool
+mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
+                                  const char *filename,
+                                  bson_error_t *error);
 
 
 BSON_END_DECLS

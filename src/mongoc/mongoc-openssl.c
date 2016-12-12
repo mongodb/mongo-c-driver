@@ -41,10 +41,12 @@
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-static mongoc_mutex_t * gMongocOpenSslThreadLocks;
+static mongoc_mutex_t *gMongocOpenSslThreadLocks;
 
-static void _mongoc_openssl_thread_startup(void);
-static void _mongoc_openssl_thread_cleanup(void);
+static void
+_mongoc_openssl_thread_startup (void);
+static void
+_mongoc_openssl_thread_cleanup (void);
 #endif
 
 /**
@@ -90,13 +92,10 @@ _mongoc_openssl_cleanup (void)
 }
 
 static int
-_mongoc_openssl_password_cb (char *buf,
-                             int   num,
-                             int   rwflag,
-                             void *user_data)
+_mongoc_openssl_password_cb (char *buf, int num, int rwflag, void *user_data)
 {
-   char *pass = (char *)user_data;
-   int pass_len = (int)strlen (pass);
+   char *pass = (char *) user_data;
+   int pass_len = (int) strlen (pass);
 
    if (num < pass_len + 1) {
       return 0;
@@ -108,16 +107,19 @@ _mongoc_openssl_password_cb (char *buf,
 
 #ifdef _WIN32
 bool
-_mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE* openssl_store)
+_mongoc_openssl_import_cert_store (LPWSTR store_name,
+                                   DWORD dwFlags,
+                                   X509_STORE *openssl_store)
 {
    PCCERT_CONTEXT cert = NULL;
    HCERTSTORE cert_store;
 
-   cert_store = CertOpenStore (CERT_STORE_PROV_SYSTEM,                       /* provider */
-                               X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,      /* certificate encoding */
-                               0,                                            /* unused */
-                               dwFlags,                                      /* dwFlags */
-                               store_name);                                  /* system store name. "My" or "Root" */
+   cert_store = CertOpenStore (
+      CERT_STORE_PROV_SYSTEM,                  /* provider */
+      X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
+      0,                                       /* unused */
+      dwFlags,                                 /* dwFlags */
+      store_name); /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
       MONGOC_WARNING ("error opening system CA store");
@@ -125,10 +127,13 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE*
    }
 
    while ((cert = CertEnumCertificatesInStore (cert_store, cert)) != NULL) {
-      X509* x509Obj = d2i_X509 (NULL, (const unsigned char **)&cert->pbCertEncoded, cert->cbCertEncoded);
+      X509 *x509Obj = d2i_X509 (NULL,
+                                (const unsigned char **) &cert->pbCertEncoded,
+                                cert->cbCertEncoded);
 
       if (x509Obj == NULL) {
-         MONGOC_WARNING ("Error parsing X509 object from Windows certificate store");
+         MONGOC_WARNING (
+            "Error parsing X509 object from Windows certificate store");
          continue;
       }
 
@@ -136,26 +141,29 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE*
       X509_free (x509Obj);
    }
 
-   CertCloseStore(cert_store, 0);
+   CertCloseStore (cert_store, 0);
    return true;
 }
 
 bool
 _mongoc_openssl_import_cert_stores (SSL_CTX *context)
 {
-    bool retval;
-    X509_STORE *store = SSL_CTX_get_cert_store (context);
+   bool retval;
+   X509_STORE *store = SSL_CTX_get_cert_store (context);
 
-    if (!store) {
-       MONGOC_WARNING ("no X509 store found for SSL context while loading system certificates");
-       return false;
-    }
+   if (!store) {
+      MONGOC_WARNING ("no X509 store found for SSL context while loading "
+                      "system certificates");
+      return false;
+   }
 
-    retval = _mongoc_openssl_import_cert_store (L"root", CERT_SYSTEM_STORE_CURRENT_USER, store);
-    if (retval) {
-       return retval;
-    }
-    return _mongoc_openssl_import_cert_store (L"CA", CERT_SYSTEM_STORE_CURRENT_USER, store);
+   retval = _mongoc_openssl_import_cert_store (
+      L"root", CERT_SYSTEM_STORE_CURRENT_USER, store);
+   if (retval) {
+      return retval;
+   }
+   return _mongoc_openssl_import_cert_store (
+      L"CA", CERT_SYSTEM_STORE_CURRENT_USER, store);
 }
 #endif
 
@@ -169,8 +177,7 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
  *
  */
 static bool
-_mongoc_openssl_hostcheck (const char *pattern,
-                           const char *hostname)
+_mongoc_openssl_hostcheck (const char *pattern, const char *hostname)
 {
    const char *pattern_label_end;
    const char *pattern_wildcard;
@@ -178,7 +185,7 @@ _mongoc_openssl_hostcheck (const char *pattern,
    size_t prefixlen;
    size_t suffixlen;
 
-   TRACE("Comparing '%s' == '%s'", pattern, hostname);
+   TRACE ("Comparing '%s' == '%s'", pattern, hostname);
    pattern_wildcard = strchr (pattern, '*');
 
    if (pattern_wildcard == NULL) {
@@ -218,7 +225,8 @@ _mongoc_openssl_hostcheck (const char *pattern,
    prefixlen = pattern_wildcard - pattern;
    suffixlen = pattern_label_end - (pattern_wildcard + 1);
    return strncasecmp (pattern, hostname, prefixlen) == 0 &&
-          strncasecmp (pattern_wildcard + 1, hostname_label_end - suffixlen,
+          strncasecmp (pattern_wildcard + 1,
+                       hostname_label_end - suffixlen,
                        suffixlen) == 0;
 }
 
@@ -226,9 +234,9 @@ _mongoc_openssl_hostcheck (const char *pattern,
 /** check if a provided cert matches a passed hostname
  */
 bool
-_mongoc_openssl_check_cert (SSL        *ssl,
+_mongoc_openssl_check_cert (SSL *ssl,
                             const char *host,
-                            bool        allow_invalid_hostname)
+                            bool allow_invalid_hostname)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -241,13 +249,13 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    long verify_status;
 
    size_t addrlen = 0;
-   unsigned char addr4[sizeof(struct in_addr)];
-   unsigned char addr6[sizeof(struct in6_addr)];
+   unsigned char addr4[sizeof (struct in_addr)];
+   unsigned char addr6[sizeof (struct in6_addr)];
    int i;
    int n_sans = -1;
    int target = GEN_DNS;
 
-   STACK_OF (GENERAL_NAME) * sans = NULL;
+   STACK_OF (GENERAL_NAME) *sans = NULL;
 
    ENTRY;
    BSON_ASSERT (ssl);
@@ -270,7 +278,8 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
-      MONGOC_WARNING ("SSL Certification verification failed: %s", ERR_error_string(ERR_get_error(), NULL));
+      MONGOC_WARNING ("SSL Certification verification failed: %s",
+                      ERR_error_string (ERR_get_error (), NULL));
       RETURN (false);
    }
 
@@ -279,7 +288,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
    if (verify_status == X509_V_OK) {
       /* gets a stack of alt names that we can iterate through */
       sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
-         (X509 *)peer, NID_subject_alt_name, NULL, NULL);
+         (X509 *) peer, NID_subject_alt_name, NULL, NULL);
 
       if (sans) {
          n_sans = sk_GENERAL_NAME_num (sans);
@@ -291,7 +300,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
             /* skip entries that can't apply, I.e. IP entries if we've got a
              * DNS host */
             if (name->type == target) {
-               check = (char *)ASN1_STRING_data (name->d.ia5);
+               check = (char *) ASN1_STRING_data (name->d.ia5);
                length = ASN1_STRING_length (name->d.ia5);
 
                switch (target) {
@@ -306,11 +315,13 @@ _mongoc_openssl_check_cert (SSL        *ssl,
                   break;
                case GEN_IPADD:
                   if (length == addrlen) {
-                      if (length == sizeof addr6 && !memcmp (check, &addr6, length)) {
-                         r = 1;
-                      } else if (length == sizeof addr4 && !memcmp (check, &addr4, length)) {
-                         r = 1;
-                      }
+                     if (length == sizeof addr6 &&
+                         !memcmp (check, &addr6, length)) {
+                        r = 1;
+                     } else if (length == sizeof addr4 &&
+                                !memcmp (check, &addr4, length)) {
+                        r = 1;
+                     }
                   }
 
                   break;
@@ -328,8 +339,8 @@ _mongoc_openssl_check_cert (SSL        *ssl,
             i = -1;
 
             /* skip to the last common name */
-            while ((idx =
-                       X509_NAME_get_index_by_NID (subject_name, NID_commonName, i)) >= 0) {
+            while ((idx = X509_NAME_get_index_by_NID (
+                       subject_name, NID_commonName, i)) >= 0) {
                i = idx;
             }
 
@@ -341,7 +352,7 @@ _mongoc_openssl_check_cert (SSL        *ssl,
                   /* TODO: I've heard tell that old versions of SSL crap out
                    * when calling ASN1_STRING_to_UTF8 on already utf8 data.
                    * Check up on that */
-                  length = ASN1_STRING_to_UTF8 ((unsigned char **)&check,
+                  length = ASN1_STRING_to_UTF8 ((unsigned char **) &check,
                                                 entry_data);
 
                   if (length >= 0) {
@@ -365,15 +376,15 @@ _mongoc_openssl_check_cert (SSL        *ssl,
 
 
 static bool
-_mongoc_openssl_setup_ca (SSL_CTX    *ctx,
-                          const char *cert,
-                          const char *cert_dir)
+_mongoc_openssl_setup_ca (SSL_CTX *ctx, const char *cert, const char *cert_dir)
 {
-   BSON_ASSERT(ctx);
-   BSON_ASSERT(cert || cert_dir);
+   BSON_ASSERT (ctx);
+   BSON_ASSERT (cert || cert_dir);
 
    if (!SSL_CTX_load_verify_locations (ctx, cert, cert_dir)) {
-      MONGOC_ERROR ("Cannot load Certificate Authorities from '%s' and '%s'", cert, cert_dir);
+      MONGOC_ERROR ("Cannot load Certificate Authorities from '%s' and '%s'",
+                    cert,
+                    cert_dir);
       return 0;
    }
 
@@ -382,8 +393,7 @@ _mongoc_openssl_setup_ca (SSL_CTX    *ctx,
 
 
 static bool
-_mongoc_openssl_setup_crl (SSL_CTX    *ctx,
-                           const char *crlfile)
+_mongoc_openssl_setup_crl (SSL_CTX *ctx, const char *crlfile)
 {
    X509_STORE *store;
    X509_LOOKUP *lookup;
@@ -401,7 +411,7 @@ _mongoc_openssl_setup_crl (SSL_CTX    *ctx,
 
 
 static bool
-_mongoc_openssl_setup_pem_file (SSL_CTX    *ctx,
+_mongoc_openssl_setup_pem_file (SSL_CTX *ctx,
                                 const char *pem_file,
                                 const char *password)
 {
@@ -411,7 +421,7 @@ _mongoc_openssl_setup_pem_file (SSL_CTX    *ctx,
    }
 
    if (password) {
-      SSL_CTX_set_default_passwd_cb_userdata (ctx, (void *)password);
+      SSL_CTX_set_default_passwd_cb_userdata (ctx, (void *) password);
       SSL_CTX_set_default_passwd_cb (ctx, _mongoc_openssl_password_cb);
    }
 
@@ -452,17 +462,20 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
 
    BSON_ASSERT (ctx);
 
-   /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's. */
+   /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client
+    * SSL's. */
    ssl_ctx_options |= SSL_OP_ALL;
 
    /* SSL_OP_NO_SSLv2 - Disable SSL v2 support */
    ssl_ctx_options |= SSL_OP_NO_SSLv2;
 
-   /* Disable compression, if we can.
-    * OpenSSL 0.9.x added compression support which was always enabled when built against zlib
-    * OpenSSL 1.0.0 added the ability to disable it, while keeping it enabled by default
-    * OpenSSL 1.1.0 disabled it by default.
-    */
+/* Disable compression, if we can.
+ * OpenSSL 0.9.x added compression support which was always enabled when built
+ * against zlib
+ * OpenSSL 1.0.0 added the ability to disable it, while keeping it enabled by
+ * default
+ * OpenSSL 1.1.0 disabled it by default.
+ */
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
    ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
 #endif
@@ -480,13 +493,14 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    SSL_CTX_set_cipher_list (ctx, "HIGH:!EXPORT:!aNULL@STRENGTH");
 #endif
 
-   /* If renegotiation is needed, don't return from recv() or send() until it's successful.
+   /* If renegotiation is needed, don't return from recv() or send() until it's
+    * successful.
     * Note: this is for blocking sockets only. */
    SSL_CTX_set_mode (ctx, SSL_MODE_AUTO_RETRY);
 
    /* Load my private keys to present to the server */
    if (opt->pem_file &&
-         !_mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd)) {
+       !_mongoc_openssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd)) {
       SSL_CTX_free (ctx);
       return NULL;
    }
@@ -499,7 +513,7 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
          return NULL;
       }
    } else {
-      /* If the server certificate is issued by known CA we trust it by default */
+/* If the server certificate is issued by known CA we trust it by default */
 #ifdef _WIN32
       _mongoc_openssl_import_cert_stores (ctx);
 #else
@@ -532,21 +546,22 @@ _mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
    }
 
    certbio = BIO_new (BIO_s_file ());
-   strbio = BIO_new (BIO_s_mem ());;
+   strbio = BIO_new (BIO_s_mem ());
+   ;
 
    BSON_ASSERT (certbio);
    BSON_ASSERT (strbio);
 
 
    if (BIO_read_filename (certbio, filename) &&
-         (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
+       (cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
       if ((subject = X509_get_subject_name (cert))) {
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
          if ((ret > 0) && (ret < INT_MAX)) {
-            str = (char *)bson_malloc (ret + 2);
+            str = (char *) bson_malloc (ret + 2);
             BIO_gets (strbio, str, ret + 1);
-            str [ret] = '\0';
+            str[ret] = '\0';
          }
       }
    }
@@ -574,7 +589,7 @@ _mongoc_openssl_thread_id_callback (void)
 {
    unsigned long ret;
 
-   ret = (unsigned long)GetCurrentThreadId ();
+   ret = (unsigned long) GetCurrentThreadId ();
    return ret;
 }
 
@@ -585,17 +600,17 @@ _mongoc_openssl_thread_id_callback (void)
 {
    unsigned long ret;
 
-   ret = (unsigned long)pthread_self ();
+   ret = (unsigned long) pthread_self ();
    return ret;
 }
 
 #endif
 
 static void
-_mongoc_openssl_thread_locking_callback (int         mode,
-                                         int         type,
+_mongoc_openssl_thread_locking_callback (int mode,
+                                         int type,
                                          const char *file,
-                                         int         line)
+                                         int line)
 {
    if (mode & CRYPTO_LOCK) {
       mongoc_mutex_lock (&gMongocOpenSslThreadLocks[type]);
@@ -609,10 +624,11 @@ _mongoc_openssl_thread_startup (void)
 {
    int i;
 
-   gMongocOpenSslThreadLocks = (mongoc_mutex_t *)OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
+   gMongocOpenSslThreadLocks = (mongoc_mutex_t *) OPENSSL_malloc (
+      CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
-      mongoc_mutex_init(&gMongocOpenSslThreadLocks[i]);
+      mongoc_mutex_init (&gMongocOpenSslThreadLocks[i]);
    }
 
    if (!CRYPTO_get_locking_callback ()) {
@@ -626,7 +642,8 @@ _mongoc_openssl_thread_cleanup (void)
 {
    int i;
 
-   if (CRYPTO_get_locking_callback () == _mongoc_openssl_thread_locking_callback) {
+   if (CRYPTO_get_locking_callback () ==
+       _mongoc_openssl_thread_locking_callback) {
       CRYPTO_set_locking_callback (NULL);
       CRYPTO_set_id_callback (NULL);
    }

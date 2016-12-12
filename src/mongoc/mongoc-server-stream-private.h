@@ -19,7 +19,7 @@
 
 #include "mongoc-config.h"
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -31,11 +31,10 @@
 
 BSON_BEGIN_DECLS
 
-typedef struct _mongoc_server_stream_t
-{
-   mongoc_topology_description_type_t  topology_type;
-   mongoc_server_description_t        *sd;            /* owned */
-   mongoc_stream_t                    *stream;        /* borrowed */
+typedef struct _mongoc_server_stream_t {
+   mongoc_topology_description_type_t topology_type;
+   mongoc_server_description_t *sd; /* owned */
+   mongoc_stream_t *stream;         /* borrowed */
 } mongoc_server_stream_t;
 
 
@@ -51,7 +50,8 @@ int32_t
 mongoc_server_stream_max_msg_size (mongoc_server_stream_t *server_stream);
 
 int32_t
-mongoc_server_stream_max_write_batch_size (mongoc_server_stream_t *server_stream);
+mongoc_server_stream_max_write_batch_size (
+   mongoc_server_stream_t *server_stream);
 
 void
 mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream);

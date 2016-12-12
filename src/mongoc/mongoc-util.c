@@ -30,16 +30,16 @@ _mongoc_hex_md5 (const char *input)
    char digest_str[33];
    int i;
 
-   bson_md5_init(&md5);
-   bson_md5_append(&md5, (const uint8_t *)input, (uint32_t)strlen(input));
-   bson_md5_finish(&md5, digest);
+   bson_md5_init (&md5);
+   bson_md5_append (&md5, (const uint8_t *) input, (uint32_t) strlen (input));
+   bson_md5_finish (&md5, digest);
 
    for (i = 0; i < sizeof digest; i++) {
-      bson_snprintf(&digest_str[i*2], 3, "%02x", digest[i]);
+      bson_snprintf (&digest_str[i * 2], 3, "%02x", digest[i]);
    }
    digest_str[sizeof digest_str - 1] = '\0';
 
-   return bson_strdup(digest_str);
+   return bson_strdup (digest_str);
 }
 
 
@@ -53,10 +53,10 @@ _mongoc_usleep (int64_t usec)
    BSON_ASSERT (usec >= 0);
 
    ft.QuadPart = -(10 * usec);
-   timer = CreateWaitableTimer(NULL, true, NULL);
-   SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-   WaitForSingleObject(timer, INFINITE);
-   CloseHandle(timer);
+   timer = CreateWaitableTimer (NULL, true, NULL);
+   SetWaitableTimer (timer, &ft, 0, NULL, NULL, 0);
+   WaitForSingleObject (timer, INFINITE);
+   CloseHandle (timer);
 #else
    BSON_ASSERT (usec >= 0);
    usleep ((useconds_t) usec);
@@ -74,8 +74,7 @@ _mongoc_get_command_name (const bson_t *command)
 
    BSON_ASSERT (command);
 
-   if (!bson_iter_init (&iter, command) ||
-       !bson_iter_next (&iter)) {
+   if (!bson_iter_init (&iter, command) || !bson_iter_next (&iter)) {
       return NULL;
    }
 
@@ -91,12 +90,9 @@ _mongoc_get_command_name (const bson_t *command)
       wrapper_name = "query";
    }
 
-   if (wrapper_name &&
-       bson_iter_init_find (&iter, command, wrapper_name) &&
-       BSON_ITER_HOLDS_DOCUMENT (&iter) &&
-       bson_iter_recurse (&iter, &child) &&
+   if (wrapper_name && bson_iter_init_find (&iter, command, wrapper_name) &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter) && bson_iter_recurse (&iter, &child) &&
        bson_iter_next (&child)) {
-
       name = bson_iter_key (&child);
    }
 
@@ -105,8 +101,7 @@ _mongoc_get_command_name (const bson_t *command)
 
 
 void
-_mongoc_get_db_name (const char *ns,
-                     char *db /* OUT */)
+_mongoc_get_db_name (const char *ns, char *db /* OUT */)
 {
    size_t dblen;
    const char *dot;
@@ -142,11 +137,11 @@ _mongoc_strlen_or_zero (const char *s)
  * if absent. On error, fills out *error with domain and code and return false.
  */
 bool
-_mongoc_get_server_id_from_opts (const bson_t          *opts,
-                                 mongoc_error_domain_t  domain,
-                                 mongoc_error_code_t    code,
-                                 uint32_t              *server_id,
-                                 bson_error_t          *error)
+_mongoc_get_server_id_from_opts (const bson_t *opts,
+                                 mongoc_error_domain_t domain,
+                                 mongoc_error_code_t code,
+                                 uint32_t *server_id,
+                                 bson_error_t *error)
 {
    bson_iter_t iter;
 
@@ -161,14 +156,13 @@ _mongoc_get_server_id_from_opts (const bson_t          *opts,
    }
 
    if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
-      bson_set_error (error, domain, code,
-                      "The serverId option must be an integer");
+      bson_set_error (
+         error, domain, code, "The serverId option must be an integer");
       RETURN (false);
    }
 
    if (bson_iter_as_int64 (&iter) <= 0) {
-      bson_set_error (error, domain, code,
-                      "The serverId option must be >= 1");
+      bson_set_error (error, domain, code, "The serverId option must be >= 1");
       RETURN (false);
    }
 

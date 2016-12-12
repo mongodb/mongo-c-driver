@@ -39,20 +39,19 @@
 
 
 void
-_mongoc_scram_startup()
+_mongoc_scram_startup ()
 {
-   mongoc_b64_initialize_rmap();
+   mongoc_b64_initialize_rmap ();
 }
 
 
 void
-_mongoc_scram_set_pass (mongoc_scram_t *scram,
-                        const char     *pass)
+_mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass)
 {
    BSON_ASSERT (scram);
 
    if (scram->pass) {
-      bson_zero_free (scram->pass, strlen(scram->pass));
+      bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
    scram->pass = pass ? bson_strdup (pass) : NULL;
@@ -60,8 +59,7 @@ _mongoc_scram_set_pass (mongoc_scram_t *scram,
 
 
 void
-_mongoc_scram_set_user (mongoc_scram_t *scram,
-                        const char     *user)
+_mongoc_scram_set_user (mongoc_scram_t *scram, const char *user)
 {
    BSON_ASSERT (scram);
 
@@ -89,7 +87,7 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
    bson_free (scram->user);
 
    if (scram->pass) {
-      bson_zero_free (scram->pass, strlen(scram->pass));
+      bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
    bson_free (scram->auth_message);
@@ -98,10 +96,10 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
 
 static bool
 _mongoc_scram_buf_write (const char *src,
-                         int32_t     src_len,
-                         uint8_t    *outbuf,
-                         uint32_t    outbufmax,
-                         uint32_t   *outbuflen)
+                         int32_t src_len,
+                         uint8_t *outbuf,
+                         uint32_t outbufmax,
+                         uint32_t *outbuflen)
 {
    if (src_len < 0) {
       src_len = (int32_t) strlen (src);
@@ -126,10 +124,10 @@ _mongoc_scram_buf_write (const char *src,
  */
 static bool
 _mongoc_scram_start (mongoc_scram_t *scram,
-                     uint8_t        *outbuf,
-                     uint32_t        outbufmax,
-                     uint32_t       *outbuflen,
-                     bson_error_t   *error)
+                     uint8_t *outbuf,
+                     uint32_t outbufmax,
+                     uint32_t *outbuflen,
+                     bson_error_t *error)
 {
    uint8_t nonce[24];
    const char *ptr;
@@ -141,7 +139,7 @@ _mongoc_scram_start (mongoc_scram_t *scram,
    BSON_ASSERT (outbuflen);
 
    /* auth message is as big as the outbuf just because */
-   scram->auth_message = (uint8_t *)bson_malloc (outbufmax);
+   scram->auth_message = (uint8_t *) bson_malloc (outbufmax);
    scram->auth_messagemax = outbufmax;
 
    /* the server uses a 24 byte random nonce.  so we do as well */
@@ -149,13 +147,15 @@ _mongoc_scram_start (mongoc_scram_t *scram,
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
                       MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: could not generate a cryptographically secure nonce in sasl step 1");
+                      "SCRAM Failure: could not generate a cryptographically "
+                      "secure nonce in sasl step 1");
       goto FAIL;
    }
 
-   scram->encoded_nonce_len =
-      mongoc_b64_ntop (nonce, sizeof (nonce), scram->encoded_nonce,
-                       sizeof (scram->encoded_nonce));
+   scram->encoded_nonce_len = mongoc_b64_ntop (nonce,
+                                               sizeof (nonce),
+                                               scram->encoded_nonce,
+                                               sizeof (scram->encoded_nonce));
 
    if (-1 == scram->encoded_nonce_len) {
       bson_set_error (error,
@@ -175,16 +175,16 @@ _mongoc_scram_start (mongoc_scram_t *scram,
       switch (*ptr) {
       case ',':
 
-         if (!_mongoc_scram_buf_write ("=2C", -1, outbuf, outbufmax,
-                                       outbuflen)) {
+         if (!_mongoc_scram_buf_write (
+                "=2C", -1, outbuf, outbufmax, outbuflen)) {
             goto BUFFER;
          }
 
          break;
       case '=':
 
-         if (!_mongoc_scram_buf_write ("=3D", -1, outbuf, outbufmax,
-                                       outbuflen)) {
+         if (!_mongoc_scram_buf_write (
+                "=3D", -1, outbuf, outbufmax, outbuflen)) {
             goto BUFFER;
          }
 
@@ -203,22 +203,28 @@ _mongoc_scram_start (mongoc_scram_t *scram,
       goto BUFFER;
    }
 
-   if (!_mongoc_scram_buf_write (scram->encoded_nonce, scram->encoded_nonce_len,
-                                 outbuf, outbufmax, outbuflen)) {
+   if (!_mongoc_scram_buf_write (scram->encoded_nonce,
+                                 scram->encoded_nonce_len,
+                                 outbuf,
+                                 outbufmax,
+                                 outbuflen)) {
       goto BUFFER;
    }
 
    /* we have to keep track of the conversation to create a client proof later
     * on.  This copies the message we're crafting from the 'n=' portion onwards
     * into a buffer we're managing */
-   if (!_mongoc_scram_buf_write ((char *)outbuf + 3, *outbuflen - 3,
+   if (!_mongoc_scram_buf_write ((char *) outbuf + 3,
+                                 *outbuflen - 3,
                                  scram->auth_message,
                                  scram->auth_messagemax,
                                  &scram->auth_messagelen)) {
       goto BUFFER_AUTH;
    }
 
-   if (!_mongoc_scram_buf_write (",", -1, scram->auth_message,
+   if (!_mongoc_scram_buf_write (",",
+                                 -1,
+                                 scram->auth_message,
                                  scram->auth_messagemax,
                                  &scram->auth_messagelen)) {
       goto BUFFER_AUTH;
@@ -227,10 +233,11 @@ _mongoc_scram_start (mongoc_scram_t *scram,
    goto CLEANUP;
 
 BUFFER_AUTH:
-   bson_set_error (error,
-                   MONGOC_ERROR_SCRAM,
-                   MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                   "SCRAM Failure: could not buffer auth message in sasl step1");
+   bson_set_error (
+      error,
+      MONGOC_ERROR_SCRAM,
+      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+      "SCRAM Failure: could not buffer auth message in sasl step1");
 
    goto FAIL;
 
@@ -254,11 +261,11 @@ CLEANUP:
 /* Compute the SCRAM step Hi() as defined in RFC5802 */
 static void
 _mongoc_scram_salt_password (mongoc_scram_t *scram,
-                             const char     *password,
-                             uint32_t        password_len,
-                             const uint8_t  *salt,
-                             uint32_t        salt_len,
-                             uint32_t        iterations)
+                             const char *password,
+                             uint32_t password_len,
+                             const uint8_t *salt,
+                             uint32_t salt_len,
+                             uint32_t iterations)
 {
    uint8_t intermediate_digest[MONGOC_SCRAM_HASH_SIZE];
    uint8_t start_key[MONGOC_SCRAM_HASH_SIZE];
@@ -279,12 +286,12 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
                             password_len,
                             start_key,
                             sizeof (start_key),
-                            output
-   );
+                            output);
 
    memcpy (intermediate_digest, output, MONGOC_SCRAM_HASH_SIZE);
 
-   /* intermediateDigest contains Ui and output contains the accumulated XOR:ed result */
+   /* intermediateDigest contains Ui and output contains the accumulated XOR:ed
+    * result */
    for (i = 2; i <= iterations; i++) {
       mongoc_crypto_hmac_sha1 (&scram->crypto,
                                password,
@@ -302,9 +309,9 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
 
 static bool
 _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
-                                     uint8_t        *outbuf,
-                                     uint32_t        outbufmax,
-                                     uint32_t       *outbuflen)
+                                     uint8_t *outbuf,
+                                     uint32_t outbufmax,
+                                     uint32_t *outbuflen)
 {
    uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t stored_key[MONGOC_SCRAM_HASH_SIZE];
@@ -317,12 +324,13 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
    mongoc_crypto_hmac_sha1 (&scram->crypto,
                             scram->salted_password,
                             MONGOC_SCRAM_HASH_SIZE,
-                            (uint8_t *)MONGOC_SCRAM_CLIENT_KEY,
+                            (uint8_t *) MONGOC_SCRAM_CLIENT_KEY,
                             strlen (MONGOC_SCRAM_CLIENT_KEY),
                             client_key);
 
    /* StoredKey := H(client_key) */
-   mongoc_crypto_sha1 (&scram->crypto, client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
+   mongoc_crypto_sha1 (
+      &scram->crypto, client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
 
    /* ClientSignature := HMAC(StoredKey, AuthMessage) */
    mongoc_crypto_hmac_sha1 (&scram->crypto,
@@ -338,8 +346,9 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
       client_proof[i] = client_key[i] ^ client_signature[i];
    }
 
-   r = mongoc_b64_ntop (client_proof, sizeof (client_proof),
-                        (char *)outbuf + *outbuflen,
+   r = mongoc_b64_ntop (client_proof,
+                        sizeof (client_proof),
+                        (char *) outbuf + *outbuflen,
                         outbufmax - *outbuflen);
 
    if (-1 == r) {
@@ -360,12 +369,12 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
  */
 static bool
 _mongoc_scram_step2 (mongoc_scram_t *scram,
-                     const uint8_t  *inbuf,
-                     uint32_t        inbuflen,
-                     uint8_t        *outbuf,
-                     uint32_t        outbufmax,
-                     uint32_t       *outbuflen,
-                     bson_error_t   *error)
+                     const uint8_t *inbuf,
+                     uint32_t inbuflen,
+                     uint8_t *outbuf,
+                     uint32_t outbufmax,
+                     uint32_t *outbuflen,
+                     bson_error_t *error)
 {
    uint8_t *val_r = NULL;
    uint32_t val_r_len;
@@ -397,22 +406,26 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    /* all our passwords go through md5 thanks to MONGODB-CR */
    tmp = bson_strdup_printf ("%s:mongo:%s", scram->user, scram->pass);
    hashed_password = _mongoc_hex_md5 (tmp);
-   bson_zero_free (tmp, strlen(tmp));
+   bson_zero_free (tmp, strlen (tmp));
 
    /* we need all of the incoming message for the final client proof */
-   if (!_mongoc_scram_buf_write ((char *)inbuf, inbuflen, scram->auth_message,
+   if (!_mongoc_scram_buf_write ((char *) inbuf,
+                                 inbuflen,
+                                 scram->auth_message,
                                  scram->auth_messagemax,
                                  &scram->auth_messagelen)) {
       goto BUFFER_AUTH;
    }
 
-   if (!_mongoc_scram_buf_write (",", -1, scram->auth_message,
+   if (!_mongoc_scram_buf_write (",",
+                                 -1,
+                                 scram->auth_message,
                                  scram->auth_messagemax,
                                  &scram->auth_messagelen)) {
       goto BUFFER_AUTH;
    }
 
-   for (ptr = inbuf; ptr < inbuf + inbuflen; ) {
+   for (ptr = inbuf; ptr < inbuf + inbuflen;) {
       switch (*ptr) {
       case 'r':
          current_val = &val_r;
@@ -449,7 +462,8 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma = (const uint8_t*)memchr (ptr, ',', (inbuf + inbuflen) - ptr);
+      next_comma =
+         (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
          *current_val_len = (uint32_t) (next_comma - ptr);
@@ -457,7 +471,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
          *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
-      *current_val = (uint8_t *)bson_malloc (*current_val_len + 1);
+      *current_val = (uint8_t *) bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -498,25 +512,27 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    /* verify our nonce */
    if (val_r_len < scram->encoded_nonce_len ||
        mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: client nonce not repeated in sasl step 2");
+      bson_set_error (
+         error,
+         MONGOC_ERROR_SCRAM,
+         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+         "SCRAM Failure: client nonce not repeated in sasl step 2");
    }
 
    *outbuflen = 0;
 
-   if (!_mongoc_scram_buf_write ("c=biws,r=", -1, outbuf, outbufmax,
-                                 outbuflen)) {
+   if (!_mongoc_scram_buf_write (
+          "c=biws,r=", -1, outbuf, outbufmax, outbuflen)) {
       goto BUFFER;
    }
 
-   if (!_mongoc_scram_buf_write ((char *)val_r, val_r_len, outbuf, outbufmax,
-                                 outbuflen)) {
+   if (!_mongoc_scram_buf_write (
+          (char *) val_r, val_r_len, outbuf, outbufmax, outbuflen)) {
       goto BUFFER;
    }
 
-   if (!_mongoc_scram_buf_write ((char *)outbuf, *outbuflen,
+   if (!_mongoc_scram_buf_write ((char *) outbuf,
+                                 *outbuflen,
                                  scram->auth_message,
                                  scram->auth_messagemax,
                                  &scram->auth_messagelen)) {
@@ -528,7 +544,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    decoded_salt_len =
-      mongoc_b64_pton ((char *)val_s, decoded_salt, sizeof (decoded_salt));
+      mongoc_b64_pton ((char *) val_s, decoded_salt, sizeof (decoded_salt));
 
    if (-1 == decoded_salt_len) {
       bson_set_error (error,
@@ -547,20 +563,24 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   iterations = (int) bson_ascii_strtoll ((char *)val_i, &tmp, 10);
+   iterations = (int) bson_ascii_strtoll ((char *) val_i, &tmp, 10);
    /* tmp holds the location of the failed to parse character.  So if it's
     * null, we got to the end of the string and didn't have a parse error */
 
    if (*tmp) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: unable to parse iterations in sasl step2");
+      bson_set_error (
+         error,
+         MONGOC_ERROR_SCRAM,
+         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+         "SCRAM Failure: unable to parse iterations in sasl step2");
       goto FAIL;
    }
 
-   _mongoc_scram_salt_password (scram, hashed_password, (uint32_t) strlen (
-                                   hashed_password), decoded_salt, decoded_salt_len,
+   _mongoc_scram_salt_password (scram,
+                                hashed_password,
+                                (uint32_t) strlen (hashed_password),
+                                decoded_salt,
+                                decoded_salt_len,
                                 iterations);
 
    _mongoc_scram_generate_client_proof (scram, outbuf, outbufmax, outbuflen);
@@ -568,10 +588,11 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    goto CLEANUP;
 
 BUFFER_AUTH:
-   bson_set_error (error,
-                   MONGOC_ERROR_SCRAM,
-                   MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                   "SCRAM Failure: could not buffer auth message in sasl step2");
+   bson_set_error (
+      error,
+      MONGOC_ERROR_SCRAM,
+      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+      "SCRAM Failure: could not buffer auth message in sasl step2");
 
    goto FAIL;
 
@@ -592,7 +613,7 @@ CLEANUP:
    bson_free (val_i);
 
    if (hashed_password) {
-      bson_zero_free (hashed_password, strlen(hashed_password));
+      bson_zero_free (hashed_password, strlen (hashed_password));
    }
 
    return rval;
@@ -601,8 +622,8 @@ CLEANUP:
 
 static bool
 _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
-                                       uint8_t        *verification,
-                                       uint32_t        len)
+                                       uint8_t *verification,
+                                       uint32_t len)
 {
    uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
    char encoded_server_signature[MONGOC_SCRAM_B64_HASH_SIZE];
@@ -613,7 +634,7 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
    mongoc_crypto_hmac_sha1 (&scram->crypto,
                             scram->salted_password,
                             MONGOC_SCRAM_HASH_SIZE,
-                            (uint8_t *)MONGOC_SCRAM_SERVER_KEY,
+                            (uint8_t *) MONGOC_SCRAM_SERVER_KEY,
                             strlen (MONGOC_SCRAM_SERVER_KEY),
                             server_key);
 
@@ -626,7 +647,8 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
                             server_signature);
 
    encoded_server_signature_len =
-      mongoc_b64_ntop (server_signature, sizeof (server_signature),
+      mongoc_b64_ntop (server_signature,
+                       sizeof (server_signature),
                        encoded_server_signature,
                        sizeof (encoded_server_signature));
    if (encoded_server_signature_len == -1) {
@@ -640,12 +662,12 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
 
 static bool
 _mongoc_scram_step3 (mongoc_scram_t *scram,
-                     const uint8_t  *inbuf,
-                     uint32_t        inbuflen,
-                     uint8_t        *outbuf,
-                     uint32_t        outbufmax,
-                     uint32_t       *outbuflen,
-                     bson_error_t   *error)
+                     const uint8_t *inbuf,
+                     uint32_t inbuflen,
+                     uint8_t *outbuf,
+                     uint32_t outbufmax,
+                     uint32_t *outbuflen,
+                     bson_error_t *error)
 {
    uint8_t *val_e = NULL;
    uint32_t val_e_len;
@@ -665,7 +687,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
    BSON_ASSERT (outbufmax);
    BSON_ASSERT (outbuflen);
 
-   for (ptr = inbuf; ptr < inbuf + inbuflen; ) {
+   for (ptr = inbuf; ptr < inbuf + inbuflen;) {
       switch (*ptr) {
       case 'e':
          current_val = &val_e;
@@ -697,7 +719,8 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma = (const uint8_t*)memchr (ptr, ',', (inbuf + inbuflen) - ptr);
+      next_comma =
+         (const uint8_t *) memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
          *current_val_len = (uint32_t) (next_comma - ptr);
@@ -705,7 +728,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
-      *current_val = (uint8_t *)bson_malloc (*current_val_len + 1);
+      *current_val = (uint8_t *) bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -719,11 +742,12 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
    *outbuflen = 0;
 
    if (val_e) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: authentication failure in sasl step 3 : %s",
-                      val_e);
+      bson_set_error (
+         error,
+         MONGOC_ERROR_SCRAM,
+         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+         "SCRAM Failure: authentication failure in sasl step 3 : %s",
+         val_e);
       goto FAIL;
    }
 
@@ -736,10 +760,11 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
    }
 
    if (!_mongoc_scram_verify_server_signature (scram, val_v, val_v_len)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SCRAM,
-                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-                      "SCRAM Failure: could not verify server signature in sasl step 3");
+      bson_set_error (
+         error,
+         MONGOC_ERROR_SCRAM,
+         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+         "SCRAM Failure: could not verify server signature in sasl step 3");
       goto FAIL;
    }
 
@@ -758,12 +783,12 @@ CLEANUP:
 
 bool
 _mongoc_scram_step (mongoc_scram_t *scram,
-                    const uint8_t  *inbuf,
-                    uint32_t        inbuflen,
-                    uint8_t        *outbuf,
-                    uint32_t        outbufmax,
-                    uint32_t       *outbuflen,
-                    bson_error_t   *error)
+                    const uint8_t *inbuf,
+                    uint32_t inbuflen,
+                    uint8_t *outbuf,
+                    uint32_t outbufmax,
+                    uint32_t *outbuflen,
+                    bson_error_t *error)
 {
    BSON_ASSERT (scram);
    BSON_ASSERT (inbuf);
@@ -774,16 +799,15 @@ _mongoc_scram_step (mongoc_scram_t *scram,
 
    switch (scram->step) {
    case 1:
-      return _mongoc_scram_start (scram, outbuf, outbufmax, outbuflen,
-                                  error);
+      return _mongoc_scram_start (scram, outbuf, outbufmax, outbuflen, error);
       break;
    case 2:
-      return _mongoc_scram_step2 (scram, inbuf, inbuflen, outbuf, outbufmax,
-                                  outbuflen, error);
+      return _mongoc_scram_step2 (
+         scram, inbuf, inbuflen, outbuf, outbufmax, outbuflen, error);
       break;
    case 3:
-      return _mongoc_scram_step3 (scram, inbuf, inbuflen, outbuf, outbufmax,
-                                  outbuflen, error);
+      return _mongoc_scram_step3 (
+         scram, inbuf, inbuflen, outbuf, outbufmax, outbuflen, error);
       break;
    default:
       bson_set_error (error,

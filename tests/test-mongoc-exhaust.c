@@ -18,7 +18,8 @@
 #define MONGOC_LOG_DOMAIN "exhaust-test"
 
 
-int skip_if_mongos (void)
+int
+skip_if_mongos (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -28,8 +29,7 @@ int skip_if_mongos (void)
 
 
 static int64_t
-get_timestamp (mongoc_client_t *client,
-               mongoc_cursor_t *cursor)
+get_timestamp (mongoc_client_t *client, mongoc_cursor_t *cursor)
 {
    uint32_t server_id;
 
@@ -85,38 +85,41 @@ test_exhaust_cursor (bool pooled)
    collection = get_test_collection (client, "test_exhaust_cursor");
    assert (collection);
 
-   mongoc_collection_drop(collection, &error);
+   mongoc_collection_drop (collection, &error);
 
    wr = mongoc_write_concern_new ();
    mongoc_write_concern_set_journal (wr, true);
 
    /* bulk insert some records to work on */
    {
-      bson_init(&q);
+      bson_init (&q);
 
       for (i = 0; i < 10; i++) {
-         bson_init(&b[i]);
-         bson_oid_init(&oid, NULL);
-         bson_append_oid(&b[i], "_id", -1, &oid);
-         bson_append_int32(&b[i], "n", -1, i % 2);
+         bson_init (&b[i]);
+         bson_oid_init (&oid, NULL);
+         bson_append_oid (&b[i], "_id", -1, &oid);
+         bson_append_int32 (&b[i], "n", -1, i % 2);
          bptr[i] = &b[i];
       }
 
       BEGIN_IGNORE_DEPRECATIONS;
-      ASSERT_OR_PRINT (mongoc_collection_insert_bulk (
-                          collection, MONGOC_INSERT_NONE,
-                          (const bson_t **)bptr, 10, wr, &error),
+      ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
+                                                      MONGOC_INSERT_NONE,
+                                                      (const bson_t **) bptr,
+                                                      10,
+                                                      wr,
+                                                      &error),
                        error);
       END_IGNORE_DEPRECATIONS;
    }
 
    /* create a couple of cursors */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q,
-                                       NULL, NULL);
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
 
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
-                                        NULL, NULL);
+      cursor2 = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
    }
 
    /* Read from the exhaust cursor, ensure that we're in exhaust where we
@@ -136,7 +139,7 @@ test_exhaust_cursor (bool pooled)
       /* destroy the cursor, make sure a disconnect happened */
       timestamp1 = get_timestamp (client, cursor);
       mongoc_cursor_destroy (cursor);
-      assert (! client->in_exhaust);
+      assert (!client->in_exhaust);
    }
 
    /* ensure even a 1 ms-resolution clock advances significantly */
@@ -146,8 +149,8 @@ test_exhaust_cursor (bool pooled)
     * (putting the client into exhaust), breaks a mid-stream read from a
     * regular cursor */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q,
-                                       NULL, NULL);
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q, NULL, NULL);
 
       r = mongoc_cursor_next (cursor2, &doc);
       if (!r) {
@@ -177,7 +180,7 @@ test_exhaust_cursor (bool pooled)
       assert (!r);
       assert (!doc);
 
-      mongoc_cursor_error(cursor2, &error);
+      mongoc_cursor_error (cursor2, &error);
       ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
       ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
 
@@ -187,8 +190,12 @@ test_exhaust_cursor (bool pooled)
    /* make sure writes fail as well */
    {
       BEGIN_IGNORE_DEPRECATIONS;
-      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                         (const bson_t **)bptr, 10, wr, &error);
+      r = mongoc_collection_insert_bulk (collection,
+                                         MONGOC_INSERT_NONE,
+                                         (const bson_t **) bptr,
+                                         10,
+                                         wr,
+                                         &error);
       END_IGNORE_DEPRECATIONS;
 
       assert (!r);
@@ -204,12 +211,12 @@ test_exhaust_cursor (bool pooled)
     * 4. make sure we can read the cursor we made during the exhuast
     */
    {
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
-                                        NULL, NULL);
+      cursor2 = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, &q, NULL, NULL);
 
       server_id = cursor->server_id;
-      stream = (mongoc_stream_t *) mongoc_set_get(client->cluster.nodes, 
-                                                  server_id);
+      stream =
+         (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes, server_id);
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -223,24 +230,24 @@ test_exhaust_cursor (bool pooled)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes,
-                                                            server_id));
+      assert (stream == (mongoc_stream_t *) mongoc_set_get (
+                           client->cluster.nodes, server_id));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);
       assert (doc);
    }
 
-   bson_destroy(&q);
+   bson_destroy (&q);
    for (i = 0; i < 10; i++) {
-      bson_destroy(&b[i]);
+      bson_destroy (&b[i]);
    }
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_write_concern_destroy (wr);
    mongoc_cursor_destroy (cursor2);
-   mongoc_collection_destroy(collection);
+   mongoc_collection_destroy (collection);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -292,10 +299,7 @@ test_exhaust_cursor_multi_batch (void *context)
    ASSERT_OR_PRINT (server_id, error);
 
    cursor = mongoc_collection_find (
-      collection,
-      MONGOC_QUERY_EXHAUST,
-      0, 0, 0,
-      tmp_bson ("{}"), NULL, NULL);
+      collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
@@ -322,14 +326,18 @@ test_cursor_set_max_await_time_ms (void)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
-   collection = get_test_collection (client,
-                                     "test_cursor_set_max_await_time_ms");
+   collection =
+      get_test_collection (client, "test_cursor_set_max_await_time_ms");
 
-   cursor = mongoc_collection_find (
-      collection,
-      MONGOC_QUERY_TAILABLE_CURSOR|MONGOC_QUERY_AWAIT_DATA,
-      0, 0, 0,
-      tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_TAILABLE_CURSOR |
+                                       MONGOC_QUERY_AWAIT_DATA,
+                                    0,
+                                    0,
+                                    0,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
 
    ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
    mongoc_cursor_set_max_await_time_ms (cursor, 123);
@@ -345,33 +353,34 @@ test_cursor_set_max_await_time_ms (void)
    mongoc_client_destroy (client);
 }
 
-typedef enum
-{
+typedef enum {
    FIRST_BATCH,
    SECOND_BATCH,
 } exhaust_error_when_t;
 
-typedef enum
-{
+typedef enum {
    NETWORK_ERROR,
    SERVER_ERROR,
 } exhaust_error_type_t;
 
 static void
-_request_error (request_t           *request,
-                exhaust_error_type_t error_type)
+_request_error (request_t *request, exhaust_error_type_t error_type)
 {
    if (error_type == NETWORK_ERROR) {
       mock_server_resets (request);
    } else {
-      mock_server_replies (request, MONGOC_REPLY_QUERY_FAILURE, 123, 0, 0,
+      mock_server_replies (request,
+                           MONGOC_REPLY_QUERY_FAILURE,
+                           123,
+                           0,
+                           0,
                            "{'$err': 'uh oh', 'code': 4321}");
    }
 }
 
 static void
-_check_error (mongoc_client_t     *client,
-              mongoc_cursor_t     *cursor,
+_check_error (mongoc_client_t *client,
+              mongoc_cursor_t *cursor,
               exhaust_error_type_t error_type)
 {
    uint32_t server_id;
@@ -388,10 +397,8 @@ _check_error (mongoc_client_t     *client,
                              "socket error or timeout");
 
       /* socket was discarded */
-      ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
-                                                 server_id,
-                                                 false /* don't reconnect */,
-                                                 &error));
+      ASSERT (!mongoc_cluster_stream_for_server (
+         &client->cluster, server_id, false /* don't reconnect */, &error));
 
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
@@ -407,7 +414,7 @@ _check_error (mongoc_client_t     *client,
 }
 
 static void
-_mock_test_exhaust (bool                 pooled,
+_mock_test_exhaust (bool pooled,
                     exhaust_error_when_t error_when,
                     exhaust_error_type_t error_type)
 {
@@ -433,16 +440,18 @@ _mock_test_exhaust (bool                 pooled,
    }
 
    collection = mongoc_client_get_collection (client, "db", "test");
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_EXHAUST,
-                                    0, 0, 0,
-                                    tmp_bson ("{}"),
-                                    NULL, NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (
-      server, "db.test", MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
-      0, 0, "{}", NULL);
+   request =
+      mock_server_receives_query (server,
+                                  "db.test",
+                                  MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+                                  0,
+                                  0,
+                                  "{}",
+                                  NULL);
 
    if (error_when == SECOND_BATCH) {
       /* initial query succeeds, gets a doc and cursor id of 123 */
@@ -527,17 +536,49 @@ test_exhaust_server_err_2nd_batch_pooled (void)
 void
 test_exhaust_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
-   TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
-   TestSuite_AddFull (suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_mongos);
-   TestSuite_AddLive (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/single", test_exhaust_network_err_1st_batch_single);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/pooled", test_exhaust_network_err_1st_batch_pooled);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/single", test_exhaust_server_err_1st_batch_single);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/pooled", test_exhaust_server_err_1st_batch_pooled);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/2nd_batch/single", test_exhaust_network_err_2nd_batch_single);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/2nd_batch/pooled", test_exhaust_network_err_2nd_batch_pooled);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/2nd_batch/single", test_exhaust_server_err_2nd_batch_single);
-   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/2nd_batch/pooled", test_exhaust_server_err_2nd_batch_pooled);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/single",
+                      test_exhaust_cursor_single,
+                      NULL,
+                      NULL,
+                      skip_if_mongos);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/pool",
+                      test_exhaust_cursor_pool,
+                      NULL,
+                      NULL,
+                      skip_if_mongos);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/batches",
+                      test_exhaust_cursor_multi_batch,
+                      NULL,
+                      NULL,
+                      skip_if_mongos);
+   TestSuite_AddLive (suite,
+                      "/Client/set_max_await_time_ms",
+                      test_cursor_set_max_await_time_ms);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/network/1st_batch/single",
+                  test_exhaust_network_err_1st_batch_single);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/network/1st_batch/pooled",
+                  test_exhaust_network_err_1st_batch_pooled);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/server/1st_batch/single",
+                  test_exhaust_server_err_1st_batch_single);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/server/1st_batch/pooled",
+                  test_exhaust_server_err_1st_batch_pooled);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/network/2nd_batch/single",
+                  test_exhaust_network_err_2nd_batch_single);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/network/2nd_batch/pooled",
+                  test_exhaust_network_err_2nd_batch_pooled);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/server/2nd_batch/single",
+                  test_exhaust_server_err_2nd_batch_single);
+   TestSuite_Add (suite,
+                  "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
+                  test_exhaust_server_err_2nd_batch_pooled);
 }
-

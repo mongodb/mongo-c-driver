@@ -14,13 +14,13 @@ test_mongoc_client_pool_basic (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
-   pool = mongoc_client_pool_new(uri);
-   client = mongoc_client_pool_pop(pool);
-   assert(client);
-   mongoc_client_pool_push(pool, client);
-   mongoc_uri_destroy(uri);
-   mongoc_client_pool_destroy(pool);
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   assert (client);
+   mongoc_client_pool_push (pool, client);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
 }
 
 
@@ -31,14 +31,14 @@ test_mongoc_client_pool_try_pop (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
-   pool = mongoc_client_pool_new(uri);
-   client = mongoc_client_pool_pop(pool);
-   assert(client);
-   assert(!mongoc_client_pool_try_pop(pool));
-   mongoc_client_pool_push(pool, client);
-   mongoc_uri_destroy(uri);
-   mongoc_client_pool_destroy(pool);
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   assert (client);
+   assert (!mongoc_client_pool_try_pop (pool));
+   mongoc_client_pool_push (pool, client);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
 }
 
 static void
@@ -100,19 +100,19 @@ test_mongoc_client_pool_min_size_dispose (void)
    assert (c3);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
 
-   mongoc_client_pool_push (pool, c0);  /* queue is [c0] */
+   mongoc_client_pool_push (pool, c0); /* queue is [c0] */
    ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 1);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
 
-   mongoc_client_pool_push (pool, c1);  /* queue is [c1, c0] */
+   mongoc_client_pool_push (pool, c1); /* queue is [c1, c0] */
    ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
 
-   mongoc_client_pool_push (pool, c2);  /* queue is [c2, c1] */
+   mongoc_client_pool_push (pool, c2); /* queue is [c2, c1] */
    ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 3);
 
-   mongoc_client_pool_push (pool, c3);  /* queue is [c3, c2] */
+   mongoc_client_pool_push (pool, c3); /* queue is [c3, c2] */
    ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
 
@@ -155,9 +155,9 @@ test_mongoc_client_pool_set_max_size (void)
       assert (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
-   mongoc_client_pool_max_size(pool,3);
+   mongoc_client_pool_max_size (pool, 3);
 
-   assert(mongoc_client_pool_try_pop(pool) == NULL);
+   assert (mongoc_client_pool_try_pop (pool) == NULL);
 
    for (i = 0; i < 5; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
@@ -192,7 +192,7 @@ test_mongoc_client_pool_set_min_size (void)
       assert (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
-   mongoc_client_pool_min_size(pool,7);
+   mongoc_client_pool_min_size (pool, 7);
 
    for (i = 0; i < 10; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
@@ -201,7 +201,7 @@ test_mongoc_client_pool_set_min_size (void)
    }
 
    assert (mongoc_client_pool_get_size (pool) == 7);
-   
+
    _mongoc_array_clear (&conns);
    _mongoc_array_destroy (&conns);
    mongoc_uri_destroy (uri);
@@ -268,23 +268,32 @@ test_mongoc_client_pool_handshake (void)
                         "Cannot set appname after handshake initiated");
    capture_logs (false);
 
-   mongoc_uri_destroy(uri);
-   mongoc_client_pool_destroy(pool);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
 }
 
 void
 test_client_pool_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
-   TestSuite_Add (suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
-   TestSuite_Add (suite, "/ClientPool/min_size_zero", test_mongoc_client_pool_min_size_zero);
-   TestSuite_Add (suite, "/ClientPool/min_size_dispose", test_mongoc_client_pool_min_size_dispose);
-   TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
-   TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
+   TestSuite_Add (
+      suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
+   TestSuite_Add (suite,
+                  "/ClientPool/min_size_zero",
+                  test_mongoc_client_pool_min_size_zero);
+   TestSuite_Add (suite,
+                  "/ClientPool/min_size_dispose",
+                  test_mongoc_client_pool_min_size_dispose);
+   TestSuite_Add (
+      suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
+   TestSuite_Add (
+      suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
 
-   TestSuite_Add (suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
+   TestSuite_Add (
+      suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
 #ifndef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
+   TestSuite_Add (
+      suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
 #endif
 }

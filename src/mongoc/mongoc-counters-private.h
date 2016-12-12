@@ -17,30 +17,30 @@
 #ifndef MONGOC_COUNTERS_PRIVATE_H
 #define MONGOC_COUNTERS_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
 
 #ifdef __linux__
-# include <sched.h>
-# include <sys/sysinfo.h>
-#elif defined(__FreeBSD__) || \
-      defined(__NetBSD__) || \
-      defined(__DragonFly__) || \
-      defined(__OpenBSD__)
-# include <sys/types.h>
-# include <sys/sysctl.h>
-# include <sys/param.h>
+#include <sched.h>
+#include <sys/sysinfo.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
+   defined(__OpenBSD__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <sys/param.h>
 #endif
 
 
 BSON_BEGIN_DECLS
 
 
-void _mongoc_counters_init (void);
-void _mongoc_counters_cleanup (void);
+void
+_mongoc_counters_init (void);
+void
+_mongoc_counters_cleanup (void);
 
 
 static BSON_INLINE unsigned
@@ -48,10 +48,8 @@ _mongoc_get_cpu_count (void)
 {
 #if defined(__linux__)
    return get_nprocs ();
-#elif defined(__FreeBSD__) || \
-      defined(__NetBSD__) || \
-      defined(__DragonFly__) || \
-      defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
+   defined(__OpenBSD__)
    int mib[2];
    int maxproc;
    size_t len;
@@ -75,47 +73,44 @@ _mongoc_get_cpu_count (void)
    GetSystemInfo (&si);
    return si.dwNumberOfProcessors;
 #else
-# warning "_mongoc_get_cpu_count() not supported, defaulting to 1."
+#warning "_mongoc_get_cpu_count() not supported, defaulting to 1."
    return 1;
 #endif
 }
 
 
-#define _mongoc_counter_add(v,count) \
-   bson_atomic_int64_add(&(v), (count))
+#define _mongoc_counter_add(v, count) bson_atomic_int64_add (&(v), (count))
 
 
 #if defined(ENABLE_RDTSCP)
- static BSON_INLINE unsigned
- _mongoc_sched_getcpu (void)
- {
-    volatile uint32_t rax, rdx, rcx;
-    __asm__ volatile ("rdtscp\n" : "=a" (rax), "=d" (rdx), "=c" (rcx) : : );
-    unsigned node_id, core_id;
-    // node_id = (rcx & 0xFFF000)>>12;  // node_id is unused
-    core_id = rcx & 0xFFF;
-    return core_id;
- }
+static BSON_INLINE unsigned
+_mongoc_sched_getcpu (void)
+{
+   volatile uint32_t rax, rdx, rcx;
+   __asm__ volatile("rdtscp\n" : "=a"(rax), "=d"(rdx), "=c"(rcx) : :);
+   unsigned node_id, core_id;
+   // node_id = (rcx & 0xFFF000)>>12;  // node_id is unused
+   core_id = rcx & 0xFFF;
+   return core_id;
+}
 #elif defined(HAVE_SCHED_GETCPU)
-# define _mongoc_sched_getcpu sched_getcpu
+#define _mongoc_sched_getcpu sched_getcpu
 #else
-# define _mongoc_sched_getcpu() (0)
+#define _mongoc_sched_getcpu() (0)
 #endif
 
 
 #ifndef SLOTS_PER_CACHELINE
-# define SLOTS_PER_CACHELINE 8
+#define SLOTS_PER_CACHELINE 8
 #endif
 
 
-typedef struct
-{
-   int64_t slots [SLOTS_PER_CACHELINE];
+typedef struct {
+   int64_t slots[SLOTS_PER_CACHELINE];
 } mongoc_counter_slots_t;
 
 
-typedef struct
-{
+typedef struct {
    mongoc_counter_slots_t *cpus;
 } mongoc_counter_t;
 
@@ -126,44 +121,39 @@ typedef struct
 #undef COUNTER
 
 
-enum
-{
-#define COUNTER(ident, Category, Name, Description) \
-   COUNTER_##ident,
+enum {
+#define COUNTER(ident, Category, Name, Description) COUNTER_##ident,
 #include "mongoc-counters.defs"
 #undef COUNTER
    LAST_COUNTER
 };
 
 
-#define COUNTER(ident, Category, Name, Description) \
-static BSON_INLINE void \
-mongoc_counter_##ident##_add (int64_t val) \
-{ \
-   _mongoc_counter_add(\
-      __mongoc_counter_##ident.cpus[_mongoc_sched_getcpu()].slots[ \
-         COUNTER_##ident%SLOTS_PER_CACHELINE], val); \
-} \
-static BSON_INLINE void \
-mongoc_counter_##ident##_inc (void) \
-{ \
-   mongoc_counter_##ident##_add (1); \
-} \
-static BSON_INLINE void \
-mongoc_counter_##ident##_dec (void) \
-{ \
-   mongoc_counter_##ident##_add (-1); \
-} \
-static BSON_INLINE void \
-mongoc_counter_##ident##_reset (void) \
-{ \
-   uint32_t i; \
-   for (i = 0; i < _mongoc_get_cpu_count(); i++) { \
-      __mongoc_counter_##ident.cpus [i].slots [\
-         COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
-   } \
-   bson_memory_barrier (); \
-}
+#define COUNTER(ident, Category, Name, Description)                   \
+   static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
+   {                                                                  \
+      _mongoc_counter_add (                                           \
+         __mongoc_counter_##ident.cpus[_mongoc_sched_getcpu ()]       \
+            .slots[COUNTER_##ident % SLOTS_PER_CACHELINE],            \
+         val);                                                        \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_inc (void)        \
+   {                                                                  \
+      mongoc_counter_##ident##_add (1);                               \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_dec (void)        \
+   {                                                                  \
+      mongoc_counter_##ident##_add (-1);                              \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_reset (void)      \
+   {                                                                  \
+      uint32_t i;                                                     \
+      for (i = 0; i < _mongoc_get_cpu_count (); i++) {                \
+         __mongoc_counter_##ident.cpus[i]                             \
+            .slots[COUNTER_##ident % SLOTS_PER_CACHELINE] = 0;        \
+      }                                                               \
+      bson_memory_barrier ();                                         \
+   }
 #include "mongoc-counters.defs"
 #undef COUNTER
 

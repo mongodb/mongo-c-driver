@@ -9,7 +9,8 @@
 #include "opts.c"
 #include "sort.c"
 
-int main(void)
+int
+main (void)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
@@ -17,20 +18,30 @@ int main(void)
    bson_error_t error;
    bson_t *options;
 
-   mongoc_init();
-   client = mongoc_client_new ("mongodb://localhost:27017/admin?appname=find-and-modify-opts-example");
+   mongoc_init ();
+   client = mongoc_client_new (
+      "mongodb://localhost:27017/admin?appname=find-and-modify-opts-example");
    mongoc_client_set_error_api (client, 2);
    database = mongoc_client_get_database (client, "databaseName");
 
-   options = BCON_NEW ("validator", "{",
-                       "age", "{", "$lte", BCON_INT32 (34), "}", "}",
-                       "validationAction", BCON_UTF8 ("error"),
-                       "validationLevel", BCON_UTF8 ("moderate"));
+   options = BCON_NEW ("validator",
+                       "{",
+                       "age",
+                       "{",
+                       "$lte",
+                       BCON_INT32 (34),
+                       "}",
+                       "}",
+                       "validationAction",
+                       BCON_UTF8 ("error"),
+                       "validationLevel",
+                       BCON_UTF8 ("moderate"));
 
-   collection = mongoc_database_create_collection (database, "collectionName",
-                                                   options, &error);
+   collection = mongoc_database_create_collection (
+      database, "collectionName", options, &error);
    if (!collection) {
-      fprintf(stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (
+         stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
       return 1;
    }
 
@@ -50,4 +61,3 @@ int main(void)
    mongoc_cleanup ();
    return 0;
 }
-
