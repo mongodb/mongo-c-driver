@@ -5950,6 +5950,7 @@ buildvariants:
     MARCH: "i386"
   run_on:
     - ubuntu1604-build
+    - ubuntu1604-test
   tasks:
     - "debug-compile-scan-build"
     - "release-compile"
@@ -5967,6 +5968,7 @@ buildvariants:
     CC: "clang"
   run_on:
     - ubuntu1604-build
+    - ubuntu1604-test
   tasks:
     - "debug-compile-scan-build"
     - "release-compile"
@@ -6069,6 +6071,7 @@ buildvariants:
     MARCH: "i386"
   run_on:
   - ubuntu1604-build
+  - ubuntu1604-test
   tasks:
     - "debug-compile-coverage"
     - "release-compile"
@@ -6085,6 +6088,7 @@ buildvariants:
     CC: "gcc"
   run_on:
   - ubuntu1604-build
+  - ubuntu1604-test
   tasks:
     - "debug-compile-coverage"
     - "release-compile"
