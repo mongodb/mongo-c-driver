@@ -148,6 +148,28 @@
 
 
 /*
+ * MONGOC_ENABLE_SASL_CYRUS is set from configure to determine if we are
+ * compiled with Cyrus SASL support.
+ */
+#define MONGOC_ENABLE_SASL_CYRUS @MONGOC_ENABLE_SASL_CYRUS@
+
+#if MONGOC_ENABLE_SASL_CYRUS != 1
+#  undef MONGOC_ENABLE_SASL_CYRUS
+#endif
+
+
+/*
+ * MONGOC_ENABLE_SASL_SSPI is set from configure to determine if we are
+ * compiled with SSPI support.
+ */
+#define MONGOC_ENABLE_SASL_SSPI @MONGOC_ENABLE_SASL_SSPI@
+
+#if MONGOC_ENABLE_SASL_SSPI != 1
+#  undef MONGOC_ENABLE_SASL_SSPI
+#endif
+
+
+/*
  * MONGOC_HAVE_SASL_CLIENT_DONE is set from configure to determine if we
  * have SASL and its version is new enough to use sasl_client_done (),
  * which supersedes sasl_done ().

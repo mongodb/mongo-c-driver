@@ -69,6 +69,8 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-client-pool-private.h \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-cluster-private.h \
+	src/mongoc/mongoc-cluster-sasl-private.h \
+	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-collection-private.h \
 	src/mongoc/mongoc-counters-private.h \
 	src/mongoc/mongoc-cursor-array-private.h \
@@ -99,6 +101,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
+	src/mongoc/mongoc-sspi-private.h \
 	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-server-description-private.h \
 	src/mongoc/mongoc-server-stream-private.h \
@@ -253,6 +256,7 @@ endif
 endif
 
 if ENABLE_SASL
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sasl.c
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
 endif
 

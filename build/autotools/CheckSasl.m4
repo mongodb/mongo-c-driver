@@ -54,6 +54,8 @@ AC_SUBST(SASL_LIBS)
 dnl Let mongoc-config.h.in know about SASL status.
 if test "$sasl_mode" != "no" ; then
   AC_SUBST(MONGOC_ENABLE_SASL, 1)
+  AC_SUBST(MONGOC_ENABLE_SASL_CYRUS, 1)
+  AC_SUBST(MONGOC_ENABLE_SASL_SSPI, 0)
   
   AC_CHECK_LIB([sasl2],[sasl_client_done],
                [have_sasl_client_done=yes],
@@ -67,5 +69,7 @@ if test "$sasl_mode" != "no" ; then
 
 else
   AC_SUBST(MONGOC_ENABLE_SASL, 0)
+  AC_SUBST(MONGOC_ENABLE_SASL_CYRUS, 0)
+  AC_SUBST(MONGOC_ENABLE_SASL_SSPI, 0)
   AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)
 fi

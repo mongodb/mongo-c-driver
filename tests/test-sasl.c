@@ -16,7 +16,9 @@
 
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <mongoc-sasl-private.h>
+#endif
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -135,6 +137,7 @@ test_gssapi_kerberos (void *context)
 }
 
 
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 static void
 test_sasl_properties (void)
 {
@@ -169,6 +172,7 @@ test_sasl_properties (void)
    _mongoc_sasl_destroy (&sasl);
    mongoc_uri_destroy (uri);
 }
+#endif
 
 
 void
@@ -180,5 +184,7 @@ test_sasl_install (TestSuite *suite)
                       NULL,
                       NULL,
                       should_run_gssapi_kerberos);
+#ifdef MONGOC_ENABLE_SASL_CYRUS
    TestSuite_Add (suite, "/SASL/properties", test_sasl_properties);
+#endif
 }

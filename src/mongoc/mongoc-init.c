@@ -43,7 +43,7 @@
  Automatic cleanup is deprecated and will be removed in version 2.0.")
 #endif
 
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
 
 static void *
@@ -83,7 +83,7 @@ mongoc_sasl_mutex_free (void *mutex)
    bson_free (mutex);
 }
 
-#endif /* MONGOC_ENABLE_SASL */
+#endif /* MONGOC_ENABLE_SASL_CYRUS */
 
 
 static MONGOC_ONCE_FUN (_mongoc_do_init)
@@ -98,7 +98,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
    _mongoc_scram_startup ();
 #endif
 
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked
     * before mongoc_log_set_handler() can complete. */
    sasl_set_mutex (mongoc_sasl_mutex_alloc,
@@ -146,7 +146,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_cleanup)
    _mongoc_openssl_cleanup ();
 #endif
 
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #ifdef MONGOC_HAVE_SASL_CLIENT_DONE
    sasl_client_done ();
 #else

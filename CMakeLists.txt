@@ -9,7 +9,10 @@ set (ENABLE_SSL AUTO CACHE STRING
      case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
      required for authenticating to MongoDB 3.0 and later.")
 
-option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
+set (ENABLE_SASL AUTO CACHE STRING
+     "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
+     SASL, \"SSPI\" to use Windows Native SSPI, \"AUTO\",\ or \"OFF\". These
+     options are case-sensitive.")
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
@@ -118,15 +121,35 @@ if (ENABLE_CRYPTO_SYSTEM_PROFILE)
    endif ()
 endif ()
 
-if (ENABLE_SASL)
-   include(FindSASL2)
-endif ()
-if (ENABLE_SASL AND SASL2_FOUND)
-   set (MONGOC_ENABLE_SASL 1)
+if (NOT (ENABLE_SASL STREQUAL CYRUS
+         OR ENABLE_SASL STREQUAL SSPI
+         OR ENABLE_SASL STREQUAL AUTO
+         OR ENABLE_SASL STREQUAL OFF))
+   message (FATAL_ERROR
+      "ENABLE_SASL option must be CYRUS, SSPI, AUTO, or OFF")
+endif()
+
+set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
+if (NOT ENABLE_SASL STREQUAL OFF)
+   if (ENABLE_SASL STREQUAL AUTO OR ENABLE_SASL STREQUAL CYRUS)
+      include(FindSASL2)
+   endif()
+
+   if (SASL2_FOUND)
+      set (MONGOC_ENABLE_SASL 1)
+      set (MONGOC_ENABLE_SASL_CYRUS 1)
+      set (MONGOC_ENABLE_SASL_SSPI 0)
+   else ((ENABLE_SASL STREQUAL SSPI OR ENABLE_SASL STREQUAL AUTO) AND WIN32)
+      set (MONGOC_ENABLE_SASL 1)
+      set (MONGOC_ENABLE_SASL_CYRUS 0)
+      set (MONGOC_ENABLE_SASL_SSPI 1)
+   endif ()
 else ()
-   set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
    set (MONGOC_ENABLE_SASL 0)
-endif ()
+   set (MONGOC_ENABLE_SASL_CYRUS 0)
+   set (MONGOC_ENABLE_SASL_SSPI 0)
+endif()
+
 
 if (ENABLE_AUTOMATIC_INIT_AND_CLEANUP)
    set (MONGOC_NO_AUTOMATIC_GLOBALS 0)
@@ -380,9 +403,18 @@ endif () # ENABLE_SSL
 
 
 if (MONGOC_ENABLE_SASL)
-   set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
-   set(LIBS ${LIBS} ${SASL2_LIBRARY})
-   include_directories(${SASL2_INCLUDE_DIR})
+   set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sasl.c)
+   if (MONGOC_ENABLE_SASL_CYRUS)
+      message (STATUS "Compiling against Cyrus SASL")
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+      set (LIBS ${LIBS} ${SASL2_LIBRARY})
+      include_directories(${SASL2_INCLUDE_DIR})
+   elseif (MONGOC_ENABLE_SASL_SSPI)
+      message (STATUS "Compiling against Windows SSPI")
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
+      set (LIBS ${LIBS} secur32.lib crypt32.lib Shlwapi.lib)
+   endif()
 endif()
 
 add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
