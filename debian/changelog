@@ -3,6 +3,7 @@ libmongoc (1.5.0-1) unstable; urgency=low
   [ A. Jesse Jiryu Davis ]
   * 1.5.0 Release
   * Remove symbols file
+  * Add libbson-dev and libssl-dev dependencies (Closes: #843495)
 
   [ Ondřej Surý ]
   * Update gbp branch
