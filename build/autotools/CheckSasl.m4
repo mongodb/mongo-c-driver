@@ -15,10 +15,13 @@ AS_IF([test "$enable_sasl" != "no"],[
         AC_MSG_ERROR([You must install the Cyrus SASL libraries and development headers to enable SASL support.])
       fi
 
+      old_CFLAGS=$CFLAGS
+      CFLAGS=$SASL_CFLAGS
       AC_CHECK_HEADER([sasl/sasl.h],[have_sasl_headers=yes],[have_sasl_headers=no])
       if test "$have_sasl_headers" = "no" -a "$enable_sasl" = "yes" ; then
         AC_MSG_ERROR([You must install the Cyrus SASL development headers to enable SASL support.])
       fi
+      CFLAGS=$old_CFLAGS
 
       if test "$have_sasl_headers" -a "$have_sasl2_lib" = "yes" ; then
         sasl_mode=sasl2
