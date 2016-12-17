@@ -1,3 +1,27 @@
+mongo-c-driver 1.5.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.1. This is a bugfix release:
+
+  * Fix SEGFAULT with performance counters on NUMA (thanks to Jonathan Wang).
+  * Prevent rare assertion error in mongoc_cluster_stream_for_server.
+  * Improve error messages from auth failure.
+  * Escape quotes when appending CFLAGS to handshake metadata.
+  * Fix OpenSSL header lookups in non-default paths.
+  * Fix build failure with LibreSSL.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeroen Ooms
+  * Jonathan Wang
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.0
 ====================
 
