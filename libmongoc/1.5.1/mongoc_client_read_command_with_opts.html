@@ -1,0 +1,278 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>mongoc_client_read_command_with_opts()</title>
+<link rel="stylesheet" type="text/css" href="C.css">
+<script type="text/javascript" src="jquery.js"></script><script type="text/javascript" src="jquery.syntax.js"></script><script type="text/javascript" src="yelp.js"></script>
+            <style type="text/css">
+              .section-anchor {
+                  display: block;
+                  opacity: 0;
+                  float: left;
+                  margin-left: -0.8em;
+                  padding-right: 0.2em;
+                  margin-top: 0.2em;
+                  cursor: pointer;
+              }
+
+              .section-anchor:hover {
+                  opacity: 1;
+              }
+
+              .footer {
+                  float: right;
+                  padding: 1em 0;
+                  font-style: italic;
+              }
+            </style>
+            <script type="text/javascript">
+              document.addEventListener("DOMContentLoaded", function() {
+                  // For each section.
+                  var elems = document.querySelectorAll('.sect');
+                  for (var i = 0; i < elems.length; i++) {
+                      // Make a closure to remember what "a" is.
+                      (function() {
+                          var section = elems[i];
+                          if (!section.id) {
+                            return;
+                          }
+
+                          var a = document.createElement('a');
+                          a.href = '#' + section.id;
+                          a.innerHTML = '&sect;';
+                          a.classList.add('section-anchor');
+                          section.insertBefore(a, section.firstChild);
+
+                          var header = section.querySelector('h1, h2, h3, h4');
+                          var mouseEnter = function() {
+                              a.style.opacity = 1;
+                          };
+
+                          var mouseLeave = function() {
+                              a.style.opacity = 0;
+                          };
+
+                          header.addEventListener("mouseenter", mouseEnter);
+                          header.addEventListener("mouseleave", mouseLeave);
+                          a.addEventListener("mouseenter", mouseEnter);
+                          a.addEventListener("mouseleave", mouseLeave);
+                      })();
+                  };
+              });
+            </script>
+        </head>
+<body><div class="page" role="main">
+<div class="header"><div class="trails" role="navigation"><div class="trail">
+<a class="trail" href="index.html" title="MongoDB C Driver">MongoDB C Driver</a> › <a class="trail" href="index.html#api-reference" title="API Reference">API Reference</a> » <a class="trail" href="mongoc_client_t.html" title="mongoc_client_t">mongoc_client_t</a> » </div></div></div>
+<div class="body">
+<div class="hgroup"><h1 class="title"><span class="title">mongoc_client_read_command_with_opts()</span></h1></div>
+<div class="region">
+<div class="contents"></div>
+<div id="synopsis" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Synopsis</span></h2></div>
+<div class="region"><div class="contents">
+<div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">bool
+mongoc_client_read_command_with_opts (mongoc_client_t           *client,
+                                      const char                *db_name,
+                                      const bson_t              *command,
+                                      const mongoc_read_prefs_t *read_prefs,
+                                      const bson_t              *opts,
+                                      bson_t                    *reply,
+                                      bson_error_t              *error);</pre></div></div></div></div></div>
+<p class="p">Execute a command on the server, applying logic that is specific to commands that read, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use <span class="code"><a href="mongoc_client_command_simple.html" title="mongoc_client_command_simple()">mongoc_client_command_simple</a></span>.</p>
+<p class="p">Use this function for commands that read such as "count" or "distinct". Read concern is applied from <span class="code">opts</span> or else from <span class="code">client</span>. Collation is applied from <span class="code">opts</span> (see example below). Read concern and collation both require MongoDB 3.2 or later, otherwise an error is returned. Read preferences are applied from <span class="code">read_prefs</span> or else from <span class="code">client</span>. No write concern is applied.</p>
+<p class="p">To target a specific server, include an integer "serverId" field in <span class="code">opts</span> with an id obtained first by calling <span class="code"><a href="mongoc_client_select_server.html" title="mongoc_client_select_server()">mongoc_client_select_server</a></span>, then <span class="code"><a href="mongoc_server_description_id.html" title="mongoc_server_description_id()">mongoc_server_description_id</a></span> on its return value.</p>
+<p class="p"><span class="code">reply</span> is always initialized, and must be freed with <span class="code"><a href="http://mongoc.org/libbson/current/bson_destroy.html" title="bson:bson_destroy">bson_destroy()</a></span>.</p>
+</div></div>
+</div></div>
+<div id="parameters" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Parameters</span></h2></div>
+<div class="region"><div class="contents"><div class="table"><div class="inner"><div class="region"><table class="table">
+<tr>
+<td><p class="p">client</p></td>
+<td><p class="p">A <span class="code"><a href="mongoc_client_t.html" title="mongoc_client_t">mongoc_client_t</a></span>.</p></td>
+</tr>
+<tr>
+<td><p class="p">db_name</p></td>
+<td><p class="p">The name of the database to run the command on.</p></td>
+</tr>
+<tr>
+<td><p class="p">command</p></td>
+<td><p class="p">A <span class="code"><a href="http://mongoc.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> containing the command specification.</p></td>
+</tr>
+<tr>
+<td><p class="p">read_prefs</p></td>
+<td><p class="p">An optional <span class="code"><a href="mongoc_read_prefs_t.html" title="mongoc_read_prefs_t">mongoc_read_prefs_t</a></span>.</p></td>
+</tr>
+<tr>
+<td><p class="p">opts</p></td>
+<td><p class="p">A <span class="code"><a href="http://mongoc.org/libbson/current/bson_t.html" title="bson:bson_t">bson_t</a></span> containing additional options.</p></td>
+</tr>
+<tr>
+<td><p class="p">reply</p></td>
+<td><p class="p">A location for the resulting document.</p></td>
+</tr>
+<tr>
+<td><p class="p">error</p></td>
+<td><p class="p">An optional location for a <span class="code"><a href="errors.html" title="Error Reporting">bson_error_t</a></span> or <span class="code">NULL</span>.</p></td>
+</tr>
+</table></div></div></div></div></div>
+</div></div>
+<div id="errors" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Errors</span></h2></div>
+<div class="region"><div class="contents"><p class="p">Errors are propagated via the <span class="code">error</span> parameter.</p></div></div>
+</div></div>
+<div id="return" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Returns</span></h2></div>
+<div class="region"><div class="contents"><p class="p"><span class="code">true</span> if successful; otherwise <span class="code">false</span> and <span class="code">error</span> is set.</p></div></div>
+</div></div>
+<div id="example" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Example</span></h2></div>
+<div class="region"><div class="contents"><div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">/*
+
+Demonstrates how to prepare options for mongoc_client_read_command_with_opts and
+mongoc_client_write_command_with_opts. First it calls "cloneCollectionAsCapped"
+command with "writeConcern" option, then "distinct" command with "collation" and
+"readConcern" options,
+
+Start a MongoDB 3.4 replica set with --enableMajorityReadConcern and insert two
+documents:
+
+$ mongo
+MongoDB Enterprise replset:PRIMARY&gt; db.my_collection.insert({x: 1, y: "One"})
+WriteResult({ "nInserted" : 1 })
+MongoDB Enterprise replset:PRIMARY&gt; db.my_collection.insert({x: 2, y: "Two"})
+WriteResult({ "nInserted" : 1 })
+
+Build and run the example:
+
+gcc example-command-with-opts.c -o example-command-with-opts $(pkg-config --cflags --libs libmongoc-1.0)
+./example-command-with-opts [CONNECTION_STRING]
+cloneCollectionAsCapped: { "ok" : 1 }
+distinct: { "values" : [ 1, 2 ], "ok" : 1 }
+
+*/
+
+#include &lt;mongoc.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int
+main (int   argc,
+      char *argv[])
+{
+   mongoc_client_t *client;
+   const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
+   bson_t *cmd;
+   bson_t *opts;
+   mongoc_write_concern_t *write_concern;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_read_concern_t *read_concern;
+   bson_t reply;
+   bson_error_t error;
+   char *json;
+
+   mongoc_init ();
+
+   if (argc &gt; 1) {
+      uristr = argv [1];
+   }
+
+   client = mongoc_client_new (uristr);
+
+   if (!client) {
+      fprintf (stderr, "Failed to parse URI.\n");
+      return EXIT_FAILURE;
+   }
+
+   mongoc_client_set_error_api (client, 2);
+
+   cmd = BCON_NEW ("cloneCollectionAsCapped", BCON_UTF8 ("my_collection"),
+                   "toCollection", BCON_UTF8 ("my_capped_collection"),
+                   "size", BCON_INT64 (1024 * 1024));
+
+   /* include write concern "majority" in command options */
+   write_concern = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (write_concern, 10000 /* wtimeoutMS */);
+   opts = bson_new ();
+   mongoc_write_concern_append (write_concern, opts);
+
+   if (mongoc_client_write_command_with_opts (client,
+                                              "test",
+                                              cmd,
+                                              opts,
+                                              &amp;reply,
+                                              &amp;error)) {
+      json = bson_as_json (&amp;reply, NULL);
+      printf ("cloneCollectionAsCapped: %s\n", json);
+      bson_free (json);
+   } else {
+      fprintf (stderr, "cloneCollectionAsCapped: %s\n", error.message);
+   }
+
+   bson_free (cmd);
+   bson_free (opts);
+
+   /* distinct values of "x" in "my_collection" where "y" sorts after "one" */
+   cmd = BCON_NEW ("distinct", BCON_UTF8 ("my_collection"),
+                   "key", BCON_UTF8 ("x"),
+                   "query", "{", "y", "{", "$gt", BCON_UTF8 ("one"), "}", "}");
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* "One" normally sorts before "one"; make "One" sort after "one" */
+   opts = BCON_NEW ("collation", "{",
+                    "locale", BCON_UTF8 ("en_US"),
+                    "caseFirst", BCON_UTF8 ("lower"),
+                    "}");
+
+   /* add a read concern to "opts" */
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+
+   mongoc_read_concern_append (read_concern, opts);
+
+   if (mongoc_client_read_command_with_opts (client,
+                                             "test",
+                                             cmd,
+                                             read_prefs,
+                                             opts,
+                                             &amp;reply,
+                                             &amp;error)) {
+      json = bson_as_json (&amp;reply, NULL);
+      printf ("distinct: %s\n", json);
+      bson_free (json);
+   } else {
+      fprintf (stderr, "distinct: %s\n", error.message);
+   }
+
+   bson_destroy (cmd);
+   bson_destroy (opts);
+   bson_destroy (&amp;reply);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_write_concern_destroy (write_concern);
+   mongoc_client_destroy (client);
+
+   mongoc_cleanup ();
+
+   return EXIT_SUCCESS;
+}</pre></div></div></div></div></div></div></div>
+</div></div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h2><span class="title">More Information</span></h2></div>
+<div class="region"><ul><li class="links "><a href="mongoc_client_t.html" title="mongoc_client_t">mongoc_client_t</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+<div class="clear"></div>
+</div>
+<div class="footer"><section id="version">MongoDB C Driver
+    1.5.1
+</section></div>
+</div></body>
+</html>
