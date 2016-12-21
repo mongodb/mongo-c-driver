@@ -151,7 +151,13 @@ class Convert(object):
         # and escape text like "\0" as "\\0". We'll replace all "-" with "\(hy",
         # which is an explicit hyphen, but leave alone the first line's
         # "name \- description" text.
-        return replaceables.sub(self._escape_char, text)
+        escaped = replaceables.sub(self._escape_char, text)
+        if escaped.startswith('.'):
+            # Lines like ". Next sentence" are misformatted by groff, do
+            # "\[char46] Next sentence" instead.
+            return r'\[char46]' + escaped[1:]
+        else:
+            return escaped
 
     def _compressWhitespace(self, text):
         return ' '.join(text.split())
@@ -162,8 +168,11 @@ class Convert(object):
     def _write_noescape(self, text):
         self.outFile.write(text)
 
-    def _writeCommand(self, text):
-        self._write_noescape(text)
+    def _writeCommand(self, command, text=None):
+        self._write_noescape(command)
+        if text:
+            self._write(' ')  # Escapes the text.
+            self._write(text)
         self._write('\n')
 
     def _writeLine(self, text):
@@ -192,8 +201,9 @@ class Convert(object):
         date = datetime.utcfromtimestamp(mtime).strftime('%Y-%m-%d')
 
         title = self.title.replace('()','').upper()
-        self._write('.TH "%s" "%s" "%s" "%s"\n' % (title, self.section, date, GROUP))
-        self._write('.SH NAME\n')
+        self._writeCommand(
+            '.TH', '"%s" "%s" "%s" "%s"\n' % (title, self.section, date, GROUP))
+        self._writeCommand('.SH NAME\n')
         self._write_noescape('%s \\- %s\n' % (self.title, self.subtitle))
 
     def _generateSection(self, section):
@@ -203,7 +213,7 @@ class Convert(object):
                 if child.text is None:
                     raise RuntimeError("Can't put formatting tags in <title>")
                 s = child.text.strip().upper()
-                self._writeCommand('.SH "%s"' % s.replace('"', ''))
+                self._writeCommand('.SH', '"%s"' % s.replace('"', ''))
         for child in section.getchildren():
             self._generateElement(child)
             if child.tail:
@@ -218,11 +228,12 @@ class Convert(object):
         self._writeCommand('.fi')
 
     def _generateCode(self, code):
+        if code.tag.endswith('output'):
+            self._writeCommand('.br')
         text = code.text
         is_synopsis = self._get_parent(code).tag.endswith('synopsis')
         if text and '\n' not in text and not is_synopsis:
-            text = text.replace('()', '(%s)' % self.section)
-            self._writeCommand('.B ' + text)
+            self._writeCommand('.B', text)
         else:
             self._writeCommand('.nf')
             self._writeLine(code.text)
@@ -248,6 +259,8 @@ class Convert(object):
                 self._writeLine(self._compressWhitespace(child.tail))
 
     def _generateScreen(self, screen):
+        if screen.text:
+            self._generateCode(screen)
         for child in screen.getchildren():
             self._generateElement(child)
 
@@ -260,7 +273,7 @@ class Convert(object):
             self._generateElement(child)
 
     def _generateEM(self, em):
-        self._writeCommand('.B %s' % em.text)
+        self._writeCommand('.B', em.text)
 
     def _generateOutput(self, output):
         self._generateCode(output)
@@ -331,15 +344,15 @@ class Convert(object):
         if text and '()' in text:
             text = text.replace('()', '(%s)' % self.section)
         if text:
-            self._writeCommand('.B ' + text)
+            self._writeCommand('.B', text)
 
     def _generateSections(self):
         for section in self.sections:
             self._generateElement(section)
 
     def _generateFooter(self):
-        self._write('\n.B')
-        self._write('\n.SH COLOPHON')
+        self._writeCommand('\n.B')
+        self._writeCommand('\n.SH COLOPHON')
         self._write('\nThis page is part of %s.' % GROUP)
         self._write('\nPlease report any bugs at %s.' % BUG_URL.replace('-','\\-'))
 

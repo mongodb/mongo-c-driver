@@ -5,7 +5,8 @@
   <info>
     <link type="guide" xref="tutorial#crud-operations"/>
   </info>
-
+  <title>Finding a Document</title>
+  <section id="description">
   <title>Finding a Document</title>
   <p>To query a MongoDB collection with the C driver, use the function <code xref="mongoc_collection_find_with_opts">mongoc_collection_find_with_opts()</code>. This returns a <link xref="mongoc_cursor_t">cursor</link> to the matching documents. The following examples iterate through the result cursors and print the matches to <code>stdout</code> as JSON strings.</p>
   <p>Use a document as a query specifier; for example,</p>
@@ -118,4 +119,5 @@ $ ./find-specific
   <screen><output style="prompt">C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 find-specific.c
 C:\> find-specific
 { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }</output></screen>
+  </section>
 </page>
