@@ -192,7 +192,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    /* See find, getMore, and killCursors Spec for batchSize rules */
    if (batch_size) {
       bson_append_int64 (
-         command, BATCH_SIZE, BATCH_SIZE_LEN, abs (_mongoc_n_return (cursor)));
+         command, MONGOC_CURSOR_BATCH_SIZE, MONGOC_CURSOR_BATCH_SIZE_LEN, abs (_mongoc_n_return (cursor)));
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable
@@ -202,8 +202,8 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       option maxAwaitTimeMS. If no maxAwaitTimeMS is specified, the driver
       SHOULD not set maxTimeMS on the getMore command."
     */
-   await_data = _mongoc_cursor_get_opt_bool (cursor, TAILABLE) &&
-                _mongoc_cursor_get_opt_bool (cursor, AWAIT_DATA);
+   await_data = _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_TAILABLE) &&
+                _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_AWAIT_DATA);
 
 
    if (await_data) {
@@ -211,7 +211,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
          (int32_t) mongoc_cursor_get_max_await_time_ms (cursor);
       if (max_await_time_ms) {
          bson_append_int32 (
-            command, MAX_TIME_MS, MAX_TIME_MS_LEN, max_await_time_ms);
+            command, MONGOC_CURSOR_MAX_TIME_MS, MONGOC_CURSOR_MAX_TIME_MS_LEN, max_await_time_ms);
       }
    }
 
