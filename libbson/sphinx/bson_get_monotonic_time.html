@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>System Clock &#8212; libbson 1.5.1</title>
+    
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bson_iter_t" href="bson_iter_t.html" />
+    <link rel="prev" title="bson_strerror_r()" href="bson_strerror_r.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+  
+  
+
+
+    <div class="document">
+    <div class="documentwrapper">
+    <div class="body" role="main">
+      
+        <div class="related">
+          <ul>
+            
+              <li class="nav-item"><a href="index.html">libbson 1.5.1</a></li>
+              
+            
+          </ul>
+        </div>
+      
+      
+  <div class="section" id="system-clock">
+<h1>System Clock<a class="headerlink" href="#system-clock" title="Permalink to this headline">¶</a></h1>
+<p>BSON Clock Abstraction</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="kt">int64_t</span>
+<span class="nf">bson_get_monotonic_time</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="kt">int</span>
+<span class="nf">bson_gettimeofday</span> <span class="p">(</span><span class="k">struct</span> <span class="n">timeval</span> <span class="o">*</span><span class="n">tv</span><span class="p">,</span>
+<span class="cp">#if defined(__SUNPRO_C)</span>
+                   <span class="kt">void</span> <span class="o">*</span><span class="n">tz</span><span class="p">);</span>
+<span class="cp">#else</span>
+                                 <span class="k">struct</span> <span class="n">timezone</span> <span class="o">*</span><span class="n">tz</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The clock abstraction in Libbson provides a cross-platform way to handle timeouts within the BSON library. It abstracts the differences in implementations of <code class="docutils literal"><span class="pre">gettimeofday()</span></code> as well as providing a monotonic (incrementing only) clock in microseconds.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+
+
+    </div>
+    </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    <div class="footer-nav">
+      <a class="footer-nav-button footer-nav-button-prev" title="bson_strerror_r()" href="bson_strerror_r.html">&laquo; Previous: bson_strerror_r()</a>
+      <a class="footer-nav-button footer-nav-button-next" title="bson_iter_t" href="bson_iter_t.html">Next: bson_iter_t &raquo;</a>
+    </div>
+    <div class="colophon">
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    </div>
+  </div>
+  
+  </body>
+</html>

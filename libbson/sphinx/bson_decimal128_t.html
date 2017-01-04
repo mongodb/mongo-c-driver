@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bson_decimal128_t &#8212; libbson 1.5.1</title>
+    
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bson_decimal128_from_string()" href="bson_decimal128_from_string.html" />
+    <link rel="prev" title="bson_context_new()" href="bson_context_new.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+  
+  
+
+
+    <div class="document">
+    <div class="documentwrapper">
+    <div class="body" role="main">
+      
+        <div class="related">
+          <ul>
+            
+              <li class="nav-item"><a href="index.html">libbson 1.5.1</a></li>
+              
+            
+          </ul>
+        </div>
+      
+      
+  <div class="section" id="bson-decimal128-t">
+<h1>bson_decimal128_t<a class="headerlink" href="#bson-decimal128-t" title="Permalink to this headline">¶</a></h1>
+<p>BSON Decimal128 Abstraction</p>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+<span class="cp">#if BSON_BYTE_ORDER == BSON_LITTLE_ENDIAN</span>
+   <span class="kt">uint64_t</span> <span class="n">low</span><span class="p">;</span>
+   <span class="kt">uint64_t</span> <span class="n">high</span><span class="p">;</span>
+<span class="cp">#elif BSON_BYTE_ORDER == BSON_BIG_ENDIAN</span>
+   <span class="kt">uint64_t</span> <span class="n">high</span><span class="p">;</span>
+   <span class="kt">uint64_t</span> <span class="n">low</span><span class="p">;</span>
+<span class="cp">#endif</span>
+<span class="p">}</span> <span class="n">bson_decimal128_t</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="symbol reference internal" href="#"><span class="doc">bson_decimal128_t</span></a> structure
+represents the IEEE-754 Decimal128 data type.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bson_decimal128_from_string.html">bson_decimal128_from_string()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_decimal128_to_string.html">bson_decimal128_to_string()</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+
+<span class="kt">int</span>
+<span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+   <span class="kt">char</span> <span class="n">string</span><span class="p">[</span><span class="n">BSON_DECIMAL128_STRING</span><span class="p">];</span>
+   <span class="n">bson_decimal128_t</span> <span class="n">decimal128</span><span class="p">;</span>
+
+   <span class="n">bson_decimal128_from_string</span> <span class="p">(</span><span class="s">&quot;100.00&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">decimal128</span><span class="p">);</span>
+   <span class="n">bson_decimal128_to_string</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">decimal128</span><span class="p">,</span> <span class="n">string</span><span class="p">);</span>
+   <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;Decimal128 value: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">);</span>
+
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+    </div>
+    </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    <div class="footer-nav">
+      <a class="footer-nav-button footer-nav-button-prev" title="bson_context_new()" href="bson_context_new.html">&laquo; Previous: bson_context_new()</a>
+      <a class="footer-nav-button footer-nav-button-next" title="bson_decimal128_from_string()" href="bson_decimal128_from_string.html">Next: bson_decimal128_from_string() &raquo;</a>
+    </div>
+    <div class="colophon">
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    </div>
+  </div>
+  
+  </body>
+</html>

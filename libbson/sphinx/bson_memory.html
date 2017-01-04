@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Memory Management &#8212; libbson 1.5.1</title>
+    
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bson_free()" href="bson_free.html" />
+    <link rel="prev" title="bson_md5_init()" href="bson_md5_init.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+  
+  
+
+
+    <div class="document">
+    <div class="documentwrapper">
+    <div class="body" role="main">
+      
+        <div class="related">
+          <ul>
+            
+              <li class="nav-item"><a href="index.html">libbson 1.5.1</a></li>
+              
+            
+          </ul>
+        </div>
+      
+      
+  <div class="section" id="memory-management">
+<h1>Memory Management<a class="headerlink" href="#memory-management" title="Permalink to this headline">¶</a></h1>
+<p>BSON Memory Abstraction.</p>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Libbson contains a lightweight memory abstraction to make portability to new platforms easier. Additionally, it helps us integrate with interesting higher-level languages. One caveat, however, is that Libbson is not designed to deal with Out of Memory (OOM) situations. Doing so requires extreme dilligence throughout the application stack that has rarely been implemented correctly. This may change in the future. As it stands now, Libbson will <code class="docutils literal"><span class="pre">abort()</span></code> under OOM situations.</p>
+<p>To aid in language binding integration, Libbson allows for setting a custom memory allocator via <a class="symbol reference internal" href="bson_mem_set_vtable.html"><span class="doc">bson_mem_set_vtable()</span></a>.  This allocation may be reversed via <a class="symbol reference internal" href="bson_mem_restore_vtable.html"><span class="doc">bson_mem_restore_vtable()</span></a>.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="bson_free.html">bson_free()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_malloc.html">bson_malloc()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_malloc0.html">bson_malloc0()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_mem_restore_vtable.html">bson_mem_restore_vtable()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_mem_set_vtable.html">bson_mem_set_table()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_realloc.html">bson_realloc()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_realloc_ctx.html">bson_realloc_ctx()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_realloc_func.html">bson_realloc_func</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bson_zero_free.html">bson_zero_free()</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+    </div>
+    </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    <div class="footer-nav">
+      <a class="footer-nav-button footer-nav-button-prev" title="bson_md5_init()" href="bson_md5_init.html">&laquo; Previous: bson_md5_init()</a>
+      <a class="footer-nav-button footer-nav-button-next" title="bson_free()" href="bson_free.html">Next: bson_free() &raquo;</a>
+    </div>
+    <div class="colophon">
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    </div>
+  </div>
+  
+  </body>
+</html>

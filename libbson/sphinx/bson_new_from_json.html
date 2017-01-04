@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bson_new_from_json() &#8212; libbson 1.5.1</title>
+    
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bson_reinit()" href="bson_reinit.html" />
+    <link rel="prev" title="bson_new_from_data()" href="bson_new_from_data.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+  
+  
+
+
+    <div class="document">
+    <div class="documentwrapper">
+    <div class="body" role="main">
+      
+        <div class="related">
+          <ul>
+            
+              <li class="nav-item"><a href="index.html">libbson 1.5.1</a></li>
+              
+                &raquo; <li class="nav-item"><a href="bson_t.html">bson_t</a></li>
+              
+            
+          </ul>
+        </div>
+      
+      
+  <div class="section" id="bson-new-from-json">
+<h1>bson_new_from_json()<a class="headerlink" href="#bson-new-from-json" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="n">bson_t</span> <span class="o">*</span>
+<span class="nf">bson_new_from_json</span> <span class="p">(</span><span class="k">const</span> <span class="kt">uint8_t</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="n">len</span><span class="p">,</span> <span class="n">bson_error_t</span> <span class="o">*</span><span class="n">error</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">data</span></code>: A UTF-8 encoded string containing valid JSON.</li>
+<li><code class="docutils literal"><span class="pre">len</span></code>: The length of <code class="docutils literal"><span class="pre">data</span></code> in bytes excluding a trailing <code class="docutils literal"><span class="pre">\0</span></code> or -1 to determine the length with <code class="docutils literal"><span class="pre">strlen()</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">error</span></code>: An optional location for a <a class="symbol reference internal" href="bson_error_t.html"><span class="doc">bson_error_t</span></a>.</li>
+</ul>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">bson_new_from_json()</span></code> function allocates and initialize a new <a class="symbol reference internal" href="bson_t.html"><span class="doc">bson_t</span></a> by parsing the JSON found in <code class="docutils literal"><span class="pre">data</span></code>. Only a single JSON object may exist in <code class="docutils literal"><span class="pre">data</span></code> or an error will be set and NULL returned.</p>
+</div>
+<div class="section" id="errors">
+<h2>Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h2>
+<p>Errors are propagated via the <code class="docutils literal"><span class="pre">error</span></code> parameter.</p>
+</div>
+<div class="section" id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<p>A newly allocated <a class="symbol reference internal" href="bson_t.html"><span class="doc">bson_t</span></a> if successful, otherwise NULL and <code class="docutils literal"><span class="pre">error</span></code> is set.</p>
+</div>
+</div>
+
+
+    </div>
+    </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    <div class="footer-nav">
+      <a class="footer-nav-button footer-nav-button-prev" title="bson_new_from_data()" href="bson_new_from_data.html">&laquo; Previous: bson_new_from_data()</a>
+      <a class="footer-nav-button footer-nav-button-next" title="bson_reinit()" href="bson_reinit.html">Next: bson_reinit() &raquo;</a>
+    </div>
+    <div class="colophon">
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    </div>
+  </div>
+  
+  </body>
+</html>

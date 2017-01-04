@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>bson_iter_init() &#8212; libbson 1.5.1</title>
+    
+    <link rel="stylesheet" href="_static/readable.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bson_iter_init_find()" href="bson_iter_init_find.html" />
+    <link rel="prev" title="bson_iter_find_descendant()" href="bson_iter_find_descendant.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+  
+  
+
+
+    <div class="document">
+    <div class="documentwrapper">
+    <div class="body" role="main">
+      
+        <div class="related">
+          <ul>
+            
+              <li class="nav-item"><a href="index.html">libbson 1.5.1</a></li>
+              
+                &raquo; <li class="nav-item"><a href="bson_iter_t.html">bson_iter_t</a></li>
+              
+            
+          </ul>
+        </div>
+      
+      
+  <div class="section" id="bson-iter-init">
+<h1>bson_iter_init()<a class="headerlink" href="#bson-iter-init" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="kt">bool</span>
+<span class="nf">bson_iter_init</span> <span class="p">(</span><span class="n">bson_iter_t</span> <span class="o">*</span><span class="n">iter</span><span class="p">,</span> <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">bson</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">iter</span></code>: A <a class="symbol reference internal" href="bson_iter_t.html"><span class="doc">bson_iter_t</span></a>.</li>
+<li><code class="docutils literal"><span class="pre">bson</span></code>: A <a class="symbol reference internal" href="bson_t.html"><span class="doc">bson_t</span></a>.</li>
+</ul>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">bson_iter_init()</span></code> function shall initialize <code class="docutils literal"><span class="pre">iter</span></code> to iterate upon the BSON document <code class="docutils literal"><span class="pre">bson</span></code>. Upon initialization, <code class="docutils literal"><span class="pre">iter</span></code> is placed before the first element. Callers must call <a class="symbol reference internal" href="bson_iter_next.html"><span class="doc">bson_iter_next()</span></a>, <a class="symbol reference internal" href="bson_iter_find.html"><span class="doc">bson_iter_find()</span></a>, or <a class="symbol reference internal" href="bson_iter_find_case.html"><span class="doc">bson_iter_find_case()</span></a> to advance to an element.</p>
+</div>
+<div class="section" id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<p>Returns true if the iter was successfully initialized.</p>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="k">static</span> <span class="kt">void</span>
+<span class="nf">print_doc_id</span> <span class="p">(</span><span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_iter_t</span> <span class="n">iter</span><span class="p">;</span>
+   <span class="n">bson_oid_t</span> <span class="n">oid</span><span class="p">;</span>
+   <span class="kt">char</span> <span class="n">oidstr</span><span class="p">[</span><span class="mi">25</span><span class="p">];</span>
+
+   <span class="k">if</span> <span class="p">(</span><span class="n">bson_iter_init</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">,</span> <span class="n">doc</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">bson_iter_find</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">,</span> <span class="s">&quot;_id&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+       <span class="n">BSON_ITER_HOLDS_OID</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">bson_iter_oid</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">oid</span><span class="p">);</span>
+      <span class="n">bson_oid_to_string</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">oid</span><span class="p">,</span> <span class="n">oidstr</span><span class="p">);</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">oidstr</span><span class="p">);</span>
+   <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;Document is missing _id.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* alternatively */</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">print_doc_id</span> <span class="p">(</span><span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_iter_t</span> <span class="n">iter</span><span class="p">;</span>
+   <span class="n">bson_oid_t</span> <span class="n">oid</span><span class="p">;</span>
+   <span class="kt">char</span> <span class="n">oidstr</span><span class="p">[</span><span class="mi">25</span><span class="p">];</span>
+
+   <span class="k">if</span> <span class="p">(</span><span class="n">bson_iter_init_find</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="s">&quot;_id&quot;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">BSON_ITER_HOLDS_OID</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">bson_iter_oid</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">iter</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">oid</span><span class="p">);</span>
+      <span class="n">bson_oid_to_string</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">oid</span><span class="p">,</span> <span class="n">oidstr</span><span class="p">);</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">oidstr</span><span class="p">);</span>
+   <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;Document is missing _id.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+    </div>
+    </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="footer">
+    <div class="footer-nav">
+      <a class="footer-nav-button footer-nav-button-prev" title="bson_iter_find_descendant()" href="bson_iter_find_descendant.html">&laquo; Previous: bson_iter_find_descendant()</a>
+      <a class="footer-nav-button footer-nav-button-next" title="bson_iter_init_find()" href="bson_iter_init_find.html">Next: bson_iter_init_find() &raquo;</a>
+    </div>
+    <div class="colophon">
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    </div>
+  </div>
+  
+  </body>
+</html>
