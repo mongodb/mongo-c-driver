@@ -134,7 +134,11 @@ div.sphinxsidebar ul {
     margin: 10px 0 20px;
     padding: 0;
 }
- 
+
+div.sphinxsidebar ul li.current {
+    font-weight: bold;
+}
+
 div.sphinxsidebar a {
     color: #444;
 }
@@ -143,6 +147,10 @@ div.sphinxsidebar a:hover {
     color: #d00;
 }
  
+div.sphinxsidebar a.fullindex {
+    font-weight: bold;
+}
+
 div.sphinxsidebar input {
     border: 1px solid #ccc;
     font-family: sans-serif;
