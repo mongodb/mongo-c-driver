@@ -1,7 +1,7 @@
 :man_page: bson_index
 
-Libbson
-=======
+Libbson |version|
+=================
 
 A Cross Platform BSON Library for C
 

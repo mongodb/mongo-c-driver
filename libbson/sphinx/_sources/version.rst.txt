@@ -8,8 +8,7 @@ Versioning Macros and Functions
 Macros
 ------
 
-The following preprocessor macros can be used to perform various checks based on the version of the library you are compiling against.
-    This may be useful if you only want to enable a feature on a certain version of the library.
+The following preprocessor macros can be used to perform various checks based on the version of the library you are compiling against. This may be useful if you only want to enable a feature on a certain version of the library.
 
 Synopsis
 --------
