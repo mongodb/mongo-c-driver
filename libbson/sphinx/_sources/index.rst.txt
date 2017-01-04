@@ -5,19 +5,17 @@ Libbson |version|
 
 A Cross Platform BSON Library for C
 
-Installation
-------------
+Contents
+--------
 
 .. toctree::
 
   installing
 
-Getting Started
----------------
-
 .. toctree::
   :titlesonly:
   :maxdepth: 1
+  :caption: Getting Started
 
   creating
   errors
@@ -25,33 +23,27 @@ Getting Started
   parsing
   utf8
 
-Guides
-------
-
 .. toctree::
   :titlesonly:
   :maxdepth: 1
+  :caption: Guides
 
   streaming-bson
   json
   performance
 
-Cross Platform Notes
---------------------
-
 .. toctree::
   :titlesonly:
   :maxdepth: 1
+  :caption: Cross Platform Notes
 
   endianness
   threading
 
-API Reference
--------------
-
 .. toctree::
   :titlesonly:
   :maxdepth: 1
+  :caption: API Reference
 
   bson_t
   bson_context_t

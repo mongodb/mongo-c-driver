@@ -97,7 +97,7 @@ div.sphinxsidebar {
 div.sphinxsidebarwrapper {
     font-size: 14px;
     line-height: 1.5em;
-    padding: 10px 0 10px 10px;
+    padding: 10px 0;
 }
 
 div.sphinxsidebar h3,
@@ -107,6 +107,10 @@ div.sphinxsidebar h4 {
     font-weight: normal;
     margin: 0 0 5px 0;
     padding: 0;
+}
+
+div.sphinxsidebarwrapper h3:first-of-type {
+    margin-bottom: 44px;
 }
 
 div.sphinxsidebar h4 {
