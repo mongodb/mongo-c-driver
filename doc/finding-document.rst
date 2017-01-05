@@ -1,0 +1,131 @@
+:man_page: mongoc_finding_document
+
+Finding a Document
+==================
+
+Finding a Document
+------------------
+
+To query a MongoDB collection with the C driver, use the function :symbol:`mongoc_collection_find_with_opts() <mongoc_collection_find_with_opts>`. This returns a :doc:`cursor <mongoc_cursor_t>` to the matching documents. The following examples iterate through the result cursors and print the matches to ``stdout`` as JSON strings.
+
+Use a document as a query specifier; for example,
+
+.. code-block:: none
+
+  { "color" : "red" }
+
+will match any document with a field named "color" with value "red". An empty document ``{}`` can be used to match all documents.
+
+This first example uses an empty query specifier to find all documents in the database "mydb" and collection "mycoll".
+
+.. code-block:: none
+
+  #include <bson.h>
+  #include <mongoc.h>
+  #include <stdio.h>
+
+  int
+  main (int   argc,
+       char *argv[])
+  {
+    mongoc_client_t *client;
+    mongoc_collection_t *collection;
+    mongoc_cursor_t *cursor;
+    const bson_t *doc;
+    bson_t *query;
+    char *str;
+
+    mongoc_init ();
+
+    client = mongoc_client_new ("mongodb://localhost:27017/");
+    collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+    query = bson_new ();
+    cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+
+    while (mongoc_cursor_next (cursor, &doc)) {
+       str = bson_as_json (doc, NULL);
+       printf ("%s\n", str);
+       bson_free (str);
+    }
+
+    bson_destroy (query);
+    mongoc_cursor_destroy (cursor);
+    mongoc_collection_destroy (collection);
+    mongoc_client_destroy (client);
+    mongoc_cleanup ();
+
+    return 0;
+  }
+
+Compile the code and run it: 
+
+.. code-block:: none
+
+  $ gcc -o find find.c $(pkg-config --cflags --libs libmongoc-1.0)
+  $ ./find
+  { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }
+
+On Windows:
+
+.. code-block:: none
+
+  C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 find.c
+  C:\> find
+  { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }
+
+To look for a specific document, add a specifier to ``query``. This example adds a call to ``BSON_APPEND_UTF8()`` to look for all documents matching ``{"hello" : "world"}``.
+
+.. code-block:: none
+
+  #include <bson.h>
+    #include <mongoc.h>
+    #include <stdio.h>
+
+    int
+    main (int   argc,
+          char *argv[])
+    {
+        mongoc_client_t *client;
+        mongoc_collection_t *collection;
+        mongoc_cursor_t *cursor;
+        const bson_t *doc;
+        bson_t *query;
+        char *str;
+
+        mongoc_init ();
+
+        client = mongoc_client_new ("mongodb://localhost:27017/");
+        collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+        query = bson_new ();
+        BSON_APPEND_UTF8 (query, "hello", "world");
+
+        cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+
+        while (mongoc_cursor_next (cursor, &doc)) {
+            str = bson_as_json (doc, NULL);
+            printf ("%s\n", str);
+            bson_free (str);
+        }
+
+        bson_destroy (query);
+        mongoc_cursor_destroy (cursor);
+        mongoc_collection_destroy (collection);
+        mongoc_client_destroy (client);
+        mongoc_cleanup ();
+
+        return 0;
+    }
+  
+
+.. code-block:: none
+
+  $ gcc -o find-specific find-specific.c $(pkg-config --cflags --libs libmongoc-1.0)
+  $ ./find-specific
+  { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }
+
+.. code-block:: none
+
+  C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 find-specific.c
+  C:\> find-specific
+  { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }
+
