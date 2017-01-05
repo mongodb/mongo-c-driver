@@ -303,6 +303,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 
 
    switch (host->family) {
+   case AF_UNSPEC:
 #if defined(AF_INET6)
    case AF_INET6:
 #endif
