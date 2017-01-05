@@ -1,8 +1,15 @@
 *.7
+*.pyc
+.doctrees
+objects.inv
 html/*.html
 html/*.css
 html/*.js
 html/*.png
+html/_sources
+html/_static
+html/.buildinfo
+html/.nojekyll
 man/*.3
 mongoc_installing.page
 mongoc_version.page
