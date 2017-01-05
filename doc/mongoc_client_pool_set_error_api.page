@@ -17,7 +17,7 @@
 mongoc_client_pool_set_error_api (mongoc_client_pool_t *client,
                                   int32_t               version);
 ]]></code></synopsis>
-    <p>Configure how the C Driver reports errors. See <link xref="errors#error-api-version" />.</p>
+    <p>Configure how the C Driver reports errors. See <link xref="errors#error_api_version">Setting the Error API Version</link>.</p>
   </section>
 
   <section id="parameters">

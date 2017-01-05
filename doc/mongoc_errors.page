@@ -128,7 +128,7 @@
           <p><code>MONGOC_ERROR_QUERY_FAILURE</code></p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 1</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
         </td>
       </tr>
       <tr>
@@ -139,7 +139,7 @@
           <p><code>MONGOC_ERROR_QUERY_FAILURE</code></p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 2</link>: Server error from command or query. The server error message is in <code>message</code>.</p>
         </td>
       </tr>
       <tr>
@@ -212,7 +212,7 @@
           <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from a command. The server error message is in <code>message</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 1</link>: Server error from a command. The server error message is in <code>message</code>.</p>
         </td>
       </tr>
       <tr>
@@ -223,7 +223,7 @@
           <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from a command. The server error message is in <code>message</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 2</link>: Server error from a command. The server error message is in <code>message</code>.</p>
         </td>
       </tr>
       <tr>
@@ -245,7 +245,7 @@
           <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 1</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 1</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
         </td>
       </tr>
       <tr>
@@ -256,7 +256,7 @@
           <p><link href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</link>.</p>
         </td>
         <td>
-          <p><link xref="#error-api-version">Error API Version 2</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
+          <p><link xref="#error_api_version">Error API Version 2</link>: Server error from <code xref="mongoc_collection_insert">mongoc_collection_insert</code>, <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>, <code xref="mongoc_collection_update">mongoc_collection_update</code>, or <code xref="mongoc_collection_remove">mongoc_collection_remove</code>.</p>
         </td>
       </tr>
       <tr>
@@ -325,7 +325,7 @@
     </table>
   </section>
 
-  <section id="error-api-version">
+  <section id="error_api_version">
   <title>Setting the Error API Version</title>
 
   <p>The driver's error reporting began with a design flaw: when the error <em style="strong">domain</em> is <code>MONGOC_ERROR_COLLECTION</code>, <code>MONGOC_ERROR_QUERY</code>, or <code>MONGOC_ERROR_COMMAND</code>, the error <em style="strong">code</em> might originate from the server or the driver. An application cannot always know where an error originated, and therefore cannot tell what the code means.</p>
@@ -399,14 +399,8 @@
       <td>
         <p>
           <code xref="mongoc_collection_insert">mongoc_collection_insert</code>
-        </p>
-        <p>
           <code xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk</code>
-        </p>
-        <p>
           <code xref="mongoc_collection_update">mongoc_collection_update</code>
-        </p>
-        <p>
           <code xref="mongoc_collection_remove">mongoc_collection_remove</code>
         </p>
       </td>

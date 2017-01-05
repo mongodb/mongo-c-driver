@@ -17,6 +17,6 @@ const char *const REDUCER = "function (key, values) {"
                             "}"
                             "return total;"
                             "}";
-/* Note We can’t just return values.length as the reduce function
+/* Note We can't just return values.length as the reduce function
    might be called iteratively on the results of other reduce
    steps. */

@@ -22,12 +22,9 @@ mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>file</p></td><td><p>A <code xref="mongoc_gridfs_file_t">
-            mongoc_gridfs_file_t</code>.</p></td></tr>
-      <tr><td><p>id</p></td><td><p>A <code xref="bson:bson_value_t">
-            bson_value_t</code>.</p></td></tr> 
-      <tr><td><p>error</p></td><td><p>A <code xref="errors">
-            bson_error_t</code>.</p></td></tr>
+      <tr><td><p>file</p></td><td><p>A <code xref="mongoc_gridfs_file_t"> mongoc_gridfs_file_t</code>.</p></td></tr>
+      <tr><td><p>id</p></td><td><p>A <code xref="bson:bson_value_t">bson_value_t</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A <code xref="errors">bson_error_t</code>.</p></td></tr>
     </table>
   </section>
 

@@ -12,8 +12,8 @@
 
       <list>
         <item><p>Did you call <code>mongoc_init()</code> in <code>main()</code>? If not, you will likely see a segfault.</p></item>
-        <item><p>Have you leaked any clients or cursors as can be found with <cmd>mongoc-stat <var>PID</var></cmd>?</p></item>
-        <item><p>Have packets been delivered to the server? See egress bytes from <cmd>mongoc-stat <var>PID</var></cmd>.</p></item>
+        <item><p>Have you leaked any clients or cursors as can be found with <code>mongoc-stat &lt;PID&gt;</code>?</p></item>
+        <item><p>Have packets been delivered to the server? See egress bytes from <code>mongoc-stat &lt;PID&gt;</code>.</p></item>
         <item><p>Does <code>valgrind</code> show any leaks? Ensure you call <code>mongoc_cleanup()</code> at the end of your process to cleanup lingering allocations from the MongoDB C driver.</p></item>
         <item><p>If compiling your own copy of MongoDB C driver, consider configuring with <code>--enable-tracing</code> to enable function tracing and hex dumps of network packets to <code>STDERR</code> and <code>STDOUT</code>.</p></item>
       </list>

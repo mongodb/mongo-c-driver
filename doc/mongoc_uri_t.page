@@ -76,8 +76,7 @@
     <table>
       <tr><td><p>heartbeatFrequencyMS</p></td><td><p>The interval between server monitoring checks. Defaults to 10 seconds in pooled (multi-threaded) mode, 60 seconds in non-pooled mode (single-threaded).</p></td></tr>
       <tr><td><p>serverSelectionTimeoutMS</p></td><td><p>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30 seconds.</p></td></tr>
-      <tr><td><p>serverSelectionTryOnce</p></td><td><p>If "true", the driver scans the topology exactly once after server selection fails, then either selects a server or returns an error. If it is false, then the driver repeatedly searches for a suitable server for up to <code>serverSelectionTimeoutMS</code> milliseconds (pausing a half second between attempts). The default for <code>serverSelectionTryOnce</code> is "false" for pooled clients, otherwise "true".</p>
-      <p>Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.</p></td></tr>
+      <tr><td><p>serverSelectionTryOnce</p></td><td><p>If "true", the driver scans the topology exactly once after server selection fails, then either selects a server or returns an error. If it is false, then the driver repeatedly searches for a suitable server for up to <code>serverSelectionTimeoutMS</code> milliseconds (pausing a half second between attempts). The default for <code>serverSelectionTryOnce</code> is "false" for pooled clients, otherwise "true". Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.</p></td></tr>
       <tr><td><p>socketCheckIntervalMS</p></td><td><p>Only applies to single threaded clients. If a socket has not been used within this time, its connection is checked with a quick "isMaster" call before it is used again. Defaults to 5 seconds.</p></td></tr>
     </table>
     <note style="important">
@@ -100,36 +99,9 @@
   <section id="write-concern-options">
     <title>Write Concern Options</title>
     <table>
-      <tr><td><p>w</p></td><td>
-        <table>
-        <tr>
-          <td><p>0</p></td>
-          <td><p>The driver will not acknowledge write operations but will pass or handle any network and socket errors that it receives to the client. If you disable write concern but enable the getLastError command’s w option, w overrides the w option.</p></td>
-        </tr>
-        <tr>
-          <td><p>1</p></td>
-          <td><p>Provides basic acknowledgment of write operations. By specifying 1, you require that a standalone mongod instance, or the primary for replica sets, acknowledge all write operations. For drivers released after the default write concern change, this is the default write concern setting.</p></td>
-        </tr>
-        <tr>
-          <td><p><code>majority</code></p></td>
-          <td><p>For replica sets, if you specify the special majority value to w option, write operations will only return successfully after a majority of the configured replica set members have acknowledged the write operation.</p></td>
-        </tr>
-        <tr>
-          <td><p>n</p></td>
-          <td><p>For replica sets, if you specify a number n greater than 1, operations with this write concern return only after n members of the set have acknowledged the write. If you set n to a number that is greater than the number of available set members or members that hold data, MongoDB will wait, potentially indefinitely, for these members to become available.</p></td>
-        </tr>
-        <tr>
-          <td><p><code>tags</code></p></td>
-          <td><p>For replica sets, you can specify a tag set to require that all members of the set that have these tags configured return confirmation of the write operation.</p></td>
-        </tr>
-        </table>
-      </td></tr>
+      <tr><td><p>w</p></td><td><p>TODO!!</p></td></tr>
       <tr><td><p>wtimeoutMS</p></td><td><p>The time in milliseconds to wait for replication to succeed, as specified in the w option, before timing out. When wtimeoutMS is 0, write operations will never time out.</p></td></tr>
       <tr><td><p>journal</p></td><td><p>Controls whether write operations will wait until the mongod acknowledges the write operations and commits the data to the on disk journal.</p>
-        <table>
-          <tr><td><p>true</p></td><td><p>Enables journal commit acknowledgment write concern. Equivalent to specifying the getLastError command with the j option enabled.</p></td></tr>
-          <tr><td><p>false</p></td><td><p>Does not require that mongod commit write operations to the journal before acknowledging the write operation. This is the default option for the journal parameter.</p></td></tr>
-        </table>
       </td></tr>
     </table>
   </section>
@@ -157,20 +129,12 @@
         <td><p>readPreference</p></td>
         <td>
           <p>Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:</p>
-          <list>
-            <item><p>primary (default)</p></item>
-            <item><p>primaryPreferred</p></item>
-            <item><p>secondary</p></item>
-            <item><p>secondaryPreferred</p></item>
-            <item><p>nearest</p></item>
-          </list>
         </td>
       </tr>
       <tr>
         <td><p>readPreferenceTags</p></td>
         <td>
-          <p>Specifies a tag set as a comma-separated list of colon-separated key-value pairs.</p>
-          <p>Cannot be combined with preference "primary".</p>
+          <p>Specifies a tag set as a comma-separated list of colon-separated key-value pairs. Cannot be combined with preference "primary".</p>
         </td>
       </tr>
       <tr>

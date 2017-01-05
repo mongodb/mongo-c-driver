@@ -37,7 +37,7 @@
       </tr>
       <tr>
         <td><p>MONGOC_READ_NEAREST</p></td>
-        <td><p>Operations read from among the nearest members of the replica set, irrespective of the member’s type.</p></td>
+        <td><p>Operations read from among the nearest members of the replica set, irrespective of the member's type.</p></td>
       </tr>
     </table>
   </section>

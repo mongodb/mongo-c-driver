@@ -34,8 +34,7 @@ mongoc_client_command_simple_with_server_id (mongoc_client_t           *client,
       <tr><td><p>db_name</p></td><td><p>The name of the database to run the command on.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
       <tr><td><p>server_id</p></td><td><p>An opaque id specifying which server to use.</p></td></tr>
-      <tr><td><p>reply</p></td><td><p>An optional location for a <code xref="bson:bson_t">bson_t</code> 
-which will store the server's reply.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>An optional location for a <code xref="bson:bson_t">bson_t</code> which will store the server's reply.</p></td></tr>
       <tr><td><p>error</p></td><td><p>An optional location for a <code xref="errors">bson_error_t</code> or a <code>NULL</code>.</p></td></tr>
     </table>
   </section>

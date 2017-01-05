@@ -6,8 +6,6 @@
   <p>This guide offers a brief introduction to the MongoDB C Driver.</p>
   <p>For more information on the C API, please refer to the <link xref="index#api-reference">API Documentation</link>.</p>
 
-  <links type="section"/>
-
   <section id="installation">
     <info><link type="guide" xref="installing"/></info>
     <title>0. Installing</title>
@@ -359,8 +357,6 @@ main (int   argc,
     <p>This section demonstrates the basics of using the C Driver to interact with MongoDB.</p>
 
     <!-- Table of contents -->
-    <links type="section"/>
-
     <section id="insert" xmlns="http://projectmallard.org/1.0/">
       <info>
         <link type="guide" xref="index#basic-operations"/>

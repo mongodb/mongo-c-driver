@@ -28,7 +28,7 @@ mongoc_database_copy (mongoc_database_t *database);
   <section id="description">
     <title>Description</title>
     <p>Performs a deep copy of the <code>database</code> struct and its configuration. Useful if you intend to call <code xref="mongoc_database_set_write_concern">mongoc_database_set_write_concern</code>, <code xref="mongoc_database_set_read_prefs">mongoc_database_set_read_prefs</code>, or <code xref="mongoc_database_set_read_concern">mongoc_database_set_read_concern</code>, and want to preserve an unaltered copy of the struct.</p>
-    <p>This function does <em>not</em> copy the contents of the database on the MongoDB server; use the <link xref="mongoc-common-task-examples#copydb"><code>copydb</code> command</link> for that purpose.</p>
+    <p>This function does <em>not</em> copy the contents of the database on the MongoDB server; use the <link xref="mongoc-common-task-examples#copydb">copydb command</link> for that purpose.</p>
   </section>
 
   <section id="return">

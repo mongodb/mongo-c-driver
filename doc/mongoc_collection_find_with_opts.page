@@ -117,12 +117,7 @@ cursor = mongoc_collection_find_with_opts (collection, filter, opts, read_prefs)
 
     <p>The following options are supported.</p>
     <table shade="rows" rules="colgroups" frame="all">
-      <colgroup><col/><col/></colgroup>
-      <colgroup><col/><col/></colgroup>
-      <thead>
         <tr><td><p>Option</p></td> <td><p>BSON type</p></td><td><p>Option</p></td> <td><p>BSON type</p></td></tr>
-      </thead>
-      <tbody>
       <!-- common options at the top -->
        <tr><td><p><code>projection</code></p></td><td><p>document</p> <!-- downgraded to "fields" --> </td><td><p><code>max</code></p></td><td><p>document</p></td> </tr>
        <tr><td><p><code>sort</code></p></td><td><p>document</p> <!-- downgraded to $orderby --> </td><td><p><code>maxScan</code></p></td><td><p>non-negative int64</p></td> </tr>
@@ -136,7 +131,6 @@ cursor = mongoc_collection_find_with_opts (collection, filter, opts, read_prefs)
        <tr><td><p><code>awaitData</code></p></td><td><p>bool</p></td><td><p><code>singleBatch</code></p></td><td><p>bool</p></td> </tr>
        <tr><td><p><code>collation</code></p></td><td><p>document</p></td><td><p><code>snapshot</code></p></td><td><p>bool</p></td> </tr>
        <tr><td><p><code>comment</code></p></td><td><p>string</p></td><td><p><code>tailable</code></p></td><td><p>bool</p></td> </tr>
-      </tbody>
     </table>
     <p>
       For some options like "collation", the driver returns an error if the server version is too old to support the feature.
