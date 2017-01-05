@@ -6,10 +6,11 @@ mongoc_server_description_ismaster()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
-  mongoc_server_description_ismaster (const mongoc_server_description_t *description);
+  mongoc_server_description_ismaster (
+     const mongoc_server_description_t *description);
 
 Parameters
 ----------

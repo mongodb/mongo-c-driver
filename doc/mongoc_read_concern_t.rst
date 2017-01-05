@@ -8,9 +8,7 @@ Read Concern abstraction
 Synopsis
 --------
 
-.. tip::
-
-  New in MongoDB 3.2 and mongoc 1.3.0
+New in MongoDB 3.2.
 
 The ``mongoc_read_concern_t`` allows clients to choose a level of isolation for their reads. The default, MONGOC_READ_CONCERN_LEVEL_LOCAL, is right for the great majority of applications.
 
@@ -19,6 +17,8 @@ You can specify a read concern on connection objects, database objects, or colle
 See `readConcern <https://docs.mongodb.org/master/reference/readConcern/>`_ on the MongoDB website for more information.
 
 Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level <mongoc_read_concern_set_level>` to anything other then empty string.
+
+.. _mongoc_read_concern_levels:
 
 Read Concern Levels
 -------------------

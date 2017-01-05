@@ -6,11 +6,11 @@ mongoc_uri_set_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_uri_set_write_concern (mongoc_uri_t                  *uri,
-                                const mongoc_write_concern_t  *wc);
+  mongoc_uri_set_write_concern (mongoc_uri_t *uri,
+                                const mongoc_write_concern_t *wc);
 
 Parameters
 ----------

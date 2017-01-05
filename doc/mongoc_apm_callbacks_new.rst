@@ -6,7 +6,7 @@ mongoc_apm_callbacks_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_apm_callbacks_t *
   mongoc_apm_callbacks_new (void);

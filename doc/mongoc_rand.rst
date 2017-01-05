@@ -8,16 +8,13 @@ MongoDB Random Number Generator
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_rand_add (const void *buf,
-                   int         num,
-                   doubel      entropy);
+  mongoc_rand_add (const void *buf, int num, doubel entropy);
 
   void
-  mongoc_rand_seed (const void *buf,
-                    int         num);
+  mongoc_rand_seed (const void *buf, int num);
 
   int
   mongoc_rand_status (void);

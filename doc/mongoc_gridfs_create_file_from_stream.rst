@@ -6,11 +6,11 @@ mongoc_gridfs_create_file_from_stream()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_t *
-  mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
-                                         mongoc_stream_t          *stream,
+  mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
+                                         mongoc_stream_t *stream,
                                          mongoc_gridfs_file_opt_t *opt);
 
 Parameters

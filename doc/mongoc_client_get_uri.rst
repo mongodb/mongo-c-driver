@@ -6,7 +6,7 @@ mongoc_client_get_uri()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_uri_t *
   mongoc_client_get_uri (const mongoc_client_t *client);

@@ -6,15 +6,15 @@ mongoc_collection_insert_bulk()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_insert_bulk (mongoc_collection_t          *collection,
-                                 mongoc_insert_flags_t         flags,
-                                 const bson_t                **documents,
-                                 uint32_t                      n_documents,
+  mongoc_collection_insert_bulk (mongoc_collection_t *collection,
+                                 mongoc_insert_flags_t flags,
+                                 const bson_t **documents,
+                                 uint32_t n_documents,
                                  const mongoc_write_concern_t *write_concern,
-                                 bson_error_t                 *error)
+                                 bson_error_t *error)
      BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_bulk_operation);
 
 Deprecated

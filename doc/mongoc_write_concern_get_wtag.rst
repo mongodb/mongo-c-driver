@@ -6,7 +6,7 @@ mongoc_write_concern_get_wtag()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern);

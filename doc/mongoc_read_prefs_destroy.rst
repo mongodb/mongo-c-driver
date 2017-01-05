@@ -6,7 +6,7 @@ mongoc_read_prefs_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs);

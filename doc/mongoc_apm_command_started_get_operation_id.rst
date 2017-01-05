@@ -6,10 +6,11 @@ mongoc_apm_command_started_get_operation_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_apm_command_started_get_operation_id (const mongoc_apm_command_started_t *event);
+  mongoc_apm_command_started_get_operation_id (
+     const mongoc_apm_command_started_t *event);
 
 Returns this event's operation id. This number correlates all the commands in a bulk operation, or all the "find" and "getMore" commands required to stream a large query result.
 

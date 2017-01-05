@@ -6,7 +6,7 @@ mongoc_apm_callbacks_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks);

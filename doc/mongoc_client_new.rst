@@ -6,7 +6,7 @@ mongoc_client_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_client_t *
   mongoc_client_new (const char *uri_string);

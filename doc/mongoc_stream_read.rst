@@ -6,14 +6,14 @@ mongoc_stream_read()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_stream_read (mongoc_stream_t *stream,
-                      void            *buf,
-                      size_t           count,
-                      size_t           min_bytes,
-                      int32_t          timeout_msec);
+                      void *buf,
+                      size_t count,
+                      size_t min_bytes,
+                      int32_t timeout_msec);
 
 Parameters
 ----------

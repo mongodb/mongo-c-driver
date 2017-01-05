@@ -1,6 +1,6 @@
-:man_page: mongoc_basic_aggregate
+:man_page: mongoc_distinct_mapreduce
 
-Basic Aggregation Examples
+"distinct" and "mapReduce"
 ==========================
 
 This document provides some practical, simple, examples to demonstrate the ``distinct`` and ``mapReduce`` commands.
@@ -51,8 +51,8 @@ In this example we contact a secondary in the replica set and do an "inline" map
    :language: c
    :caption: map-reduce-advanced.c
 
-Running
--------
+Running the Examples
+--------------------
 
 Here's how to run the example code
 
@@ -72,5 +72,19 @@ Now compile and run the example program:
 
 .. code-block:: none
 
-  $ cd examples/basic_aggregation/$ gcc -Wall -o agg-example basic-aggregation.c $(pkg-config --cflags --libs libmongoc-1.0)$ ./agg-example localhost
+  $ cd examples/basic_aggregation/
+  $ gcc -Wall -o agg-example basic-aggregation.c $(pkg-config --cflags --libs libmongoc-1.0)
+  $ ./agg-example localhost
+
+  Inserting data
+  distinct
+  Next double: 2.000000
+  Next double: 3.000000
+  map reduce
+  { "result" : "outCollection", "timeMillis" : 155, "counts" : { "input" : 84, "emit" : 126, "reduce" : 3, "output" : 3 }, "ok" : 1 }
+  { "_id" : "cat", "value" : 63 }
+  { "_id" : "dog", "value" : 42 }
+  { "_id" : "mouse", "value" : 21 }
+  more complicated map reduce
+  { "results" : [ { "_id" : "cat", "value" : 63 }, { "_id" : "dog", "value" : 42 }, { "_id" : "mouse", "value" : 21 } ], "timeMillis" : 14, "counts" : { "input" : 84, "emit" : 126, "reduce" : 3, "output" : 3 }, "ok" : 1 }
 

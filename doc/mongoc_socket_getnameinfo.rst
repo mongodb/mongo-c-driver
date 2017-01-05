@@ -6,7 +6,7 @@ mongoc_socket_getnameinfo()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   char *
   mongoc_socket_getnameinfo (mongoc_socket_t *sock);

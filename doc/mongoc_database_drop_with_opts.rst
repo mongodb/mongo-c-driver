@@ -6,12 +6,12 @@ mongoc_database_drop_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_database_drop_with_opts (mongoc_database_t *database,
-                                  const bson_t      *opts,
-                                  bson_error_t      *error);
+                                  const bson_t *opts,
+                                  bson_error_t *error);
 
 Parameters
 ----------

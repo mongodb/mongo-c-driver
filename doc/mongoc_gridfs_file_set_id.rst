@@ -6,12 +6,12 @@ mongoc_gridfs_file_set_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  bool 
-  mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file, 
-                             const bson_value_t   *id, 
-                             bson_error_t          error);
+  bool
+  mongoc_gridfs_file_set_id (mongoc_gridfs_file_t *file,
+                             const bson_value_t *id,
+                             bson_error_t error);
 
 Parameters
 ----------

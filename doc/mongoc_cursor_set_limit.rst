@@ -6,11 +6,10 @@ mongoc_cursor_set_limit()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_cursor_set_limit (mongoc_cursor_t *cursor,
-                           int64_t          limit);
+  mongoc_cursor_set_limit (mongoc_cursor_t *cursor, int64_t limit);
 
 Parameters
 ----------

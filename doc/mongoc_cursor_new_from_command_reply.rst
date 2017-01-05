@@ -6,12 +6,12 @@ mongoc_cursor_new_from_command_reply()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
   mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
-                                        bson_t          *reply,
-                                        uint32_t         server_id);
+                                        bson_t *reply,
+                                        uint32_t server_id);
 
 Parameters
 ----------

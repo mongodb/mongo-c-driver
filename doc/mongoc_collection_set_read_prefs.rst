@@ -6,10 +6,10 @@ mongoc_collection_set_read_prefs()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
+  mongoc_collection_set_read_prefs (mongoc_collection_t *collection,
                                     const mongoc_read_prefs_t *read_prefs);
 
 Parameters

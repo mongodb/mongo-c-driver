@@ -6,13 +6,13 @@ mongoc_collection_validate()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_validate (mongoc_collection_t *collection,
-                              const bson_t        *options,
-                              bson_t              *reply,
-                              bson_error_t        *error);
+                              const bson_t *options,
+                              bson_t *reply,
+                              bson_error_t *error);
 
 Parameters
 ----------

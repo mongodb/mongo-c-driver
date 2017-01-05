@@ -6,7 +6,7 @@ mongoc_collection_get_last_error()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
   mongoc_collection_get_last_error (const mongoc_collection_t *collection);

@@ -6,7 +6,7 @@ mongoc_stream_gridfs_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_stream_t *
   mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);

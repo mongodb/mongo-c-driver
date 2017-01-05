@@ -6,11 +6,11 @@ mongoc_apm_server_opening_get_topology_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_apm_server_opening_get_topology_id (const mongoc_apm_server_opening_t *event,
-                                             bson_oid_t                        *topology_id);
+  mongoc_apm_server_opening_get_topology_id (
+     const mongoc_apm_server_opening_t *event, bson_oid_t *topology_id);
 
 Returns this event's topology id.
 

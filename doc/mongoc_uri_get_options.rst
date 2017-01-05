@@ -6,7 +6,7 @@ mongoc_uri_get_options()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
   mongoc_uri_get_options (const mongoc_uri_t *uri);

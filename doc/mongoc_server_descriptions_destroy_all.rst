@@ -6,7 +6,7 @@ mongoc_server_descriptions_destroy_all()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,

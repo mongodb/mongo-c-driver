@@ -6,7 +6,7 @@ mongoc_gridfs_file_save()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);

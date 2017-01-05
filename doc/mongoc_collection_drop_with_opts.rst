@@ -6,12 +6,12 @@ mongoc_collection_drop_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
-                                    bson_t              *opts,
-                                    bson_error_t        *error);
+                                    bson_t *opts,
+                                    bson_error_t *error);
 
 Parameters
 ----------

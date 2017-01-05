@@ -6,12 +6,11 @@ mongoc_find_and_modify_opts_get_update()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_find_and_modify_opts_get_update (
-     const mongoc_find_and_modify_opts_t *opts,
-     bson_t *update);
+     const mongoc_find_and_modify_opts_t *opts, bson_t *update);
 
 Parameters
 ----------

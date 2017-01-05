@@ -8,12 +8,11 @@ Flags for update operations
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef enum
-  {
-     MONGOC_UPDATE_NONE         = 0,
-     MONGOC_UPDATE_UPSERT       = 1 << 0,
+  typedef enum {
+     MONGOC_UPDATE_NONE = 0,
+     MONGOC_UPDATE_UPSERT = 1 << 0,
      MONGOC_UPDATE_MULTI_UPDATE = 1 << 1,
   } mongoc_update_flags_t;
 

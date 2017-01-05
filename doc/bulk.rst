@@ -10,9 +10,10 @@ Bulk Insert
 
 First we need to fetch a bulk operation handle from the :symbol:`mongoc_collection_t <mongoc_collection_t>`. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.
 
-.. code-block:: none
+.. code-block:: c
 
-  mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);
+  mongoc_bulk_operation_t *bulk =
+     mongoc_collection_create_bulk_operation (collection, true, write_concern);
 
 We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.
 
@@ -108,12 +109,12 @@ Example ``reply`` document:
 
 The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_COMMAND`` and its code is 11000. 
 
+.. _bulk_operation_bypassing_document_validation:
+
 Bulk Operation Bypassing Document Validation
 --------------------------------------------
 
-.. tip::
-
-  This feature is only available when using MongoDB 3.2 and later.
+This feature is only available when using MongoDB 3.2 and later.
 
 By default bulk operations are validated against the schema, if any is defined. In certain cases however it may be necessary to bypass the document validation.
 
@@ -177,9 +178,7 @@ The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_WRITE_CONCERN`` if 
 Setting Collation Order
 -----------------------
 
-.. tip::
-
-  This feature is only available when using MongoDB 3.4 and later.
+This feature is only available when using MongoDB 3.4 and later.
 
 .. literalinclude:: ../examples/bulk/bulk-collation.c
    :language: c

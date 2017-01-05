@@ -6,14 +6,14 @@ mongoc_collection_command_simple()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_command_simple (mongoc_collection_t       *collection,
-                                    const bson_t              *command,
+  mongoc_collection_command_simple (mongoc_collection_t *collection,
+                                    const bson_t *command,
                                     const mongoc_read_prefs_t *read_prefs,
-                                    bson_t                    *reply,
-                                    bson_error_t              *error);
+                                    bson_t *reply,
+                                    bson_error_t *error);
 
 Parameters
 ----------

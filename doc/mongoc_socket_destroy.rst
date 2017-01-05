@@ -6,7 +6,7 @@ mongoc_socket_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_socket_destroy (mongoc_socket_t *sock);

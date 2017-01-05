@@ -6,14 +6,14 @@ mongoc_bulk_operation_replace_one_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t       *bulk,
-                                               const bson_t                  *selector,
-                                               const bson_t                  *document,
-                                               const bson_t                  *opts,
-                                               bson_error_t                  *error); /* OUT */
+  mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
+                                               const bson_t *selector,
+                                               const bson_t *document,
+                                               const bson_t *opts,
+                                               bson_error_t *error); /* OUT */
 
 Replace a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
 
@@ -35,7 +35,7 @@ See Also
 
 :symbol:`mongoc_bulk_operation_remove_many_with_opts() <mongoc_bulk_operation_remove_many_with_opts>`
 
-:symbol:`mongoc_bulk_operation_insert_with_opts() <mongoc_bulk_operation_insert_with_opts>`
+:symbol:`mongoc_bulk_operation_insert() <mongoc_bulk_operation_insert>`
 
 Errors
 ------

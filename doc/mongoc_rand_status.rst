@@ -6,10 +6,10 @@ mongoc_rand_status()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
-  mongoc_rand_status(void);
+  mongoc_rand_status (void);
 
 Description
 -----------

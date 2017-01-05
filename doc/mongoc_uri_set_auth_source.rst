@@ -6,11 +6,10 @@ mongoc_uri_set_auth_source()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_uri_set_auth_source (mongoc_uri_t *uri,
-                              const char   *value);
+  mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value);
 
 Parameters
 ----------

@@ -6,11 +6,10 @@ mongoc_collection_drop()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_drop (mongoc_collection_t *collection,
-                          bson_error_t        *error);
+  mongoc_collection_drop (mongoc_collection_t *collection, bson_error_t *error);
 
 Parameters
 ----------

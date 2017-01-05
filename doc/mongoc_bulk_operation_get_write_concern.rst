@@ -6,7 +6,7 @@ mongoc_bulk_operation_get_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_write_concern_t *
   mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);

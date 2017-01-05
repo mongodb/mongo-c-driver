@@ -6,7 +6,7 @@ mongoc_read_prefs_get_tags()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
   mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs);

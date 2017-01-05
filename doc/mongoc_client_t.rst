@@ -8,19 +8,19 @@ MongoDB Connection Abstraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_client_t mongoc_client_t;
-    
-  typedef mongoc_stream_t *
-  (*mongoc_stream_initiator_t) (const mongoc_uri_t       *uri,
-                                const mongoc_host_list_t *host,
-                                void                     *user_data,
-                                bson_error_t             *error);
+
+  typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (
+     const mongoc_uri_t *uri,
+     const mongoc_host_list_t *host,
+     void *user_data,
+     bson_error_t *error);
 
 ``mongoc_client_t`` is an opaque type that provides access to a MongoDB node,
 replica-set, or sharded-cluster. It maintains management of underlying sockets
-and routing to individual nodes based on :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or:symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+and routing to individual nodes based on :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
 
 Streams
 -------

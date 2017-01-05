@@ -6,14 +6,14 @@ mongoc_collection_delete()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_delete (mongoc_collection_t          *collection,
-                            mongoc_delete_flags_t         flags,
-                            const bson_t                 *selector,
+  mongoc_collection_delete (mongoc_collection_t *collection,
+                            mongoc_delete_flags_t flags,
+                            const bson_t *selector,
                             const mongoc_write_concern_t *write_concern,
-                            bson_error_t                 *error);
+                            bson_error_t *error);
 
 Deprecated
 ----------

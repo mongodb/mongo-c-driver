@@ -6,11 +6,11 @@ mongoc_database_remove_all_users()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_database_remove_all_users (mongoc_database_t *database,
-                                    bson_error_t      *error);
+                                    bson_error_t *error);
 
 This function will remove all users configured to access ``database``.
 

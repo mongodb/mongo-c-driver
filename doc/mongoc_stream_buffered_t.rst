@@ -6,7 +6,7 @@ mongoc_stream_buffered_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_stream_buffered_t mongoc_stream_buffered_t;
 

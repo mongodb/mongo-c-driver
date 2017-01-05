@@ -6,15 +6,15 @@ mongoc_database_read_command_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_database_read_command_with_opts (mongoc_database_t         *database,
-                                          const bson_t              *command,
+  mongoc_database_read_command_with_opts (mongoc_database_t *database,
+                                          const bson_t *command,
                                           const mongoc_read_prefs_t *read_prefs,
-                                          const bson_t              *opts,
-                                          bson_t                    *reply,
-                                          bson_error_t              *error);
+                                          const bson_t *opts,
+                                          bson_t *reply,
+                                          bson_error_t *error);
 
 Execute a command on the server, applying logic that is specific to commands that read, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use :symbol:`mongoc_database_command_simple <mongoc_database_command_simple>`.
 

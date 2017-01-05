@@ -8,7 +8,7 @@ Client-side cursor abtraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_cursor_t mongoc_cursor_t;
 
@@ -34,7 +34,7 @@ Example
 
 .. literalinclude:: ../examples/example-client.c
    :language: c
-   :caption: example-client.c
+   :caption: Query MongoDB and iterate results
 
 .. only:: html
 

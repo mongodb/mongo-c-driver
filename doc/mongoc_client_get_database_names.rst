@@ -6,11 +6,10 @@ mongoc_client_get_database_names()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   char **
-  mongoc_client_get_database_names (mongoc_client_t *client,
-                                    bson_error_t    *error);
+  mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error);
 
 This function queries the MongoDB server for a list of known databases.
 
@@ -35,7 +34,7 @@ A ``NULL`` terminated vector of ``NULL-byte`` terminated strings. The result sho
 Examples
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   {
      bson_error_t error;
@@ -43,8 +42,8 @@ Examples
      unsigned i;
 
      if ((strv = mongoc_client_get_database_names (client, &error))) {
-        for (i = 0; strv [i]; i++)
-           printf ("%s\n", strv [i]);
+        for (i = 0; strv[i]; i++)
+           printf ("%s\n", strv[i]);
         bson_strfreev (strv);
      } else {
         fprintf (stderr, "Command failed: %s\n", error.message);

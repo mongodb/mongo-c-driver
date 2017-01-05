@@ -6,7 +6,7 @@ mongoc_stream_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_stream_destroy (mongoc_stream_t *stream);

@@ -8,11 +8,10 @@ Flags for deletion operations
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef enum
-  {
-     MONGOC_REMOVE_NONE          = 0,
+  typedef enum {
+     MONGOC_REMOVE_NONE = 0,
      MONGOC_REMOVE_SINGLE_REMOVE = 1 << 0,
   } mongoc_remove_flags_t;
 

@@ -6,7 +6,7 @@ mongoc_cursor_get_batch_size()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint32_t
   mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor);

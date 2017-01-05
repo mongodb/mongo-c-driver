@@ -6,7 +6,7 @@ mongoc_stream_file_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_stream_t *
   mongoc_stream_file_new (int fd);

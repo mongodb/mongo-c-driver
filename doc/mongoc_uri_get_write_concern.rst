@@ -6,7 +6,7 @@ mongoc_uri_get_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_write_concern_t *
   mongoc_uri_get_write_concern (const mongoc_uri_t *uri);

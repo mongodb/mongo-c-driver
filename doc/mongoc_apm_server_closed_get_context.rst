@@ -6,7 +6,7 @@ mongoc_apm_server_closed_get_context()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void *
   mongoc_apm_server_closed_get_context (const mongoc_apm_server_closed_t *event);

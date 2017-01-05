@@ -6,7 +6,7 @@ mongoc_client_get_max_bson_size()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int32_t
   mongoc_client_get_max_bson_size (mongoc_client_t *client);

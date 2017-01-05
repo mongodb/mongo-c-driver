@@ -6,10 +6,10 @@ mongoc_database_set_read_prefs()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_database_set_read_prefs (mongoc_database_t         *database,
+  mongoc_database_set_read_prefs (mongoc_database_t *database,
                                   const mongoc_read_prefs_t *read_prefs);
 
 This function sets the default read preferences to use on operations performed with ``database``. Collections created with :symbol:`mongoc_database_get_collection() <mongoc_database_get_collection>` after this call will inherit these read preferences.

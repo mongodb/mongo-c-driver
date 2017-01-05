@@ -6,12 +6,10 @@ mongoc_socket_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_socket_t *
-  mongoc_socket_new (int domain,
-                     int type,
-                     int protocol);
+  mongoc_socket_new (int domain, int type, int protocol);
 
 Parameters
 ----------

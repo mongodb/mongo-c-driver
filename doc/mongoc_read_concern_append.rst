@@ -6,11 +6,10 @@ mongoc_read_concern_append()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
-                              bson_t                *opts);
+  mongoc_read_concern_append (mongoc_read_concern_t *read_concern, bson_t *opts);
 
 Parameters
 ----------

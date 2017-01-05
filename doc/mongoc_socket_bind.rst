@@ -6,12 +6,12 @@ mongoc_socket_bind()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
-  mongoc_socket_bind (mongoc_socket_t       *sock,
+  mongoc_socket_bind (mongoc_socket_t *sock,
                       const struct sockaddr *addr,
-                      socklen_t              addrlen);
+                      socklen_t addrlen);
 
 Parameters
 ----------

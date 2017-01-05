@@ -6,15 +6,15 @@ mongoc_database_add_user()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_database_add_user (mongoc_database_t *database,
-                            const char        *username,
-                            const char        *password,
-                            const bson_t      *roles,
-                            const bson_t      *custom_data,
-                            bson_error_t      *error);
+                            const char *username,
+                            const char *password,
+                            const bson_t *roles,
+                            const bson_t *custom_data,
+                            bson_error_t *error);
 
 Parameters
 ----------

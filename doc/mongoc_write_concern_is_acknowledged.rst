@@ -6,10 +6,11 @@ mongoc_write_concern_is_acknowledged()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_write_concern_is_acknowledged (const mongoc_write_concern_t *write_concern);
+  mongoc_write_concern_is_acknowledged (
+     const mongoc_write_concern_t *write_concern);
 
 Parameters
 ----------

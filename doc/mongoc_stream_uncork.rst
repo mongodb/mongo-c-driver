@@ -6,7 +6,7 @@ mongoc_stream_uncork()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_stream_uncork (mongoc_stream_t *stream);

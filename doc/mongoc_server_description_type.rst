@@ -6,7 +6,7 @@ mongoc_server_description_type()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_server_description_type (const mongoc_server_description_t *description);

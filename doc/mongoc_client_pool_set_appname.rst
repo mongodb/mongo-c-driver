@@ -6,11 +6,10 @@ mongoc_client_pool_set_appname()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_client_pool_set_appname       (mongoc_client_pool_t   *pool,
-                                        const char             *appname)
+  mongoc_client_pool_set_appname (mongoc_client_pool_t *pool, const char *appname)
 
 This function is identical to :symbol:`mongoc_client_set_appname() <mongoc_client_set_appname>` except for client pools.
 

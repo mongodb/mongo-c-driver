@@ -6,7 +6,7 @@ mongoc_bulk_operation_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk);

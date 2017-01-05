@@ -6,7 +6,7 @@ mongoc_write_concern_get_fsync()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern);

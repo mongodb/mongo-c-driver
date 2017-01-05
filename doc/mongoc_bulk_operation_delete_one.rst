@@ -6,11 +6,11 @@ mongoc_bulk_operation_delete_one()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk,
-                                    const bson_t            *selector);
+                                    const bson_t *selector);
 
 Delete a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
 

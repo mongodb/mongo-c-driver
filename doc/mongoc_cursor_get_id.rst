@@ -6,7 +6,7 @@ mongoc_cursor_get_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
   mongoc_cursor_get_id (const mongoc_cursor_t *cursor);

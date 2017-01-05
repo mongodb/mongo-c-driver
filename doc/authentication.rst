@@ -21,7 +21,7 @@ Simply provide the username and password as one would with an ``HTTP URL``, as w
 GSSAPI (Kerberos) Authentication
 --------------------------------
 
-.. warning::
+.. note::
 
   Kerberos support is only provided in environments supported by the ``cyrus-sasl`` Kerberos implementation. This currently limits support to UNIX-like environments.
 
@@ -29,7 +29,8 @@ GSSAPI (Kerberos) Authentication
 
 .. code-block:: none
 
-  $ kinit mongodbuser@EXAMPLE.COMmongodbuser@EXAMPLE.COM's Password:$ klistCredentials cache: FILE:/tmp/krb5cc_1000
+  $ kinit mongodbuser@EXAMPLE.COMmongodbuser@EXAMPLE.COM's Password:
+  $ klistCredentials cache: FILE:/tmp/krb5cc_1000
           Principal: mongodbuser@EXAMPLE.COM
 
     Issued                Expires               Principal
@@ -66,13 +67,13 @@ If you encounter errors such as ``Invalid net address``, check if the applicatio
 SASL Plain Authentication
 -------------------------
 
-.. warning::
+.. note::
 
   The MongoDB C Driver must be compiled with SASL support in order to use ``SASL PLAIN`` authentication.
 
 MongoDB Enterprise Edition versions 2.5.0 and newer support the ``SASL PLAIN`` authentication mechanism, initially intended for delegating authentication to an LDAP server. Using the ``SASL PLAIN`` mechanism is very similar to the challenge response mechanism with usernames and passwords. These examples use the ``$external`` virtual database for ``LDAP`` support:
 
-.. warning::
+.. note::
 
   ``SASL PLAIN`` is a clear-text authentication mechanism. It is strongly recommended to connect to MongoDB using SSL with certificate validation when using the ``PLAIN`` mechanism.
 
@@ -85,7 +86,7 @@ MongoDB Enterprise Edition versions 2.5.0 and newer support the ``SASL PLAIN`` a
 X.509 Certificate Authentication
 --------------------------------
 
-.. warning::
+.. note::
 
   The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options: 
 

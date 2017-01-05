@@ -6,7 +6,7 @@ mongoc_server_description_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint32_t
   mongoc_server_description_id (const mongoc_server_description_t *description);

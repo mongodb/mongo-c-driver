@@ -6,7 +6,7 @@ mongoc_socket_close()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_socket_close (mongoc_socket_t *socket);

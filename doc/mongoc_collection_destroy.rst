@@ -6,7 +6,7 @@ mongoc_collection_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_collection_destroy (mongoc_collection_t *collection);

@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_value_t *
   mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file);

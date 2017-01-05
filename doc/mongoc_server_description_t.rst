@@ -8,7 +8,7 @@ Server description
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
   typedef struct _mongoc_server_description_t mongoc_server_description_t

@@ -6,12 +6,12 @@ mongoc_bulk_operation_execute()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint32_t
   mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
-                                 bson_t                  *reply,
-                                 bson_error_t            *error);
+                                 bson_t *reply,
+                                 bson_error_t *error);
 
 This function executes all operations queued into the bulk operation. If ``ordered`` was specified to :symbol:`mongoc_collection_create_bulk_operation() <mongoc_collection_create_bulk_operation>`, then forward progress will be stopped upon the first error.
 

@@ -6,7 +6,7 @@ mongoc_gridfs_file_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file);

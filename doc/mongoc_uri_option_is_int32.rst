@@ -6,7 +6,7 @@ mongoc_uri_option_is_int32()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_option_is_int32 (const char *option);

@@ -1,7 +1,7 @@
 :man_page: mongoc_application_performance_monitoring
 
-Introduction to Application Performance Monitoring (APM)
-========================================================
+Application Performance Monitoring (APM)
+========================================
 
 The MongoDB C Driver allows you to monitor all the MongoDB operations the driver executes. This event-notification system conforms to two MongoDB driver specs:
 
@@ -115,3 +115,26 @@ This example program prints something like:
 
 The driver discovers the third member, "localhost:27019", and adds it to the topology.
 
+
+.. only:: html
+
+  Functions
+  ---------
+
+  .. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    mongoc_apm_callbacks_t
+    mongoc_apm_command_failed_t
+    mongoc_apm_command_started_t
+    mongoc_apm_command_succeeded_t
+    mongoc_apm_server_changed_t
+    mongoc_apm_server_closed_t
+    mongoc_apm_server_heartbeat_failed_t
+    mongoc_apm_server_heartbeat_started_t
+    mongoc_apm_server_heartbeat_succeeded_t
+    mongoc_apm_server_opening_t
+    mongoc_apm_topology_changed_t
+    mongoc_apm_topology_closed_t
+    mongoc_apm_topology_opening_t

@@ -6,14 +6,14 @@ mongoc_stream_readv()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_stream_readv (mongoc_stream_t *stream,
-                       mongoc_iovec_t  *iov,
-                       size_t           iovcnt,
-                       size_t           min_bytes,
-                       int32_t          timeout_msec);
+                       mongoc_iovec_t *iov,
+                       size_t iovcnt,
+                       size_t min_bytes,
+                       int32_t timeout_msec);
 
 Parameters
 ----------

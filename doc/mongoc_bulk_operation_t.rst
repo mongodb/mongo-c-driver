@@ -8,7 +8,7 @@ Bulk Write Operations
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_bulk_operation_t mongoc_bulk_operation_t;
 

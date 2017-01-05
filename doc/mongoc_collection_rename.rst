@@ -6,14 +6,14 @@ mongoc_collection_rename()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_rename (mongoc_collection_t *collection,
-                            const char          *new_db,
-                            const char          *new_name,
-                            bool                 drop_target_before_rename,
-                            bson_error_t        *error);
+                            const char *new_db,
+                            const char *new_name,
+                            bool drop_target_before_rename,
+                            bson_error_t *error);
 
 Parameters
 ----------

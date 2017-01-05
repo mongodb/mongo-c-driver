@@ -6,10 +6,11 @@ mongoc_apm_command_succeeded_get_server_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint32_t
-  mongoc_apm_command_succeeded_get_server_id (const mongoc_apm_command_succeeded_t *event);
+  mongoc_apm_command_succeeded_get_server_id (
+     const mongoc_apm_command_succeeded_t *event);
 
 Returns this event's server id.
 

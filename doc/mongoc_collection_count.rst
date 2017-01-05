@@ -6,16 +6,16 @@ mongoc_collection_count()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_collection_count (mongoc_collection_t       *collection,
-                           mongoc_query_flags_t       flags,
-                           const bson_t              *query,
-                           int64_t                    skip,
-                           int64_t                    limit,
+  mongoc_collection_count (mongoc_collection_t *collection,
+                           mongoc_query_flags_t flags,
+                           const bson_t *query,
+                           int64_t skip,
+                           int64_t limit,
                            const mongoc_read_prefs_t *read_prefs,
-                           bson_error_t              *error);
+                           bson_error_t *error);
 
 Parameters
 ----------

@@ -6,17 +6,17 @@ mongoc_collection_count_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
-                                     mongoc_query_flags_t       flags,
-                                     const bson_t              *query,
-                                     int64_t                    skip,
-                                     int64_t                    limit,
-                                     const bson_t              *opts,
+  mongoc_collection_count_with_opts (mongoc_collection_t *collection,
+                                     mongoc_query_flags_t flags,
+                                     const bson_t *query,
+                                     int64_t skip,
+                                     int64_t limit,
+                                     const bson_t *opts,
                                      const mongoc_read_prefs_t *read_prefs,
-                                     bson_error_t              *error);
+                                     bson_error_t *error);
 
 Parameters
 ----------
@@ -55,6 +55,7 @@ Examples
 --------
 
 .. code-block:: c
+  :caption: Basic Counting
 
   #include <mongoc.h>
   #include <bcon.h>
@@ -83,6 +84,7 @@ Examples
   }
 
 .. code-block:: c
+  :caption: Counting with Collation
 
   #include <mongoc.h>
   #include <bcon.h>

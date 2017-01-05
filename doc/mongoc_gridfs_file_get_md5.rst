@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_md5()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_gridfs_file_get_md5 (mongoc_gridfs_file_t *file);

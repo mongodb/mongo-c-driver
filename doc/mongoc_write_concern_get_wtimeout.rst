@@ -6,7 +6,7 @@ mongoc_write_concern_get_wtimeout()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int32_t
   mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern);

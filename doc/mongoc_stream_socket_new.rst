@@ -6,7 +6,7 @@ mongoc_stream_socket_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_stream_t *
   mongoc_stream_socket_new (mongoc_socket_t *socket);

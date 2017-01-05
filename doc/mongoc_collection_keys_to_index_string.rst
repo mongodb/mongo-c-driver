@@ -6,7 +6,7 @@ mongoc_collection_keys_to_index_string()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   char *
   mongoc_collection_keys_to_index_string (const bson_t *keys);

@@ -6,7 +6,7 @@ mongoc_read_prefs_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_read_prefs_t *
   mongoc_read_prefs_new (mongoc_read_mode_t read_mode);

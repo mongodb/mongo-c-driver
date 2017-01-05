@@ -6,18 +6,18 @@ mongoc_collection_write_command_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_write_command_with_opts (mongoc_collection_t *collection,
-                                             const bson_t        *command,
-                                             const bson_t        *opts,
-                                             bson_t              *reply,
-                                             bson_error_t        *error);
+                                             const bson_t *command,
+                                             const bson_t *opts,
+                                             bson_t *reply,
+                                             bson_error_t *error);
 
 Execute a command on the server, applying logic that is specific to commands that write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use :symbol:`mongoc_collection_command_simple <mongoc_collection_command_simple>`.
 
-Use this function for commands that write such as "drop" or "createRole" (but not for "insert", "update", or "delete", see :ref:`Basic Write Operations <basic_write_operations>`). Write concern is applied from ``opts``, or else from ``collection``. The write concern is omitted for MongoDB before 3.2. Collation is applied from ``opts`` (:ref:`see example for  <mongoc_client_read_command_with_opts_example>`). Collation requires MongoDB 3.2 or later, otherwise an error is returned. No read concern or read preferences are applied.
+Use this function for commands that write such as "drop" or "createRole" (but not for "insert", "update", or "delete", see `Basic Write Operations`_). Write concern is applied from ``opts``, or else from ``collection``. The write concern is omitted for MongoDB before 3.2. Collation is applied from ``opts`` (:ref:`see example for  <mongoc_client_read_command_with_opts_example>`). Collation requires MongoDB 3.2 or later, otherwise an error is returned. No read concern or read preferences are applied.
 
 To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server <mongoc_client_select_server>`, then :symbol:`mongoc_server_description_id <mongoc_server_description_id>` on its return value.
 

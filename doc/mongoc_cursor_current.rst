@@ -6,7 +6,7 @@ mongoc_cursor_current()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
   mongoc_cursor_current (const mongoc_cursor_t *cursor);

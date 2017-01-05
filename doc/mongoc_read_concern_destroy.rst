@@ -6,7 +6,7 @@ mongoc_read_concern_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_read_concern_destroy (mongoc_read_concern_t *read_concern);

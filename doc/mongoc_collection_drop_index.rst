@@ -6,12 +6,12 @@ mongoc_collection_drop_index()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_drop_index (mongoc_collection_t *collection,
-                                const char          *index_name,
-                                bson_error_t        *error);
+                                const char *index_name,
+                                bson_error_t *error);
 
 Parameters
 ----------

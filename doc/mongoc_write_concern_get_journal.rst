@@ -6,7 +6,7 @@ mongoc_write_concern_get_journal()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern);

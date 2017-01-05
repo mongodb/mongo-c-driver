@@ -6,15 +6,15 @@ mongoc_collection_update()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_update (mongoc_collection_t          *collection,
-                            mongoc_update_flags_t         flags,
-                            const bson_t                 *selector,
-                            const bson_t                 *update,
+  mongoc_collection_update (mongoc_collection_t *collection,
+                            mongoc_update_flags_t flags,
+                            const bson_t *selector,
+                            const bson_t *update,
                             const mongoc_write_concern_t *write_concern,
-                            bson_error_t                 *error);
+                            bson_error_t *error);
 
 Parameters
 ----------

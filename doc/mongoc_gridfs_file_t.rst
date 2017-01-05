@@ -6,7 +6,7 @@ mongoc_gridfs_file_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_gridfs_file_t mongoc_gridfs_file_t;
 

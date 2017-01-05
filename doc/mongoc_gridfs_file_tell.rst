@@ -6,7 +6,7 @@ mongoc_gridfs_file_tell()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint64_t
   mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);

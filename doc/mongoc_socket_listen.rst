@@ -6,11 +6,10 @@ mongoc_socket_listen()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
-  mongoc_socket_listen (mongoc_socket_t *sock,
-                        unsigned int     backlog);
+  mongoc_socket_listen (mongoc_socket_t *sock, unsigned int backlog);
 
 Parameters
 ----------

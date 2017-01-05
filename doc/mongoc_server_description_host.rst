@@ -6,7 +6,7 @@ mongoc_server_description_host()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_host_list_t *
   mongoc_server_description_host (const mongoc_server_description_t *description);

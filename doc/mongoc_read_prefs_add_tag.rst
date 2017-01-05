@@ -6,11 +6,10 @@ mongoc_read_prefs_add_tag()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
-                             const bson_t        *tag);
+  mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs, const bson_t *tag);
 
 Parameters
 ----------

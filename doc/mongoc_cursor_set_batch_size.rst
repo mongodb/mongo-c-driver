@@ -6,11 +6,10 @@ mongoc_cursor_set_batch_size()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor,
-                                uint32_t         batch_size);
+  mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor, uint32_t batch_size);
 
 Parameters
 ----------

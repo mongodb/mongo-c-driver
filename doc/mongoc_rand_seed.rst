@@ -6,11 +6,10 @@ mongoc_rand_seed()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_rand_seed(const void *buf,
-                   int         num);
+  mongoc_rand_seed (const void *buf, int num);
 
 Description
 -----------

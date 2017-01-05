@@ -6,12 +6,12 @@ mongoc_uri_get_option_as_utf8()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri,
-                                 const char         *option,
-                                 const char         *fallback);
+                                 const char *option,
+                                 const char *fallback);
 
 Parameters
 ----------

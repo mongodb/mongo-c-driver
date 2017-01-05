@@ -8,11 +8,10 @@ Flags for insert operations
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef enum
-  {
-     MONGOC_INSERT_NONE              = 0,
+  typedef enum {
+     MONGOC_INSERT_NONE = 0,
      MONGOC_INSERT_CONTINUE_ON_ERROR = 1 << 0,
   } mongoc_insert_flags_t;
 

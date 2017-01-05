@@ -6,12 +6,12 @@ mongoc_client_pool_set_apm_callbacks()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
+  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
                                         mongoc_apm_callbacks_t *callbacks,
-                                        void                   *context);
+                                        void *context);
 
 Register a set of callbacks to receive Application Performance Monitoring events.
 

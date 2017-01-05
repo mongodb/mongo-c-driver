@@ -6,7 +6,7 @@ mongoc_find_and_modify_opts_get_bypass_document_validation()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_find_and_modify_opts_get_bypass_document_validation (

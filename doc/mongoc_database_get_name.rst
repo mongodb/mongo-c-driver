@@ -6,7 +6,7 @@ mongoc_database_get_name()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_database_get_name (mongoc_database_t *database);

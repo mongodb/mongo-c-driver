@@ -6,13 +6,13 @@ mongoc_stream_write()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_stream_write (mongoc_stream_t *stream,
-                      void            *buf,
-                      size_t           count,
-                      int32_t          timeout_msec);
+                       void *buf,
+                       size_t count,
+                       int32_t timeout_msec);
 
 Parameters
 ----------

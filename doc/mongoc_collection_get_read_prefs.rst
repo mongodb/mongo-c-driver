@@ -6,7 +6,7 @@ mongoc_collection_get_read_prefs()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_read_prefs_t *
   mongoc_collection_get_read_prefs (const mongoc_collection_t *collection);

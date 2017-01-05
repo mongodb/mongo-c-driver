@@ -6,11 +6,11 @@ mongoc_gridfs_file_list_error()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
-                                 bson_error_t              *error);
+                                 bson_error_t *error);
 
 Parameters
 ----------

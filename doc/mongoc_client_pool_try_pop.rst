@@ -6,7 +6,7 @@ mongoc_client_pool_try_pop()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_client_t *
   mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);

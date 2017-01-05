@@ -6,11 +6,11 @@ mongoc_client_pool_set_ssl_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #ifdef MONGOC_ENABLE_SSL
   void
-  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
+  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
                                    const mongoc_ssl_opt_t *opts);
   #endif
 

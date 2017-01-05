@@ -6,7 +6,7 @@ mongoc_cursor_get_limit()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
   mongoc_cursor_get_limit (mongoc_cursor_t *cursor);

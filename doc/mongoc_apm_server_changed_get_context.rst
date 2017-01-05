@@ -6,10 +6,11 @@ mongoc_apm_server_changed_get_context()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void *
-  mongoc_apm_server_changed_get_context (const mongoc_apm_server_changed_t *event);
+  mongoc_apm_server_changed_get_context (
+     const mongoc_apm_server_changed_t *event);
 
 Returns this event's context.
 

@@ -6,7 +6,7 @@ mongoc_client_get_read_prefs()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_read_prefs_t *
   mongoc_client_get_read_prefs (const mongoc_client_t *client);

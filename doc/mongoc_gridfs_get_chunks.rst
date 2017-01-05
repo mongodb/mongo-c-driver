@@ -6,7 +6,7 @@ mongoc_gridfs_get_chunks()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_collection_t *
   mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs);

@@ -6,13 +6,13 @@ mongoc_client_select_server()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_server_description_t *
-  mongoc_client_select_server (mongoc_client_t           *client,
-                               bool                       for_writes,
+  mongoc_client_select_server (mongoc_client_t *client,
+                               bool for_writes,
                                const mongoc_read_prefs_t *prefs,
-                               bson_error_t              *error);
+                               bson_error_t *error);
 
 Choose a server for an operation, according to the logic described in the Server Selection Spec.
 

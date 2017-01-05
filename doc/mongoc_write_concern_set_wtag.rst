@@ -6,11 +6,11 @@ mongoc_write_concern_set_wtag()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
-                                 const char             *tag);
+                                 const char *tag);
 
 Parameters
 ----------

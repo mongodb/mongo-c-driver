@@ -6,7 +6,7 @@ mongoc_cursor_clone()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
   mongoc_cursor_clone (const mongoc_cursor_t *cursor)

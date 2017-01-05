@@ -6,11 +6,10 @@ mongoc_gridfs_file_set_aliases()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_gridfs_file_set_aliases (mongoc_gridfs_file_t *file,
-                                  const bson_t         *bson);
+  mongoc_gridfs_file_set_aliases (mongoc_gridfs_file_t *file, const bson_t *bson);
 
 Parameters
 ----------

@@ -1,4 +1,5 @@
 :man_page: mongoc_matcher
+:orphan:
 
 Client Side Document Matching
 =============================

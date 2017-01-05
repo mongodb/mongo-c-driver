@@ -6,11 +6,11 @@ mongoc_bulk_operation_set_hint()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_bulk_operation_set_hint (const mongoc_bulk_operation_t *bulk,
-                                  uint32_t                       server_id);
+                                  uint32_t server_id);
 
 Parameters
 ----------

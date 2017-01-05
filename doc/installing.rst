@@ -10,25 +10,17 @@ Supported Platforms
 
 The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on variety of platforms including:
 
-====================================================  ================================================================  ==============================================================================================================================================================================================================
-                                                                                                                                                                                                                                                                                                                                      
-* GNU/Linux
-* Solaris
-* Mac OS X
-* Microsoft Windows  * x86 and x86_64
-* ARM
-* PPC
-* SPARC
-* aarch64
-* s390x
-* ppc64le  * GCC 4.1 and newer
-* Clang 3.3 and newer
-* Microsoft Visual Studio 2010 and newer
-* `Oracle Solaris Studio 12 <http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html>`_
-* MinGW
-====================================================  ================================================================  ==============================================================================================================================================================================================================
+=======================  =================  ======================================
+Operating Systems        CPU Architectures  Compiler Toolchain
+=======================  =================  ======================================
+GNU/Linux                x86 and x86_64     GCC 4.1 and newer
+Solaris 11               ARM                Clang 3.3 and newer
+Mac OS X 10.6 and newer  PPC                Microsoft Visual Studio 2010 and newer
+Windows Vista, 7, and 8  SPARC              `Oracle Solaris Studio 12`_
+FreeBSD                                     MinGW
+=======================  =================  ======================================
 
-The driver is also known to work on FreeBSD, and should work on any POSIX compatible platform with a working c89 (or later) compiler.
+.. _Oracle Solaris Studio 12: http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html
 
 Install with a Package Manager
 ------------------------------
@@ -45,10 +37,7 @@ On Fedora, a mongo-c-driver package is available in the default repositories and
 
   $ dnf install mongo-c-driver
 
-On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package
-      is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check
-      version available, see `https://apps.fedoraproject.org/packages/mongo-c-driver <https://apps.fedoraproject.org/packages/mongo-c-driver>`_.
-      The package can be installed with:
+On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check version available, see `https://apps.fedoraproject.org/packages/mongo-c-driver <https://apps.fedoraproject.org/packages/mongo-c-driver>`_. The package can be installed with:
 
 .. code-block:: none
 
@@ -58,7 +47,7 @@ Building on Unix
 ----------------
 
 Prerequisites
--------------
+^^^^^^^^^^^^^
 
 OpenSSL is required for authentication or for SSL connections to MongoDB. Kerberos or LDAP support requires Cyrus SASL.
 
@@ -81,17 +70,17 @@ On FreeBSD:
   $ su -c 'pkg install pkgconf openssl cyrus-sasl'
 
 Building from a release tarball
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Unless you intend on contributing to the mongo-c-driver, you will want to build from a release tarball.
 
-The most recent release of libmongoc is 1.4.0 and can be `downloaded here <https://github.com/mongodb/mongo-c-driver/releases/download/1.4.0/mongo-c-driver-1.4.0.tar.gz>`_. The following snippet will download and extract the driver, and configure it:
+The most recent release of libmongoc is |release| and can be `downloaded here <https://github.com/mongodb/mongo-c-driver/releases/download/|release|/mongo-c-driver-|release|.tar.gz>`_. The following snippet will download and extract the driver, and configure it:
 
-.. code-block:: none
+.. parsed-literal::
 
-  $ wget https://github.com/mongodb/mongo-c-driver/releases/download/1.4.0/mongo-c-driver-1.4.0.tar.gz
-  $ tar xzf mongo-c-driver-1.4.0.tar.gz
-  $ cd mongo-c-driver-1.4.0
+  $ wget |release_download|
+  $ tar xzf mongo-c-driver-|release|.tar.gz
+  $ cd mongo-c-driver-|release|
   $ ./configure
       
 
@@ -125,7 +114,7 @@ mongo-c-driver contains a copy of libbson, in case your system does not already 
       
 
 Building from git
------------------
+^^^^^^^^^^^^^^^^^
 
 To build an unreleased version of the driver from git requires additional dependencies.
 
@@ -160,9 +149,9 @@ Once you have the dependencies installed, clone the repository and build the cur
       
 
 Generating the documentation
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Install the ``yelp-tools`` and ``yelp-xsl`` packages, then:
+Install `Sphinx <http://www.sphinx-doc.org/>`_, then:
 
 .. code-block:: none
 
@@ -172,54 +161,21 @@ Install the ``yelp-tools`` and ``yelp-xsl`` packages, then:
 Building on Mac OS X
 --------------------
 
-Prerequisites
--------------
+Install the XCode Command Line Tools::
 
-XCode Command Line Tools
-------------------------
+  $ xcode-select --install
 
-To install the XCode Command Line Tools, just type ``xcode-select --install`` in the Terminal and follow the instructions.
+Some Homebrew packages are also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
 
-OpenSSL support on El Capitan
------------------------------
+  $ brew install automake autoconf libtool pkgconfig
 
-Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers. To build the driver with SSL on El Capitan and later, first `install Homebrew according to its instructions <http://brew.sh/>`_, then:
+Download the latest release tarball
 
-.. code-block:: none
+.. parsed-literal::
 
-  $ brew install openssl
-  $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
-  $ export CPPFLAGS="-I/usr/local/opt/openssl/include"
-
-Native TLS Support on Mac OS X / Darwin (Secure Transport)
-----------------------------------------------------------
-
-	The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
-	Using the native libraries there is no need to install OpenSSL. By
-	default however, the driver will compile against OpenSSL if it
-	detects it being available. If OpenSSL is not available, it will
-	fallback on the native libraries.
-      
-
-	To compile against the Darwin native TLS and crypto libraries, even when
-	OpenSSL is available, configure the driver like so:
-      
-
-.. code-block:: none
-
-  $ ./configure --enable-ssl=darwin
-      
-
-Building on OS X
-----------------
-
-Download the latest release tarball:
-
-.. code-block:: none
-
-  $ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/1.4.0/mongo-c-driver-1.4.0.tar.gz
-  $ tar xzf mongo-c-driver-1.4.0.tar.gz
-  $ cd mongo-c-driver-1.4.0
+  $ curl -LO |release_download|
+  $ tar xzf mongo-c-driver-|release|.tar.gz
+  $ cd mongo-c-driver-|release|
 
 Build and install the driver:
 
@@ -229,27 +185,32 @@ Build and install the driver:
   $ make
   $ sudo make install
 
-Generating the documentation on OS X
-------------------------------------
+Native TLS Support on Mac OS X / Darwin (Secure Transport)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Homebrew is required to generate the driver's HTML documentation and man pages:
+The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
+Using the native libraries there is no need to install OpenSSL. By
+default however, the driver will compile against OpenSSL if it
+detects it being available. If OpenSSL is not available, it will
+fallback on the native libraries.
 
-.. code-block:: none
-
-  $ brew install yelp-xsl yelp-tools
-  $ ./configure --enable-html-docs --enable-man-pages
-  $ make man html
-
-Installing on Mac OS X
-----------------------
-
-To build the C Driver on a Mac, install the prerequisites in order to build it from source. It is recommended to use `Homebrew <http://brew.sh>`_:
+To compile against the Darwin native TLS and crypto libraries, even when
+OpenSSL is available, configure the driver like so:
 
 .. code-block:: none
 
-  $ brew install automake autoconf libtool pkgconfig
+  $ ./configure --enable-ssl=darwin
 
-Additionally, `XCode <http://developer.apple.com/xcode>`_ is required. The driver can then be installed by following the directions for :ref:`building from source <installing_build_yourself>`.
+OpenSSL support on El Capitan
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers. To build the driver with SSL on El Capitan and later:
+
+.. code-block:: none
+
+  $ brew install openssl
+  $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
+  $ export CPPFLAGS="-I/usr/local/opt/openssl/include"
 
 Building on Windows
 -------------------
@@ -258,10 +219,10 @@ Building on Windows requires Windows Vista or newer and Visual Studio 2010 or ne
 
 Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft.
 
-.. code-block:: none
+.. parsed-literal::
 
-  cd mongo-c-driver-1.4.0\src\libbson
-  cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"
+  cd mongo-c-driver-|release|\\src\\libbson
+  cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver"
 
 (Run ``cmake -LH .`` for a list of other options.)
 
@@ -281,30 +242,35 @@ You should now see libbson installed in ``C:\mongo-c-driver``
 
 Now let's do the same for the MongoDB C driver.
 
-.. code-block:: none
+.. parsed-literal::
 
-  cd mongo-c-driver-1.4.0
-  cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+  cd mongo-c-driver-|release|
+  cmake -G "Visual Studio 14 2015 Win64" \\
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+    "-DBSON_ROOT_DIR=C:\\mongo-c-driver"
+
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
 All of the MongoDB C Driver's components will now be found in ``C:\mongo-c-driver``.
 
 Native TLS Support on Windows (Secure Channel)
-----------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	The MongoDB C Driver supports the Windows native TLS and crypto libraries.
-	Using the native libraries there is no need to install OpenSSL. By
-	default however, the driver will compile against OpenSSL if it
-	detects it being available. If OpenSSL is not available, it will
-	fallback on the native libraries.
-      
+The MongoDB C Driver supports the Windows native TLS and crypto libraries.
+Using the native libraries there is no need to install OpenSSL. By
+default however, the driver will compile against OpenSSL if it
+detects it being available. If OpenSSL is not available, it will
+fallback on the native libraries.
 
-	To compile against the Windows native TLS and crypto libraries, even when
-	OpenSSL is available, configure the driver like so:
-      
+
+To compile against the Windows native TLS and crypto libraries, even when
+OpenSSL is available, configure the driver like so:
 
 .. code-block:: none
 
-  cmake -G "Visual Studio 14 2015 Win64" "-DENABLE_SSL=WINDOWS" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+  cmake -G "Visual Studio 14 2015 Win64" \
+    "-DENABLE_SSL=WINDOWS" \
+    "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" \
+    "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 

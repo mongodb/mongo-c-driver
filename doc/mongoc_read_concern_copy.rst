@@ -6,7 +6,7 @@ mongoc_read_concern_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_read_concern_t *
   mongoc_read_concern_copy (const mongoc_read_concern_t *read_concern);

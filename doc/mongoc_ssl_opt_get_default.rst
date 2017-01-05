@@ -6,7 +6,7 @@ mongoc_ssl_opt_get_default()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_ssl_opt_t *
   mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;

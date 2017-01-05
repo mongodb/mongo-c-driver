@@ -6,17 +6,16 @@ mongoc_index_opt_geo_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 
-  typedef struct
-  {
+  typedef struct {
      uint8_t twod_sphere_version;
      uint8_t twod_bits_precision;
-     double  twod_location_min;
-     double  twod_location_max;
-     double  haystack_bucket_size;
+     double twod_location_min;
+     double twod_location_max;
+     double haystack_bucket_size;
      uint8_t *padding[32];
   } mongoc_index_opt_geo_t;
 

@@ -6,10 +6,11 @@ mongoc_apm_server_heartbeat_failed_get_context()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void *
-  mongoc_apm_server_heartbeat_failed_get_context (const mongoc_apm_server_heartbeat_failed_t *event);
+  mongoc_apm_server_heartbeat_failed_get_context (
+     const mongoc_apm_server_heartbeat_failed_t *event);
 
 Returns this event's context.
 

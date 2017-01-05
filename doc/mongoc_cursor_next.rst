@@ -6,11 +6,10 @@ mongoc_cursor_next()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_cursor_next (mongoc_cursor_t *cursor,
-                      const bson_t   **bson);
+  mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson);
 
 Parameters
 ----------

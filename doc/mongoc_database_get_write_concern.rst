@@ -6,7 +6,7 @@ mongoc_database_get_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_write_concern_t *
   mongoc_database_get_write_concern (const mongoc_database_t *database);

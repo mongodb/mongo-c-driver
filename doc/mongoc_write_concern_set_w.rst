@@ -6,11 +6,10 @@ mongoc_write_concern_set_w()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
-                              int32_t                 w);
+  mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w);
 
 Parameters
 ----------

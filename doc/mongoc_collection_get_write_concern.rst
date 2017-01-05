@@ -6,7 +6,7 @@ mongoc_collection_get_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_write_concern_t *
   mongoc_collection_get_write_concern (const mongoc_collection_t *collection);

@@ -6,7 +6,7 @@ mongoc_matcher_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_matcher_destroy (mongoc_matcher_t *matcher);

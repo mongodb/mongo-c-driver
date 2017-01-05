@@ -11,12 +11,11 @@ This function is deprecated, use :symbol:`mongoc_gridfs_find_with_opts <mongoc_g
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_list_t *
-  mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
-                      const bson_t    *query)
-    BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_with_opts);
+  mongoc_gridfs_find (mongoc_gridfs_t *gridfs, const bson_t *query)
+     BSON_GNUC_DEPRECATED_FOR (mongoc_gridfs_find_with_opts);
 
 Parameters
 ----------

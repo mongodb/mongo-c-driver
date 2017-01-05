@@ -6,12 +6,10 @@ mongoc_gridfs_file_seek()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
-  mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
-                           int64_t               delta,
-                           int                   whence);
+  mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence);
 
 Parameters
 ----------

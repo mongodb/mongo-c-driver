@@ -51,8 +51,8 @@ Here's an example of the ``cloneCollection`` command to clone a collection from 
    :language: c
    :caption: clone-collection.c
 
-Running
--------
+Running the Examples
+--------------------
 
 .. literalinclude:: ../examples/common_operations/common-operations.c
    :language: c

@@ -6,7 +6,7 @@ mongoc_collection_get_read_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_read_concern_t *
   mongoc_collection_get_read_concern (const mongoc_collection_t *collection);

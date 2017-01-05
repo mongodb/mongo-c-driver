@@ -5,15 +5,18 @@ Tutorial
 
 This guide offers a brief introduction to the MongoDB C Driver.
 
-For more information on the C API, please refer to the :ref:`API Documentation <index_api_reference>`.
+For more information on the C API, please refer to the :doc:`api`.
 
-0. Installing
--------------
+.. contents::
+  :depth: 2
+
+Installing
+----------
 
 For detailed instructions on installing the MongoDB C Driver on a particular platform, please see the :doc:`installation guide <installing>`.
 
-1. Starting MongoDB
--------------------
+Starting MongoDB
+----------------
 
 To run the examples in this tutorial, MongoDB must be installed and running on ``localhost`` on the default port, 27017. To check if it is up and running, connect to it with the MongoDB shell.
 
@@ -26,8 +29,8 @@ To run the examples in this tutorial, MongoDB must be installed and running on `
 
 .. _tutorial_connecting:
 
-2. Making a Connection
-----------------------
+Making a Connection
+-------------------
 
 The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a :symbol:`mongoc_client_t <mongoc_client_t>`. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs :symbol:`mongoc_database_t <mongoc_database_t>` and :symbol:`mongoc_collection_t <mongoc_collection_t>`, respectively. MongoDB operations can then be performed through these handles.
 
@@ -35,7 +38,7 @@ At the start of an application, call :doc:`mongoc_init() <mongoc_init>` before a
 
 The example below establishes a connection to a standalone server on ``localhost``, registers the client application as "connect-example," and performs a simple command. More information about database operations can be found in the :ref:`CRUD Operations <tutorial_crud_operations>` and :ref:`Executing Commands <tutorial_executing_commands>` sections. Examples of connecting to replica sets and sharded clusters can be found on the :doc:`Advanced Connections <advanced-connections>` page.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <bcon.h>
@@ -139,13 +142,13 @@ For Windows users, the code can be compiled and run with the following commands.
   C:\> connect
   { "ok" : 1.000000 }
 
-3. Creating BSON Documents
---------------------------
+Creating BSON Documents
+-----------------------
 
 Documents are stored in MongoDB's data format, BSON. The C driver uses :doc:`libbson <bson:index>` to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.
 
 Appending BSON
---------------
+^^^^^^^^^^^^^^
 
 A BSON document, represented as a :doc:`bson_t <bson:bson_t>` in code, can be constructed one field at a time using libbson's append functions.
 
@@ -166,7 +169,7 @@ For example, to create a document like this:
 
 Use the following code:
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
 
@@ -260,11 +263,11 @@ Use the following code:
 See the :doc:`libbson documentation <bson:bson_t>` for all of the types that can be appended to a :symbol:`bson_t <bson:bson_t>`.
 
 Using BCON
-----------
+^^^^^^^^^^
 
 *BSON C Object Notation*, BCON for short, is an alternative way of constructing BSON documents in a manner closer to the intended format. It has less type-safety than BSON's append functions but results in less code.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
 
@@ -319,11 +322,11 @@ Using BCON
 Notice that BCON can create arrays, subdocuments and arbitrary fields.
 
 Creating BSON from JSON
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 For *single* documents, BSON can be created from JSON strings via :doc:`bson_new_from_json <bson:bson_new_from_json>`.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
 
@@ -354,19 +357,19 @@ To initialize BSON from a sequence of JSON documents, use :doc:`bson_json_reader
 
 .. _tutorial_crud_operations:
 
-4. Basic CRUD Operations
-------------------------
+Basic CRUD Operations
+---------------------
 
 This section demonstrates the basics of using the C Driver to interact with MongoDB.
 
 Inserting a Document
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 To insert documents into a collection, first obtain a handle to a ``mongoc_collection_t`` via a ``mongoc_client_t``. Then, use :doc:`mongoc_collection_insert() <mongoc_collection_insert>` to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".
 
 When finished, ensure that allocated structures are freed by using their respective destroy functions.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <mongoc.h>
@@ -434,7 +437,7 @@ To verify that the insert succeeded, connect with the MongoDB shell.
 .. _tutorial_find:
 
 Finding a Document
-------------------
+^^^^^^^^^^^^^^^^^^
 
 To query a MongoDB collection with the C driver, use the function :doc:`mongoc_collection_find_with_opts() <mongoc_collection_find_with_opts>`. This returns a :doc:`cursor <mongoc_cursor_t>` to the matching documents. The following examples iterate through the result cursors and print the matches to ``stdout`` as JSON strings.
 
@@ -448,43 +451,43 @@ will match any document with a field named "color" with value "red". An empty do
 
 This first example uses an empty query specifier to find all documents in the database "mydb" and collection "mycoll".
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
   int
-  main (int   argc,
-       char *argv[])
+  main (int argc, char *argv[])
   {
-    mongoc_client_t *client;
-    mongoc_collection_t *collection;
-    mongoc_cursor_t *cursor;
-    const bson_t *doc;
-    bson_t *query;
-    char *str;
+     mongoc_client_t *client;
+     mongoc_collection_t *collection;
+     mongoc_cursor_t *cursor;
+     const bson_t *doc;
+     bson_t *query;
+     char *str;
 
-    mongoc_init ();
+     mongoc_init ();
 
-    client = mongoc_client_new ("mongodb://localhost:27017/?appname=find-example");
-    collection = mongoc_client_get_collection (client, "mydb", "mycoll");
-    query = bson_new ();
-    cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+     client =
+        mongoc_client_new ("mongodb://localhost:27017/?appname=find-example");
+     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+     query = bson_new ();
+     cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
-    while (mongoc_cursor_next (cursor, &doc)) {
-       str = bson_as_json (doc, NULL);
-       printf ("%s\n", str);
-       bson_free (str);
-    }
+     while (mongoc_cursor_next (cursor, &doc)) {
+        str = bson_as_json (doc, NULL);
+        printf ("%s\n", str);
+        bson_free (str);
+     }
 
-    bson_destroy (query);
-    mongoc_cursor_destroy (cursor);
-    mongoc_collection_destroy (collection);
-    mongoc_client_destroy (client);
-    mongoc_cleanup ();
+     bson_destroy (query);
+     mongoc_cursor_destroy (cursor);
+     mongoc_collection_destroy (collection);
+     mongoc_client_destroy (client);
+     mongoc_cleanup ();
 
-    return 0;
+     return 0;
   }
 
 Compile the code and run it: 
@@ -505,45 +508,45 @@ On Windows:
 
 To look for a specific document, add a specifier to ``query``. This example adds a call to ``BSON_APPEND_UTF8()`` to look for all documents matching ``{"hello" : "world"}``.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
-      mongoc_client_t *client;
-      mongoc_collection_t *collection;
-      mongoc_cursor_t *cursor;
-      const bson_t *doc;
-      bson_t *query;
-      char *str;
+     mongoc_client_t *client;
+     mongoc_collection_t *collection;
+     mongoc_cursor_t *cursor;
+     const bson_t *doc;
+     bson_t *query;
+     char *str;
 
-      mongoc_init ();
+     mongoc_init ();
 
-      client = mongoc_client_new ("mongodb://localhost:27017/?appname=find-specific-example");
-      collection = mongoc_client_get_collection (client, "mydb", "mycoll");
-      query = bson_new ();
-      BSON_APPEND_UTF8 (query, "hello", "world");
+     client = mongoc_client_new (
+        "mongodb://localhost:27017/?appname=find-specific-example");
+     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+     query = bson_new ();
+     BSON_APPEND_UTF8 (query, "hello", "world");
 
-      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
+     cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
-      while (mongoc_cursor_next (cursor, &doc)) {
-          str = bson_as_json (doc, NULL);
-          printf ("%s\n", str);
-          bson_free (str);
-      }
+     while (mongoc_cursor_next (cursor, &doc)) {
+        str = bson_as_json (doc, NULL);
+        printf ("%s\n", str);
+        bson_free (str);
+     }
 
-      bson_destroy (query);
-      mongoc_cursor_destroy (cursor);
-      mongoc_collection_destroy (collection);
-      mongoc_client_destroy (client);
-      mongoc_cleanup ();
+     bson_destroy (query);
+     mongoc_cursor_destroy (cursor);
+     mongoc_collection_destroy (collection);
+     mongoc_client_destroy (client);
+     mongoc_cleanup ();
 
-      return 0;
+     return 0;
   }
 
 .. code-block:: none
@@ -559,13 +562,13 @@ To look for a specific document, add a specifier to ``query``. This example adds
   { "_id" : { "$oid" : "55ef43766cb5f36a3bae6ee4" }, "hello" : "world" }
 
 Updating a Document
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 This code snippet gives an example of using :doc:`mongoc_collection_update() <mongoc_collection_update>` to update the fields of a document.
 
 Using the "mydb" database, the following example inserts an example document into the "mycoll" collection. Then, using its ``_id`` field, the document is updated with different values and a new field.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bcon.h>
   #include <bson.h>
@@ -573,55 +576,59 @@ Using the "mydb" database, the following example inserts an example document int
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
-      mongoc_collection_t *collection;
-      mongoc_client_t *client;
-      bson_error_t error;
-      bson_oid_t oid;
-      bson_t *doc = NULL;
-      bson_t *update = NULL;
-      bson_t *query = NULL;
+     mongoc_collection_t *collection;
+     mongoc_client_t *client;
+     bson_error_t error;
+     bson_oid_t oid;
+     bson_t *doc = NULL;
+     bson_t *update = NULL;
+     bson_t *query = NULL;
 
-      mongoc_init ();
+     mongoc_init ();
 
-      client = mongoc_client_new ("mongodb://localhost:27017/?appname=update-example");
-      collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+     client =
+        mongoc_client_new ("mongodb://localhost:27017/?appname=update-example");
+     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
-      bson_oid_init (&oid, NULL);
-      doc = BCON_NEW ("_id", BCON_OID (&oid),
-                      "key", BCON_UTF8 ("old_value"));
+     bson_oid_init (&oid, NULL);
+     doc = BCON_NEW ("_id", BCON_OID (&oid), "key", BCON_UTF8 ("old_value"));
 
-      if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-          fprintf (stderr, "%s\n", error.message);
-          goto fail;
-      }
+     if (!mongoc_collection_insert (
+            collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+        fprintf (stderr, "%s\n", error.message);
+        goto fail;
+     }
 
-      query = BCON_NEW ("_id", BCON_OID (&oid));
-      update = BCON_NEW ("$set", "{",
-                             "key", BCON_UTF8 ("new_value"),
-                             "updated", BCON_BOOL (true),
-                         "}");
+     query = BCON_NEW ("_id", BCON_OID (&oid));
+     update = BCON_NEW ("$set",
+                        "{",
+                        "key",
+                        BCON_UTF8 ("new_value"),
+                        "updated",
+                        BCON_BOOL (true),
+                        "}");
 
-      if (!mongoc_collection_update (collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
-          fprintf (stderr, "%s\n", error.message);
-          goto fail;
-      }
+     if (!mongoc_collection_update (
+            collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
+        fprintf (stderr, "%s\n", error.message);
+        goto fail;
+     }
 
   fail:
-      if (doc)
-          bson_destroy (doc);
-      if (query)
-          bson_destroy (query);
-      if (update)
-          bson_destroy (update);
+     if (doc)
+        bson_destroy (doc);
+     if (query)
+        bson_destroy (query);
+     if (update)
+        bson_destroy (update);
 
-      mongoc_collection_destroy (collection);
-      mongoc_client_destroy (client);
-      mongoc_cleanup ();
+     mongoc_collection_destroy (collection);
+     mongoc_client_destroy (client);
+     mongoc_cleanup ();
 
-      return 0;
+     return 0;
   }
 
 Compile the code and run it:
@@ -653,57 +660,59 @@ To verify that the update succeeded, connect with the MongoDB shell.
   > 
 
 Deleting a Document
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 This example illustrates the use of :doc:`mongoc_collection_remove() <mongoc_collection_remove>` to delete documents.
 
 The following code inserts a sample document into the database "mydb" and collection "mycoll". Then, it deletes all documents matching ``{"hello" : "world"}``.
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
-      mongoc_client_t *client;
-      mongoc_collection_t *collection;
-      bson_error_t error;
-      bson_oid_t oid;
-      bson_t *doc;
+     mongoc_client_t *client;
+     mongoc_collection_t *collection;
+     bson_error_t error;
+     bson_oid_t oid;
+     bson_t *doc;
 
-      mongoc_init ();
+     mongoc_init ();
 
-      client = mongoc_client_new ("mongodb://localhost:27017/?appname=delete-example");
-      collection = mongoc_client_get_collection (client, "test", "test");
+     client =
+        mongoc_client_new ("mongodb://localhost:27017/?appname=delete-example");
+     collection = mongoc_client_get_collection (client, "test", "test");
 
-      doc = bson_new ();
-      bson_oid_init (&oid, NULL);
-      BSON_APPEND_OID (doc, "_id", &oid);
-      BSON_APPEND_UTF8 (doc, "hello", "world");
+     doc = bson_new ();
+     bson_oid_init (&oid, NULL);
+     BSON_APPEND_OID (doc, "_id", &oid);
+     BSON_APPEND_UTF8 (doc, "hello", "world");
 
-      if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-          fprintf (stderr, "Insert failed: %s\n", error.message);
-      }
+     if (!mongoc_collection_insert (
+            collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+        fprintf (stderr, "Insert failed: %s\n", error.message);
+     }
 
-      bson_destroy (doc);
+     bson_destroy (doc);
 
-      doc = bson_new ();
-      BSON_APPEND_OID (doc, "_id", &oid);
+     doc = bson_new ();
+     BSON_APPEND_OID (doc, "_id", &oid);
 
-      if (!mongoc_collection_remove (collection, MONGOC_REMOVE_SINGLE_REMOVE, doc, NULL, &error)) {
-          fprintf (stderr, "Delete failed: %s\n", error.message);
-      }
+     if (!mongoc_collection_remove (
+            collection, MONGOC_REMOVE_SINGLE_REMOVE, doc, NULL, &error)) {
+        fprintf (stderr, "Delete failed: %s\n", error.message);
+     }
 
-      bson_destroy (doc);
-      mongoc_collection_destroy (collection);
-      mongoc_client_destroy (client);
-      mongoc_cleanup ();
+     bson_destroy (doc);
+     mongoc_collection_destroy (collection);
+     mongoc_client_destroy (client);
+     mongoc_cleanup ();
 
-      return 0;
+     return 0;
   }
 
 Compile the code and run it:
@@ -734,19 +743,18 @@ Use the MongoDB shell to prove that the documents have been removed successfully
   > 
 
 Counting Documents
-------------------
+^^^^^^^^^^^^^^^^^^
 
 Counting the number of documents in a MongoDB collection is similar to performing a :ref:`find operation <tutorial_find>`. This example counts the number of documents matching ``{"hello" : "world"}`` in the database "mydb" and collection "mycoll".
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
      mongoc_client_t *client;
      mongoc_collection_t *collection;
@@ -756,11 +764,14 @@ Counting the number of documents in a MongoDB collection is similar to performin
 
      mongoc_init ();
 
-     client = mongoc_client_new ("mongodb://localhost:27017/?appname=count-example");
+     client =
+        mongoc_client_new ("mongodb://localhost:27017/?appname=count-example");
      collection = mongoc_client_get_collection (client, "mydb", "mycoll");
-     doc = bson_new_from_json ((const uint8_t *)"{\"hello\" : \"world\"}", -1, &error);
+     doc = bson_new_from_json (
+        (const uint8_t *) "{\"hello\" : \"world\"}", -1, &error);
 
-     count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, doc, 0, 0, NULL, &error);
+     count = mongoc_collection_count (
+        collection, MONGOC_QUERY_NONE, doc, 0, 0, NULL, &error);
 
      if (count < 0) {
         fprintf (stderr, "%s\n", error.message);
@@ -794,14 +805,14 @@ On Windows:
 
 .. _tutorial_executing_commands:
 
-5. Executing Commands
----------------------
+Executing Commands
+------------------
 
 The driver provides helper functions for executing MongoDB commands on client, database and collection structures. These functions return :doc:`cursors <mongoc_cursor_t>`; the ``_simple`` variants return booleans indicating success or failure.
 
 This example executes the `collStats <http://docs.mongodb.org/manual/reference/command/collStats/>`_ command against the collection "mycoll" in database "mydb".
 
-.. code-block:: none
+.. code-block:: c
 
   #include <bson.h>
   #include <bcon.h>
@@ -809,37 +820,38 @@ This example executes the `collStats <http://docs.mongodb.org/manual/reference/c
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
-      mongoc_client_t *client;
-      mongoc_collection_t *collection;
-      bson_error_t error;
-      bson_t *command;
-      bson_t reply;
-      char *str;
+     mongoc_client_t *client;
+     mongoc_collection_t *collection;
+     bson_error_t error;
+     bson_t *command;
+     bson_t reply;
+     char *str;
 
-      mongoc_init ();
+     mongoc_init ();
 
-      client = mongoc_client_new ("mongodb://localhost:27017/?appname=executing-example");
-      collection = mongoc_client_get_collection (client, "mydb", "mycoll");
+     client = mongoc_client_new (
+        "mongodb://localhost:27017/?appname=executing-example");
+     collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
-      command = BCON_NEW ("collStats", BCON_UTF8 ("mycoll"));
-      if (mongoc_collection_command_simple (collection, command, NULL, &reply, &error)) {
-          str = bson_as_json (&reply, NULL);
-          printf ("%s\n", str);
-          bson_free (str);
-      } else {
-          fprintf (stderr, "Failed to run command: %s\n", error.message);
-      }
+     command = BCON_NEW ("collStats", BCON_UTF8 ("mycoll"));
+     if (mongoc_collection_command_simple (
+            collection, command, NULL, &reply, &error)) {
+        str = bson_as_json (&reply, NULL);
+        printf ("%s\n", str);
+        bson_free (str);
+     } else {
+        fprintf (stderr, "Failed to run command: %s\n", error.message);
+     }
 
-      bson_destroy (command);
-      bson_destroy (&reply);
-      mongoc_collection_destroy (collection);
-      mongoc_client_destroy (client);
-      mongoc_cleanup ();
+     bson_destroy (command);
+     bson_destroy (&reply);
+     mongoc_collection_destroy (collection);
+     mongoc_client_destroy (client);
+     mongoc_cleanup ();
 
-      return 0;
+     return 0;
   }
 
 Compile the code and run it:
@@ -862,8 +874,8 @@ On Windows:
   "lastExtentSize" : 8192.000000, "paddingFactor" : 1.000000, "userFlags" : 1, "capped" : false, "nindexes" : 1,
   "indexDetails" : {  }, "totalIndexSize" : 8176, "indexSizes" : { "_id_" : 8176 }, "ok" : 1.000000 }
 
-6. Threading
-------------
+Threading
+---------
 
 The MongoDB C Driver is thread-unaware in the vast majority of its operations. This means it is up to the programmer to guarantee thread-safety.
 
@@ -873,8 +885,8 @@ However, :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>` is thread-safe an
    :language: c
    :caption: example-pool.c
 
-7. Next Steps
--------------
+Next Steps
+----------
 
 To find information on advanced topics, browse the rest of the :doc:`C driver guide <index>` or the `official MongoDB documentation <https://docs.mongodb.org>`_.
 

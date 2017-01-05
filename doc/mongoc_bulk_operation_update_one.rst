@@ -6,13 +6,13 @@ mongoc_bulk_operation_update_one()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
-                                    const bson_t            *selector,
-                                    const bson_t            *document,
-                                    bool                     upsert);
+                                    const bson_t *selector,
+                                    const bson_t *document,
+                                    bool upsert);
 
 This function queues an update as part of a bulk operation. It will only modify a single document on the MongoDB server. This function does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
 

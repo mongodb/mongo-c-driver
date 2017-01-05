@@ -6,11 +6,10 @@ mongoc_cursor_set_hint()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_cursor_set_hint (mongoc_cursor_t *cursor,
-                          uint32_t         server_id);
+  mongoc_cursor_set_hint (mongoc_cursor_t *cursor, uint32_t server_id);
 
 Parameters
 ----------

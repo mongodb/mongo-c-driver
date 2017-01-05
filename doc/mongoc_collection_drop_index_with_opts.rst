@@ -6,13 +6,13 @@ mongoc_collection_drop_index_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
-                                          const char          *index_name,
-                                          const bson_t        *opts,
-                                          bson_error_t        *error);
+                                          const char *index_name,
+                                          const bson_t *opts,
+                                          bson_error_t *error);
 
 Parameters
 ----------

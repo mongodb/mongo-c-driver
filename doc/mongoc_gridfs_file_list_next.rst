@@ -6,7 +6,7 @@ mongoc_gridfs_file_list_next()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_t *
   mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);

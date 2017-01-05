@@ -6,11 +6,11 @@ mongoc_read_prefs_set_mode()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
-                              mongoc_read_mode_t   mode);
+                              mongoc_read_mode_t mode);
 
 Parameters
 ----------

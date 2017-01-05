@@ -8,7 +8,7 @@ MongoDB Database Abstraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_database_t mongoc_database_t;
 
@@ -18,10 +18,7 @@ Read preferences and write concerns are inherited from the parent client. They c
 
 .. warning::
 
-  It is an error to call :symbol:`mongoc_database_destroy() <mongoc_database_destroy>` on a
-    database that has operations pending. It is required that you release :symbol:`mongoc_cursor_t <mongoc_cursor_t>` structures before calling
-    :symbol:`mongoc_database_destroy <mongoc_database_destroy>`.
-    
+  It is an error to call :symbol:`mongoc_database_destroy() <mongoc_database_destroy>` on a database that has operations pending. It is required that you release :symbol:`mongoc_cursor_t <mongoc_cursor_t>` structures before calling :symbol:`mongoc_database_destroy <mongoc_database_destroy>`.
 
 .. only:: html
 
@@ -60,13 +57,12 @@ Read preferences and write concerns are inherited from the parent client. They c
 Examples
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 
   int
-  main (int argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
      mongoc_database_t *database;
      mongoc_client_t *client;

@@ -6,11 +6,11 @@ mongoc_write_concern_append()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
-                               bson_t                 *command);    
+                               bson_t *command);
 
 Parameters
 ----------

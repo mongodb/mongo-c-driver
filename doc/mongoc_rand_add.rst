@@ -6,12 +6,10 @@ mongoc_rand_add()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_rand_add(const void *buf,
-                  int         num,
-                  double      entropy);
+  mongoc_rand_add (const void *buf, int num, double entropy);
 
 Description
 -----------

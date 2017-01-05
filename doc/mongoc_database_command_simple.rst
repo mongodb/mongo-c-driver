@@ -6,14 +6,14 @@ mongoc_database_command_simple()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_database_command_simple (mongoc_database_t         *database,
-                                  const bson_t              *command,
+  mongoc_database_command_simple (mongoc_database_t *database,
+                                  const bson_t *command,
                                   const mongoc_read_prefs_t *read_prefs,
-                                  bson_t                    *reply,
-                                  bson_error_t              *error);
+                                  bson_t *reply,
+                                  bson_error_t *error);
 
 Parameters
 ----------

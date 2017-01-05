@@ -8,18 +8,17 @@ Flags for query operations
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef enum
-  {
-     MONGOC_QUERY_NONE              = 0,
-     MONGOC_QUERY_TAILABLE_CURSOR   = 1 << 1,
-     MONGOC_QUERY_SLAVE_OK          = 1 << 2,
-     MONGOC_QUERY_OPLOG_REPLAY      = 1 << 3,
+  typedef enum {
+     MONGOC_QUERY_NONE = 0,
+     MONGOC_QUERY_TAILABLE_CURSOR = 1 << 1,
+     MONGOC_QUERY_SLAVE_OK = 1 << 2,
+     MONGOC_QUERY_OPLOG_REPLAY = 1 << 3,
      MONGOC_QUERY_NO_CURSOR_TIMEOUT = 1 << 4,
-     MONGOC_QUERY_AWAIT_DATA        = 1 << 5,
-     MONGOC_QUERY_EXHAUST           = 1 << 6,
-     MONGOC_QUERY_PARTIAL           = 1 << 7,
+     MONGOC_QUERY_AWAIT_DATA = 1 << 5,
+     MONGOC_QUERY_EXHAUST = 1 << 6,
+     MONGOC_QUERY_PARTIAL = 1 << 7,
   } mongoc_query_flags_t;
 
 Description

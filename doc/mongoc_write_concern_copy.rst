@@ -6,7 +6,7 @@ mongoc_write_concern_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_write_concern_t *
   mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern);

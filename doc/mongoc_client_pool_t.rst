@@ -8,7 +8,7 @@ Connection pooling abstraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_client_pool_t mongoc_client_pool_t
 

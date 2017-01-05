@@ -6,15 +6,14 @@ mongoc_index_opt_wt_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 
-  typedef struct
-  {
-     mongoc_index_opt_storage_t  base;
-     const char                 *config_str;
-     void                       *padding[8];
+  typedef struct {
+     mongoc_index_opt_storage_t base;
+     const char *config_str;
+     void *padding[8];
   } mongoc_index_opt_wt_t;
 
 Description

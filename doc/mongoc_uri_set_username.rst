@@ -6,11 +6,10 @@ mongoc_uri_set_username()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_uri_set_username (mongoc_uri_t *uri,
-                           const char   *username);
+  mongoc_uri_set_username (mongoc_uri_t *uri, const char *username);
 
 Parameters
 ----------

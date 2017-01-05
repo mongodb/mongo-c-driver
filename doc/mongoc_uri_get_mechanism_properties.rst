@@ -6,12 +6,11 @@ mongoc_uri_get_mechanism_properties()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
-                                       bson_t             *properties /* OUT */);
-    
+                                       bson_t *properties /* OUT */);
 
 Parameters
 ----------
@@ -32,20 +31,21 @@ If no "authMechanismProperties" have been set on ``uri``, this functions returns
 Example
 -------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_uri_t *uri;
   bson_t props;
 
-  uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI"
-                        "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
+  uri = mongoc_uri_new (
+     "mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI"
+     "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
 
   if (mongoc_uri_get_mechanism_properties (uri, &props)) {
-      char *json = bson_as_json (&props, NULL);
-      printf ("%s\n", json);
-      bson_free (json);
+     char *json = bson_as_json (&props, NULL);
+     printf ("%s\n", json);
+     bson_free (json);
   } else {
-      printf ("No authMechanismProperties.\n");
+     printf ("No authMechanismProperties.\n");
   }
 
 This code produces the output:

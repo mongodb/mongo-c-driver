@@ -6,10 +6,11 @@ mongoc_server_description_round_trip_time()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_server_description_round_trip_time (const mongoc_server_description_t *description);
+  mongoc_server_description_round_trip_time (
+     const mongoc_server_description_t *description);
 
 Parameters
 ----------

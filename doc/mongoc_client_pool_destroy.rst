@@ -6,7 +6,7 @@ mongoc_client_pool_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_client_pool_destroy (mongoc_client_pool_t *pool);

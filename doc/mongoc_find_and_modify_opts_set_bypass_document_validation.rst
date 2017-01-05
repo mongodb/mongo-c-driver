@@ -6,19 +6,13 @@ mongoc_find_and_modify_opts_set_bypass_document_validation()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
-                                                              bool                           bypass);
+  mongoc_find_and_modify_opts_set_bypass_document_validation (
+     mongoc_find_and_modify_opts_t *opts, bool bypass);
 
-.. tip::
-
-  New in MongoDB 3.2 and mongoc 1.3.0
-
-.. tip::
-
-  This option is only available when talking to MongoDB 3.2 and later.
+This option is only available when talking to MongoDB 3.2 and later.
 
 Parameters
 ----------
@@ -31,9 +25,7 @@ Description
 
 Adds bypassDocumentValidation argument to the builder.
 
-.. tip::
-
-  When authentication is enabled, the authenticated user must have either the "dbadmin" or "restore" roles to bypass document validation.
+When authentication is enabled, the authenticated user must have either the "dbadmin" or "restore" roles to bypass document validation.
 
 Returns
 -------
@@ -49,24 +41,19 @@ Setting bypassDocumentValidation
 
 Outputs:
 
-.. code-block:: none
+.. code-block:: c
 
   {
-      "lastErrorObject": {
-          "updatedExisting": true,
-          "n": 1
-      },
-      "value": {
-          "_id": {
-              "$oid": "56562a99d13e6d86239c7b00"
-          },
-          "age": 34,
-          "firstname": "Zlatan",
-          "goals": 342,
-          "lastname": "Ibrahimovic",
-          "profession": "Football player",
-          "position": "striker"
-      },
-      "ok": 1
+     "lastErrorObject" : {"updatedExisting" : true, "n" : 1},
+                         "value" : {
+                            "_id" : {"$oid" : "56562a99d13e6d86239c7b00"},
+                            "age" : 34,
+                            "firstname" : "Zlatan",
+                            "goals" : 342,
+                            "lastname" : "Ibrahimovic",
+                            "profession" : "Football player",
+                            "position" : "striker"
+                         },
+                                   "ok" : 1
   }
 

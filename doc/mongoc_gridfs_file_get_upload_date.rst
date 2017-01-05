@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_upload_date()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
   mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);

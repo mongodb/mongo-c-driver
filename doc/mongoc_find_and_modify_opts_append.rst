@@ -6,11 +6,11 @@ mongoc_find_and_modify_opts_append()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
-                                      const bson_t                  *extra);
+                                      const bson_t *extra);
 
 Parameters
 ----------

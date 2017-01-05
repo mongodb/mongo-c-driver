@@ -6,11 +6,10 @@ mongoc_gridfs_drop()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
-                      bson_error_t    *error);
+  mongoc_gridfs_drop (mongoc_gridfs_t *gridfs, bson_error_t *error);
 
 Parameters
 ----------

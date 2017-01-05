@@ -6,7 +6,7 @@ mongoc_uri_unescape()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   char *
   mongoc_uri_unescape (const char *escaped_string);

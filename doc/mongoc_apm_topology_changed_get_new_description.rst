@@ -6,10 +6,11 @@ mongoc_apm_topology_changed_get_new_description()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_topology_description_t *
-  mongoc_apm_topology_changed_get_new_description (const mongoc_apm_topology_changed_t *event);
+  mongoc_apm_topology_changed_get_new_description (
+     const mongoc_apm_topology_changed_t *event);
 
 Returns this event's new description. The data is only valid in the scope of the callback that receives this event; copy it if it will be accessed after the callback returns.
 

@@ -6,13 +6,13 @@ mongoc_collection_save()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_save (mongoc_collection_t          *collection,
-                          const bson_t                 *document,
+  mongoc_collection_save (mongoc_collection_t *collection,
+                          const bson_t *document,
                           const mongoc_write_concern_t *write_concern,
-                          bson_error_t                 *error);
+                          bson_error_t *error);
 
 Parameters
 ----------

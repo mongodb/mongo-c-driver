@@ -6,7 +6,7 @@ mongoc_read_prefs_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_read_prefs_t *
   mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);

@@ -6,7 +6,7 @@ mongoc_write_concern_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_write_concern_t *
   mongoc_write_concern_new (void);

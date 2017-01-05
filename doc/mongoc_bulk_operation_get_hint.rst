@@ -6,7 +6,7 @@ mongoc_bulk_operation_get_hint()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   uint32_t
   mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk);

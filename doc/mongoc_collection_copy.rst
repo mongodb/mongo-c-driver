@@ -6,7 +6,7 @@ mongoc_collection_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_collection_t *
   mongoc_collection_copy (mongoc_collection_t *collection);

@@ -6,11 +6,10 @@ mongoc_client_set_appname()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_client_set_appname (mongoc_client_t *client,
-                             const char      *appname)
+  mongoc_client_set_appname (mongoc_client_t *client, const char *appname)
 
 Sets the application name for this client. This string, along with other internal driver details, is sent to the server as part of the initial connection handshake (`"isMaster" <https://docs.mongodb.org/manual/reference/command/isMaster/>`_).
 

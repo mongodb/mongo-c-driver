@@ -6,11 +6,10 @@ mongoc_gridfs_file_set_md5()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_gridfs_file_set_md5 (mongoc_gridfs_file_t *file,
-                              const char           *md5);
+  mongoc_gridfs_file_set_md5 (mongoc_gridfs_file_t *file, const char *md5);
 
 Parameters
 ----------

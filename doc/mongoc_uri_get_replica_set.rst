@@ -6,7 +6,7 @@ mongoc_uri_get_replica_set()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_uri_get_replica_set (const mongoc_uri_t *uri);

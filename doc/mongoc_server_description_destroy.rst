@@ -6,10 +6,10 @@ mongoc_server_description_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_server_description_destroy(mongoc_server_description_t *description);
+  mongoc_server_description_destroy (mongoc_server_description_t *description);
 
 Parameters
 ----------

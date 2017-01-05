@@ -6,11 +6,11 @@ mongoc_write_concern_set_fsync()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
-                                  bool                    fsync_);
+                                  bool fsync_);
 
 Parameters
 ----------

@@ -9,15 +9,14 @@ Synopsis
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 
   #ifdef _WIN32
-  typedef struct
-  {
-     u_long  iov_len;
-     char   *iov_base;
+  typedef struct {
+     u_long iov_len;
+     char *iov_base;
   } mongoc_iovec_t;
   #else
   typedef struct iovec mongoc_iovec_t;

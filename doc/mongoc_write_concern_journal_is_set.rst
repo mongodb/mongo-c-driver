@@ -6,10 +6,11 @@ mongoc_write_concern_journal_is_set()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_write_concern_journal_is_set (const mongoc_write_concern_t *write_concern);
+  mongoc_write_concern_journal_is_set (
+     const mongoc_write_concern_t *write_concern);
 
 Parameters
 ----------

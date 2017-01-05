@@ -6,18 +6,15 @@ mongoc_collection_find_and_modify_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                 *collection,
-                                               const bson_t                        *query,
-                                               const mongoc_find_and_modify_opts_t *opts,
-                                               bson_t                              *reply,
-                                               bson_error_t                        *error);
-
-.. tip::
-
-  New in mongoc 1.3.0
+  mongoc_collection_find_and_modify_with_opts (
+     mongoc_collection_t *collection,
+     const bson_t *query,
+     const mongoc_find_and_modify_opts_t *opts,
+     bson_t *reply,
+     bson_error_t *error);
 
 Parameters
 ----------
@@ -48,5 +45,5 @@ A write concern timeout or write concern error is considered a failure.
 Example
 -------
 
-See :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t#example>`
+See the example code for :ref:`mongoc_find_and_modify_opts_t <mongoc_collection_find_and_modify_with_opts_example>`.
 

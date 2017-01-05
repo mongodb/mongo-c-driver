@@ -6,7 +6,7 @@ mongoc_socket_errno()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_socket_errno (mongoc_socket_t *sock);

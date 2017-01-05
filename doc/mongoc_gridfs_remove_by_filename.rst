@@ -6,12 +6,12 @@ mongoc_gridfs_remove_by_filename()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
-                                    const char      *filename,
-                                    bson_error_t    *error);
+                                    const char *filename,
+                                    bson_error_t *error);
 
 Parameters
 ----------

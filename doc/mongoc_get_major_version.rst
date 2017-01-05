@@ -6,7 +6,7 @@ mongoc_get_major_version()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_get_major_version (void);

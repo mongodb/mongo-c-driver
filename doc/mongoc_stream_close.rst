@@ -6,7 +6,7 @@ mongoc_stream_close()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_stream_close (mongoc_stream_t *stream);

@@ -6,7 +6,7 @@ mongoc_client_get_default_database()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_database_t *
   mongoc_client_get_default_database (mongoc_client_t *client);
@@ -29,6 +29,7 @@ Example
 -------
 
 .. code-block:: c
+  :caption: Default Database Example
 
   /* default database is "db_name" */
   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");

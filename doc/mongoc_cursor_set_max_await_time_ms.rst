@@ -6,11 +6,11 @@ mongoc_cursor_set_max_await_time_ms()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t *cursor,
-                                       uint32_t         max_await_time_ms);
+                                       uint32_t max_await_time_ms);
 
 Parameters
 ----------

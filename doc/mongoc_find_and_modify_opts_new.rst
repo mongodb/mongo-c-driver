@@ -6,14 +6,10 @@ mongoc_find_and_modify_opts_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_find_and_modify_opts_t *
   mongoc_find_and_modify_opts_new (void);
-
-.. tip::
-
-  New in mongoc 1.3.0
 
 Returns
 -------

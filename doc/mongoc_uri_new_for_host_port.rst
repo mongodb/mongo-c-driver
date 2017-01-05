@@ -6,11 +6,10 @@ mongoc_uri_new_for_host_port()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_uri_t *
-  mongoc_uri_new_for_host_port (const char *hostname,
-                                uint16_t    port);
+  mongoc_uri_new_for_host_port (const char *hostname, uint16_t port);
 
 Parameters
 ----------

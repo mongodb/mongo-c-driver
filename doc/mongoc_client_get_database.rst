@@ -6,11 +6,10 @@ mongoc_client_get_database()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_database_t *
-  mongoc_client_get_database (mongoc_client_t *client,
-                              const char      *name);
+  mongoc_client_get_database (mongoc_client_t *client, const char *name);
 
 Get a newly allocated :symbol:`mongoc_database_t <mongoc_database_t>` for the database named ``name``.
 

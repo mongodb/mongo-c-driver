@@ -6,11 +6,10 @@ mongoc_matcher_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_matcher_t *
-  mongoc_matcher_new (const bson_t *query,
-                      bson_error_t *error);
+  mongoc_matcher_new (const bson_t *query, bson_error_t *error);
 
 Create a new :symbol:`mongoc_matcher_t <mongoc_matcher_t>` using the query specification provided.
 

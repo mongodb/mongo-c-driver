@@ -6,10 +6,10 @@ mongoc_client_set_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_set_write_concern (mongoc_client_t              *client,
+  mongoc_client_set_write_concern (mongoc_client_t *client,
                                    const mongoc_write_concern_t *write_concern);
 
 Sets the write concern for the client. This only affects future operations, collections, and databases inheriting from ``client``.

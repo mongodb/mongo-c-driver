@@ -6,13 +6,13 @@ mongoc_socket_sendv()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_socket_sendv (mongoc_socket_t *sock,
-                       mongoc_iovec_t  *iov,
-                       size_t           iovcnt,
-                       int64_t          expire_at);
+                       mongoc_iovec_t *iov,
+                       size_t iovcnt,
+                       int64_t expire_at);
 
 Parameters
 ----------
@@ -20,7 +20,7 @@ Parameters
 * ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
 * ``iov``: A mongoc_iovec_t.
 * ``iovcnt``: A size_t containing the number of elements in iov.
-* ``expire_at``: A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using :symbol:`bson_get_monotonic_time() <bson:clock>`.
+* ``expire_at``: A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using :symbol:`bson_get_monotonic_time() <bson:bson_get_monotonic_time>`.
 
 Description
 -----------

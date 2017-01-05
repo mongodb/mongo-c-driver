@@ -6,15 +6,15 @@ mongoc_collection_rename_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
-                                      const char          *new_db,
-                                      const char          *new_name,
-                                      bool                 drop_target_before_rename,
-                                      const bson_t        *opts,
-                                      bson_error_t        *error);
+                                      const char *new_db,
+                                      const char *new_name,
+                                      bool drop_target_before_rename,
+                                      const bson_t *opts,
+                                      bson_error_t *error);
 
 Parameters
 ----------

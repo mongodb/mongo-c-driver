@@ -6,13 +6,13 @@ mongoc_stream_writev()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_stream_writev (mongoc_stream_t *stream,
-                        mongoc_iovec_t  *iov,
-                        size_t           iovcnt,
-                        int32_t          timeout_msec);
+                        mongoc_iovec_t *iov,
+                        size_t iovcnt,
+                        int32_t timeout_msec);
 
 Parameters
 ----------

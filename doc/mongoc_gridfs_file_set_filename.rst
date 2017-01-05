@@ -6,11 +6,11 @@ mongoc_gridfs_file_set_filename()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_gridfs_file_set_filename (mongoc_gridfs_file_t *file,
-                                   const char           *filename);
+                                   const char *filename);
 
 Parameters
 ----------

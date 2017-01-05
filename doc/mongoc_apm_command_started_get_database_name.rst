@@ -6,10 +6,11 @@ mongoc_apm_command_started_get_database_name()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
-  mongoc_apm_command_started_get_database_name (const mongoc_apm_command_started_t *event);
+  mongoc_apm_command_started_get_database_name (
+     const mongoc_apm_command_started_t *event);
 
 Returns this event's database name. The data is only valid in the scope of the callback that receives this event; copy it if it will be accessed after the callback returns.
 

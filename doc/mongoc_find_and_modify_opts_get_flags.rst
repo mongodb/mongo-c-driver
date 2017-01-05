@@ -6,7 +6,7 @@ mongoc_find_and_modify_opts_get_flags()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_find_and_modify_flags_t
   mongoc_find_and_modify_opts_get_flags (

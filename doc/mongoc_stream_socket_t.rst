@@ -6,7 +6,7 @@ mongoc_stream_socket_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t
 

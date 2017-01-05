@@ -6,10 +6,11 @@ mongoc_server_description_new_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_server_description_t *
-  mongoc_server_description_new_copy (const mongoc_server_description_t *description);
+  mongoc_server_description_new_copy (
+     const mongoc_server_description_t *description);
 
 Parameters
 ----------

@@ -6,7 +6,7 @@ mongoc_read_prefs_get_mode()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_read_mode_t
   mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs);

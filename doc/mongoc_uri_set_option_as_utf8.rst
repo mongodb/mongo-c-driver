@@ -6,12 +6,12 @@ mongoc_uri_set_option_as_utf8()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_set_option_as_utf8 (const mongoc_uri_t *uri,
-                                 const char         *option,
-                                 utf8                value);
+                                 const char *option,
+                                 utf8 value);
 
 Parameters
 ----------

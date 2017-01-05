@@ -6,7 +6,7 @@ mongoc_cleanup()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_cleanup (void);

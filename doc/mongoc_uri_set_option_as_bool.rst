@@ -6,12 +6,12 @@ mongoc_uri_set_option_as_bool()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_set_option_as_bool (const mongoc_uri_t *uri,
-                                 const char         *option,
-                                 bool                value);
+                                 const char *option,
+                                 bool value);
 
 Parameters
 ----------

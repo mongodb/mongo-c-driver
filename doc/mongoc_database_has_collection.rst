@@ -6,12 +6,12 @@ mongoc_database_has_collection()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_database_has_collection (mongoc_database_t *database,
-                                  const char        *name,
-                                  bson_error_t      *error);
+                                  const char *name,
+                                  bson_error_t *error);
 
 This function checks to see if a collection exists on the MongoDB server within ``database``.
 

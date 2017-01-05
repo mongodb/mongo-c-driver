@@ -6,10 +6,11 @@ mongoc_apm_command_started_get_request_id()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_apm_command_started_get_request_id (const mongoc_apm_command_started_t *event);
+  mongoc_apm_command_started_get_request_id (
+     const mongoc_apm_command_started_t *event);
 
 Returns this event's wire-protocol request id. Use this number to correlate client-side events with server log messages.
 

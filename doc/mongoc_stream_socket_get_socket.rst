@@ -6,7 +6,7 @@ mongoc_stream_socket_get_socket()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_socket_t *
   mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);

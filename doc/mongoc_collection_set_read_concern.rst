@@ -6,11 +6,11 @@ mongoc_collection_set_read_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_collection_set_read_concern (mongoc_collection_t          *collection,
-                                      const mongoc_read_concern_t  *read_concern);
+  mongoc_collection_set_read_concern (mongoc_collection_t *collection,
+                                      const mongoc_read_concern_t *read_concern);
 
 Parameters
 ----------

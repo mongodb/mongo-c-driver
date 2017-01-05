@@ -6,7 +6,7 @@ mongoc_uri_get_hosts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_host_list_t *
   mongoc_uri_get_hosts (const mongoc_uri_t *uri);

@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_metadata()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
   mongoc_gridfs_file_get_metadata (mongoc_gridfs_file_t *file);

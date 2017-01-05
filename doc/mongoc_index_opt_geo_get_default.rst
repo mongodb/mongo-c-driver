@@ -6,7 +6,7 @@ mongoc_index_opt_geo_get_default()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_index_opt_geo_t *
   mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;

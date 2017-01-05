@@ -6,12 +6,12 @@ mongoc_collection_find_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_collection_find_with_opts (mongoc_collection_t       *collection,
-                                    const bson_t              *filter,
-                                    const bson_t              *opts,
+  mongoc_collection_find_with_opts (mongoc_collection_t *collection,
+                                    const bson_t *filter,
+                                    const bson_t *opts,
                                     const mongoc_read_prefs_t *read_prefs)
      BSON_GNUC_WARN_UNUSED_RESULT;
 
@@ -39,6 +39,7 @@ Examples
 --------
 
 .. code-block:: c
+  :caption: Print First Ten Documents in a Collection
 
   #include <mongoc.h>
   #include <stdio.h>
@@ -75,9 +76,8 @@ Examples
      bson_destroy (opts);
   }
 
-More examples of modifying the query with ``opts``:
-
 .. code-block:: c
+  :caption: More examples of modifying the query with ``opts``:
 
   bson_t *filter;
   bson_t *opts;
@@ -88,30 +88,17 @@ More examples of modifying the query with ``opts``:
   /* Include "field_name_one" and "field_name_two" in "projection", omit
    * others. "_id" must be specifically removed or it is included by default.
    */
-  opts = BCON_NEW ("projection",
-                   "{",
-                   "field_name_one",
-                   BCON_BOOL (true),
-                   "field_name_two",
-                   BCON_BOOL (true),
-                   "_id",
-                   BCON_BOOL (false),
+  opts = BCON_NEW ("projection", "{",
+                      "field_name_one", BCON_BOOL (true),
+                      "field_name_two", BCON_BOOL (true),
+                      "_id", BCON_BOOL (false),
                    "}",
-                   "tailable",
-                   BCON_BOOL (true),
-                   "awaitData",
-                   BCON_BOOL (true),
-                   "sort",
-                   "{",
-                   "bar",
-                   BCON_INT32 (-1),
-                   "}",
-                   "collation",
-                   "{",
-                   "locale",
-                   BCON_UTF8 ("en_US"),
-                   "caseFirst",
-                   BCON_UTF8 ("lower"),
+                   "tailable", BCON_BOOL (true),
+                   "awaitData", BCON_BOOL (true),
+                   "sort", "{", "bar", BCON_INT32 (-1), "}",
+                   "collation", "{",
+                      "locale", BCON_UTF8("en_US"),
+                      "caseFirst", BCON_UTF8 ("lower"),
                    "}");
 
   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -136,15 +123,15 @@ Option                   BSON type           Option               BSON type
 ``comment``              string              ``tailable``         bool              
 =======================  ==================  ===================  ==================
 
-      For some options like "collation", the driver returns an error if the server version is too old to support the feature.
-      Any fields in ``opts`` that are not listed here are passed to the server unmodified.
+For some options like "collation", the driver returns an error if the server version is too old to support the feature.
+Any fields in ``opts`` that are not listed here are passed to the server unmodified.
     
 
 See Also
 --------
 
-      `The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual. All options listed there are supported by the C Driver.
-      For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
+`The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual. All options listed there are supported by the C Driver.
+For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
     
 
 The "explain" command
@@ -155,15 +142,9 @@ With MongoDB before 3.2, a query with option ``$explain: true`` returns informat
 .. code-block:: c
 
   /* MongoDB 3.2+, "explain" command syntax */
-  command = BCON_NEW ("explain",
-                      "{",
-                      "find",
-                      BCON_UTF8 ("collection_name"),
-                      "filter",
-                      "{",
-                      "foo",
-                      BCON_INT32 (1),
-                      "}",
+  command = BCON_NEW ("explain", "{",
+                      "find", BCON_UTF8 ("collection_name"),
+                      "filter", "{", "foo", BCON_INT32 (1), "}",
                       "}");
 
   mongoc_collection_command_simple (collection, command, NULL, &reply, &error);

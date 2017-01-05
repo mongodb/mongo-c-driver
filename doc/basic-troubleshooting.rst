@@ -17,16 +17,13 @@ The following is a short list of things to check when you have a problem.
 Performance Counters
 --------------------
 
-        The MongoDB C driver comes with a unique feature to help developers and sysadmins troubleshoot problems in production.
-        Performance counters are available for each process using the driver.
-        The counters can be accessed outside of the application process via a shared memory segment.
-        This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
-        Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
+The MongoDB C driver comes with a unique feature to help developers and sysadmins troubleshoot problems in production.
+Performance counters are available for each process using the driver.
+The counters can be accessed outside of the application process via a shared memory segment.
+This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
+Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
       
-
-.. note::
-
-  Counters are currently available on UNIX-like platforms that support shared memory segments.
+Counters are currently available on UNIX-like platforms that support shared memory segments.
 
 * Active and Disposed Cursors
 * Active and Disposed Clients, Client Pools, and Socket Streams.

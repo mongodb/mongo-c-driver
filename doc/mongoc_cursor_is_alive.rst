@@ -6,7 +6,7 @@ mongoc_cursor_is_alive()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_cursor_is_alive (const mongoc_cursor_t *cursor);

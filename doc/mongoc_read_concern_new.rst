@@ -6,7 +6,7 @@ mongoc_read_concern_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_read_concern_t *
   mongoc_read_concern_new (void);

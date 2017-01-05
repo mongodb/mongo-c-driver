@@ -6,11 +6,11 @@ mongoc_read_prefs_set_max_staleness_seconds()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
-                                               int64_t              max_staleness_seconds);
+                                               int64_t max_staleness_seconds);
 
 Parameters
 ----------

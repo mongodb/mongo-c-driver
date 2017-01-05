@@ -6,12 +6,12 @@ mongoc_database_find_collections()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_database_find_collections (mongoc_database_t * database,
-                                    const bson_t * filter,
-                                    bson_error_t * error);
+  mongoc_database_find_collections (mongoc_database_t *database,
+                                    const bson_t *filter,
+                                    bson_error_t *error);
 
 Fetches a cursor containing documents, each corresponding to a collection on this database.
 
@@ -30,6 +30,5 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A cursor where each result corresponds to the server's representation of
-    a collection in this database.
+A cursor where each result corresponds to the server's representation of a collection in this database.
 

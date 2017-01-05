@@ -6,11 +6,11 @@ mongoc_client_set_read_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_set_read_concern (mongoc_client_t              *client,
-                                  const mongoc_read_concern_t  *read_concern);
+  mongoc_client_set_read_concern (mongoc_client_t *client,
+                                  const mongoc_read_concern_t *read_concern);
 
 Sets the read concern for the client. This only affects future operations, collections, and databases inheriting from ``client``.
 

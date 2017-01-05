@@ -6,7 +6,7 @@ mongoc_uri_get_ssl()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_get_ssl (const mongoc_uri_t *uri);

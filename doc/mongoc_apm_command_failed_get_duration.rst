@@ -6,10 +6,11 @@ mongoc_apm_command_failed_get_duration()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int64_t
-  mongoc_apm_command_failed_get_duration (const mongoc_apm_command_failed_t *event);
+  mongoc_apm_command_failed_get_duration (
+     const mongoc_apm_command_failed_t *event);
 
 Returns this event's duration in microseconds.
 

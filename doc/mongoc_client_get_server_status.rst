@@ -6,13 +6,13 @@ mongoc_client_get_server_status()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_client_get_server_status (mongoc_client_t     *client,
+  mongoc_client_get_server_status (mongoc_client_t *client,
                                    mongoc_read_prefs_t *read_prefs,
-                                   bson_t              *reply,
-                                   bson_error_t        *error);
+                                   bson_t *reply,
+                                   bson_error_t *error);
 
 Queries the server for the current server status. The result is stored in ``reply``.
 

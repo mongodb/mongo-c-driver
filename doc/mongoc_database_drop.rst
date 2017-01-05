@@ -6,11 +6,10 @@ mongoc_database_drop()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_database_drop (mongoc_database_t *database,
-                        bson_error_t      *error);
+  mongoc_database_drop (mongoc_database_t *database, bson_error_t *error);
 
 Parameters
 ----------

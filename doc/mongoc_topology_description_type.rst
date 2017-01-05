@@ -6,7 +6,7 @@ mongoc_topology_description_type()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_topology_description_type (const mongoc_topology_description_t *td);

@@ -6,11 +6,10 @@ mongoc_matcher_match()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_matcher_match (const mongoc_matcher_t *matcher,
-                        const bson_t           *document);
+  mongoc_matcher_match (const mongoc_matcher_t *matcher, const bson_t *document);
 
 This function will check to see if the query compiled in ``matcher`` matches ``document``.
 

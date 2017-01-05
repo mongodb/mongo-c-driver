@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_filename()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_gridfs_file_get_filename (mongoc_gridfs_file_t *file);

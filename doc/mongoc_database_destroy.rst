@@ -6,7 +6,7 @@ mongoc_database_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_database_destroy (mongoc_database_t *database);

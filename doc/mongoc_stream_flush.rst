@@ -6,7 +6,7 @@ mongoc_stream_flush()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_stream_flush (mongoc_stream_t *stream);

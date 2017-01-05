@@ -6,11 +6,10 @@ mongoc_client_pool_push()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_pool_push (mongoc_client_pool_t *pool,
-                           mongoc_client_t      *client);
+  mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client);
 
 This function returns a :symbol:`mongoc_client_t <mongoc_client_t>` back to the client pool.
 

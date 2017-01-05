@@ -6,7 +6,7 @@ mongoc_gridfs_file_list_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 
@@ -20,7 +20,7 @@ Description
 Example
 -------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_list_t *list;
   mongoc_gridfs_file_t *file;
@@ -28,7 +28,7 @@ Example
   list = mongoc_gridfs_find (gridfs, query);
 
   while ((file = mongoc_gridfs_file_list_next (list))) {
-     do_something(file);
+     do_something (file);
 
      mongoc_gridfs_file_destroy (file);
   }

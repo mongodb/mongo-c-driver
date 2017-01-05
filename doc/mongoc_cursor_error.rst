@@ -6,11 +6,10 @@ mongoc_cursor_error()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_cursor_error (mongoc_cursor_t *cursor,
-                       bson_error_t    *error);
+  mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error);
 
 Parameters
 ----------

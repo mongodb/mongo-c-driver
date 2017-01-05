@@ -6,11 +6,11 @@ mongoc_write_concern_set_wmajority()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
-                                      int32_t                 wtimeout_msec);
+                                      int32_t wtimeout_msec);
 
 Parameters
 ----------

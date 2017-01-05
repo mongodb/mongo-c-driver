@@ -13,19 +13,19 @@ Use the more convenient :symbol:`mongoc_collection_find_with_opts <mongoc_collec
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_collection_find (mongoc_collection_t       *collection,
-                          mongoc_query_flags_t       flags,
-                          uint32_t                   skip,
-                          uint32_t                   limit,
-                          uint32_t                   batch_size,
-                          const bson_t              *query,
-                          const bson_t              *fields,
+  mongoc_collection_find (mongoc_collection_t *collection,
+                          mongoc_query_flags_t flags,
+                          uint32_t skip,
+                          uint32_t limit,
+                          uint32_t batch_size,
+                          const bson_t *query,
+                          const bson_t *fields,
                           const mongoc_read_prefs_t *read_prefs)
      BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_with_opts)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+        BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------
@@ -55,6 +55,7 @@ Example
 -------
 
 .. code-block:: c
+  :caption: Print All Documents in a Collection
 
   #include <mongoc.h>
   #include <stdio.h>

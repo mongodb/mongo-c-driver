@@ -6,10 +6,10 @@ mongoc_database_set_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_database_set_write_concern (mongoc_database_t            *database,
+  mongoc_database_set_write_concern (mongoc_database_t *database,
                                      const mongoc_write_concern_t *write_concern);
 
 This function sets the write concern to use on operations performed with ``database``. Collections created with :symbol:`mongoc_database_get_collection() <mongoc_database_get_collection>` after this call will inherit this write concern.

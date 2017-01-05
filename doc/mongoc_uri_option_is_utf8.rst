@@ -6,7 +6,7 @@ mongoc_uri_option_is_utf8()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_option_is_utf8 (const char *option);

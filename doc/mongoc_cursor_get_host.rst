@@ -6,11 +6,10 @@ mongoc_cursor_get_host()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
-                          mongoc_host_list_t *host);
+  mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 
 Parameters
 ----------

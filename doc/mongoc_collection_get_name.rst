@@ -6,7 +6,7 @@ mongoc_collection_get_name()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_collection_get_name (mongoc_collection_t *collection);

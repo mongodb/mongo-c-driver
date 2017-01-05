@@ -6,15 +6,11 @@ mongoc_find_and_modify_opts_set_sort()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t  *opts,
-                                        const bson_t                   *sort);
-
-.. tip::
-
-  New in mongoc 1.3.0
+  mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
+                                        const bson_t *sort);
 
 Parameters
 ----------
@@ -43,25 +39,20 @@ Setting sort
 
 Outputs:
 
-.. code-block:: none
+.. code-block:: c
 
   {
-      "lastErrorObject": {
-          "updatedExisting": true,
-          "n": 1
-      },
-      "value": {
-          "_id": {
-              "$oid": "56562a99d13e6d86239c7b00"
-          },
-          "age": 35,
-          "firstname": "Zlatan",
-          "goals": 343,
-          "lastname": "Ibrahimovic",
-          "profession": "Football player",
-          "position": "striker",
-          "author": true
-      },
-      "ok": 1
+     "lastErrorObject" : {"updatedExisting" : true, "n" : 1},
+                         "value" : {
+                            "_id" : {"$oid" : "56562a99d13e6d86239c7b00"},
+                            "age" : 35,
+                            "firstname" : "Zlatan",
+                            "goals" : 343,
+                            "lastname" : "Ibrahimovic",
+                            "profession" : "Football player",
+                            "position" : "striker",
+                            "author" : true
+                         },
+                                   "ok" : 1
   }
 

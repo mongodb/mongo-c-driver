@@ -6,7 +6,7 @@ mongoc_client_pool_new()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_client_pool_t *
   mongoc_client_pool_new (const mongoc_uri_t *uri);

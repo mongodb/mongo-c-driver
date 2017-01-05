@@ -6,11 +6,11 @@ mongoc_gridfs_file_set_metadata()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_gridfs_file_set_metadata (mongoc_gridfs_file_t *file,
-                                   const bson_t         *metadata);
+                                   const bson_t *metadata);
 
 Parameters
 ----------

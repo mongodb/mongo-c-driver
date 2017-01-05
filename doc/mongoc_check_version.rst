@@ -6,7 +6,7 @@ mongoc_check_version()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_check_version (int required_major,

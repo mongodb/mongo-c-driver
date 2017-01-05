@@ -6,11 +6,10 @@ mongoc_uri_set_database()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_uri_set_database (mongoc_uri_t *uri,
-                           const char   *database);
+  mongoc_uri_set_database (mongoc_uri_t *uri, const char *database);
 
 Parameters
 ----------

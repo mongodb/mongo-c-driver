@@ -6,14 +6,14 @@ mongoc_bulk_operation_update_many_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t       *bulk,
-                                               const bson_t                  *selector,
-                                               const bson_t                  *document,
-                                               const bson_t                  *opts,
-                                               bson_error_t                  *error); /* OUT */
+  mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
+                                               const bson_t *selector,
+                                               const bson_t *document,
+                                               const bson_t *opts,
+                                               bson_error_t *error); /* OUT */
 
 This function queues an update as part of a bulk operation. This does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
 

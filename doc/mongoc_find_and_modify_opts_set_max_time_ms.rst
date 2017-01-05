@@ -6,11 +6,11 @@ mongoc_find_and_modify_opts_set_max_time_ms()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_find_and_modify_opts_set_max_time_ms (mongoc_find_and_modify_opts_t *opts,
-                                               uint32_t                       max_time_ms);
+  mongoc_find_and_modify_opts_set_max_time_ms (
+     mongoc_find_and_modify_opts_t *opts, uint32_t max_time_ms);
 
 Parameters
 ----------

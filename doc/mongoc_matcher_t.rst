@@ -8,7 +8,7 @@ Client-side document matching abstraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   typedef struct _mongoc_matcher_t mongoc_matcher_t;
 
@@ -43,7 +43,8 @@ Deprecated
 Example
 -------
 
-.. code-block:: none
+.. code-block:: c
+  :caption: Filter a sequence of BSON documents from STDIN based on a query
 
   #include <bcon.h>
   #include <bson.h>
@@ -51,8 +52,7 @@ Example
   #include <stdio.h>
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
      mongoc_matcher_t *matcher;
      bson_reader_t *reader;

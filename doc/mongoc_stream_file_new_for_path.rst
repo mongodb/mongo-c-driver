@@ -6,12 +6,10 @@ mongoc_stream_file_new_for_path()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_stream_t *
-  mongoc_stream_file_new_for_path (const char *path,
-                                   int         flags,
-                                   int         mode);
+  mongoc_stream_file_new_for_path (const char *path, int flags, int mode);
 
 Parameters
 ----------

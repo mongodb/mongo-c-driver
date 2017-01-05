@@ -6,7 +6,7 @@ mongoc_apm_command_started_get_host()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_host_list_t *
   mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event);

@@ -8,18 +8,17 @@ Conditional compilation based on mongoc version
 Description
 -----------
 
-        The following preprocessor macros can be used to perform various checks based on the version of the library you are compiling against.
-        This may be useful if you only want to enable a feature on a certain version of the library.
-      
+The following preprocessor macros can be used to perform various checks based on the version of the library you are compiling against.
+This may be useful if you only want to enable a feature on a certain version of the library.
 
-.. code-block:: none
+.. parsed-literal::
 
   #include <mongoc.h>
 
-  #define MONGOC_MAJOR_VERSION (1)
-  #define MONGOC_MINOR_VERSION (4)
-  #define MONGOC_MICRO_VERSION (0)
-  #define MONGOC_VERSION_S     "1.4.0"
+  #define MONGOC_MAJOR_VERSION (|release_major|)
+  #define MONGOC_MINOR_VERSION (|release_minor|)
+  #define MONGOC_MICRO_VERSION (|release_patch|)
+  #define MONGOC_VERSION_S     "|release|"
   #define MONGOC_VERSION_HEX   ((1 << 24) | (0 << 16) | (0 << 8) | 0)
   #define MONGOC_CHECK_VERSION(major, minor, micro)
 

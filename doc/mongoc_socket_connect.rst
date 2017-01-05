@@ -6,13 +6,13 @@ mongoc_socket_connect()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
-  mongoc_socket_connect (mongoc_socket_t       *sock,
+  mongoc_socket_connect (mongoc_socket_t *sock,
                          const struct sockaddr *addr,
-                         socklen_t              addrlen,
-                         int64_t                expire_at);
+                         socklen_t addrlen,
+                         int64_t expire_at);
 
 Parameters
 ----------
@@ -27,7 +27,7 @@ Description
 
 This function is a wrapper around the BSD socket ``connect()`` interface. It provides better portability between UNIX-like and Microsoft Windows platforms.
 
-This function performs a socket connection but will fail if @expire_at has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to :symbol:`bson_get_monotonic_time() <bson:clock>`.
+This function performs a socket connection but will fail if ``expire_at`` has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to :symbol:`bson_get_monotonic_time() <bson:bson_get_monotonic_time>`.
 
 Returns
 -------

@@ -6,12 +6,11 @@ mongoc_find_and_modify_opts_get_sort()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_find_and_modify_opts_get_sort (
-     const mongoc_find_and_modify_opts_t *opts,
-     bson_t *sort);
+  mongoc_find_and_modify_opts_get_sort (const mongoc_find_and_modify_opts_t *opts,
+                                        bson_t *sort);
 
 Parameters
 ----------

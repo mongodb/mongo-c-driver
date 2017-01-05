@@ -6,16 +6,16 @@ mongoc_database_command()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_database_command (mongoc_database_t         *database,
-                           mongoc_query_flags_t       flags,
-                           uint32_t                   skip,
-                           uint32_t                   limit,
-                           uint32_t                   batch_size,
-                           const bson_t              *command,
-                           const bson_t              *fields,
+  mongoc_database_command (mongoc_database_t *database,
+                           mongoc_query_flags_t flags,
+                           uint32_t skip,
+                           uint32_t limit,
+                           uint32_t batch_size,
+                           const bson_t *command,
+                           const bson_t *fields,
                            const mongoc_read_prefs_t *read_prefs);
 
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next <mongoc_cursor_next>` is called on it. The database's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next <mongoc_cursor_next>` will not check the server response for a write concern error or write concern timeout.

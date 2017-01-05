@@ -6,13 +6,13 @@ mongoc_socket_send()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   ssize_t
   mongoc_socket_send (mongoc_socket_t *sock,
-                      const void      *buf,
-                      size_t           buflen,
-                      int64_t          expire_at);
+                      const void *buf,
+                      size_t buflen,
+                      int64_t expire_at);
 
 Parameters
 ----------
@@ -20,7 +20,7 @@ Parameters
 * ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
 * ``buf``: A buffer to send.
 * ``buflen``: A size_t with the number of bytes in buf.
-* ``expire_at``: A int64_t with an absolute timeout for the operation or 0. The timeout is in monotonic time using microseconds. You can retrieve the current monotonic time with :symbol:`bson_get_monotonic_time() <bson:clock>`.
+* ``expire_at``: A int64_t with an absolute timeout for the operation or 0. The timeout is in monotonic time using microseconds. You can retrieve the current monotonic time with :symbol:`bson_get_monotonic_time() <bson:bson_get_monotonic_time>`.
 
 Description
 -----------

@@ -6,15 +6,12 @@ mongoc_find_and_modify_opts_set_flags()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_find_and_modify_opts_set_flags (mongoc_find_and_modify_opts_t         *opts,
-                                         const mongoc_find_and_modify_flags_t   flags);
-
-.. tip::
-
-  New in mongoc 1.3.0
+  mongoc_find_and_modify_opts_set_flags (
+     mongoc_find_and_modify_opts_t *opts,
+     const mongoc_find_and_modify_flags_t flags);
 
 Parameters
 ----------
@@ -48,27 +45,23 @@ Setting flags
 
 Outputs:
 
-.. code-block:: none
+.. code-block:: c
 
   {
-      "lastErrorObject": {
-          "updatedExisting": false,
-          "n": 1,
-          "upserted": {
-              "$oid": "56562a99d13e6d86239c7b00"
-          }
-      },
-      "value": {
-          "_id": {
-              "$oid": "56562a99d13e6d86239c7b00"
-          },
-          "age": 34,
-          "firstname": "Zlatan",
-          "goals": 342,
-          "lastname": "Ibrahimovic",
-          "profession": "Football player",
-          "position": "striker"
-      },
-      "ok": 1
+     "lastErrorObject" : {
+        "updatedExisting" : false,
+        "n" : 1,
+        "upserted" : {"$oid" : "56562a99d13e6d86239c7b00"}
+     },
+                         "value" : {
+                            "_id" : {"$oid" : "56562a99d13e6d86239c7b00"},
+                            "age" : 34,
+                            "firstname" : "Zlatan",
+                            "goals" : 342,
+                            "lastname" : "Ibrahimovic",
+                            "profession" : "Football player",
+                            "position" : "striker"
+                         },
+                                   "ok" : 1
   }
 

@@ -6,7 +6,7 @@ mongoc_gridfs_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   #include <mongoc.h>
 

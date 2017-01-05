@@ -6,7 +6,7 @@ mongoc_uri_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_uri_destroy (mongoc_uri_t *uri);

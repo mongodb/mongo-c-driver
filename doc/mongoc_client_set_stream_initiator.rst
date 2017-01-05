@@ -6,16 +6,14 @@ mongoc_client_set_stream_initiator()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_set_stream_initiator (mongoc_client_t          *client,
+  mongoc_client_set_stream_initiator (mongoc_client_t *client,
                                       mongoc_stream_initiator_t initiator,
-                                      void                     *user_data);
+                                      void *user_data);
 
-The :symbol:`mongoc_client_set_stream_initiator() <mongoc_client_set_stream_initiator>`function shall associate a given :symbol:`mongoc_client_t <mongoc_client_t>`with a new stream initiator. This will completely replace the default transport
-(buffered TCP, possibly with TLS). The ``initiator`` should fulfill the:symbol:`mongoc_stream_t <mongoc_stream_t>` contract.``user_data`` is passed through to the ``initiator`` callback and may
-be used for whatever run time customization is necessary.
+The :symbol:`mongoc_client_set_stream_initiator() <mongoc_client_set_stream_initiator>` function shall associate a given :symbol:`mongoc_client_t <mongoc_client_t>` with a new stream initiator. This will completely replace the default transport (buffered TCP, possibly with TLS). The ``initiator`` should fulfill the :symbol:`mongoc_stream_t <mongoc_stream_t>` contract. ``user_data`` is passed through to the ``initiator`` callback and may be used for whatever run time customization is necessary.
 
 Parameters
 ----------

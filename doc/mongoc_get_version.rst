@@ -6,7 +6,7 @@ mongoc_get_version()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_get_version (void);

@@ -6,11 +6,11 @@ mongoc_client_get_server_description()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_server_description_t *
-  mongoc_client_get_server_description (mongoc_client_t     *client,
-                                        uint32_t             server_id);
+  mongoc_client_get_server_description (mongoc_client_t *client,
+                                        uint32_t server_id);
 
 Get information about the server specified by ``server_id``.
 

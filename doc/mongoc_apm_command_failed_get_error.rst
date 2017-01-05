@@ -6,11 +6,11 @@ mongoc_apm_command_failed_get_error()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
-                                       bson_error_t                      *error);
+                                       bson_error_t *error);
 
 Copies this event's error info.
 

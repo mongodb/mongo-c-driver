@@ -6,14 +6,14 @@ mongoc_socket_setsockopt()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_socket_setsockopt (mongoc_socket_t *sock,
-                            int              level,
-                            int              optname,
-                            const void      *optval,
-                            socklen_t        optlen);
+                            int level,
+                            int optname,
+                            const void *optval,
+                            socklen_t optlen);
 
 Parameters
 ----------

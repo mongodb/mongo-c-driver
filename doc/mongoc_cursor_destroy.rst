@@ -6,7 +6,7 @@ mongoc_cursor_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_cursor_destroy (mongoc_cursor_t *cursor);

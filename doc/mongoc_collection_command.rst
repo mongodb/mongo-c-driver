@@ -6,18 +6,18 @@ mongoc_collection_command()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_collection_command (mongoc_collection_t       *collection,
-                             mongoc_query_flags_t       flags,
-                             uint32_t                   skip,
-                             uint32_t                   limit,
-                             uint32_t                   batch_size,
-                             const bson_t              *command,
-                             const bson_t              *fields,
+  mongoc_collection_command (mongoc_collection_t *collection,
+                             mongoc_query_flags_t flags,
+                             uint32_t skip,
+                             uint32_t limit,
+                             uint32_t batch_size,
+                             const bson_t *command,
+                             const bson_t *fields,
                              const mongoc_read_prefs_t *read_prefs)
-  BSON_GNUC_WARN_UNUSED_RESULT;
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next <mongoc_cursor_next>` is called on it. The collection's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next <mongoc_cursor_next>` will not check the server response for a write concern error or write concern timeout.
 

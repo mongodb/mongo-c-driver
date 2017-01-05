@@ -6,7 +6,7 @@ mongoc_init()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_init (void);

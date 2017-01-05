@@ -6,11 +6,11 @@ mongoc_bulk_operation_insert()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
-                                const bson_t            *document);
+                                const bson_t *document);
 
 Queue an insert of a single document into a bulk operation. The insert is not performed until :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>` is called.
 
@@ -23,7 +23,7 @@ Parameters
 See Also
 --------
 
-:symbol:`Bulk Insert <bulk-insert>`
+:doc:`bulk`
 
 Errors
 ------

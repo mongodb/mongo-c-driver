@@ -6,14 +6,13 @@ mongoc_collection_create_bulk_operation()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_bulk_operation_t *
   mongoc_collection_create_bulk_operation (
-        mongoc_collection_t          *collection,
-        bool                          ordered,
-        const mongoc_write_concern_t *write_concern)
-     BSON_GNUC_WARN_UNUSED_RESULT;
+     mongoc_collection_t *collection,
+     bool ordered,
+     const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

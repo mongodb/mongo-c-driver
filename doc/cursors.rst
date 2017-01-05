@@ -10,7 +10,7 @@ Cursors exist on a MongoDB server. However, the ``mongoc_cursor_t`` structure gi
 
 While iterating cursors, you should check to see if an error has occurred. See the following example for how to robustly check for errors.
 
-.. code-block:: none
+.. code-block:: c
 
   static void
   print_all_documents (mongoc_collection_t *collection)
@@ -50,9 +50,9 @@ Tailable cursors are cursors that remain open even after they've returned a fina
 
 Here's a complete test case that demonstrates the use of tailable cursors.
 
-.. info::
+.. note::
 
-  Note that tailable cursors are for capped collections only.
+  Tailable cursors are for capped collections only.
 
 An example to tail the oplog from a replicaSet.
 
@@ -66,9 +66,7 @@ Let's compile and run this example against a replica set to see updates as they 
 
   $ gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)$ ./mongoc-tail mongodb://example.com/?replicaSet=myReplSet{ "ts" : { "$timestamp" : { "t" : 1400023818, "i" : 1 } }, "h" : -8458503739429355503, "v" : 2, "op" : "i", "ns" : "test.test", "o" : { "_id" : { "$oid" : "5372ab0a25164be923d10d50" } } }
 
-.. tip::
-
-  The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the given replicaSet.
+The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the given replicaSet.
 
 See also :symbol:`mongoc_cursor_set_max_await_time_ms <mongoc_cursor_set_max_await_time_ms>`.
 

@@ -6,7 +6,7 @@ mongoc_uri_get_read_prefs_t()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_read_prefs_t *
   mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri);

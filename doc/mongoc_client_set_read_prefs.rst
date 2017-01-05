@@ -6,10 +6,10 @@ mongoc_client_set_read_prefs()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_set_read_prefs (mongoc_client_t           *client,
+  mongoc_client_set_read_prefs (mongoc_client_t *client,
                                 const mongoc_read_prefs_t *read_prefs);
 
 Sets the default read preferences to use with future operations upon ``client``.

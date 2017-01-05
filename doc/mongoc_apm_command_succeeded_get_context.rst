@@ -6,10 +6,11 @@ mongoc_apm_command_succeeded_get_context()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void *
-  mongoc_apm_command_succeeded_get_context (const mongoc_apm_command_succeeded_t *event);
+  mongoc_apm_command_succeeded_get_context (
+     const mongoc_apm_command_succeeded_t *event);
 
 Returns this event's context.
 

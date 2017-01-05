@@ -6,11 +6,12 @@ mongoc_collection_set_write_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
-                                       const mongoc_write_concern_t *write_concern);
+  mongoc_collection_set_write_concern (
+     mongoc_collection_t *collection,
+     const mongoc_write_concern_t *write_concern);
 
 Parameters
 ----------

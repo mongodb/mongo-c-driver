@@ -6,11 +6,11 @@ mongoc_client_pool_min_size()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
-                              uint32_t              min_pool_size);
+  mongoc_client_pool_min_size (mongoc_client_pool_t *pool,
+                               uint32_t min_pool_size);
 
 This function sets the minimum number of pooled connections kept in :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
 

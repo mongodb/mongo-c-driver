@@ -6,10 +6,11 @@ mongoc_apm_server_heartbeat_started_get_host()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const mongoc_host_list_t *
-  mongoc_apm_server_heartbeat_started_get_host (const mongoc_apm_server_heartbeat_started_t *event);
+  mongoc_apm_server_heartbeat_started_get_host (
+     const mongoc_apm_server_heartbeat_started_t *event);
 
 Returns this event's host. This :symbol:`mongoc_host_list_t <mongoc_host_list_t>` is *not* part of a linked list, it is solely the server for this event. The data is only valid in the scope of the callback that receives this event; copy it if it will be accessed after the callback returns.
 

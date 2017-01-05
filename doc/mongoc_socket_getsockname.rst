@@ -6,12 +6,12 @@ mongoc_socket_getsockname()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_socket_getsockname (mongoc_socket_t *sock,
                              struct sockaddr *addr,
-                             socklen_t       *addrlen);
+                             socklen_t *addrlen);
 
 Parameters
 ----------

@@ -6,9 +6,9 @@ mongoc_read_concern_get_level()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  const char*
+  const char *
   mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern);
 
 Parameters

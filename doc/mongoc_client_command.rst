@@ -6,17 +6,17 @@ mongoc_client_command()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_cursor_t *
-  mongoc_client_command (mongoc_client_t           *client,
-                         const char                *db_name,
-                         mongoc_query_flags_t       flags,
-                         uint32_t                   skip,
-                         uint32_t                   limit,
-                         uint32_t                   batch_size,
-                         const bson_t              *query,
-                         const bson_t              *fields,
+  mongoc_client_command (mongoc_client_t *client,
+                         const char *db_name,
+                         mongoc_query_flags_t flags,
+                         uint32_t skip,
+                         uint32_t limit,
+                         uint32_t batch_size,
+                         const bson_t *query,
+                         const bson_t *fields,
                          const mongoc_read_prefs_t *read_prefs);
 
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next <mongoc_cursor_next>` is called on it. The client's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next <mongoc_cursor_next>` will not check the server response for a write concern error or write concern timeout.

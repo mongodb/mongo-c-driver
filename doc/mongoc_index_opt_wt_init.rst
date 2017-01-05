@@ -6,7 +6,7 @@ mongoc_index_opt_wt_init()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_index_opt_wt_init (mongoc_index_opt_wt_t *opt);

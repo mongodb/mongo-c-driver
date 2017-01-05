@@ -6,14 +6,14 @@ mongoc_stream_setsockopt()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_stream_setsockopt (mongoc_stream_t *stream,
-                            int              level,
-                            int              optname,
-                            void            *optval,
-                            socklen_t        optlen);
+                            int level,
+                            int optname,
+                            void *optval,
+                            socklen_t optlen);
 
 Parameters
 ----------

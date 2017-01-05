@@ -6,15 +6,15 @@ mongoc_collection_create_index_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_create_index_with_opts (mongoc_collection_t      *collection,
-                                            const bson_t             *keys,
+  mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
+                                            const bson_t *keys,
                                             const mongoc_index_opt_t *index_opts,
-                                            const bson_t             *command_opts,
-                                            bson_t                   *reply,
-                                            bson_error_t             *error);
+                                            const bson_t *command_opts,
+                                            bson_t *reply,
+                                            bson_error_t *error);
 
 Parameters
 ----------

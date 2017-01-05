@@ -6,10 +6,10 @@ mongoc_gridfs_create_file()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_t *
-  mongoc_gridfs_create_file (mongoc_gridfs_t          *gridfs,
+  mongoc_gridfs_create_file (mongoc_gridfs_t *gridfs,
                              mongoc_gridfs_file_opt_t *opt);
 
 Parameters

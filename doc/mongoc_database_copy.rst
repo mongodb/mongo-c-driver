@@ -6,7 +6,7 @@ mongoc_database_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_database_t *
   mongoc_database_copy (mongoc_database_t *database);

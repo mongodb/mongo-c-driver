@@ -35,15 +35,17 @@ When MongoDB is started with SSL enabled, it will by default require the client 
 
 To provide the client certificate, the user must configure the ``pem_file`` to point at a PEM armored certificate.
 
-.. code-block:: none
+.. code-block:: c
 
-  mongoc_ssl_opt_t ssl_opts = { 0 };
+  mongoc_ssl_opt_t ssl_opts = {0};
 
   ssl_opts.pem_file = "/path/to/client-certificate.pem"
 
-  /* Then set the client ssl_opts, when using a single client mongoc_client_t */
-  mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
-  /* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t */
+     /* Then set the client ssl_opts, when using a single client mongoc_client_t
+        */
+     mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+  /* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t
+   */
   mongoc_client_set_ssl_opts (client, &ssl_opts);
 
 Server Certificate Verification
@@ -65,38 +67,24 @@ When compiled against OpenSSL, the driver will attempt to load the system defaul
 Native TLS Support on Windows (Secure Channel)
 ----------------------------------------------
 
-The MongoDB C Driver supports the Windows native TLS library (Secure
-      Channel, or SChannel), and its native crypto library (Cryptography API:
-      Next Generation, or CNG).
+The MongoDB C Driver supports the Windows native TLS library (Secure Channel, or SChannel), and its native crypto library (Cryptography API: Next Generation, or CNG).
 
-When compiled against the Windows native libraries, the ``ca_dir``      option is not supported, and will issue an error if used.
+When compiled against the Windows native libraries, the ``ca_dir`` option is not supported, and will issue an error if used.
 
-Encrypted PEM files (e.g., requiring ``pem_pwd``) are also not
-      supported, and will result in error when attempting to load them.
+Encrypted PEM files (e.g., requiring ``pem_pwd``) are also not supported, and will result in error when attempting to load them.
 
-When ``ca_file`` is provided, the driver will only allow server
-      certificates issued by the authority (or authorities) provided. When no
-      ``ca_file`` is provided, the driver will look up the Certificate
-      Authority using the ``System Local Machine Root`` certificate
-      store to confirm the provided certificate.
+When ``ca_file`` is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``ca_file`` is provided, the driver will look up the Certificate Authority using the ``System Local Machine Root`` certificate store to confirm the provided certificate.
 
-When ``crl_file`` is provided, the driver will import the
-      revocation list to the ``System Local Machine Root`` certificate
-      store.
+When ``crl_file`` is provided, the driver will import the revocation list to the ``System Local Machine Root`` certificate store.
 
 Native TLS Support on Mac OS X / Darwin (Secure Transport)
 ----------------------------------------------------------
 
-The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native
-      TLS library (Secure Transport), and its native crypto library (Common
-      Crypto, or CC).
+The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native TLS library (Secure Transport), and its native crypto library (Common Crypto, or CC).
 
-When compiled against Secure Transport, the ``ca_dir``      option is not supported, and will issue an error if used.
+When compiled against Secure Transport, the ``ca_dir`` option is not supported, and will issue an error if used.
 
-When ``ca_file`` is provided, the driver will only allow server
-      certificates issued by the authority (or authorities) provided. When no
-      ``ca_file`` is provided, the driver will use the Certificate
-      Authorities in the currently unlocked keychains.
+When ``ca_file`` is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``ca_file`` is provided, the driver will use the Certificate Authorities in the currently unlocked keychains.
 
 .. only:: html
 

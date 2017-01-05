@@ -6,7 +6,7 @@ mongoc_uri_copy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_uri_t *
   mongoc_uri_copy (const mongoc_uri_t *uri);

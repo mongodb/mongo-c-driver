@@ -8,10 +8,9 @@ MongoDB C driver Logging Abstraction
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef enum
-  {
+  typedef enum {
      MONGOC_LOG_LEVEL_ERROR,
      MONGOC_LOG_LEVEL_CRITICAL,
      MONGOC_LOG_LEVEL_WARNING,
@@ -21,31 +20,36 @@ Synopsis
      MONGOC_LOG_LEVEL_TRACE,
   } mongoc_log_level_t;
 
-  #define MONGOC_ERROR(...)    
-  #define MONGOC_CRITICAL(...) 
-  #define MONGOC_WARNING(...)  
-  #define MONGOC_MESSAGE(...)  
-  #define MONGOC_INFO(...)     
-  #define MONGOC_DEBUG(...)    
+  #define MONGOC_ERROR(...)
+  #define MONGOC_CRITICAL(...)
+  #define MONGOC_WARNING(...)
+  #define MONGOC_MESSAGE(...)
+  #define MONGOC_INFO(...)
+  #define MONGOC_DEBUG(...)
 
-  typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
-                                     const char         *log_domain,
-                                     const char         *message,
-                                     void               *user_data);
+  typedef void (*mongoc_log_func_t) (mongoc_log_level_t log_level,
+                                     const char *log_domain,
+                                     const char *message,
+                                     void *user_data);
 
-  void        mongoc_log_set_handler     (mongoc_log_func_t   log_func,
-                                          void               *user_data);
-  void        mongoc_log                 (mongoc_log_level_t  log_level,
-                                          const char         *log_domain,
-                                          const char         *format,
-                                          ...) BSON_GNUC_PRINTF(3, 4);
-  const char *mongoc_log_level_str       (mongoc_log_level_t log_level);
-  void        mongoc_log_default_handler (mongoc_log_level_t  log_level,
-                                          const char         *log_domain,
-                                          const char         *message,
-                                          void               *user_data);
-  void        mongoc_log_trace_enable    (void);
-  void        mongoc_log_trace_disable   (void);
+  void
+  mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
+  void
+  mongoc_log (mongoc_log_level_t log_level,
+              const char *log_domain,
+              const char *format,
+              ...) BSON_GNUC_PRINTF (3, 4);
+  const char *
+  mongoc_log_level_str (mongoc_log_level_t log_level);
+  void
+  mongoc_log_default_handler (mongoc_log_level_t log_level,
+                              const char *log_domain,
+                              const char *message,
+                              void *user_data);
+  void
+  mongoc_log_trace_enable (void);
+  void
+  mongoc_log_trace_disable (void);
 
 The MongoDB C driver comes with an abstraction for logging that you can use in your application, or integrate with an existing logging system.
 
@@ -54,7 +58,7 @@ Macros
 
 To make logging a little less painful, various helper macros are provided. See the following example.
 
-.. code-block:: none
+.. code-block:: c
 
   #undef MONGOC_LOG_DOMAIN
   #define MONGOC_LOG_DOMAIN "my-custom-domain"
@@ -70,13 +74,13 @@ The default log handler prints a timestamp and the log message to ``stdout``, or
 
 For example, you could register a custom handler to suppress messages at INFO level and below:
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  my_logger (mongoc_log_level_t  log_level,
-             const char         *log_domain,
-             const char         *message,
-             void               *user_data)
+  my_logger (mongoc_log_level_t log_level,
+             const char *log_domain,
+             const char *message,
+             void *user_data)
   {
      /* smaller values are more important */
      if (log_level < MONGOC_LOG_LEVEL_INFO) {
@@ -85,8 +89,7 @@ For example, you could register a custom handler to suppress messages at INFO le
   }
 
   int
-  main (int   argc,
-        char *argv[])
+  main (int argc, char *argv[])
   {
      mongoc_init ();
      mongoc_log_set_handler (my_logger, NULL);
@@ -99,7 +102,7 @@ For example, you could register a custom handler to suppress messages at INFO le
 
 To restore the default handler:
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_log_set_handler (mongoc_log_default_handler, NULL);
 
@@ -108,7 +111,7 @@ Disable logging
 
 To disable all logging, including warnings, critical messages and errors, provide an empty log handler:
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_log_set_handler (NULL, NULL);
 

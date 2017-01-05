@@ -6,10 +6,10 @@ mongoc_uri_set_read_prefs_t()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_uri_set_read_prefs_t (mongoc_uri_t              *uri,
+  mongoc_uri_set_read_prefs_t (mongoc_uri_t *uri,
                                const mongoc_read_prefs_t *prefs);
 
 Parameters

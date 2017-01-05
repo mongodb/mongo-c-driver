@@ -6,7 +6,7 @@ mongoc_stream_file_get_fd()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int
   mongoc_stream_file_get_fd (mongoc_stream_file_t *stream);

@@ -1,4 +1,4 @@
-:man_page: bson_reference
+:man_page: mongoc_reference
 :orphan:
 
 .. Yes it's confusing: the home page is called "index" so this is "full_index",
@@ -9,6 +9,7 @@ Index
 =====
 
 .. toctree::
-  :maxdepth: 5
+  :maxdepth: 6
+  :titlesonly:
 
   index

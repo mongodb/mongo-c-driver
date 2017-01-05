@@ -6,11 +6,11 @@ mongoc_uri_set_read_concern()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_uri_set_read_concern (mongoc_uri_t                 *uri,
-                               const mongoc_read_concern_t  *rc);
+  mongoc_uri_set_read_concern (mongoc_uri_t *uri,
+                               const mongoc_read_concern_t *rc);
 
 Parameters
 ----------

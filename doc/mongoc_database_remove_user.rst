@@ -6,12 +6,12 @@ mongoc_database_remove_user()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_database_remove_user (mongoc_database_t *database,
-                               const char        *username,
-                               bson_error_t      *error);
+                               const char *username,
+                               bson_error_t *error);
 
 This function removes the user named ``username`` from ``database``.
 

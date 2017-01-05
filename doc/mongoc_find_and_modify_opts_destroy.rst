@@ -6,14 +6,11 @@ mongoc_find_and_modify_opts_destroy()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
-  mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *find_and_modify_opts);
-
-.. tip::
-
-  New in mongoc 1.3.0
+  mongoc_find_and_modify_opts_destroy (
+     mongoc_find_and_modify_opts_t *find_and_modify_opts);
 
 Parameters
 ----------

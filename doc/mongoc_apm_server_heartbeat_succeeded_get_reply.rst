@@ -6,10 +6,11 @@ mongoc_apm_server_heartbeat_succeeded_get_reply()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const bson_t *
-  mongoc_apm_server_heartbeat_succeeded_get_reply (const mongoc_apm_server_heartbeat_succeeded_t *event);
+  mongoc_apm_server_heartbeat_succeeded_get_reply (
+     const mongoc_apm_server_heartbeat_succeeded_t *event);
 
 Returns this event's reply. The data is only valid in the scope of the callback that receives this event; copy it if it will be accessed after the callback returns.
 

@@ -6,7 +6,7 @@ mongoc_uri_get_password()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_uri_get_password (const mongoc_uri_t *uri);

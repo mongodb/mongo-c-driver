@@ -6,12 +6,11 @@ mongoc_find_and_modify_opts_get_fields()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   void
   mongoc_find_and_modify_opts_get_fields (
-     const mongoc_find_and_modify_opts_t *opts,
-     bson_t *fields);
+     const mongoc_find_and_modify_opts_t *opts, bson_t *fields);
 
 Parameters
 ----------

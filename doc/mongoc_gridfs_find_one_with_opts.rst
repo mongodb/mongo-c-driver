@@ -6,13 +6,13 @@ mongoc_gridfs_find_one_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_gridfs_file_t *
   mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
-                                    const bson_t    *filter,
-                                    const bson_t    *opts,
-                                    bson_error_t    *error)
+                                    const bson_t *filter,
+                                    const bson_t *opts,
+                                    bson_error_t *error)
      BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters

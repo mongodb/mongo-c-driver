@@ -6,12 +6,12 @@ mongoc_uri_get_option_as_int32()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int32
   mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                  int32               fallback);
+                                  const char *option,
+                                  int32 fallback);
 
 Parameters
 ----------
@@ -27,9 +27,9 @@ Returns the value of the URI option if it is set and of the correct type (int32)
 
 Zero is considered "unset", so URIs can be constructed like so, and still accept default values:
 
-.. code-block:: none
+.. code-block:: c
 
-        bson_strdup_printf("mongodb://localhost/?connectTimeoutMS=%d", myvalue)
+  bson_strdup_printf ("mongodb://localhost/?connectTimeoutMS=%d", myvalue)
 
 If ``myvalue`` is non-zero it is the connection timeout; if it is zero the driver uses the default timeout.
 

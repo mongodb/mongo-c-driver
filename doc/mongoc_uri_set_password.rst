@@ -6,11 +6,10 @@ mongoc_uri_set_password()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_uri_set_password (mongoc_uri_t *uri,
-                           const char   *password);
+  mongoc_uri_set_password (mongoc_uri_t *uri, const char *password);
 
 Parameters
 ----------

@@ -6,7 +6,7 @@ mongoc_gridfs_file_get_chunk_size()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   int32_t
   mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file);

@@ -41,7 +41,7 @@ Aggregations using the Zip Codes Data Set
 
 Each document in this collection has the following form:
 
-.. code-block:: none
+.. code-block:: json
 
   {
     "_id" : "35004",
@@ -70,7 +70,7 @@ To get all states with a population greater than 10 million, use the following a
 
 You should see a result like the following:
 
-.. code-block:: none
+.. code-block:: json
 
   { "_id" : "PA", "total_pop" : 11881643 }
   { "_id" : "OH", "total_pop" : 10847115 }
@@ -86,7 +86,7 @@ The ``$group`` pipeline operator requires _id field where we specify grouping; r
 
 The ``$group`` process reads all documents and for each state it creates a separate document, for example:
 
-.. code-block:: none
+.. code-block:: json
 
   { "_id" : "WA", "total_pop" : 4866692 }
 
@@ -99,7 +99,7 @@ Average City Population by State
 
 To get the first three states with the greatest average population per city, use the following aggregation:
 
-.. code-block:: none
+.. code-block:: c
 
   pipeline = BCON_NEW ("pipeline", "[",
      "{", "$group", "{", "_id", "{", "state", "$state", "city", "$city", "}", "pop", "{", "$sum", "$pop", "}", "}", "}",
@@ -110,7 +110,7 @@ To get the first three states with the greatest average population per city, use
 
 This aggregate pipeline produces:
 
-.. code-block:: none
+.. code-block:: json
 
   { "_id" : "DC", "avg_city_pop" : 303450.0 }
   { "_id" : "FL", "avg_city_pop" : 27942.29805615551 }
@@ -120,7 +120,7 @@ The above aggregation pipeline is build from three pipeline operators: ``$group`
 
 The first ``$group`` operator creates the following documents:
 
-.. code-block:: none
+.. code-block:: json
 
   { "_id" : { "state" : "WY", "city" : "Smoot" }, "pop" : 414 }
 
@@ -128,7 +128,7 @@ Note, that the ``$group`` operator can't use nested documents except the ``_id``
 
 The second ``$group`` uses these documents to create the following documents:
 
-.. code-block:: none
+.. code-block:: json
 
   { "_id" : "FL", "avg_city_pop" : 27942.29805615551 }
 

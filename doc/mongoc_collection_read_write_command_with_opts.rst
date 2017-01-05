@@ -6,15 +6,16 @@ mongoc_collection_read_write_command_with_opts()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
-  mongoc_collection_read_write_command_with_opts (mongoc_collection_t       *collection,
-                                                  const bson_t              *command,
-                                                  const mongoc_read_prefs_t *read_prefs,
-                                                  const bson_t              *opts,
-                                                  bson_t                    *reply,
-                                                  bson_error_t              *error);
+  mongoc_collection_read_write_command_with_opts (
+     mongoc_collection_t *collection,
+     const bson_t *command,
+     const mongoc_read_prefs_t *read_prefs,
+     const bson_t *opts,
+     bson_t *reply,
+     bson_error_t *error);
 
 Execute a command on the server, applying logic for commands that both read and write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use :symbol:`mongoc_collection_command_simple <mongoc_collection_command_simple>`.
 

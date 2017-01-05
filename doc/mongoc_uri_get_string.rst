@@ -6,7 +6,7 @@ mongoc_uri_get_string()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   const char *
   mongoc_uri_get_string (const mongoc_uri_t *uri);

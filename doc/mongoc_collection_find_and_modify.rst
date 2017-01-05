@@ -6,19 +6,19 @@ mongoc_collection_find_and_modify()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_collection_find_and_modify (mongoc_collection_t *collection,
-                                     const bson_t        *query,
-                                     const bson_t        *sort,
-                                     const bson_t        *update,
-                                     const bson_t        *fields,
-                                     bool                 _remove,
-                                     bool                 upsert,
-                                     bool                 _new,
-                                     bson_t              *reply,
-                                     bson_error_t        *error);
+                                     const bson_t *query,
+                                     const bson_t *sort,
+                                     const bson_t *update,
+                                     const bson_t *fields,
+                                     bool _remove,
+                                     bool upsert,
+                                     bool _new,
+                                     bson_t *reply,
+                                     bson_error_t *error);
 
 Parameters
 ----------
@@ -43,9 +43,7 @@ This is a thin wrapper around the ``findAndModify`` command. Either ``update`` o
 
 See also: :symbol:`mongoc_collection_find_and_modify_with_opts <mongoc_collection_find_and_modify_with_opts>`.
 
-.. tip::
-
-  As of MongoDB 3.2 and mongoc 1.3.0, the :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_collection_t <mongoc_collection_t>` will be used, if any.
+As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_collection_t <mongoc_collection_t>` will be used, if any.
 
 Errors
 ------

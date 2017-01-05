@@ -6,12 +6,12 @@ mongoc_uri_set_option_as_int32()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_set_option_as_int32 (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                  int32               value);
+                                  const char *option,
+                                  int32 value);
 
 Parameters
 ----------

@@ -6,16 +6,15 @@ mongoc_gridfs_file_opt_t
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
-  typedef struct
-  {
-     const char   *md5;
-     const char   *filename;
-     const char   *content_type;
+  typedef struct {
+     const char *md5;
+     const char *filename;
+     const char *content_type;
      const bson_t *aliases;
      const bson_t *metadata;
-     uint32_t      chunk_size;
+     uint32_t chunk_size;
   } mongoc_gridfs_file_opt_t;
 
 Description

@@ -6,7 +6,7 @@ mongoc_uri_option_is_bool()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   bool
   mongoc_uri_option_is_bool (const char *option);

@@ -6,13 +6,13 @@ mongoc_database_create_collection()
 Synopsis
 --------
 
-.. code-block:: none
+.. code-block:: c
 
   mongoc_collection_t *
-  mongoc_database_create_collection (mongoc_database_t      *database,
-                                     const char             *name,
-                                     const bson_t           *opts,
-                                     bson_error_t           *error);
+  mongoc_database_create_collection (mongoc_database_t *database,
+                                     const char *name,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
 
 Parameters
 ----------
@@ -27,9 +27,7 @@ Description
 
 This function creates a :symbol:`mongoc_collection_t <mongoc_collection_t>` from the given :symbol:`mongoc_database_t <mongoc_database_t>`.
 
-.. tip::
-
-  The :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_database_t <mongoc_database_t>` will be used, if any.
+The :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_database_t <mongoc_database_t>` will be used, if any.
 
 Errors
 ------
