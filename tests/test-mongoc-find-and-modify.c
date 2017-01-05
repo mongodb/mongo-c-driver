@@ -83,6 +83,8 @@ test_find_and_modify_bypass (bool bypass)
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_bypass_document_validation (opts, bypass);
+   assert (bypass ==
+           mongoc_find_and_modify_opts_get_bypass_document_validation (opts));
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_set_flags (opts,
                                           MONGOC_FIND_AND_MODIFY_RETURN_NEW);
@@ -298,6 +300,7 @@ test_find_and_modify (void)
    bson_iter_t citer;
    bson_t *update;
    bson_t doc = BSON_INITIALIZER;
+   bson_t tmp;
    bson_t reply;
    mongoc_find_and_modify_opts_t *opts;
 
@@ -317,11 +320,22 @@ test_find_and_modify (void)
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_update (opts, update);
+   mongoc_find_and_modify_opts_get_update (opts, &tmp);
+   assert (match_bson (&tmp, update, false));
+   bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_fields (opts,
                                            tmp_bson ("{'superduper': 1}"));
+   mongoc_find_and_modify_opts_get_fields (opts, &tmp);
+   assert (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_sort (opts, tmp_bson ("{'superduper': 1}"));
+   mongoc_find_and_modify_opts_get_sort (opts, &tmp);
+   assert (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_flags (opts,
                                           MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+   assert (MONGOC_FIND_AND_MODIFY_RETURN_NEW ==
+           mongoc_find_and_modify_opts_get_flags (opts));
 
    ASSERT_OR_PRINT (mongoc_collection_find_and_modify_with_opts (
                        collection, &doc, opts, &reply, &error),
@@ -361,6 +375,7 @@ test_find_and_modify_opts (void)
    mongoc_collection_t *collection;
    bson_error_t error;
    mongoc_find_and_modify_opts_t *opts;
+   bson_t extra;
    future_t *future;
    request_t *request;
 
@@ -372,7 +387,12 @@ test_find_and_modify_opts (void)
 
    opts = mongoc_find_and_modify_opts_new ();
    assert (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
+   ASSERT_CMPUINT32 (
+      42, ==, mongoc_find_and_modify_opts_get_max_time_ms (opts));
    assert (mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
+   mongoc_find_and_modify_opts_get_extra (opts, &extra);
+   assert (match_bson (&extra, tmp_bson ("{'foo': 1}"), false));
+   bson_destroy (&extra);
 
    future = future_collection_find_and_modify_with_opts (
       collection, tmp_bson ("{}"), opts, NULL, &error);

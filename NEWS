@@ -5,6 +5,13 @@ New features and bug fixes:
   * New function mongoc_uri_set_mechanism_properties to replace all the
     authMechanismProperties on an existing URI.
   * mongoc_uri_get_mechanism_properties asserts its inputs are not NULL.
+  * Getter functions for options in mongoc_find_and_modify_opts_t:
+    * mongoc_find_and_modify_opts_get_bypass_document_validation
+    * mongoc_find_and_modify_opts_get_fields
+    * mongoc_find_and_modify_opts_get_flags
+    * mongoc_find_and_modify_opts_get_max_time_ms
+    * mongoc_find_and_modify_opts_get_sort
+    * mongoc_find_and_modify_opts_get_update
 
 mongo-c-driver 1.5.0
 ====================
