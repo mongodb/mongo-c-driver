@@ -5,22 +5,37 @@ CLEANFILES += $(wildcard doc/html/*.png)
 
 .PHONY: doc/html
 
+# "E" is "ignore cache", and "d" sets the dir to save cachefiles in.
 doc/html:
 	-mkdir -p doc/html
-	$(AM_V_GEN)$(YELP_BUILD) html -x $(top_srcdir)/build/libmongoc.xsl -o doc/html/ doc
+	$(SPHINX_BUILD) -qEW -d /tmp/sphinx-cache-dir doc doc/html
 
-YELP_HTML_FILES = \
-	doc/html/C.css \
-	doc/html/jquery.js \
-	doc/html/jquery.syntax.brush.clang.js \
-	doc/html/jquery.syntax.core.js \
-	doc/html/jquery.syntax.js \
-	doc/html/jquery.syntax.layout.yelp.js \
-	doc/html/yelp-note-tip.png \
-	doc/html/yelp-note-warning.png \
-	doc/html/yelp-note.png \
-	doc/html/yelp.js
+SPHINX_HTML_FILES = \
+   doc/html/.nojekyll \
+   doc/html/_static \
+   doc/html/_static/ajax-loader.gif \
+   doc/html/_static/basic.css \
+   doc/html/_static/comment-bright.png \
+   doc/html/_static/comment-close.png \
+   doc/html/_static/comment.png \
+   doc/html/_static/doctools.js \
+   doc/html/_static/down-pressed.png \
+   doc/html/_static/down.png \
+   doc/html/_static/file.png \
+   doc/html/_static/jquery-3.1.0.js \
+   doc/html/_static/jquery.js \
+   doc/html/_static/minus.png \
+   doc/html/_static/mongoc.css \
+   doc/html/_static/plus.png \
+   doc/html/_static/pygments.css \
+   doc/html/_static/searchtools.js \
+   doc/html/_static/underscore-1.3.1.js \
+   doc/html/_static/underscore.js \
+   doc/html/_static/up-pressed.png \
+   doc/html/_static/up.png \
+   doc/html/_static/websupport.js \
+   doc/html/objects.inv \
+   doc/html/searchindex.js
 
 EXTRA_DIST += doc/html
-EXTRA_DIST += $(YELP_HTML_FILES)
-
+EXTRA_DIST += $(SPHINX_HTML_FILES)

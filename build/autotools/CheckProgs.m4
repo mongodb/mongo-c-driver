@@ -16,7 +16,7 @@ fi
 AC_CHECK_HEADERS_ONCE([strings.h])
 
 # Optional for documentation
-AC_PATH_PROG(YELP_BUILD, yelp-build)
+AC_PATH_PROG(SPHINX_BUILD, sphinx-build)
 
 AC_PROG_INSTALL
 

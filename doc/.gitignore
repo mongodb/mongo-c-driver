@@ -11,5 +11,3 @@ html/_static
 html/.buildinfo
 html/.nojekyll
 man/*.3
-mongoc_installing.page
-mongoc_version.page

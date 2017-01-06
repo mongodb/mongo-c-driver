@@ -96,12 +96,6 @@ AC_ARG_ENABLE([man-pages],
               [],
               [enable_man_pages=no])
 
-AC_ARG_ENABLE([yelp],
-              [AS_HELP_STRING([--enable-yelp=@<:@yes/no@:>@],
-                              [Install yelp manuals.])],
-              [],
-              [enable_yelp=no])
-
 AC_ARG_ENABLE([examples],
               [AS_HELP_STRING([--enable-examples=@<:@yes/no@:>@],
                               [Build MongoDB C Driver examples.])],

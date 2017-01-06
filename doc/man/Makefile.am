@@ -11,8 +11,12 @@ dist_noinst_DATA = $(dist_man_MANS)
 
 man3_MANS = $(BUILT_MAN_FILES)
 
-%.3: ../%.page
-	$(AM_V_GEN)./doc/mallard2man.py 3 $^
+.PHONY: doc/man
+
+doc/man:
+	-mkdir -p doc/man
+   # "E" is "ignore cache", "d" sets dir for cachefiles, "b" is build type.
+	$(SPHINX_BUILD) -qEW -d /tmp/sphinx-cache-dir -b man doc doc/man
 
 man: $(MAN_FILES_TO_BUILD)
 EXTRA_DIST += $(MAN_FILES_TO_BUILD)
