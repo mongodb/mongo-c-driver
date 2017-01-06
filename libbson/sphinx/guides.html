@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bson_utf8_get_char() &#8212; libbson 1.5.0-dev</title>
+    <title>Guides &#8212; libbson 1.5.0-dev</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="bson_utf8_next_char()" href="bson_utf8_next_char.html" />
-    <link rel="prev" title="bson_utf8_from_unichar()" href="bson_utf8_from_unichar.html" />
+    <link rel="next" title="Streaming BSON" href="streaming-bson.html" />
+    <link rel="prev" title="UTF-8" href="utf8.html" />
    
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
@@ -36,43 +36,25 @@
 
     <div class="document">
   <div class="documentwrapper">
-    <div class="bodywrapper" id="bson_utf8_get_char">
+    <div class="bodywrapper" id="guides">
       <div class="body" role="main">
         
             <div class="related">
               <ul>
                 <li class="nav-item nav-item-0"><a href="index.html">libbson 1.5.0-dev</a> &#187;</li>
                 
-                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a> &#187;</li>
-                
-                  <li class="nav-item nav-item-2"><a href="bson_string_t.html">bson_string_t</a></li>
-                
               </ul>
             </div>
           
         
-  <div class="section" id="bson-utf8-get-char">
-<h1>bson_utf8_get_char()<a class="headerlink" href="#bson-utf8-get-char" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="synopsis">
-<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-c"><div class="highlight"><pre><span></span><span class="n">bson_unichar_t</span>
-<span class="nf">bson_utf8_get_char</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">utf8</span><span class="p">);</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="parameters">
-<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">utf8</span></code>: A UTF-8 encoded string.</li>
+  <div class="section" id="guides">
+<h1>Guides<a class="headerlink" href="#guides" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="streaming-bson.html">Streaming BSON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="json.html">JSON</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance.html">Performance Notes</a></li>
 </ul>
-</div>
-<div class="section" id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Converts the current character in a UTF-8 sequence to a bson_unichar_t, the 32-bit representation of the multi-byte character.</p>
-</div>
-<div class="section" id="returns">
-<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
-<p>A bson_unichar_t.</p>
 </div>
 </div>
 
@@ -80,8 +62,8 @@
       </div>
       <div class="footer">
         <div class="footer-nav">
-          <a class="footer-nav-button footer-nav-button-prev" title="bson_utf8_from_unichar()" href="bson_utf8_from_unichar.html">&laquo; Previous: bson_utf8_from_unichar()</a>
-          <a class="footer-nav-button footer-nav-button-next" title="bson_utf8_next_char()" href="bson_utf8_next_char.html">Next: bson_utf8_next_char() &raquo;</a>
+          <a class="footer-nav-button footer-nav-button-prev" title="UTF-8" href="utf8.html">&laquo; Previous: UTF-8</a>
+          <a class="footer-nav-button footer-nav-button-next" title="Streaming BSON" href="streaming-bson.html">Next: Streaming BSON &raquo;</a>
         </div>
       </div>
     </div>
@@ -94,14 +76,14 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 </ul>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Guides</a></li>
 </ul>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="cross-platform-notes.html">Cross Platform Notes</a></li>
 </ul>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 </ul>
 
 <ul>

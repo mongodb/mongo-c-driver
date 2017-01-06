@@ -57,6 +57,11 @@ div.bodywrapper {
     margin: 0 0 0 230px;
 }
 
+/* make room for the big table */
+div.bodywrapper#errors {
+    margin: 0;
+}
+
 div.body {
     background-color: #ffffff;
     color: #3e4349;
@@ -67,7 +72,7 @@ div.footer {
     color: #555;
     font-size: 14px;
     margin: 20px auto 30px auto;
-    text-align: right;
+    padding: 1em;
     max-width: 880px;
 }
  
@@ -79,7 +84,12 @@ div.related {
     padding: 10px 0;
     width: auto;
 }
- 
+
+/* on wide windows, show the sidebar and hide the home link */
+div.related li.nav-item-0 {
+    display: none;
+}
+
 div.related ul {
     padding: 0;
     padding-left: 0 !important;
@@ -147,10 +157,6 @@ div.sphinxsidebar a:hover {
     color: #d00;
 }
  
-div.sphinxsidebar a.fullindex {
-    font-weight: bold;
-}
-
 div.sphinxsidebar input {
     border: 1px solid #ccc;
     font-family: sans-serif;
@@ -164,6 +170,7 @@ div.footer-nav {
 div.footer a.footer-nav-button {
     display: block;
     font-size: 17px;
+    margin: 0.5em 0;
     text-decoration: none;
 }
 
@@ -178,7 +185,7 @@ a.footer-nav-button-next {
 div.colophon {
     clear: both;
     text-align: center;
-    padding-top: 2em;
+    padding: 2em;
 }
 
 /* -- body styles --------------------------------------------------------- */
@@ -375,6 +382,43 @@ span.pre {
     padding: 0 2px;
 }
 
+/* Table-of-contents lists (UL) on home page should look like section headers */
+
+
+div.bodywrapper#index div.toctree-wrapper > ul {
+    margin: 0;
+}
+
+div.bodywrapper#index div.toctree-wrapper > ul {
+    padding: 0;
+    margin: 20px 0 0 0;
+}
+
+div.bodywrapper#index div.toctree-wrapper > ul > li.toctree-l1 {
+    list-style: none;
+    margin: 20px 0 10px;
+}
+
+div.bodywrapper#index div.toctree-wrapper > ul li.toctree-l1 > a {
+    width: 100%;
+    display: block;
+    padding: 17px 0;
+    margin-bottom: 17px;
+    border-bottom: 1px solid #ddd;
+    font-size: 180%;
+    font-weight: normal;
+    color: black;
+}
+
+div.bodywrapper#index div.toctree-wrapper > ul li.toctree-l1 > a:hover {
+    text-decoration: none;
+    color: #d00;
+}
+
+div.bodywrapper#index div.toctree-wrapper > ul li.toctree-l1 ul {
+    padding-left: 20px;
+}
+
 dl.class, dl.function {
     margin-bottom: 50px;
 }
@@ -459,15 +503,16 @@ a.symbol span {
     font-family: monospace;
 }
 
+div.code-block-caption {
+    font-size: inherit;
+    padding: 0 0 1em 0;
+}
+
 @media screen and (max-width: 870px) {
 
     div.document {
         width: auto;
         margin: 0;
-    }
-
-    div.documentwrapper {
-        float: none;
     }
 
     div.bodywrapper {
@@ -479,41 +524,12 @@ a.symbol span {
         padding: 0 20px 30px 20px;
     }
 
-    div.footer {
-        background-color: #333;
-        color: #888;
-        margin: 0;
-        padding: 10px 20px 20px;
-        text-align: left;
-        width: auto;
+    /* hide side bar and reveal home page link */
+    div.sphinxsidebar, div.colophon {
+        display: none;
     }
 
-    div.sphinxsidebar {
-        background-color: #333;
-        color: #fff;
-        float: none;
-        margin: 0;
-        padding: 10px 20px;
-        width: auto;
+    div.related li.nav-item-0 {
+        display: inline;
     }
-
-    div.sphinxsidebar h3,
-    div.sphinxsidebar h4,
-    div.sphinxsidebar p,
-    div.sphinxsidebar h3 a {
-        color: #fff;
-    }
-
-    div.sphinxsidebar ul {
-        color: #999;
-    }
-
-    div.sphinxsidebar a {
-        color: #aaa;
-    }
-
-    div.sphinxsidebar a:hover {
-        color: #fff;
-    }
-
 }
