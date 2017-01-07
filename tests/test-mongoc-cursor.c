@@ -141,47 +141,6 @@ test_clone (void)
 
 
 static void
-test_invalid_query (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_error_t error;
-   const bson_t *doc = NULL;
-   bson_t *q;
-   bool r;
-
-   client = test_framework_client_new ();
-   assert (client);
-
-   q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
-
-   cursor = _mongoc_cursor_new (client,
-                                "test.test",
-                                MONGOC_QUERY_NONE,
-                                0,
-                                1,
-                                1,
-                                false,
-                                q,
-                                NULL,
-                                NULL,
-                                NULL);
-   assert (!mongoc_cursor_is_alive (cursor));
-   r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   mongoc_cursor_error (cursor, &error);
-   assert (strstr (error.message, "$query"));
-   assert (error.domain == MONGOC_ERROR_CURSOR);
-   assert (error.code == MONGOC_ERROR_CURSOR_INVALID_CURSOR);
-   assert (doc == NULL);
-
-   bson_destroy (q);
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-}
-
-
-static void
 test_limit (void)
 {
    mongoc_client_t *client;
@@ -1575,7 +1534,6 @@ test_cursor_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Cursor/get_host", test_get_host);
    TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
-   TestSuite_AddLive (suite, "/Cursor/invalid_query", test_invalid_query);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);

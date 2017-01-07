@@ -200,34 +200,6 @@ _has_dollar_fields (const bson_t *bson)
 }
 
 
-/* true if there are any non-$ keys. precondition: bson must be valid. */
-static bool
-_has_nondollar_fields (const bson_t *bson)
-{
-   bson_iter_t iter;
-   const char *key;
-
-   BSON_ASSERT (bson_iter_init (&iter, bson));
-   while (bson_iter_next (&iter)) {
-      key = bson_iter_key (&iter);
-
-      if (key[0] != '$') {
-         return true;
-      }
-   }
-
-   return false;
-}
-
-
-/* true if there are $ and non-$ keys. precondition: bson must be valid. */
-static bool
-_mixed_dollar_non_dollar (const bson_t *bson)
-{
-   return _has_dollar_fields (bson) && _has_nondollar_fields (bson);
-}
-
-
 #define MARK_FAILED(c)          \
    do {                         \
       (c)->done = true;         \
@@ -413,16 +385,6 @@ _mongoc_cursor_new (mongoc_client_t *client,
                /* strip leading "$" */
                bson_append_iter (&opts, key + 1, -1, &iter);
             }
-         }
-      } else {
-         /* whole document is query, like "{a: 1}" or "{$or: [...]}" */
-         if (_mixed_dollar_non_dollar (query)) {
-            bson_set_error (&error,
-                            MONGOC_ERROR_CURSOR,
-                            MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                            "Cannot mix top-level query with dollar keys such "
-                            "as $orderby. Use {$query: {},...} instead.");
-            GOTO (done);
          }
       }
    }
