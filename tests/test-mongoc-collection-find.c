@@ -413,6 +413,22 @@ test_dollar_or (void)
 }
 
 
+static void
+test_mixed_dollar_nondollar (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+
+   test_data.docs = "[{'a': 1}, {'a': 1, 'b': 2}, {'a': 2}]";
+   test_data.query_input = "{'a': 1, '$or': [{'b': 1}, {'b': 2}]}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {'a': 1, '$or': [{'b': 1}, {'b': 2}]}}";
+
+   test_data.expected_result = "[{'a': 1, 'b': 2}]";
+   _test_collection_find (&test_data);
+}
+
+
 /* test that we can query for a document by a key named "filter" */
 static void
 test_key_named_filter (void)
@@ -1085,7 +1101,7 @@ _test_tailable_timeout (bool pooled)
    } else {
       client = test_framework_client_new ();
    }
-   
+
    database = mongoc_client_get_database (client, "test");
    collection_name = gen_collection_name ("test");
 
@@ -1123,7 +1139,7 @@ _test_tailable_timeout (bool pooled)
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    bson_free (collection_name);
-   
+
    if (pooled) {
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
@@ -1152,13 +1168,15 @@ test_tailable_timeout_pooled (void)
 void
 test_collection_find_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/Collection/find/dollar_query",
-                      test_dollar_query);
-   TestSuite_AddLive (suite, "/Collection/find/dollar_or",
-                      test_dollar_or);
-   TestSuite_AddLive (suite, "/Collection/find/key_named_filter",
-                      test_key_named_filter);
-   TestSuite_AddLive (suite, "/Collection/find/key_named_filter/$query",
+   TestSuite_AddLive (
+      suite, "/Collection/find/dollar_query", test_dollar_query);
+   TestSuite_AddLive (suite, "/Collection/find/dollar_or", test_dollar_or);
+   TestSuite_AddLive (suite,
+                      "/Collection/find/mixed_dollar_nondollar",
+                      test_mixed_dollar_nondollar);
+   TestSuite_AddLive (suite, "/Collection/find/key_named_filter", test_key_named_filter);
+   TestSuite_AddLive (suite,
+                      "/Collection/find/key_named_filter/$query",
                       test_key_named_filter_with_dollar_query);
    TestSuite_AddLive (suite, "/Collection/find/subdoc_named_filter",
                       test_subdoc_named_filter);
