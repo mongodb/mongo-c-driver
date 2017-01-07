@@ -178,8 +178,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
     */
    reply_ptr = reply ? reply : &reply_local;
    bson_init (reply_ptr);
-   command_name = _mongoc_get_command_name (command);
-   BSON_ASSERT (command_name);
    callbacks = &cluster->client->apm_callbacks;
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
@@ -192,6 +190,18 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    /*
     * prepare the request
     */
+
+   command_name = _mongoc_get_command_name (command);
+   if (!command_name) {
+      bson_set_error (error, MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Empty command document");
+
+      /* haven't fired command-started event, so don't fire command-failed */
+      monitored = false;
+      GOTO (done);
+   }
+
    bson_snprintf (cmd_ns, sizeof cmd_ns, "%s.$cmd", db_name);
    request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, command, flags);

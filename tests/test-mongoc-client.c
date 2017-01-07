@@ -1110,6 +1110,27 @@ test_command_with_opts_modern (void)
 
 
 static void
+test_command_empty (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{}"), NULL, NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Empty command document");
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_command_no_errmsg (void)
 {
    mock_server_t *server;
@@ -2693,6 +2714,8 @@ test_client_install (TestSuite *suite)
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddLive (
       suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
+   TestSuite_AddLive (
+      suite, "/Client/command/empty", test_command_empty);
    TestSuite_AddLive (
       suite, "/Client/command/no_errmsg", test_command_no_errmsg);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
