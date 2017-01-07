@@ -1213,11 +1213,14 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
 
    apply_read_preferences (read_prefs, server_stream, command, flags, &result);
 
+   ++client->cluster.operation_id;
+
    ret = mongoc_cluster_run_command_monitored (&client->cluster,
                                                server_stream,
                                                result.flags,
                                                db_name,
                                                result.query_with_read_prefs,
+                                               client->cluster.operation_id,
                                                reply,
                                                error);
 
@@ -1870,13 +1873,20 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 
    ENTRY;
 
+   ++cluster->operation_id;
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &command);
 
    /* Find, getMore And killCursors Commands Spec: "The result from the
     * killCursors command MAY be safely ignored."
     */
-   mongoc_cluster_run_command_monitored (
-      cluster, server_stream, MONGOC_QUERY_SLAVE_OK, db, &command, NULL, NULL);
+   mongoc_cluster_run_command_monitored (cluster,
+                                         server_stream,
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         db,
+                                         &command,
+                                         cluster->operation_id,
+                                         NULL,
+                                         NULL);
 
    bson_destroy (&command);
 

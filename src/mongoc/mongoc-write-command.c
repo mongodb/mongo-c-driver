@@ -1381,6 +1381,7 @@ again:
                                                   MONGOC_QUERY_NONE,
                                                   database,
                                                   &cmd,
+                                                  command->operation_id,
                                                   &reply,
                                                   error);
 

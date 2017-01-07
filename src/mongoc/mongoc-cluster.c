@@ -134,7 +134,7 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                      mongoc_stream_t *stream,
                                      uint32_t server_id,
@@ -142,6 +142,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                      const char *db_name,
                                      const bson_t *command,
                                      bool monitored,
+                                     int64_t operation_id,
                                      const mongoc_host_list_t *host,
                                      bson_t *reply,
                                      bson_error_t *error)
@@ -215,7 +216,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                        db_name,
                                        command_name,
                                        request_id,
-                                       cluster->operation_id,
+                                       operation_id,
                                        host,
                                        server_id,
                                        cluster->client->apm_context);
@@ -310,7 +311,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                          reply_ptr,
                                          command_name,
                                          request_id,
-                                         cluster->operation_id,
+                                         operation_id,
                                          host,
                                          server_id,
                                          cluster->client->apm_context);
@@ -335,7 +336,7 @@ done:
                                       command_name,
                                       error,
                                       request_id,
-                                      cluster->operation_id,
+                                      operation_id,
                                       host,
                                       server_id,
                                       cluster->client->apm_context);
@@ -375,6 +376,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       mongoc_query_flags_t flags,
                                       const char *db_name,
                                       const bson_t *command,
+                                      int64_t operation_id,
                                       bson_t *reply,
                                       bson_error_t *error)
 {
@@ -385,6 +387,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                                db_name,
                                                command,
                                                true,
+                                               operation_id,
                                                &server_stream->sd->host,
                                                reply,
                                                error);
@@ -428,6 +431,8 @@ mongoc_cluster_run_command (mongoc_cluster_t *cluster,
                                                command,
                                                /* not monitored */
                                                false,
+                                               /* operation_id */
+                                               0,
                                                NULL,
                                                reply,
                                                error);

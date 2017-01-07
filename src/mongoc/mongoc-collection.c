@@ -1205,6 +1205,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bool has_collation = false;
    mongoc_server_stream_t *server_stream = NULL;
    bson_iter_t iter;
+   mongoc_cluster_t *cluster;
 
    ENTRY;
 
@@ -1345,11 +1346,14 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
                       "The selected server does not support collation");
       GOTO (done);
    }
-   ret = mongoc_cluster_run_command_monitored (&collection->client->cluster,
+
+   cluster = &collection->client->cluster;
+   ret = mongoc_cluster_run_command_monitored (cluster,
                                                server_stream,
                                                MONGOC_QUERY_NONE,
                                                collection->db,
                                                &cmd,
+                                               ++cluster->operation_id,
                                                reply,
                                                &local_error);
 
@@ -1913,12 +1917,13 @@ mongoc_collection_remove (mongoc_collection_t *collection,
    BSON_APPEND_INT32 (
       &opts, "limit", flags & MONGOC_REMOVE_SINGLE_REMOVE ? 1 : 0);
    _mongoc_write_result_init (&result);
+   ++collection->client->cluster.operation_id;
    _mongoc_write_command_init_delete (
       &command,
       selector,
       &opts,
       write_flags,
-      ++collection->client->cluster.operation_id);
+      collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (
@@ -2558,11 +2563,13 @@ mongoc_collection_find_and_modify_with_opts (
       }
    }
 
+   ++cluster->operation_id;
    ret = mongoc_cluster_run_command_monitored (cluster,
                                                server_stream,
                                                MONGOC_QUERY_NONE,
                                                collection->db,
                                                &command,
+                                               cluster->operation_id,
                                                reply_ptr,
                                                error);
 

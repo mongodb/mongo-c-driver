@@ -3,6 +3,8 @@
 #include <mongoc-apm-private.h>
 #include <mongoc-host-list-private.h>
 #include <mongoc-cursor-private.h>
+#include <mongoc-bulk-operation-private.h>
+#include <mongoc-client-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -1213,7 +1215,7 @@ test_op_id_failed_cb (const mongoc_apm_command_failed_t *event)
    _mongoc_array_index (&test._event_type##_ids, ids_t, _index).op_id
 
 static void
-_test_bulk_operation_id (bool pooled)
+_test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
 {
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
@@ -1243,11 +1245,22 @@ _test_bulk_operation_id (bool pooled)
    }
 
    collection = get_test_collection (client, "test_bulk_operation_id");
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   if (use_bulk_operation_new) {
+      bulk = mongoc_bulk_operation_new (false);
+      mongoc_bulk_operation_set_client (bulk, client);
+      mongoc_bulk_operation_set_database (bulk, collection->db);
+      mongoc_bulk_operation_set_collection (bulk, collection->collection);
+   } else {
+      bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   }
+
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    mongoc_bulk_operation_update_one (
       bulk, tmp_bson ("{'_id': 1}"), tmp_bson ("{'$set': {'x': 1}}"), false);
    mongoc_bulk_operation_remove (bulk, tmp_bson ("{}"));
+
+   /* ensure we monitor with bulk->operation_id, not cluster->operation_id */
+   client->cluster.operation_id = 42;
 
    /* write errors don't trigger failed events, so we only test success */
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
@@ -1266,9 +1279,10 @@ _test_bulk_operation_id (bool pooled)
    ASSERT_CMPINT64 (REQUEST_ID (succeeded, 0), !=, REQUEST_ID (succeeded, 2));
    ASSERT_CMPINT64 (REQUEST_ID (succeeded, 1), !=, REQUEST_ID (succeeded, 2));
 
-   /* operation ids all the same */
-   op_id = OP_ID (started, 0);
+   /* events' operation ids all equal bulk->operation_id */
+   op_id = bulk->operation_id;
    ASSERT_CMPINT64 (op_id, !=, (int64_t) 0);
+   ASSERT_CMPINT64 (op_id, ==, OP_ID (started, 0));
    ASSERT_CMPINT64 (op_id, ==, OP_ID (started, 1));
    ASSERT_CMPINT64 (op_id, ==, OP_ID (started, 2));
    ASSERT_CMPINT64 (op_id, ==, OP_ID (succeeded, 0));
@@ -1291,16 +1305,30 @@ _test_bulk_operation_id (bool pooled)
 
 
 static void
-test_bulk_operation_id_single (void)
+test_collection_bulk_op_single (void)
 {
-   _test_bulk_operation_id (false);
+   _test_bulk_operation_id (false, false);
 }
 
 
 static void
-test_bulk_operation_id_pooled (void)
+test_collection_bulk_op_pooled (void)
 {
-   _test_bulk_operation_id (true);
+   _test_bulk_operation_id (true, false);
+}
+
+
+static void
+test_bulk_op_single (void)
+{
+   _test_bulk_operation_id (false, true);
+}
+
+
+static void
+test_bulk_op_pooled (void)
+{
+   _test_bulk_operation_id (true, true);
 }
 
 
@@ -1621,6 +1649,62 @@ test_client_cmd_simple (void)
 
 
 static void
+test_client_cmd_op_ids (void)
+{
+   op_id_test_t test;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   bool r;
+   bson_error_t error;
+   int64_t op_id;
+
+   op_id_test_init (&test);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, test_op_id_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks, test_op_id_succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
+
+   client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
+
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (1, ==, test.started_calls);
+   ASSERT_CMPINT (1, ==, test.succeeded_calls);
+   ASSERT_CMPINT (0, ==, test.failed_calls);
+   ASSERT_CMPINT64 (REQUEST_ID (started, 0), ==, REQUEST_ID (succeeded, 0));
+   ASSERT_CMPINT64 (OP_ID (started, 0), ==, OP_ID (succeeded, 0));
+   op_id = OP_ID (started, 0);
+   ASSERT_CMPINT64 (op_id, !=, (int64_t) 0);
+
+   op_id_test_cleanup (&test);
+   op_id_test_init (&test);
+
+   /* again. test that we use a new op_id. */
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (1, ==, test.started_calls);
+   ASSERT_CMPINT (1, ==, test.succeeded_calls);
+   ASSERT_CMPINT (0, ==, test.failed_calls);
+   ASSERT_CMPINT64 (REQUEST_ID (started, 0), ==, REQUEST_ID (succeeded, 0));
+   ASSERT_CMPINT64 (OP_ID (started, 0), ==, OP_ID (succeeded, 0));
+   ASSERT_CMPINT64 (OP_ID (started, 0), !=, (int64_t) 0);
+
+   /* new op_id */
+   ASSERT_CMPINT64 (OP_ID (started, 0), !=, op_id);
+
+   mongoc_client_destroy (client);
+   op_id_test_cleanup (&test);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static void
 test_killcursors_deprecated (void)
 {
    cmd_test_t test;
@@ -1675,11 +1759,17 @@ test_command_monitoring_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_1);
    TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/single",
-                      test_bulk_operation_id_single);
+                      "/command_monitoring/operation_id/bulk/collection/single",
+                      test_collection_bulk_op_single);
    TestSuite_AddLive (suite,
-                      "/command_monitoring/operation_id/bulk/pooled",
-                      test_bulk_operation_id_pooled);
+                      "/command_monitoring/operation_id/bulk/collection/pooled",
+                      test_collection_bulk_op_pooled);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/operation_id/bulk/new/single",
+                      test_bulk_op_single);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/operation_id/bulk/new/pooled",
+                      test_bulk_op_pooled);
    TestSuite_Add (suite,
                   "/command_monitoring/operation_id/query/single/cmd",
                   test_query_operation_id_single_cmd);
@@ -1695,6 +1785,8 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (
       suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
+   TestSuite_AddLive (
+      suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
    TestSuite_AddLive (suite,
                       "/command_monitoring/killcursors_deprecated",
                       test_killcursors_deprecated);

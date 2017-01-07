@@ -126,6 +126,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       mongoc_query_flags_t flags,
                                       const char *db_name,
                                       const bson_t *command,
+                                      int64_t operation_id,
                                       bson_t *reply,
                                       bson_error_t *error);
 

@@ -1277,6 +1277,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       read_prefs_result.flags,
       db,
       read_prefs_result.query_with_read_prefs,
+      cursor->operation_id,
       reply,
       &cursor->error);
 
