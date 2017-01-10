@@ -1,3 +1,27 @@
+mongo-c-driver 1.5.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+New bug fixes:
+  * CDRIVER-1975 allow mixed $ and non-$ query ops.
+  * CDRIVER-1972 Support for ipv6 hostnames.
+  * CDRIVER-1971 Missing exports of mongoc_gridfs_file_set_*() functions.
+  * CDRIVER-1970 update define constants for "find" opts to be unique.
+  * CDRIVER-1964 Windows CA stores should be opened with read-only flag.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * Alexey Ponomarev
+  * Peter Beckman
+  * Rockford Wei
+
+Peace,
+
+    Hannes Magnusson
+
 mongo-c-driver 1.5.1
 ====================
 
