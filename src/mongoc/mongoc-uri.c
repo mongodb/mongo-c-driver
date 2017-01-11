@@ -102,7 +102,7 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    } else {
       bson_snprintf (link_->host_and_port, sizeof link_->host_and_port,
                      "%s:%hu", host, port);
-      link_->family = strstr (host, ".sock") ? AF_UNIX : AF_UNSPEC;
+      link_->family = strstr (host, ".sock") ? AF_UNIX : AF_INET;
    }
    link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
    link_->port = port;
