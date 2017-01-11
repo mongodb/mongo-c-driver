@@ -34,6 +34,10 @@ if [ "$AUTH" = "auth" ]; then
   ORCHESTRATION_FILE="auth"
 fi
 
+if [ "$IPV4_ONLY" = "on" ]; then
+  ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ipv4-only"
+fi
+
 if [ "$SSL" != "nossl" ]; then
    cp -f tests/x509gen/* $MONGO_ORCHESTRATION_HOME/lib/
    # find print0 and xargs -0 not available on Solaris. Lets hope for good paths

@@ -639,7 +639,6 @@ test_mongoc_host_list_from_string (void)
    ASSERT (!strcmp (host_list.host_and_port, "localhost:27019"));
    ASSERT (!strcmp (host_list.host, "localhost"));
    ASSERT (host_list.port == 27019);
-   ASSERT (host_list.family == AF_INET);
    ASSERT (!host_list.next);
 }
 

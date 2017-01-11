@@ -223,7 +223,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} AUTH=${AUTH} SSL=${SSL} sh .evergreen/integration-tests.sh
+          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} SSL=${SSL} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
@@ -5004,6 +5004,28 @@ tasks:
             URI: ""
 
 
+    - name: test-latest-server-noauth-nosasl-nossl-ipv4-only
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-only"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
     - name: test-latest-server-noauth-nosasl-openssl
       tags: ["openssl", "nosasl", "noauth", "server", "latest"]
       depends_on:
@@ -6017,6 +6039,7 @@ buildvariants:
     - ".debug-compile .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".latest .nossl !.nosasl !.ipv4-only"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .openssl !.nosasl .server"
