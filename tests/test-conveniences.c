@@ -1126,11 +1126,11 @@ init_huge_string (mongoc_client_t *client)
    if (!gHugeString) {
       max_bson_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster);
       assert (max_bson_size > 0);
-      gHugeStringLength = (size_t) max_bson_size - 37;
-      gHugeString = (char *) bson_malloc (gHugeStringLength);
+      gHugeStringLength = (size_t) max_bson_size - 36;
+      gHugeString = (char *) bson_malloc (gHugeStringLength + 1);
       assert (gHugeString);
-      memset (gHugeString, 'a', gHugeStringLength - 1);
-      gHugeString[gHugeStringLength - 1] = '\0';
+      memset (gHugeString, 'a', gHugeStringLength);
+      gHugeString[gHugeStringLength] = '\0';
    }
 }
 
@@ -1155,10 +1155,10 @@ static void
 init_four_mb_string ()
 {
    if (!gFourMBString) {
-      gFourMBString = (char *) bson_malloc (FOUR_MB);
+      gFourMBString = (char *) bson_malloc (FOUR_MB + 1);
       assert (gFourMBString);
-      memset (gFourMBString, 'a', FOUR_MB - 1);
-      gFourMBString[FOUR_MB - 1] = '\0';
+      memset (gFourMBString, 'a', FOUR_MB);
+      gFourMBString[FOUR_MB] = '\0';
    }
 }
 
