@@ -28,8 +28,11 @@ void
 bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
 
 
-#ifdef _MSC_VER
+#ifndef PATH_MAX
 #define PATH_MAX 1024
+#endif
+
+#ifdef _WIN32
 #define realpath(path, expanded) \
    GetFullPathName (path, PATH_MAX, expanded, NULL)
 #endif

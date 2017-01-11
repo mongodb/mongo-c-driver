@@ -704,8 +704,10 @@ install_json_test_suite (TestSuite *suite,
 
    for (i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file (test_paths[i]);
-      skip_json = strstr (test_paths[i], "/json") + strlen ("/json");
+      skip_json = COALESCE (strstr (test_paths[i], "/json"),
+                            strstr (test_paths[i], "\\json"));
       assert (skip_json);
+      skip_json += strlen ("/json");
       ext = strstr (skip_json, ".json");
       assert (ext);
       ext[0] = '\0';
