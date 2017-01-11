@@ -256,9 +256,8 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    do {                                                                       \
       if (NULL == strstr ((a), (b))) {                                        \
          fprintf (stderr,                                                     \
-                  "FAIL\n\nAssert Failure: \"%s\" does not contain \"%s\"\n", \
-                  a,                                                          \
-                  b);                                                         \
+            "%s:%d %s(): : [%s] does not contain with [%s]\n",                \
+            __FILE__, __LINE__, BSON_FUNC, a, b);                             \
          abort ();                                                            \
       }                                                                       \
    } while (0)
@@ -268,18 +267,29 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       if ((a) != strstr ((a), (b))) {                                      \
          fprintf (                                                         \
             stderr,                                                        \
-            "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n", \
-            a,                                                             \
-            b);                                                            \
+            "%s:%d %s(): : [%s] does not start with [%s]\n",               \
+            __FILE__, __LINE__, BSON_FUNC, a, b);                          \
          abort ();                                                         \
       }                                                                    \
    } while (0)
 
-#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
-   do {                                                        \
-      ASSERT_CMPINT (error.domain, ==, _domain);               \
-      ASSERT_CMPINT (error.code, ==, _code);                   \
-      ASSERT_CONTAINS (error.message, _message);               \
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)               \
+   do {                                                                      \
+      if (error.domain != _domain) {                                         \
+         fprintf (stderr,                                                    \
+                  "%s:%d %s(): error domain %d doesn't match expected %d\n", \
+                  __FILE__, __LINE__, BSON_FUNC,                             \
+                  error.domain, _domain);                                    \
+         abort ();                                                           \
+      };                                                                     \
+      if (error.code != _code) {                                             \
+         fprintf (stderr,                                                    \
+                  "%s:%d %s(): error code %d doesn't match expected %d\n",   \
+                  __FILE__, __LINE__, BSON_FUNC,                             \
+                  error.code, _code);                                        \
+         abort ();                                                           \
+      };                                                                     \
+      ASSERT_CONTAINS (error.message, _message);                             \
    } while (0);
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                \
