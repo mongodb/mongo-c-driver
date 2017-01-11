@@ -170,3 +170,76 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 
    RETURN (true);
 }
+
+
+const bson_validate_flags_t insert_vflags = (bson_validate_flags_t)
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
+   BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS;
+
+bool
+_mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
+{
+   if (!bson_validate (doc, insert_vflags, NULL)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "document to insert contains invalid keys");
+      return false;
+   }
+
+   return true;
+}
+
+
+bool
+_mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
+{
+   if (!bson_validate (doc, insert_vflags, NULL)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "replacement document contains invalid keys");
+      return false;
+   }
+
+   return true;
+}
+
+
+bool
+_mongoc_validate_update (const bson_t *update, bson_error_t *error)
+{
+   bson_iter_t iter;
+   const char *key;
+   int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS;
+
+   if (!bson_validate (update, (bson_validate_flags_t) vflags, NULL)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "update document contains invalid keys");
+      return false;
+   }
+
+   if (!bson_iter_init (&iter, update)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "update document is corrupt");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+      if (key[0] != '$') {
+         bson_set_error (error, MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid key '%s': update only works with $ operators",
+                         key);
+
+         return false;
+      }
+   }
+
+   return true;
+}

@@ -461,14 +461,21 @@ test_insert (void)
       bson_destroy (&b);
    }
 
-   bson_init (&b);
-   BSON_APPEND_INT32 (&b, "$hello", 1);
    r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{'$hello': 1}"), NULL, &error);
    ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_BSON);
-   ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
-   bson_destroy (&b);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "contains invalid keys");
+
+   r = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{'a.b': 1}"), NULL, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "contains invalid keys");
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -661,8 +668,27 @@ test_insert_bulk (void)
       collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, NULL, &error);
    END_IGNORE_DEPRECATIONS;
    ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_BSON);
-   ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   bson_destroy (&q);
+   for (i = 0; i < 10; i++) {
+      bson_destroy (&b[i]);
+   }
+
+   for (i = 0; i < 10; i++) {
+      bson_destroy (&b[i]);
+      bson_init (&b[i]);
+      BSON_APPEND_INT32 (&b[i], "a.b", i);
+      bptr[i] = &b[i];
+   }
+   BEGIN_IGNORE_DEPRECATIONS;
+   r = mongoc_collection_insert_bulk (
+      collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, NULL, &error);
+   END_IGNORE_DEPRECATIONS;
+   ASSERT (!r);
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    bson_destroy (&q);
    for (i = 0; i < 10; i++) {
@@ -1189,6 +1215,7 @@ test_save (void)
    bson_oid_t oid;
    unsigned i;
    bson_t b;
+   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1216,7 +1243,21 @@ test_save (void)
 
    bson_destroy (&b);
 
-   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+   r = mongoc_collection_save (
+      collection, tmp_bson ("{'$hello': 1}"), NULL, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "contains invalid keys");
+
+   r = mongoc_collection_save (
+      collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "contains invalid keys");
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -1402,8 +1443,8 @@ test_update (void)
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
    ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_BSON);
-   ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
    bson_destroy (&q);
    bson_destroy (&u);
 
@@ -1413,8 +1454,8 @@ test_update (void)
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
    ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_BSON);
-   ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
    bson_destroy (&q);
    bson_destroy (&u);
 
@@ -1432,8 +1473,12 @@ test_update_oversize (void *ctx)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   size_t huger_sz = 20 * 1024 * 1024;
+   char *huger;
    bson_t huge = BSON_INITIALIZER;
    bson_t empty = BSON_INITIALIZER;
+   bson_t huge_update = BSON_INITIALIZER;
+   bson_t child;
    bool r;
    bson_error_t error;
 
@@ -1453,13 +1498,21 @@ test_update_oversize (void *ctx)
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "too large");
 
-   /* swap docs to test oversized update operator */
+   /* test oversized update operator */
+   huger = bson_malloc (huger_sz + 1);
+   memset (huger, 'a', huger_sz);
+   huger[huger_sz] = '\0';
+   assert (BSON_APPEND_DOCUMENT_BEGIN (&huge_update, "$set", &child));
+   assert (bson_append_utf8 (&child, "x", 1, huger, (int) huger_sz));
+   assert (bson_append_document_end (&huge_update, &child));
+
    r = mongoc_collection_update (
-      collection, MONGOC_UPDATE_NONE, &empty, &huge, NULL, &error);
+      collection, MONGOC_UPDATE_NONE, &empty, &huge_update, NULL, &error);
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "too large");
 
+   bson_free (huger);
    bson_destroy (&huge);
    bson_destroy (&empty);
    mongoc_collection_destroy (collection);
@@ -2213,10 +2266,12 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{ 'count' : 'test', 'query' : {  "
-                                             "}, 'readConcern': {'level': "
-                                             "'majority'}}");
+   request = mock_server_receives_command (server,
+                                           "test",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{ 'count' : 'test', 'query' : {  "
+                                           "}, 'readConcern': {'level': "
+                                           "'majority'}}");
 
    mock_server_replies_simple (request, "{ 'n' : 43, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2256,10 +2311,12 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{ 'count' : 'test', 'query' : {  "
-                                             "}, 'readConcern': {'level': "
-                                             "'futureCompatible'}}");
+   request = mock_server_receives_command (server,
+                                           "test",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{ 'count' : 'test', 'query' : {  "
+                                           "}, 'readConcern': {'level': "
+                                           "'futureCompatible'}}");
 
    mock_server_replies_simple (request, "{ 'n' : 45, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2277,10 +2334,12 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{ 'count' : 'test', 'query' : {  "
-                                             "}, 'readConcern': { '$exists': "
-                                             "false }}");
+   request = mock_server_receives_command (server,
+                                           "test",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{ 'count' : 'test', 'query' : {  "
+                                           "}, 'readConcern': { '$exists': "
+                                           "false }}");
 
    mock_server_replies_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -2297,10 +2356,12 @@ test_count_read_concern (void)
    future = future_collection_count (
       collection, MONGOC_QUERY_NONE, &b, 0, 0, NULL, &error);
    bson_destroy (&b);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{ 'count' : 'test', 'query' : {  "
-                                             "}, 'readConcern': { '$exists': "
-                                             "false }}");
+   request = mock_server_receives_command (server,
+                                           "test",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{ 'count' : 'test', 'query' : {  "
+                                           "}, 'readConcern': { '$exists': "
+                                           "false }}");
 
    mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
    count = future_get_int64_t (future);

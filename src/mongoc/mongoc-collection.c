@@ -1552,17 +1552,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
    }
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-                    BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
-
       for (i = 0; i < n_documents; i++) {
-         if (!bson_validate (
-                documents[i], (bson_validate_flags_t) vflags, NULL)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "A document was corrupt or contained "
-                            "invalid characters . or $");
+         if (!_mongoc_validate_new_document (documents[i], error)) {
             RETURN (false);
          }
       }
@@ -1655,18 +1646,9 @@ mongoc_collection_insert (mongoc_collection_t *collection,
       write_concern = collection->write_concern;
    }
 
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-                    BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
-
-      if (!bson_validate (document, (bson_validate_flags_t) vflags, NULL)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "A document was corrupt or contained "
-                         "invalid characters . or $");
-         RETURN (false);
-      }
+   if (!(flags & MONGOC_INSERT_NO_VALIDATE) &&
+       !_mongoc_validate_new_document (document, error)) {
+      RETURN (false);
    }
 
    _mongoc_write_result_init (&result);
@@ -1733,10 +1715,7 @@ mongoc_collection_update (mongoc_collection_t *collection,
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bson_iter_t iter;
-   size_t err_offset;
    bool ret;
-   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-                 BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
    int flags = uflags;
    bson_t opts;
 
@@ -1753,15 +1732,18 @@ mongoc_collection_update (mongoc_collection_t *collection,
    }
 
    if (!((uint32_t) flags & MONGOC_UPDATE_NO_VALIDATE) &&
-       bson_iter_init (&iter, update) && bson_iter_next (&iter) &&
-       (bson_iter_key (&iter)[0] != '$') &&
-       !bson_validate (update, (bson_validate_flags_t) vflags, &err_offset)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "update document is corrupt or contains "
-                      "invalid keys including $ or .");
-      return false;
+       bson_iter_init (&iter, update) && bson_iter_next (&iter)) {
+
+      if (bson_iter_key (&iter)[0] == '$') {
+         /* update document, all keys must be $-operators */
+         if (!_mongoc_validate_update (update, error)) {
+            return false;
+         }
+      } else {
+         if (!_mongoc_validate_replace (update, error)) {
+            return false;
+         }
+      }
    } else {
       flags = (uint32_t) flags & ~MONGOC_UPDATE_NO_VALIDATE;
    }
@@ -1846,12 +1828,18 @@ mongoc_collection_save (mongoc_collection_t *collection,
       return false;
    }
 
-   ret = mongoc_collection_update (collection,
-                                   MONGOC_UPDATE_UPSERT,
-                                   &selector,
-                                   document,
-                                   write_concern,
-                                   error);
+   /* this document will be inserted, validate same as for inserts */
+   if (!_mongoc_validate_new_document (document, error)) {
+      return false;
+   }
+
+   ret = mongoc_collection_update (
+      collection,
+      MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE,
+      &selector,
+      document,
+      write_concern,
+      error);
 
    bson_destroy (&selector);
 

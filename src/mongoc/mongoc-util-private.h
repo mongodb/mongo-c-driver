@@ -85,6 +85,14 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  mongoc_error_code_t code,
                                  uint32_t *server_id,
                                  bson_error_t *error);
+bool
+_mongoc_validate_new_document (const bson_t *insert, bson_error_t *error);
+
+bool
+_mongoc_validate_replace (const bson_t *insert, bson_error_t *error);
+
+bool
+_mongoc_validate_update (const bson_t *update, bson_error_t *error);
 
 BSON_END_DECLS
 
