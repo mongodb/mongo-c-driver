@@ -1,5 +1,24 @@
+mongo-c-driver 1.5.3
+====================
+
+This release fixes a bug that prevented connecting to IPv4-only MongoDB servers
+by hostname.
+
+https://jira.mongodb.org/browse/CDRIVER-1988
+
+The driver has reverted to its 1.5.1 behavior: it connects to MongoDB over IPv6
+if given an IPv6 connection string like "mongodb://[::1]", and requires an IPv4
+connection when given a hostname like "mongodb://localhost".
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.2
 ====================
+
+UPDATE: 1.5.2 suffered a severe bug and has been removed from GitHub.
 
 It is my pleasure to announce mongo-c-driver 1.5.2.
 
@@ -21,6 +40,7 @@ New bug fixes:
 Peace,
 
     Hannes Magnusson
+
 
 mongo-c-driver 1.5.1
 ====================
