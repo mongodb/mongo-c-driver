@@ -141,7 +141,7 @@ enum {
 #define COUNTER(ident, Category, Name, Description)                   \
    static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
    {                                                                  \
-      _mongoc_counter_add (                                           \
+      (void) _mongoc_counter_add (                                    \
          __mongoc_counter_##ident.cpus[_mongoc_sched_getcpu ()]       \
             .slots[COUNTER_##ident % SLOTS_PER_CACHELINE],            \
          val);                                                        \
