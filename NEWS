@@ -13,6 +13,58 @@ New features and bug fixes:
     * mongoc_find_and_modify_opts_get_sort
     * mongoc_find_and_modify_opts_get_update
 
+
+mongo-c-driver 1.5.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+New bug fixes:
+  * CDRIVER-1975 allow mixed $ and non-$ query ops.
+  * CDRIVER-1972 Support for ipv6 hostnames.
+  * CDRIVER-1971 Missing exports of mongoc_gridfs_file_set_*() functions.
+  * CDRIVER-1970 update define constants for "find" opts to be unique.
+  * CDRIVER-1964 Windows CA stores should be opened with read-only flag.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * Alexey Ponomarev
+  * Peter Beckman
+  * Rockford Wei
+
+Peace,
+
+    Hannes Magnusson
+
+
+mongo-c-driver 1.5.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.1. This is a bugfix release:
+
+  * Fix SEGFAULT with performance counters on NUMA (thanks to Jonathan Wang).
+  * Prevent rare assertion error in mongoc_cluster_stream_for_server.
+  * Improve error messages from auth failure.
+  * Escape quotes when appending CFLAGS to handshake metadata.
+  * Fix OpenSSL header lookups in non-default paths.
+  * Fix build failure with LibreSSL.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeroen Ooms
+  * Jonathan Wang
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.0
 ====================
 
