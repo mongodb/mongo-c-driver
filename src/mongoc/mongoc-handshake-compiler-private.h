@@ -17,10 +17,7 @@
 #define MONGOC_HANDSHAKE_COMPILER_PRIVATE_H
 
 #include "mongoc-config.h"
-
-/* Helper macros for stringifying things */
-#define MONGOC_STR(s) #s
-#define MONGOC_EVALUATE_STR(s) MONGOC_STR(s)
+#include "mongoc-util-private.h"
 
 /*
  * Thanks to:
@@ -55,7 +52,7 @@
 /* Portable C Compiler. Version may not be available */
    #define MONGOC_COMPILER "PCC"
 #else
-   #define MONGOC_COMPILER MONGOC_CC
+   #define MONGOC_COMPILER MONGOC_EVALUATE_STR (MONGOC_CC)
 /* Not defining COMPILER_VERSION. We'll fall back to values set at
  * configure-time */
 #endif

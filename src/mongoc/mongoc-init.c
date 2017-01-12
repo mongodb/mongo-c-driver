@@ -28,6 +28,8 @@
 # include "mongoc-ssl.h"
 # ifdef MONGOC_ENABLE_SSL_OPENSSL
 #  include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#  include "tls.h"
 # endif
 #endif
 #include "mongoc-thread-private.h"

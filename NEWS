@@ -1,7 +1,75 @@
+mongo-c-driver 1.5.3
+====================
+
+This release fixes a bug that prevented connecting to IPv4-only MongoDB servers
+by hostname.
+
+https://jira.mongodb.org/browse/CDRIVER-1988
+
+The driver has reverted to its 1.5.1 behavior: it connects to MongoDB over IPv6
+if given an IPv6 connection string like "mongodb://[::1]", and requires an IPv4
+connection when given a hostname like "mongodb://localhost".
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.2
+====================
+
+UPDATE: 1.5.2 suffered a severe bug and has been removed from GitHub.
+
+It is my pleasure to announce mongo-c-driver 1.5.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+New bug fixes:
+  * CDRIVER-1975 allow mixed $ and non-$ query ops.
+  * CDRIVER-1972 Support for ipv6 hostnames.
+  * CDRIVER-1971 Missing exports of mongoc_gridfs_file_set_*() functions.
+  * CDRIVER-1970 update define constants for "find" opts to be unique.
+  * CDRIVER-1964 Windows CA stores should be opened with read-only flag.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * Alexey Ponomarev
+  * Peter Beckman
+  * Rockford Wei
+
+Peace,
+
+    Hannes Magnusson
+
+
+mongo-c-driver 1.5.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.1. This is a bugfix release:
+
+  * Fix SEGFAULT with performance counters on NUMA (thanks to Jonathan Wang).
+  * Prevent rare assertion error in mongoc_cluster_stream_for_server.
+  * Improve error messages from auth failure.
+  * Escape quotes when appending CFLAGS to handshake metadata.
+  * Fix OpenSSL header lookups in non-default paths.
+  * Fix build failure with LibreSSL.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeroen Ooms
+  * Jonathan Wang
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.0
 ====================
 
-It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
+It is my pleasure to announce the release of mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support

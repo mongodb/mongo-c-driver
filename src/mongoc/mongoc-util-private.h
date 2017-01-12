@@ -49,6 +49,10 @@
 # define MONGOC_RAND_R rand_r
 #endif
 
+/* Helper macros for stringifying things */
+#define MONGOC_STR(s) #s
+#define MONGOC_EVALUATE_STR(s) MONGOC_STR (s)
+
 BSON_BEGIN_DECLS
 
 

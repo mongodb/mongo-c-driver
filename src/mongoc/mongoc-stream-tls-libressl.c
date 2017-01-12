@@ -501,7 +501,6 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t  *base_stream,
 
    }
 
-   libressl->n = streams++;
    mongoc_counter_streams_active_inc();
    RETURN((mongoc_stream_t *)tls);
 }
