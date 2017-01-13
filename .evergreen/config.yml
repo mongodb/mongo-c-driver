@@ -232,7 +232,7 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          AUTH=${AUTH} SSL=${SSL} URI=${URI} sh .evergreen/run-tests.sh
+          CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} sh .evergreen/run-tests.sh
 
   "run auth tests":
     - command: shell.exec
@@ -6410,6 +6410,16 @@ buildvariants:
     - ".3.0 .nossl .nosasl"
     - ".2.6 .nossl .nosasl"
       # There is no 2.4 build for Windows
+
+- name: mingw
+  display_name: "MinGW-W64"
+  expansions:
+    CC: "mingw"
+  run_on:
+  - windows-64-vs2013-compile
+  tasks:
+    - ".debug-compile .nossl .nosasl"
+    - ".latest .nossl .nosasl .server"
 
 - name: power8-rhel71
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"

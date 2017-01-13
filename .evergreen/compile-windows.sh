@@ -53,8 +53,15 @@ case "$SSL" in
    esac
 esac
 
-# Resolve the compiler name to correct MSBuild location
+export CONFIGURE_FLAGS
+
 case "$CC" in
+   mingw*)
+      git submodule update --init
+      cmd.exe /c .evergreen\\compile-windows-mingw.bat
+      exit 0
+   ;;
+   # Resolve the compiler name to correct MSBuild location
    "Visual Studio 10 2010")
       BUILD="/cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe"
    ;;

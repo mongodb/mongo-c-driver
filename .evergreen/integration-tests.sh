@@ -61,7 +61,7 @@ case "$OS" in
       echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
 
       # Crazy python stuff to make sure MO is running latest version
-      python -m virtualenv venv
+      python.exe -m virtualenv venv
       cd venv
       . Scripts/activate
       git clone https://github.com/10gen/mongo-orchestration.git

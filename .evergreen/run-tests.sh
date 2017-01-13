@@ -26,6 +26,12 @@ export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"
 export MONGOC_TEST_SERVER_LOG="json"
 
+if [ "$CC" = "mingw" ]; then
+   chmod +x test-libmongoc.exe
+   cmd.exe /c .evergreen\\run-tests-mingw.bat
+   exit 0
+fi
+
 case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
