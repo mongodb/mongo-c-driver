@@ -703,9 +703,11 @@ request_t *
 mock_server_receives_request (mock_server_t *server)
 {
    sync_queue_t *q;
+   int64_t request_timeout_msec;
 
    q = mock_server_get_queue (server);
-   return (request_t *) q_get (q, server->request_timeout_msec);
+   request_timeout_msec = mock_server_get_request_timeout_msec (server);
+   return (request_t *) q_get (q, request_timeout_msec);
 }
 
 

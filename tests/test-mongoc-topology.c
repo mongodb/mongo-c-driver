@@ -160,7 +160,6 @@ _test_server_selection (bool try_once)
    mongoc_server_description_t *sd;
 
    server = mock_server_new ();
-   mock_server_set_request_timeout_msec (server, 600);
    mock_server_run (server);
 
    secondary_response =
@@ -200,7 +199,9 @@ _test_server_selection (bool try_once)
 
    /* the selection timeout is 100 ms, and we can't rescan until a half second
     * passes, so selection fails without another ismaster call */
+   mock_server_set_request_timeout_msec (server, 600);
    assert (!mock_server_receives_ismaster (server));
+   mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
    /* selection fails */
    assert (!future_get_mongoc_server_description_ptr (future));
@@ -479,7 +480,6 @@ test_cooldown_standalone (void *ctx)
    mongoc_server_description_t *sd;
 
    server = mock_server_new ();
-   mock_server_set_request_timeout_msec (server, 100);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* anything less than minHeartbeatFrequencyMS=500 is irrelevant */
@@ -502,9 +502,11 @@ test_cooldown_standalone (void *ctx)
    /* second selection doesn't try to call ismaster: we're in cooldown */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
+   mock_server_set_request_timeout_msec (server, 100);
    assert (!mock_server_receives_ismaster (server)); /* no ismaster call */
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
+   mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
    _mongoc_usleep (5100 * 1000); /* 5.1 seconds */
 
@@ -544,7 +546,6 @@ test_cooldown_rs (void *ctx)
 
    for (i = 0; i < 2; i++) {
       servers[i] = mock_server_new ();
-      mock_server_set_request_timeout_msec (servers[i], 600);
       mock_server_run (servers[i]);
    }
 
@@ -598,7 +599,9 @@ test_cooldown_rs (void *ctx)
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
+   mock_server_set_request_timeout_msec (servers[1], 600);
    assert (!mock_server_receives_ismaster (servers[1])); /* no ismaster call */
+   mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
    /* still no primary */
    assert (!future_get_mongoc_server_description_ptr (future));

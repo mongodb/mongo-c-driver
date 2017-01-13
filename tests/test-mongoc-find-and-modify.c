@@ -118,6 +118,7 @@ test_find_and_modify_bypass (bool bypass)
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
+   request_destroy (request);
 
    mongoc_find_and_modify_opts_destroy (opts);
    bson_destroy (&reply);
@@ -211,6 +212,7 @@ test_find_and_modify_write_concern (int wire_version)
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
+   request_destroy (request);
 
    mongoc_find_and_modify_opts_destroy (opts);
    bson_destroy (&reply);

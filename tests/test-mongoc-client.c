@@ -2115,7 +2115,6 @@ _cmd (mock_server_t *server,
 static void
 test_client_set_ssl_copies_args (bool pooled)
 {
-   mongoc_uri_t *uri;
    mock_server_t *server;
    mongoc_ssl_opt_t client_opts = {0};
    mongoc_ssl_opt_t server_opts = {0};
@@ -2138,16 +2137,13 @@ test_client_set_ssl_copies_args (bool pooled)
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
-
    if (pooled) {
       capture_logs (true);
-      pool = mongoc_client_pool_new (uri);
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
       mongoc_client_pool_set_ssl_opts (pool, &client_opts);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
       mongoc_client_set_ssl_opts (client, &client_opts);
    }
 
@@ -2166,7 +2162,6 @@ test_client_set_ssl_copies_args (bool pooled)
 
    bson_free (mutable_client_ca);
    mock_server_destroy (server);
-   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -2206,7 +2201,6 @@ _test_ssl_reconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
 
    if (pooled) {
       capture_logs (true);
