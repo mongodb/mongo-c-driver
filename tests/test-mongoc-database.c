@@ -95,10 +95,10 @@ test_create_with_write_concern (void)
          ASSERT (!error.code);
          ASSERT (!error.domain);
          ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+         mongoc_collection_destroy (collection);
       }
    }
 
-   mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    bson_free (name);
    bson_free (dbname);
