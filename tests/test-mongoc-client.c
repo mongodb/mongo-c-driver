@@ -1051,6 +1051,7 @@ test_command_with_opts_modern (void)
 
    /* apply write concern from opts, not client */
    opts = tmp_bson ("{'writeConcern': {'w': 2}}");
+   mongoc_write_concern_destroy (wc);
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 4);
    mongoc_client_set_write_concern (client, wc);

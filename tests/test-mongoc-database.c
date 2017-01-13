@@ -77,6 +77,7 @@ test_create_with_write_concern (void)
    if (!test_framework_is_mongos ()) { /* skip if sharded */
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
+      mongoc_collection_destroy (collection);
       collection =
          mongoc_database_create_collection (database, name, opts, &error);
 
@@ -97,6 +98,7 @@ test_create_with_write_concern (void)
       }
    }
 
+   mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    bson_free (name);
    bson_free (dbname);

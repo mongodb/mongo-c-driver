@@ -309,7 +309,8 @@ _test_topology_reconcile_sharded (bool pooled)
       int64_t start = bson_get_monotonic_time ();
       while (get_node (client->topology,
                        mock_server_get_host_and_port (secondary))) {
-         assert (bson_get_monotonic_time () - start < 1000000);
+         ASSERT_CMPTIME ((int) (bson_get_monotonic_time () - start),
+                         (int) 1000000);
       }
    } else {
       assert (!get_node (client->topology,

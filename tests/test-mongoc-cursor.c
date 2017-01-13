@@ -204,6 +204,8 @@ test_limit (void)
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT_CMPINT (n_docs, ==, 5);
+
+      mongoc_cursor_destroy (cursor);
    }
 
    mongoc_bulk_operation_destroy (bulk);

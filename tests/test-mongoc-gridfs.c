@@ -16,12 +16,16 @@ get_test_gridfs (mongoc_client_t *client, const char *name, bson_error_t *error)
 {
    char *gen;
    char n[48];
+   mongoc_database_t *db;
 
    gen = gen_collection_name ("fs");
    bson_snprintf (n, sizeof n, "%s_%s", gen, name);
    bson_free (gen);
 
-   mongoc_database_drop (mongoc_client_get_database (client, "test"), NULL);
+   db = mongoc_client_get_database (client, "test");
+   mongoc_database_drop (db, NULL);
+   mongoc_database_destroy (db);
+
    return mongoc_client_get_gridfs (client, "test", NULL, error);
 }
 

@@ -255,9 +255,8 @@ sendv_test_server (void *data_)
    } while (amount > 0);
    ASSERT_CMPINT (0, ==, amount);
 
-
+   bson_free (buf);
    mongoc_stream_destroy (stream);
-
    mongoc_socket_destroy (listen_sock);
 
    return NULL;
@@ -330,6 +329,7 @@ sendv_test_client (void *data_)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    mongoc_stream_destroy (stream);
+   bson_free (buf);
 
    return NULL;
 }
