@@ -14,47 +14,27 @@ find_path(BSON_INCLUDE_DIR
     libbson-1.0/bson.h
   HINTS
     ${BSON_ROOT_DIR}
-    ${_BSON_INCLUDEDIR}
   PATH_SUFFIXES
     include
 )
 
 set(BSON_INCLUDE_DIR "${BSON_INCLUDE_DIR}/libbson-1.0")
 
-if(WIN32 AND NOT CYGWIN)
-  if(MSVC)
-    find_library(BSON
-      NAMES
-        "bson-1.0"
-      HINTS
-        ${BSON_ROOT_DIR}
-      PATH_SUFFIXES
-        bin
-        lib
-    )
+find_library(BSON
+  NAMES
+    "bson-1.0"
+  HINTS
+    ${BSON_ROOT_DIR}
+  PATH_SUFFIXES
+    bin
+    lib
+)
 
-    mark_as_advanced(BSON)
-    set(BSON_LIBRARIES ${BSON} ws2_32)
-  else()
-      # bother supporting this?
-  endif()
+if(WIN32)
+   set(BSON_LIBRARIES ${BSON} ws2_32)
 else()
-
-  find_library(BSON_LIBRARY
-    NAMES
-      bson-1.0
-    HINTS
-      ${_BSON_LIBDIR}
-    PATH_SUFFIXES
-      lib
-  )
-
-  mark_as_advanced(BSON_LIBRARY)
-
   find_package (Threads REQUIRED)
-
-  set(BSON_LIBRARIES ${BSON_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
-
+  set(BSON_LIBRARIES ${BSON} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if (BSON_INCLUDE_DIR)
