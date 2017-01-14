@@ -81,29 +81,32 @@ The most recent release of libmongoc is |release| and can be `downloaded here <h
   $ wget |release_download|
   $ tar xzf mongo-c-driver-|release|.tar.gz
   $ cd mongo-c-driver-|release|
-  $ ./configure
-      
+  $ ./configure --disable-automatic-init-and-cleanup
+
+For a list of all configure options, run ``./configure --help``.
 
 If ``configure`` completed successfully, you'll see something like the following describing your build configuration.
 
-.. code-block:: none
+.. parsed-literal::
 
-  libmongoc was configured with the following options:
+  libmongoc |release| was configured with the following options:
 
   Build configuration:
-  Enable debugging (slow)                          : no
-  Compile with debug symbols (slow)                : no
-  Enable GCC build optimization                    : yes
-  Code coverage support                            : no
-  Cross Compiling                                  : no
-  Fast counters                                    : no
-  SASL                                             : sasl2
-  SSL                                              : yes
-  Libbson                                          : bundled
+    Enable debugging (slow)                          : no
+    Compile with debug symbols (slow)                : no
+    Enable GCC build optimization                    : yes
+    Enable automatic init and cleanup                : no
+    Code coverage support                            : no
+    Cross Compiling                                  : no
+    Fast counters                                    : no
+    Shared memory performance counters               : yes
+    SASL                                             : sasl2
+    SSL                                              : openssl
+    Libbson                                          : bundled
 
   Documentation:
-  Generate man pages                               : no
-  Install man pages                                : no
+    man                                              : no
+    HTML                                             : no
 
 mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.
 
