@@ -13,8 +13,6 @@ Synopsis
 
 This function is identical to :symbol:`mongoc_client_set_appname() <mongoc_client_set_appname>` except for client pools.
 
-This function can only be called once on a pool, and must be called before the first :symbol:`mongoc_client_pool_pop <mongoc_client_pool_pop>`.
-
 Also note that :symbol:`mongoc_client_set_appname() <mongoc_client_set_appname>` cannot be called on a client retrieved from a client pool.
 
 Parameters
@@ -28,3 +26,4 @@ Returns
 
 true if the appname is set successfully. Otherwise, false.
 
+.. include:: includes/mongoc_client_pool_call_once.txt

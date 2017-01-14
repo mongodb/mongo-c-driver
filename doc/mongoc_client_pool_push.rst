@@ -19,3 +19,4 @@ Parameters
 * ``pool``: A :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
 * ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
 
+.. include:: includes/mongoc_client_pool_thread_safe.txt

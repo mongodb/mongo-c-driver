@@ -15,8 +15,6 @@ Synopsis
 
 Register a set of callbacks to receive Application Performance Monitoring events.
 
-This function can only be called once on a pool, and must be called before the first :symbol:`mongoc_client_pool_pop <mongoc_client_pool_pop>`.
-
 Parameters
 ----------
 
@@ -28,6 +26,8 @@ Returns
 -------
 
 Returns true on success, otherwise false and an error is logged.
+
+.. include:: includes/mongoc_client_pool_call_once.txt
 
 See Also
 --------

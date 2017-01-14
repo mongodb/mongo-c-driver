@@ -20,3 +20,4 @@ Parameters
 * ``pool``: A :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
 * ``max_pool_size``: The maximum number of connections which shall be available from the pool.
 
+.. include:: includes/mongoc_client_pool_thread_safe.txt
