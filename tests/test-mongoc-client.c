@@ -2473,6 +2473,7 @@ test_client_appname (bool pooled, bool use_uri)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 120 * 1000);
 
    if (use_uri) {
       mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
