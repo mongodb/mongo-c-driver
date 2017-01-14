@@ -83,7 +83,7 @@ The most recent release of libmongoc is |release| and can be `downloaded here <h
   $ cd mongo-c-driver-|release|
   $ ./configure --disable-automatic-init-and-cleanup
 
-For a list of all configure options, run ``./configure --help``.
+The ``--disable-automatic-init-and-cleanup`` option is recommended, see :doc:`init-cleanup`. For a list of all configure options, run ``./configure --help``.
 
 If ``configure`` completed successfully, you'll see something like the following describing your build configuration.
 

@@ -8,7 +8,8 @@ EXTRA_DIST += \
   doc/mongoc-theme/static/mongoc.css_t \
   doc/mongoc-theme/static/pygments.css \
   doc/mongoc-theme/theme.conf \
-  doc/taglist.py
+  doc/taglist.py \
+  $(wildcard doc/includes/*.txt)
 
 dist-hook: man html
 

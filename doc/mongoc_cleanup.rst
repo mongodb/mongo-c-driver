@@ -14,5 +14,4 @@ Synopsis
 Description
 -----------
 
-This function is responsible for cleaning up after use of the MongoDB C driver. It will release any lingering allocated memory which can be useful when running under valgrind.
-
+.. include:: includes/init_cleanup.txt
