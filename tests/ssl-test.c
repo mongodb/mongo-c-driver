@@ -12,7 +12,7 @@
 #include "ssl-test.h"
 #include "TestSuite.h"
 
-#define TIMEOUT 1000
+#define TIMEOUT 10 * 1000
 
 #define NUM_IOVECS 2000
 
