@@ -370,6 +370,7 @@ test_invalid_cluster_node (void *ctx)
    mongoc_client_t *client;
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
+   int64_t scanner_node_ts;
    uint32_t id;
 
    /* use client pool, this test is only valid when multi-threaded */
@@ -387,25 +388,28 @@ test_invalid_cluster_node (void *ctx)
    mongoc_server_stream_cleanup (server_stream);
 
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
+   assert (cluster_node);
+   assert (cluster_node->stream);
+
+   mongoc_mutex_lock (&client->topology->mutex);
    scanner_node =
       mongoc_topology_scanner_get_node (client->topology->scanner, id);
-   assert (cluster_node);
    assert (scanner_node);
-   assert (cluster_node->stream);
    ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
    _mongoc_usleep (1000 * 1000);
-   scanner_node->timestamp = bson_get_monotonic_time ();
-   ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node->timestamp);
+   scanner_node_ts = scanner_node->timestamp = bson_get_monotonic_time ();
+   ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node_ts);
    _mongoc_usleep (1000 * 1000);
+   mongoc_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one */
    server_stream =
       mongoc_cluster_stream_for_server (&client->cluster, id, true, &error);
    ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
-   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node_ts);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
