@@ -979,6 +979,7 @@ test_reset_callbacks (void *ctx)
    bson_t *cmd;
    bson_t cmd_reply;
    bson_error_t error;
+   mongoc_server_description_t *sd;
    mongoc_cursor_t *cursor;
    const bson_t *b;
 
@@ -995,8 +996,18 @@ test_reset_callbacks (void *ctx)
    cmd = tmp_bson ("{'aggregate': '%s', 'pipeline': [], 'cursor': {}}",
                    collection->collection);
 
-   r = mongoc_client_command_simple (
-      client, "test", cmd, NULL, &cmd_reply, &error);
+   sd =
+      mongoc_client_select_server (client, true /* for writes */, NULL, &error);
+   ASSERT_OR_PRINT (sd, error);
+
+   r = mongoc_client_read_command_with_opts (
+      client,
+      "test",
+      cmd,
+      NULL,
+      tmp_bson ("{'serverId': %d}", sd->id),
+      &cmd_reply,
+      &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (incremented, ==, 1);
@@ -1004,7 +1015,8 @@ test_reset_callbacks (void *ctx)
    /* reset callbacks */
    mongoc_client_set_apm_callbacks (client, NULL, NULL);
    /* destroys cmd_reply */
-   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, 1);
+   cursor = mongoc_cursor_new_from_command_reply (
+      client, &cmd_reply, sd->id);
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (incremented, ==, 1); /* same value as before */
 
@@ -1017,6 +1029,7 @@ test_reset_callbacks (void *ctx)
    mongoc_collection_drop (collection, NULL);
 
    mongoc_cursor_destroy (cursor);
+   mongoc_server_description_destroy (sd);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mongoc_apm_callbacks_destroy (inc_callbacks);
