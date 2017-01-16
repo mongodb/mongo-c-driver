@@ -76,13 +76,14 @@ void *
 q_get (sync_queue_t *q, int64_t timeout_msec)
 {
    void *item = NULL;
-   int64_t deadline;
+   int64_t remaining_usec = timeout_msec * 1000;
+   int64_t deadline = bson_get_monotonic_time () + timeout_msec * 1000;
 
    mongoc_mutex_lock (&q->mutex);
    if (timeout_msec) {
-      deadline = bson_get_monotonic_time () + timeout_msec * 1000;
-      while (!q->array.len && bson_get_monotonic_time () <= deadline) {
-         mongoc_cond_timedwait (&q->cond, &q->mutex, timeout_msec);
+      while (!q->array.len && remaining_usec > 0) {
+         mongoc_cond_timedwait (&q->cond, &q->mutex, remaining_usec / 1000);
+         remaining_usec = deadline - bson_get_monotonic_time ();
       }
    } else {
       /* no deadline */
