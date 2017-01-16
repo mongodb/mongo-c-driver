@@ -161,7 +161,8 @@ test_ismaster (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+/* CDRIVER-1992: temporarily disable test on Windows */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
 static void
 test_ismaster_ssl (void)
 {
@@ -174,7 +175,7 @@ void
 test_async_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #endif
 }
