@@ -569,8 +569,7 @@ test_cooldown_rs (void *ctx)
 
    primary_response =
       bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'setName': 'rs',"
-                          " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
-                          mock_server_get_port (servers[0]),
+                          " 'hosts': ['localhost:%hu']}",
                           mock_server_get_port (servers[1]));
 
    /* server 0 is a secondary. */
@@ -603,7 +602,7 @@ test_cooldown_rs (void *ctx)
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
-   mock_server_set_request_timeout_msec (servers[1], 600);
+   mock_server_set_request_timeout_msec (servers[1], 100);
    assert (!mock_server_receives_ismaster (servers[1])); /* no ismaster call */
    mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
@@ -611,7 +610,7 @@ test_cooldown_rs (void *ctx)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   _mongoc_usleep (5100 * 1000); /* 5.1 seconds */
+   _mongoc_usleep (5100 * 1000); /* 5.1 seconds. longer than 5 sec cooldown. */
 
    /* cooldown ends, now we try ismaster on server 1, this time succeeding */
    future = future_topology_select (
@@ -652,7 +651,6 @@ _test_select_succeed (bool try_once)
    future_t *future;
    int64_t start;
    bson_error_t error;
-   request_t *request;
    int64_t duration_usec;
 
    primary = mock_server_new ();
@@ -661,6 +659,7 @@ _test_select_succeed (bool try_once)
    secondary = mock_server_new ();
    mock_server_run (secondary);
 
+   /* primary auto-responds, secondary never responds */
    mock_server_auto_ismaster (primary,
                               "{'ok': 1,"
                               " 'ismaster': true,"
@@ -688,11 +687,6 @@ _test_select_succeed (bool try_once)
    start = bson_get_monotonic_time ();
    future =
       future_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
-
-   /* secondary doesn't respond */
-   request = mock_server_receives_ismaster (secondary);
-   assert (request);
-   request_destroy (request);
 
    /* selection succeeds */
    sd = future_get_mongoc_server_description_ptr (future);
