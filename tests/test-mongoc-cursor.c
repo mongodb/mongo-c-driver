@@ -423,7 +423,6 @@ test_kill_cursors_pooled_cmd (void)
 }
 
 
-#ifdef CDRIVER_1442
 static void
 _test_getmore_fail (bool has_primary, bool pooled)
 {
@@ -526,7 +525,6 @@ test_getmore_fail_no_primary_single (void)
 {
    _test_getmore_fail (false, false);
 }
-#endif
 
 
 /* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
@@ -1544,7 +1542,6 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
    TestSuite_Add (
       suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
-#ifdef CDRIVER_1442
    TestSuite_Add (suite,
                   "/Cursor/getmore_fail/with_primary/pooled",
                   test_getmore_fail_with_primary_pooled);
@@ -1557,8 +1554,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Cursor/getmore_fail/no_primary/single",
                   test_getmore_fail_no_primary_single);
-#endif
-
    TestSuite_Add (suite,
                   "/Cursor/client_kill_cursor/with_primary",
                   test_client_kill_cursor_with_primary);
