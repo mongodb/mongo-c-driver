@@ -234,6 +234,15 @@ functions:
           set -o errexit
           AUTH=${AUTH} SSL=${SSL} URI=${URI} sh .evergreen/run-tests.sh
 
+  "run auth tests":
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          sh .evergreen/run-auth-tests.sh
+
   "cleanup":
     - command: shell.exec
       params:
@@ -567,6 +576,45 @@ tasks:
               set -o errexit
               set -o xtrace
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=winssl sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-nossl
+      tags: ["debug-compile", "sspi", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=no sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-openssl
+      tags: ["debug-compile", "sspi", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=openssl sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-winssl
+      tags: ["debug-compile", "sspi", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=winssl sh .evergreen/compile.sh
         - func: "upload build"
 
 # }}}
@@ -5886,6 +5934,16 @@ tasks:
             SSL: "winssl"
             URI: ""
 
+    - name: test-latest-server-auth-sspi-winssl
+      tags: ["winssl", "sspi", "auth", "server", "latest"]
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "run auth tests"
+
 
 # }}}
 
@@ -5901,8 +5959,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
 
 
@@ -5916,8 +5974,8 @@ buildvariants:
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -5938,8 +5996,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -5956,8 +6014,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .nossl !.nosasl"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .nossl !.nosasl" # No enterprise build for Archlinux, SSL not available
@@ -5978,7 +6036,7 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -5996,8 +6054,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6014,8 +6072,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6035,8 +6093,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .nossl !.nosasl !.ipv4-only"
@@ -6057,8 +6115,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6079,8 +6137,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6099,7 +6157,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -6116,8 +6174,8 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6136,7 +6194,7 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .nossl" # No MongoDB SSL builds available for any version
     - ".3.4 .nossl" # No MongoDB SSL builds available for any version
     - ".3.2 .nossl !.nosasl"
@@ -6154,7 +6212,7 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -6170,8 +6228,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .darwinssl"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
     - ".latest .darwinssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
@@ -6195,8 +6253,9 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
+    - ".debug-compile .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6220,10 +6279,12 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
       # No 32bit OpenSSL builds
+    - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
+    - ".latest .sspi"
     - ".3.4 .winssl .nosasl .server"
     - ".3.4 .nossl .nosasl"
     - ".3.2 .winssl .nosasl .server"
@@ -6242,11 +6303,13 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
+    - ".debug-compile .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".latest .sspi"
     - ".3.4 .winssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
@@ -6265,10 +6328,12 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
+    - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
+    - ".latest .sspi"
     - ".3.4 .winssl .nosasl .server"
     - ".3.4 .nossl .nosasl"
     - ".3.2 .winssl .nosasl .server"
@@ -6287,11 +6352,13 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
+    - ".debug-compile .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".latest .sspi"
     - ".3.4 .winssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
@@ -6311,10 +6378,13 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
+    - ".debug-compile .winssl .sspi"
     - ".debug-compile .winssl .nosasl"
-    - ".debug-compile .nossl .nosasl"
+    - ".debug-compile !.sspi .nossl .nosasl"
+    - ".debug-compile .nossl .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
+    - ".latest .sspi"
     - ".3.4 .winssl .nosasl .server"
     - ".3.4 .nossl .nosasl"
     - ".3.2 .winssl .nosasl .server"
@@ -6334,8 +6404,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6357,8 +6427,8 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6378,8 +6448,8 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6397,8 +6467,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6417,8 +6487,8 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6436,8 +6506,8 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .openssl"
-    - ".debug-compile .nossl"
+    - ".debug-compile !.sspi .openssl"
+    - ".debug-compile !.sspi .nossl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
