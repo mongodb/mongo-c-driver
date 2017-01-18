@@ -471,6 +471,8 @@ test_max_wire_version_race_condition (void *ctx)
 }
 
 
+/* disabled on Solaris, CDRIVER-1995 */
+#ifndef __sun
 static void
 test_cooldown_standalone (void *ctx)
 {
@@ -635,6 +637,7 @@ test_cooldown_rs (void *ctx)
    mock_server_destroy (servers[0]);
    mock_server_destroy (servers[1]);
 }
+#endif /* __sun */
 
 
 static void
@@ -1033,6 +1036,8 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
+/* disabled on Solaris, CDRIVER-1995 */
+#ifndef __sun
    TestSuite_AddFull (suite,
                       "/Topology/cooldown/standalone",
                       test_cooldown_standalone,
@@ -1045,6 +1050,7 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
+#endif
    TestSuite_AddFull (suite,
                       "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,
