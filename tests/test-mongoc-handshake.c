@@ -336,6 +336,8 @@ test_mongoc_handshake_too_big (void)
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* avoid rare test timeouts */
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 20000);
    client = mongoc_client_new_from_uri (uri);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
