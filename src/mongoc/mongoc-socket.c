@@ -333,7 +333,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 #else
    sock->errno_ = errno;
 #endif
-   TRACE ("setting errno: %d", sock->errno_);
+   TRACE ("setting errno: %d %s", sock->errno_, strerror (sock->errno_));
 }
 
 
