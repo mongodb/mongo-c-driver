@@ -146,6 +146,11 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 
    /* milliseconds -> microseconds -> nanoseconds*/
    ts->tv_nsec = (ticks % 1000) * 1000 * 1000;
+#elif defined(__hpux__)
+   uint64_t nsec = gethrtime ();
+
+   ts->tv_sec = (int64_t) (nsec / 1e9);
+   ts->tv_nsec = (int32_t) (nsec - (double) ts->tv_sec * 1e9);
 #else
 #warning "Monotonic clock is not yet supported on your platform."
 #endif
