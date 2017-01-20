@@ -137,6 +137,21 @@ endif ()
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 
+include(CheckTypeSize)
+if (MSVC)
+   SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
+else()
+   SET(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
+endif ()
+CHECK_TYPE_SIZE(socklen_t HAVE_SOCKLEN)
+SET(CMAKE_EXTRA_INCLUDE_FILES) 
+
+if (HAVE_SOCKLEN)
+   set(MONGOC_HAVE_SOCKLEN 1)
+else()
+   set(MONGOC_HAVE_SOCKLEN 0)
+endif()
+
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)

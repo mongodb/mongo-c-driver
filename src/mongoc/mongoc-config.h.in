@@ -183,6 +183,15 @@
 #endif
 
 /*
+ * MONGOC_HAVE_SOCKLEN is set from configure to determine if we
+ * need to emulate the type.
+ */
+#define MONGOC_HAVE_SOCKLEN @MONGOC_HAVE_SOCKLEN@
+
+#if MONGOC_HAVE_SOCKLEN != 1
+#  undef MONGOC_HAVE_SOCKLEN
+#endif
+/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:
