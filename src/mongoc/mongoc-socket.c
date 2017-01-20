@@ -487,7 +487,7 @@ again:
 int
 mongoc_socket_bind (mongoc_socket_t *sock,       /* IN */
                     const struct sockaddr *addr, /* IN */
-                    mongoc_socklen_t addrlen)           /* IN */
+                    mongoc_socklen_t addrlen)    /* IN */
 {
    int ret;
 
@@ -578,7 +578,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 int
 mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
                        const struct sockaddr *addr, /* IN */
-                       mongoc_socklen_t addrlen,           /* IN */
+                       mongoc_socklen_t addrlen,    /* IN */
                        int64_t expire_at)           /* IN */
 {
    bool try_again = false;
@@ -844,11 +844,11 @@ again:
  */
 
 int
-mongoc_socket_setsockopt (mongoc_socket_t *sock, /* IN */
-                          int level,             /* IN */
-                          int optname,           /* IN */
-                          const void *optval,    /* IN */
-                          mongoc_socklen_t optlen)      /* IN */
+mongoc_socket_setsockopt (mongoc_socket_t *sock,   /* IN */
+                          int level,               /* IN */
+                          int optname,             /* IN */
+                          const void *optval,      /* IN */
+                          mongoc_socklen_t optlen) /* IN */
 {
    int ret;
 
@@ -1175,9 +1175,9 @@ CLEANUP:
 
 
 int
-mongoc_socket_getsockname (mongoc_socket_t *sock, /* IN */
-                           struct sockaddr *addr, /* OUT */
-                           mongoc_socklen_t *addrlen)    /* INOUT */
+mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
+                           struct sockaddr *addr,     /* OUT */
+                           mongoc_socklen_t *addrlen) /* INOUT */
 {
    int ret;
 

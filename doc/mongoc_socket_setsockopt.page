@@ -14,10 +14,10 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[int
 mongoc_socket_setsockopt (mongoc_socket_t *sock,
-                          int              level,
-                          int              optname,
-                          const void      *optval,
-                          socklen_t        optlen);
+                          int level,
+                          int optname,
+                          const void *optval,
+                          mongoc_socklen_t optlen);
 ]]></code></synopsis>
   </section>
 
@@ -28,7 +28,7 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,
       <tr><td><p>level</p></td><td><p>A sockopt level.</p></td></tr>
       <tr><td><p>optname</p></td><td><p>A sockopt name.</p></td></tr>
       <tr><td><p>optval</p></td><td><p>A the value for the sockopt.</p></td></tr>
-      <tr><td><p>optlen</p></td><td><p>A socklen_t that contains the length of optval.</p></td></tr>
+      <tr><td><p>optlen</p></td><td><p>A mongoc_socklen_t that contains the length of optval.</p></td></tr>
     </table>
   </section>
 

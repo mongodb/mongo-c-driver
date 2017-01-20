@@ -17,10 +17,10 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[int
 mongoc_stream_setsockopt (mongoc_stream_t *stream,
-                          int              level,
-                          int              optname,
-                          void            *optval,
-                          socklen_t        optlen);
+                          int level,
+                          int optname,
+                          void *optval,
+                          mongoc_socklen_t optlen);
 ]]></code></synopsis>
   </section>
 

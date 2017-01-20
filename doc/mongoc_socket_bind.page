@@ -16,9 +16,9 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[int
-mongoc_socket_bind (mongoc_socket_t       *sock,
+mongoc_socket_bind (mongoc_socket_t *sock,
                     const struct sockaddr *addr,
-                    socklen_t              addrlen);
+                    mongoc_socklen_t addrlen);
 ]]></code></synopsis>
   </section>
 
@@ -28,7 +28,7 @@ mongoc_socket_bind (mongoc_socket_t       *sock,
     <table>
       <tr><td><p>sock</p></td><td><p>A <code xref="mongoc_socket_t">mongoc_socket_t</code>.</p></td></tr>
       <tr><td><p>addr</p></td><td><p>A struct sockaddr.</p></td></tr>
-      <tr><td><p>addrlen</p></td><td><p>A socklen_t.</p></td></tr>
+      <tr><td><p>addrlen</p></td><td><p>A mongoc_socklen_t.</p></td></tr>
     </table>
   </section>
 
