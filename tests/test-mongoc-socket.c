@@ -219,17 +219,8 @@ sendv_test_server (void *data_)
       r = mongoc_stream_readv (stream, &iov, 1, amount, WAIT);
       if (r > 0) {
          amount -= r;
-      } else if (MONGOC_ERRNO_IS_AGAIN (errno)) {
-         continue;
-      } else {
-         fprintf (stderr,
-                  "r: %" PRIu64 " , errno: %d",
-                  (uint64_t) r,
-                  conn_sock->errno_);
-         assert (r == amount);
       }
    } while (amount > 0);
-
 
    /* Allow the client to finish all its writes */
    mongoc_mutex_lock (&data->cond_mutex);
@@ -246,11 +237,6 @@ sendv_test_server (void *data_)
       r = mongoc_stream_readv (stream, &iov, 1, amount, WAIT);
       if (r > 0) {
          amount -= r;
-      } else if (MONGOC_ERRNO_IS_AGAIN (errno)) {
-         continue;
-      } else {
-         fprintf (stderr, "r: %" PRIu64 " , errno: %d", (uint64_t) r, errno);
-         assert (r == amount);
       }
    } while (amount > 0);
    ASSERT_CMPINT (0, ==, amount);
@@ -308,17 +294,13 @@ sendv_test_client (void *data_)
          amount += r;
       }
       if (r != gFourMB) {
-         if (MONGOC_ERRNO_IS_AGAIN (conn_sock->errno_)) {
-            if (!done) {
-               mongoc_mutex_lock (&data->cond_mutex);
-               data->amount = amount;
-               amount = 0;
-               mongoc_cond_signal (&data->cond);
-               mongoc_mutex_unlock (&data->cond_mutex);
-               done = true;
-            }
-         } else {
-            assert (r == gFourMB);
+         if (!done) {
+            mongoc_mutex_lock (&data->cond_mutex);
+            data->amount = amount;
+            amount = 0;
+            mongoc_cond_signal (&data->cond);
+            mongoc_mutex_unlock (&data->cond_mutex);
+            done = true;
          }
       }
    }
