@@ -54,7 +54,7 @@ struct _mongoc_stream_t {
                       int level,
                       int optname,
                       void *optval,
-                      socklen_t optlen);
+                      mongoc_socklen_t optlen);
    mongoc_stream_t *(*get_base_stream) (mongoc_stream_t *stream);
    bool (*check_closed) (mongoc_stream_t *stream);
    ssize_t (*poll) (mongoc_stream_poll_t *streams,
@@ -104,7 +104,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           int level,
                           int optname,
                           void *optval,
-                          socklen_t optlen);
+                          mongoc_socklen_t optlen);
 BSON_EXPORT (bool)
 mongoc_stream_check_closed (mongoc_stream_t *stream);
 BSON_EXPORT (ssize_t)

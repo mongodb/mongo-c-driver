@@ -509,7 +509,7 @@ _mongoc_stream_tls_openssl_setsockopt (mongoc_stream_t *stream,
                                        int level,
                                        int optname,
                                        void *optval,
-                                       socklen_t optlen)
+                                       mongoc_socklen_t optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
 

@@ -35,7 +35,7 @@ socket_test_server (void *data_)
    mongoc_socket_t *conn_sock;
    mongoc_stream_t *stream;
    mongoc_iovec_t iov;
-   socklen_t sock_len;
+   mongoc_socklen_t sock_len;
    ssize_t r;
    char buf[5];
 
@@ -167,7 +167,7 @@ sendv_test_server (void *data_)
    mongoc_socket_t *conn_sock;
    mongoc_stream_t *stream;
    mongoc_iovec_t iov;
-   socklen_t sock_len;
+   mongoc_socklen_t sock_len;
    int amount = 0;
    ssize_t r;
    char *buf = (char *) bson_malloc (gFourMB);

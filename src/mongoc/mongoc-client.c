@@ -148,7 +148,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t *uri,
        */
       expire_at = bson_get_monotonic_time () + (connecttimeoutms * 1000L);
       if (0 != mongoc_socket_connect (
-                  sock, rp->ai_addr, (socklen_t) rp->ai_addrlen, expire_at)) {
+                  sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, expire_at)) {
          char *errmsg;
          char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
          char ip[255];

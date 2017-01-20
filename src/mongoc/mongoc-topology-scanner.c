@@ -475,7 +475,7 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
          continue;
       }
 
-      mongoc_socket_connect (sock, rp->ai_addr, (socklen_t) rp->ai_addrlen, 0);
+      mongoc_socket_connect (sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, 0);
 
       break;
    }

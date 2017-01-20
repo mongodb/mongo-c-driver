@@ -39,7 +39,7 @@ ssl_test_server (void *ptr)
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *listen_sock;
    mongoc_socket_t *conn_sock;
-   socklen_t sock_len;
+   mongoc_socklen_t sock_len;
    char buf[4 * NUM_IOVECS];
    ssize_t r;
    bson_error_t error;
