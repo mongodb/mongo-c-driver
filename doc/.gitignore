@@ -11,3 +11,4 @@ html/_static
 html/.buildinfo
 html/.nojekyll
 man/*.3
+man/.buildinfo

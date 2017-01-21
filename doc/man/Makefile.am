@@ -1,4 +1,3 @@
-MAN_FILES_TO_BUILD = $(patsubst doc/%.page,doc/man/%.3,$(wildcard doc/*.page))
 BUILT_MAN_FILES = $(wildcard doc/man/*.3)
 CLEANFILES += $(wildcard doc/man/*.3)
 
@@ -11,12 +10,12 @@ dist_noinst_DATA = $(dist_man_MANS)
 
 man3_MANS = $(BUILT_MAN_FILES)
 
-.PHONY: doc/man
+.PHONY: man
 
-doc/man:
+# "E" is "ignore cache", "b" is build type.
+man:
 	-mkdir -p doc/man
-   # "E" is "ignore cache", "d" sets dir for cachefiles, "b" is build type.
-	$(SPHINX_BUILD) -qEW -d /tmp/sphinx-cache-dir -b man doc doc/man
+	$(SPHINX_BUILD) -qEW -b man $(top_srcdir)/doc doc/man
 
 man: $(MAN_FILES_TO_BUILD)
 EXTRA_DIST += $(MAN_FILES_TO_BUILD)

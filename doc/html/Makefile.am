@@ -2,13 +2,14 @@ CLEANFILES += $(wildcard doc/html/*.html)
 CLEANFILES += $(wildcard doc/html/*.css)
 CLEANFILES += $(wildcard doc/html/*.js)
 CLEANFILES += $(wildcard doc/html/*.png)
+CLEANFILES += doc/html/.nojekyll doc/html/objects.inv doc/html/searchindex.js
 
 .PHONY: doc/html
 
-# "E" is "ignore cache", and "d" sets the dir to save cachefiles in.
+# "E" is "ignore cache".
 doc/html:
 	-mkdir -p doc/html
-	$(SPHINX_BUILD) -qEW -d /tmp/sphinx-cache-dir doc doc/html
+	$(SPHINX_BUILD) -qEW $(top_srcdir)/doc doc/html
 
 SPHINX_HTML_FILES = \
    doc/html/.nojekyll \
