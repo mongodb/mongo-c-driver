@@ -118,6 +118,16 @@ fam_CFLAGS = $(EXAMPLE_CFLAGS)
 fam_LDADD = $(EXAMPLE_LDADD)
 
 EXTRA_DIST += \
+	examples/doc-common-insert.c \
+	examples/basic_aggregation/map-reduce-basic.c \
+	examples/basic_aggregation/map-reduce-advanced.c \
+	examples/basic_aggregation/distinct.c \
+	examples/basic_aggregation/basic-aggregation.c \
+	examples/basic_aggregation/constants.c \
+	examples/common_operations/explain.c \
+	examples/common_operations/copydb.c \
+	examples/common_operations/common-operations.c \
+	examples/common_operations/clone-collection.c \
 	examples/find_and_modify_with_opts/bypass.c \
 	examples/find_and_modify_with_opts/fields.c \
 	examples/find_and_modify_with_opts/flags.c \
