@@ -13,7 +13,7 @@ Synopsis
                             int level,
                             int optname,
                             const void *optval,
-                            socklen_t optlen);
+                            mongoc_socklen_t optlen);
 
 Parameters
 ----------
@@ -22,7 +22,7 @@ Parameters
 * ``level``: A sockopt level.
 * ``optname``: A sockopt name.
 * ``optval``: A the value for the sockopt.
-* ``optlen``: A socklen_t that contains the length of optval.
+* ``optlen``: A mongoc_socklen_t that contains the length of optval.
 
 Description
 -----------

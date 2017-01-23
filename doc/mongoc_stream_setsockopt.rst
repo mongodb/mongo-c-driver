@@ -13,7 +13,7 @@ Synopsis
                             int level,
                             int optname,
                             void *optval,
-                            socklen_t optlen);
+                            mongoc_socklen_t optlen);
 
 Parameters
 ----------

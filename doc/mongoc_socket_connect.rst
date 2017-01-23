@@ -11,7 +11,7 @@ Synopsis
   int
   mongoc_socket_connect (mongoc_socket_t *sock,
                          const struct sockaddr *addr,
-                         socklen_t addrlen,
+                         mongoc_socklen_t addrlen,
                          int64_t expire_at);
 
 Parameters
@@ -19,7 +19,7 @@ Parameters
 
 * ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
 * ``addr``: A struct sockaddr.
-* ``addrlen``: A socklen_t.
+* ``addrlen``: A mongoc_socklen_t.
 * ``expire_at``: A int64_t containing the absolute timeout using the monotonic clock.
 
 Description
