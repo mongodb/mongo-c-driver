@@ -331,11 +331,29 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              # Need modern Sphinx for :caption: in literal includes
+              python -m virtualenv venv
+              cd venv
+              . bin/activate
+              ./bin/pip install sphinx
+              cd ..
+
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
               set -o errexit
               set -o xtrace
               export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
               export MONGOC_TEST_SKIP_LIVE=on
               export MONGOC_TEST_SKIP_SLOW=on
+
+              # Use modern sphinx-build from venv.
+              . venv/bin/activate
+              which sphinx-build
+              sphinx-build --version
+
               ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
         - func: "upload docs"
         - func: "upload release"
