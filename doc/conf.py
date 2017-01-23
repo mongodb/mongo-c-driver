@@ -7,17 +7,14 @@ sys.path.append(os.path.dirname(__file__))
 
 extensions = [
     'mongoc',
-    'githubpages',
     'taglist',
     'sphinx.ext.intersphinx',
 ]
 
 intersphinx_mapping = {
-    # TODO: update to mongoc.org once libbson 1.6.0 is released, replace
-    # 'libbson-objects.inv' here with None and delete the file. Remove from
-    # doc/Makefile.am too.
-    'bson': ('https://s3.amazonaws.com/mciuploads/libbson/docs/latest/',
-             'libbson-objects.inv'),
+    # TODO: update to http://mongoc.org/libbson/%(version)s once libbson 1.6.0
+    # is released.
+    'bson': ('http://mongoc.org/libbson/current', None),
 }
 
 # General information about the project.

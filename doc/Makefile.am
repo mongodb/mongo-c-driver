@@ -1,10 +1,8 @@
 EXTRA_DIST += $(wildcard doc/*.rst)
 
-# TODO: remove libbson-objects.inv once libbson's Sphinx docs are on mongoc.org
 EXTRA_DIST += \
   doc/conf.py \
   doc/githubpages.py \
-  doc/libbson-objects.inv \
   doc/mongoc/__init__.py \
   doc/mongoc-theme/globaltoc.html \
   doc/mongoc-theme/layout.html \
