@@ -512,6 +512,8 @@ DONE:
  *       Given a parent directory and filename, compile a full path to
  *       the child file.
  *
+ *       "dst" receives the joined path, delimited by "/" even on Windows.
+ *
  *-----------------------------------------------------------------------
  */
 void
@@ -519,6 +521,7 @@ assemble_path (const char *parent_path,
                const char *child_name,
                char *dst /* OUT */)
 {
+   char *p;
    int path_len = (int) strlen (parent_path);
    int name_len = (int) strlen (child_name);
 
@@ -528,6 +531,12 @@ assemble_path (const char *parent_path,
    strncat (dst, parent_path, path_len);
    strncat (dst, "/", 1);
    strncat (dst, child_name, name_len);
+
+   for (p = dst; *p; ++p) {
+      if (*p == '\\') {
+         *p = '/';
+      }
+   }
 }
 
 /*
