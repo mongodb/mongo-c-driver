@@ -555,21 +555,9 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 static void
 _append_json_escaped (bson_string_t *buf, const char *s)
 {
-   while (*s) {
-      if (*s == '"') {
-         bson_string_append_c (buf, '\\');
-         bson_string_append_c (buf, '\"');
-      } else if (*s == '\n') {
-         bson_string_append_c (buf, '\\');
-         bson_string_append_c (buf, 'n');
-      } else if (*s == '\t') {
-         bson_string_append (buf, "    ");
-      } else {
-         bson_string_append_c (buf, *s);
-      }
-
-      s++;
-   }
+   char *escaped = bson_utf8_escape_for_json (s, -1);
+   bson_string_append (buf, escaped);
+   bson_free (escaped);
 }
 
 
