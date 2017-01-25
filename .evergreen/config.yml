@@ -6330,7 +6330,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests"
+    - ".authentication-tests !.sasl" # GSSAPI isn't installed
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6382,7 +6382,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests"
+    - ".authentication-tests !.sasl" # GSSAPI isn't installed
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6433,7 +6433,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests"
+    - ".authentication-tests !.sasl" # GSSAPI isn't installed
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
