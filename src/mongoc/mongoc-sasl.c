@@ -235,12 +235,24 @@ _mongoc_sasl_is_failure (int status, bson_error_t *error)
                          status,
                          "SASL Failure: insufficient memory.");
          break;
-      case SASL_NOMECH:
+      case SASL_NOMECH: {
+         bson_string_t *str = bson_string_new ("available mechanisms: ");
+         const char **mechs = sasl_global_listmech ();
+         int i = 0;
+
+         for (i = 0; mechs[i]; i++) {
+            bson_string_append (str, mechs[i]);
+            if (mechs[i + 1]) {
+               bson_string_append (str, ",");
+            }
+         }
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
                          status,
-                         "SASL Failure: failure to negotiate mechanism");
-         break;
+                         "SASL Failure: failure to negotiate mechanism (%s)",
+                         str->str);
+         bson_string_free (str, 0);
+      } break;
       case SASL_BADPARAM:
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
