@@ -277,13 +277,36 @@ functions:
         working_dir: "mongoc"
         script: |
               sudo apt-get install -y awscli || true
-              sudo /opt/csw/bin/pkgutil -y -i sasl_dev || true
+              sudo /opt/csw/bin/pkgutil -y -i sasl_dev sasl_gssapi || true
+
+  "prepare kerberos" :
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongoc"
+        script: |
+           if test -w /etc/hosts; then
+              SUDO=""
+           else
+              SUDO="sudo"
+           fi
+           if command -v host 2>/dev/null; then
+              echo "`host ldaptest.10gen.cc | awk '/has address/ { print $4 ; exit }'` ldaptest.10gen.cc" | $SUDO tee -a /etc/hosts
+           else
+              echo "`getent hosts ldaptest.10gen.cc | awk '{ print $1; exit }'` ldaptest.10gen.cc" | $SUDO tee -a /etc/hosts
+           fi
+           if test "${keytab|}"; then
+              echo "${keytab}" > /tmp/drivers.keytab.base64
+              base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
+              cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
+           fi
 
 pre:
   - func: "fetch source"
   - func: "windows fix"
   - func: "make files executable"
   - func: "install dependencies"
+  - func: "prepare kerberos"
 
 post:
   - func: "upload working dir"
@@ -5962,6 +5985,25 @@ tasks:
             BUILD_NAME: "debug-compile-sspi-winssl"
         - func: "run auth tests"
 
+    - name: authentication-tests-sasl
+      tags: ["authentication-tests", "sasl"]
+      depends_on:
+        - name: "debug-compile-sasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-nosasl
+      tags: ["authentication-tests", "nosasl"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "run auth tests"
 
 # }}}
 
@@ -5994,6 +6036,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6016,6 +6059,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6034,6 +6078,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .nossl !.nosasl"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .nossl !.nosasl" # No enterprise build for Archlinux, SSL not available
@@ -6055,6 +6100,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
+    - ".authentication-tests !.sasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -6074,6 +6120,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6092,6 +6139,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6113,6 +6161,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .nossl !.nosasl !.ipv4-only"
@@ -6135,6 +6184,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6157,6 +6207,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6175,6 +6226,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
+    - ".authentication-tests !.sasl"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
@@ -6194,6 +6246,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6213,6 +6266,7 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .nossl" # No MongoDB SSL builds available for any version
     - ".3.4 .nossl" # No MongoDB SSL builds available for any version
     - ".3.2 .nossl !.nosasl"
@@ -6231,6 +6285,7 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .nossl .nosasl"
+    - ".authentication-tests !.sasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -6249,6 +6304,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
+    - ".authentication-tests"
     - ".latest .darwinssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6274,6 +6330,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
+    - ".authentication-tests"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6300,6 +6357,7 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
+    - ".authentication-tests !.sasl"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6324,6 +6382,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
+    - ".authentication-tests"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6349,6 +6408,7 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
+    - ".authentication-tests !.sasl"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6373,6 +6433,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
+    - ".authentication-tests"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6400,6 +6461,7 @@ buildvariants:
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".debug-compile .nossl .sspi"
+    - ".authentication-tests !.sasl"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6434,6 +6496,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6457,6 +6520,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6478,6 +6542,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6497,6 +6562,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6517,6 +6583,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6536,6 +6603,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
+    - ".authentication-tests"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"

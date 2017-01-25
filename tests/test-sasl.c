@@ -67,7 +67,7 @@ gssapi_kerberos_worker (void *data)
 
    for (i = 0; i < NLOOPS; i++) {
       client = mongoc_client_pool_pop (pool);
-      collection = mongoc_client_get_collection (client, "test", "collection");
+      collection = mongoc_client_get_collection (client, "kerberos", "test");
       cursor = mongoc_collection_find (
          collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
 

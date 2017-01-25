@@ -48,6 +48,11 @@ case "$OS" in
       ;;
 
    *)
+      if test -f /tmp/drivers.keytab; then
+         export MONGOC_TEST_GSSAPI_USER="drivers%40LDAPTEST.10GEN.CC"
+         export MONGOC_TEST_GSSAPI_HOST="LDAPTEST.10GEN.CC"
+         kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC
+      fi
       # This libtool wrapper script was built in a unique dir like
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.
