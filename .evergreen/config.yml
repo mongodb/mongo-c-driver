@@ -6266,7 +6266,8 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.sasl"
+    #- ".authentication-tests" FIXME: Kerberos authentication doesn't seem to work
     - ".latest .nossl" # No MongoDB SSL builds available for any version
     - ".3.4 .nossl" # No MongoDB SSL builds available for any version
     - ".3.2 .nossl !.nosasl"
@@ -6496,7 +6497,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.sasl"
+    #- ".authentication-tests" FIXME: Kerberos Authentication doesn't seem to work
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
