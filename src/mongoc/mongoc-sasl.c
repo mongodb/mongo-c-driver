@@ -23,6 +23,7 @@
 #include "mongoc-error.h"
 #include "mongoc-sasl-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-trace-private.h"
 
 
 #ifndef SASL_CALLBACK_FN
@@ -69,6 +70,23 @@ _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass)
    sasl->pass = pass ? bson_strdup (pass) : NULL;
 }
 
+
+static int
+_mongoc_sasl_canon_user (sasl_conn_t *conn,
+                         void *context,
+                         const char *in,
+                         unsigned inlen,
+                         unsigned flags,
+                         const char *user_realm,
+                         char *out,
+                         unsigned out_max,
+                         unsigned *out_len)
+{
+   TRACE ("Canonicalizing %s (%" PRIu32 ")\n", in, inlen);
+   strcpy (out, in);
+   *out_len = inlen;
+   return SASL_OK;
+}
 
 static int
 _mongoc_sasl_get_user (mongoc_sasl_t *sasl,
@@ -185,6 +203,7 @@ _mongoc_sasl_init (mongoc_sasl_t *sasl)
       {SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl},
       {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl},
       {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_sasl_get_pass), sasl},
+      {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_sasl_canon_user), sasl},
       {SASL_CB_LIST_END}};
 
    BSON_ASSERT (sasl);
@@ -352,6 +371,7 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbuflen);
 
+   TRACE ("Running %d, inbuflen: %" PRIu32, sasl->step, inbuflen);
    sasl->step++;
 
    if (sasl->step == 1) {
@@ -364,11 +384,13 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
       return false;
    }
 
+   TRACE ("Running %d, inbuflen: %" PRIu32, sasl->step, inbuflen);
    if (!inbuflen) {
       bson_set_error (error,
                       MONGOC_ERROR_SASL,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "SASL Failure: no payload provided from server.");
+                      "SASL Failure: no payload provided from server: %s",
+                      sasl_errdetail (sasl->conn));
       return false;
    }
 
