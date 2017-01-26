@@ -3,6 +3,15 @@
 mongoc_collection_save()
 ========================
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :symbol:`mongoc_collection_insert() <mongoc_collection_insert>` or
+:symbol:`mongoc_collection_update() <mongoc_collection_update>` instead.
+
+
 Synopsis
 --------
 
@@ -12,7 +21,8 @@ Synopsis
   mongoc_collection_save (mongoc_collection_t *collection,
                           const bson_t *document,
                           const mongoc_write_concern_t *write_concern,
-                          bson_error_t *error);
+                          bson_error_t *error)
+      BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert or mongoc_collection_update);
 
 Parameters
 ----------

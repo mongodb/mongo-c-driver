@@ -1231,6 +1231,8 @@ test_save (void)
    context = bson_context_new (BSON_CONTEXT_NONE);
    ASSERT (context);
 
+   BEGIN_IGNORE_DEPRECATIONS;
+
    for (i = 0; i < 10; i++) {
       bson_init (&b);
       bson_oid_init (&oid, context);
@@ -1253,6 +1255,9 @@ test_save (void)
 
    r = mongoc_collection_save (
       collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
+
+   END_IGNORE_DEPRECATIONS;
+
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
