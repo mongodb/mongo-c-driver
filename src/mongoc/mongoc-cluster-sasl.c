@@ -210,13 +210,15 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
 
       if (sasl.step == 1) {
          _mongoc_cluster_build_sasl_start (
-            &cmd, mechanism ? mechanism : "GSSAPI", (const char *)buf, buflen);
+            &cmd, mechanism ? mechanism : "GSSAPI", (const char *) buf, buflen);
       } else {
-         _mongoc_cluster_build_sasl_continue (&cmd, conv_id, (const char *)buf, buflen);
+         _mongoc_cluster_build_sasl_continue (
+            &cmd, conv_id, (const char *) buf, buflen);
       }
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
+      TRACE ("Sending: %s", bson_as_json (&cmd, NULL));
       if (!mongoc_cluster_run_command (cluster,
                                        stream,
                                        0,
@@ -225,10 +227,12 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
                                        &cmd,
                                        &reply,
                                        error)) {
+         TRACE ("Replied with: %s", bson_as_json (&reply, NULL));
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
       }
+      TRACE ("Replied with: %s", bson_as_json (&reply, NULL));
 
       bson_destroy (&cmd);
 
@@ -252,6 +256,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
       }
 
       tmpstr = bson_iter_utf8 (&iter, &buflen);
+      TRACE ("Got string: %s, (len=%" PRIu32 ")\n", tmpstr, buflen);
 
       if (buflen > sizeof buf) {
          bson_set_error (error,
