@@ -25,18 +25,54 @@
 #include "mongoc-util-private.h"
 #include "mongoc-trace-private.h"
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
-#ifndef SASL_CALLBACK_FN
-#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
-#endif
-
-void
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl, const char *mechanism)
+int
+_mongoc_sasl_log (mongoc_sasl_t *sasl, int level, const char *message)
 {
+   TRACE ("SASL Log; level=%d: message=%s", level, message);
+   return SASL_OK;
+}
+
+bool
+_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
+                            const char *mechanism,
+                            bson_error_t *error)
+{
+   bson_string_t *str = bson_string_new ("");
+   const char **mechs = sasl_global_listmech ();
+   int i = 0;
+   bool ok = false;
+
    BSON_ASSERT (sasl);
 
-   bson_free (sasl->mechanism);
-   sasl->mechanism = mechanism ? bson_strdup (mechanism) : NULL;
+   for (i = 0; mechs[i]; i++) {
+      if (!strcmp (mechs[i], mechanism)) {
+         ok = true;
+         break;
+      }
+      bson_string_append (str, mechs[i]);
+      if (mechs[i + 1]) {
+         bson_string_append (str, ",");
+      }
+   }
+
+   if (ok) {
+      bson_free (sasl->mechanism);
+      sasl->mechanism = mechanism ? bson_strdup (mechanism) : NULL;
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_SASL,
+                      SASL_NOMECH,
+                      "SASL Failure: Unsupported mechanism by client: %s. "
+                      "Available mechanisms: %s",
+                      mechanism,
+                      str->str);
+   }
+
+   bson_string_free (str, 0);
+   return ok;
 }
 
 
@@ -73,7 +109,7 @@ _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass)
 
 static int
 _mongoc_sasl_canon_user (sasl_conn_t *conn,
-                         void *context,
+                         mongoc_sasl_t *sasl,
                          const char *in,
                          unsigned inlen,
                          unsigned flags,
@@ -246,6 +282,11 @@ _mongoc_sasl_is_failure (int status, bson_error_t *error)
 {
    bool ret = (status < 0);
 
+   TRACE ("Got status: %d ok is %d, continue=%d interact=%d\n",
+          status,
+          SASL_OK,
+          SASL_CONTINUE,
+          SASL_INTERACT);
    if (ret) {
       switch (status) {
       case SASL_NOMEM:
@@ -323,12 +364,16 @@ _mongoc_sasl_start (mongoc_sasl_t *sasl,
 
    status = sasl_client_new (
       service_name, service_host, NULL, NULL, sasl->callbacks, 0, &sasl->conn);
+   TRACE ("Created new sasl client %s",
+          status == SASL_OK ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
 
    status = sasl_client_start (
       sasl->conn, sasl->mechanism, &sasl->interact, &raw, &raw_len, &mechanism);
+   TRACE ("Started the sasl client %s",
+          status == SASL_CONTINUE ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
@@ -400,8 +445,11 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
       return false;
    }
 
+   TRACE ("%s", "Running client_step");
    status = sasl_client_step (
       sasl->conn, (char *) outbuf, *outbuflen, &sasl->interact, &raw, &rawlen);
+   TRACE ("%s sent a client step",
+          status == SASL_OK ? "Successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }

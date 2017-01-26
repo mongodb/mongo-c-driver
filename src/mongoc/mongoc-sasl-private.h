@@ -48,20 +48,28 @@ struct _mongoc_sasl_t {
 };
 
 
+#ifndef SASL_CALLBACK_FN
+#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
+#endif
+
 void
 _mongoc_sasl_init (mongoc_sasl_t *sasl);
 void
 _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
 void
 _mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user);
-void
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl, const char *mechanism);
+bool
+_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
+                            const char *mechanism,
+                            bson_error_t *error);
 void
 _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name);
 void
 _mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host);
 void
 _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
+int
+_mongoc_sasl_log (mongoc_sasl_t *sasl, int level, const char *message);
 void
 _mongoc_sasl_destroy (mongoc_sasl_t *sasl);
 bool

@@ -174,7 +174,9 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
    _mongoc_sasl_init (&sasl);
 
    if ((mechanism = mongoc_uri_get_auth_mechanism (cluster->uri))) {
-      _mongoc_sasl_set_mechanism (&sasl, mechanism);
+      if (!_mongoc_sasl_set_mechanism (&sasl, mechanism, error)) {
+         goto failure;
+      }
    }
 
    _mongoc_sasl_set_pass (&sasl, mongoc_uri_get_password (cluster->uri));
