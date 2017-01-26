@@ -344,11 +344,7 @@ tasks:
                ls -la /usr/local/Cellar/ || true
                scan-build --version || true
                genhtml --version || true
-               valgrind --version || true
-               getent hosts ldaptest.10gen.cc || true
-               host ldaptest.10gen.cc || true
-               whoami || true
-               ls -la /etc/hosts || true
+               valgrind --version
 
 # Compile Matrix {{{
     - name: make-release-archive
@@ -6018,7 +6014,6 @@ buildvariants:
   run_on:
     - ubuntu1404-build
   tasks:
-    - "getdata"
     - "make-release-archive"
     - ".release-eng"
     - "release-compile"
@@ -6036,7 +6031,6 @@ buildvariants:
   run_on:
     - ubuntu1404-build
   tasks:
-    - "getdata"
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
@@ -6060,7 +6054,6 @@ buildvariants:
   run_on:
   - debian81-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
@@ -6080,7 +6073,6 @@ buildvariants:
   run_on:
     - archlinux-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
@@ -6103,7 +6095,6 @@ buildvariants:
     - ubuntu1604-build
     - ubuntu1604-test
   tasks:
-    - "getdata"
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
@@ -6123,7 +6114,6 @@ buildvariants:
     - ubuntu1604-build
     - ubuntu1604-test
   tasks:
-    - "getdata"
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
@@ -6145,7 +6135,6 @@ buildvariants:
   run_on:
     - ubuntu1204-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6168,7 +6157,6 @@ buildvariants:
   run_on:
     - ubuntu1404-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6192,7 +6180,6 @@ buildvariants:
   run_on:
     - rhel70
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6216,7 +6203,6 @@ buildvariants:
   run_on:
   - debian81-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6237,7 +6223,6 @@ buildvariants:
   - ubuntu1604-build
   - ubuntu1604-test
   tasks:
-    - "getdata"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6256,7 +6241,6 @@ buildvariants:
   - ubuntu1604-build
   - ubuntu1604-test
   tasks:
-    - "getdata"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6279,7 +6263,6 @@ buildvariants:
   run_on:
     - solaris
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .nossl"
@@ -6300,7 +6283,6 @@ buildvariants:
   run_on:
     - solaris
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .nossl .nosasl"
@@ -6316,7 +6298,6 @@ buildvariants:
   run_on:
     - osx-1010
   tasks:
-    - "getdata"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6344,7 +6325,6 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6372,7 +6352,6 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
       # No 32bit OpenSSL builds
@@ -6398,7 +6377,6 @@ buildvariants:
   run_on:
     - windows-64-vs2013-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6426,7 +6404,6 @@ buildvariants:
   run_on:
     - windows-64-vs2013-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .sspi !.openssl"
@@ -6451,7 +6428,6 @@ buildvariants:
   run_on:
     - windows-64-vs2010-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6480,7 +6456,6 @@ buildvariants:
   run_on:
     - windows-64-vs2010-compile
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl .sspi"
@@ -6506,7 +6481,6 @@ buildvariants:
   run_on:
   - windows-64-vs2013-compile
   tasks:
-    - "getdata"
     - ".debug-compile .nossl .nosasl"
     - ".latest .nossl .nosasl .server"
 
@@ -6519,7 +6493,6 @@ buildvariants:
   - rhel71-power8-build
   - rhel71-power8-test
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6543,7 +6516,6 @@ buildvariants:
   - ubuntu1604-power8-build
   - ubuntu1604-power8-test
   tasks:
-    - "getdata"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
@@ -6566,7 +6538,6 @@ buildvariants:
   - ubuntu1604-arm64-large
   - ubuntu1604-arm64-small
   tasks:
-    - "getdata"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
@@ -6589,7 +6560,6 @@ buildvariants:
   - rhel72-zseries-test
   - rhel72-zseries-build
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6610,7 +6580,6 @@ buildvariants:
   - ubuntu1604-zseries-large
   - ubuntu1604-zseries-small
   tasks:
-    - "getdata"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6632,7 +6601,6 @@ buildvariants:
   - suse12-zseries-build
   - suse12-zseries-test
   tasks:
-    - "getdata"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
