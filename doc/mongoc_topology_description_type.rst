@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``td``: A :symbol:`mongoc_topology_description_t <mongoc_topology_description_t>`.
+* ``td``: A :symbol:`mongoc_topology_description_t`.
 
 Description
 -----------

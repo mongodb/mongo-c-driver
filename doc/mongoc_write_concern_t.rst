@@ -10,16 +10,16 @@ Synopsis
 
 ``mongoc_write_concern_t`` tells the driver what level of acknowledgment to await from the server. The default, MONGOC_WRITE_CONCERN_W_DEFAULT, is right for the great majority of applications.
 
-You can specify a write concern on connection objects, database objects, collection objects, or per-operation. Data-modifying operations typically use the write concern of the object they operate on, and check the server response for a write concern error or write concern timeout. For example, :symbol:`mongoc_collection_drop_index <mongoc_collection_drop_index>` uses the collection's write concern, and a write concern error or timeout in the response is considered a failure.
+You can specify a write concern on connection objects, database objects, collection objects, or per-operation. Data-modifying operations typically use the write concern of the object they operate on, and check the server response for a write concern error or write concern timeout. For example, :symbol:`mongoc_collection_drop_index` uses the collection's write concern, and a write concern error or timeout in the response is considered a failure.
 
 Exceptions to this principle are the generic command functions:
 
-* :symbol:`mongoc_client_command <mongoc_client_command>`
-* :symbol:`mongoc_client_command_simple <mongoc_client_command_simple>`
-* :symbol:`mongoc_database_command <mongoc_database_command>`
-* :symbol:`mongoc_database_command_simple <mongoc_database_command_simple>`
-* :symbol:`mongoc_collection_command <mongoc_collection_command>`
-* :symbol:`mongoc_collection_command_simple <mongoc_collection_command_simple>`
+* :symbol:`mongoc_client_command`
+* :symbol:`mongoc_client_command_simple`
+* :symbol:`mongoc_database_command`
+* :symbol:`mongoc_database_command_simple`
+* :symbol:`mongoc_collection_command`
+* :symbol:`mongoc_collection_command_simple`
 
 These generic command functions do not automatically apply a write concern, and they do not check the server response for a write concern error or write concern timeout.
 

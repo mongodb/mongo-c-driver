@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``opt``: A :symbol:`mongoc_index_opt_wt_t <mongoc_index_opt_wt_t>`.
+* ``opt``: A :symbol:`mongoc_index_opt_wt_t`.
 
 Description
 -----------

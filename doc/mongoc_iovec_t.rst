@@ -22,7 +22,7 @@ Synopsis
   typedef struct iovec mongoc_iovec_t;
   #endif
 
-The ``mongoc_iovec_t`` structure is a portability abstraction for consumers of the :symbol:`mongoc_stream_t <mongoc_stream_t>` interfaces. It allows for scatter/gather I/O through the socket subsystem.
+The ``mongoc_iovec_t`` structure is a portability abstraction for consumers of the :symbol:`mongoc_stream_t` interfaces. It allows for scatter/gather I/O through the socket subsystem.
 
 .. warning::
 

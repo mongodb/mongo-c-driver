@@ -14,15 +14,15 @@ Synopsis
 Parameters
 ----------
 
-* ``read_mode``: A :symbol:`mongoc_read_mode_t <mongoc_read_mode_t>`.
+* ``read_mode``: A :symbol:`mongoc_read_mode_t`.
 
 Description
 -----------
 
-Creates a new :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` using the mode specified.
+Creates a new :symbol:`mongoc_read_prefs_t` using the mode specified.
 
 Returns
 -------
 
-Returns a newly allocated :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` that should be freed with :symbol:`mongoc_read_prefs_destroy() <mongoc_read_prefs_destroy>`.
+Returns a newly allocated :symbol:`mongoc_read_prefs_t` that should be freed with :symbol:`mongoc_read_prefs_destroy()`.
 

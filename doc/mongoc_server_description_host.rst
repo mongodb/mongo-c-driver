@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``description``: A :symbol:`mongoc_server_description_t <mongoc_server_description_t>`.
+* ``description``: A :symbol:`mongoc_server_description_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Return the server's host and port. This object is owned by the server descriptio
 Returns
 -------
 
-A reference to the server description's :symbol:`mongoc_host_list_t <mongoc_host_list_t>`, which you must not modify or free.
+A reference to the server description's :symbol:`mongoc_host_list_t`, which you must not modify or free.
 

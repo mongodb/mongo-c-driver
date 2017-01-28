@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_stream_gridfs_t mongoc_stream_gridfs_t
 
-The ``mongoc_stream_gridfs_t`` class is an implementation of :symbol:`mongoc_stream_t <mongoc_stream_t>` for files stored in GridFS. It allows for transparently streaming GridFS files from a MongoDB server.
+The ``mongoc_stream_gridfs_t`` class is an implementation of :symbol:`mongoc_stream_t` for files stored in GridFS. It allows for transparently streaming GridFS files from a MongoDB server.
 
 .. only:: html
 

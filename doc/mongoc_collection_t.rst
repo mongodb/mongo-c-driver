@@ -22,7 +22,7 @@ Read preferences and write concerns are inherited from the parent client. They c
 Lifecycle
 ---------
 
-It is an error to call :symbol:`mongoc_collection_destroy() <mongoc_collection_destroy>` on a collection that has operations pending. It is required that you release :symbol:`mongoc_cursor_t <mongoc_cursor_t>` structures before calling :symbol:`mongoc_collection_destroy() <mongoc_collection_destroy>`.
+It is an error to call :symbol:`mongoc_collection_destroy()` on a collection that has operations pending. It is required that you release :symbol:`mongoc_cursor_t` structures before calling :symbol:`mongoc_collection_destroy()`.
 
 .. only:: html
 

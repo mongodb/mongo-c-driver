@@ -18,10 +18,10 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``flags``: A :symbol:`mongoc_insert_flags_t <mongoc_insert_flags_t>`.
-* ``document``: A :symbol:`bson_t <bson:bson_t>`.
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``flags``: A :symbol:`mongoc_insert_flags_t`.
+* ``document``: A :symbol:`bson:bson_t`.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
@@ -29,7 +29,7 @@ Description
 
 This function shall insert ``document`` into ``collection``.
 
-If no ``_id`` element is found in ``document``, then a :symbol:`bson_oid_t <bson:bson_oid_t>` will be generated locally and added to the document. If you must know the inserted document's ``_id``, generate it in your code and include it as the first field of ``document``. The ``_id`` you generate can be a :symbol:`bson_oid_t <bson:bson_oid_t>` or any other non-array BSON type.
+If no ``_id`` element is found in ``document``, then a :symbol:`bson:bson_oid_t` will be generated locally and added to the document. If you must know the inserted document's ``_id``, generate it in your code and include it as the first field of ``document``. The ``_id`` you generate can be a :symbol:`bson:bson_oid_t` or any other non-array BSON type.
 
 Errors
 ------

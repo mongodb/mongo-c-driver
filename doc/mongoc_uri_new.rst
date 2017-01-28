@@ -24,7 +24,7 @@ Parses a string containing a MongoDB style URI connection string.
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_uri_t <mongoc_uri_t>` if successful. Otherwise ``NULL``.
+A newly allocated :symbol:`mongoc_uri_t` if successful. Otherwise ``NULL``.
 
 .. warning::
 

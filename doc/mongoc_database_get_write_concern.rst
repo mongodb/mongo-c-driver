@@ -11,15 +11,15 @@ Synopsis
   const mongoc_write_concern_t *
   mongoc_database_get_write_concern (const mongoc_database_t *database);
 
-This function retrieves the default :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` to use with ``database`` as configured by the client.
+This function retrieves the default :symbol:`mongoc_write_concern_t` to use with ``database`` as configured by the client.
 
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
+* ``database``: A :symbol:`mongoc_database_t`.
 
 Returns
 -------
 
-A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` that should not be modified or freed.
+A :symbol:`mongoc_write_concern_t` that should not be modified or freed.
 

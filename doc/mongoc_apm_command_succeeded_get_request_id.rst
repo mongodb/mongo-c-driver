@@ -17,7 +17,7 @@ Returns this event's wire-protocol request id. Use this number to correlate clie
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_command_succeeded_t <mongoc_apm_command_succeeded_t>`.
+* ``event``: A :symbol:`mongoc_apm_command_succeeded_t`.
 
 Returns
 -------

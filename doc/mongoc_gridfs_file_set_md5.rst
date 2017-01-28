@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
 * ``str``: A string containing the MD5 of the file.
 
 Description
@@ -22,5 +22,5 @@ Description
 
 Sets the MD5 checksum for ``file``.
 
-You need to call :symbol:`mongoc_gridfs_file_save() <mongoc_gridfs_file_save>` to persist this change.
+You need to call :symbol:`mongoc_gridfs_file_save()` to persist this change.
 

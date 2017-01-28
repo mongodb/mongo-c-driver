@@ -14,27 +14,27 @@ Synopsis
                                               const bson_t *opts,
                                               bson_error_t *error); /* OUT */
 
-Remove a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+Remove a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute()`.
 
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
-* ``selector``: A :symbol:`bson_t <bson:bson_t>` that selects which documen to remove.
-* ``opts``: A :symbol:`bson_t <bson:bson_t>` containing additional options.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
+* ``selector``: A :symbol:`bson:bson_t` that selects which documen to remove.
+* ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 See Also
 --------
 
-:symbol:`mongoc_bulk_operation_remove_one() <mongoc_bulk_operation_remove_one>`
+:symbol:`mongoc_bulk_operation_remove_one()`
 
-:symbol:`mongoc_bulk_operation_remove_many_with_opts() <mongoc_bulk_operation_remove_many_with_opts>`
+:symbol:`mongoc_bulk_operation_remove_many_with_opts()`
 
 Errors
 ------
 
-Operation errors are propagated via :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`, while argument validation errors are reported by the ``error`` argument.
+Operation errors are propagated via :symbol:`mongoc_bulk_operation_execute()`, while argument validation errors are reported by the ``error`` argument.
 
 Returns
 -------

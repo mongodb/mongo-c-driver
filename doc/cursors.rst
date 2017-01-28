@@ -39,14 +39,14 @@ While iterating cursors, you should check to see if an error has occurred. See t
 Destroying Server-Side Cursors
 ------------------------------
 
-The MongoDB C driver will automatically destroy a server-side cursor when :symbol:`mongoc_cursor_destroy() <mongoc_cursor_destroy>` is called. Failure to call this function when done with a cursor will leak memory client side as well as consume extra memory server side. If the cursor was configured to never timeout, it will become a memory leak on the server.
+The MongoDB C driver will automatically destroy a server-side cursor when :symbol:`mongoc_cursor_destroy()` is called. Failure to call this function when done with a cursor will leak memory client side as well as consume extra memory server side. If the cursor was configured to never timeout, it will become a memory leak on the server.
 
 .. _cursors_tailable:
 
 Tailable Cursors
 ----------------
 
-Tailable cursors are cursors that remain open even after they've returned a final result. This way, if more documents are added to a collection (i.e., to the cursor's result set), then you can continue to call :symbol:`mongoc_cursor_next() <mongoc_cursor_next>` to retrieve those additional results.
+Tailable cursors are cursors that remain open even after they've returned a final result. This way, if more documents are added to a collection (i.e., to the cursor's result set), then you can continue to call :symbol:`mongoc_cursor_next()` to retrieve those additional results.
 
 Here's a complete test case that demonstrates the use of tailable cursors.
 
@@ -68,5 +68,5 @@ Let's compile and run this example against a replica set to see updates as they 
 
 The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the given replicaSet.
 
-See also :symbol:`mongoc_cursor_set_max_await_time_ms <mongoc_cursor_set_max_await_time_ms>`.
+See also :symbol:`mongoc_cursor_set_max_await_time_ms`.
 

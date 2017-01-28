@@ -17,12 +17,12 @@ Returns this event's context.
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_server_heartbeat_started_t <mongoc_apm_server_heartbeat_started_t>`.
+* ``event``: A :symbol:`mongoc_apm_server_heartbeat_started_t`.
 
 Returns
 -------
 
-The pointer passed with :symbol:`mongoc_client_set_apm_callbacks <mongoc_client_set_apm_callbacks>` or :symbol:`mongoc_client_pool_set_apm_callbacks <mongoc_client_pool_set_apm_callbacks>`.
+The pointer passed with :symbol:`mongoc_client_set_apm_callbacks` or :symbol:`mongoc_client_pool_set_apm_callbacks`.
 
 See Also
 --------

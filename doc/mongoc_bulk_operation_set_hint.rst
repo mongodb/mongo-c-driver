@@ -15,13 +15,13 @@ Synopsis
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``server_id``: An opaque id identifying the server to use.
 
 Description
 -----------
 
-Specifies which server to use for the operation. This function has an effect only if called before :symbol:`mongoc_bulk_operation_execute <mongoc_bulk_operation_execute>`.
+Specifies which server to use for the operation. This function has an effect only if called before :symbol:`mongoc_bulk_operation_execute`.
 
 (The function name includes the old term "hint" for the sake of backward compatibility, but we now call this number a "server id".)
 

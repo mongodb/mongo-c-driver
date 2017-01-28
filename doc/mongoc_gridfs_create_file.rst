@@ -15,18 +15,18 @@ Synopsis
 Parameters
 ----------
 
-* ``gridfs``: A :symbol:`mongoc_gridfs_t <mongoc_gridfs_t>`.
-* ``opt``: A :symbol:`mongoc_gridfs_file_opt_t <mongoc_gridfs_file_opt_t>` to specify file options.
+* ``gridfs``: A :symbol:`mongoc_gridfs_t`.
+* ``opt``: A :symbol:`mongoc_gridfs_file_opt_t` to specify file options.
 
 Description
 -----------
 
-This function shall create a new :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
+This function shall create a new :symbol:`mongoc_gridfs_file_t`.
 
-Use :symbol:`mongoc_gridfs_file_writev() <mongoc_gridfs_file_writev>` to write to the file.
+Use :symbol:`mongoc_gridfs_file_writev()` to write to the file.
 
 Returns
 -------
 
-Returns a newly allocated :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>` that should be freed with :symbol:`mongoc_gridfs_file_destroy() <mongoc_gridfs_file_destroy>`.
+Returns a newly allocated :symbol:`mongoc_gridfs_file_t` that should be freed with :symbol:`mongoc_gridfs_file_destroy()`.
 

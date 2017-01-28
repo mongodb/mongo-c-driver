@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 * ``max_time_ms``: The maximum server-side execution time permitted, in milliseconds, or 0 to specify no maximum time (the default setting).
 
 Description

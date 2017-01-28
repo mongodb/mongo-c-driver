@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t`.
 * ``wtimeout_msec``: A positive ``int32_t`` or zero.
 
 Description

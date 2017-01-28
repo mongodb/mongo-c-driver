@@ -8,7 +8,7 @@ Server-opening event
 Synopsis
 --------
 
-An event notification sent when the driver adds a :symbol:`mongoc_server_description_t <mongoc_server_description_t>` for a new server it was not monitoring before.
+An event notification sent when the driver adds a :symbol:`mongoc_server_description_t` for a new server it was not monitoring before.
 
 See Also
 --------

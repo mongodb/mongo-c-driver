@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
 
 Description
 -----------

@@ -16,10 +16,10 @@ Retrieve the default read concern configured for the client instance. The result
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 
 Returns
 -------
 
-A :symbol:`mongoc_read_concern_t <mongoc_read_concern_t>`.
+A :symbol:`mongoc_read_concern_t`.
 

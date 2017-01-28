@@ -16,8 +16,8 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t`.
 
 Description
 -----------

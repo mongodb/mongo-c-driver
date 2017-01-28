@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 * ``sort``: Determines which document the operation modifies if the query selects multiple documents. findAndModify modifies the first document in the sort order specified by this argument.
 
 Description

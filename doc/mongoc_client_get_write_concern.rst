@@ -16,10 +16,10 @@ Retrieve the default write concern configured for the client instance. The resul
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 
 Returns
 -------
 
-A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+A :symbol:`mongoc_write_concern_t`.
 

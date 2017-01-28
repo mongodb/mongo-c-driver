@@ -14,10 +14,10 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
 
 Description
 -----------
 
-Return the value set with :symbol:`mongoc_cursor_set_limit <mongoc_cursor_set_limit>` or :symbol:`mongoc_collection_find <mongoc_collection_find>`.
+Return the value set with :symbol:`mongoc_cursor_set_limit` or :symbol:`mongoc_collection_find`.
 

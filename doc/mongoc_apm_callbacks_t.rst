@@ -10,7 +10,7 @@ Synopsis
 
 Used to receive notification of events, such as when a MongoDB command begins, succeeds, or fails.
 
-Create a ``mongoc_apm_callbacks_t`` with :symbol:`mongoc_apm_callbacks_new <mongoc_apm_callbacks_new>`, set callbacks on it, then pass it to :symbol:`mongoc_client_set_apm_callbacks <mongoc_client_set_apm_callbacks>` or :symbol:`mongoc_client_pool_set_apm_callbacks <mongoc_client_pool_set_apm_callbacks>`.
+Create a ``mongoc_apm_callbacks_t`` with :symbol:`mongoc_apm_callbacks_new`, set callbacks on it, then pass it to :symbol:`mongoc_client_set_apm_callbacks` or :symbol:`mongoc_client_pool_set_apm_callbacks`.
 
 See Also
 --------

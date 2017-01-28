@@ -11,7 +11,7 @@ Synopsis
   int32_t
   mongoc_client_get_max_bson_size (mongoc_client_t *client);
 
-The :symbol:`mongoc_client_get_max_bson_size() <mongoc_client_get_max_bson_size>` returns the maximum bson document size allowed by the cluster. Until a connection has been made, this will be the default of 16Mb.
+The :symbol:`mongoc_client_get_max_bson_size()` returns the maximum bson document size allowed by the cluster. Until a connection has been made, this will be the default of 16Mb.
 
 Deprecated
 ----------
@@ -23,7 +23,7 @@ Deprecated
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 
 Returns
 -------

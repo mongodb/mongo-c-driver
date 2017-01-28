@@ -21,13 +21,13 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``flags``: A :symbol:`mongoc_query_flags_t <mongoc_query_flags_t>`.
-* ``query``: A :symbol:`bson_t <bson:bson_t>` containing the query.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``flags``: A :symbol:`mongoc_query_flags_t`.
+* ``query``: A :symbol:`bson:bson_t` containing the query.
 * ``skip``: A int64_t, zero to ignore.
 * ``limit``: A int64_t, zero to ignore.
-* ``opts``: A :symbol:`bson_t <bson:bson_t>`, ``NULL`` to ignore.
-* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`, otherwise uses the collection's read preference.
+* ``opts``: A :symbol:`bson:bson_t`, ``NULL`` to ignore.
+* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`, otherwise uses the collection's read preference.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
@@ -35,7 +35,7 @@ Description
 
 This function shall execute a count query on the underlying 'collection'. The bson 'query' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.
 
-The :symbol:`mongoc_read_concern_t <mongoc_read_concern_t>` specified on the :symbol:`mongoc_collection_t <mongoc_collection_t>` will be used, if any. If ``read_prefs`` is NULL, the collection's read preferences are used.
+The :symbol:`mongoc_read_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any. If ``read_prefs`` is NULL, the collection's read preferences are used.
 
 In addition to the standard functionality available from mongoc_collection_count, this function allows the user to add arbitrary extra keys to the count.  This pass through enables features such as hinting for counts.
 

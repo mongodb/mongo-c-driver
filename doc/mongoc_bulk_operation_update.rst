@@ -14,7 +14,7 @@ Synopsis
                                 const bson_t *document,
                                 bool upsert);
 
-This function queues an update as part of a bulk operation. This does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+This function queues an update as part of a bulk operation. This does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute()`.
 
 .. warning::
 
@@ -23,20 +23,20 @@ This function queues an update as part of a bulk operation. This does not execut
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
-* ``selector``: A :symbol:`bson_t <bson:bson_t>` that selects which documents to remove.
-* ``document``: A :symbol:`bson_t <bson:bson_t>` containing the update document.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
+* ``selector``: A :symbol:`bson:bson_t` that selects which documents to remove.
+* ``document``: A :symbol:`bson:bson_t` containing the update document.
 * ``upsert``: ``true`` if an ``upsert`` should be performed.
 
 See Also
 --------
 
-:symbol:`mongoc_bulk_operation_update_one() <mongoc_bulk_operation_update_one>`
+:symbol:`mongoc_bulk_operation_update_one()`
 
-:symbol:`mongoc_bulk_operation_update_many_with_opts() <mongoc_bulk_operation_update_many_with_opts>`
+:symbol:`mongoc_bulk_operation_update_many_with_opts()`
 
 Errors
 ------
 
-Errors are propagated via :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
 

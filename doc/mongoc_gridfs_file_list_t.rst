@@ -15,7 +15,7 @@ Synopsis
 Description
 -----------
 
-``mongoc_gridfs_file_list_t`` provides a gridfs file list abstraction.  It provides iteration and basic marshalling on top of a regular :symbol:`mongoc_collection_find_with_opts() <mongoc_collection_find_with_opts>` style query. In interface, it's styled after :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+``mongoc_gridfs_file_list_t`` provides a gridfs file list abstraction.  It provides iteration and basic marshalling on top of a regular :symbol:`mongoc_collection_find_with_opts()` style query. In interface, it's styled after :symbol:`mongoc_cursor_t`.
 
 Example
 -------

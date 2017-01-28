@@ -23,7 +23,7 @@ Please use :doc:`mongoc_uri_get_read_prefs_t() <mongoc_uri_get_read_prefs_t>` in
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 
 Description
 -----------

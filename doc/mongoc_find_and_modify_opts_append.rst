@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
-* ``extra``: A :symbol:`bson_t <bson:bson_t>` with fields and values to append directly to the findAndModify command sent to the server.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
+* ``extra``: A :symbol:`bson:bson_t` with fields and values to append directly to the findAndModify command sent to the server.
 
 Description
 -----------

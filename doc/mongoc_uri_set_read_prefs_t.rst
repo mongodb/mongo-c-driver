@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
-* ``rc``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
+* ``rc``: A :symbol:`mongoc_read_prefs_t`.
 
 Description
 -----------

@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_stream_file_t mongoc_stream_file_t
 
-``mongoc_stream_file_t`` is a :symbol:`mongoc_stream_t <mongoc_stream_t>` subclass for working with standard UNIX style file-descriptors.
+``mongoc_stream_file_t`` is a :symbol:`mongoc_stream_t` subclass for working with standard UNIX style file-descriptors.
 
 .. only:: html
 

@@ -17,12 +17,12 @@ Returns this event's command. The data is only valid in the scope of the callbac
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_command_started_t <mongoc_apm_command_started_t>`.
+* ``event``: A :symbol:`mongoc_apm_command_started_t`.
 
 Returns
 -------
 
-A :symbol:`bson_t <bson:bson_t>` that should not be modified or freed.
+A :symbol:`bson:bson_t` that should not be modified or freed.
 
 See Also
 --------

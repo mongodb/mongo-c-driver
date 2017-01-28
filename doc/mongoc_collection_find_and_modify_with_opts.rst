@@ -19,10 +19,10 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``query``: A :symbol:`bson_t <bson:bson_t>` containing the query to locate target document(s).
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``query``: A :symbol:`bson:bson_t` containing the query to locate target document(s).
 * ``opts``: :symbol:`find and modify options <mongoc_find_and_modify_opts_t>`
-* ``reply``: An optional location for a :symbol:`bson_t <bson:bson_t>` that will be initialized with the result or ``NULL``.
+* ``reply``: An optional location for a :symbol:`bson:bson_t` that will be initialized with the result or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

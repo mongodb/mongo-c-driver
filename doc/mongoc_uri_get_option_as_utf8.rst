@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 * ``option``: The name of an option, case insensitive.
 * ``fallback``: A default value to return.
 

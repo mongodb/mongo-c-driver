@@ -15,11 +15,11 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
-* ``update``: An uninitialized :symbol:`bson_t <bson:bson_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
+* ``update``: An uninitialized :symbol:`bson:bson_t`.
 
 Description
 -----------
 
-Copies the update document set with :symbol:`mongoc_find_and_modify_opts_set_update <mongoc_find_and_modify_opts_set_update>`, or initializes ``update`` with an empty BSON document.
+Copies the update document set with :symbol:`mongoc_find_and_modify_opts_set_update`, or initializes ``update`` with an empty BSON document.
 

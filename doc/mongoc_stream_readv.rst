@@ -18,13 +18,13 @@ Synopsis
 Parameters
 ----------
 
-* ``stream``: A :symbol:`mongoc_stream_t <mongoc_stream_t>`.
-* ``iov``: A vector of :symbol:`mongoc_iovec_t <mongoc_iovec_t>`.
+* ``stream``: A :symbol:`mongoc_stream_t`.
+* ``iov``: A vector of :symbol:`mongoc_iovec_t`.
 * ``iovcnt``: The number of items in ``iov``.
 * ``min_bytes``: The minimum number of bytes to read or failure will be indicated.
 * ``timeout_msec``: A timeout in milliseconds, or 0 to indicate non-blocking. A negative value with use the default timeout.
 
-This function is identical to :symbol:`mongoc_stream_read() <mongoc_stream_read>` except that it takes a :symbol:`mongoc_iovec_t <mongoc_iovec_t>` to perform gathered I/O.
+This function is identical to :symbol:`mongoc_stream_read()` except that it takes a :symbol:`mongoc_iovec_t` to perform gathered I/O.
 
 Returns
 -------
@@ -34,9 +34,9 @@ Returns
 See Also
 --------
 
-:symbol:`mongoc_stream_read() <mongoc_stream_read>`
+:symbol:`mongoc_stream_read()`
 
-:symbol:`mongoc_stream_write() <mongoc_stream_write>`
+:symbol:`mongoc_stream_write()`
 
-:symbol:`mongoc_stream_writev() <mongoc_stream_writev>`
+:symbol:`mongoc_stream_writev()`
 

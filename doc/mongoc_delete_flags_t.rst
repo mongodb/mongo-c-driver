@@ -22,5 +22,5 @@ Deprecated
 
   These flags are deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_remove_flags_t <mongoc_remove_flags_t>` with :symbol:`mongoc_collection_remove() <mongoc_collection_remove>` instead.
+Please use :symbol:`mongoc_remove_flags_t` with :symbol:`mongoc_collection_remove()` instead.
 

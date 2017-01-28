@@ -17,10 +17,10 @@ Synopsis
 Parameters
 ----------
 
-* ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
+* ``sock``: A :symbol:`mongoc_socket_t`.
 * ``iov``: A mongoc_iovec_t.
 * ``iovcnt``: A size_t containing the number of elements in iov.
-* ``expire_at``: A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using :symbol:`bson_get_monotonic_time() <bson:bson_get_monotonic_time>`.
+* ``expire_at``: A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using :symbol:`bson:bson_get_monotonic_time()`.
 
 Description
 -----------

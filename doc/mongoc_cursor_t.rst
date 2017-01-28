@@ -15,14 +15,14 @@ Synopsis
 ``mongoc_cursor_t`` provides access to a MongoDB query cursor.
 It wraps up the wire protocol negotiation required to initiate a query and retrieve an unknown number of documents.
 
-Cursors are lazy, meaning that no network traffic occurs until the first call to :symbol:`mongoc_cursor_next() <mongoc_cursor_next>`.
+Cursors are lazy, meaning that no network traffic occurs until the first call to :symbol:`mongoc_cursor_next()`.
 
 At that point we can:
 
-* Determine which host we've connected to with :symbol:`mongoc_cursor_get_host() <mongoc_cursor_get_host>`.
-* Retrieve more records with repeated calls to :symbol:`mongoc_cursor_next() <mongoc_cursor_next>`.
-* Clone a query to repeat execution at a later point with :symbol:`mongoc_cursor_clone() <mongoc_cursor_clone>`.
-* Test for errors with :symbol:`mongoc_cursor_error() <mongoc_cursor_error>`.
+* Determine which host we've connected to with :symbol:`mongoc_cursor_get_host()`.
+* Retrieve more records with repeated calls to :symbol:`mongoc_cursor_next()`.
+* Clone a query to repeat execution at a later point with :symbol:`mongoc_cursor_clone()`.
+* Test for errors with :symbol:`mongoc_cursor_error()`.
 
 Thread Safety
 -------------

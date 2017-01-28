@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t`.
 * ``fsync_``: A boolean.
 
 Description
@@ -30,5 +30,5 @@ Deprecated
 
   The ``fsync`` write concern is deprecated.
 
-Please use :symbol:`mongoc_write_concern_set_journal() <mongoc_write_concern_set_journal>` instead.
+Please use :symbol:`mongoc_write_concern_set_journal()` instead.
 

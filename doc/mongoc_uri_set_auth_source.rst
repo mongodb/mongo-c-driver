@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 * ``value``: The new "authSource" value.
 
 Description
@@ -22,7 +22,7 @@ Description
 
 Sets the "authSource" URI option, after the URI has been parsed from a string.
 
-Updates the option in-place if already set, otherwise appends it to the URI's :symbol:`bson_t <bson:bson_t>` of options.
+Updates the option in-place if already set, otherwise appends it to the URI's :symbol:`bson:bson_t` of options.
 
 Returns
 -------

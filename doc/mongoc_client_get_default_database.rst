@@ -18,12 +18,12 @@ Useful when you want to choose which database to use based only on the URI in a 
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_database_t <mongoc_client_t>` that should be freed with :symbol:`mongoc_database_destroy() <mongoc_database_destroy>`.
+A newly allocated :symbol:`mongoc_database_t <mongoc_client_t>` that should be freed with :symbol:`mongoc_database_destroy()`.
 
 Example
 -------

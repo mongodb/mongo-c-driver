@@ -20,7 +20,7 @@ Synopsis
 Description
 -----------
 
-This structure contains options that can be set on a :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`. It can be used by various functions when creating a new gridfs file.
+This structure contains options that can be set on a :symbol:`mongoc_gridfs_file_t`. It can be used by various functions when creating a new gridfs file.
 
 .. only:: html
 

@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches a linked list of hosts that were defined in the URI (the comma-separated
 Returns
 -------
 
-A linked list of :symbol:`mongoc_host_list_t <mongoc_host_list_t>` structures that should not be modified or freed.
+A linked list of :symbol:`mongoc_host_list_t` structures that should not be modified or freed.
 

@@ -20,10 +20,10 @@ Parameters
 Description
 -----------
 
-Creates a new :symbol:`mongoc_uri_t <mongoc_uri_t>` based on the hostname and port provided.
+Creates a new :symbol:`mongoc_uri_t` based on the hostname and port provided.
 
 Returns
 -------
 
-Returns a newly allocated :symbol:`mongoc_uri_t <mongoc_uri_t>` that should be freed with :symbol:`mongoc_uri_destroy() <mongoc_uri_destroy>` when no longer in use.
+Returns a newly allocated :symbol:`mongoc_uri_t` that should be freed with :symbol:`mongoc_uri_destroy()` when no longer in use.
 

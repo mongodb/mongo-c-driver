@@ -23,5 +23,5 @@ Deprecated
 Parameters
 ----------
 
-* ``matcher``: A :symbol:`mongoc_matcher_t <mongoc_matcher_t>`.
+* ``matcher``: A :symbol:`mongoc_matcher_t`.
 

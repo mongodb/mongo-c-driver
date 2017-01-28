@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 * ``flags``: .
 
 Description

@@ -16,12 +16,12 @@ Parameters
 
 * ``fd``: A UNIX style file-descriptor.
 
-Creates a new :symbol:`mongoc_stream_file_t <mongoc_stream_file_t>` using the file-descriptor provided.
+Creates a new :symbol:`mongoc_stream_file_t` using the file-descriptor provided.
 
 Returns
 -------
 
-``NULL`` upon failure, otherwise a newly allocated :symbol:`mongoc_stream_file_t <mongoc_stream_file_t>` that should be freed with :symbol:`mongoc_stream_destroy() <mongoc_stream_destroy>` when no longer in use.
+``NULL`` upon failure, otherwise a newly allocated :symbol:`mongoc_stream_file_t` that should be freed with :symbol:`mongoc_stream_destroy()` when no longer in use.
 
 ``errno`` is set upon failure.
 

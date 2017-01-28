@@ -15,13 +15,13 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
-* ``properties``: An uninitialized :symbol:`bson_t <bson:bson_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
+* ``properties``: An uninitialized :symbol:`bson:bson_t`.
 
 Description
 -----------
 
-Fetches the "authMechanismProperties" options set on this :symbol:`mongoc_uri_t <mongoc_uri_t>`. The out-parameter ``properties`` should be an uninitialized, stack-allocated :symbol:`bson_t <bson:bson_t>`. It is statically initialized with :symbol:`bson_init_static <bson:bson_init_static>` to point to the internal data of ``uri``, so its contents must not be modified and it becomes invalid after ``uri`` is destroyed.
+Fetches the "authMechanismProperties" options set on this :symbol:`mongoc_uri_t`. The out-parameter ``properties`` should be an uninitialized, stack-allocated :symbol:`bson:bson_t`. It is statically initialized with :symbol:`bson:bson_init_static` to point to the internal data of ``uri``, so its contents must not be modified and it becomes invalid after ``uri`` is destroyed.
 
 Returns
 -------
@@ -57,5 +57,5 @@ This code produces the output:
 See Also
 --------
 
-:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_set_mechanism_properties <mongoc_uri_set_mechanism_properties>`
+:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_set_mechanism_properties`
 

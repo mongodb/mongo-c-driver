@@ -17,7 +17,7 @@ Returns this event's database name. The data is only valid in the scope of the c
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_command_started_t <mongoc_apm_command_started_t>`.
+* ``event``: A :symbol:`mongoc_apm_command_started_t`.
 
 Returns
 -------

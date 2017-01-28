@@ -10,7 +10,7 @@ Synopsis
 
   typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t
 
-``mongoc_stream_socket_t`` should be considered a subclass of :symbol:`mongoc_stream_t <mongoc_stream_t>` that works upon socket streams.
+``mongoc_stream_socket_t`` should be considered a subclass of :symbol:`mongoc_stream_t` that works upon socket streams.
 
 .. only:: html
 

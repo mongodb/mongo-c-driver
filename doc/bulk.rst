@@ -8,7 +8,7 @@ This tutorial explains how to take advantage of MongoDB C driver bulk write oper
 Bulk Insert
 -----------
 
-First we need to fetch a bulk operation handle from the :symbol:`mongoc_collection_t <mongoc_collection_t>`. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.
+First we need to fetch a bulk operation handle from the :symbol:`mongoc_collection_t`. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.
 
 .. code-block:: c
 
@@ -17,13 +17,13 @@ First we need to fetch a bulk operation handle from the :symbol:`mongoc_collecti
 
 We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.
 
-The bulk operation will coalesce insertions as a single batch for each consecutive call to :symbol:`mongoc_bulk_operation_insert() <mongoc_bulk_operation_insert>`. This creates a pipelined effect when possible.
+The bulk operation will coalesce insertions as a single batch for each consecutive call to :symbol:`mongoc_bulk_operation_insert()`. This creates a pipelined effect when possible.
 
 .. tip::
 
   The bulk operation API will automatically handle MongoDB servers < 2.6 by speaking the old wire protocol. However, some performance degradation may occur.
 
-To execute the bulk operation and receive the result we call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+To execute the bulk operation and receive the result we call :symbol:`mongoc_bulk_operation_execute()`.
 
 .. literalinclude:: ../examples/bulk/bulk1.c
    :language: c
@@ -48,7 +48,7 @@ MongoDB C driver also supports executing mixed bulk write operations. A batch of
 
 .. tip::
 
-  Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions >= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated :symbol:`mongoc_collection_insert_bulk() <mongoc_collection_insert_bulk>` method.
+  Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions >= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated :symbol:`mongoc_collection_insert_bulk()` method.
 
 Ordered Bulk Write Operations
 -----------------------------
@@ -150,7 +150,7 @@ The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_COMMAND``.
 Bulk Operation Write Concerns
 -----------------------------
 
-By default bulk operations are executed with the :symbol:`write_concern <mongoc_write_concern_t>` of the collection they are executed against. A custom write concern can be passed to the :symbol:`mongoc_collection_create_bulk_operation() <mongoc_collection_create_bulk_operation>` method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.
+By default bulk operations are executed with the :symbol:`write_concern <mongoc_write_concern_t>` of the collection they are executed against. A custom write concern can be passed to the :symbol:`mongoc_collection_create_bulk_operation()` method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.
 
 .. literalinclude:: ../examples/bulk/bulk4.c
    :language: c

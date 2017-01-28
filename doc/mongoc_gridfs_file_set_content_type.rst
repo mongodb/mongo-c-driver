@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
 * ``str``: A string containing the content type.
 
 Description
@@ -23,5 +23,5 @@ Description
 
 Sets the content type for the gridfs file. This should be something like ``"text/plain"``.
 
-You need to call :symbol:`mongoc_gridfs_file_save() <mongoc_gridfs_file_save>` to persist this change.
+You need to call :symbol:`mongoc_gridfs_file_save()` to persist this change.
 

@@ -32,7 +32,7 @@ To run the examples in this tutorial, MongoDB must be installed and running on `
 Making a Connection
 -------------------
 
-The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a :symbol:`mongoc_client_t <mongoc_client_t>`. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs :symbol:`mongoc_database_t <mongoc_database_t>` and :symbol:`mongoc_collection_t <mongoc_collection_t>`, respectively. MongoDB operations can then be performed through these handles.
+The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a :symbol:`mongoc_client_t`. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs :symbol:`mongoc_database_t` and :symbol:`mongoc_collection_t`, respectively. MongoDB operations can then be performed through these handles.
 
 At the start of an application, call :doc:`mongoc_init() <mongoc_init>` before any other libmongoc functions and call :doc:`mongoc_cleanup() <mongoc_cleanup>` before exiting. When creating handles to clients, databases and servers, call the appropriate destroy functions when finished.
 
@@ -260,7 +260,7 @@ Use the following code:
      return 0;
   }
 
-See the :doc:`libbson documentation <bson:bson_t>` for all of the types that can be appended to a :symbol:`bson_t <bson:bson_t>`.
+See the :doc:`libbson documentation <bson:bson_t>` for all of the types that can be appended to a :symbol:`bson:bson_t`.
 
 Using BCON
 ^^^^^^^^^^
@@ -879,7 +879,7 @@ Threading
 
 The MongoDB C Driver is thread-unaware in the vast majority of its operations. This means it is up to the programmer to guarantee thread-safety.
 
-However, :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>` is thread-safe and is used to fetch a ``mongoc_client_t`` in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.
+However, :symbol:`mongoc_client_pool_t` is thread-safe and is used to fetch a ``mongoc_client_t`` in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.
 
 .. literalinclude:: ../examples/example-pool.c
    :language: c

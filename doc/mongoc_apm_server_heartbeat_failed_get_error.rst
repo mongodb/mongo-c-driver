@@ -17,8 +17,8 @@ Copies this event's error info.
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_server_heartbeat_failed_t <mongoc_apm_server_heartbeat_failed_t>`.
-* ``error``: A :symbol:`bson_error_t <bson:bson_error_t>` to receive the event's error info.
+* ``event``: A :symbol:`mongoc_apm_server_heartbeat_failed_t`.
+* ``error``: A :symbol:`bson:bson_error_t` to receive the event's error info.
 
 See Also
 --------

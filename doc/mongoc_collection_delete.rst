@@ -22,15 +22,15 @@ Deprecated
 
   This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_remove() <mongoc_collection_remove>` instead.
+Please use :symbol:`mongoc_collection_remove()` instead.
 
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``flags``: A :symbol:`mongoc_delete_flags_t <mongoc_delete_flags_t>`.
-* ``selector``: A :symbol:`bson_t <bson:bson_t>` containing the query to match documents.
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` or ``NULL``.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``flags``: A :symbol:`mongoc_delete_flags_t`.
+* ``selector``: A :symbol:`bson:bson_t` containing the query to match documents.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t` or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

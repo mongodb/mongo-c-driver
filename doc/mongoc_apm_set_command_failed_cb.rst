@@ -20,8 +20,8 @@ Receive an event notification whenever the driver fails to execute a MongoDB ope
 Parameters
 ----------
 
-* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t <mongoc_apm_callbacks_t>`.
-* ``cb``: A function to call with a :symbol:`mongoc_apm_command_failed_t <mongoc_apm_command_failed_t>` whenever a MongoDB operation fails.
+* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
+* ``cb``: A function to call with a :symbol:`mongoc_apm_command_failed_t` whenever a MongoDB operation fails.
 
 See Also
 --------

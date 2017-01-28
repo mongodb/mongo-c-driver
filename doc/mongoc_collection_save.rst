@@ -8,8 +8,8 @@ Deprecated
 
 This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_insert() <mongoc_collection_insert>` or
-:symbol:`mongoc_collection_update() <mongoc_collection_update>` instead.
+Please use :symbol:`mongoc_collection_insert()` or
+:symbol:`mongoc_collection_update()` instead.
 
 
 Synopsis
@@ -27,9 +27,9 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``document``: A :symbol:`bson_t <bson:bson_t>` containing the document.
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` or ``NULL`` for default write concern.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``document``: A :symbol:`bson:bson_t` containing the document.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t` or ``NULL`` for default write concern.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

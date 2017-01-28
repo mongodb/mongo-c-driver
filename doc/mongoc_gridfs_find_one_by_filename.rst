@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``gridfs``: A :symbol:`mongoc_gridfs_t <mongoc_gridfs_t>`.
+* ``gridfs``: A :symbol:`mongoc_gridfs_t`.
 * ``filename``: A UTF-8 encoded string containing the filename.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
@@ -33,5 +33,5 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns a newly allocated :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>` if successful, otherwise ``NULL`` and error is set. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy() <mongoc_gridfs_file_destroy>` when no longer in use.
+Returns a newly allocated :symbol:`mongoc_gridfs_file_t` if successful, otherwise ``NULL`` and error is set. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy()` when no longer in use.
 

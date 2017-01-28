@@ -14,12 +14,12 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
 
 Description
 -----------
 
-This function shall indicate if there is *potentially* more data to be read from the cursor. This is only useful with tailable cursors. Use :symbol:`mongoc_cursor_next <mongoc_cursor_next>` for regular cursors.
+This function shall indicate if there is *potentially* more data to be read from the cursor. This is only useful with tailable cursors. Use :symbol:`mongoc_cursor_next` for regular cursors.
 
 Details: ``mongoc_cursor_more`` is unreliable because it does not contact the server to see if there are actually more documents in the result set. It simply returns true if the cursor has not begun, or if it has begun and there are buffered documents in the client-side cursor, or if it has begun and the server has not yet told the cursor it is completely iterated.
 

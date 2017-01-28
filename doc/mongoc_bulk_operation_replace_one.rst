@@ -14,14 +14,14 @@ Synopsis
                                      const bson_t *document,
                                      bool upsert);
 
-Replace a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+Replace a single document as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute()`.
 
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
-* ``selector``: A :symbol:`bson_t <bson:bson_t>` that selects which document to remove.
-* ``document``: A :symbol:`bson_t <bson:bson_t>` containing the replacement document.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
+* ``selector``: A :symbol:`bson:bson_t` that selects which document to remove.
+* ``document``: A :symbol:`bson:bson_t` containing the replacement document.
 * ``upsert``: ``true`` if this should be an ``upsert``.
 
 .. warning::
@@ -31,10 +31,10 @@ Parameters
 See Also
 --------
 
-:symbol:`mongoc_bulk_operation_replace_one_with_opts() <mongoc_bulk_operation_replace_one_with_opts>`
+:symbol:`mongoc_bulk_operation_replace_one_with_opts()`
 
 Errors
 ------
 
-Errors are propagated via :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>`.
+Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
 

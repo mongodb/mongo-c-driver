@@ -16,7 +16,7 @@ You can specify a read concern on connection objects, database objects, or colle
 
 See `readConcern <https://docs.mongodb.org/master/reference/readConcern/>`_ on the MongoDB website for more information.
 
-Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level <mongoc_read_concern_set_level>` to anything other then empty string.
+Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level` to anything other then empty string.
 
 .. _mongoc_read_concern_levels:
 

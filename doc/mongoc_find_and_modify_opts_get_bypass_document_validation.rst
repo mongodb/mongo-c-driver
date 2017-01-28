@@ -15,10 +15,10 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 
 Returns
 -------
 
-Returns true if :symbol:`mongoc_find_and_modify_opts_set_bypass_document_validation <mongoc_find_and_modify_opts_set_bypass_document_validation>` was called previously on ``opts``.
+Returns true if :symbol:`mongoc_find_and_modify_opts_set_bypass_document_validation` was called previously on ``opts``.
 

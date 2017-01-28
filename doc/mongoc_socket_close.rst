@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``socket``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
+* ``socket``: A :symbol:`mongoc_socket_t`.
 
 Description
 -----------

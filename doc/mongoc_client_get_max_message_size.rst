@@ -11,7 +11,7 @@ Synopsis
   int32_t
   mongoc_client_get_max_message_size (mongoc_client_t *client);
 
-The :symbol:`mongoc_client_get_max_message_size() <mongoc_client_get_max_message_size>` returns the maximum message size allowed by the cluster. Until a connection has been made, this will be the default of 40Mb.
+The :symbol:`mongoc_client_get_max_message_size()` returns the maximum message size allowed by the cluster. Until a connection has been made, this will be the default of 40Mb.
 
 Deprecated
 ----------
@@ -23,7 +23,7 @@ Deprecated
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 
 Returns
 -------

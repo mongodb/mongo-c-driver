@@ -15,10 +15,10 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 
 Returns
 -------
 
-Returns the "maxTimeMS" value set with :symbol:`mongoc_find_and_modify_opts_set_max_time_ms <mongoc_find_and_modify_opts_set_max_time_ms>`.
+Returns the "maxTimeMS" value set with :symbol:`mongoc_find_and_modify_opts_set_max_time_ms`.
 

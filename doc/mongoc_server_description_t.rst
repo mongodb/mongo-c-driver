@@ -15,12 +15,12 @@ Synopsis
 
 ``mongoc_server_description_t`` holds information about a mongod or mongos the driver is connected to.
 
-See also :symbol:`mongoc_client_get_server_descriptions() <mongoc_client_get_server_descriptions>`.
+See also :symbol:`mongoc_client_get_server_descriptions()`.
 
 Lifecycle
 ---------
 
-Clean up with :symbol:`mongoc_server_description_destroy() <mongoc_server_description_destroy>`.
+Clean up with :symbol:`mongoc_server_description_destroy()`.
 
 .. only:: html
 

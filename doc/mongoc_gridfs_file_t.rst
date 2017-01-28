@@ -60,8 +60,8 @@ This structure is NOT thread-safe and should only be used from one thread at a t
 Related
 -------
 
-* :symbol:`mongoc_client_t <mongoc_client_t>`
-* :symbol:`mongoc_gridfs_t <mongoc_gridfs_t>`
-* :symbol:`mongoc_gridfs_file_list_t <mongoc_gridfs_file_list_t>`
-* :symbol:`mongoc_gridfs_file_opt_t <mongoc_gridfs_file_opt_t>`
+* :symbol:`mongoc_client_t`
+* :symbol:`mongoc_gridfs_t`
+* :symbol:`mongoc_gridfs_file_list_t`
+* :symbol:`mongoc_gridfs_file_opt_t`
 

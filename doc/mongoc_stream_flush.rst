@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``stream``: A :symbol:`mongoc_stream_t <mongoc_stream_t>`.
+* ``stream``: A :symbol:`mongoc_stream_t`.
 
 This function shall flush any buffered bytes in the underlying stream to the physical transport. It mimics the API and semantics of ``fflush()``, forcing a write of user space buffered data.
 

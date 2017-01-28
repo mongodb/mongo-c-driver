@@ -16,7 +16,7 @@ Create a struct to hold event-notification callbacks.
 Returns
 -------
 
-A new ``mongoc_apm_callbacks_t`` you must free with :symbol:`mongoc_apm_callbacks_destroy <mongoc_apm_callbacks_destroy>`.
+A new ``mongoc_apm_callbacks_t`` you must free with :symbol:`mongoc_apm_callbacks_destroy`.
 
 See Also
 --------

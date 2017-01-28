@@ -18,14 +18,14 @@ Queries the server for the current server status. The result is stored in ``repl
 
 .. warning::
 
-  ``reply`` is always initialized, even in the case of failure. Always call :symbol:`bson_destroy() <bson:bson_destroy>` to release it.
+  ``reply`` is always initialized, even in the case of failure. Always call :symbol:`bson:bson_destroy()` to release it.
 
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
-* ``reply``: A location for the result :symbol:`bson_t <bson:bson_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
+* ``reply``: A location for the result :symbol:`bson:bson_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Errors

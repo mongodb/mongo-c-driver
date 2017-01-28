@@ -22,11 +22,11 @@ This function executes a command on a specific server, using the database and co
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``db_name``: The name of the database to run the command on.
-* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`.
 * ``server_id``: An opaque id specifying which server to use.
-* ``reply``: An optional location for a :symbol:`bson_t <bson:bson_t>` which will store the server's reply.
+* ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or a ``NULL``.
 
 Returns

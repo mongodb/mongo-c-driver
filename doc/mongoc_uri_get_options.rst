@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches a bson document containing all of the options provided after the ``?`` o
 Returns
 -------
 
-A :symbol:`bson_t <bson:bson_t>` which should not be modified or freed.
+A :symbol:`bson:bson_t` which should not be modified or freed.
 

@@ -10,9 +10,15 @@ class SymbolRole(XRefRole):
         for node in nodes:
             attrs = node.attributes
             target = attrs['reftarget']
+            if target.endswith('()'):
+                # Function call, :symbol:`mongoc_init()`
+                target = target[:-2]
+
             if ':' in target:
                 # E.g., 'bson:bson_t' has domain 'bson', target 'bson_t'
                 attrs['domain'], attrs['reftarget'] = target.split(':', 1)
+            else:
+                attrs['reftarget'] = target
 
             attrs['reftype'] = 'doc'
             attrs['classes'].append('symbol')

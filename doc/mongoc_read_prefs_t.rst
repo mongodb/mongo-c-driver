@@ -8,7 +8,7 @@ A read preference abstraction
 Synopsis
 --------
 
-:symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` provides an abstraction on top of the MongoDB connection read prefences. It allows for hinting to the driver which nodes in a replica set should be accessed first.
+:symbol:`mongoc_read_prefs_t` provides an abstraction on top of the MongoDB connection read prefences. It allows for hinting to the driver which nodes in a replica set should be accessed first.
 
 You can specify a read preference mode on connection objects, database objects, collection objects, or per-operation.  Generally, it makes the most sense to stick with the global default, ``MONGOC_READ_PRIMARY``.  All of the other modes come with caveats that won't be covered in great detail here.
 

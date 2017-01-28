@@ -14,5 +14,5 @@ Synopsis
 Returns
 -------
 
-Creates a newly allocated read concern that can be configured based on user preference. This should be freed with :symbol:`mongoc_read_concern_destroy() <mongoc_read_concern_destroy>` when no longer in use.
+Creates a newly allocated read concern that can be configured based on user preference. This should be freed with :symbol:`mongoc_read_concern_destroy()` when no longer in use.
 

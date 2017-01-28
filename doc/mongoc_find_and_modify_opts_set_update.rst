@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
-* ``update``: The ``update`` document is the same format as the ``update`` document passed to :symbol:`mongoc_collection_update <mongoc_collection_update>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
+* ``update``: The ``update`` document is the same format as the ``update`` document passed to :symbol:`mongoc_collection_update`.
 
 Description
 -----------

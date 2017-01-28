@@ -18,7 +18,7 @@ Fetches a cursor containing documents, each corresponding to a collection on thi
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
+* ``database``: A :symbol:`mongoc_database_t`.
 * ``filter``: A matcher used by the server to filter the returned collections. May be ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

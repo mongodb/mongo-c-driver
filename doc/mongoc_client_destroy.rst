@@ -16,5 +16,5 @@ Release all resources associated with ``client`` and free the structure.
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 

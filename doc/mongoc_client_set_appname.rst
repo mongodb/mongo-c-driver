@@ -19,12 +19,12 @@ This function will log an error and return false in the following cases:
 
 * ``appname`` is longer than ``MONGOC_HANDSHAKE_APPNAME_MAX``
 * ``client`` has already initiated a handshake
-* ``client`` is from a :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`
+* ``client`` is from a :symbol:`mongoc_client_pool_t`
 
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``appname``: The application name, of length at most ``MONGOC_HANDSHAKE_APPNAME_MAX``.
 
 Returns

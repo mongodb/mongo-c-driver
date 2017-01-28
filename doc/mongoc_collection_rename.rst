@@ -18,7 +18,7 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
 * ``new_db``: The name of the new database.
 * ``new_name``: The new name for the collection.
 * ``drop_target_before_rename``: If an existing collection matches the new name, drop it before the rename.
@@ -27,5 +27,5 @@ Parameters
 Description
 -----------
 
-For more information, see :symbol:`mongoc_collection_rename_with_opts() <mongoc_collection_rename_with_opts>`. This function is a thin wrapper, passing ``NULL`` in as :symbol:`opts <bson:bson_t>` parameter.
+For more information, see :symbol:`mongoc_collection_rename_with_opts()`. This function is a thin wrapper, passing ``NULL`` in as :symbol:`opts <bson:bson_t>` parameter.
 

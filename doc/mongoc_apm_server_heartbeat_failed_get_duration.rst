@@ -17,7 +17,7 @@ Returns this event's duration in microseconds.
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_server_heartbeat_failed_t <mongoc_apm_server_heartbeat_failed_t>`.
+* ``event``: A :symbol:`mongoc_apm_server_heartbeat_failed_t`.
 
 Returns
 -------

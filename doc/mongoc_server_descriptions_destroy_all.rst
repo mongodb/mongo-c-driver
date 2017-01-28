@@ -12,7 +12,7 @@ Synopsis
   mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
                                           size_t n);
 
-Frees the array of :symbol:`mongoc_server_description_t <mongoc_server_description_t>` structs returned by :symbol:`mongoc_client_get_server_descriptions <mongoc_client_get_server_descriptions>`.
+Frees the array of :symbol:`mongoc_server_description_t` structs returned by :symbol:`mongoc_client_get_server_descriptions`.
 
 Parameters
 ----------

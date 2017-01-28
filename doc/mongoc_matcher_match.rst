@@ -23,11 +23,11 @@ Deprecated
 Parameters
 ----------
 
-* ``matcher``: A :symbol:`mongoc_matcher_t <mongoc_matcher_t>`.
-* ``query``: A :symbol:`bson_t <bson:bson_t>` that contains the query.
+* ``matcher``: A :symbol:`mongoc_matcher_t`.
+* ``query``: A :symbol:`bson:bson_t` that contains the query.
 
 Returns
 -------
 
-``true`` if ``document`` matches the query specification provided to :symbol:`mongoc_matcher_new() <mongoc_matcher_new>`. Otherwise, ``false``.
+``true`` if ``document`` matches the query specification provided to :symbol:`mongoc_matcher_new()`. Otherwise, ``false``.
 

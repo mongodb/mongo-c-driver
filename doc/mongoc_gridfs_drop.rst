@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``gridfs``: A :symbol:`mongoc_gridfs_t <mongoc_gridfs_t>`.
+* ``gridfs``: A :symbol:`mongoc_gridfs_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

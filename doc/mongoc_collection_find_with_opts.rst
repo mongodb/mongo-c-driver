@@ -18,22 +18,22 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``filter``: A :symbol:`bson_t <bson:bson_t>` containing the query to execute.
-* ``opts``: A :symbol:`bson_t <bson:bson_t>` query options, including sort order and which fields to return. Can be ``NULL``.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or ``NULL``.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``filter``: A :symbol:`bson:bson_t` containing the query to execute.
+* ``opts``: A :symbol:`bson:bson_t` query options, including sort order and which fields to return. Can be ``NULL``.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL``.
 
 Description
 -----------
 
 Query on ``collection``, passing arbitrary query options to the server in ``opts``.
 
-To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server <mongoc_client_select_server>`, then :symbol:`mongoc_server_description_id <mongoc_server_description_id>` on its return value.
+To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_cursor_t <mongoc_cursor_t>` that must be freed with :symbol:`mongoc_cursor_destroy() <mongoc_cursor_destroy>`.
+A newly allocated :symbol:`mongoc_cursor_t` that must be freed with :symbol:`mongoc_cursor_destroy()`.
 
 Examples
 --------

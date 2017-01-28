@@ -17,7 +17,7 @@ Returns this event's server id.
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_command_failed_t <mongoc_apm_command_failed_t>`.
+* ``event``: A :symbol:`mongoc_apm_command_failed_t`.
 
 Returns
 -------

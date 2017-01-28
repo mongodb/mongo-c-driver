@@ -16,8 +16,8 @@ Synopsis
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
-* ``opts``: A :symbol:`bson_t <bson:bson_t>` or ``NULL``.
+* ``database``: A :symbol:`mongoc_database_t`.
+* ``opts``: A :symbol:`bson:bson_t` or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description

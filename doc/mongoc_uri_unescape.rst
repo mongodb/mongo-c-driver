@@ -24,5 +24,5 @@ Unescapes an URI encoded string. For example, "%40" would become "@".
 Returns
 -------
 
-Returns a newly allocated string that should be freed with :symbol:`bson_free() <bson:bson_free>`.
+Returns a newly allocated string that should be freed with :symbol:`bson:bson_free()`.
 

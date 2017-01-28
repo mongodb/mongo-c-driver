@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches the cursors current document or ``NULL`` if there has been an error.
 Returns
 -------
 
-A :symbol:`bson_t <bson:bson_t>` that should not be modified or freed or ``NULL``.
+A :symbol:`bson:bson_t` that should not be modified or freed or ``NULL``.
 

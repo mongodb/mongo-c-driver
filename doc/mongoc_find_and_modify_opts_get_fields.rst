@@ -15,11 +15,11 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
-* ``fields``: An uninitialized :symbol:`bson_t <bson:bson_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
+* ``fields``: An uninitialized :symbol:`bson:bson_t`.
 
 Description
 -----------
 
-Copy to ``fields`` the BSON document that was set with :symbol:`mongoc_find_and_modify_opts_set_fields <mongoc_find_and_modify_opts_set_fields>`, or initializes ``fields`` with an empty BSON document.
+Copy to ``fields`` the BSON document that was set with :symbol:`mongoc_find_and_modify_opts_set_fields`, or initializes ``fields`` with an empty BSON document.
 

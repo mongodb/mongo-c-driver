@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
 * ``str``: A UTF-8 encoded string containing the filename.
 
 Description
@@ -23,5 +23,5 @@ Description
 
 Sets the filename for ``file``.
 
-You need to call :symbol:`mongoc_gridfs_file_save() <mongoc_gridfs_file_save>` to persist this change.
+You need to call :symbol:`mongoc_gridfs_file_save()` to persist this change.
 

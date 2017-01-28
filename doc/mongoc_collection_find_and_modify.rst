@@ -23,15 +23,15 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``query``: A :symbol:`bson_t <bson:bson_t>` containing the query to locate target document(s).
-* ``sort``: A :symbol:`bson_t <bson:bson_t>` containing the sort order for ``query``.
-* ``update``: A :symbol:`bson_t <bson:bson_t>` containing an update spec.
-* ``fields``: An optional :symbol:`bson_t <bson:bson_t>` containing the fields to return or ``NULL``.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``query``: A :symbol:`bson:bson_t` containing the query to locate target document(s).
+* ``sort``: A :symbol:`bson:bson_t` containing the sort order for ``query``.
+* ``update``: A :symbol:`bson:bson_t` containing an update spec.
+* ``fields``: An optional :symbol:`bson:bson_t` containing the fields to return or ``NULL``.
 * ``_remove``: If the matching documents should be removed.
 * ``upsert``: If an upsert should be performed.
 * ``_new``: If the new version of the document should be returned.
-* ``reply``: Optional pointer to an *uninitialized* :symbol:`bson_t <bson:bson_t>` that will be initialized with the result.
+* ``reply``: Optional pointer to an *uninitialized* :symbol:`bson:bson_t` that will be initialized with the result.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
@@ -41,9 +41,9 @@ Update and return an object.
 
 This is a thin wrapper around the ``findAndModify`` command. Either ``update`` or ``_remove`` arguments are required.
 
-See also: :symbol:`mongoc_collection_find_and_modify_with_opts <mongoc_collection_find_and_modify_with_opts>`.
+See also: :symbol:`mongoc_collection_find_and_modify_with_opts`.
 
-As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_collection_t <mongoc_collection_t>` will be used, if any.
+As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
 Errors
 ------

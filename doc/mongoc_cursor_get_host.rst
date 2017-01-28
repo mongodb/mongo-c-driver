@@ -14,8 +14,8 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
-* ``host``: A :symbol:`mongoc_host_list_t <mongoc_host_list_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
+* ``host``: A :symbol:`mongoc_host_list_t`.
 
 Description
 -----------

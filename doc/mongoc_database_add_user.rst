@@ -19,11 +19,11 @@ Synopsis
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
+* ``database``: A :symbol:`mongoc_database_t`.
 * ``username``: The name of the user.
 * ``password``: The cleartext password for the user.
-* ``roles``: An optional :symbol:`bson_t <bson:bson_t>` for roles.
-* ``custom_data``: A optional :symbol:`bson_t <bson:bson_t>` for extra data.
+* ``roles``: An optional :symbol:`bson:bson_t` for roles.
+* ``custom_data``: A optional :symbol:`bson:bson_t` for extra data.
 * ``error``: A location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 This function shall create a new user with access to ``database``.

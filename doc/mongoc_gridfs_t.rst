@@ -19,7 +19,7 @@ Description
 
 There are extensive caveats about the kind of use cases gridfs is practical for. In particular, any writing after initial file creation is likely to both break any concurrent readers and be quite expensive. That said, this implementation does allow for arbitrary writes to existing gridfs object, just use them with caution.
 
-mongoc_gridfs also integrates tightly with the :symbol:`mongoc_stream_t <mongoc_stream_t>` abstraction, which provides some convenient wrapping for file creation and reading/writing.  It can be used without, but its worth looking to see if your problem can fit that model.
+mongoc_gridfs also integrates tightly with the :symbol:`mongoc_stream_t` abstraction, which provides some convenient wrapping for file creation and reading/writing.  It can be used without, but its worth looking to see if your problem can fit that model.
 
 .. warning::
 
@@ -28,12 +28,12 @@ mongoc_gridfs also integrates tightly with the :symbol:`mongoc_stream_t <mongoc_
 Thread Safety
 -------------
 
-``mongoc_gridfs_t`` is NOT thread-safe and should only be used in the same thread as the owning :symbol:`mongoc_client_t <mongoc_client_t>`.
+``mongoc_gridfs_t`` is NOT thread-safe and should only be used in the same thread as the owning :symbol:`mongoc_client_t`.
 
 Lifecycle
 ---------
 
-It is an error to free a ``mongoc_gridfs_t`` before freeing all related instances of :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>` and :symbol:`mongoc_gridfs_file_list_t <mongoc_gridfs_file_list_t>`.
+It is an error to free a ``mongoc_gridfs_t`` before freeing all related instances of :symbol:`mongoc_gridfs_file_t` and :symbol:`mongoc_gridfs_file_list_t`.
 
 Example
 -------

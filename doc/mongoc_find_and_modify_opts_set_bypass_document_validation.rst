@@ -17,7 +17,7 @@ This option is only available when talking to MongoDB 3.2 and later.
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 * ``bypass``: If the schema validation rules should be ignored.
 
 Description

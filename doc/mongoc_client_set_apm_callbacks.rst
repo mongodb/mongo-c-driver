@@ -18,8 +18,8 @@ Register a set of callbacks to receive Application Performance Monitoring events
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
-* ``callbacks``: Optional :symbol:`mongoc_apm_callbacks_t <mongoc_apm_callbacks_t>`. Pass NULL to clear all callbacks.
+* ``client``: A :symbol:`mongoc_client_t`.
+* ``callbacks``: Optional :symbol:`mongoc_apm_callbacks_t`. Pass NULL to clear all callbacks.
 * ``context``: Optional pointer to include with each event notification.
 
 Returns

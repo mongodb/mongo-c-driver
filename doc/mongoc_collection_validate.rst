@@ -17,9 +17,9 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``options``: A :symbol:`bson_t <bson:bson_t>`.
-* ``reply``: An optional location for a :symbol:`bson_t <bson:bson_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``options``: A :symbol:`bson:bson_t`.
+* ``reply``: An optional location for a :symbol:`bson:bson_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
@@ -41,5 +41,5 @@ Returns
 
 true if successful, otherwise false and error is set.
 
-``reply`` is always initialized if it's not ``NULL`` and must be destroyed with :symbol:`bson_destroy() <bson:bson_destroy>`.
+``reply`` is always initialized if it's not ``NULL`` and must be destroyed with :symbol:`bson:bson_destroy()`.
 

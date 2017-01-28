@@ -19,13 +19,13 @@ Beginning in version 1.2.0, once a client has any SSL options set, all connectio
 
 The ``mongoc_ssl_opt_t`` struct is copied by the client along with the strings it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and ``crl_file``) so they don't have to remain valid after the call to ``mongoc_client_set_ssl_opts``.
 
-It is a programming error to call this function on a client from a :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`. Instead, call :symbol:`mongoc_client_pool_set_ssl_opts <mongoc_client_pool_set_ssl_opts>` on the pool before popping any clients.
+It is a programming error to call this function on a client from a :symbol:`mongoc_client_pool_t`. Instead, call :symbol:`mongoc_client_pool_set_ssl_opts` on the pool before popping any clients.
 
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
-* ``opts``: A :symbol:`mongoc_ssl_opt_t <mongoc_ssl_opt_t>`. The struct is copied by the client, but the strings it points to are not.
+* ``client``: A :symbol:`mongoc_client_t`.
+* ``opts``: A :symbol:`mongoc_ssl_opt_t`. The struct is copied by the client, but the strings it points to are not.
 
 Availability
 ------------

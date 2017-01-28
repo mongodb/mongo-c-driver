@@ -19,11 +19,11 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``flags``: A :symbol:`mongoc_query_flags_t <mongoc_query_flags_t>`.
-* ``pipeline``: A :symbol:`bson_t <bson:bson_t>` containing the pipeline array.
-* ``opts``: A :symbol:`bson_t <bson:bson_t>` containing options for the command, or ``NULL``.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or ``NULL``.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``flags``: A :symbol:`mongoc_query_flags_t`.
+* ``pipeline``: A :symbol:`bson:bson_t` containing the pipeline array.
+* ``opts``: A :symbol:`bson:bson_t` containing options for the command, or ``NULL``.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL``.
 
 Description
 -----------
@@ -38,14 +38,14 @@ For more information on building MongoDB pipelines, see `MongoDB Aggregation Com
 
   The ``pipeline`` parameter should contain a field named ``pipeline`` containing a BSON array of pipeline stages.
 
-To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server <mongoc_client_select_server>`, then :symbol:`mongoc_server_description_id <mongoc_server_description_id>` on its return value.
+To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 
-The :symbol:`mongoc_read_concern_t <mongoc_read_concern_t>` and the :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` specified on the :symbol:`mongoc_collection_t <mongoc_collection_t>` will be used, if any.
+The :symbol:`mongoc_read_concern_t` and the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
 Returns
 -------
 
-This function returns a newly allocated :symbol:`mongoc_cursor_t <mongoc_cursor_t>` that should be freed with :symbol:`mongoc_cursor_destroy() <mongoc_cursor_destroy>` when no longer in use. The returned :symbol:`mongoc_cursor_t <mongoc_cursor_t>` is never ``NULL``; if the parameters are invalid, the :symbol:`bson_error_t <bson:bson_error_t>` in the :symbol:`mongoc_cursor_t <mongoc_cursor_t>` is filled out, and the :symbol:`mongoc_cursor_t <mongoc_cursor_t>` is returned before the server is selected.
+This function returns a newly allocated :symbol:`mongoc_cursor_t` that should be freed with :symbol:`mongoc_cursor_destroy()` when no longer in use. The returned :symbol:`mongoc_cursor_t` is never ``NULL``; if the parameters are invalid, the :symbol:`bson:bson_error_t` in the :symbol:`mongoc_cursor_t` is filled out, and the :symbol:`mongoc_cursor_t` is returned before the server is selected.
 
 .. warning::
 
@@ -94,7 +94,7 @@ Example
 Other Parameters
 ----------------
 
-When using ``$out``, the pipeline stage that writes, the write_concern field of the :symbol:`mongoc_cursor_t <mongoc_cursor_t>` will be set to the :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` parameter, if it is valid, and applied to the write command when :symbol:`mongoc_cursor_next() <mongoc_cursor_next>` is called. Pass any other parameters to the ``aggregate`` command, besides ``pipeline``, as fields in ``opts``:
+When using ``$out``, the pipeline stage that writes, the write_concern field of the :symbol:`mongoc_cursor_t` will be set to the :symbol:`mongoc_write_concern_t` parameter, if it is valid, and applied to the write command when :symbol:`mongoc_cursor_next()` is called. Pass any other parameters to the ``aggregate`` command, besides ``pipeline``, as fields in ``opts``:
 
 .. code-block:: c
 

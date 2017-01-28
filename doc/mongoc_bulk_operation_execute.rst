@@ -13,19 +13,19 @@ Synopsis
                                  bson_t *reply,
                                  bson_error_t *error);
 
-This function executes all operations queued into the bulk operation. If ``ordered`` was specified to :symbol:`mongoc_collection_create_bulk_operation() <mongoc_collection_create_bulk_operation>`, then forward progress will be stopped upon the first error.
+This function executes all operations queued into the bulk operation. If ``ordered`` was specified to :symbol:`mongoc_collection_create_bulk_operation()`, then forward progress will be stopped upon the first error.
 
-It is only valid to call :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>` once. The ``mongoc_bulk_operation_t`` must be destroyed afterwards.
+It is only valid to call :symbol:`mongoc_bulk_operation_execute()` once. The ``mongoc_bulk_operation_t`` must be destroyed afterwards.
 
 .. warning::
 
-  ``reply`` is always initialized, even upon failure. Callers *must* call :symbol:`bson_destroy() <bson:bson_destroy>` to release this potential allocation.
+  ``reply`` is always initialized, even upon failure. Callers *must* call :symbol:`bson:bson_destroy()` to release this potential allocation.
 
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
-* ``reply``: An uninitialized :symbol:`bson_t <bson:bson_t>`.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
+* ``reply``: An uninitialized :symbol:`bson:bson_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 See Also
@@ -47,5 +47,5 @@ A write concern timeout or write concern error is considered a failure.
 
 The ``reply`` document counts operations and collects error information. See :doc:`Bulk Write Operations <bulk>` for examples.
 
-See also :symbol:`mongoc_bulk_operation_get_hint <mongoc_bulk_operation_get_hint>`, which gets the id of the server used even if the operation failed.
+See also :symbol:`mongoc_bulk_operation_get_hint`, which gets the id of the server used even if the operation failed.
 

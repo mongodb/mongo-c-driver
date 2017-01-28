@@ -14,5 +14,5 @@ Synopsis
 Returns
 -------
 
-Creates a newly allocated find and modify builder structure that is used to create a findAndModify command. This should be freed with :symbol:`mongoc_find_and_modify_opts_destroy() <mongoc_find_and_modify_opts_destroy>` when no longer in use.
+Creates a newly allocated find and modify builder structure that is used to create a findAndModify command. This should be freed with :symbol:`mongoc_find_and_modify_opts_destroy()` when no longer in use.
 

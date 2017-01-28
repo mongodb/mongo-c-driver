@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 * ``option``: The name of an option, case insensitive.
 * ``value``: The new value.
 
@@ -27,7 +27,7 @@ Sets an individual URI option, after the URI has been parsed from a string.
 
 Only known options of type int32 can be set.
 
-Updates the option in-place if already set, otherwise appends it to the URI's :symbol:`bson_t <bson:bson_t>` of options.
+Updates the option in-place if already set, otherwise appends it to the URI's :symbol:`bson:bson_t` of options.
 
 Returns
 -------

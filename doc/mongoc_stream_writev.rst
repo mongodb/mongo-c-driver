@@ -17,13 +17,13 @@ Synopsis
 Parameters
 ----------
 
-* ``stream``: A :symbol:`mongoc_stream_t <mongoc_stream_t>`.
-* ``iov``: A vector of :symbol:`mongoc_iovec_t <mongoc_iovec_t>`.
+* ``stream``: A :symbol:`mongoc_stream_t`.
+* ``iov``: A vector of :symbol:`mongoc_iovec_t`.
 * ``iovcnt``: The number of items in ``iov``.
 * ``timeout_msec``: The number of milliseconds to block before indicating failure, or 0 for non-blocking. Negative values indicate the default timeout.
 
 The ``mongoc_stream_writev()`` function shall perform a write
-to a :symbol:`mongoc_stream_t <mongoc_stream_t>`. It's modeled on the
+to a :symbol:`mongoc_stream_t`. It's modeled on the
 API and semantics of ``writev()``, though the parameters map only
 loosely.
 

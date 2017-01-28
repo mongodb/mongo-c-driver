@@ -19,8 +19,8 @@ This function uses the driver's current knowledge of the state of the MongoDB se
 Parameters
 ----------
 
-* ``td``: A :symbol:`mongoc_topology_description_t <mongoc_topology_description_t>`.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or ``NULL`` for default read preferences.
+* ``td``: A :symbol:`mongoc_topology_description_t`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL`` for default read preferences.
 
 Returns
 -------

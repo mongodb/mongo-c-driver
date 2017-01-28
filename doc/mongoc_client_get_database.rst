@@ -11,7 +11,7 @@ Synopsis
   mongoc_database_t *
   mongoc_client_get_database (mongoc_client_t *client, const char *name);
 
-Get a newly allocated :symbol:`mongoc_database_t <mongoc_database_t>` for the database named ``name``.
+Get a newly allocated :symbol:`mongoc_database_t` for the database named ``name``.
 
 .. tip::
 
@@ -20,11 +20,11 @@ Get a newly allocated :symbol:`mongoc_database_t <mongoc_database_t>` for the da
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``name``: The name of the database.
 
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_database_t <mongoc_client_t>` that should be freed with :symbol:`mongoc_database_destroy() <mongoc_database_destroy>` when no longer in use.
+A newly allocated :symbol:`mongoc_database_t <mongoc_client_t>` that should be freed with :symbol:`mongoc_database_destroy()` when no longer in use.
 

@@ -12,7 +12,7 @@ Synopsis
   mongoc_client_get_server_descriptions (const mongoc_client_t *client,
                                          size_t *n);
 
-Fetches an array of :symbol:`mongoc_server_description_t <mongoc_server_description_t>` structs for all known servers in the topology. Returns no servers until the client connects. Returns a single server if the client is directly connected, or all members of a replica set if the client's MongoDB URI includes a "replicaSet" option, or all known mongos servers if the MongoDB URI includes a list of them.
+Fetches an array of :symbol:`mongoc_server_description_t` structs for all known servers in the topology. Returns no servers until the client connects. Returns a single server if the client is directly connected, or all members of a replica set if the client's MongoDB URI includes a "replicaSet" option, or all known mongos servers if the MongoDB URI includes a list of them.
 
 .. code-block:: c
 
@@ -45,11 +45,11 @@ Fetches an array of :symbol:`mongoc_server_description_t <mongoc_server_descript
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``n``: Receives the length of the descriptions array.
 
 Returns
 -------
 
-A newly allocated array that must be freed with :symbol:`mongoc_server_descriptions_destroy_all <mongoc_server_descriptions_destroy_all>`.
+A newly allocated array that must be freed with :symbol:`mongoc_server_descriptions_destroy_all`.
 

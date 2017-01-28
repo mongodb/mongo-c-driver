@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
 * ``database``: The new database name.
 
 Description
@@ -22,7 +22,7 @@ Description
 
 Sets the URI's database, after the URI has been parsed from a string.
 
-The driver authenticates to this database if the connection string includes authentication credentials. This database is also the return value of :symbol:`mongoc_client_get_default_database <mongoc_client_get_default_database>`.
+The driver authenticates to this database if the connection string includes authentication credentials. This database is also the return value of :symbol:`mongoc_client_get_default_database`.
 
 Returns
 -------

@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
 * ``limit``: The maximum number of documents to retrieve for this query.
 
 Description
@@ -22,9 +22,9 @@ Description
 
 Limits the number of documents in the result set.
 
-This function is useful for setting the limit on a cursor after the cursor is created, but before any calls to :symbol:`mongoc_cursor_next <mongoc_cursor_next>`. It can also be used to pass a negative limit: The ``limit`` parameter to ``mongoc_cursor_set_limit`` is signed, although for backward-compatibility reasons the ``limit`` parameter to :symbol:`mongoc_collection_find <mongoc_collection_find>` is not.
+This function is useful for setting the limit on a cursor after the cursor is created, but before any calls to :symbol:`mongoc_cursor_next`. It can also be used to pass a negative limit: The ``limit`` parameter to ``mongoc_cursor_set_limit`` is signed, although for backward-compatibility reasons the ``limit`` parameter to :symbol:`mongoc_collection_find` is not.
 
-Calling this function after :symbol:`mongoc_cursor_next <mongoc_cursor_next>` has no effect.
+Calling this function after :symbol:`mongoc_cursor_next` has no effect.
 
 Returns
 -------

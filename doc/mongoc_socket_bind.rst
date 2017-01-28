@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
+* ``sock``: A :symbol:`mongoc_socket_t`.
 * ``addr``: A struct sockaddr.
 * ``addrlen``: A mongoc_socklen_t.
 

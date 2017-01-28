@@ -14,14 +14,14 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
 
 Description
 -----------
 
-This function shall destroy a :symbol:`mongoc_collection_t <mongoc_collection_t>` and its associated resources.
+This function shall destroy a :symbol:`mongoc_collection_t` and its associated resources.
 
 .. warning::
 
-  Always destroy a :symbol:`mongoc_cursor_t <mongoc_cursor_t>` created from a collection before destroying the collection.
+  Always destroy a :symbol:`mongoc_cursor_t` created from a collection before destroying the collection.
 

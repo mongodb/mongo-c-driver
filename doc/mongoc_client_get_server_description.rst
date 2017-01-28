@@ -17,11 +17,11 @@ Get information about the server specified by ``server_id``.
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``server_id``: An opaque id specifying the server.
 
 Returns
 -------
 
-A :symbol:`mongoc_server_description_t <mongoc_server_description_t>` that must be freed with :symbol:`mongoc_server_description_destroy <mongoc_server_description_destroy>`. If the server is no longer in the topology, returns NULL.
+A :symbol:`mongoc_server_description_t` that must be freed with :symbol:`mongoc_server_description_destroy`. If the server is no longer in the topology, returns NULL.
 

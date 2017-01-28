@@ -56,7 +56,7 @@ Connection Options
 ------------------
 
 ================  =========================================================================================================================================================================================================================
-ssl               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts <mongoc_client_set_ssl_opts>` and :symbol:`mongoc_client_pool_set_ssl_opts <mongoc_client_pool_set_ssl_opts>`.)
+ssl               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
 connectTimeoutMS  A timeout in milliseconds to attempt a connection before timing out. This setting applies to server discovery and monitoring connections as well as to connections for application operations. The default is 10 seconds.
 socketTimeoutMS   The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.
 ================  =========================================================================================================================================================================================================================
@@ -66,7 +66,7 @@ Setting any of the \*TimeoutMS options above to ``0`` will be interpreted as "us
 Server Discovery, Monitoring, and Selection Options
 ---------------------------------------------------
 
-Clients in a :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>` share a topology scanner that runs on a background thread. The thread wakes every ``heartbeatFrequencyMS`` (default 10 seconds) to scan all MongoDB servers in parallel. Whenever an application operation requires a server that is not known--for example, if there is no known primary and your application attempts an insert--the thread rescans all servers every half-second. In this situation the pooled client waits up to ``serverSelectionTimeoutMS`` (default 30 seconds) for the thread to find a server suitable for the operation, then returns an error with domain ``MONGOC_ERROR_SERVER_SELECTION``.
+Clients in a :symbol:`mongoc_client_pool_t` share a topology scanner that runs on a background thread. The thread wakes every ``heartbeatFrequencyMS`` (default 10 seconds) to scan all MongoDB servers in parallel. Whenever an application operation requires a server that is not known--for example, if there is no known primary and your application attempts an insert--the thread rescans all servers every half-second. In this situation the pooled client waits up to ``serverSelectionTimeoutMS`` (default 30 seconds) for the thread to find a server suitable for the operation, then returns an error with domain ``MONGOC_ERROR_SERVER_SELECTION``.
 
 Technically, the total time an operation may wait while a pooled client scans the topology is controlled both by ``serverSelectionTimeoutMS`` and ``connectTimeoutMS``. The longest wait occurs if the last scan begins just at the end of the selection timeout, and a slow or down server requires the full connection timeout before the client gives up.
 
@@ -93,11 +93,11 @@ Setting any of the \*TimeoutMS options above to ``0`` will be interpreted as "us
 Connection Pool Options
 -----------------------
 
-These options govern the behavior of a :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`. They are ignored by a non-pooled :symbol:`mongoc_client_t <mongoc_client_t>`.
+These options govern the behavior of a :symbol:`mongoc_client_pool_t`. They are ignored by a non-pooled :symbol:`mongoc_client_t`.
 
 ==================  ===============================================================================================================================================================================================================================================================================================
-maxPoolSize         The maximum number of clients created by a :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop <mongoc_client_pool_pop>` blocks until another thread pushes a client.
-minPoolSize         The number of clients to keep in the pool; once it is reached, :symbol:`mongoc_client_pool_push <mongoc_client_pool_push>` destroys clients instead of pushing them. The default value, 0, means "no minimum": a client pushed into the pool is always stored, not destroyed.                  
+maxPoolSize         The maximum number of clients created by a :symbol:`mongoc_client_pool_t` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop` blocks until another thread pushes a client.
+minPoolSize         The number of clients to keep in the pool; once it is reached, :symbol:`mongoc_client_pool_push` destroys clients instead of pushing them. The default value, 0, means "no minimum": a client pushed into the pool is always stored, not destroyed.                  
 maxIdleTimeMS       Not implemented.                                                                                                                                                                                                                                                                               
 waitQueueMultiple   Not implemented.                                                                                                                                                                                                                                                                               
 waitQueueTimeoutMS  Not implemented.                                                                                                                                                                                                                                                                               

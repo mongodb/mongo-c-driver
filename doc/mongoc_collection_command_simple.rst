@@ -18,16 +18,16 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``command``: A :symbol:`bson_t <bson:bson_t>` containing the command to execute.
-* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
-* ``reply``: A location to initialize a :symbol:`bson_t <bson:bson_t>`. This should be on the stack.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``command``: A :symbol:`bson:bson_t` containing the command to execute.
+* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
+* ``reply``: A location to initialize a :symbol:`bson:bson_t`. This should be on the stack.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
 -----------
 
-This is a simplified version of :symbol:`mongoc_collection_command() <mongoc_collection_command>` that returns the first result document in ``reply``. The collection's read preference, read concern, and write concern are not applied to the command. The parameter ``reply`` is initialized even upon failure to simplify memory management.
+This is a simplified version of :symbol:`mongoc_collection_command()` that returns the first result document in ``reply``. The collection's read preference, read concern, and write concern are not applied to the command. The parameter ``reply`` is initialized even upon failure to simplify memory management.
 
 This function tries to unwrap an embedded error in the command when possible. The unwrapped error will be propagated via the ``error`` parameter. Additionally, the result document is set in ``reply``.
 

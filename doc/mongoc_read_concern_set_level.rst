@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``read_concern``: A :symbol:`mongoc_read_concern_t <mongoc_read_concern_t>`.
+* ``read_concern``: A :symbol:`mongoc_read_concern_t`.
 * ``level``: The readConcern level to use. Should be one of the :ref:`MONGOC_READ_CONCERN_LEVEL <mongoc_read_concern_levels>` macros.
 
 Description

@@ -16,7 +16,7 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
 * ``index_name``: A string containing the name of the index.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches any read preference tags that have been registered.
 Returns
 -------
 
-Returns a :symbol:`bson_t <bson:bson_t>` that should not be modified or freed.
+Returns a :symbol:`bson:bson_t` that should not be modified or freed.
 

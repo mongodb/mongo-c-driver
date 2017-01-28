@@ -18,7 +18,7 @@ Synopsis
 Parameters
 ----------
 
-* ``stream``: A :symbol:`mongoc_stream_t <mongoc_stream_t>`.
+* ``stream``: A :symbol:`mongoc_stream_t`.
 * ``level``: The level to pass to ``setsockopt()``.
 * ``optname``: The optname to pass to ``setsockopt()``.
 * ``optval``: The optval to pass to ``setsockopt()``.

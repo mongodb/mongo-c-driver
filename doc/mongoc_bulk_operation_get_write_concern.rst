@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``bulk``: A :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`.
+* ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches the write concern to be used for ``bulk``.
 Returns
 -------
 
-A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` that should not be modified or freed.
+A :symbol:`mongoc_write_concern_t` that should not be modified or freed.
 

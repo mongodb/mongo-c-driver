@@ -8,7 +8,7 @@ Topology-closed event
 Synopsis
 --------
 
-An event notification sent when the driver stops monitoring a server topology and destroys its :symbol:`mongoc_topology_description_t <mongoc_topology_description_t>`.
+An event notification sent when the driver stops monitoring a server topology and destroys its :symbol:`mongoc_topology_description_t`.
 
 See Also
 --------

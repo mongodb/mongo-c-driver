@@ -19,11 +19,11 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``keys``: A :symbol:`bson_t <bson:bson_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``keys``: A :symbol:`bson:bson_t`.
 * ``index_opts``: A mongoc_index_opt_t.
-* ``command_opts``: A :symbol:`bson_t <bson:bson_t>` with extra options, such as writeConcern or collation, or ``NULL``.
-* ``reply``: An optional location for a :symbol:`bson_t <bson:bson_t>` which will store the server's reply.
+* ``command_opts``: A :symbol:`bson:bson_t` with extra options, such as writeConcern or collation, or ``NULL``.
+* ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
@@ -37,7 +37,7 @@ The server's reply is stored in ``reply``.
 
 If no write concern is provided in ``command_opts``, the collection's write concern is used.
 
-See :symbol:`mongoc_index_opt_t <mongoc_index_opt_t>` for options on creating indexes.
+See :symbol:`mongoc_index_opt_t` for options on creating indexes.
 
 Errors
 ------
@@ -49,5 +49,5 @@ Returns
 
 ``true`` on success, otherwise ``false`` and ``error`` is set.
 
-``reply`` is always initialized and must be destroyed with :symbol:`bson_destroy() <bson:bson_destroy>`. If the server is running an obsolete version of MongoDB then ``reply`` may be empty, though it will still be initialized.
+``reply`` is always initialized and must be destroyed with :symbol:`bson:bson_destroy()`. If the server is running an obsolete version of MongoDB then ``reply`` may be empty, though it will still be initialized.
 

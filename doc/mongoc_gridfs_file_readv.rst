@@ -18,8 +18,8 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
-* ``iov``: An array of :symbol:`mongoc_iovec_t <mongoc_iovec_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
+* ``iov``: An array of :symbol:`mongoc_iovec_t`.
 * ``iovcnt``: The number of elements in ``iov``.
 * ``min_bytes``: The minimum number of bytes that must be read or an error will be synthesized.
 * ``timeout_msec``: Unused.
@@ -34,5 +34,5 @@ The ``timeout_msec`` parameter is unused.
 Returns
 -------
 
-Returns the number of bytes read, or -1 on failure. Use :symbol:`mongoc_gridfs_file_error <mongoc_gridfs_file_error>` to retrieve error details.
+Returns the number of bytes read, or -1 on failure. Use :symbol:`mongoc_gridfs_file_error` to retrieve error details.
 

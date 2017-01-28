@@ -18,7 +18,7 @@ Synopsis
 Parameters
 ----------
 
-* ``sock``: A :symbol:`mongoc_socket_t <mongoc_socket_t>`.
+* ``sock``: A :symbol:`mongoc_socket_t`.
 * ``level``: A sockopt level.
 * ``optname``: A sockopt name.
 * ``optval``: A the value for the sockopt.

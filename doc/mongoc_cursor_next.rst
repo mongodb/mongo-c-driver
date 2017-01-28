@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``cursor``: A :symbol:`mongoc_cursor_t <mongoc_cursor_t>`.
+* ``cursor``: A :symbol:`mongoc_cursor_t`.
 * ``bson``: A location for a :symbol:`const bson_t * <bson:bson_t>`.
 
 Description
@@ -29,10 +29,10 @@ Returns
 
 This function returns true if a valid bson document was read from the cursor. Otherwise, false if there was an error or the cursor was exhausted.
 
-Errors can be determined with the :symbol:`mongoc_cursor_error() <mongoc_cursor_error>` function.
+Errors can be determined with the :symbol:`mongoc_cursor_error()` function.
 
 Lifecycle
 ---------
 
-The bson objects set in this function are ephemeral and good until the next call. This means that you must copy the returned bson if you wish to retain it beyond the lifetime of a single call to :symbol:`mongoc_cursor_next() <mongoc_cursor_next>`.
+The bson objects set in this function are ephemeral and good until the next call. This means that you must copy the returned bson if you wish to retain it beyond the lifetime of a single call to :symbol:`mongoc_cursor_next()`.
 

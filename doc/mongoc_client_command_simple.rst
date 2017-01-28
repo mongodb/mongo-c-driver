@@ -16,19 +16,19 @@ Synopsis
                                 bson_t *reply,
                                 bson_error_t *error);
 
-This is a simplified interface to :symbol:`mongoc_client_command() <mongoc_client_command>`. It returns the first document from the result cursor into ``reply``. The client's read preference, read concern, and write concern are not applied to the command.
+This is a simplified interface to :symbol:`mongoc_client_command()`. It returns the first document from the result cursor into ``reply``. The client's read preference, read concern, and write concern are not applied to the command.
 
 .. warning::
 
-  ``reply`` is always set, and should be released with :symbol:`bson_destroy() <bson:bson_destroy>`.
+  ``reply`` is always set, and should be released with :symbol:`bson:bson_destroy()`.
 
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``db_name``: The name of the database to run the command on.
-* ``command``: A :symbol:`bson_t <bson:bson_t>` containing the command specification.
-* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
+* ``command``: A :symbol:`bson:bson_t` containing the command specification.
+* ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
 * ``reply``: A location for the resulting document.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

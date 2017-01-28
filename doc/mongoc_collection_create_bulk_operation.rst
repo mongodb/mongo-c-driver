@@ -17,16 +17,16 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
 * ``ordered``: If the operations must be performed in order.
-* ``write_concern``: An optional :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>` or ``NULL``.
+* ``write_concern``: An optional :symbol:`mongoc_write_concern_t` or ``NULL``.
 
 Description
 -----------
 
-This function shall begin a new bulk operation. After creating this you may call various functions such as :symbol:`mongoc_bulk_operation_update() <mongoc_bulk_operation_update>`, :symbol:`mongoc_bulk_operation_insert() <mongoc_bulk_operation_insert>` and others.
+This function shall begin a new bulk operation. After creating this you may call various functions such as :symbol:`mongoc_bulk_operation_update()`, :symbol:`mongoc_bulk_operation_insert()` and others.
 
-After calling :symbol:`mongoc_bulk_operation_execute() <mongoc_bulk_operation_execute>` the commands will be executed in as large as batches as reasonable by the client.
+After calling :symbol:`mongoc_bulk_operation_execute()` the commands will be executed in as large as batches as reasonable by the client.
 
 If ``ordered`` is true, then processing will stop at the first error.
 
@@ -39,7 +39,7 @@ See Also
 
 :symbol:`Bulk Write Operations <bulk>`
 
-:symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>`
+:symbol:`mongoc_bulk_operation_t`
 
 Errors
 ------
@@ -49,7 +49,7 @@ Errors are propagated when executing the bulk operation.
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_bulk_operation_t <mongoc_bulk_operation_t>` that should be freed with :symbol:`mongoc_bulk_operation_destroy() <mongoc_bulk_operation_destroy>` when no longer in use.
+A newly allocated :symbol:`mongoc_bulk_operation_t` that should be freed with :symbol:`mongoc_bulk_operation_destroy()` when no longer in use.
 
 .. warning::
 

@@ -8,7 +8,7 @@ The MongoDB C Driver allows you to monitor all the MongoDB operations the driver
 * `Command Monitoring <https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst>`_: events related to all application operations.
 * `SDAM Monitoring <https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst>`_: events related to the driver's Server Discovery And Monitoring logic.
 
-To receive notifications, create a ``mongoc_apm_callbacks_t`` with :symbol:`mongoc_apm_callbacks_new <mongoc_apm_callbacks_new>`, set callbacks on it, then pass it to :symbol:`mongoc_client_set_apm_callbacks <mongoc_client_set_apm_callbacks>` or :symbol:`mongoc_client_pool_set_apm_callbacks <mongoc_client_pool_set_apm_callbacks>`.
+To receive notifications, create a ``mongoc_apm_callbacks_t`` with :symbol:`mongoc_apm_callbacks_new`, set callbacks on it, then pass it to :symbol:`mongoc_client_set_apm_callbacks` or :symbol:`mongoc_client_pool_set_apm_callbacks`.
 
 Command-Monitoring Example
 --------------------------

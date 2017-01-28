@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``stream``: A :symbol:`mongoc_stream_t <mongoc_stream_t>`.
+* ``stream``: A :symbol:`mongoc_stream_t`.
 
 This function shall close underlying file-descriptors of ``stream``.
 

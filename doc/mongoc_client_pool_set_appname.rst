@@ -11,14 +11,14 @@ Synopsis
   bool
   mongoc_client_pool_set_appname (mongoc_client_pool_t *pool, const char *appname)
 
-This function is identical to :symbol:`mongoc_client_set_appname() <mongoc_client_set_appname>` except for client pools.
+This function is identical to :symbol:`mongoc_client_set_appname()` except for client pools.
 
-Also note that :symbol:`mongoc_client_set_appname() <mongoc_client_set_appname>` cannot be called on a client retrieved from a client pool.
+Also note that :symbol:`mongoc_client_set_appname()` cannot be called on a client retrieved from a client pool.
 
 Parameters
 ----------
 
-* ``pool``: A :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
+* ``pool``: A :symbol:`mongoc_client_pool_t`.
 * ``appname``: The application name, of length at most ``MONGOC_HANDSHAKE_APPNAME_MAX``.
 
 Returns

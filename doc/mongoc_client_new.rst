@@ -11,7 +11,7 @@ Synopsis
   mongoc_client_t *
   mongoc_client_new (const char *uri_string);
 
-Creates a new :symbol:`mongoc_client_t <mongoc_client_t>` using the URI string provided.
+Creates a new :symbol:`mongoc_client_t` using the URI string provided.
 
 Parameters
 ----------
@@ -21,10 +21,10 @@ Parameters
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_client_t <mongoc_client_t>` if the URI parsed successfully, otherwise ``NULL``.
+A newly allocated :symbol:`mongoc_client_t` if the URI parsed successfully, otherwise ``NULL``.
 
 See Also
 --------
 
-:symbol:`mongoc_client_new_from_uri() <mongoc_client_new_from_uri>`
+:symbol:`mongoc_client_new_from_uri()`
 

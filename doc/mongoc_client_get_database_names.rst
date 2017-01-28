@@ -16,7 +16,7 @@ This function queries the MongoDB server for a list of known databases.
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Errors
@@ -27,7 +27,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A ``NULL`` terminated vector of ``NULL-byte`` terminated strings. The result should be freed with :symbol:`bson_strfreev() <bson:bson_strfreev>`.
+A ``NULL`` terminated vector of ``NULL-byte`` terminated strings. The result should be freed with :symbol:`bson:bson_strfreev()`.
 
 ``NULL`` is returned upon failure and ``error`` is set.
 

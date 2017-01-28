@@ -22,11 +22,11 @@ Synopsis
 Description
 -----------
 
-This structure is used to set the SSL options for a :symbol:`mongoc_client_t <mongoc_client_t>` or :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
+This structure is used to set the SSL options for a :symbol:`mongoc_client_t` or :symbol:`mongoc_client_pool_t`.
 
 Beginning in version 1.2.0, once a pool or client has any SSL options set, all connections use SSL, even if ``ssl=true`` is omitted from the MongoDB URI. Before, SSL options were ignored unless ``ssl=true`` was included in the URI.
 
-As of 1.4.0, the :symbol:`mongoc_client_pool_set_ssl_opts <mongoc_client_pool_set_ssl_opts>` and :symbol:`mongoc_client_set_ssl_opts <mongoc_client_set_ssl_opts>` will not only shallow copy the struct, but will also copy the ``const char*``. It is therefore no longer needed to make sure the values remain valid after setting them.
+As of 1.4.0, the :symbol:`mongoc_client_pool_set_ssl_opts` and :symbol:`mongoc_client_set_ssl_opts` will not only shallow copy the struct, but will also copy the ``const char*``. It is therefore no longer needed to make sure the values remain valid after setting them.
 
 Client Authentication
 ---------------------

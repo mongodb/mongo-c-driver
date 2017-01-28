@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t <mongoc_find_and_modify_opts_t>`.
+* ``opts``: A :symbol:`mongoc_find_and_modify_opts_t`.
 * ``fields``: A subset of fields to return. Choose which fields to include by appending ``{fieldname: 1}`` for each fieldname, or excluding it with ``{fieldname: 0}``.
 
 Description

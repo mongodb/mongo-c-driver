@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
 * ``delta``: The amount to move the file position. May be positive or negative.
 * ``whence``: One of SEEK_SET, SEEK_CUR or SEEK_END.
 

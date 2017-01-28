@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
 * ``max_staleness_seconds``: A positive integer or ``MONGOC_NO_MAX_STALENESS``.
 
 Description

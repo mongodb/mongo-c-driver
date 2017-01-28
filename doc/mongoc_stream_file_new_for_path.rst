@@ -18,12 +18,12 @@ Parameters
 * ``flags``: Flags to be passed to ``open()``.
 * ``mode``: An optional mode to be passed to ``open()`` when creating a file.
 
-This function shall create a new :symbol:`mongoc_stream_file_t <mongoc_stream_file_t>` after opening the underlying file with ``open()`` or the platform equivalent.
+This function shall create a new :symbol:`mongoc_stream_file_t` after opening the underlying file with ``open()`` or the platform equivalent.
 
 Returns
 -------
 
-``NULL`` on failure, otherwise a newly allocated :symbol:`mongoc_stream_file_t <mongoc_stream_file_t>` that should be freed with :symbol:`mongoc_stream_destroy() <mongoc_stream_destroy>` when no longer in use.
+``NULL`` on failure, otherwise a newly allocated :symbol:`mongoc_stream_file_t` that should be freed with :symbol:`mongoc_stream_destroy()` when no longer in use.
 
 ``errno`` is set upon failure.
 

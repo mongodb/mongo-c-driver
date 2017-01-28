@@ -22,13 +22,13 @@ Deprecated
 
   This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_create_index() <mongoc_collection_create_index>` instead.
+Please use :symbol:`mongoc_collection_create_index()` instead.
 
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``keys``: A :symbol:`bson_t <bson:bson_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``keys``: A :symbol:`bson:bson_t`.
 * ``opt``: A mongoc_index_opt_t.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

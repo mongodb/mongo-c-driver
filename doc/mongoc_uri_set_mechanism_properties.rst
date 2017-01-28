@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
-* ``properties``: A :symbol:`bson_t <bson:bson_t>` .
+* ``uri``: A :symbol:`mongoc_uri_t`.
+* ``properties``: A :symbol:`bson:bson_t` .
 
 Description
 -----------
@@ -51,5 +51,5 @@ Example
 See Also
 --------
 
-:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_get_mechanism_properties <mongoc_uri_get_mechanism_properties>`
+:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_get_mechanism_properties`
 

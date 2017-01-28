@@ -15,7 +15,7 @@ Synopsis
 Parameters
 ----------
 
-* ``write_concern``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``write_concern``: A :symbol:`mongoc_write_concern_t`.
 * ``journal``: A boolean.
 
 Description

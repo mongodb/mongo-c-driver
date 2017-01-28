@@ -17,7 +17,7 @@ Determines if the topology has a writable server available, such as a primary, m
 Parameters
 ----------
 
-* ``td``: A :symbol:`mongoc_topology_description_t <mongoc_topology_description_t>`.
+* ``td``: A :symbol:`mongoc_topology_description_t`.
 
 Returns
 -------

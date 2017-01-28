@@ -17,8 +17,8 @@ Synopsis
 Parameters
 ----------
 
-* ``file``: A :symbol:`mongoc_gridfs_file_t <mongoc_gridfs_file_t>`.
-* ``iov``: An array of :symbol:`mongoc_iovec_t <mongoc_iovec_t>`.
+* ``file``: A :symbol:`mongoc_gridfs_file_t`.
+* ``iov``: An array of :symbol:`mongoc_iovec_t`.
 * ``iovcnt``: The number of elements in ``iov``.
 * ``timeout_msec``: Unused.
 

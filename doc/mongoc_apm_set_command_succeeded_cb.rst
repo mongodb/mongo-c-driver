@@ -20,8 +20,8 @@ Receive an event notification whenever the driver completes a MongoDB operation.
 Parameters
 ----------
 
-* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t <mongoc_apm_callbacks_t>`.
-* ``cb``: A function to call with a :symbol:`mongoc_apm_command_succeeded_t <mongoc_apm_command_succeeded_t>` whenever the driver completes a MongoDB operation.
+* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
+* ``cb``: A function to call with a :symbol:`mongoc_apm_command_succeeded_t` whenever the driver completes a MongoDB operation.
 
 See Also
 --------

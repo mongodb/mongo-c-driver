@@ -14,12 +14,12 @@ Synopsis
 Parameters
 ----------
 
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>`.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t`.
 
 Description
 -----------
 
-Fetches the :symbol:`mongoc_read_mode_t <mongoc_read_mode_t>` for the read preference.
+Fetches the :symbol:`mongoc_read_mode_t` for the read preference.
 
 Returns
 -------

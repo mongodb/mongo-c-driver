@@ -18,8 +18,8 @@ Register a set of callbacks to receive Application Performance Monitoring events
 Parameters
 ----------
 
-* ``pool``: A :symbol:`mongoc_client_pool_t <mongoc_client_pool_t>`.
-* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t <mongoc_apm_callbacks_t>`.
+* ``pool``: A :symbol:`mongoc_client_pool_t`.
+* ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``context``: Optional pointer to include with each event notification.
 
 Returns

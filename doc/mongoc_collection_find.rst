@@ -8,7 +8,7 @@ Deprecated
 
 This function is deprecated and should not be used in new code.
 
-Use the more convenient :symbol:`mongoc_collection_find_with_opts <mongoc_collection_find_with_opts>` instead.
+Use the more convenient :symbol:`mongoc_collection_find_with_opts` instead.
 
 Synopsis
 --------
@@ -30,14 +30,14 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
-* ``flags``: A :symbol:`mongoc_query_flags_t <mongoc_query_flags_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``flags``: A :symbol:`mongoc_query_flags_t`.
 * ``skip``: A uint32_t of number of documents to skip or 0.
 * ``limit``: A uint32_t of max number of documents to return or 0.
 * ``batch_size``: A uint32_t containing batch size of document result sets or 0 for default. Default is 100.
-* ``query``: A :symbol:`bson_t <bson:bson_t>` containing the query and options to execute.
-* ``fields``: A :symbol:`bson_t <bson:bson_t>` containing fields to return or ``NULL``.
-* ``read_prefs``: A :symbol:`mongoc_read_prefs_t <mongoc_read_prefs_t>` or ``NULL`` for default read preferences.
+* ``query``: A :symbol:`bson:bson_t` containing the query and options to execute.
+* ``fields``: A :symbol:`bson:bson_t` containing fields to return or ``NULL``.
+* ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL`` for default read preferences.
 
 Description
 -----------
@@ -49,7 +49,7 @@ If no options are necessary, ``query`` can simply contain a query such as ``{a:1
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_cursor_t <mongoc_cursor_t>` that should be freed with :symbol:`mongoc_cursor_destroy() <mongoc_cursor_destroy>` when no longer in use.
+A newly allocated :symbol:`mongoc_cursor_t` that should be freed with :symbol:`mongoc_cursor_destroy()` when no longer in use.
 
 Example
 -------

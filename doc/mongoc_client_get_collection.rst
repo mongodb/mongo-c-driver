@@ -13,7 +13,7 @@ Synopsis
                                 const char *db,
                                 const char *collection);
 
-Get a newly allocated :symbol:`mongoc_collection_t <mongoc_collection_t>` for the collection named ``collection`` in the database named ``db``.
+Get a newly allocated :symbol:`mongoc_collection_t` for the collection named ``collection`` in the database named ``db``.
 
 .. tip::
 
@@ -22,12 +22,12 @@ Get a newly allocated :symbol:`mongoc_collection_t <mongoc_collection_t>` for th
 Parameters
 ----------
 
-* ``client``: A :symbol:`mongoc_client_t <mongoc_client_t>`.
+* ``client``: A :symbol:`mongoc_client_t`.
 * ``db``: The name of the database containing the collection.
 * ``collection``: The name of the collection.
 
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_collection_t <mongoc_collection_t>` that should be freed with :symbol:`mongoc_collection_destroy() <mongoc_collection_destroy>` when no longer in use.
+A newly allocated :symbol:`mongoc_collection_t` that should be freed with :symbol:`mongoc_collection_destroy()` when no longer in use.
 

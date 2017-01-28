@@ -17,12 +17,12 @@ Returns this event's previous description. The data is only valid in the scope o
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_server_changed_t <mongoc_apm_server_changed_t>`.
+* ``event``: A :symbol:`mongoc_apm_server_changed_t`.
 
 Returns
 -------
 
-A :symbol:`mongoc_server_description_t <mongoc_server_description_t>` that should not be modified or freed.
+A :symbol:`mongoc_server_description_t` that should not be modified or freed.
 
 See Also
 --------

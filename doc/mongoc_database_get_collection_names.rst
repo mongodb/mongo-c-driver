@@ -17,7 +17,7 @@ Fetches a ``NULL`` terminated array of ``NULL-byte`` terminated ``char*`` string
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
+* ``database``: A :symbol:`mongoc_database_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Errors
@@ -28,7 +28,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A ``NULL`` terminated array of ``NULL`` terminated ``char*`` strings that should be freed with :symbol:`bson_strfreev() <bson:bson_strfreev>`. Upon failure, ``NULL`` is returned and ``error`` is set.
+A ``NULL`` terminated array of ``NULL`` terminated ``char*`` strings that should be freed with :symbol:`bson:bson_strfreev()`. Upon failure, ``NULL`` is returned and ``error`` is set.
 
 Examples
 --------

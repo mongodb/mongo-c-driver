@@ -15,8 +15,8 @@ Synopsis
 Parameters
 ----------
 
-* ``uri``: A :symbol:`mongoc_uri_t <mongoc_uri_t>`.
-* ``rc``: A :symbol:`mongoc_write_concern_t <mongoc_write_concern_t>`.
+* ``uri``: A :symbol:`mongoc_uri_t`.
+* ``rc``: A :symbol:`mongoc_write_concern_t`.
 
 Description
 -----------

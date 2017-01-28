@@ -14,7 +14,7 @@ Synopsis
 Parameters
 ----------
 
-* ``collection``: A :symbol:`mongoc_collection_t <mongoc_collection_t>`.
+* ``collection``: A :symbol:`mongoc_collection_t`.
 
 Description
 -----------
@@ -24,5 +24,5 @@ Fetches the default read concern to be used on read operations originating from 
 Returns
 -------
 
-A :symbol:`mongoc_read_concern_t <mongoc_read_concern_t>` that should not be modified or freed.
+A :symbol:`mongoc_read_concern_t` that should not be modified or freed.
 

@@ -26,5 +26,5 @@ Creates a new ``mongoc_socket_t`` structure. This calls ``socket()`` underneath 
 Returns
 -------
 
-A new socket if successful, otherwise ``NULL`` and errno is set. The result should be freed with :symbol:`mongoc_socket_destroy() <mongoc_socket_destroy>` when no longer in use.
+A new socket if successful, otherwise ``NULL`` and errno is set. The result should be freed with :symbol:`mongoc_socket_destroy()` when no longer in use.
 

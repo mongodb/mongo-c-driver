@@ -17,8 +17,8 @@ Returns this event's topology id.
 Parameters
 ----------
 
-* ``event``: A :symbol:`mongoc_apm_topology_opening_t <mongoc_apm_topology_opening_t>`.
-* ``topology_id``: A :symbol:`bson_oid_t <bson:bson_oid_t>` to receive the event's topology_id.
+* ``event``: A :symbol:`mongoc_apm_topology_opening_t`.
+* ``topology_id``: A :symbol:`bson:bson_oid_t` to receive the event's topology_id.
 
 Returns
 -------

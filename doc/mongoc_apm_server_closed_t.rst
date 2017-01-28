@@ -8,7 +8,7 @@ Server-closed event
 Synopsis
 --------
 
-An event notification sent when the driver stops monitoring a server and removes its :symbol:`mongoc_server_description_t <mongoc_server_description_t>`.
+An event notification sent when the driver stops monitoring a server and removes its :symbol:`mongoc_server_description_t`.
 
 See Also
 --------

@@ -18,7 +18,7 @@ This function removes the user named ``username`` from ``database``.
 Parameters
 ----------
 
-* ``database``: A :symbol:`mongoc_database_t <mongoc_database_t>`.
+* ``database``: A :symbol:`mongoc_database_t`.
 * ``username``: A string containing the username of the user to remove.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
