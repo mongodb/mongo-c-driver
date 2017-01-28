@@ -109,8 +109,9 @@ Examples
 The following options are supported.
 
 =======================  ==================  ===================  ==================
-Option                   BSON type           Option               BSON type         
-``projection``           document            ``max``              document          
+Option                   BSON type           Option               BSON type
+=======================  ==================  ===================  ==================
+``projection``           document            ``max``              document
 ``sort``                 document            ``maxScan``          non-negative int64
 ``skip``                 non-negative int64  ``maxTimeMS``        non-negative int64
 ``limit``                non-negative int64  ``min``              document          
