@@ -1752,8 +1752,6 @@ mongoc_collection_update (mongoc_collection_t *collection,
             return false;
          }
       }
-   } else {
-      flags = (uint32_t) flags & ~MONGOC_UPDATE_NO_VALIDATE;
    }
 
    bson_init (&opts);
