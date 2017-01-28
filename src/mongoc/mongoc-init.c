@@ -45,6 +45,7 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
+#include "mongoc-sasl-private.h"
 
 static void *
 mongoc_sasl_mutex_alloc (void)
@@ -88,6 +89,12 @@ mongoc_sasl_mutex_free (void *mutex)
 
 static MONGOC_ONCE_FUN (_mongoc_do_init)
 {
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   int status;
+   sasl_callback_t callbacks[] = {
+      {SASL_CB_LOG, SASL_CALLBACK_FN (_mongoc_sasl_log), NULL},
+      {SASL_CB_LIST_END}};
+#endif
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init ();
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
@@ -106,8 +113,8 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
                    mongoc_sasl_mutex_unlock,
                    mongoc_sasl_mutex_free);
 
-   /* TODO: logging callback? */
-   sasl_client_init (NULL);
+   status = sasl_client_init (callbacks);
+   BSON_ASSERT (status == SASL_OK);
 #endif
 
    _mongoc_counters_init ();

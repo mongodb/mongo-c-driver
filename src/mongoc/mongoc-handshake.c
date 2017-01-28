@@ -109,6 +109,18 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL;
 #endif
 
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   bf |= MONGOC_MD_FLAG_ENABLE_SASL_CYRUS;
+#endif
+
+#ifdef MONGOC_ENABLE_SASL_SSPI
+   bf |= MONGOC_MD_FLAG_ENABLE_SASL_SSPI;
+#endif
+
+#ifdef MONGOC_HAVE_SOCKLEN
+   bf |= MONGOC_MD_FLAG_HAVE_SOCKLEN;
+#endif
+
    return bf;
 }
 
