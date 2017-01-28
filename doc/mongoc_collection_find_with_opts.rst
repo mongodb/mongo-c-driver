@@ -111,29 +111,35 @@ The following options are supported.
 =======================  ==================  ===================  ==================
 Option                   BSON type           Option               BSON type
 =======================  ==================  ===================  ==================
-``projection``           document            ``max``              document
-``sort``                 document            ``maxScan``          non-negative int64
-``skip``                 non-negative int64  ``maxTimeMS``        non-negative int64
-``limit``                non-negative int64  ``min``              document          
-``batchSize``            non-negative int64  ``noCursorTimeout``  bool              
-``exhaust``              bool                ``oplogReplay``      bool              
-``hint``                 string or document  ``returnKey``        bool              
-``allowPartialResults``  bool                ``showRecordId``     bool              
-``awaitData``            bool                ``singleBatch``      bool              
-``collation``            document            ``snapshot``         bool              
+``projection``           document            ``maxScan``          non-negative int64
+``sort``                 document            ``maxTimeMS``        non-negative int64
+``skip``                 non-negative int64  ``maxAwaitTimeMS``   non-negative int64
+``limit``                non-negative int64  ``min``              document
+``batchSize``            non-negative int64  ``noCursorTimeout``  bool
+``exhaust``              bool                ``oplogReplay``      bool
+``hint``                 string or document  ``returnKey``        bool
+``allowPartialResults``  bool                ``showRecordId``     bool
+``awaitData``            bool                ``singleBatch``      bool
+``collation``            document            ``snapshot``         bool
 ``comment``              string              ``tailable``         bool              
+``max``                  document
 =======================  ==================  ===================  ==================
+
+All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS".
+
+"maxAwaitTimeMS" is the maximum amount of time for the server to wait on new documents to satisfy a query, if "tailable" and "awaitData" are both true.
+If no new documents are found, the tailable cursor receives an empty batch. The "maxAwaitTimeMS" option is ignored for MongoDB older than 3.4.
 
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
-    
 
 See Also
 --------
 
-`The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual. All options listed there are supported by the C Driver.
+`The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.
 For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
-    
+
+.. _the "find" command: https://docs.mongodb.org/master/reference/command/find/
 
 The "explain" command
 ---------------------
