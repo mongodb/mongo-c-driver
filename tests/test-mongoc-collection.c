@@ -4431,14 +4431,12 @@ test_getmore_read_concern_live (void *ctx)
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern (collection, wc);
 
-   for (i=5000; i > 0; i--) {
-      mongoc_collection_insert (collection, MONGOC_INSERT_NONE, tmp_bson
-            ("{'a': 1}"), NULL, NULL);
+   for (i = 5000; i > 0; i--) {
+      mongoc_collection_insert (
+         collection, MONGOC_INSERT_NONE, tmp_bson ("{'a': 1}"), NULL, NULL);
    }
-   cursor = mongoc_collection_find_with_opts (collection,
-         tmp_bson ("{}"),
-         NULL,
-         NULL);
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       i++;
@@ -4453,7 +4451,6 @@ test_getmore_read_concern_live (void *ctx)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
-
 
 
 static void
@@ -4737,6 +4734,33 @@ test_insert_duplicate_key (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_create_index_fail (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bool r;
+   bson_t reply;
+   bson_error_t error;
+
+   client = mongoc_client_new ("mongodb://example.com/?connectTimeoutMS=10");
+   collection = mongoc_client_get_collection (client, "test", "test");
+   r = mongoc_collection_create_index_with_opts (
+      collection, tmp_bson ("{'a': 1}"), NULL, NULL, &reply, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "connection timeout");
+
+   /* reply was initialized */
+   ASSERT (bson_empty (&reply));
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -4882,9 +4906,12 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/stats/read_pref", test_stats_read_pref);
    TestSuite_Add (
       suite, "/Collection/find_read_concern", test_find_read_concern);
-   TestSuite_AddFull (
-      suite, "/Collection/getmore_read_concern_live",
-      test_getmore_read_concern_live, NULL, NULL, test_framework_skip_if_max_wire_version_less_than_4);
+   TestSuite_AddFull (suite,
+                      "/Collection/getmore_read_concern_live",
+                      test_getmore_read_concern_live,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (
       suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite,
@@ -4913,4 +4940,6 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
+   TestSuite_Add (
+      suite, "/Collection/create_index/fail", test_create_index_fail);
 }

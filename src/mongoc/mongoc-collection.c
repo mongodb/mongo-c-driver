@@ -1327,6 +1327,10 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    server_stream = mongoc_cluster_stream_for_reads (
       &collection->client->cluster, NULL, error);
 
+   if (!server_stream) {
+      GOTO (done);
+   }
+
    if (opts && bson_iter_init (&iter, opts)) {
       while (bson_iter_next (&iter)) {
          if (BSON_ITER_IS_KEY (&iter, "writeConcern")) {
