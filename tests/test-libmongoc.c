@@ -1552,6 +1552,17 @@ test_framework_skip_if_windows (void)
 }
 
 
+int
+test_framework_skip_if_apple (void)
+{
+#ifdef __APPLE__
+   return false;
+#else
+   return true;
+#endif
+}
+
+
 /* skip if no Unix domain socket */
 int
 test_framework_skip_if_no_uds (void)
