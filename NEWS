@@ -14,6 +14,35 @@ New features and bug fixes:
     * mongoc_find_and_modify_opts_get_update
 
 
+mongo-c-driver 1.5.4
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.4. This release fixes an error
+in cursor iteration when a readConcern is set. Thanks to Jeremy Mikola and
+Hannes Magnusson.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.3
+====================
+
+This release fixes a bug that prevented connecting to IPv4-only MongoDB servers
+by hostname.
+
+https://jira.mongodb.org/browse/CDRIVER-1988
+
+The driver has reverted to its 1.5.1 behavior: it connects to MongoDB over IPv6
+if given an IPv6 connection string like "mongodb://[::1]", and requires an IPv4
+connection when given a hostname like "mongodb://localhost".
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.2
 ====================
 
