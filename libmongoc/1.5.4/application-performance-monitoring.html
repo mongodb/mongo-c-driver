@@ -1,0 +1,564 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Introduction to Application Performance Monitoring (APM)</title>
+<link rel="stylesheet" type="text/css" href="C.css">
+<script type="text/javascript" src="jquery.js"></script><script type="text/javascript" src="jquery.syntax.js"></script><script type="text/javascript" src="yelp.js"></script>
+            <style type="text/css">
+              .section-anchor {
+                  display: block;
+                  opacity: 0;
+                  float: left;
+                  margin-left: -0.8em;
+                  padding-right: 0.2em;
+                  margin-top: 0.2em;
+                  cursor: pointer;
+              }
+
+              .section-anchor:hover {
+                  opacity: 1;
+              }
+
+              .footer {
+                  float: right;
+                  padding: 1em 0;
+                  font-style: italic;
+              }
+            </style>
+            <script type="text/javascript">
+              document.addEventListener("DOMContentLoaded", function() {
+                  // For each section.
+                  var elems = document.querySelectorAll('.sect');
+                  for (var i = 0; i < elems.length; i++) {
+                      // Make a closure to remember what "a" is.
+                      (function() {
+                          var section = elems[i];
+                          if (!section.id) {
+                            return;
+                          }
+
+                          var a = document.createElement('a');
+                          a.href = '#' + section.id;
+                          a.innerHTML = '&sect;';
+                          a.classList.add('section-anchor');
+                          section.insertBefore(a, section.firstChild);
+
+                          var header = section.querySelector('h1, h2, h3, h4');
+                          var mouseEnter = function() {
+                              a.style.opacity = 1;
+                          };
+
+                          var mouseLeave = function() {
+                              a.style.opacity = 0;
+                          };
+
+                          header.addEventListener("mouseenter", mouseEnter);
+                          header.addEventListener("mouseleave", mouseLeave);
+                          a.addEventListener("mouseenter", mouseEnter);
+                          a.addEventListener("mouseleave", mouseLeave);
+                      })();
+                  };
+              });
+            </script>
+        </head>
+<body><div class="page" role="main">
+<div class="header"><div class="trails" role="navigation"><div class="trail">
+<a class="trail" href="index.html" title="MongoDB C Driver">MongoDB C Driver</a> › <a class="trail" href="index.html#apm" title="Application Performance Monitoring">Application Performance Monitoring</a> » </div></div></div>
+<div class="body">
+<div class="hgroup"><h1 class="title"><span class="title">Introduction to Application Performance Monitoring (APM)</span></h1></div>
+<div class="region">
+<div class="contents">
+<p class="p">The MongoDB C Driver allows you to monitor all the MongoDB operations the driver executes. This event-notification system conforms to two MongoDB driver specs:</p>
+<div class="list"><div class="inner"><div class="region"><ul class="list">
+<li class="list"><p class="p"><span class="link"><a href="https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst" title="https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst">Command Monitoring</a></span>: events related to all application operations.</p></li>
+<li class="list"><p class="p"><span class="link"><a href="https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst" title="https://github.com/mongodb/specifications/blob/master/source/server-discovery-and-monitoring/server-discovery-and-monitoring-monitoring.rst">SDAM Monitoring</a></span>: events related to the driver's Server Discovery And Monitoring logic.</p></li>
+</ul></div></div></div>
+<p class="p">To receive notifications, create a <span class="code">mongoc_apm_callbacks_t</span> with <span class="code"><a href="mongoc_apm_callbacks_new.html" title="mongoc_apm_callbacks_new()">mongoc_apm_callbacks_new</a></span>, set callbacks on it, then pass it to <span class="code"><a href="mongoc_client_set_apm_callbacks.html" title="mongoc_client_set_apm_callbacks()">mongoc_client_set_apm_callbacks</a></span> or <span class="code"><a href="mongoc_client_pool_set_apm_callbacks.html" title="mongoc_client_pool_set_apm_callbacks()">mongoc_client_pool_set_apm_callbacks</a></span>.</p>
+</div>
+<div id="command-monitoring-example" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">Command-Monitoring Example</span></h2></div>
+<div class="region"><div class="contents">
+<div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">/* gcc example-command-monitoring.c -o example-command-monitoring \
+ *     $(pkg-config --cflags --libs libmongoc-1.0) */
+
+/* ./example-command-monitoring [CONNECTION_STRING] */
+
+#include &lt;mongoc.h&gt;
+#include &lt;stdio.h&gt;
+
+
+typedef struct {
+   int started;
+   int succeeded;
+   int failed;
+} stats_t;
+
+
+void
+command_started (const mongoc_apm_command_started_t *event)
+{
+   char *s;
+   
+   s = bson_as_json (mongoc_apm_command_started_get_command (event), NULL);
+   printf ("Command %s started on %s:\n%s\n\n",
+           mongoc_apm_command_started_get_command_name (event),
+           mongoc_apm_command_started_get_host (event)-&gt;host,
+           s);
+   
+   ((stats_t *) mongoc_apm_command_started_get_context (event))-&gt;started++;
+   
+   bson_free (s);
+}
+
+
+void
+command_succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   char *s;
+   
+   s = bson_as_json (mongoc_apm_command_succeeded_get_reply (event), NULL);
+   printf ("Command %s succeeded:\n%s\n\n",
+           mongoc_apm_command_succeeded_get_command_name (event),
+           s);
+   
+   ((stats_t *) mongoc_apm_command_succeeded_get_context (event))-&gt;succeeded++;
+   
+   bson_free (s);
+}
+
+
+void
+command_failed (const mongoc_apm_command_failed_t *event)
+{
+   bson_error_t error;
+   
+   mongoc_apm_command_failed_get_error (event, &amp;error);
+   printf ("Command %s failed:\n\"%s\"\n\n",
+           mongoc_apm_command_failed_get_command_name (event),
+           error.message);
+   
+   ((stats_t *) mongoc_apm_command_failed_get_context (event))-&gt;failed++;
+}
+
+
+int
+main (int   argc,
+      char *argv[])
+{
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   stats_t stats = { 0 }; 
+   mongoc_collection_t *collection;
+   const char *uristr = "mongodb://127.0.0.1/?appname=cmd-monitoring-example";
+   const char *collection_name = "test";
+   bson_t doc;
+
+   mongoc_init ();
+
+   if (argc &gt; 1) {
+      uristr = argv [1];
+   }
+
+   client = mongoc_client_new (uristr);
+
+   if (!client) {
+      fprintf (stderr, "Failed to parse URI.\n");
+      return EXIT_FAILURE;
+   }
+
+   mongoc_client_set_error_api (client, 2);
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, command_started);
+   mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded );
+   mongoc_apm_set_command_failed_cb (callbacks, command_failed);
+   mongoc_client_set_apm_callbacks (client,
+                                    callbacks,
+                                    (void *) &amp;stats /* context pointer */);
+
+   bson_init (&amp;doc);
+   BSON_APPEND_INT32 (&amp;doc, "_id", 1);
+
+   collection = mongoc_client_get_collection (client, "test", collection_name);
+   mongoc_collection_drop (collection, NULL);
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &amp;doc, NULL, NULL);
+   /* duplicate key error on the second insert */
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &amp;doc, NULL, NULL);
+
+   printf ("started: %d\nsucceeded: %d\nfailed: %d\n",
+           stats.started, stats.succeeded, stats.failed);
+
+   bson_destroy (&amp;doc);
+   mongoc_collection_destroy (collection);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+
+   mongoc_cleanup ();
+
+   return EXIT_SUCCESS;
+}</pre></div></div></div></div></div>
+<p class="p">This example program prints:</p>
+<div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents ">Command drop started on 127.0.0.1:
+{ "drop" : "test" }
+
+Command drop failed:
+"ns not found"
+
+Command insert started on 127.0.0.1:
+{ "insert" : "test", "documents" : [ { "_id" : 1 } ] }
+
+Command insert succeeded:
+{ "ok" : 1, "n" : 1 }
+
+Command insert started on 127.0.0.1:
+{ "insert" : "test", "documents" : [ { "_id" : 1 } ] }
+
+Command insert succeeded:
+{ "ok" : 1,
+  "n" : 0,
+  "writeErrors" : [ {
+     "index" : 0, "code" : 11000,
+     "errmsg" : "E11000 duplicate key error"
+} ] }
+
+started: 3
+succeeded: 2
+failed: 1</pre></div></div></div></div></div>
+<p class="p">In older versions of the MongoDB wire protocol, queries and write operations are sent to the server with special <span class="link"><a href="https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/#request-opcodes" title="https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/#request-opcodes">opcodes</a></span>, not as commands. To provide consistent event notifications with any MongoDB version, these legacy opcodes are reported as if they had used modern commands.</p>
+<p class="p">The final "insert" command is considered successful, despite the writeError, because the server replied to the overall command with <span class="code">"ok": 1</span>.</p>
+</div></div>
+</div></div>
+<div id="sdam-monitoring-example" class="sect"><div class="inner">
+<div class="hgroup"><h2 class="title"><span class="title">SDAM Monitoring Example</span></h2></div>
+<div class="region"><div class="contents">
+<div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents syntax brush-clang">/* gcc example-sdam-monitoring.c -o example-sdam-monitoring \
+ *     $(pkg-config --cflags --libs libmongoc-1.0) */
+
+/* ./example-sdam-monitoring [CONNECTION_STRING] */
+
+#include &lt;mongoc.h&gt;
+#include &lt;stdio.h&gt;
+
+
+typedef struct
+{
+   int server_changed_events;
+   int server_opening_events;
+   int server_closed_events;
+   int topology_changed_events;
+   int topology_opening_events;
+   int topology_closed_events;
+   int heartbeat_started_events;
+   int heartbeat_succeeded_events;
+   int heartbeat_failed_events;
+} stats_t;
+
+
+static void
+server_changed (const mongoc_apm_server_changed_t *event)
+{
+   stats_t *context;
+   const mongoc_server_description_t *prev_sd, *new_sd;
+
+   context = (stats_t *) mongoc_apm_server_changed_get_context (event);
+   context-&gt;server_changed_events++;
+
+   prev_sd = mongoc_apm_server_changed_get_previous_description (event);
+   new_sd = mongoc_apm_server_changed_get_new_description (event);
+
+   printf (
+      "server changed: %s %s -&gt; %s\n",
+      mongoc_apm_server_changed_get_host (event)-&gt;host_and_port,
+      mongoc_server_description_type (prev_sd),
+      mongoc_server_description_type (new_sd));
+}
+
+
+static void
+server_opening (const mongoc_apm_server_opening_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_server_opening_get_context (event);
+   context-&gt;server_opening_events++;
+
+   printf ("server opening: %s\n",
+           mongoc_apm_server_opening_get_host (event)-&gt;host_and_port);
+}
+
+
+static void
+server_closed (const mongoc_apm_server_closed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_server_closed_get_context (event);
+   context-&gt;server_closed_events++;
+
+   printf ("server closed: %s\n",
+           mongoc_apm_server_closed_get_host (event)-&gt;host_and_port);
+}
+
+
+static void
+topology_changed (const mongoc_apm_topology_changed_t *event)
+{
+   stats_t *context;
+   const mongoc_topology_description_t *prev_td;
+   const mongoc_topology_description_t *new_td;
+   mongoc_server_description_t **prev_sds;
+   size_t n_prev_sds;
+   mongoc_server_description_t **new_sds;
+   size_t n_new_sds;
+   size_t i;
+
+   context = (stats_t *) mongoc_apm_topology_changed_get_context (event);
+   context-&gt;topology_changed_events++;
+
+   prev_td = mongoc_apm_topology_changed_get_previous_description (event);
+   prev_sds = mongoc_topology_description_get_servers (prev_td, &amp;n_prev_sds);
+   new_td = mongoc_apm_topology_changed_get_new_description (event);
+   new_sds = mongoc_topology_description_get_servers (new_td, &amp;n_new_sds);
+
+   printf ("topology changed: %s -&gt; %s\n",
+           mongoc_topology_description_type (prev_td),
+           mongoc_topology_description_type (new_td));
+
+   if (n_prev_sds) {
+      printf ("  previous servers:\n");
+      for (i = 0; i &lt; n_prev_sds; i++) {
+         printf ("      %s %s\n",
+                 mongoc_server_description_type (prev_sds[i]),
+                 mongoc_server_description_host (prev_sds[i])-&gt;host_and_port);
+      }
+   }
+
+   if (n_new_sds) {
+      printf ("  new servers:\n");
+      for (i = 0; i &lt; n_new_sds; i++) {
+         printf ("      %s %s\n",
+                 mongoc_server_description_type (new_sds[i]),
+                 mongoc_server_description_host (new_sds[i])-&gt;host_and_port);
+      }
+   }
+
+   mongoc_server_descriptions_destroy_all (prev_sds, n_prev_sds);
+   mongoc_server_descriptions_destroy_all (new_sds, n_new_sds);
+}
+
+
+static void
+topology_opening (const mongoc_apm_topology_opening_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_topology_opening_get_context (event);
+   context-&gt;topology_opening_events++;
+
+   printf ("topology opening\n");
+}
+
+
+static void
+topology_closed (const mongoc_apm_topology_closed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_topology_closed_get_context (event);
+   context-&gt;topology_closed_events++;
+
+   printf ("topology closed\n");
+}
+
+
+static void
+server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
+{
+   stats_t *context;
+
+   context =
+      (stats_t *) mongoc_apm_server_heartbeat_started_get_context (event);
+   context-&gt;heartbeat_started_events++;
+
+   printf (
+      "%s heartbeat started\n",
+      mongoc_apm_server_heartbeat_started_get_host (event)-&gt;host_and_port);
+}
+
+
+static void
+server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   stats_t *context;
+   char *reply;
+
+   context = (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (
+      event);
+   context-&gt;heartbeat_succeeded_events++;
+
+   reply = bson_as_json (
+      mongoc_apm_server_heartbeat_succeeded_get_reply (event), NULL);
+
+   printf (
+      "%s heartbeat succeeded: %s\n",
+      mongoc_apm_server_heartbeat_succeeded_get_host (event)-&gt;host_and_port,
+      reply);
+
+   bson_free (reply);
+}
+
+
+static void
+server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   stats_t *context;
+   bson_error_t error;
+
+   context = (stats_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   context-&gt;heartbeat_failed_events++;
+   mongoc_apm_server_heartbeat_failed_get_error (event, &amp;error);
+
+   printf (
+      "%s heartbeat failed: %s\n",
+      mongoc_apm_server_heartbeat_failed_get_host (event)-&gt;host_and_port,
+      error.message);
+}
+
+
+int
+main (int   argc,
+      char *argv[])
+{
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *cbs;
+   stats_t stats = { 0 };
+   const char *uristr = "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
+   bson_error_t error;
+
+   mongoc_init ();
+
+   if (argc &gt; 1) {
+      uristr = argv [1];
+   }
+
+   client = mongoc_client_new (uristr);
+
+   if (!client) {
+      fprintf (stderr, "Failed to parse URI.\n");
+      return EXIT_FAILURE;
+   }
+
+   mongoc_client_set_error_api (client, 2);
+   cbs = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_changed_cb (cbs, server_changed);
+   mongoc_apm_set_server_opening_cb (cbs, server_opening);
+   mongoc_apm_set_server_closed_cb (cbs, server_closed);
+   mongoc_apm_set_topology_changed_cb (cbs, topology_changed);
+   mongoc_apm_set_topology_opening_cb (cbs, topology_opening);
+   mongoc_apm_set_topology_closed_cb (cbs, topology_closed);
+   mongoc_apm_set_server_heartbeat_started_cb (cbs, server_heartbeat_started);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (cbs,
+                                                 server_heartbeat_succeeded);
+   mongoc_apm_set_server_heartbeat_failed_cb (cbs, server_heartbeat_failed);
+   mongoc_client_set_apm_callbacks (client, cbs,
+                                    (void *) &amp;stats /* context pointer */);
+
+   /* the driver connects on demand to perform first operation */
+   BSON_APPEND_INT32 (&amp;cmd, "buildinfo", 1);
+   mongoc_client_command_simple (client, "admin", &amp;cmd, NULL, &amp;reply, &amp;error);
+   mongoc_client_destroy (client);
+
+   printf ("Events:\n"
+           "   server changed: %d\n"
+           "   server opening: %d\n"
+           "   server closed: %d\n"
+           "   topology changed: %d\n"
+           "   topology opening: %d\n"
+           "   topology closed: %d\n"
+           "   heartbeat started: %d\n"
+           "   heartbeat succeeded: %d\n"
+           "   heartbeat failed: %d\n",
+           stats.server_changed_events,
+           stats.server_opening_events,
+           stats.server_closed_events,
+           stats.topology_changed_events,
+           stats.topology_opening_events,
+           stats.topology_closed_events,
+           stats.heartbeat_started_events,
+           stats.heartbeat_succeeded_events,
+           stats.heartbeat_failed_events);
+
+   bson_destroy (&amp;cmd);
+   bson_destroy (&amp;reply);
+   mongoc_apm_callbacks_destroy (cbs);
+
+   mongoc_cleanup ();
+
+   return EXIT_SUCCESS;
+}</pre></div></div></div></div></div>
+<p class="p">Start a 3-node replica set on localhost with set name "rs" and start the program:</p>
+<div class="code"><pre class="contents ">./example-sdam-monitoring "mongodb://localhost:27017,localhost:27018/?replicaSet=rs"</pre></div>
+<p class="p">This example program prints something like:</p>
+<div class="synopsis"><div class="inner"><div class="region"><div class="contents"><div class="code"><pre class="contents ">topology opening
+topology changed: Unknown -&gt; ReplicaSetNoPrimary
+server opening: localhost:27017
+server opening: localhost:27018
+localhost:27017 heartbeat started
+localhost:27018 heartbeat started
+localhost:27017 heartbeat succeeded: { ... reply ... }
+server changed: localhost:27017 Unknown -&gt; RSPrimary
+server opening: localhost:27019
+topology changed: ReplicaSetNoPrimary -&gt; ReplicaSetWithPrimary
+  new servers:
+      RSPrimary localhost:27017
+localhost:27019 heartbeat started
+localhost:27018 heartbeat succeeded: { ... reply ... }
+server changed: localhost:27018 Unknown -&gt; RSSecondary
+topology changed: ReplicaSetWithPrimary -&gt; ReplicaSetWithPrimary
+  previous servers:
+      RSPrimary localhost:27017
+  new servers:
+      RSPrimary localhost:27017
+      RSSecondary localhost:27018
+localhost:27019 heartbeat succeeded: { ... reply ... }
+server changed: localhost:27019 Unknown -&gt; RSSecondary
+topology changed: ReplicaSetWithPrimary -&gt; ReplicaSetWithPrimary
+  previous servers:
+      RSPrimary localhost:27017
+      RSSecondary localhost:27018
+  new servers:
+      RSPrimary localhost:27017
+      RSSecondary localhost:27018
+      RSSecondary localhost:27019
+topology closed
+
+Events:
+   server changed: 3
+   server opening: 3
+   server closed: 0
+   topology changed: 4
+   topology opening: 1
+   topology closed: 1
+   heartbeat started: 3
+   heartbeat succeeded: 3
+   heartbeat failed: 0</pre></div></div></div></div></div>
+<p class="p">The driver discovers the third member, "localhost:27019", and adds it to the topology.</p>
+</div></div>
+</div></div>
+<div class="sect sect-links" role="navigation">
+<div class="hgroup"></div>
+<div class="contents"><div class="links guidelinks"><div class="inner">
+<div class="title"><h2><span class="title">More Information</span></h2></div>
+<div class="region"><ul><li class="links "><a href="index.html#apm" title="Application Performance Monitoring">Application Performance Monitoring</a></li></ul></div>
+</div></div></div>
+</div>
+</div>
+<div class="clear"></div>
+</div>
+<div class="footer"><section id="version">MongoDB C Driver
+    1.5.4
+</section></div>
+</div></body>
+</html>
