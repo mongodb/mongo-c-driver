@@ -1137,6 +1137,121 @@ test_mongoc_uri_long_hostname (void)
    bson_free (host);
 }
 
+static void
+test_mongoc_uri_ssl (void)
+{
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new (
+      "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New "
+      "York,C=US@ldaptest.10gen.cc/"
+      "?ssl=true&" MONGOC_URI_AUTHMECHANISM
+      "=MONGODB-X509&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=tests/"
+      "x509gen/legacy-x509.pem&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
+      "=tests/x509gen/"
+      "legacy-ca.crt&" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true");
+
+   ASSERT_CMPSTR (
+      mongoc_uri_get_username (uri),
+      "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US");
+   ASSERT (!mongoc_uri_get_password (uri));
+   ASSERT_CMPSTR (mongoc_uri_get_database (uri), "");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509");
+
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "tests/x509gen/legacy-x509.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
+                  "tests/x509gen/legacy-ca.crt");
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/"
+                         "?ssl=true&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
+                         "=key.pem&"
+                         "" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=ca.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "key.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
+                  "ca.pem");
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/?ssl=true");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
+                  "none");
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/"
+      "?ssl=true&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=pa$$word!&"
+      "" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=encrypted.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "encrypted.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                  "pa$$word!");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
+                  "none");
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?ssl=true&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
+      "=true");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
+                  "none");
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -1153,6 +1268,7 @@ test_uri_install (TestSuite *suite)
                   "/Uri/auth_mechanism_properties",
                   test_mongoc_uri_authmechanismproperties);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
+   TestSuite_Add (suite, "/Uri/ssl", test_mongoc_uri_ssl);
    TestSuite_Add (
       suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);

@@ -759,7 +759,20 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    client->use_ssl = false;
    if (mongoc_uri_get_ssl (client->uri)) {
       /* sets use_ssl = true */
-      mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
+      mongoc_ssl_opt_t ssl_opts = {0};
+
+      ssl_opts.pem_file = mongoc_uri_get_option_as_utf8 (
+         client->uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, NULL);
+      ssl_opts.pem_pwd = mongoc_uri_get_option_as_utf8 (
+         client->uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, NULL);
+      ssl_opts.ca_file = mongoc_uri_get_option_as_utf8 (
+         client->uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, NULL);
+      ssl_opts.weak_cert_validation = mongoc_uri_get_option_as_bool (
+         client->uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false);
+      ssl_opts.allow_invalid_hostname = mongoc_uri_get_option_as_bool (
+         client->uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false);
+
+      mongoc_client_set_ssl_opts (client, &ssl_opts);
    }
 #endif
 

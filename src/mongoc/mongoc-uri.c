@@ -586,7 +586,9 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_SAFE) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
           !strcasecmp (key, MONGOC_URI_SLAVEOK) ||
-          !strcasecmp (key, MONGOC_URI_SSL);
+          !strcasecmp (key, MONGOC_URI_SSL) ||
+          !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
+          !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
 }
 
 bool
@@ -609,9 +611,12 @@ mongoc_uri_option_is_utf8 (const char *key)
    }
 
    if (!strcasecmp (key, MONGOC_URI_APPNAME) ||
+       !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME) ||
        !strcasecmp (key, MONGOC_URI_REPLICASET) ||
        !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
-       !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME)) {
+       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
+       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD ) ||
+       !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE)) {
       return true;
    }
 
