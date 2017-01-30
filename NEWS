@@ -1,10 +1,23 @@
-Next Release
-============
+mongo-c-driver 1.6.0-rc0
+========================
+
+It is my please to announce mongo-c-driver 1.6.0-rc0.
 
 New features and bug fixes:
+  * Enterprise authentication on Windows now uses the native GSSAPI library;
+    Cyrus SASL is no longer required for enterprise auth on Windows.
+  * BSON documents are more thoroughly validated before insert or update.
   * New function mongoc_uri_set_mechanism_properties to replace all the
     authMechanismProperties on an existing URI.
   * mongoc_uri_get_mechanism_properties asserts its inputs are not NULL.
+  * For consistency with other MongoDB drivers, mongoc_collection_save is
+    deprecated in favor of mongoc_collection_insert or mongoc_collection_update.
+  * The driver is now built and continuously tested with MinGW-W64 on Windows.
+  * Experimental support for HPUX.
+  * The correct operation ids are now passed to Command Monitoring callbacks.
+  * Fix a crash if the driver couldn't connect to the server to create an index.
+  * The documentation is ported from Mallard XML to ReStructured Text, the
+    HTML documentation is restyled, and numerous man page syntax errors fixed.
   * Getter functions for options in mongoc_find_and_modify_opts_t:
     * mongoc_find_and_modify_opts_get_bypass_document_validation
     * mongoc_find_and_modify_opts_get_fields
@@ -12,6 +25,26 @@ New features and bug fixes:
     * mongoc_find_and_modify_opts_get_max_time_ms
     * mongoc_find_and_modify_opts_get_sort
     * mongoc_find_and_modify_opts_get_update
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Aleksander Melnikov
+  * Jeroen Ooms
+  * Brian McCarthy
+  * Jonathan Wang
+  * Peter Beckman
+  * Remi Collet
+  * Rockford Wei
+  * Alexey Ponomarev
+  * Christopher Wang
+  * David Golden
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.5.4
@@ -97,7 +130,7 @@ Peace,
 mongo-c-driver 1.5.0
 ====================
 
-It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
+It is my pleasure to announce mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support
