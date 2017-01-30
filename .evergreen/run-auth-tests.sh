@@ -54,6 +54,13 @@ if test -f /tmp/drivers.keytab; then
    kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
 fi
 
+if [ $SSL -eq 1 ]; then
+   # FIXME: CDRIVER-2008
+   if [ "${OS%_*}" != "cygwin" ]; then
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@ldaptest.10gen.cc/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true"
+   fi
+fi
+
 $PING 'mongodb://drivers-team:mongor0x$xgen@ldaptest.10gen.cc/?authMechanism=PLAIN'
 $PING 'mongodb://drivers:mongor0x$xgen@ldaptest.10gen.cc/mongodb-cr?authMechanism=MONGODB-CR'
 
