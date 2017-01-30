@@ -1,3 +1,15 @@
+mongo-c-driver 1.5.4
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.4. This release fixes an error
+in cursor iteration when a readConcern is set. Thanks to Jeremy Mikola and
+Hannes Magnusson.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.3
 ====================
 
