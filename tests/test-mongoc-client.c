@@ -2644,6 +2644,22 @@ test_null_error_pointer_pooled (void *ctx)
    _test_null_error_pointer (true);
 }
 
+#ifdef MONGOC_ENABLE_SSL
+static void
+test_set_ssl_opts (void)
+{
+   const mongoc_ssl_opt_t *opts = mongoc_ssl_opt_get_default ();
+
+   ASSERT (opts->pem_file == NULL);
+   ASSERT (opts->pem_pwd == NULL);
+   ASSERT (opts->ca_file == NULL);
+   ASSERT (opts->ca_dir == NULL);
+   ASSERT (opts->crl_file == NULL);
+   ASSERT (!opts->weak_cert_validation);
+   ASSERT (!opts->allow_invalid_hostname);
+}
+#endif
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -2717,8 +2733,7 @@ test_client_install (TestSuite *suite)
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddLive (
       suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
-   TestSuite_AddLive (
-      suite, "/Client/command/empty", test_command_empty);
+   TestSuite_AddLive (suite, "/Client/command/empty", test_command_empty);
    TestSuite_AddLive (
       suite, "/Client/command/no_errmsg", test_command_no_errmsg);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
@@ -2803,6 +2818,7 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+   TestSuite_Add (suite, "/Client/set_ssl_opts", test_set_ssl_opts);
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
