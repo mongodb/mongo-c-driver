@@ -1624,13 +1624,16 @@ test_get_database_names (void)
 static void
 test_mongoc_client_ipv6 (void)
 {
+   char *uri_str;
    mongoc_client_t *client;
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
 
-   client = mongoc_client_new ("mongodb://[::1]/");
+   uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
+   client = mongoc_client_new (uri_str);
    assert (client);
+   test_framework_set_ssl_opts (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
@@ -1640,8 +1643,8 @@ test_mongoc_client_ipv6 (void)
    assert (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
-
    mongoc_client_destroy (client);
+   bson_free (uri_str);
 }
 
 
@@ -2646,7 +2649,7 @@ test_client_install (TestSuite *suite)
 {
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
-      TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
+      TestSuite_AddLive (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
 
    TestSuite_AddFull (suite,

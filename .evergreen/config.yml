@@ -232,7 +232,7 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} sh .evergreen/run-tests.sh
+          CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} sh .evergreen/run-tests.sh
 
   "run auth tests":
     - command: shell.exec
@@ -5112,6 +5112,7 @@ tasks:
           vars:
             AUTH: "noauth"
             SSL: "nossl"
+            IPV4_ONLY: "on"
             URI: ""
 
 

@@ -28,11 +28,15 @@
   "routers": [
     {
       "setParameter" : { "enableTestCommands": 1 },
-      "port": 27017
+      "port": 27017,
+      "ipv6": true,
+      "bind_ip": ""
     },
     {
       "setParameter" : { "enableTestCommands": 1 },
-      "port": 27018
+      "port": 27018,
+      "ipv6": true,
+      "bind_ip": ""
     }
   ],
   "sslParams": {
