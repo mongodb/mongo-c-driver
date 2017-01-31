@@ -184,6 +184,21 @@ bson_lookup_bool (const bson_t *b, const char *key, bool default_value)
    return default_value;
 }
 
+bool
+bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+
+   if (bson_iter_find_descendant (&iter, key, &descendent)) {
+      return bson_iter_as_bool (&descendent);
+   }
+
+   return default_value;
+}
+
 /*--------------------------------------------------------------------------
  *
  * bson_lookup_doc --
@@ -203,6 +218,19 @@ bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc)
    bson_iter_init (&iter, b);
    BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
    bson_iter_bson (&descendent, doc);
+}
+
+void
+bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   if (!BSON_ITER_HOLDS_NULL (&descendent)) {
+      bson_iter_bson (&descendent, doc);
+   }
 }
 
 

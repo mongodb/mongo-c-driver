@@ -57,6 +57,8 @@ test_collection_find_install (TestSuite *suite);
 extern void
 test_collection_find_with_opts_install (TestSuite *suite);
 extern void
+test_connection_uri_install (TestSuite *suite);
+extern void
 test_command_monitoring_install (TestSuite *suite);
 extern void
 test_cursor_install (TestSuite *suite);
@@ -1884,6 +1886,7 @@ main (int argc, char *argv[])
    test_collection_install (&suite);
    test_collection_find_install (&suite);
    test_collection_find_with_opts_install (&suite);
+   test_connection_uri_install (&suite);
    test_command_monitoring_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
