@@ -46,7 +46,6 @@ INSTALL_DIR=$(pwd)/install-dir
 DEBUG_FLAGS="\
    --enable-html-docs=no \
    --enable-man-pages=no \
-   --enable-yelp=no \
    --enable-optimizations=no \
    --enable-extra-align=no \
    --enable-maintainer-flags \
