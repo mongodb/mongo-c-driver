@@ -663,12 +663,26 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
          BSON_APPEND_UTF8 (&uri->options, "w", value);
       }
    } else if (mongoc_uri_option_is_bool (key)) {
-      bson_append_bool (&uri->options,
-                        key,
-                        -1,
-                        (0 == strcasecmp (value, "true")) ||
-                           (0 == strcasecmp (value, "t")) ||
-                           (0 == strcmp (value, "1")));
+      if (0 == strcasecmp (value, "true")) {
+         BSON_APPEND_BOOL (&uri->options, key, true);
+      } else if (0 == strcasecmp (value, "false")) {
+         BSON_APPEND_BOOL (&uri->options, key, false);
+      } else if ((0 == strcmp (value, "1")) ||
+               (0 == strcasecmp (value, "yes")) ||
+               (0 == strcasecmp (value, "y")) ||
+               (0 == strcasecmp (value, "t"))) {
+         MONGOC_WARNING ("Deprecated boolean value for \"%1$s\": \"%2$s\", please update to \"%1$s=true\"", key, value);
+         BSON_APPEND_BOOL (&uri->options, key, true);
+      } else if ((0 == strcasecmp (value, "0")) ||
+               (0 == strcasecmp (value, "-1")) ||
+               (0 == strcmp (value, "no")) ||
+               (0 == strcmp (value, "n")) ||
+               (0 == strcmp (value, "f"))) {
+         MONGOC_WARNING ("Deprecated boolean value for \"%1$s\": \"%2$s\", please update to \"%1$s=false\"", key, value);
+         BSON_APPEND_BOOL (&uri->options, key, false);
+      } else {
+         MONGOC_WARNING ("Unsupported value for \"%s\" : \"%s\"", key, value);
+      }
    } else if (!strcasecmp (key, "readpreferencetags")) {
       if (!mongoc_uri_parse_tags (uri, value)) {
          goto CLEANUP;
