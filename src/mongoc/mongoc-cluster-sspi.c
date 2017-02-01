@@ -16,13 +16,14 @@
 
 #include "mongoc-config.h"
 
+#ifdef MONGOC_ENABLE_SASL_SSPI
+
 #include "mongoc-cluster-sspi-private.h"
 #include "mongoc-cluster-sasl-private.h"
 #include "mongoc-sspi-private.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
 
-#ifdef MONGOC_ENABLE_SASL_SSPI
 
 
 /*
