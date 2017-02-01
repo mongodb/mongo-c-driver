@@ -736,24 +736,43 @@ mock_server_receives_command (mock_server_t *server,
                               const char *command_json,
                               ...)
 {
+   request_t *request;
    va_list args;
+
+   va_start (args, command_json);
+   request = mock_server_receives_command_with_ctx (
+      server, database_name, flags, command_json, NULL, args);
+   va_end (args);
+   return request;
+}
+
+request_t *
+mock_server_receives_command_with_ctx (mock_server_t *server,
+                                       const char *database_name,
+                                       mongoc_query_flags_t flags,
+                                       const char *command_json,
+                                       match_ctx_t *ctx,
+                                       va_list args)
+{
    char *formatted_command_json = NULL;
    char *ns;
    request_t *request;
 
-   va_start (args, command_json);
    if (command_json) {
-      formatted_command_json = bson_strdupv_printf (command_json, args);
+      if (args) {
+         formatted_command_json = bson_strdupv_printf (command_json, args);
+      } else {
+         formatted_command_json = bson_strdup (command_json);
+      }
    }
-   va_end (args);
 
    ns = bson_strdup_printf ("%s.$cmd", database_name);
 
    request = mock_server_receives_request (server);
 
    if (request &&
-       !request_matches_query (
-          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
+       !request_matches_query_with_ctx (
+          request, ns, flags, 0, 1, formatted_command_json, NULL, true, ctx)) {
       request_destroy (request);
       request = NULL;
    }

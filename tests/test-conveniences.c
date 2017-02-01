@@ -418,19 +418,41 @@ match_json (const bson_t *doc,
             const char *json_pattern,
             ...)
 {
+   bool retval;
    va_list args;
+
+   va_start (args, json_pattern);
+   retval = match_json_with_ctx (
+      doc, is_command, filename, lineno, funcname, json_pattern, NULL, args);
+   va_end (args);
+
+   return retval;
+}
+
+bool
+match_json_with_ctx (const bson_t *doc,
+                     bool is_command,
+                     const char *filename,
+                     int lineno,
+                     const char *funcname,
+                     const char *json_pattern,
+                     struct _match_ctx_t *ctx,
+                     va_list args)
+{
    char *json_pattern_formatted;
    char *double_quoted;
    bson_error_t error;
    bson_t *pattern;
    char errmsg[1000];
-   match_ctx_t ctx = {0};
+   match_ctx_t cctx = {0};
    bool matches;
 
-   va_start (args, json_pattern);
-   json_pattern_formatted =
-      bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
-   va_end (args);
+   if (args) {
+      json_pattern_formatted =
+         bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
+   } else {
+      json_pattern_formatted = bson_strdup (json_pattern ? json_pattern : "{}");
+   }
 
    double_quoted = single_quotes_to_double (json_pattern_formatted);
    pattern = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
@@ -440,9 +462,12 @@ match_json (const bson_t *doc,
       abort ();
    }
 
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
-   matches = match_bson_with_ctx (doc, pattern, is_command, &ctx);
+   if (!ctx) {
+      ctx = &cctx;
+   }
+   ctx->errmsg = errmsg;
+   ctx->errmsg_len = sizeof errmsg;
+   matches = match_bson_with_ctx (doc, pattern, is_command, ctx);
 
    if (!matches) {
       fprintf (stderr,
@@ -453,7 +478,7 @@ match_json (const bson_t *doc,
                "%s:%d %s()\n",
                doc ? bson_as_json (doc, NULL) : "{}",
                double_quoted,
-               ctx.errmsg,
+               ctx->errmsg,
                filename,
                lineno,
                funcname);
@@ -490,6 +515,7 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
    match_ctx_t ctx = {0};
 
    ctx.strict_numeric_types = true;
+   ctx.case_insensitive_values = false;
    return match_bson_with_ctx (doc, pattern, is_command, &ctx);
 }
 
@@ -527,6 +553,7 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    BSON_ASSERT (key);
 
    derived->strict_numeric_types = ctx->strict_numeric_types;
+   derived->case_insensitive_values = ctx->case_insensitive_values;
    derived->errmsg = ctx->errmsg; /* location to write err msg if any */
    derived->errmsg_len = ctx->errmsg_len;
 
@@ -1082,10 +1109,16 @@ match_bson_value (const bson_value_t *doc,
       break;
 
    case BSON_TYPE_UTF8:
-      ret = doc->value.v_utf8.len == pattern->value.v_utf8.len &&
-            !strncmp (doc->value.v_utf8.str,
-                      pattern->value.v_utf8.str,
-                      doc->value.v_utf8.len);
+      if (ctx && ctx->case_insensitive_values) {
+         ret = !strncasecmp (doc->value.v_utf8.str,
+                             pattern->value.v_utf8.str,
+                             doc->value.v_utf8.len);
+      } else {
+         ret = !strncmp (doc->value.v_utf8.str,
+                         pattern->value.v_utf8.str,
+                         doc->value.v_utf8.len);
+      }
+      ret &= doc->value.v_utf8.len == pattern->value.v_utf8.len;
 
       if (!ret) {
          match_err (ctx,

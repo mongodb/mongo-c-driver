@@ -21,6 +21,15 @@
 
 #include "mongoc.h"
 
+struct _match_ctx_t {
+   char *errmsg;
+   size_t errmsg_len;
+   bool strict_numeric_types;
+   bool case_insensitive_values;
+   char path[1000];
+};
+typedef struct _match_ctx_t match_ctx_t;
+
 bson_t *
 tmp_bson (const char *json, ...);
 
@@ -68,13 +77,6 @@ bson_lookup_read_prefs (const bson_t *b, const char *key);
 char *
 single_quotes_to_double (const char *str);
 
-typedef struct {
-   char *errmsg;
-   size_t errmsg_len;
-   bool strict_numeric_types;
-   char path[1000];
-} match_ctx_t;
-
 bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
 
@@ -92,6 +94,15 @@ match_json (const bson_t *doc,
             const char *funcname,
             const char *json_pattern,
             ...);
+bool
+match_json_with_ctx (const bson_t *doc,
+                     bool is_command,
+                     const char *filename,
+                     int lineno,
+                     const char *funcname,
+                     const char *json_pattern,
+                     struct _match_ctx_t *ctx,
+                     va_list vargs);
 
 bool
 mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,

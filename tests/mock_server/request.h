@@ -26,6 +26,7 @@
 #include "sync-queue.h"
 
 struct _mock_server_t; /* forward declaration */
+struct _match_ctx_t;   /* forward declaration */
 
 typedef struct _request_t {
    uint8_t *data;
@@ -66,6 +67,16 @@ request_matches_query (const request_t *request,
                        const char *query_json,
                        const char *fields_json,
                        bool is_command);
+bool
+request_matches_query_with_ctx (const request_t *request,
+                                const char *ns,
+                                mongoc_query_flags_t flags,
+                                uint32_t skip,
+                                int32_t n_return,
+                                const char *query_json,
+                                const char *fields_json,
+                                bool is_command,
+                                struct _match_ctx_t *ctx);
 
 bool
 request_matches_insert (const request_t *request,
