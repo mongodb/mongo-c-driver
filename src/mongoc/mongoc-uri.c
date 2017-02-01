@@ -649,7 +649,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
 
    if (mongoc_uri_option_is_int32 (key)) {
       if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
-         goto CLEANUP;
+         goto UNSUPPORTED_VALUE;
       }
 
       BSON_APPEND_INT32 (&uri->options, key, v_int);
@@ -681,11 +681,11 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
          MONGOC_WARNING ("Deprecated boolean value for \"%1$s\": \"%2$s\", please update to \"%1$s=false\"", key, value);
          BSON_APPEND_BOOL (&uri->options, key, false);
       } else {
-         MONGOC_WARNING ("Unsupported value for \"%s\" : \"%s\"", key, value);
+         goto UNSUPPORTED_VALUE;
       }
    } else if (!strcasecmp (key, "readpreferencetags")) {
       if (!mongoc_uri_parse_tags (uri, value)) {
-         goto CLEANUP;
+         goto UNSUPPORTED_VALUE;
       }
    } else if (!strcasecmp (key, "authmechanism") ||
               !strcasecmp (key, "authsource")) {
@@ -694,18 +694,22 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
       mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp (key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties (uri, value)) {
-         goto CLEANUP;
+         goto UNSUPPORTED_VALUE;
       }
    } else if (!strcasecmp (key, "appname")) {
       if (!mongoc_uri_set_appname (uri, value)) {
-         MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
-         goto CLEANUP;
+         goto UNSUPPORTED_VALUE;
       }
    } else {
       bson_append_utf8 (&uri->options, key, -1, value, -1);
    }
 
    ret = true;
+
+UNSUPPORTED_VALUE:
+   if (!ret) {
+      MONGOC_WARNING ("Unsupported value for \"%s\" : \"%s\"", key, value);
+   }
 
 CLEANUP:
    bson_free (key);

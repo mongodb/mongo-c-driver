@@ -89,7 +89,7 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://localhost:27017/test?q=1");
+   uri = mongoc_uri_new ("mongodb://localhost:27017/test?replicaset=foo");
    ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);
@@ -100,11 +100,11 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "test");
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
-   ASSERT (bson_iter_init_find (&iter, options, "q"));
-   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "1");
+   ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "foo");
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://local1,local2:999,local3?q=1");
+   uri = mongoc_uri_new ("mongodb://local1,local2:999,local3?replicaset=foo");
    ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);
@@ -119,8 +119,8 @@ test_mongoc_uri_new (void)
    ASSERT_CMPINT (hosts->next->next->port, ==, 27017);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
-   ASSERT (bson_iter_init_find (&iter, options, "q"));
-   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "1");
+   ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "foo");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost:27017/"
@@ -265,21 +265,22 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "db.name");
    mongoc_uri_destroy (uri);
 
-   uri =
-      mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/?abcd=%20");
+   uri = mongoc_uri_new (
+      "mongodb://christian%40realm@localhost:27017/?replicaset=%20");
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
-   ASSERT (bson_iter_init_find (&iter, options, "abcd"));
+   ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), " ");
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://christian%40realm@[::6]:27017/?abcd=%20");
+   uri = mongoc_uri_new (
+      "mongodb://christian%40realm@[::6]:27017/?replicaset=%20");
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
-   ASSERT (bson_iter_init_find (&iter, options, "abcd"));
+   ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
    ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), " ");
    mongoc_uri_destroy (uri);
@@ -535,10 +536,10 @@ test_mongoc_uri_functions (void)
    mongoc_client_destroy (client);
 
    uri = mongoc_uri_new ("mongodb://localhost/");
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "random", "default"),
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "replicaset", "default"),
                   "default");
-   ASSERT (mongoc_uri_set_option_as_utf8 (uri, "random", "value"));
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "random", "default"),
+   ASSERT (mongoc_uri_set_option_as_utf8 (uri, "replicaset", "value"));
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "replicaset", "default"),
                   "value");
 
    mongoc_uri_destroy (uri);
