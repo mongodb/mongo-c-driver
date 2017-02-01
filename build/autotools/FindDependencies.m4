@@ -35,6 +35,9 @@ AS_IF([test "$enable_rdtscp" = "yes"],
 AS_IF([test "$enable_shm_counters" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DMONGOC_ENABLE_SHM_COUNTERS"])
 
-AC_CHECK_TYPE([socklen_t], [AC_SUBST(MONGOC_HAVE_SOCKLEN, 1)], [], [#include <sys/socket.h>])
+AC_CHECK_TYPE([socklen_t],
+              [AC_SUBST(MONGOC_HAVE_SOCKLEN, 1)],
+              [AC_SUBST(MONGOC_HAVE_SOCKLEN, 0)],
+              [#include <sys/socket.h>])
 
 AX_PTHREAD
