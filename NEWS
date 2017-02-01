@@ -1,7 +1,7 @@
-mongo-c-driver 1.6.0-rc0
-========================
+mongo-c-driver 1.6.0
+====================
 
-It is my please to announce mongo-c-driver 1.6.0-rc0.
+It is my please to announce mongo-c-driver 1.6.0.
 
 New features and bug fixes:
   * Enterprise authentication on Windows now uses the native GSSAPI library;
@@ -25,6 +25,7 @@ New features and bug fixes:
     * mongoc_find_and_modify_opts_get_max_time_ms
     * mongoc_find_and_modify_opts_get_sort
     * mongoc_find_and_modify_opts_get_update
+  * All public functions now have the __cdecl calling convention on Windows.
 
 Thanks to everyone who contributed to the development of this release.
 
