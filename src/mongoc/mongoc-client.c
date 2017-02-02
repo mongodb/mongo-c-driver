@@ -108,7 +108,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t *uri,
    BSON_ASSERT (host);
 
    connecttimeoutms = mongoc_uri_get_option_as_int32 (
-      uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+      uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    BSON_ASSERT (connecttimeoutms);
 
@@ -344,7 +344,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
          }
 
          connecttimeoutms = mongoc_uri_get_option_as_int32 (
-            uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+            uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
          if (!mongoc_stream_tls_handshake_block (
                 base_stream, host->host, connecttimeoutms, error)) {
@@ -746,7 +746,8 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
    client->read_prefs = mongoc_read_prefs_copy (read_prefs);
 
-   appname = mongoc_uri_get_option_as_utf8 (client->uri, "appname", NULL);
+   appname =
+      mongoc_uri_get_option_as_utf8 (client->uri, MONGOC_URI_APPNAME, NULL);
    if (appname && client->topology->single_threaded) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_set_appname (client, appname));

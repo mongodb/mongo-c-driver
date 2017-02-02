@@ -918,9 +918,11 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 
    uri = mongoc_uri_new (uri_str);
    assert (uri);
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
-   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10000);
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
+   mongoc_uri_set_option_as_bool (
+      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
 
    client = mongoc_client_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
@@ -1067,7 +1069,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
             bson_string_append (uri_string, database_name);
          }
 
-         add_option_to_uri_str (uri_string, "replicaSet", name);
+         add_option_to_uri_str (uri_string, MONGOC_URI_REPLICASET, name);
          bson_free (name);
       } else {
          host = test_framework_get_host ();
@@ -1082,14 +1084,15 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       }
 
       if (test_framework_get_ssl ()) {
-         add_option_to_uri_str (uri_string, "ssl", "true");
+         add_option_to_uri_str (uri_string, MONGOC_URI_SSL, "true");
       }
 
       bson_destroy (&ismaster_response);
    }
 
    /* make tests a little more resilient to transient errors */
-   add_option_to_uri_str (uri_string, "serverSelectionTryOnce", "false");
+   add_option_to_uri_str (
+      uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
    return bson_string_free (uri_string, false);
 }

@@ -49,7 +49,7 @@ test_mongoc_handshake_appname_in_uri (void)
 {
    char long_string[MONGOC_HANDSHAKE_APPNAME_MAX + 2];
    char *uri_str;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
+   const char *good_uri = "mongodb://host/?" MONGOC_URI_APPNAME "=mongodump";
    mongoc_uri_t *uri;
    const char *appname = "mongodump";
    const char *value;
@@ -59,11 +59,12 @@ test_mongoc_handshake_appname_in_uri (void)
 
    /* Shouldn't be able to set with appname really long */
    capture_logs (true);
-   uri_str = bson_strdup_printf ("mongodb://a/?appname=%s", long_string);
+   uri_str = bson_strdup_printf ("mongodb://a/?" MONGOC_URI_APPNAME "=%s",
+                                 long_string);
    ASSERT (!mongoc_client_new (uri_str));
    ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
                         MONGOC_LOG_LEVEL_WARNING,
-                        "is invalid");
+                        "Unsupported value");
    capture_logs (false);
 
    uri = mongoc_uri_new (good_uri);
@@ -89,7 +90,7 @@ static void
 test_mongoc_handshake_appname_frozen_single (void)
 {
    mongoc_client_t *client;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
+   const char *good_uri = "mongodb://host/?" MONGOC_URI_APPNAME "=mongodump";
 
    client = mongoc_client_new (good_uri);
 
@@ -108,7 +109,7 @@ static void
 test_mongoc_handshake_appname_frozen_pooled (void)
 {
    mongoc_client_pool_t *pool;
-   const char *good_uri = "mongodb://host/?appname=mongodump";
+   const char *good_uri = "mongodb://host/?" MONGOC_URI_APPNAME "=mongodump";
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new (good_uri);
@@ -186,8 +187,8 @@ test_mongoc_handshake_data_append_success (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
-   mongoc_uri_set_option_as_utf8 (uri, "appname", "testapp");
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
    pool = mongoc_client_pool_new (uri);
 
    /* Force topology scanner to start */
@@ -284,7 +285,8 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    _reset_handshake ();
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?" MONGOC_URI_MAXPOOLSIZE
+                         "=1&" MONGOC_URI_MINPOOLSIZE "=1");
 
    /* Make sure that after we pop a client we can't set global handshake */
    pool = mongoc_client_pool_new (uri);
@@ -337,7 +339,7 @@ test_mongoc_handshake_too_big (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* avoid rare test timeouts */
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 20000);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
    client = mongoc_client_new_from_uri (uri);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
@@ -411,7 +413,7 @@ test_mongoc_handshake_cannot_send (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
    pool = mongoc_client_pool_new (uri);
 
    /* Pop a client to trigger the topology scanner */

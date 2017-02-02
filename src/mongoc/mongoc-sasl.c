@@ -190,7 +190,8 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
       bson_init (&properties);
    }
 
-   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
+   if (bson_iter_init_find_case (
+          &iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       service_name = bson_iter_utf8 (&iter, NULL);
    }
@@ -214,7 +215,8 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
     *
     * See CDRIVER-323 for more information.
     */
-   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
+   if (bson_iter_init_find_case (
+          &iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
       canonicalize = bson_iter_bool (&iter);
    }

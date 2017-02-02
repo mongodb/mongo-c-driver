@@ -35,14 +35,16 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://localhost/?\x80=bar"));
    ASSERT (!mongoc_uri_new ("mongodb://\x80:pass@localhost"));
    ASSERT (!mongoc_uri_new ("mongodb://user:\x80@localhost"));
-   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                            "authMechanism=\x80"));
-   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                            "authMechanism=GSSAPI"
-                            "&authMechanismProperties=SERVICE_NAME:\x80"));
-   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/?"
-                            "authMechanism=GSSAPI"
-                            "&authMechanismProperties=\x80:mongodb"));
+   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
+                            "?" MONGOC_URI_AUTHMECHANISM "=\x80"));
+   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
+                            "?" MONGOC_URI_AUTHMECHANISM
+                            "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES
+                            "=SERVICE_NAME:\x80"));
+   ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
+                            "?" MONGOC_URI_AUTHMECHANISM
+                            "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES
+                            "=\x80:mongodb"));
    ASSERT (!mongoc_uri_new ("mongodb://::"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost::27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost,localhost::"));
@@ -63,8 +65,8 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536/"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:0/"));
 
-   uri =
-      mongoc_uri_new ("mongodb://[::1]:27888,[::2]:27999/?ipv6=true&safe=true");
+   uri = mongoc_uri_new (
+      "mongodb://[::1]:27888,[::2]:27999/?ipv6=true&" MONGOC_URI_SAFE "=true");
    assert (uri);
    hosts = mongoc_uri_get_hosts (uri);
    assert (hosts);
@@ -124,8 +126,9 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost:27017/"
-                         "?readPreference=secondaryPreferred&"
-                         "readPreferenceTags=dc:ny&readPreferenceTags=");
+                         "?" MONGOC_URI_READPREFERENCE
+                         "=secondaryPreferred&" MONGOC_URI_READPREFERENCETAGS
+                         "=dc:ny&" MONGOC_URI_READPREFERENCETAGS "=");
    ASSERT (uri);
    read_prefs = mongoc_uri_get_read_prefs_t (uri);
    ASSERT (mongoc_read_prefs_get_mode (read_prefs) ==
@@ -148,45 +151,49 @@ test_mongoc_uri_new (void)
    ASSERT (!bson_iter_next (&iter));
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/a?slaveok=true&ssl=false&journal=true");
+   uri = mongoc_uri_new ("mongodb://localhost/a?" MONGOC_URI_SLAVEOK
+                         "=true&" MONGOC_URI_SSL "=false&" MONGOC_URI_JOURNAL
+                         "=true");
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
    ASSERT_CMPINT (bson_count_keys (options), ==, 3);
    ASSERT (bson_iter_init (&iter, options));
-   ASSERT (bson_iter_find_case (&iter, "slaveok"));
+   ASSERT (bson_iter_find_case (&iter, "" MONGOC_URI_SLAVEOK ""));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, "ssl"));
+   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_SSL));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (!bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, "journal"));
+   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_JOURNAL));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (bson_iter_bool (&iter));
    ASSERT (!bson_iter_next (&iter));
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://localhost/?safe=false&journal=false");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_SAFE
+                         "=false&" MONGOC_URI_JOURNAL "=false");
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
    ASSERT_CMPINT (bson_count_keys (options), ==, 2);
    ASSERT (bson_iter_init (&iter, options));
-   ASSERT (bson_iter_find_case (&iter, "safe"));
+   ASSERT (bson_iter_find_case (&iter, "" MONGOC_URI_SAFE ""));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (!bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, "journal"));
+   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_JOURNAL));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (!bson_iter_bool (&iter));
    ASSERT (!bson_iter_next (&iter));
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb:///tmp/mongodb-27017.sock/?ssl=false");
+   uri = mongoc_uri_new ("mongodb:///tmp/mongodb-27017.sock/?" MONGOC_URI_SSL
+                         "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host, "/tmp/mongodb-27017.sock");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb:///tmp/mongodb-27017.sock,localhost:27017/?ssl=false");
+      "mongodb:///tmp/mongodb-27017.sock,localhost:27017/?" MONGOC_URI_SSL
+      "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host, "/tmp/mongodb-27017.sock");
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->next->host_and_port,
@@ -203,7 +210,8 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb://localhost:27017,/tmp/mongodb-27017.sock/?ssl=false");
+      "mongodb://localhost:27017,/tmp/mongodb-27017.sock/?" MONGOC_URI_SSL
+      "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, "localhost:27017");
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->next->host,
@@ -211,9 +219,11 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_get_hosts (uri)->next->next);
    mongoc_uri_destroy (uri);
 
-   /* should use the authSource over db when both are specified */
+   /* should use the " MONGOC_URI_AUTHSOURCE " over db when both are specified
+    */
    uri = mongoc_uri_new (
-      "mongodb://christian:secret@localhost:27017/foo/?authSource=abcd");
+      "mongodb://christian:secret@localhost:27017/foo/?" MONGOC_URI_AUTHSOURCE
+      "=abcd");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian");
    ASSERT_CMPSTR (mongoc_uri_get_password (uri), "secret");
@@ -227,7 +237,7 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_get_auth_mechanism (uri));
    mongoc_uri_destroy (uri);
 
-   /* should use the db when no authSource is specified */
+   /* should use the db when no " MONGOC_URI_AUTHSOURCE " is specified */
    uri = mongoc_uri_new ("mongodb://user:password@localhost/foo");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "foo");
@@ -288,8 +298,8 @@ test_mongoc_uri_new (void)
    /* GSSAPI-specific options */
 
    /* should recognize the GSSAPI mechanism, and use $external as source */
-   uri = mongoc_uri_new (
-      "mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI");
+   uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
+                         "?" MONGOC_URI_AUTHMECHANISM "=GSSAPI");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "GSSAPI");
    /*ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");*/
@@ -297,20 +307,22 @@ test_mongoc_uri_new (void)
 
    /* use $external as source when db is specified */
    uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/foo/"
-                         "?authMechanism=GSSAPI");
+                         "?" MONGOC_URI_AUTHMECHANISM "=GSSAPI");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
    mongoc_uri_destroy (uri);
 
-   /* should not accept authSource other than $external */
+   /* should not accept " MONGOC_URI_AUTHSOURCE " other than $external */
    ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
-                            "foo/?authMechanism=GSSAPI&authSource=bar"));
+                            "foo/?" MONGOC_URI_AUTHMECHANISM
+                            "=GSSAPI&" MONGOC_URI_AUTHSOURCE "=bar"));
 
-   /* should accept authMechanismProperties */
-   uri = mongoc_uri_new (
-      "mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI"
-      "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:"
-      "true");
+   /* should accept MONGOC_URI_AUTHMECHANISMPROPERTIES */
+   uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
+                         "?" MONGOC_URI_AUTHMECHANISM
+                         "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES
+                         "=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:"
+                         "true");
    ASSERT (uri);
    credentials = mongoc_uri_get_credentials (uri);
    ASSERT (credentials);
@@ -325,29 +337,32 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    /* reverse order of arguments to ensure parsing still succeeds */
-   uri = mongoc_uri_new ("mongodb://user@localhost/"
-                         "?authMechanismProperties=SERVICE_NAME:other"
-                         "&authMechanism=GSSAPI");
+   uri = mongoc_uri_new (
+      "mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISMPROPERTIES
+      "=SERVICE_NAME:other&" MONGOC_URI_AUTHMECHANISM "=GSSAPI");
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
    /* deprecated gssapiServiceName option */
    uri = mongoc_uri_new ("mongodb://christian%40realm.cc@localhost:27017/"
-                         "?authMechanism=GSSAPI&gssapiServiceName=blah");
+                         "?" MONGOC_URI_AUTHMECHANISM
+                         "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=blah");
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
    assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
    assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
-   assert (bson_iter_init_find_case (&iter, options, "gssapiServiceName") &&
-           BSON_ITER_HOLDS_UTF8 (&iter) &&
-           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
+   assert (
+      bson_iter_init_find_case (&iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
+      BSON_ITER_HOLDS_UTF8 (&iter) &&
+      (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
    mongoc_uri_destroy (uri);
 
    /* MONGODB-CR */
 
    /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?authMechanism=MONGODB-CR");
+   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
+                         "=MONGODB-CR");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
    mongoc_uri_destroy (uri);
@@ -355,8 +370,8 @@ test_mongoc_uri_new (void)
    /* X509 */
 
    /* should recognize this mechanism, and use $external as the source */
-   uri =
-      mongoc_uri_new ("mongodb://user@localhost/?authMechanism=MONGODB-X509");
+   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
+                         "=MONGODB-X509");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509");
    /*ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");*/
@@ -366,21 +381,23 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new (
       "mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
       "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/"
-      "?authMechanism=MONGODB-X509");
+      "?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
    mongoc_uri_destroy (uri);
 
-   /* should not accept authSource other than $external */
+   /* should not accept " MONGOC_URI_AUTHSOURCE " other than $external */
    ASSERT (!mongoc_uri_new (
       "mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
       "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/"
-      "?authMechanism=MONGODB-X509&authSource=bar"));
+      "?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509&" MONGOC_URI_AUTHSOURCE
+      "=bar"));
 
    /* should recognize the encoded username */
    uri = mongoc_uri_new (
       "mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
-      "%2CST%3DmyState%2CC%3DmyCountry@localhost/?authMechanism=MONGODB-X509");
+      "%2CST%3DmyState%2CC%3DmyCountry@localhost/?" MONGOC_URI_AUTHMECHANISM
+      "=MONGODB-X509");
    ASSERT (uri);
    ASSERT_CMPSTR (
       mongoc_uri_get_username (uri),
@@ -390,7 +407,8 @@ test_mongoc_uri_new (void)
    /* PLAIN */
 
    /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?authMechanism=PLAIN");
+   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
+                         "=PLAIN");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "PLAIN");
    mongoc_uri_destroy (uri);
@@ -398,7 +416,8 @@ test_mongoc_uri_new (void)
    /* SCRAM-SHA1 */
 
    /* should recognize this mechanism */
-   uri = mongoc_uri_new ("mongodb://user@localhost/?authMechanism=SCRAM-SHA1");
+   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
+                         "=SCRAM-SHA1");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    mongoc_uri_destroy (uri);
@@ -411,8 +430,9 @@ test_mongoc_uri_authmechanismproperties (void)
    mongoc_uri_t *uri;
    bson_t props;
 
-   uri = mongoc_uri_new ("mongodb://user@localhost/?authMechanism=SCRAM-SHA1"
-                         "&authmechanismproperties=a:one,b:two");
+   uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
+                         "=SCRAM-SHA1"
+                         "&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:one,b:two");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
@@ -420,7 +440,7 @@ test_mongoc_uri_authmechanismproperties (void)
 
    /* prohibited */
    ASSERT (!mongoc_uri_set_option_as_utf8 (
-      uri, "authMechanismProperties", "a:three"));
+      uri, MONGOC_URI_AUTHMECHANISMPROPERTIES, "a:three"));
 
    ASSERT (
       mongoc_uri_set_mechanism_properties (uri, tmp_bson ("{'a': 'four'}")));
@@ -440,7 +460,7 @@ test_mongoc_uri_functions (void)
    mongoc_database_t *db;
 
    uri = mongoc_uri_new (
-      "mongodb://foo:bar@localhost:27017/baz?authSource=source");
+      "mongodb://foo:bar@localhost:27017/baz?" MONGOC_URI_AUTHSOURCE "=source");
 
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "foo");
    ASSERT_CMPSTR (mongoc_uri_get_password (uri), "bar");
@@ -480,11 +500,12 @@ test_mongoc_uri_functions (void)
    mongoc_client_destroy (client);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/?serverselectiontimeoutms=3"
-                         "&journal=true"
-                         "&wtimeoutms=42"
-                         "&localthresholdms=17"
-                         "&canonicalizeHostname=false");
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=3"
+      "&" MONGOC_URI_JOURNAL "=true"
+      "&" MONGOC_URI_WTIMEOUTMS "=42"
+      "&" MONGOC_URI_LOCALTHRESHOLDMS "=17"
+      "&" MONGOC_URI_CANONICALIZEHOSTNAME "=false");
 
    ASSERT_CMPINT (
       mongoc_uri_get_option_as_int32 (uri, "serverselectiontimeoutms", 18),
@@ -498,41 +519,49 @@ test_mongoc_uri_functions (void)
       18);
 
    ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "wtimeoutms", 18), ==, 42);
-   ASSERT (mongoc_uri_set_option_as_int32 (uri, "wtimeoutms", 18));
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18), ==, 42);
+   ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18));
    ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "wtimeoutms", 19), ==, 18);
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 18);
 
    ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "localthresholdms", 99), ==, 17);
-   ASSERT (mongoc_uri_set_option_as_int32 (uri, "localthresholdms", 99));
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 99),
+      ==,
+      17);
+   ASSERT (
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 99));
    ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "localthresholdms", 42), ==, 99);
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 42),
+      ==,
+      99);
 
    /* socketcheckintervalms isn't set, return our fallback */
-   ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 123),
-      ==,
-      123);
-   ASSERT (mongoc_uri_set_option_as_int32 (uri, "socketcheckintervalms", 18));
-   ASSERT_CMPINT (
-      mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 19),
-      ==,
-      18);
+   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 123),
+                  ==,
+                  123);
+   ASSERT (mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 18));
+   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 19),
+                  ==,
+                  18);
 
-   ASSERT (mongoc_uri_get_option_as_bool (uri, "journal", false));
-   ASSERT (!mongoc_uri_get_option_as_bool (uri, "canonicalizeHostname", true));
+   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_JOURNAL, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
    /* ssl isn't set, return out fallback */
-   ASSERT (mongoc_uri_get_option_as_bool (uri, "ssl", true));
+   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSL, true));
 
    client = mongoc_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
 
-   ASSERT (mongoc_uri_get_option_as_bool (client->uri, "journal", false));
+   ASSERT (
+      mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
-      client->uri, "canonicalizeHostname", true));
+      client->uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
    /* ssl isn't set, return out fallback */
-   ASSERT (mongoc_uri_get_option_as_bool (client->uri, "ssl", true));
+   ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_SSL, true));
    mongoc_client_destroy (client);
 
    uri = mongoc_uri_new ("mongodb://localhost/");
@@ -545,24 +574,28 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?sockettimeoutms=1&socketcheckintervalms=200");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_SOCKETTIMEOUTMS
+                         "=1&" MONGOC_URI_SOCKETCHECKINTERVALMS "=200");
    ASSERT_CMPINT (
-      1, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
-   ASSERT_CMPINT (
-      200,
+      1,
       ==,
-      mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 0));
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0));
+   ASSERT_CMPINT (200,
+                  ==,
+                  mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 0));
 
-   mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 2);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 2);
    ASSERT_CMPINT (
-      2, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
-
-   mongoc_uri_set_option_as_int32 (uri, "socketcheckintervalms", 202);
-   ASSERT_CMPINT (
-      202,
+      2,
       ==,
-      mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 0));
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0));
+
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 202);
+   ASSERT_CMPINT (202,
+                  ==,
+                  mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 0));
 
 
    client = mongoc_client_new_from_uri (uri);
@@ -600,10 +633,10 @@ test_mongoc_uri_compound_setters (void)
    mongoc_write_concern_t *wc;
    const mongoc_write_concern_t *wc_result;
 
-   uri = mongoc_uri_new ("mongodb://localhost/"
-                         "?readPreference=nearest&readPreferenceTags=dc:ny"
-                         "&readConcern=majority"
-                         "&w=3");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READPREFERENCE
+                         "=nearest&" MONGOC_URI_READPREFERENCETAGS
+                         "=dc:ny&" MONGOC_URI_READCONCERNLEVEL
+                         "=majority&" MONGOC_URI_W "=3");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_uri_set_read_prefs_t (uri, prefs);
@@ -735,88 +768,103 @@ test_mongoc_uri_read_prefs (void)
 
    const read_prefs_test tests[] = {
       {"mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL},
-      {"mongodb://localhost/?slaveOk=false", true, MONGOC_READ_PRIMARY, NULL},
-      {"mongodb://localhost/?slaveOk=true",
-       true,
-       MONGOC_READ_SECONDARY_PREFERRED,
-       NULL},
-      {"mongodb://localhost/?readPreference=primary",
+      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK "=false",
        true,
        MONGOC_READ_PRIMARY,
        NULL},
-      {"mongodb://localhost/?readPreference=primaryPreferred",
+      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK "=true",
+       true,
+       MONGOC_READ_SECONDARY_PREFERRED,
+       NULL},
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=primary",
+       true,
+       MONGOC_READ_PRIMARY,
+       NULL},
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=primaryPreferred",
        true,
        MONGOC_READ_PRIMARY_PREFERRED,
        NULL},
-      {"mongodb://localhost/?readPreference=secondary",
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=secondary",
        true,
        MONGOC_READ_SECONDARY,
        NULL},
-      {"mongodb://localhost/?readPreference=secondaryPreferred",
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=secondaryPreferred",
        true,
        MONGOC_READ_SECONDARY_PREFERRED,
        NULL},
-      {"mongodb://localhost/?readPreference=nearest",
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=nearest",
        true,
        MONGOC_READ_NEAREST,
        NULL},
-      /* readPreference should take priority over slaveOk */
-      {"mongodb://localhost/?slaveOk=false&readPreference=secondary",
+      /* MONGOC_URI_READPREFERENCE should take priority over "
+         MONGOC_URI_SLAVEOK " */
+      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK
+       "=false&" MONGOC_URI_READPREFERENCE "=secondary",
        true,
        MONGOC_READ_SECONDARY,
        NULL},
-      /* readPreferenceTags conflict with primary mode */
-      {"mongodb://localhost/?readPreferenceTags=",
+      /* MONGOC_URI_READPREFERENCETAGS conflict with primary mode */
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCETAGS "=",
        false,
        MONGOC_READ_PRIMARY,
        NULL,
        conflicts},
-      {"mongodb://localhost/?readPreference=primary&readPreferenceTags=",
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE
+       "=primary&" MONGOC_URI_READPREFERENCETAGS "=",
        false,
        MONGOC_READ_PRIMARY,
        NULL,
        conflicts},
-      {"mongodb://localhost/?slaveOk=false&readPreferenceTags=",
+      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK
+       "=false&" MONGOC_URI_READPREFERENCETAGS "=",
        false,
        MONGOC_READ_PRIMARY,
        NULL,
        conflicts},
       {"mongodb://localhost/"
-       "?readPreference=secondaryPreferred&readPreferenceTags=",
+       "?" MONGOC_URI_READPREFERENCE
+       "=secondaryPreferred&" MONGOC_URI_READPREFERENCETAGS "=",
        true,
        MONGOC_READ_SECONDARY_PREFERRED,
        tags_empty},
       {"mongodb://localhost/"
-       "?readPreference=secondaryPreferred&readPreferenceTags=dc:ny",
+       "?" MONGOC_URI_READPREFERENCE
+       "=secondaryPreferred&" MONGOC_URI_READPREFERENCETAGS "=dc:ny",
        true,
        MONGOC_READ_SECONDARY_PREFERRED,
        tags_dcny},
       {"mongodb://localhost/"
-       "?readPreference=nearest&readPreferenceTags=dc:ny&readPreferenceTags=",
+       "?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS
+       "=dc:ny&" MONGOC_URI_READPREFERENCETAGS "=",
        true,
        MONGOC_READ_NEAREST,
        tags_dcny_empty},
       {"mongodb://localhost/"
-       "?readPreference=nearest&readPreferenceTags=dc:ny,use:ssd&"
-       "readPreferenceTags=dc:sf&readPreferenceTags=",
+       "?" MONGOC_URI_READPREFERENCE "=nearest&" MONGOC_URI_READPREFERENCETAGS
+       "=dc:ny,use:ssd&" MONGOC_URI_READPREFERENCETAGS
+       "=dc:sf&" MONGOC_URI_READPREFERENCETAGS "=",
        true,
        MONGOC_READ_NEAREST,
        tags_dcnyusessd_dcsf_empty},
-      {"mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo",
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE
+       "=nearest&" MONGOC_URI_READPREFERENCETAGS "=foo",
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "invalid readPreferenceTags: \"foo\""},
-      {"mongodb://localhost/?readPreference=nearest&readPreferenceTags=foo,bar",
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"foo\""},
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE
+       "=nearest&" MONGOC_URI_READPREFERENCETAGS "=foo,bar",
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "invalid readPreferenceTags: \"foo,bar\""},
-      {"mongodb://localhost/?readPreference=nearest&readPreferenceTags=1",
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS
+       "\": \"foo,bar\""},
+      {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE
+       "=nearest&" MONGOC_URI_READPREFERENCETAGS "=1",
        false,
        MONGOC_READ_NEAREST,
        NULL,
-       "invalid readPreferenceTags: \"1\""},
+       "Unsupported value for \"" MONGOC_URI_READPREFERENCETAGS "\": \"1\""},
       {NULL}};
 
    for (i = 0; tests[i].uri; i++) {
@@ -873,57 +921,71 @@ test_mongoc_uri_write_concern (void)
    const write_concern_test *t;
    int i;
    static const write_concern_test tests[] = {
-      {"mongodb://localhost/?safe=false",
+      {"mongodb://localhost/?" MONGOC_URI_SAFE "=false",
        true,
        MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED},
-      {"mongodb://localhost/?safe=true", true, 1},
-      {"mongodb://localhost/?w=-1",
+      {"mongodb://localhost/?" MONGOC_URI_SAFE "=true", true, 1},
+      {"mongodb://localhost/?" MONGOC_URI_W "=-1",
        true,
        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED},
-      {"mongodb://localhost/?w=0", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED},
-      {"mongodb://localhost/?w=1", true, 1},
-      {"mongodb://localhost/?w=2", true, 2},
-      {"mongodb://localhost/?w=majority",
+      {"mongodb://localhost/?" MONGOC_URI_W "=0",
+       true,
+       MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED},
+      {"mongodb://localhost/?" MONGOC_URI_W "=1", true, 1},
+      {"mongodb://localhost/?" MONGOC_URI_W "=2", true, 2},
+      {"mongodb://localhost/?" MONGOC_URI_W "=majority",
        true,
        MONGOC_WRITE_CONCERN_W_MAJORITY},
-      {"mongodb://localhost/?w=10", true, 10},
-      {"mongodb://localhost/?w=", true, MONGOC_WRITE_CONCERN_W_DEFAULT},
-      {"mongodb://localhost/?w=mytag",
-       true,
-       MONGOC_WRITE_CONCERN_W_TAG,
-       "mytag"},
-      {"mongodb://localhost/?w=mytag&safe=false",
-       true,
-       MONGOC_WRITE_CONCERN_W_TAG,
-       "mytag"},
-      {"mongodb://localhost/?w=1&safe=false", true, 1},
-      {"mongodb://localhost/?journal=true",
+      {"mongodb://localhost/?" MONGOC_URI_W "=10", true, 10},
+      {"mongodb://localhost/?" MONGOC_URI_W "=",
        true,
        MONGOC_WRITE_CONCERN_W_DEFAULT},
-      {"mongodb://localhost/?w=1&journal=true", true, 1},
-      {"mongodb://localhost/?w=2&wtimeoutms=1000", true, 2, NULL, 1000},
-      {"mongodb://localhost/?w=majority&wtimeoutms=1000",
+      {"mongodb://localhost/?" MONGOC_URI_W "=mytag",
+       true,
+       MONGOC_WRITE_CONCERN_W_TAG,
+       "mytag"},
+      {"mongodb://localhost/?" MONGOC_URI_W "=mytag&" MONGOC_URI_SAFE "=false",
+       true,
+       MONGOC_WRITE_CONCERN_W_TAG,
+       "mytag"},
+      {"mongodb://localhost/?" MONGOC_URI_W "=1&" MONGOC_URI_SAFE "=false",
+       true,
+       1},
+      {"mongodb://localhost/?" MONGOC_URI_JOURNAL "=true",
+       true,
+       MONGOC_WRITE_CONCERN_W_DEFAULT},
+      {"mongodb://localhost/?" MONGOC_URI_W "=1&" MONGOC_URI_JOURNAL "=true",
+       true,
+       1},
+      {"mongodb://localhost/?" MONGOC_URI_W "=2&" MONGOC_URI_WTIMEOUTMS "=1000",
+       true,
+       2,
+       NULL,
+       1000},
+      {"mongodb://localhost/?" MONGOC_URI_W "=majority&" MONGOC_URI_WTIMEOUTMS
+       "=1000",
        true,
        MONGOC_WRITE_CONCERN_W_MAJORITY,
        NULL,
        1000},
-      {"mongodb://localhost/?w=mytag&wtimeoutms=1000",
+      {"mongodb://localhost/?" MONGOC_URI_W "=mytag&" MONGOC_URI_WTIMEOUTMS
+       "=1000",
        true,
        MONGOC_WRITE_CONCERN_W_TAG,
        "mytag",
        1000},
-      {"mongodb://localhost/?w=0&journal=true",
+      {"mongodb://localhost/?" MONGOC_URI_W "=0&" MONGOC_URI_JOURNAL "=true",
        false,
        MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED,
        NULL,
        0,
-       "Journal conflicts with w value [w=0]"},
-      {"mongodb://localhost/?w=-1&journal=true",
+       "Journal conflicts with w value [" MONGOC_URI_W "=0]"},
+      {"mongodb://localhost/?" MONGOC_URI_W "=-1&" MONGOC_URI_JOURNAL "=true",
        false,
        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED,
        NULL,
        0,
-       "Journal conflicts with w value [w=-1]"},
+       "Journal conflicts with w value [" MONGOC_URI_W "=-1]"},
       {NULL}};
 
    for (i = 0; tests[i].uri; i++) {
@@ -971,39 +1033,42 @@ test_mongoc_uri_read_concern (void)
    const mongoc_read_concern_t *rc;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=majority");
-   rc = mongoc_uri_get_read_concern (uri);
-   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
-   mongoc_uri_destroy (uri);
-
-   uri =
-      mongoc_uri_new ("mongodb://localhost/"
-                      "?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READCONCERNLEVEL
+                         "=majority");
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost/"
-                         "?readConcernLevel"
+                         "?" MONGOC_URI_READCONCERNLEVEL
+                         "=" MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/"
+                         "?" MONGOC_URI_READCONCERNLEVEL
                          "=" MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "linearizable");
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=local");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READCONCERNLEVEL
+                         "=local");
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "local");
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READCONCERNLEVEL
+                         "=" MONGOC_READ_CONCERN_LEVEL_LOCAL);
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "local");
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=randomstuff");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READCONCERNLEVEL
+                         "=randomstuff");
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "randomstuff");
    mongoc_uri_destroy (uri);
@@ -1015,7 +1080,8 @@ test_mongoc_uri_read_concern (void)
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=");
+   uri =
+      mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_READCONCERNLEVEL "=");
    rc = mongoc_uri_get_read_concern (uri);
    ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "");
    mongoc_uri_destroy (uri);

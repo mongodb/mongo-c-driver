@@ -164,7 +164,7 @@ test_topology_scanner_discovery (void)
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
 
-   uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (primary));
    client = mongoc_client_new (uri_str);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -242,7 +242,7 @@ test_topology_scanner_oscillate (void)
                           mock_server_get_host_and_port (server0));
 
    /* start with server 0 */
-   uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (server0));
    client = mongoc_client_new (uri_str);
    scanner = client->topology->scanner;
@@ -319,7 +319,7 @@ test_topology_scanner_socket_timeout (void)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10);
    client = mongoc_client_new_from_uri (uri);
 
    ASSERT (!mongoc_client_command_simple (
@@ -382,7 +382,7 @@ test_topology_scanner_blocking_initiator (void)
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    client = mongoc_client_new_from_uri (uri);
 
    /* pretend last host in linked list is slow */
