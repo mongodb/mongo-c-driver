@@ -1,4 +1,4 @@
-from docutils.nodes import literal
+from docutils.nodes import literal, Text
 from docutils.parsers.rst import roles
 
 from sphinx.roles import XRefRole
@@ -10,13 +10,21 @@ class SymbolRole(XRefRole):
         for node in nodes:
             attrs = node.attributes
             target = attrs['reftarget']
+            parens = ''
             if target.endswith('()'):
                 # Function call, :symbol:`mongoc_init()`
                 target = target[:-2]
+                parens = '()'
 
             if ':' in target:
                 # E.g., 'bson:bson_t' has domain 'bson', target 'bson_t'
-                attrs['domain'], attrs['reftarget'] = target.split(':', 1)
+                attrs['domain'], name = target.split(':', 1)
+                attrs['reftarget'] = name
+
+                assert isinstance(node.children[0].children[0], Text)
+                node.children[0].children[0] = Text(name + parens,
+                                                    name + parens)
+
             else:
                 attrs['reftarget'] = target
 
