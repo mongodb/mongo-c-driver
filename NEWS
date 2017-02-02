@@ -4,6 +4,7 @@ mongo-c-driver 1.6.0
 It is my please to announce mongo-c-driver 1.6.0.
 
 New features and bug fixes:
+
   * Enterprise authentication on Windows now uses the native GSSAPI library;
     Cyrus SASL is no longer required for enterprise auth on Windows.
   * BSON documents are more thoroughly validated before insert or update.
