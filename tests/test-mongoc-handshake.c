@@ -285,7 +285,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    _reset_handshake ();
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?" MONGOC_URI_MAXPOOLSIZE
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?" MONGOC_URI_MAXPOOLSIZE
                          "=1&" MONGOC_URI_MINPOOLSIZE "=1");
 
    /* Make sure that after we pop a client we can't set global handshake */

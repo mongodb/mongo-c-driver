@@ -106,7 +106,7 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "foo");
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://local1,local2:999,local3?replicaset=foo");
+   uri = mongoc_uri_new ("mongodb://local1,local2:999,local3/?replicaset=foo");
    ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);

@@ -914,7 +914,7 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
    uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
                                  host,
                                  port,
-                                 test_framework_get_ssl () ? "?ssl=true" : "");
+                                 test_framework_get_ssl () ? "/?ssl=true" : "");
 
    uri = mongoc_uri_new (uri_str);
    assert (uri);

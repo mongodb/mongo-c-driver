@@ -14,7 +14,7 @@ test_mongoc_client_pool_basic (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
    assert (client);
@@ -31,7 +31,7 @@ test_mongoc_client_pool_try_pop (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
    assert (client);
@@ -81,7 +81,7 @@ test_mongoc_client_pool_min_size_dispose (void)
    mongoc_uri_t *uri;
    mongoc_client_t *c0, *c1, *c2, *c3;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?minpoolsize=2");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?minpoolsize=2");
    pool = mongoc_client_pool_new (uri);
 
    c0 = mongoc_client_pool_pop (pool);
@@ -145,7 +145,7 @@ test_mongoc_client_pool_set_max_size (void)
 
    _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 5; i++) {
@@ -182,7 +182,7 @@ test_mongoc_client_pool_set_min_size (void)
 
    _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 10; i++) {
@@ -229,7 +229,7 @@ test_mongoc_client_pool_handshake (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
 
 

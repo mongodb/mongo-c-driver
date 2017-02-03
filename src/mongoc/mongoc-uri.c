@@ -88,13 +88,17 @@ mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port)
                      host,
                      port);
       link_->family = AF_INET6;
+   } else if (strstr (host, ".sock")) {
+      bson_snprintf (
+         link_->host_and_port, sizeof link_->host_and_port, "%s", host);
+      link_->family = AF_UNIX;
    } else {
       bson_snprintf (link_->host_and_port,
                      sizeof link_->host_and_port,
                      "%s:%hu",
                      host,
                      port);
-      link_->family = strstr (host, ".sock") ? AF_UNIX : AF_INET;
+      link_->family = AF_INET;
    }
    link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
    link_->port = port;
@@ -365,6 +369,7 @@ again:
          str++;
          goto again;
       }
+      *end = str;
    } else if ((s = scan_to_unichar (str, ',', "/", &end_hostport))) {
       if (!mongoc_uri_parse_host (uri, s)) {
          bson_free (s);
@@ -809,24 +814,27 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str)
       return false;
    }
 
-   switch (*str) {
-   case '/':
-      str++;
-      if (*str && !mongoc_uri_parse_database (uri, str, &str)) {
+   if (*str) {
+      if (*str == '/') {
+         str++;
+         if (*str) {
+            if (!mongoc_uri_parse_database (uri, str, &str)) {
+               return false;
+            }
+         }
+
+         if (*str == '?') {
+            str++;
+            if (*str) {
+               if (!mongoc_uri_parse_options (uri, str)) {
+                  return false;
+               }
+            }
+         }
+      } else {
+         MONGOC_WARNING ("Expected end of hostname delimiter");
          return false;
       }
-      if (!*str) {
-         break;
-      }
-   /* Fall through */
-   case '?':
-      str++;
-      if (*str && !mongoc_uri_parse_options (uri, str)) {
-         return false;
-      }
-      break;
-   default:
-      break;
    }
 
    return mongoc_uri_finalize_auth (uri);
