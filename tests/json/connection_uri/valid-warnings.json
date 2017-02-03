@@ -16,21 +16,6 @@
       "options": null
     },
     {
-      "description": "Unsupported option values are ignored",
-      "uri": "mongodb://example.com/?fsync=ifPossible",
-      "valid": true,
-      "warning": true,
-      "hosts": [
-        {
-          "type": "hostname",
-          "host": "example.com",
-          "port": null
-        }
-      ],
-      "auth": null,
-      "options": null
-    },
-    {
       "description": "Repeated option keys",
       "uri": "mongodb://example.com/?replicaSet=test&replicaSet=test",
       "valid": true,
