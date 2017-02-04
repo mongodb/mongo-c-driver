@@ -179,15 +179,6 @@
       "hosts": null,
       "auth": null,
       "options": null
-    },
-    {
-      "description": "Host with unescaped slash",
-      "uri": "mongodb:///tmp/mongodb-27017.sock/",
-      "valid": false,
-      "warning": null,
-      "hosts": null,
-      "auth": null,
-      "options": null
     }
   ]
 }
