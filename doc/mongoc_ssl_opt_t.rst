@@ -28,10 +28,26 @@ Beginning in version 1.2.0, once a pool or client has any SSL options set, all c
 
 As of 1.4.0, the :symbol:`mongoc_client_pool_set_ssl_opts` and :symbol:`mongoc_client_set_ssl_opts` will not only shallow copy the struct, but will also copy the ``const char*``. It is therefore no longer needed to make sure the values remain valid after setting them.
 
+
+Configuration through URI Options
+---------------------------------
+
+Most of the configurable options can be using the Connection URI.
+
+===============================  ===============================
+**mongoc_ssl_opt_t key**         **URI key**
+===============================  ===============================
+pem_file                         sslClientCertificateKeyFile
+pem_pwd                          sslClientCertificateKeyPassword
+ca_file                          sslCertificateAuthorityFile
+weak_cert_validation             sslAllowInvalidCertificates
+allow_invalid_hostname           sslAllowInvalidHostnames
+===============================  ===============================
+
 Client Authentication
 ---------------------
 
-When MongoDB is started with SSL enabled, it will by default require the client o provide a client certificate issued by a certificate authority specified by ``--sslCAFile``, or an authority trusted by the native certificate store in use on the server.
+When MongoDB is started with SSL enabled, it will by default require the client to provide a client certificate issued by a certificate authority specified by ``--sslCAFile``, or an authority trusted by the native certificate store in use on the server.
 
 To provide the client certificate, the user must configure the ``pem_file`` to point at a PEM armored certificate.
 
@@ -41,11 +57,10 @@ To provide the client certificate, the user must configure the ``pem_file`` to p
 
   ssl_opts.pem_file = "/path/to/client-certificate.pem"
 
-     /* Then set the client ssl_opts, when using a single client mongoc_client_t
-        */
-     mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
-  /* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t
-   */
+  /* Then set the client ssl_opts, when using a single client mongoc_client_t */
+  mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+
+  /* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t */
   mongoc_client_set_ssl_opts (client, &ssl_opts);
 
 Server Certificate Verification
@@ -63,6 +78,11 @@ The MongoDB C Driver supports the dominating TLS library (OpenSSL) and crypto li
 Support for OpenSSL 1.1 and later was added in 1.4.0.
 
 When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution, if the ``ca_file`` and ``ca_dir`` are not set.
+
+LibreSSL / libtls
+-----------------
+
+The MongoDB C Driver supports LibreSSL through the use of OpenSSL compatibility checks when configured to compile against ``openssl``. It also supports the new ``libtls`` library when configured to build against ``libressl``.
 
 Native TLS Support on Windows (Secure Channel)
 ----------------------------------------------

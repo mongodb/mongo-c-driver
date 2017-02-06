@@ -81,6 +81,17 @@ canonicalizeHostname  Use the canonical hostname of the service, rather then con
 gssapiServicename     Use alternative service name. The default is ``mongodb``.
 ====================  ========================================================================
 
+SSL Options
+-----------
+
+===============================  ==================================================================================================================================
+sslClientCertificateKeyFile      Path to PEM formatted Private Key, with its Public Certificate concatenated at the end.
+sslClientCertificateKeyPassword  The password, if any, to use to unlock encrypted Private Key.
+sslCertificateAuthorityFile      One, or a bundle of, Certificate Authorities whom should be considered to be trusted.
+sslAllowInvalidCertificates      Accept and ignore certificate verification errors (e.g. untrusted issuer, expired, etc etc)
+sslAllowInvalidHostnames         Ignore hostname verification of the certificate (e.g. Man In The Middle, using valid certificate, but issued for another hostname)
+===============================  ==================================================================================================================================
+
 Server Discovery, Monitoring, and Selection Options
 ---------------------------------------------------
 
