@@ -114,6 +114,43 @@ functions:
         content_type: text/html
         display_name: "Rendered docs"
 
+  "upload man pages" :
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongoc"
+        script: |
+           . venv/bin/activate
+
+           # "man" with redirection writes plain ASCII, use lower-level groff to
+           # force formatted output. -t lays out tables, -T utf8 sets the output
+           # type, -man loads the manpage TROFF macros.
+           for doc in doc/man/*.3; do
+             echo $doc
+             fullpath=`pwd`/$doc
+             groff -man -t -T utf8 $fullpath | term2image -o $fullpath.png
+           done
+
+           mkdir -p man-page-images
+           mv doc/man/*.png man-page-images
+
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           sudo apt-get install -y awscli
+           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+
+           sh .evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  ${workdir}/mongoc/man-page-images/index.html
+        remote_file: ${project}/man-page-images/${CURRENT_VERSION}/index.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "Rendered man pages"
+
   "upload coverage" :
     - command: shell.exec
       params:
@@ -354,11 +391,12 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              # Need modern Sphinx for :caption: in literal includes
+              # Need modern Sphinx for :caption: in literal includes.
+              # Install term2image for man page rendering.
               python -m virtualenv venv
               cd venv
               . bin/activate
-              ./bin/pip install sphinx
+              ./bin/pip install sphinx git+https://github.com/ajdavis/term2image.git
               cd ..
 
         - command: shell.exec
@@ -379,6 +417,7 @@ tasks:
 
               ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
         - func: "upload docs"
+        - func: "upload man pages"
         - func: "upload release"
         - func: "upload build"
 
