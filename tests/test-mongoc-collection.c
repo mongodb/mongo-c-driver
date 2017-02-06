@@ -4734,6 +4734,8 @@ test_insert_duplicate_key (void)
    mongoc_client_destroy (client);
 }
 
+/* fails on Ubuntu zSeries, iff OpenSSL is not compiled in */
+#ifdef TODO_CDRIVER_2034
 static void
 test_create_index_fail (void)
 {
@@ -4760,6 +4762,7 @@ test_create_index_fail (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
+#endif
 
 void
 test_collection_install (TestSuite *suite)
@@ -4940,6 +4943,8 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
+#ifdef TODO_CDRIVER_2034
    TestSuite_Add (
       suite, "/Collection/create_index/fail", test_create_index_fail);
+#endif
 }
