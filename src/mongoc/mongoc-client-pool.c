@@ -114,19 +114,20 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    b = mongoc_uri_get_options (pool->uri);
 
-   if (bson_iter_init_find_case (&iter, b, "minpoolsize")) {
+   if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MINPOOLSIZE)) {
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->min_pool_size = BSON_MAX (0, bson_iter_int32 (&iter));
       }
    }
 
-   if (bson_iter_init_find_case (&iter, b, "maxpoolsize")) {
+   if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MAXPOOLSIZE)) {
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->max_pool_size = BSON_MAX (1, bson_iter_int32 (&iter));
       }
    }
 
-   appname = mongoc_uri_get_option_as_utf8 (pool->uri, "appname", NULL);
+   appname =
+      mongoc_uri_get_option_as_utf8 (pool->uri, MONGOC_URI_APPNAME, NULL);
    if (appname) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_pool_set_appname (pool, appname));

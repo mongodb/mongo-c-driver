@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "description": "Unrecognized option keys are ignored",
+      "uri": "mongodb://example.com/?foo=bar",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": null
+    }
+  ]
+}

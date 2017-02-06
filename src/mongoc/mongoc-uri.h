@@ -34,6 +34,39 @@
 #define MONGOC_DEFAULT_PORT 27017
 #endif
 
+#define MONGOC_URI_APPNAME "appname"
+#define MONGOC_URI_AUTHMECHANISM "authmechanism"
+#define MONGOC_URI_AUTHMECHANISMPROPERTIES "authmechanismproperties"
+#define MONGOC_URI_AUTHSOURCE "authsource"
+#define MONGOC_URI_CANONICALIZEHOSTNAME "canonicalizehostname" /* bool */
+#define MONGOC_URI_CONNECTTIMEOUTMS "connecttimeoutms"         /* int32 */
+#define MONGOC_URI_DATABASE "database"
+#define MONGOC_URI_GSSAPISERVICENAME "gssapiservicename"
+#define MONGOC_URI_HEARTBEATFREQUENCYMS "heartbeatfrequencyms"
+#define MONGOC_URI_JOURNAL "journal"
+#define MONGOC_URI_LOCALTHRESHOLDMS "localthresholdms"
+#define MONGOC_URI_MAXIDLETIMEMS "maxidletimems"
+#define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
+#define MONGOC_URI_MAXSTALENESSSECONDS "maxstalenessseconds"
+#define MONGOC_URI_MECHANISMPROPERTIES "mechanismproperties"
+#define MONGOC_URI_MINPOOLSIZE "minpoolsize"
+#define MONGOC_URI_PASSWORD "password"
+#define MONGOC_URI_READCONCERNLEVEL "readconcernlevel"
+#define MONGOC_URI_READPREFERENCE "readpreference"
+#define MONGOC_URI_READPREFERENCETAGS "readpreferencetags"
+#define MONGOC_URI_REPLICASET "replicaset"
+#define MONGOC_URI_SAFE "safe"
+#define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"
+#define MONGOC_URI_SERVERSELECTIONTRYONCE "serverselectiontryonce"
+#define MONGOC_URI_SLAVEOK "slaveok"
+#define MONGOC_URI_SOCKETCHECKINTERVALMS "socketcheckintervalms"
+#define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
+#define MONGOC_URI_SSL "ssl"
+#define MONGOC_URI_USERNAME "username"
+#define MONGOC_URI_W "w"
+#define MONGOC_URI_WAITQUEUEMULTIPLE "waitqueuemultiple"
+#define MONGOC_URI_WAITQUEUETIMEOUTMS "waitqueuetimeoutms"
+#define MONGOC_URI_WTIMEOUTMS "wtimeoutms"
 
 BSON_BEGIN_DECLS
 

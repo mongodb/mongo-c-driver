@@ -215,7 +215,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
 
    heartbeat = mongoc_uri_get_option_as_int32 (
-      uri, "heartbeatfrequencyms", heartbeat_default);
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
    mongoc_topology_description_init (
       &topology->description, init_type, heartbeat);
@@ -242,19 +242,21 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
        *
        *   "The serverSelectionTryOnce option MUST be true by default."
        */
-      topology->server_selection_try_once =
-         mongoc_uri_get_option_as_bool (uri, "serverselectiontryonce", true);
+      topology->server_selection_try_once = mongoc_uri_get_option_as_bool (
+         uri, MONGOC_URI_SERVERSELECTIONTRYONCE, true);
    } else {
       topology->server_selection_try_once = false;
    }
 
    topology->server_selection_timeout_msec = mongoc_uri_get_option_as_int32 (
       topology->uri,
-      "serverselectiontimeoutms",
+      MONGOC_URI_SERVERSELECTIONTIMEOUTMS,
       MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
-   topology->local_threshold_msec = mongoc_uri_get_option_as_int32 (
-      topology->uri, "localthresholdms", MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+   topology->local_threshold_msec =
+      mongoc_uri_get_option_as_int32 (topology->uri,
+                                      MONGOC_URI_LOCALTHRESHOLDMS,
+                                      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* Total time allowed to check a server is connectTimeoutMS.
     * Server Discovery And Monitoring Spec:
@@ -263,8 +265,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
     *   regular sockets. Multi-threaded clients SHOULD set monitoring sockets'
     *   socketTimeoutMS to the connectTimeoutMS."
     */
-   topology->connect_timeout_msec = mongoc_uri_get_option_as_int32 (
-      topology->uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+   topology->connect_timeout_msec =
+      mongoc_uri_get_option_as_int32 (topology->uri,
+                                      MONGOC_URI_CONNECTTIMEOUTMS,
+                                      MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);

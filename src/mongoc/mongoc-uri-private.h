@@ -27,8 +27,6 @@
 BSON_BEGIN_DECLS
 
 
-void
-mongoc_uri_lowercase_hostname (const char *src, char *buf /* OUT */, int len);
 bool
 mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port);
 bool

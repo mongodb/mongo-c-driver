@@ -106,6 +106,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-collection-find.c \
 	tests/test-mongoc-collection-find-with-opts.c \
+	tests/test-mongoc-connection-uri.c \
 	tests/test-mongoc-command-monitoring.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
@@ -224,6 +225,7 @@ EXTRA_DIST += \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
 	$(wildcard tests/release_files/*.txt) \
+	$(wildcard tests/json/connection_uri/*.json) \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
