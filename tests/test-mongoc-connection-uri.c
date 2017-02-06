@@ -89,7 +89,6 @@ run_uri_test (const char *uri_string,
       bson_concat (&all, mongoc_uri_get_credentials (uri));
 
       for (bson_iter_init (&iter, options); bson_iter_next (&iter);) {
-         uint32_t l;
          ASSERT (
             bson_iter_init_find_case (&key_iter, &all, bson_iter_key (&iter)));
          ASSERT_CMPSTR (bson_iter_utf8 (&key_iter, 0),
