@@ -56,12 +56,30 @@ Connection Options
 ------------------
 
 ================  =========================================================================================================================================================================================================================
+appname           The client application name. This value is used by MongoDB when it logs connection information and profile information, such as slow queries.
 ssl               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
 connectTimeoutMS  A timeout in milliseconds to attempt a connection before timing out. This setting applies to server discovery and monitoring connections as well as to connections for application operations. The default is 10 seconds.
 socketTimeoutMS   The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.
 ================  =========================================================================================================================================================================================================================
 
 Setting any of the \*TimeoutMS options above to ``0`` will be interpreted as "use the default value".
+
+Authentication Options
+----------------------
+
+=======================  ============================================================================================================================================================================================================
+authMechanism            Specifies the mechanism to use when authenticating as the provided user. See :doc:`Authentication <authentication>` for supported values.
+authMechanismProperties  Certain authentication mechanisms have additional options that can be configured. These options should be provided as colon separated option_key:_option_value pair and provided as authMechanismProperties.
+authSource               The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
+=======================  ============================================================================================================================================================================================================
+
+Mechanism Properties
+~~~~~~~~~~~~~~~~~~~~
+
+====================  ========================================================================
+canonicalizeHostname  Use the canonical hostname of the service, rather then configured alias.
+gssapiServicename     Use alternative service name. The default is ``mongodb``.
+====================  ========================================================================
 
 Server Discovery, Monitoring, and Selection Options
 ---------------------------------------------------
@@ -148,25 +166,21 @@ When connected to a replica set, the driver chooses which member to query using 
 #. From these, if there are any tags sets configured, choose members matching the first tag set. If there are none, fall back to the next tag set and so on, until some members are chosen or the tag sets are exhausted.
 #. From the chosen servers, distribute queries randomly among the server with the fastest round-trip times. These include the server with the fastest time and any whose round-trip time is no more than "localThresholdMS" slower.
 
-==================  =======================================================================================================================================================================
-readPreference      Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:
+===================  =======================================================================================================================================================================
+readPreference       Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:
 
-                    * primary (default)
-                    * primaryPreferred
-                    * secondary
-                    * secondaryPreferred
-                    * nearest
+                     * primary (default)
+                     * primaryPreferred
+                     * secondary
+                     * secondaryPreferred
+                     * nearest
+readPreferenceTags   Specifies a tag set as a comma-separated list of colon-separated key-value pairs.
 
+                     Cannot be combined with preference "primary".
 
-
-
-
-readPreferenceTags  Specifies a tag set as a comma-separated list of colon-separated key-value pairs.
-
-                    Cannot be combined with preference "primary".
-
-localThresholdMS    How far to distribute queries, beyond the server with the fastest round-trip time. By default, only servers within 15ms of the fastest round-trip time receive queries.
-==================  =======================================================================================================================================================================
+localThresholdMS     How far to distribute queries, beyond the server with the fastest round-trip time. By default, only servers within 15ms of the fastest round-trip time receive queries.
+maxStalenessSeconds  The maximum replication lag, in wall clock time, that a secondary can suffer and still be eligible. The smallest allowed value for maxStalenessSeconds is 90 seconds.
+===================  =======================================================================================================================================================================
 
 .. note::
 
