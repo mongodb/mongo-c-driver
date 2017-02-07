@@ -129,6 +129,26 @@
       ],
       "auth": null,
       "options": null
+    },
+    {
+      "description": "UTF-8 hosts",
+      "uri": "mongodb://bücher.example.com,umläut.example.com/",
+      "valid": true,
+      "warning": false,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "bücher.example.com",
+          "port": null
+        },
+        {
+          "type": "hostname",
+          "host": "umläut.example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": null
     }
   ]
 }
