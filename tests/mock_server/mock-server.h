@@ -34,8 +34,6 @@ typedef bool (*autoresponder_t) (request_t *request, void *data);
 
 typedef void (*destructor_t) (void *data);
 
-struct _match_ctx_t; /* forward declaration */
-
 mock_server_t *
 mock_server_new ();
 
@@ -106,13 +104,6 @@ mock_server_receives_command (mock_server_t *server,
                               mongoc_query_flags_t flags,
                               const char *command_json,
                               ...);
-request_t *
-mock_server_receives_command_with_ctx (mock_server_t *server,
-                                       const char *database_name,
-                                       mongoc_query_flags_t flags,
-                                       const char *command_json,
-                                       struct _match_ctx_t *ctx,
-                                       va_list vargs);
 
 request_t *
 mock_server_receives_ismaster (mock_server_t *server);

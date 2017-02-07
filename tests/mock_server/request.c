@@ -155,27 +155,6 @@ request_matches_query (const request_t *request,
                        const char *fields_json,
                        bool is_command)
 {
-   return request_matches_query_with_ctx (request,
-                                          ns,
-                                          flags,
-                                          skip,
-                                          n_return,
-                                          query_json,
-                                          fields_json,
-                                          is_command,
-                                          NULL);
-}
-bool
-request_matches_query_with_ctx (const request_t *request,
-                                const char *ns,
-                                mongoc_query_flags_t flags,
-                                uint32_t skip,
-                                int32_t n_return,
-                                const char *query_json,
-                                const char *fields_json,
-                                bool is_command,
-                                struct _match_ctx_t *ctx)
-{
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
    bool n_return_equal;
@@ -238,14 +217,8 @@ request_matches_query_with_ctx (const request_t *request,
       doc = NULL;
    }
 
-   if (!match_json_with_ctx (doc,
-                             is_command,
-                             __FILE__,
-                             __LINE__,
-                             BSON_FUNC,
-                             query_json,
-                             ctx,
-                             NULL)) {
+   if (!match_json (
+          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -256,8 +229,7 @@ request_matches_query_with_ctx (const request_t *request,
       doc = NULL;
    }
 
-   if (!match_json_with_ctx (
-          doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json, ctx, NULL)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json)) {
       /* match_json has logged the err */
       return false;
    }
