@@ -179,6 +179,7 @@ request_matches_query_with_ctx (const request_t *request,
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
    bool n_return_equal;
+   va_list vargs;
 
    assert (request);
    rpc = &request->request_rpc;
@@ -245,7 +246,7 @@ request_matches_query_with_ctx (const request_t *request,
                              BSON_FUNC,
                              query_json,
                              ctx,
-                             NULL)) {
+                             vargs)) {
       /* match_json has logged the err */
       return false;
    }
@@ -257,7 +258,7 @@ request_matches_query_with_ctx (const request_t *request,
    }
 
    if (!match_json_with_ctx (
-          doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json, ctx, NULL)) {
+          doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json, ctx, vargs)) {
       /* match_json has logged the err */
       return false;
    }

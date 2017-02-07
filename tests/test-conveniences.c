@@ -447,12 +447,8 @@ match_json_with_ctx (const bson_t *doc,
    match_ctx_t cctx = {0};
    bool matches;
 
-   if (args) {
-      json_pattern_formatted =
-         bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
-   } else {
-      json_pattern_formatted = bson_strdup (json_pattern ? json_pattern : "{}");
-   }
+   json_pattern_formatted =
+      bson_strdupv_printf (json_pattern ? json_pattern : "{}", args);
 
    double_quoted = single_quotes_to_double (json_pattern_formatted);
    pattern = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
