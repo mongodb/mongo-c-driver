@@ -62,18 +62,8 @@ mongoc_uri_do_unescape (char **str)
 void
 mongoc_uri_lowercase_hostname (const char *src, char *buf /* OUT */, int len)
 {
-   bson_unichar_t c;
-   const char *iter;
-   char *buf_iter;
-
-   /* TODO: this code only accepts ascii, and assumes that lowercased
-      chars are the same width as originals */
-   for (iter = src, buf_iter = buf;
-        iter && *iter && (c = bson_utf8_get_char (iter)) &&
-        buf_iter - buf < len;
-        iter = bson_utf8_next_char (iter), buf_iter++) {
-      assert (c < 128);
-      *buf_iter = tolower (c);
+   for (; *src; ++src, ++buf) {
+      *buf = tolower (*src);
    }
 }
 
@@ -615,7 +605,7 @@ mongoc_uri_option_is_utf8 (const char *key)
        !strcasecmp (key, MONGOC_URI_REPLICASET) ||
        !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
        !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
-       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD ) ||
+       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
        !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE)) {
       return true;
    }
