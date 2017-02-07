@@ -759,7 +759,11 @@ mock_server_receives_command_with_ctx (mock_server_t *server,
    request_t *request;
 
    if (command_json) {
-      formatted_command_json = bson_strdupv_printf (command_json, args);
+      if (args) {
+         formatted_command_json = bson_strdupv_printf (command_json, args);
+      } else {
+         formatted_command_json = bson_strdup (command_json);
+      }
    }
 
    ns = bson_strdup_printf ("%s.$cmd", database_name);
