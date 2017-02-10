@@ -4735,7 +4735,7 @@ test_insert_duplicate_key (void)
 }
 
 static void
-test_create_index_fail (void)
+test_create_index_fail (void *context)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -4940,6 +4940,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
-   TestSuite_Add (
-      suite, "/Collection/create_index/fail", test_create_index_fail);
+   TestSuite_AddFull (
+      suite, "/Collection/create_index/fail", test_create_index_fail,
+      NULL, NULL, test_framework_skip_if_offline);
 }
