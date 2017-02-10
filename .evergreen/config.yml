@@ -6346,8 +6346,7 @@ buildvariants:
     - "debug-compile"
     - "debug-compile-nosasl-openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .sasl"
-    #- ".authentication-tests !.ssl" FIXME: Kerberos authentication doesn't seem to work
+    - ".authentication-tests .nosasl !.ssl" # Revert me: CDRIVER-2000
     - ".authentication-tests .openssl"
     - ".latest .nossl" # No MongoDB SSL builds available for any version
     - ".3.4 .nossl" # No MongoDB SSL builds available for any version
@@ -6414,7 +6413,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .sasl" # GSSAPI isn't installed
+    - ".authentication-tests .nosasl !.ssl" # Revert Me: CDRIVER-2040
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
     - ".latest .winssl !.nosasl .server"
@@ -6589,8 +6588,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .sasl"
-    #- ".authentication-tests !.ssl" FIXME: Kerberos Authentication doesn't seem to work
+    - ".authentication-tests .nosasl !.ssl" # Revert me: CDRIVER-2000
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
