@@ -1,6 +1,6 @@
 AC_MSG_CHECKING([whether to enable crypto and TLS])
 AC_ARG_ENABLE([ssl],
-              [AS_HELP_STRING([--enable-ssl=@<:@auto/no/openssl/darwin@:>@],
+              [AS_HELP_STRING([--enable-ssl=@<:@auto/no/openssl/libressl/darwin@:>@],
                               [Enable TLS connections and SCRAM-SHA-1 authentication.])],
               [],
               [enable_ssl=auto])
