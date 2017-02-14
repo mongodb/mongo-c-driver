@@ -42,7 +42,7 @@ functions:
           set -o xtrace
           rm -f *.tar.gz
           curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
-          pip install --upgrade git+git://github.com/mongodb/mongo-orchestration@master
+          sudo pip install --upgrade git+git://github.com/mongodb/mongo-orchestration@master
 
   "upload release":
     - command: shell.exec
