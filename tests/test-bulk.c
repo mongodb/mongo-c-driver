@@ -501,6 +501,24 @@ test_insert_check_keys (void)
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
 
+   /* valid, then invalid */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   assert (bulk);
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson (NULL));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "document to insert contains invalid keys");
+
+   assert (bson_empty (&reply));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+
    /* keys can't contain "." */
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
@@ -1260,6 +1278,402 @@ test_update_many_with_opts_check_keys (void)
    _test_update_check_keys (true, true);
 }
 
+
+typedef void (*update_fn) (mongoc_bulk_operation_t *bulk,
+                           const bson_t *selector,
+                           const bson_t *document,
+                           bool upsert);
+
+typedef bool (*update_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *document,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
+typedef struct {
+   const char *bad_update_json;
+   const char *good_update_json;
+   update_fn update;
+   update_with_opts_fn update_with_opts;
+   bool invalid_first;
+   const char *error_message;
+} update_validate_test_t;
+
+
+static void
+_test_update_validate (update_validate_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t *q = tmp_bson ("{}");
+   bson_t *bad_update = tmp_bson (test->bad_update_json);
+   bson_t *good_update = tmp_bson (test->good_update_json);
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   assert (client);
+   collection = get_test_collection (client, "test_update_invalid_first");
+   assert (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   assert (bulk);
+
+   capture_logs (true);
+
+   if (test->update_with_opts) {
+      if (test->invalid_first) {
+         /* document is rejected immediately */
+         r = test->update_with_opts (bulk, q, bad_update, NULL, &error);
+         assert (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+
+         /* now a valid document */
+         r = test->update_with_opts (bulk, q, good_update, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         assert (!bson_empty (&reply));
+      } else {
+         /* first a valid document */
+         r = test->update_with_opts (bulk, q, good_update, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+
+         /* invalid document is rejected without invalidating batch */
+         r = test->update_with_opts (bulk, q, bad_update, NULL, &error);
+         assert (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         assert (!bson_empty (&reply));
+      }
+   } else {
+      if (test->invalid_first) {
+         /* invalid, then valid */
+         test->update (bulk, q, bad_update, false);
+         test->update (bulk, q, good_update, false);
+
+         /* not added */
+         ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         assert (!r);
+         assert (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+      } else {
+         /* valid, then invalid */
+         test->update (bulk, q, good_update, false);
+         test->update (bulk, q, bad_update, false);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         assert (!r);
+         assert (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+      }
+   }
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+_test_update_one_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = mongoc_bulk_operation_update_one;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = mongoc_bulk_operation_update;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_one_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_update_one_with_opts;
+   test.invalid_first = first;
+   test.error_message = "update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_many_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_update_many_with_opts;
+   test.invalid_first = first;
+   test.error_message = "update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_replace_one_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'$set': {'x': 1}}";
+   test.good_update_json = "{'a': 1}";
+   test.update = mongoc_bulk_operation_replace_one;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "replacement document contains invalid keys";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_replace_one_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'$set': {'x': 1}}";
+   test.good_update_json = "{'a': 1}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_replace_one_with_opts;
+   test.invalid_first = first;
+   test.error_message = "replacement document contains invalid keys";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+test_update_one_invalid_first (void)
+{
+   _test_update_one_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_invalid_first (void)
+{
+   _test_update_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_one_with_opts_invalid_first (void)
+{
+   _test_update_one_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_many_with_opts_invalid_first (void)
+{
+   _test_update_many_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_replace_one_invalid_first (void)
+{
+   _test_replace_one_invalid (true /* invalid first */);
+}
+
+
+static void
+test_replace_one_with_opts_invalid_first (void)
+{
+   _test_replace_one_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_one_invalid_second (void)
+{
+   _test_update_one_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_invalid_second (void)
+{
+   _test_update_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_one_with_opts_invalid_second (void)
+{
+   _test_update_one_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_many_with_opts_invalid_second (void)
+{
+   _test_update_many_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+test_replace_one_invalid_second (void)
+{
+   _test_replace_one_invalid (false /* invalid first */);
+}
+
+
+static void
+test_replace_one_with_opts_invalid_second (void)
+{
+   _test_replace_one_with_opts_invalid (false /* invalid first */);
+}
+
+
+typedef void (*remove_fn) (mongoc_bulk_operation_t *bulk,
+                           const bson_t *selector);
+
+typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
+typedef struct {
+   remove_fn remove;
+   remove_with_opts_fn remove_with_opts;
+} remove_validate_test_t;
+
+
+static void
+_test_remove_validate (remove_validate_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   assert (client);
+   collection = get_test_collection (client, "test_update_invalid_first");
+   assert (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   assert (bulk);
+
+   capture_logs (true);
+
+   /* invalid */
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$': 1}"));
+
+   if (test->remove_with_opts) {
+      r = test->remove_with_opts (bulk, tmp_bson (NULL), NULL, &error);
+      assert (!r);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Bulk operation is invalid from prior error: "
+                             "document to insert contains invalid keys");
+   } else {
+      test->remove (bulk, tmp_bson (NULL));
+   }
+
+   /* remove operation was not recorded */
+   ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+   /* invalid document invalidated the whole bulk */
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (!r);
+   assert (bson_empty (&reply));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "document to insert contains invalid keys");
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_remove_one_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove = mongoc_bulk_operation_remove_one;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove = mongoc_bulk_operation_remove;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_one_with_opts_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove_with_opts = mongoc_bulk_operation_remove_one_with_opts;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_many_with_opts_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove_with_opts = mongoc_bulk_operation_remove_many_with_opts;
+
+   _test_remove_validate (&test);
+}
 
 static void
 test_index_offset (void)
@@ -3590,6 +4004,52 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_many_with_opts_check_keys",
                       test_update_many_with_opts_check_keys);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_invalid_first",
+                      test_update_one_invalid_first);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/update_invalid_first", test_update_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_with_opts_invalid_first",
+                      test_update_one_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_many_with_opts_invalid_first",
+                      test_update_many_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_invalid_first",
+                      test_replace_one_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_with_opts_invalid_first",
+                      test_replace_one_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_invalid_second",
+                      test_update_one_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_invalid_second",
+                      test_update_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_with_opts_invalid_second",
+                      test_update_one_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_many_with_opts_invalid_second",
+                      test_update_many_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_invalid_second",
+                      test_replace_one_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_with_opts_invalid_second",
+                      test_replace_one_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_one_after_invalid",
+                      test_remove_one_after_invalid);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/remove_after_invalid", test_remove_after_invalid);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_one_with_opts_after_invalid",
+                      test_remove_one_with_opts_after_invalid);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_many_with_opts_after_invalid",
+                      test_remove_many_with_opts_after_invalid);
    TestSuite_AddLive (
       suite, "/BulkOperation/upsert_ordered", test_upsert_ordered);
    TestSuite_AddLive (
