@@ -30,6 +30,7 @@
 #include "mongoc-log.h"
 #include "mongoc-handshake-private.h"
 #include "mongoc-socket.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
@@ -1361,6 +1362,24 @@ mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value)
       &uri->options, MONGOC_URI_APPNAME, value);
 
    return true;
+}
+
+/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
+int32_t
+mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   int32_t retval = MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, "localthresholdms") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+
+      retval = bson_iter_int32 (&iter);
+   }
+
+   return retval;
 }
 
 const bson_t *
