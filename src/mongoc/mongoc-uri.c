@@ -1265,6 +1265,11 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
        BSON_ITER_HOLDS_INT32 (&iter)) {
 
       retval = bson_iter_int32 (&iter);
+
+      if (retval < 0) {
+         MONGOC_WARNING ("Invalid localThresholdMS: %d", retval);
+         retval = MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS;
+      }
    }
 
    return retval;
