@@ -1266,6 +1266,19 @@ test_mongoc_uri_local_threshold_ms (void)
    ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 99);
 
    mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new(
+      "mongodb://localhost/?" MONGOC_URI_LOCALTHRESHOLDMS "=-1");
+
+   /* localthresholdms is invalid, return the default */
+   capture_logs (true);
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==,
+      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+   ASSERT_CAPTURED_LOG ("mongoc_uri_get_local_threshold_option",
+      MONGOC_LOG_LEVEL_WARNING, "Invalid localThresholdMS: -1");
+
+   mongoc_uri_destroy(uri);
 }
 
 
