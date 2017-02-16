@@ -119,6 +119,28 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
    (((_write_cmd->type) == (_write_cmd_type)) &&   \
     (_write_cmd)->n_documents < MONGOC_DEFAULT_WRITE_BATCH_SIZE)
 
+/* already failed, e.g. a bad call to mongoc_bulk_operation_insert? */
+#define BULK_EXIT_IF_PRIOR_ERROR \
+   do { \
+      if (bulk->result.error.domain) { \
+         EXIT; \
+      } \
+   } while (0)
+
+#define BULK_RETURN_IF_PRIOR_ERROR \
+   do { \
+      if (bulk->result.error.domain) {\
+         if (error != &bulk->result.error) {\
+            bson_set_error (error, \
+               MONGOC_ERROR_COMMAND, \
+               MONGOC_ERROR_COMMAND_INVALID_ARG, \
+               "Bulk operation is invalid from prior error: %s", \
+               bulk->result.error.message); \
+         }; \
+         return false; \
+      }; \
+   } while (0)
+
 
 bool
 _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
@@ -134,10 +156,7 @@ _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
    BSON_ASSERT (bulk);
    BSON_ASSERT (selector);
 
-   if (bulk->result.error.domain) {
-      /* already failed e.g. a bad call to mongoc_bulk_operation_insert */
-      RETURN (true);
-   }
+   BULK_RETURN_IF_PRIOR_ERROR;
 
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
@@ -166,6 +185,10 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
    bson_t opts_dup;
    bson_iter_t iter;
 
+   ENTRY;
+
+   BULK_RETURN_IF_PRIOR_ERROR;
+
    if (opts && bson_iter_init_find (&iter, opts, "limit")) {
       if ((!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) ||
           !bson_iter_as_int64 (&iter)) {
@@ -174,7 +197,7 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "%s expects the 'limit' option to be 1",
                          BSON_FUNC);
-         return false;
+         RETURN (false);
       }
 
       return _mongoc_bulk_operation_remove_with_opts (
@@ -190,7 +213,7 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
       bulk, selector, &opts_dup, error);
    bson_destroy (&opts_dup);
 
-   return retval;
+   RETURN (retval);
 }
 
 bool
@@ -203,6 +226,10 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
    bson_t opts_dup;
    bson_iter_t iter;
 
+   ENTRY;
+
+   BULK_RETURN_IF_PRIOR_ERROR;
+
    if (opts && bson_iter_init_find (&iter, opts, "limit")) {
       if ((!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) ||
           bson_iter_as_int64 (&iter)) {
@@ -211,11 +238,11 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "%s expects the 'limit' option to be 0",
                          BSON_FUNC);
-         return false;
+         RETURN (false);
       }
 
-      return _mongoc_bulk_operation_remove_with_opts (
-         bulk, selector, opts, error);
+      RETURN (_mongoc_bulk_operation_remove_with_opts (
+         bulk, selector, opts, error));
    }
 
    bson_init (&opts_dup);
@@ -227,7 +254,7 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
       bulk, selector, &opts_dup, error);
    bson_destroy (&opts_dup);
 
-   return retval;
+   RETURN (retval);
 }
 
 
@@ -237,6 +264,10 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
 {
    bson_t opts;
    bson_error_t *error = &bulk->result.error;
+
+   ENTRY;
+
+   BULK_EXIT_IF_PRIOR_ERROR;
 
    bson_init (&opts);
    BSON_APPEND_INT32 (&opts, "limit", 0);
@@ -249,6 +280,8 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
    }
+
+   EXIT;
 }
 
 
@@ -258,6 +291,10 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
 {
    bson_t opts;
    bson_error_t *error = &bulk->result.error;
+
+   ENTRY;
+
+   BULK_EXIT_IF_PRIOR_ERROR;
 
    bson_init (&opts);
    BSON_APPEND_INT32 (&opts, "limit", 1);
@@ -269,6 +306,8 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
    }
+
+   EXIT;
 }
 
 void
@@ -305,6 +344,13 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    BSON_ASSERT (bulk);
    BSON_ASSERT (document);
 
+   BULK_EXIT_IF_PRIOR_ERROR;
+
+   if (!_mongoc_validate_new_document (document, &bulk->result.error)) {
+      MONGOC_WARNING ("%s", bulk->result.error.message);
+      EXIT;
+   }
+
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
@@ -322,7 +368,6 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
       bulk->operation_id,
       !mongoc_write_concern_is_acknowledged (bulk->write_concern));
 
-   _mongoc_validate_new_document (document, &bulk->result.error);
    _mongoc_array_append_val (&bulk->commands, command);
 
    EXIT;
@@ -340,10 +385,7 @@ _mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
 
    ENTRY;
 
-   if (bulk->result.error.domain) {
-      /* already failed e.g. a bad call to mongoc_bulk_operation_insert */
-      RETURN (true);
-   }
+   BULK_RETURN_IF_PRIOR_ERROR;
 
    BSON_ASSERT (bulk);
    BSON_ASSERT (selector);
@@ -378,6 +420,8 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    bson_t opts;
    bson_error_t *error = &bulk->result.error;
 
+   ENTRY;
+
    bson_init (&opts);
    BSON_APPEND_BOOL (&opts, "upsert", upsert);
    BSON_APPEND_BOOL (&opts, "multi", false);
@@ -389,6 +433,8 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
    }
+
+   EXIT;
 }
 
 bool
@@ -444,11 +490,13 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
 
+   ENTRY;
+
    BSON_ASSERT (bulk);
    BSON_ASSERT (selector);
    BSON_ASSERT (document);
 
-   ENTRY;
+   BULK_RETURN_IF_PRIOR_ERROR;
 
    if (!_mongoc_validate_update (document, error)) {
       RETURN (false);
@@ -481,6 +529,8 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
    bson_t opts_dup;
    bson_iter_t iter;
 
+   ENTRY;
+
    if (opts && bson_iter_init_find (&iter, opts, "multi")) {
       if (!BSON_ITER_HOLDS_BOOL (&iter) || bson_iter_bool (&iter)) {
          bson_set_error (error,
@@ -488,11 +538,11 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "%s expects the 'multi' option to be false",
                          BSON_FUNC);
-         return false;
+         RETURN (false);
       }
 
-      return _mongoc_bulk_operation_update_with_opts (
-         bulk, selector, document, opts, error);
+      RETURN (_mongoc_bulk_operation_update_with_opts (
+         bulk, selector, document, opts, error));
    }
 
    bson_init (&opts_dup);
@@ -504,7 +554,7 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
       bulk, selector, document, &opts_dup, error);
    bson_destroy (&opts_dup);
 
-   return retval;
+   RETURN (retval);
 }
 
 bool
@@ -518,6 +568,8 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
    bson_t opts_dup;
    bson_iter_t iter;
 
+   ENTRY;
+
    if (opts && bson_iter_init_find (&iter, opts, "multi")) {
       if (!BSON_ITER_HOLDS_BOOL (&iter) || !bson_iter_bool (&iter)) {
          bson_set_error (error,
@@ -525,7 +577,7 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "%s expects the 'multi' option to be true",
                          BSON_FUNC);
-         return false;
+         RETURN (false);
       }
 
       return _mongoc_bulk_operation_update_with_opts (
@@ -541,7 +593,7 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
       bulk, selector, document, &opts_dup, error);
    bson_destroy (&opts_dup);
 
-   return retval;
+   RETURN (retval);
 }
 
 void
@@ -552,6 +604,10 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
 {
    bson_t opts;
    bson_error_t *error = &bulk->result.error;
+
+   ENTRY;
+
+   BULK_EXIT_IF_PRIOR_ERROR;
 
    bson_init (&opts);
    BSON_APPEND_BOOL (&opts, "upsert", upsert);
@@ -565,6 +621,8 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
    }
+
+   EXIT;
 }
 
 void
@@ -575,6 +633,10 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
 {
    bson_t opts;
    bson_error_t *error = &bulk->result.error;
+
+   ENTRY;
+
+   BULK_EXIT_IF_PRIOR_ERROR;
 
    bson_init (&opts);
    BSON_APPEND_BOOL (&opts, "upsert", upsert);
@@ -588,6 +650,8 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
    }
+
+   EXIT;
 }
 
 uint32_t
