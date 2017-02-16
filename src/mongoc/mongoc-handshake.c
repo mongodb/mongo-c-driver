@@ -330,19 +330,19 @@ _free_platform_string (mongoc_handshake_t *handshake)
 void
 _mongoc_handshake_init (void)
 {
-   _get_system_info (&gMongocHandshake);
-   _get_driver_info (&gMongocHandshake);
-   _set_platform_string (&gMongocHandshake);
+   _get_system_info (_mongoc_handshake_get ());
+   _get_driver_info (_mongoc_handshake_get ());
+   _set_platform_string (_mongoc_handshake_get ());
 
-   gMongocHandshake.frozen = false;
+   _mongoc_handshake_get ()->frozen = false;
 }
 
 void
 _mongoc_handshake_cleanup (void)
 {
-   _free_system_info (&gMongocHandshake);
-   _free_driver_info (&gMongocHandshake);
-   _free_platform_string (&gMongocHandshake);
+   _free_system_info (_mongoc_handshake_get ());
+   _free_driver_info (_mongoc_handshake_get ());
+   _free_platform_string (_mongoc_handshake_get ());
 }
 
 static bool
@@ -384,7 +384,7 @@ _append_platform_field (bson_t *doc, const char *platform)
 bool
 _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
 {
-   const mongoc_handshake_t *md = &gMongocHandshake;
+   const mongoc_handshake_t *md = _mongoc_handshake_get ();
    bson_t child;
 
    if (appname) {
@@ -434,7 +434,7 @@ _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
 void
 _mongoc_handshake_freeze (void)
 {
-   gMongocHandshake.frozen = true;
+   _mongoc_handshake_get ()->frozen = true;
 }
 
 /*
@@ -484,26 +484,29 @@ mongoc_handshake_data_append (const char *driver_name,
 {
    int max_size = 0;
 
-   if (gMongocHandshake.frozen) {
+   if (_mongoc_handshake_get ()->frozen) {
       MONGOC_ERROR ("Cannot set handshake more than once");
       return false;
    }
 
-   _append_and_truncate (
-      &gMongocHandshake.driver_name, driver_name, HANDSHAKE_DRIVER_NAME_MAX);
+   _append_and_truncate (&_mongoc_handshake_get ()->driver_name,
+                         driver_name,
+                         HANDSHAKE_DRIVER_NAME_MAX);
 
-   _append_and_truncate (&gMongocHandshake.driver_version,
+   _append_and_truncate (&_mongoc_handshake_get ()->driver_version,
                          driver_version,
                          HANDSHAKE_DRIVER_VERSION_MAX);
 
-   max_size = HANDSHAKE_MAX_SIZE -
-              -_mongoc_strlen_or_zero (gMongocHandshake.os_type) -
-              _mongoc_strlen_or_zero (gMongocHandshake.os_name) -
-              _mongoc_strlen_or_zero (gMongocHandshake.os_version) -
-              _mongoc_strlen_or_zero (gMongocHandshake.os_architecture) -
-              _mongoc_strlen_or_zero (gMongocHandshake.driver_name) -
-              _mongoc_strlen_or_zero (gMongocHandshake.driver_version);
-   _append_and_truncate (&gMongocHandshake.platform, platform, max_size);
+   max_size =
+      HANDSHAKE_MAX_SIZE -
+      -_mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_type) -
+      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_name) -
+      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_version) -
+      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_architecture) -
+      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->driver_name) -
+      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->driver_version);
+   _append_and_truncate (
+      &_mongoc_handshake_get ()->platform, platform, max_size);
 
    _mongoc_handshake_freeze ();
    return true;
