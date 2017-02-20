@@ -120,15 +120,15 @@ _begin_ismaster_cmd (mongoc_topology_scanner_t *ts,
 {
    const bson_t *ismaster_cmd_to_send = _get_ismaster_doc (ts, node);
 
-   node->cmd = mongoc_async_cmd (ts->async,
-                                 node->stream,
-                                 ts->setup,
-                                 node->host.host,
-                                 "admin",
-                                 ismaster_cmd_to_send,
-                                 &mongoc_topology_scanner_ismaster_handler,
-                                 node,
-                                 timeout_msec);
+   node->cmd = mongoc_async_cmd_new (ts->async,
+                                     node->stream,
+                                     ts->setup,
+                                     node->host.host,
+                                     "admin",
+                                     ismaster_cmd_to_send,
+                                     &mongoc_topology_scanner_ismaster_handler,
+                                     node,
+                                     timeout_msec);
 }
 
 

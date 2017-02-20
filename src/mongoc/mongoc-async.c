@@ -25,20 +25,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
 
-mongoc_async_cmd_t *
-mongoc_async_cmd (mongoc_async_t *async,
-                  mongoc_stream_t *stream,
-                  mongoc_async_cmd_setup_t setup,
-                  void *setup_ctx,
-                  const char *dbname,
-                  const bson_t *cmd,
-                  mongoc_async_cmd_cb_t cb,
-                  void *cb_data,
-                  int64_t timeout_msec)
-{
-   return mongoc_async_cmd_new (
-      async, stream, setup, setup_ctx, dbname, cmd, cb, cb_data, timeout_msec);
-}
 
 mongoc_async_t *
 mongoc_async_new ()

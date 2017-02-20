@@ -120,15 +120,15 @@ test_ismaster_impl (bool with_ssl)
 
       results[i].finished = false;
 
-      mongoc_async_cmd (async,
-                        sock_streams[i],
-                        setup,
-                        setup_ctx,
-                        "admin",
-                        &q,
-                        &test_ismaster_helper,
-                        (void *) &results[i],
-                        TIMEOUT);
+      mongoc_async_cmd_new (async,
+                            sock_streams[i],
+                            setup,
+                            setup_ctx,
+                            "admin",
+                            &q,
+                            &test_ismaster_helper,
+                            (void *) &results[i],
+                            TIMEOUT);
    }
 
    mongoc_async_run (async, TIMEOUT);
