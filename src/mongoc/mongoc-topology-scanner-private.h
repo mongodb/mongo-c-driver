@@ -132,8 +132,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                bool obey_cooldown);
 
 void
-mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
-                              int64_t timeout_msec);
+mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts);
 
 void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts);

@@ -103,7 +103,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-   rtt_msec = (bson_get_monotonic_time () - acmd->start_time) / 1000;
+   rtt_msec = (bson_get_monotonic_time () - acmd->cmd_started) / 1000;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
       acmd->cb (result, &acmd->reply, rtt_msec, acmd->data, &acmd->error);
@@ -175,6 +175,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    acmd->setup_ctx = setup_ctx;
    acmd->cb = cb;
    acmd->data = cb_data;
+   acmd->connect_started = bson_get_monotonic_time ();
    bson_copy_to (cmd, &acmd->cmd);
 
    _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
@@ -270,7 +271,7 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
    acmd->bytes_to_read = 4;
    acmd->events = POLLIN;
 
-   acmd->start_time = bson_get_monotonic_time ();
+   acmd->cmd_started = bson_get_monotonic_time ();
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }

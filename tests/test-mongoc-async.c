@@ -131,7 +131,7 @@ test_ismaster_impl (bool with_ssl)
                             TIMEOUT);
    }
 
-   mongoc_async_run (async, TIMEOUT);
+   mongoc_async_run (async);
 
    for (i = 0; i < NSERVERS; i++) {
       if (!results[i].finished) {

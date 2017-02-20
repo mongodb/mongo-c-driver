@@ -724,17 +724,13 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
  *      be called only after mongoc_topology_scanner_start() has been used
  *      to begin the scan.
  *
- * Returns:
- *      true if there is more work to do, false if scan is done.
- *
  *--------------------------------------------------------------------------
  */
 
 void
-mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
-                              int64_t timeout_msec)
+mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts)
 {
-   mongoc_async_run (ts->async, timeout_msec);
+   mongoc_async_run (ts->async);
 }
 
 /*

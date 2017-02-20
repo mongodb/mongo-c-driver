@@ -367,8 +367,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    mongoc_topology_scanner_start (
       scanner, (int32_t) topology->connect_timeout_msec, true);
 
-   mongoc_topology_scanner_work (topology->scanner,
-                                 topology->connect_timeout_msec);
+   mongoc_topology_scanner_work (topology->scanner);
 
    mongoc_mutex_lock (&topology->mutex);
    _mongoc_topology_scanner_finish (scanner);
@@ -994,8 +993,7 @@ _mongoc_topology_run_background (void *data)
 
       /* scanning locks and unlocks the mutex itself until the scan is done */
       mongoc_mutex_unlock (&topology->mutex);
-      mongoc_topology_scanner_work (topology->scanner,
-                                    topology->connect_timeout_msec);
+      mongoc_topology_scanner_work (topology->scanner);
 
       mongoc_mutex_lock (&topology->mutex);
 

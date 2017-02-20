@@ -1193,7 +1193,7 @@ test_framework_mongos_count (void)
  *
  * test_framework_replset_member_count --
  *
- *       Returns the number replica set data members (including arbiters).
+ *       Returns the number of replica set members (including arbiters).
  *
  *--------------------------------------------------------------------------
  */
