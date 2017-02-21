@@ -155,9 +155,8 @@ test_connection_uri_cb (bson_t *scenario)
       run_uri_test (uri_string, valid, &hosts, &auth, &options);
 
       if (bson_lookup_bool_null_ok (&test_case, "warning", false)) {
-         ASSERT_CAPTURED_LOG ("mongoc_uri",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Unsupported URI option \"foo\"");
+         ASSERT_CAPTURED_LOG (
+            "mongoc_uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option");
       } else {
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri");
       }
