@@ -4944,8 +4944,11 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
 #ifdef TODO_CDRIVER_2034
-   TestSuite_AddFull (
-      suite, "/Collection/create_index/fail", test_create_index_fail,
-      NULL, NULL, test_framework_skip_if_offline);
+   TestSuite_AddFull (suite,
+                      "/Collection/create_index/fail",
+                      test_create_index_fail,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_offline);
 #endif
 }
