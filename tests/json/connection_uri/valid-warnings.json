@@ -14,6 +14,23 @@
       ],
       "auth": null,
       "options": null
+    },
+    {
+      "description": "Deprecated (or unknown) options are ignored if replacement exists",
+      "uri": "mongodb://example.com/?wtimeout=5&wtimeoutMS=10",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": {
+        "wtimeoutms": 10
+      }
     }
   ]
 }
