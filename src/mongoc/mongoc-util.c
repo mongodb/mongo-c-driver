@@ -172,8 +172,8 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 }
 
 
-const bson_validate_flags_t insert_vflags = (bson_validate_flags_t)
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
+const bson_validate_flags_t insert_vflags =
+   (bson_validate_flags_t) BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
    BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS;
 
 bool
@@ -232,7 +232,8 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
       if (key[0] != '$') {
-         bson_set_error (error, MONGOC_ERROR_COMMAND,
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "Invalid key '%s': update only works with $ operators",
                          key);

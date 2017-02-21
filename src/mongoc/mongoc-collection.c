@@ -1745,7 +1745,6 @@ mongoc_collection_update (mongoc_collection_t *collection,
 
    if (!((uint32_t) flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) && bson_iter_next (&iter)) {
-
       if (bson_iter_key (&iter)[0] == '$') {
          /* update document, all keys must be $-operators */
          if (!_mongoc_validate_update (update, error)) {
@@ -1843,13 +1842,13 @@ mongoc_collection_save (mongoc_collection_t *collection,
       return false;
    }
 
-   ret = mongoc_collection_update (
-      collection,
-      MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE,
-      &selector,
-      document,
-      write_concern,
-      error);
+   ret = mongoc_collection_update (collection,
+                                   MONGOC_UPDATE_UPSERT |
+                                      MONGOC_UPDATE_NO_VALIDATE,
+                                   &selector,
+                                   document,
+                                   write_concern,
+                                   error);
 
    bson_destroy (&selector);
 
@@ -1916,12 +1915,11 @@ mongoc_collection_remove (mongoc_collection_t *collection,
       &opts, "limit", flags & MONGOC_REMOVE_SINGLE_REMOVE ? 1 : 0);
    _mongoc_write_result_init (&result);
    ++collection->client->cluster.operation_id;
-   _mongoc_write_command_init_delete (
-      &command,
-      selector,
-      &opts,
-      write_flags,
-      collection->client->cluster.operation_id);
+   _mongoc_write_command_init_delete (&command,
+                                      selector,
+                                      &opts,
+                                      write_flags,
+                                      collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (

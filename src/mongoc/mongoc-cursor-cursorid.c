@@ -191,8 +191,10 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
 
    /* See find, getMore, and killCursors Spec for batchSize rules */
    if (batch_size) {
-      bson_append_int64 (
-         command, MONGOC_CURSOR_BATCH_SIZE, MONGOC_CURSOR_BATCH_SIZE_LEN, abs (_mongoc_n_return (cursor)));
+      bson_append_int64 (command,
+                         MONGOC_CURSOR_BATCH_SIZE,
+                         MONGOC_CURSOR_BATCH_SIZE_LEN,
+                         abs (_mongoc_n_return (cursor)));
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable
@@ -210,8 +212,10 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       max_await_time_ms =
          (int32_t) mongoc_cursor_get_max_await_time_ms (cursor);
       if (max_await_time_ms) {
-         bson_append_int32 (
-            command, MONGOC_CURSOR_MAX_TIME_MS, MONGOC_CURSOR_MAX_TIME_MS_LEN, max_await_time_ms);
+         bson_append_int32 (command,
+                            MONGOC_CURSOR_MAX_TIME_MS,
+                            MONGOC_CURSOR_MAX_TIME_MS_LEN,
+                            max_await_time_ms);
       }
    }
 

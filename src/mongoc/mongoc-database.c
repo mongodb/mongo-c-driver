@@ -414,7 +414,8 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
       bson_append_utf8 (&user, "pwd", 3, pwd, -1);
    }
 
-   if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &user, NULL, error)) {
+   if (!mongoc_collection_insert (
+          collection, MONGOC_INSERT_NONE, &user, NULL, error)) {
       GOTO (failure_with_user);
    }
 

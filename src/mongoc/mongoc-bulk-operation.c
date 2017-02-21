@@ -120,25 +120,25 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
     (_write_cmd)->n_documents < MONGOC_DEFAULT_WRITE_BATCH_SIZE)
 
 /* already failed, e.g. a bad call to mongoc_bulk_operation_insert? */
-#define BULK_EXIT_IF_PRIOR_ERROR \
-   do { \
+#define BULK_EXIT_IF_PRIOR_ERROR       \
+   do {                                \
       if (bulk->result.error.domain) { \
-         EXIT; \
-      } \
+         EXIT;                         \
+      }                                \
    } while (0)
 
-#define BULK_RETURN_IF_PRIOR_ERROR \
-   do { \
-      if (bulk->result.error.domain) {\
-         if (error != &bulk->result.error) {\
-            bson_set_error (error, \
-               MONGOC_ERROR_COMMAND, \
-               MONGOC_ERROR_COMMAND_INVALID_ARG, \
-               "Bulk operation is invalid from prior error: %s", \
-               bulk->result.error.message); \
-         }; \
-         return false; \
-      }; \
+#define BULK_RETURN_IF_PRIOR_ERROR                                            \
+   do {                                                                       \
+      if (bulk->result.error.domain) {                                        \
+         if (error != &bulk->result.error) {                                  \
+            bson_set_error (error,                                            \
+                            MONGOC_ERROR_COMMAND,                             \
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,                 \
+                            "Bulk operation is invalid from prior error: %s", \
+                            bulk->result.error.message);                      \
+         };                                                                   \
+         return false;                                                        \
+      };                                                                      \
    } while (0)
 
 
@@ -241,8 +241,8 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
          RETURN (false);
       }
 
-      RETURN (_mongoc_bulk_operation_remove_with_opts (
-         bulk, selector, opts, error));
+      RETURN (
+         _mongoc_bulk_operation_remove_with_opts (bulk, selector, opts, error));
    }
 
    bson_init (&opts_dup);
@@ -272,8 +272,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
    bson_init (&opts);
    BSON_APPEND_INT32 (&opts, "limit", 0);
 
-   mongoc_bulk_operation_remove_many_with_opts (
-      bulk, selector, &opts, error);
+   mongoc_bulk_operation_remove_many_with_opts (bulk, selector, &opts, error);
 
    bson_destroy (&opts);
 
@@ -299,8 +298,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
    bson_init (&opts);
    BSON_APPEND_INT32 (&opts, "limit", 1);
 
-   mongoc_bulk_operation_remove_one_with_opts (
-      bulk, selector, &opts, error);
+   mongoc_bulk_operation_remove_one_with_opts (bulk, selector, &opts, error);
    bson_destroy (&opts);
 
    if (error->domain) {
