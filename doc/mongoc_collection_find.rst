@@ -83,7 +83,7 @@ Example
         collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_json (doc, NULL);
+        str = bson_as_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }

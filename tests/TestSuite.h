@@ -327,7 +327,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          fprintf (stderr,                                                \
                   "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
                   (_field),                                              \
-                  bson_as_json (_bson, NULL));                           \
+                  bson_as_extended_json (_bson, NULL));                           \
          abort ();                                                       \
       }                                                                  \
    } while (0)

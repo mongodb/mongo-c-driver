@@ -232,7 +232,7 @@
       memcpy (&__l, rpc->_name, 4);           \
       __l = BSON_UINT32_FROM_LE (__l);        \
       bson_init_static (&b, rpc->_name, __l); \
-      s = bson_as_json (&b, NULL);            \
+      s = bson_as_extended_json (&b, NULL);   \
       printf ("  " #_name " : %s\n", s);      \
       bson_free (s);                          \
       bson_destroy (&b);                      \
@@ -244,7 +244,7 @@
       const bson_t *__b;                                              \
       __r = bson_reader_new_from_data (rpc->_name, rpc->_name##_len); \
       while ((__b = bson_reader_read (__r, &__eof))) {                \
-         char *s = bson_as_json (__b, NULL);                          \
+         char *s = bson_as_extended_json (__b, NULL);                 \
          printf ("  " #_name " : %s\n", s);                           \
          bson_free (s);                                               \
       }                                                               \
