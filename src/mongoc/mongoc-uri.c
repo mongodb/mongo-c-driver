@@ -194,6 +194,7 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri, const char *str, const char **end)
    const char *end_userpass;
    const char *end_user;
    char *s;
+   char *tmp;
 
    if ((s = scan_to_unichar (str, '@', "", &end_userpass))) {
       if ((uri->username = scan_to_unichar (s, ':', "", &end_user))) {
@@ -202,11 +203,22 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri, const char *str, const char **end)
          uri->username = bson_strndup (str, end_userpass - str);
          uri->password = NULL;
       }
-      mongoc_uri_do_unescape (&uri->username);
-      mongoc_uri_do_unescape (&uri->password);
-      *end = end_userpass + 1;
+      /* Make sure we don't have unescaped : */
+      if (uri->password && strchr (uri->password, ':')) {
+         ret = false;
+      } else {
+         mongoc_uri_do_unescape (&uri->username);
+         mongoc_uri_do_unescape (&uri->password);
+         *end = end_userpass + 1;
+         ret = true;
+      }
+
+      /* Make sure we don't have unescaped @ */
+      if ((tmp = scan_to_unichar (*end, '@', ",/[", end))) {
+         ret = false;
+         bson_free (tmp);
+      }
       bson_free (s);
-      ret = true;
    } else {
       ret = true;
    }

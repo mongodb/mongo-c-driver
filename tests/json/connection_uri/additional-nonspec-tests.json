@@ -67,6 +67,42 @@
       "options": {
         "appname": "example42"
       }
+    },
+    {
+      "description": "Username containing an unescaped :",
+      "uri": "mongodb://alic::e@127.0.0.1:27017",
+      "valid": false,
+      "warning": null,
+      "hosts": null,
+      "auth": null,
+      "options": null
+    },
+    {
+      "description": "Username containing an unescaped :",
+      "uri": "mongodb://alic::e@[::1]",
+      "valid": false,
+      "warning": null,
+      "hosts": null,
+      "auth": null,
+      "options": null
+    },
+    {
+      "description": "Username containing an unescaped :",
+      "uri": "mongodb://alic::e@[::1]:27017",
+      "valid": false,
+      "warning": null,
+      "hosts": null,
+      "auth": null,
+      "options": null
+    },
+    {
+      "description": "Username containing an unescaped :",
+      "uri": "mongodb://alic::e@%2Ftmp%2Fmongodb-27017.sock/",
+      "valid": false,
+      "warning": null,
+      "hosts": null,
+      "auth": null,
+      "options": null
     }
   ]
 }
