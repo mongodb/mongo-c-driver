@@ -48,7 +48,6 @@
 #define MONGOC_URI_MAXIDLETIMEMS "maxidletimems"
 #define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
 #define MONGOC_URI_MAXSTALENESSSECONDS "maxstalenessseconds"
-#define MONGOC_URI_MECHANISMPROPERTIES "mechanismproperties"
 #define MONGOC_URI_MINPOOLSIZE "minpoolsize"
 #define MONGOC_URI_PASSWORD "password"
 #define MONGOC_URI_READCONCERNLEVEL "readconcernlevel"
@@ -63,7 +62,8 @@
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
 #define MONGOC_URI_SSL "ssl"
 #define MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "sslclientcertificatekeyfile"
-#define MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "sslclientcertificatekeypassword"
+#define MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD \
+   "sslclientcertificatekeypassword"
 #define MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "sslcertificateauthorityfile"
 #define MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "sslallowinvalidcertificates"
 #define MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "sslallowinvalidhostnames"

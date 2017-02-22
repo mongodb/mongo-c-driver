@@ -1,0 +1,72 @@
+{
+  "tests": [
+    {
+      "description": "Repeated authSource key",
+      "uri": "mongodb://example.com/?authSource=bar&authSource=foo",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": {
+        "authSource": "foo"
+      }
+    },
+    {
+      "description": "Repeated readConcernLevel key",
+      "uri": "mongodb://example.com/?readConcernLevel=local&readConcernLevel=majority",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": {
+        "readconcernlevel": "majority"
+      }
+    },
+    {
+      "description": "Repeated authmechanismproperties: key",
+      "uri": "mongodb://example.com/?authmechanismproperties=SERVICE_NAME:42&authmechanismproperties=SERVICE_NAME:49",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": {
+        "authmechanismproperties": { "SERVICE_NAME": 49 }
+      }
+    },
+    {
+      "description": "Repeated appname key",
+      "uri": "mongodb://example.com/?appname=example&appname=example42",
+      "valid": true,
+      "warning": true,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "example.com",
+          "port": null
+        }
+      ],
+      "auth": null,
+      "options": {
+        "appname": "example42"
+      }
+    }
+  ]
+}

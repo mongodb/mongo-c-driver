@@ -48,6 +48,11 @@ struct _mongoc_uri_t {
    mongoc_write_concern_t *write_concern;
 };
 
+bool
+_mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
+                                 const char *option,
+                                 int32_t value);
+
 static void
 mongoc_uri_do_unescape (char **str)
 {
@@ -60,7 +65,7 @@ mongoc_uri_do_unescape (char **str)
 }
 
 void
-mongoc_uri_lowercase_hostname (const char *src, char *buf /* OUT */, int len)
+mongoc_uri_lowercase (const char *src, char *buf /* OUT */)
 {
    for (; *src; ++src, ++buf) {
       *buf = tolower (*src);
@@ -80,7 +85,7 @@ mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port)
    }
 
    link_ = (mongoc_host_list_t *) bson_malloc0 (sizeof *link_);
-   mongoc_uri_lowercase_hostname (host, link_->host, sizeof link_->host);
+   mongoc_uri_lowercase (host, link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port,
                      sizeof link_->host_and_port,
@@ -447,10 +452,7 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
    }
 
    /* append our auth properties to our credentials */
-   bson_append_document (&uri->credentials,
-                         MONGOC_URI_MECHANISMPROPERTIES,
-                         -1,
-                         (const bson_t *) &properties);
+   mongoc_uri_set_mechanism_properties (uri, &properties);
    return true;
 }
 
@@ -509,8 +511,8 @@ fail:
  *       Appends 'option' to the end of 'options' if not already set.
  *
  *       Since we cannot grow utf8 strings inline, we have to allocate a
- *temporary
- *       bson variable and splice in the new value if the key is already set.
+ *       temporary bson variable and splice in the new value if the key
+ *       is already set.
  *
  *       NOTE: This function keeps the order of the BSON keys.
  *
@@ -645,6 +647,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
 {
    int32_t v_int;
    const char *end_key;
+   char *lkey = NULL;
    char *key = NULL;
    char *value = NULL;
    bool ret = false;
@@ -660,26 +663,35 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
       goto CLEANUP;
    }
 
-   if (mongoc_uri_option_is_int32 (key)) {
-      if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
+   lkey = bson_malloc (strlen (key) + 1);
+   mongoc_uri_lowercase (key, lkey);
+
+   if (bson_has_field (&uri->options, lkey)) {
+      MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+   }
+
+   if (mongoc_uri_option_is_int32 (lkey)) {
+      if (!mongoc_uri_parse_int32 (lkey, value, &v_int)) {
          goto UNSUPPORTED_VALUE;
       }
 
-      BSON_APPEND_INT32 (&uri->options, key, v_int);
-   } else if (!strcasecmp (key, MONGOC_URI_W)) {
+      mongoc_uri_set_option_as_int32 (uri, lkey, v_int);
+   } else if (!strcmp (lkey, MONGOC_URI_W)) {
       if (*value == '-' || isdigit (*value)) {
          v_int = (int) strtol (value, NULL, 10);
-         BSON_APPEND_INT32 (&uri->options, MONGOC_URI_W, v_int);
+         _mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_W, v_int);
       } else if (0 == strcasecmp (value, "majority")) {
-         BSON_APPEND_UTF8 (&uri->options, MONGOC_URI_W, "majority");
+         mongoc_uri_bson_append_or_replace_key (
+            &uri->options, MONGOC_URI_W, "majority");
       } else if (*value) {
-         BSON_APPEND_UTF8 (&uri->options, MONGOC_URI_W, value);
+         mongoc_uri_bson_append_or_replace_key (
+            &uri->options, MONGOC_URI_W, value);
       }
-   } else if (mongoc_uri_option_is_bool (key)) {
+   } else if (mongoc_uri_option_is_bool (lkey)) {
       if (0 == strcasecmp (value, "true")) {
-         BSON_APPEND_BOOL (&uri->options, key, true);
+         mongoc_uri_set_option_as_bool (uri, lkey, true);
       } else if (0 == strcasecmp (value, "false")) {
-         BSON_APPEND_BOOL (&uri->options, key, false);
+         mongoc_uri_set_option_as_bool (uri, lkey, false);
       } else if ((0 == strcmp (value, "1")) ||
                  (0 == strcasecmp (value, "yes")) ||
                  (0 == strcasecmp (value, "y")) ||
@@ -688,7 +700,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
                          "please update to \"%1$s=true\"",
                          key,
                          value);
-         BSON_APPEND_BOOL (&uri->options, key, true);
+         mongoc_uri_set_option_as_bool (uri, lkey, true);
       } else if ((0 == strcasecmp (value, "0")) ||
                  (0 == strcasecmp (value, "-1")) ||
                  (0 == strcmp (value, "no")) || (0 == strcmp (value, "n")) ||
@@ -697,29 +709,40 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
                          "please update to \"%1$s=false\"",
                          key,
                          value);
-         BSON_APPEND_BOOL (&uri->options, key, false);
+         mongoc_uri_set_option_as_bool (uri, lkey, false);
       } else {
          goto UNSUPPORTED_VALUE;
       }
-   } else if (!strcasecmp (key, MONGOC_URI_READPREFERENCETAGS)) {
+   } else if (!strcmp (lkey, MONGOC_URI_READPREFERENCETAGS)) {
+      /* Allows providing this key multiple times */
       if (!mongoc_uri_parse_tags (uri, value)) {
          goto UNSUPPORTED_VALUE;
       }
-   } else if (!strcasecmp (key, MONGOC_URI_AUTHMECHANISM) ||
-              !strcasecmp (key, MONGOC_URI_AUTHSOURCE)) {
-      bson_append_utf8 (&uri->credentials, key, -1, value, -1);
-   } else if (!strcasecmp (key, MONGOC_URI_READCONCERNLEVEL)) {
+   } else if (!strcmp (lkey, MONGOC_URI_AUTHMECHANISM) ||
+              !strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
+      if (bson_has_field (&uri->credentials, lkey)) {
+         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+      }
+      mongoc_uri_bson_append_or_replace_key (&uri->credentials, lkey, value);
+   } else if (!strcmp (lkey, MONGOC_URI_READCONCERNLEVEL)) {
+      if (!_mongoc_read_concern_is_default (uri->read_concern)) {
+         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+      }
       mongoc_read_concern_set_level (uri->read_concern, value);
-   } else if (!strcasecmp (key, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
+   } else if (!strcmp (lkey, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
+      if (bson_has_field (&uri->credentials, lkey)) {
+         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+      }
       if (!mongoc_uri_parse_auth_mechanism_properties (uri, value)) {
          goto UNSUPPORTED_VALUE;
       }
-   } else if (!strcasecmp (key, MONGOC_URI_APPNAME)) {
+   } else if (!strcmp (lkey, MONGOC_URI_APPNAME)) {
+      /* Part of uri->options */
       if (!mongoc_uri_set_appname (uri, value)) {
          goto UNSUPPORTED_VALUE;
       }
-   } else if (mongoc_uri_option_is_utf8 (key)) {
-      bson_append_utf8 (&uri->options, key, -1, value, -1);
+   } else if (mongoc_uri_option_is_utf8 (lkey)) {
+      mongoc_uri_bson_append_or_replace_key (&uri->options, lkey, value);
    } else {
       /*
        * Keys that aren't supported by a driver MUST be ignored.
@@ -739,6 +762,7 @@ UNSUPPORTED_VALUE:
 
 CLEANUP:
    bson_free (key);
+   bson_free (lkey);
    bson_free (value);
 
    return ret;
@@ -900,7 +924,7 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
    BSON_ASSERT (properties);
 
    if (bson_iter_init_find_case (
-          &iter, &uri->credentials, MONGOC_URI_MECHANISMPROPERTIES) &&
+          &iter, &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES) &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       uint32_t len = 0;
       const uint8_t *data = NULL;
@@ -927,15 +951,15 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
    BSON_ASSERT (properties);
 
    if (bson_iter_init_find (
-          &iter, &uri->credentials, MONGOC_URI_MECHANISMPROPERTIES)) {
-      /* copy all elements to tmp besides mechanismProperties */
+          &iter, &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
+      /* copy all elements to tmp besides authMechanismProperties */
       bson_copy_to_excluding_noinit (&uri->credentials,
                                      &tmp,
-                                     MONGOC_URI_MECHANISMPROPERTIES,
+                                     MONGOC_URI_AUTHMECHANISMPROPERTIES,
                                      (char *) NULL);
 
       r = BSON_APPEND_DOCUMENT (
-         &tmp, MONGOC_URI_MECHANISMPROPERTIES, properties);
+         &tmp, MONGOC_URI_AUTHMECHANISMPROPERTIES, properties);
       if (!r) {
          bson_destroy (&tmp);
          return false;
@@ -948,7 +972,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
       return true;
    } else {
       return BSON_APPEND_DOCUMENT (
-         &uri->credentials, MONGOC_URI_MECHANISMPROPERTIES, properties);
+         &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES, properties);
    }
 }
 
@@ -1612,14 +1636,36 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                 const char *option,
                                 int32_t value)
 {
-   const bson_t *options;
-   bson_iter_t iter;
-
    BSON_ASSERT (option);
 
    if (!mongoc_uri_option_is_int32 (option)) {
       return false;
    }
+
+   return _mongoc_uri_set_option_as_int32 (uri, option, value);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_uri_set_option_as_int32 --
+ *
+ *       Same as mongoc_uri_set_option_as_int32, except the option is not
+ *       validated against valid int32 options
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+_mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
+                                 const char *option,
+                                 int32_t value)
+{
+   const bson_t *options;
+   bson_iter_t iter;
 
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, option)) {
@@ -1634,6 +1680,7 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
    bson_append_int32 (&uri->options, option, -1, value);
    return true;
 }
+
 
 /*
  *--------------------------------------------------------------------------

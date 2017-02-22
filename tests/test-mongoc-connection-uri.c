@@ -3,6 +3,7 @@
 
 #include "json-test.h"
 #include "test-libmongoc.h"
+#include "mongoc-read-concern-private.h"
 
 
 static void
@@ -81,12 +82,18 @@ run_uri_test (const char *uri_string,
       }
    }
    if (options) {
+      const mongoc_read_concern_t *rc;
       bson_t all = BSON_INITIALIZER;
       bson_iter_t iter;
       bson_iter_t key_iter;
 
       bson_concat (&all, mongoc_uri_get_options (uri));
       bson_concat (&all, mongoc_uri_get_credentials (uri));
+      rc = mongoc_uri_get_read_concern (uri);
+      if (!_mongoc_read_concern_is_default (rc)) {
+         BSON_APPEND_UTF8 (
+            &all, "readconcernlevel", mongoc_read_concern_get_level (rc));
+      }
 
       for (bson_iter_init (&iter, options); bson_iter_next (&iter);) {
          ASSERT (
@@ -155,8 +162,7 @@ test_connection_uri_cb (bson_t *scenario)
       run_uri_test (uri_string, valid, &hosts, &auth, &options);
 
       if (bson_lookup_bool_null_ok (&test_case, "warning", false)) {
-         ASSERT_CAPTURED_LOG (
-            "mongoc_uri", MONGOC_LOG_LEVEL_WARNING, "Unsupported URI option");
+         ASSERT_CAPTURED_LOG ("mongoc_uri", MONGOC_LOG_LEVEL_WARNING, "");
       } else {
          ASSERT_NO_CAPTURED_LOGS ("mongoc_uri");
       }
