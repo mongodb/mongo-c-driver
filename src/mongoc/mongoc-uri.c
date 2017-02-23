@@ -203,20 +203,33 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri, const char *str, const char **end)
          uri->username = bson_strndup (str, end_userpass - str);
          uri->password = NULL;
       }
-      /* Make sure we don't have unescaped : */
-      if (uri->password && strchr (uri->password, ':')) {
+
+      ret = true;
+
+      mongoc_uri_do_unescape (&uri->username);
+      if (!uri->username) {
          ret = false;
-      } else {
-         mongoc_uri_do_unescape (&uri->username);
-         mongoc_uri_do_unescape (&uri->password);
-         *end = end_userpass + 1;
-         ret = true;
+         /* Providing password at all is optional */
+      } else if (uri->password) {
+         /* Make sure we don't have unescaped : */
+         if (strchr (uri->password, ':')) {
+            ret = false;
+         } else {
+            mongoc_uri_do_unescape (&uri->password);
+            if (!uri->password) {
+               ret = false;
+            }
+         }
       }
 
-      /* Make sure we don't have unescaped @ */
-      if ((tmp = scan_to_unichar (*end, '@', ",/[", end))) {
-         ret = false;
-         bson_free (tmp);
+      if (ret) {
+         *end = end_userpass + 1;
+
+         /* Make sure we don't have unescaped @ */
+         if ((tmp = scan_to_unichar (*end, '@', ",/[", end))) {
+            ret = false;
+            bson_free (tmp);
+         }
       }
       bson_free (s);
    } else {
@@ -1442,7 +1455,8 @@ mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
  *       that is not UTF-8 encoded!
  *
  * Returns:
- *       A newly allocated string that should be freed with bson_free().
+ *       A newly allocated string that should be freed with bson_free()
+ *       or NULL on failure, such as invalid % encoding.
  *
  * Side effects:
  *       None.
