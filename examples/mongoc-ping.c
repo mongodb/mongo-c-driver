@@ -48,12 +48,13 @@ main (int argc, char *argv[])
    }
 
    client = mongoc_client_new (host_and_port);
-   bson_free (host_and_port);
 
    if (!client) {
       fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
+      bson_free (host_and_port);
       return 2;
    }
+   bson_free (host_and_port);
 
    mongoc_client_set_error_api (client, 2);
 
