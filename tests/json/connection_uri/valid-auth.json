@@ -262,6 +262,31 @@
       }
     },
     {
+      "description": "Escaped username (GSSAPI)",
+      "uri": "mongodb://user%40EXAMPLE.COM:secret@localhost/?authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true&authMechanism=GSSAPI",
+      "valid": true,
+      "warning": false,
+      "hosts": [
+        {
+          "type": "hostname",
+          "host": "localhost",
+          "port": null
+        }
+      ],
+      "auth": {
+        "username": "user@EXAMPLE.COM",
+        "password": "secret",
+        "db": null
+      },
+      "options": {
+        "authmechanism": "GSSAPI",
+        "authmechanismproperties": {
+          "SERVICE_NAME": "other",
+          "CANONICALIZE_HOST_NAME": true
+        }
+      }
+    },
+    {
       "description": "At-signs in options aren't part of the userinfo",
       "uri": "mongodb://alice:secret@example.com/admin?replicaset=my@replicaset",
       "valid": true,
