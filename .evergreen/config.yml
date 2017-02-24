@@ -421,7 +421,7 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
-    - name: cmake-compile
+    - name: release-cmake-compile
       tags: ["release-eng", "cmake-compile"]
       depends_on:
         - name: "make-release-archive"
@@ -434,7 +434,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              BUILDTOOL="cmake" sh .evergreen/compile.sh
+              "CC='${CC}' sh .evergreen/compile-unix-cmake.sh"
         - func: "upload build"
 
     - name: debug-compile

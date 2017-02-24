@@ -22,6 +22,17 @@ option(ENABLE_TRACING "Turn on verbose debug output" OFF)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
 include(InstallRequiredSystemLibraries)
+
+# Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
+include(LoadVersion)
+LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
+LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
+
+message("Current version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
+if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
+   message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
+endif()
+
 include(FindBSON REQUIRED)
 
 if (NOT (ENABLE_SSL STREQUAL DARWIN
@@ -185,16 +196,6 @@ set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
-# Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
-include(LoadVersion)
-LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
-LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
-
-message("Current version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
-if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
-   message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
-endif()
-
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set (MONGOC_API_VERSION 1.0)
@@ -227,7 +228,8 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories("${SOURCE_DIR}/src/mongoc")
-include_directories(${BSON_INCLUDE_DIR})
+include_directories (${BSON_INCLUDE_DIRS})
+link_directories (${BSON_LIBRARY_DIRS})
 
 set(LIBS ${LIBS} ${BSON_LIBRARIES})
 
@@ -607,9 +609,12 @@ install(
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+set (MONGOC_HEADER_INSTALL_DIR "include/libmongoc-${MONGOC_API_VERSION}")
+
 install(
   FILES ${HEADERS}
-  DESTINATION "include/libmongoc-${MONGOC_API_VERSION}"
+  DESTINATION "${MONGOC_HEADER_INSTALL_DIR}"
 )
 
 # Define pkg-config files
@@ -634,3 +639,5 @@ if (MONGOC_ENABLE_SSL)
     DESTINATION lib/pkgconfig
   )
 endif()
+
+include (build/cmake/MongoCPackage.cmake)

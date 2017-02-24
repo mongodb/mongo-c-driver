@@ -225,7 +225,8 @@ Let's start by generating Visual Studio project files for libbson, a dependency 
 .. parsed-literal::
 
   cd mongo-c-driver-|release|\\src\\libbson
-  cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver"
+  cmake -G "Visual Studio 14 2015 Win64" \\
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver"
 
 (Run ``cmake -LH .`` for a list of other options.)
 
@@ -250,7 +251,7 @@ Now let's do the same for the MongoDB C driver.
   cd mongo-c-driver-|release|
   cmake -G "Visual Studio 14 2015 Win64" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
-    "-DBSON_ROOT_DIR=C:\\mongo-c-driver"
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
 
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
@@ -274,6 +275,5 @@ OpenSSL is available, configure the driver like so:
 
   cmake -G "Visual Studio 14 2015 Win64" \
     "-DENABLE_SSL=WINDOWS" \
-    "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" \
-    "-DBSON_ROOT_DIR=C:\mongo-c-driver"
-
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
