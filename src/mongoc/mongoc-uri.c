@@ -688,7 +688,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
       goto CLEANUP;
    }
 
-   lkey = bson_malloc (strlen (key) + 1);
+   lkey = bson_strdup (key);
    mongoc_uri_lowercase (key, lkey);
 
    if (bson_has_field (&uri->options, lkey)) {
