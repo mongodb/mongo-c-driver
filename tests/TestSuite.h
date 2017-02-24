@@ -65,7 +65,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #ifdef ASSERT
 #undef ASSERT
 #endif
-#define ASSERT assert
+#define ASSERT BSON_ASSERT
 
 
 #ifdef ASSERT_OR_PRINT

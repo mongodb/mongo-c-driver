@@ -29,10 +29,10 @@ test_split_insert (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_split_insert");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    docs = (bson_t **) bson_malloc (sizeof (bson_t *) * 3000);
 
@@ -69,7 +69,7 @@ test_split_insert (void)
                                       &reply,
                                       &error);
    ASSERT_OR_PRINT (r, error);
-   assert (result.nInserted == 3000);
+   BSON_ASSERT (result.nInserted == 3000);
 
    _mongoc_write_command_destroy (&command);
    _mongoc_write_result_destroy (&result);
@@ -103,16 +103,16 @@ test_invalid_write_concern (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_invalid_write_concern");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    write_concern = mongoc_write_concern_new ();
-   assert (write_concern);
+   BSON_ASSERT (write_concern);
    mongoc_write_concern_set_w (write_concern, 0);
    mongoc_write_concern_set_journal (write_concern, true);
-   assert (!mongoc_write_concern_is_valid (write_concern));
+   BSON_ASSERT (!mongoc_write_concern_is_valid (write_concern));
 
    doc = BCON_NEW ("_id", BCON_INT32 (0));
 
@@ -137,7 +137,7 @@ test_invalid_write_concern (void)
                                       &reply,
                                       &error);
 
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
@@ -169,13 +169,13 @@ test_bypass_validation (void *context)
    int i;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    collname = gen_collection_name ("bypass");
    database = mongoc_client_get_database (client, dbname);
    collection = mongoc_database_get_collection (database, collname);
-   assert (collection);
+   BSON_ASSERT (collection);
 
    options = tmp_bson (
       "{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");

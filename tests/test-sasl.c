@@ -103,7 +103,7 @@ test_gssapi_kerberos (void *context)
    int i;
    mongoc_thread_t threads[NTHREADS];
 
-   assert (host && user);
+   BSON_ASSERT (host && user);
 
    mongoc_mutex_init (&closure.mutex);
 

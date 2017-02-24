@@ -56,7 +56,7 @@ _test_op_query (const mongoc_uri_t *uri,
                         "{'a': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -113,7 +113,7 @@ _test_find_command (const mongoc_uri_t *uri,
                         "    'firstBatch': [{'a': 1}]}}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -165,7 +165,7 @@ _test_command (const mongoc_uri_t *uri,
                         "{'ok': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -207,7 +207,7 @@ _test_command_simple (const mongoc_uri_t *uri,
                         "{'ok': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);

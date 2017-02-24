@@ -45,14 +45,14 @@ test_get_max_bson_obj_size (void)
 
    /* single-threaded */
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    id = server_id_for_reads (&client->cluster);
    sd = (mongoc_server_description_t *) mongoc_set_get (
       client->topology->description.servers, id);
    sd->max_bson_obj_size = max_bson_obj_size;
-   assert (max_bson_obj_size ==
-           mongoc_cluster_get_max_bson_obj_size (&client->cluster));
+   BSON_ASSERT (max_bson_obj_size ==
+                mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
    mongoc_client_destroy (client);
 
@@ -63,8 +63,8 @@ test_get_max_bson_obj_size (void)
    id = server_id_for_reads (&client->cluster);
    node = (mongoc_cluster_node_t *) mongoc_set_get (client->cluster.nodes, id);
    node->max_bson_obj_size = max_bson_obj_size;
-   assert (max_bson_obj_size ==
-           mongoc_cluster_get_max_bson_obj_size (&client->cluster));
+   BSON_ASSERT (max_bson_obj_size ==
+                mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -87,7 +87,8 @@ test_get_max_msg_size (void)
    sd = (mongoc_server_description_t *) mongoc_set_get (
       client->topology->description.servers, id);
    sd->max_msg_size = max_msg_size;
-   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
+   BSON_ASSERT (max_msg_size ==
+                mongoc_cluster_get_max_msg_size (&client->cluster));
 
    mongoc_client_destroy (client);
 
@@ -98,7 +99,8 @@ test_get_max_msg_size (void)
    id = server_id_for_reads (&client->cluster);
    node = (mongoc_cluster_node_t *) mongoc_set_get (client->cluster.nodes, id);
    node->max_msg_size = max_msg_size;
-   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
+   BSON_ASSERT (max_msg_size ==
+                mongoc_cluster_get_max_msg_size (&client->cluster));
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -107,8 +109,8 @@ test_get_max_msg_size (void)
 
 #define ASSERT_CURSOR_ERR()                                  \
    do {                                                      \
-      assert (!future_get_bool (future));                    \
-      assert (mongoc_cursor_error (cursor, &error));         \
+      BSON_ASSERT (!future_get_bool (future));               \
+      BSON_ASSERT (mongoc_cursor_error (cursor, &error));    \
       ASSERT_ERROR_CONTAINS (                                \
          error,                                              \
          MONGOC_ERROR_STREAM,                                \

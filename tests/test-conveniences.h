@@ -110,7 +110,7 @@ four_mb_string ();
 
 #define ASSERT_MATCH(doc, ...)                                                 \
    do {                                                                        \
-      assert (                                                                 \
+      BSON_ASSERT (                                                            \
          match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
    } while (0)
 

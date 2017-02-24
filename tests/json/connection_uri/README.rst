@@ -7,7 +7,7 @@ that drivers can use to prove their conformance to the Connection String Spec.
 
 As the spec is primarily concerned with parsing the parts of a URI, these tests
 do not focus on host and option validation. Where necessary, the tests use
-options known to be (un)supported by drivers to assert behavior such as issuing
+options known to be (un)supported by drivers to BSON_ASSERT behavior such as issuing
 a warning on repeated option keys.  As such these YAML tests are in no way a
 replacement for more thorough testing. However, they can provide an initial
 verification of your implementation.
@@ -95,5 +95,5 @@ whether URI parsing (or MongoClient construction) raises an error or exception.
 Testing for emitted warnings may require more legwork (e.g. configuring a log
 handler and watching for output).
 
-Not all drivers may be able to directly assert the hosts, auth credentials, and
+Not all drivers may be able to directly BSON_ASSERT the hosts, auth credentials, and
 options. Doing so may require exposing the driver's URI parsing component.

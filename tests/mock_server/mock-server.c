@@ -556,7 +556,7 @@ mock_server_get_host_and_port (mock_server_t *server)
    const mongoc_uri_t *uri;
 
    uri = mock_server_get_uri (server);
-   assert (uri); /* must call after mock_server_run */
+   BSON_ASSERT (uri); /* must call after mock_server_run */
    return (mongoc_uri_get_hosts (uri))->host_and_port;
 }
 
@@ -1168,7 +1168,7 @@ mock_server_replies (request_t *request,
    bson_error_t error;
    bool r;
 
-   assert (request);
+   BSON_ASSERT (request);
 
    if (docs_json) {
       quotes_replaced = single_quotes_to_double (docs_json);
@@ -1562,7 +1562,7 @@ again:
    rpc = NULL;
 
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, 10, &error) > 0) {
-      assert (buffer.len >= 4);
+      BSON_ASSERT (buffer.len >= 4);
 
       memcpy (&msg_len, buffer.data + buffer.off, 4);
       msg_len = BSON_UINT32_FROM_LE (msg_len);
@@ -1578,7 +1578,7 @@ again:
          GOTO (failure);
       }
 
-      assert (buffer.len >= (unsigned) msg_len);
+      BSON_ASSERT (buffer.len >= (unsigned) msg_len);
 
       /* copies message from buffer */
       request = request_new (
@@ -1775,7 +1775,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
 
    n_written = mongoc_stream_writev (client, iov, (size_t) iovcnt, -1);
 
-   assert (n_written == expected);
+   BSON_ASSERT (n_written == expected);
 
    bson_string_free (docs_json, true);
    _mongoc_array_destroy (&ar);

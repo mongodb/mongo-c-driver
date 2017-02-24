@@ -917,7 +917,7 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
                                  test_framework_get_ssl () ? "/?ssl=true" : "");
 
    uri = mongoc_uri_new (uri_str);
-   assert (uri);
+   BSON_ASSERT (uri);
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10000);
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
@@ -1055,7 +1055,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 
          /* append "host1,host2,host3" */
          while (bson_iter_next (&hosts_iter)) {
-            assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
+            BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
             if (!first) {
                bson_string_append (uri_string, ",");
             }
@@ -1151,7 +1151,7 @@ test_framework_get_uri ()
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
 
-   assert (uri);
+   BSON_ASSERT (uri);
    bson_free (test_uri_str);
 
    return uri;
@@ -1175,7 +1175,7 @@ test_framework_mongos_count (void)
    const mongoc_host_list_t *h;
    size_t count = 0;
 
-   assert (uri);
+   BSON_ASSERT (uri);
    h = mongoc_uri_get_hosts (uri);
    while (h) {
       ++count;
@@ -1308,7 +1308,7 @@ test_framework_server_count (void)
 void
 test_framework_set_ssl_opts (mongoc_client_t *client)
 {
-   assert (client);
+   BSON_ASSERT (client);
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
@@ -1344,7 +1344,7 @@ test_framework_client_new ()
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = mongoc_client_new (test_uri_str);
 
-   assert (client);
+   BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
    bson_free (test_uri_str);
@@ -1396,7 +1396,7 @@ test_framework_get_ssl_opts (void)
 void
 test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 {
-   assert (pool);
+   BSON_ASSERT (pool);
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
@@ -1432,11 +1432,11 @@ test_framework_client_pool_new ()
    mongoc_uri_t *test_uri = test_framework_get_uri ();
    mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
 
-   assert (pool);
+   BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
 
    mongoc_uri_destroy (test_uri);
-   assert (pool);
+   BSON_ASSERT (pool);
    return pool;
 }
 

@@ -20,19 +20,19 @@ _topology_has_description (mongoc_topology_description_t *topology,
    const char *set_name;
 
    sd = server_description_by_hostname (topology, address);
-   assert (sd);
+   BSON_ASSERT (sd);
 
    bson_iter_init (&server_iter, server);
    while (bson_iter_next (&server_iter)) {
       if (strcmp ("setName", bson_iter_key (&server_iter)) == 0) {
          set_name = bson_iter_utf8 (&server_iter, NULL);
          if (set_name) {
-            assert (sd->set_name);
+            BSON_ASSERT (sd->set_name);
             ASSERT_CMPSTR (sd->set_name, set_name);
          }
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
-         assert (sd->type ==
-                 server_type_from_test (bson_iter_utf8 (&server_iter, NULL)));
+         BSON_ASSERT (sd->type == server_type_from_test (
+                                     bson_iter_utf8 (&server_iter, NULL)));
       } else if (strcmp ("setVersion", bson_iter_key (&server_iter)) == 0) {
          int64_t expected_set_version;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -40,7 +40,7 @@ _topology_has_description (mongoc_topology_description_t *topology,
          } else {
             expected_set_version = bson_iter_as_int64 (&server_iter);
          }
-         assert (sd->set_version == expected_set_version);
+         BSON_ASSERT (sd->set_version == expected_set_version);
       } else if (strcmp ("electionId", bson_iter_key (&server_iter)) == 0) {
          bson_oid_t expected_oid;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -55,7 +55,7 @@ _topology_has_description (mongoc_topology_description_t *topology,
       } else {
          fprintf (
             stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
-         assert (0);
+         BSON_ASSERT (0);
       }
    }
 }
@@ -85,11 +85,11 @@ test_sdam_cb (bson_t *test)
    const char *hostname;
 
    /* parse out the uri and use it to create a client */
-   assert (bson_iter_init_find (&iter, test, "uri"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
 
    /* for each phase, parse and validate */
-   assert (bson_iter_init_find (&iter, test, "phases"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
    bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
@@ -100,7 +100,7 @@ test_sdam_cb (bson_t *test)
                                             &client->topology->description);
 
       /* parse out "outcome" and validate */
-      assert (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
+      BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
       bson_iter_bson (&phase_field_iter, &outcome);
       bson_iter_init (&outcome_iter, &outcome);
 
@@ -126,7 +126,7 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
             set_name = bson_iter_utf8 (&outcome_iter, NULL);
             if (set_name) {
-               assert (&client->topology->description.set_name);
+               BSON_ASSERT (&client->topology->description.set_name);
                ASSERT_CMPSTR (client->topology->description.set_name, set_name);
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
@@ -138,7 +138,7 @@ test_sdam_cb (bson_t *test)
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
                      bson_iter_key (&outcome_iter));
-            assert (false);
+            BSON_ASSERT (false);
          }
       }
    }

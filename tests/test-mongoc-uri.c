@@ -68,11 +68,11 @@ test_mongoc_uri_new (void)
 
    uri = mongoc_uri_new (
       "mongodb://[::1]:27888,[::2]:27999/?ipv6=true&" MONGOC_URI_SAFE "=true");
-   assert (uri);
+   BSON_ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
-   assert (hosts);
+   BSON_ASSERT (hosts);
    ASSERT_CMPSTR (hosts->host, "::1");
-   assert (hosts->port == 27888);
+   BSON_ASSERT (hosts->port == 27888);
    ASSERT_CMPSTR (hosts->host_and_port, "[::1]:27888");
    mongoc_uri_destroy (uri);
 
@@ -82,9 +82,9 @@ test_mongoc_uri_new (void)
 
    /* should normalize to lowercase */
    uri = mongoc_uri_new ("mongodb://cRaZyHoStNaMe");
-   assert (uri);
+   BSON_ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
-   assert (hosts);
+   BSON_ASSERT (hosts);
    ASSERT_CMPSTR (hosts->host, "crazyhostname");
    mongoc_uri_destroy (uri);
 
@@ -328,10 +328,10 @@ test_mongoc_uri_new (void)
    credentials = mongoc_uri_get_credentials (uri);
    ASSERT (credentials);
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &properties));
-   assert (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") &&
-           BSON_ITER_HOLDS_UTF8 (&iter) &&
-           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "other")));
-   assert (
+   BSON_ASSERT (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") &&
+                BSON_ITER_HOLDS_UTF8 (&iter) &&
+                (0 == strcmp (bson_iter_utf8 (&iter, NULL), "other")));
+   BSON_ASSERT (
       bson_iter_init_find_case (&iter, &properties, "CANONICALIZE_HOST_NAME") &&
       BSON_ITER_HOLDS_UTF8 (&iter) &&
       (0 == strcmp (bson_iter_utf8 (&iter, NULL), "true")));
@@ -351,9 +351,10 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
-   assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
-   assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
-   assert (
+   BSON_ASSERT (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
+   BSON_ASSERT (0 ==
+                strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
+   BSON_ASSERT (
       bson_iter_init_find_case (&iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
       BSON_ITER_HOLDS_UTF8 (&iter) &&
       (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
@@ -862,10 +863,10 @@ test_mongoc_uri_read_prefs (void)
       capture_logs (true);
       uri = mongoc_uri_new (t->uri);
       if (t->parses) {
-         assert (uri);
+         BSON_ASSERT (uri);
          ASSERT_NO_CAPTURED_LOGS (t->uri);
       } else {
-         assert (!uri);
+         BSON_ASSERT (!uri);
          if (t->log_msg) {
             ASSERT_CAPTURED_LOG (t->uri, MONGOC_LOG_LEVEL_WARNING, t->log_msg);
          }
@@ -874,12 +875,12 @@ test_mongoc_uri_read_prefs (void)
       }
 
       rp = mongoc_uri_get_read_prefs_t (uri);
-      assert (rp);
+      BSON_ASSERT (rp);
 
-      assert (t->mode == mongoc_read_prefs_get_mode (rp));
+      BSON_ASSERT (t->mode == mongoc_read_prefs_get_mode (rp));
 
       if (t->tags) {
-         assert (bson_equal (t->tags, mongoc_read_prefs_get_tags (rp)));
+         BSON_ASSERT (bson_equal (t->tags, mongoc_read_prefs_get_tags (rp)));
       }
 
       mongoc_uri_destroy (uri);
@@ -993,23 +994,24 @@ test_mongoc_uri_write_concern (void)
       capture_logs (false); /* clear captured logs */
 
       if (t->parses) {
-         assert (uri);
+         BSON_ASSERT (uri);
       } else {
-         assert (!uri);
+         BSON_ASSERT (!uri);
          continue;
       }
 
       wr = mongoc_uri_get_write_concern (uri);
-      assert (wr);
+      BSON_ASSERT (wr);
 
-      assert (t->w == mongoc_write_concern_get_w (wr));
+      BSON_ASSERT (t->w == mongoc_write_concern_get_w (wr));
 
       if (t->wtag) {
-         assert (0 == strcmp (t->wtag, mongoc_write_concern_get_wtag (wr)));
+         BSON_ASSERT (0 ==
+                      strcmp (t->wtag, mongoc_write_concern_get_wtag (wr)));
       }
 
       if (t->wtimeoutms) {
-         assert (t->wtimeoutms == mongoc_write_concern_get_wtimeout (wr));
+         BSON_ASSERT (t->wtimeoutms == mongoc_write_concern_get_wtimeout (wr));
       }
 
       mongoc_uri_destroy (uri);

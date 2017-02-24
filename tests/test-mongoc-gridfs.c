@@ -501,13 +501,13 @@ test_read (void)
    ASSERT_MEMCMP (iov[0].iov_base, "turducken ", 10);
    ASSERT_MEMCMP (iov[1].iov_base, "spare ribs", 10);
 
-   assert (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
+   BSON_ASSERT (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
    previous_errno = errno;
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
-   assert (errno == previous_errno);
-   assert (r == 0);
-   assert (mongoc_gridfs_file_tell (file) == file->length + 20);
+   BSON_ASSERT (errno == previous_errno);
+   BSON_ASSERT (r == 0);
+   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + 20);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -604,21 +604,21 @@ _test_write (bool at_boundary)
    _check_chunk_count (gridfs, len, file->chunk_size);
 
    /* Test writing beyond the end of the file */
-   assert (mongoc_gridfs_file_seek (file, seek_len, SEEK_END) == 0);
-   assert (mongoc_gridfs_file_tell (file) == file->length + seek_len);
+   BSON_ASSERT (mongoc_gridfs_file_seek (file, seek_len, SEEK_END) == 0);
+   BSON_ASSERT (mongoc_gridfs_file_tell (file) == file->length + seek_len);
 
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
-   assert (r == len);
-   assert (mongoc_gridfs_file_tell (file) == 2 * len + seek_len);
-   assert (file->length == 2 * len + seek_len);
-   assert (mongoc_gridfs_file_save (file));
+   BSON_ASSERT (r == len);
+   BSON_ASSERT (mongoc_gridfs_file_tell (file) == 2 * len + seek_len);
+   BSON_ASSERT (file->length == 2 * len + seek_len);
+   BSON_ASSERT (mongoc_gridfs_file_save (file));
    _check_chunk_count (gridfs, 2 * len + seek_len, file->chunk_size);
 
-   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
-   assert (mongoc_gridfs_file_tell (file) == 0);
+   BSON_ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   BSON_ASSERT (mongoc_gridfs_file_tell (file) == 0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, 2 * len + seek_len, 0);
-   assert (r == 2 * len + seek_len);
+   BSON_ASSERT (r == 2 * len + seek_len);
 
    /* expect file to be like "fo bazr baz\0\0\0\0\0\0foo bar baz" */
    bson_snprintf (expected, strlen ("fo bazr baz") + 1, "fo bazr baz");
@@ -626,8 +626,8 @@ _test_write (bool at_boundary)
                   strlen ("foo bar baz") + 1,
                   "foo bar baz");
 
-   assert (memcmp (buf3, expected, (size_t) (2 * len + seek_len)) == 0);
-   assert (mongoc_gridfs_file_save (file));
+   BSON_ASSERT (memcmp (buf3, expected, (size_t) (2 * len + seek_len)) == 0);
+   BSON_ASSERT (mongoc_gridfs_file_save (file));
 
    mongoc_gridfs_file_destroy (file);
 

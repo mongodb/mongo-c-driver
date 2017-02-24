@@ -1839,7 +1839,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);
-      assert (0);
+      BSON_ASSERT (0);
    }
 
    return NULL;

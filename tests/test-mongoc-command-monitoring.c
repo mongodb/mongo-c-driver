@@ -230,14 +230,15 @@ convert_command_for_test (context_t *context,
          BSON_APPEND_DOUBLE (dst, key, (double) bson_iter_as_int64 (&iter));
 
       } else if (!strcmp (key, "errmsg")) {
-         /* "errmsg values of "" MUST assert that the value is not empty" */
+         /* "errmsg values of "" MUST BSON_ASSERT that the value is not empty"
+          */
          errmsg = bson_iter_utf8 (&iter, NULL);
          ASSERT_CMPSIZE_T (strlen (errmsg), >, (size_t) 0);
          BSON_APPEND_UTF8 (dst, key, "");
 
       } else if (!strcmp (key, "id") && ends_with (path, "cursor")) {
          /* "When encountering a cursor or getMore value of "42" in a test, the
-          * driver MUST assert that the values are equal to each other and
+          * driver MUST BSON_ASSERT that the values are equal to each other and
           * greater than zero."
           */
          if (context->cursor_id == 0) {
@@ -247,7 +248,7 @@ convert_command_for_test (context_t *context,
          }
 
          /* replace the reply's cursor id with 42 or 0 - check_expectations()
-          * will assert it matches the value from the JSON test */
+          * will BSON_ASSERT it matches the value from the JSON test */
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
       } else if (ends_with (path, "cursors") ||
                  ends_with (path, "cursorsUnknown")) {
@@ -264,7 +265,8 @@ convert_command_for_test (context_t *context,
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
 
       } else if (!strcmp (key, "code")) {
-         /* "code values of 42 MUST assert that the value is present and greater
+         /* "code values of 42 MUST BSON_ASSERT that the value is present and
+          * greater
           * than zero" */
          ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), >, (int64_t) 0);
          BSON_APPEND_INT32 (dst, key, 42);

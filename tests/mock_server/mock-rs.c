@@ -412,7 +412,7 @@ mock_rs_reply_to_find (mock_rs_t           *rs,
    request_t *request;
 
    request = mock_rs_receives_request (rs);
-   assert (request);
+   BSON_ASSERT (request);
 
    mock_server_reply_to_find (request, flags, cursor_id, number_returned,
                               reply_json, is_command);
@@ -731,7 +731,7 @@ mock_rs_replies_to_find (request_t *request,
 bool
 mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request)
 {
-   assert (request);
+   BSON_ASSERT (request);
 
    return MONGOC_SERVER_RS_PRIMARY ==
           _mock_rs_server_type (rs, request_get_server_port (request));
@@ -757,7 +757,7 @@ mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request)
 bool
 mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request)
 {
-   assert (request);
+   BSON_ASSERT (request);
 
    return MONGOC_SERVER_RS_SECONDARY ==
           _mock_rs_server_type (rs, request_get_server_port (request));

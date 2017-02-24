@@ -1,5 +1,4 @@
 #include <mongoc.h>
-#include <assert.h>
 #include <mongoc-client-private.h>
 
 #include "TestSuite.h"
@@ -47,7 +46,7 @@ test_get_host (void)
       abort ();
    }
 
-   assert (doc == mongoc_cursor_current (cursor));
+   BSON_ASSERT (doc == mongoc_cursor_current (cursor));
 
    mongoc_cursor_get_host (cursor, &host);
 
@@ -375,7 +374,7 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
                   ==,
                   request_get_server_port (request));
 
-   assert (future_wait (future));
+   BSON_ASSERT (future_wait (future));
 
    request_destroy (kill_cursors);
    request_destroy (request);
@@ -567,15 +566,15 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
    request = mock_rs_receives_kill_cursors (rs, 123);
 
    if (has_primary) {
-      assert (request);
+      BSON_ASSERT (request);
 
       /* weird but true. see mongoc_client_kill_cursor's documentation */
-      assert (mock_rs_request_is_to_primary (rs, request));
+      BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
 
       request_destroy (request); /* server has no reply to OP_KILLCURSORS */
    } else {
       /* TODO: catch and check warning */
-      assert (!request);
+      BSON_ASSERT (!request);
    }
 
    future_wait (future); /* no return value */
@@ -950,7 +949,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
    }
 
    mock_rs_replies (request, 0, 0, 0, 1, "{'b': 1}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
 
    request_destroy (request);
@@ -1044,7 +1043,7 @@ test_cursor_hint_mongos (void)
          server, "test.test", expected_flag[i], 0, 0, "{}", NULL);
 
       mock_server_replies_simple (request, "{}");
-      assert (future_get_bool (future));
+      BSON_ASSERT (future_get_bool (future));
 
       request_destroy (request);
       future_destroy (future);
@@ -1096,7 +1095,7 @@ test_cursor_hint_mongos_cmd (void)
                                   "    'ns': 'test.test',"
                                   "    'firstBatch': [{}]}}");
 
-      assert (future_get_bool (future));
+      BSON_ASSERT (future_get_bool (future));
 
       request_destroy (request);
       future_destroy (future);

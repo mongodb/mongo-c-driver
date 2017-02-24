@@ -53,7 +53,7 @@ topology_type_from_test (const char *type)
    }
 
    fprintf (stderr, "can't parse this: %s", type);
-   assert (0);
+   BSON_ASSERT (0);
    return 0;
 }
 
@@ -80,7 +80,7 @@ server_type_from_test (const char *type)
       return MONGOC_SERVER_UNKNOWN;
    }
    fprintf (stderr, "ERROR: Unknown server type %s\n", type);
-   assert (0);
+   BSON_ASSERT (0);
    return 0;
 }
 
@@ -184,7 +184,7 @@ process_sdam_test_ismaster_responses (bson_t *phase,
    const char *hostname;
 
    /* grab ismaster responses out and feed them to topology */
-   assert (bson_iter_init_find (&phase_field_iter, phase, "responses"));
+   BSON_ASSERT (bson_iter_init_find (&phase_field_iter, phase, "responses"));
    bson_iter_bson (&phase_field_iter, &ismasters);
    bson_iter_init (&ismaster_iter, &ismasters);
 
@@ -333,11 +333,11 @@ test_server_selection_logic_cb (bson_t *test)
    }
 
    /* pull out topology description field */
-   assert (bson_iter_init_find (&iter, test, "topology_description"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "topology_description"));
    bson_iter_bson (&iter, &test_topology);
 
    /* set topology state from test */
-   assert (bson_iter_init_find (&topology_iter, &test_topology, "type"));
+   BSON_ASSERT (bson_iter_init_find (&topology_iter, &test_topology, "type"));
    type = bson_iter_utf8 (&topology_iter, NULL);
 
    if (strcmp (type, "Single") == 0) {
@@ -351,7 +351,8 @@ test_server_selection_logic_cb (bson_t *test)
    }
 
    /* for each server description in test, add server to our topology */
-   assert (bson_iter_init_find (&topology_iter, &test_topology, "servers"));
+   BSON_ASSERT (
+      bson_iter_init_find (&topology_iter, &test_topology, "servers"));
    bson_iter_bson (&topology_iter, &test_servers);
 
    bson_iter_init (&server_iter, &test_servers);
@@ -360,10 +361,10 @@ test_server_selection_logic_cb (bson_t *test)
 
       /* initialize new server description with given address */
       sd = (mongoc_server_description_t *) bson_malloc0 (sizeof *sd);
-      assert (bson_iter_init_find (&sd_iter, &server, "address"));
+      BSON_ASSERT (bson_iter_init_find (&sd_iter, &server, "address"));
       mongoc_server_description_init (sd, bson_iter_utf8 (&sd_iter, NULL), i++);
 
-      assert (bson_iter_init_find (&sd_iter, &server, "type"));
+      BSON_ASSERT (bson_iter_init_find (&sd_iter, &server, "type"));
       sd->type = server_type_from_test (bson_iter_utf8 (&sd_iter, NULL));
 
       if (bson_iter_init_find (&sd_iter, &server, "avg_rtt_ms")) {
@@ -382,10 +383,10 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       if (bson_iter_init_find (&sd_iter, &server, "lastWrite")) {
-         assert (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) &&
-                 bson_iter_recurse (&sd_iter, &last_write_iter) &&
-                 bson_iter_find (&last_write_iter, "lastWriteDate") &&
-                 BSON_ITER_HOLDS_INT64 (&last_write_iter));
+         BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) &&
+                      bson_iter_recurse (&sd_iter, &last_write_iter) &&
+                      bson_iter_find (&last_write_iter, "lastWriteDate") &&
+                      BSON_ITER_HOLDS_INT64 (&last_write_iter));
          sd->last_write_date_ms = bson_iter_as_int64 (&last_write_iter);
       }
 
@@ -400,7 +401,7 @@ test_server_selection_logic_cb (bson_t *test)
    }
 
    /* create read preference document from test */
-   assert (bson_iter_init_find (&iter, test, "read_preference"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "read_preference"));
    bson_iter_bson (&iter, &test_read_pref);
 
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref, "mode")) {
@@ -440,21 +441,24 @@ test_server_selection_logic_cb (bson_t *test)
    }
 
    if (expected_error) {
-      assert (!mongoc_read_prefs_is_valid (read_prefs) ||
-              !mongoc_topology_compatible (&topology, read_prefs, &error));
+      BSON_ASSERT (!mongoc_read_prefs_is_valid (read_prefs) ||
+                   !mongoc_topology_compatible (&topology, read_prefs, &error));
       goto DONE;
    }
 
    /* no expected error */
-   assert (mongoc_read_prefs_is_valid (read_prefs));
-   assert (mongoc_topology_compatible (&topology, read_prefs, &error));
+   BSON_ASSERT (mongoc_read_prefs_is_valid (read_prefs));
+   BSON_ASSERT (mongoc_topology_compatible (&topology, read_prefs, &error));
 
    /* read in latency window servers */
-   assert (bson_iter_init_find (&iter, test, "in_latency_window"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "in_latency_window"));
 
    /* TODO: use topology_select instead? */
    mongoc_topology_description_suitable_servers (
-      &selected_servers, op, &topology, read_prefs,
+      &selected_servers,
+      op,
+      &topology,
+      read_prefs,
       MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* check each server in expected_servers is in selected_servers */
@@ -464,8 +468,8 @@ test_server_selection_logic_cb (bson_t *test)
       bool found = false;
       bson_iter_t host;
 
-      assert (bson_iter_recurse (&expected_servers_iter, &host));
-      assert (bson_iter_find (&host, "address"));
+      BSON_ASSERT (bson_iter_recurse (&expected_servers_iter, &host));
+      BSON_ASSERT (bson_iter_find (&host, "address"));
 
       for (i = 0; i < selected_servers.len; i++) {
          sd = _mongoc_array_index (
@@ -526,7 +530,7 @@ assemble_path (const char *parent_path,
    int path_len = (int) strlen (parent_path);
    int name_len = (int) strlen (child_name);
 
-   assert (path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
+   BSON_ASSERT (path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
 
    memset (dst, '\0', MAX_TEST_NAME_LENGTH * sizeof (char));
    strncat (dst, parent_path, path_len);
@@ -570,7 +574,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
    }
 
    while (1) {
-      assert (paths_index < max_paths);
+      BSON_ASSERT (paths_index < max_paths);
 
       if (_findnext (handle, &info) == -1) {
          break;
@@ -599,9 +603,9 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
    DIR *dir;
 
    dir = opendir (dir_path);
-   assert (dir);
+   BSON_ASSERT (dir);
    while ((entry = readdir (dir))) {
-      assert (paths_index < max_paths);
+      BSON_ASSERT (paths_index < max_paths);
       if (strcmp (entry->d_name, "..") == 0 ||
           strcmp (entry->d_name, ".") == 0) {
          continue;
@@ -692,7 +696,7 @@ get_bson_from_json_file (char *filename)
  *      test into a BSON blob and call the provided callback for
  *      evaluation.
  *
- *      It is expected that the callback will assert on failure, so if
+ *      It is expected that the callback will BSON_ASSERT on failure, so if
  *      callback returns quietly the test is considered to have passed.
  *
  *-----------------------------------------------------------------------
@@ -716,10 +720,10 @@ install_json_test_suite (TestSuite *suite,
       test = get_bson_from_json_file (test_paths[i]);
       skip_json = COALESCE (strstr (test_paths[i], "/json"),
                             strstr (test_paths[i], "\\json"));
-      assert (skip_json);
+      BSON_ASSERT (skip_json);
       skip_json += strlen ("/json");
       ext = strstr (skip_json, ".json");
-      assert (ext);
+      BSON_ASSERT (ext);
       ext[0] = '\0';
 
       TestSuite_AddFull (suite,

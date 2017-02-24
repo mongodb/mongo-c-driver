@@ -167,22 +167,22 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * server0 is selected, server1 is discovered and added to scanner.
     */
-   assert (selects_server (client, secondary_read_prefs, server0));
-   assert (
+   BSON_ASSERT (selects_server (client, secondary_read_prefs, server0));
+   BSON_ASSERT (
       get_node (client->topology, mock_server_get_host_and_port (server1)));
 
    /*
     * select again with mode "primary": server1 is selected.
     */
-   assert (selects_server (client, primary_read_prefs, server1));
+   BSON_ASSERT (selects_server (client, primary_read_prefs, server1));
 
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
    RS_RESPONSE_TO_ISMASTER (server0, true, true, server0); /* server1 absent */
 
-   assert (selects_server (client, tag_read_prefs, server0));
-   assert (!client->topology->stale);
+   BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
+   BSON_ASSERT (!client->topology->stale);
 
    if (!pooled) {
       ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
@@ -194,7 +194,7 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server0, true, true, server0, server1);
    RS_RESPONSE_TO_ISMASTER (server1, false, false, server0, server1);
 
-   assert (selects_server (client, secondary_read_prefs, server1));
+   BSON_ASSERT (selects_server (client, secondary_read_prefs, server1));
 
    if (!pooled) {
       /* no additional failed streams */
@@ -314,8 +314,8 @@ _test_topology_reconcile_sharded (bool pooled)
                          (int) 1000000);
       }
    } else {
-      assert (!get_node (client->topology,
-                         mock_server_get_host_and_port (secondary)));
+      BSON_ASSERT (!get_node (client->topology,
+                              mock_server_get_host_and_port (secondary)));
    }
 
    mongoc_server_description_destroy (sd);

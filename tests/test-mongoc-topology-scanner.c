@@ -33,9 +33,9 @@ test_topology_scanner_helper (uint32_t id,
    }
 
    /* mock servers are configured to return their ids as max wire version */
-   assert (bson);
-   assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   BSON_ASSERT (bson);
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    max_wire_version = (uint32_t) bson_iter_int32 (&iter);
    ASSERT_CMPINT (max_wire_version, ==, id);
 
@@ -96,7 +96,7 @@ _test_topology_scanner (bool with_ssl)
       mongoc_topology_scanner_reset (topology_scanner);
    }
 
-   assert (finished == 0);
+   BSON_ASSERT (finished == 0);
 
    mongoc_topology_scanner_destroy (topology_scanner);
 
@@ -248,7 +248,7 @@ test_topology_scanner_oscillate (void)
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   assert (!scanner->async->ncmds);
+   BSON_ASSERT (!scanner->async->ncmds);
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
@@ -266,8 +266,8 @@ test_topology_scanner_oscillate (void)
    /* we don't schedule another check of server0 */
    _mongoc_usleep (250 * 1000);
 
-   assert (!future_get_mongoc_server_description_ptr (future));
-   assert (scanner->async->ncmds == 0);
+   BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
+   BSON_ASSERT (scanner->async->ncmds == 0);
 
    future_destroy (future);
    request_destroy (request);

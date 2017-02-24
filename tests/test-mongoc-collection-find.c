@@ -1,6 +1,5 @@
 #include <mongoc.h>
 #include <mongoc-cursor-private.h>
-#include <assert.h>
 #include "mongoc-uri-private.h"
 #include "mongoc-client-private.h"
 
@@ -215,7 +214,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
    cursor_next_result = future_get_bool (future);
    /* did we expect at least one result? */
    ASSERT (cursor_next_result == (test_data->n_results > 0));
-   assert (!mongoc_cursor_error (cursor, NULL));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, NULL));
 
    if (cursor_next_result) {
       bson_append_document (&actual_result, "0", -1, doc);
@@ -228,7 +227,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
          i++;
       }
 
-      assert (!mongoc_cursor_error (cursor, NULL));
+      BSON_ASSERT (!mongoc_cursor_error (cursor, NULL));
    }
 
    if (i != test_data->n_results) {
@@ -1057,7 +1056,7 @@ test_getmore_await (void)
                                        " 'maxTimeMS': %s}",
                                        max_time_json);
 
-      assert (request);
+      BSON_ASSERT (request);
       /* reply with cursor id 0 */
       mock_server_replies_simple (request,
                                   "{'ok': 1,"

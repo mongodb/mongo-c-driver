@@ -17,7 +17,6 @@
 #include <bson.h>
 #include <mongoc.h>
 
-#include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
 
@@ -188,7 +187,7 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
    unsigned seed;
    if (fd != -1) {
       n_read = read (fd, &seed, 4);
-      assert (n_read == 4);
+      BSON_ASSERT (n_read == 4);
       close (fd);
       test->seed = seed;
       return;

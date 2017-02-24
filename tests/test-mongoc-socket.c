@@ -43,7 +43,7 @@ socket_test_server (void *data_)
    iov.iov_len = sizeof (buf);
 
    listen_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (listen_sock);
+   BSON_ASSERT (listen_sock);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
@@ -51,15 +51,15 @@ socket_test_server (void *data_)
 
    r = mongoc_socket_bind (
       listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    sock_len = sizeof (server_addr);
    r = mongoc_socket_getsockname (
       listen_sock, (struct sockaddr *) &server_addr, &sock_len);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    mongoc_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
@@ -67,19 +67,19 @@ socket_test_server (void *data_)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    stream = mongoc_stream_socket_new (conn_sock);
-   assert (stream);
+   BSON_ASSERT (stream);
 
    r = mongoc_stream_readv (stream, &iov, 1, 5, TIMEOUT);
-   assert (r == 5);
-   assert (strcmp (buf, "ping") == 0);
+   BSON_ASSERT (r == 5);
+   BSON_ASSERT (strcmp (buf, "ping") == 0);
 
    strcpy (buf, "pong");
 
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
-   assert (r == 5);
+   BSON_ASSERT (r == 5);
 
    mongoc_stream_destroy (stream);
 
@@ -110,7 +110,7 @@ socket_test_client (void *data_)
    iov.iov_len = sizeof (buf);
 
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    mongoc_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
@@ -124,24 +124,24 @@ socket_test_client (void *data_)
 
    r = mongoc_socket_connect (
       conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    stream = mongoc_stream_socket_new (conn_sock);
 
    strcpy (buf, "ping");
 
    closed = mongoc_stream_check_closed (stream);
-   assert (closed == false);
+   BSON_ASSERT (closed == false);
 
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
-   assert (r == 5);
+   BSON_ASSERT (r == 5);
 
    closed = mongoc_stream_check_closed (stream);
-   assert (closed == false);
+   BSON_ASSERT (closed == false);
 
    r = mongoc_stream_readv (stream, &iov, 1, 5, TIMEOUT);
-   assert (r == 5);
-   assert (strcmp (buf, "pong") == 0);
+   BSON_ASSERT (r == 5);
+   BSON_ASSERT (strcmp (buf, "pong") == 0);
 
    mongoc_mutex_lock (&data->cond_mutex);
    while (!data->closed_socket) {
@@ -150,7 +150,7 @@ socket_test_client (void *data_)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    closed = mongoc_stream_check_closed (stream);
-   assert (closed == true);
+   BSON_ASSERT (closed == true);
 
    mongoc_stream_destroy (stream);
 
@@ -176,7 +176,7 @@ sendv_test_server (void *data_)
    iov.iov_len = gFourMB;
 
    listen_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (listen_sock);
+   BSON_ASSERT (listen_sock);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
@@ -184,15 +184,15 @@ sendv_test_server (void *data_)
 
    r = mongoc_socket_bind (
       listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    sock_len = sizeof (server_addr);
    r = mongoc_socket_getsockname (
       listen_sock, (struct sockaddr *) &server_addr, &sock_len);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    mongoc_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
@@ -200,10 +200,10 @@ sendv_test_server (void *data_)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    stream = mongoc_stream_socket_new (conn_sock);
-   assert (stream);
+   BSON_ASSERT (stream);
 
    /* Wait until the client has pushed so much data he can't write more */
    mongoc_mutex_lock (&data->cond_mutex);
@@ -270,7 +270,7 @@ sendv_test_client (void *data_)
    iov.iov_len = gFourMB;
 
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    mongoc_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
@@ -284,7 +284,7 @@ sendv_test_client (void *data_)
 
    r = mongoc_socket_connect (
       conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    stream = mongoc_stream_socket_new (conn_sock);
 
@@ -304,7 +304,7 @@ sendv_test_client (void *data_)
          }
       }
    }
-   assert (true == done);
+   BSON_ASSERT (true == done);
    mongoc_mutex_lock (&data->cond_mutex);
    data->amount = amount;
    mongoc_cond_signal (&data->cond);
@@ -328,14 +328,14 @@ test_mongoc_socket_check_closed (void *ctx)
    mongoc_cond_init (&data.cond);
 
    r = mongoc_thread_create (threads, &socket_test_server, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_thread_create (threads + 1, &socket_test_client, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
       r = mongoc_thread_join (threads[i]);
-      assert (r == 0);
+      BSON_ASSERT (r == 0);
    }
 
    mongoc_mutex_destroy (&data.cond_mutex);
@@ -354,14 +354,14 @@ test_mongoc_socket_sendv (void *ctx)
    mongoc_cond_init (&data.cond);
 
    r = mongoc_thread_create (threads, &sendv_test_server, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_thread_create (threads + 1, &sendv_test_client, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
       r = mongoc_thread_join (threads[i]);
-      assert (r == 0);
+      BSON_ASSERT (r == 0);
    }
 
    mongoc_mutex_destroy (&data.cond_mutex);

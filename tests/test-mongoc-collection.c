@@ -35,7 +35,7 @@ test_aggregate_w_write_concern (void *context)
    opts = bson_new ();
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    ASSERT (mongoc_client_set_error_api (client, 2));
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -499,10 +499,10 @@ test_insert_oversize (void *ctx)
    collection = get_test_collection (client, "test_insert_oversize");
 
    /* two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
 
@@ -825,7 +825,7 @@ receive_bulk (mock_server_t *server, int n, mongoc_insert_flags_t flags)
    request_t *request;
 
    request = mock_server_receives_bulk_insert (server, "test.test", flags, n);
-   assert (request);
+   BSON_ASSERT (request);
    request_destroy (request);
 
    request = mock_server_receives_gle (server, "test");
@@ -1064,12 +1064,12 @@ _test_legacy_bulk_insert (const bson_t **bsons,
    }
 
    /* mongoc_collection_insert_bulk returns false, there was an error */
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, err_msg);
 
    gle = mongoc_collection_get_last_error (collection);
-   assert (gle);
+   BSON_ASSERT (gle);
 
    ASSERT_MATCH (gle, gle_json_formatted);
 
@@ -1491,10 +1491,10 @@ test_update_oversize (void *ctx)
    collection = get_test_collection (client, "test_update_oversize");
 
    /* first test oversized selector. two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &huge, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &huge, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
    r = mongoc_collection_update (
@@ -1507,9 +1507,9 @@ test_update_oversize (void *ctx)
    huger = bson_malloc (huger_sz + 1);
    memset (huger, 'a', huger_sz);
    huger[huger_sz] = '\0';
-   assert (BSON_APPEND_DOCUMENT_BEGIN (&huge_update, "$set", &child));
-   assert (bson_append_utf8 (&child, "x", 1, huger, (int) huger_sz));
-   assert (bson_append_document_end (&huge_update, &child));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&huge_update, "$set", &child));
+   BSON_ASSERT (bson_append_utf8 (&child, "x", 1, huger, (int) huger_sz));
+   BSON_ASSERT (bson_append_document_end (&huge_update, &child));
 
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &empty, &huge_update, NULL, &error);
@@ -1596,10 +1596,10 @@ test_remove_oversize (void *ctx)
    collection = get_test_collection (client, "test_remove_oversize");
 
    /* two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
    r = mongoc_collection_remove (
@@ -2714,7 +2714,7 @@ test_aggregate_bypass (void *context)
    char *json;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    collname = gen_collection_name ("data");
@@ -3048,13 +3048,13 @@ test_aggregate_legacy (void *data)
                                     context->with_options ? ", 'foo': 1" : "");
 
    mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
    request_destroy (request);
    future_destroy (future);
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -3113,7 +3113,7 @@ test_aggregate_modern (void *data)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
 
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
@@ -3294,7 +3294,7 @@ test_validate (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_collection_validate (collection, &opts, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "valid"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "valid"));
 
    bson_destroy (&reply);
 
@@ -3307,22 +3307,22 @@ test_validate (void *ctx)
 
    /* invalidate reply */
    reply.len = 0;
-   assert (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
+   BSON_ASSERT (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
 
    r = mongoc_collection_validate (collection, &opts, &reply, &error);
-   assert (!r);
-   assert (error.domain == expected_err_domain);
-   assert (error.code == expected_err_code);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (error.domain == expected_err_domain);
+   BSON_ASSERT (error.code == expected_err_code);
 
    /* check that reply has been initialized */
-   assert (bson_validate (&reply, 0, NULL));
+   BSON_ASSERT (bson_validate (&reply, 0, NULL));
 
    /* Make sure we don't segfault when reply is NULL */
    memset (&error, 0, sizeof (error));
    r = mongoc_collection_validate (collection, &opts, NULL, &error);
-   assert (!r);
-   assert (error.domain == expected_err_domain);
-   assert (error.code == expected_err_code);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (error.domain == expected_err_domain);
+   BSON_ASSERT (error.code == expected_err_code);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -3484,10 +3484,10 @@ test_stats (void)
    ASSERT_OR_PRINT (mongoc_collection_stats (collection, NULL, &stats, &error),
                     error);
 
-   assert (bson_iter_init_find (&iter, &stats, "ns"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "ns"));
 
-   assert (bson_iter_init_find (&iter, &stats, "count"));
-   assert (bson_iter_as_int64 (&iter) >= 1);
+   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "count"));
+   BSON_ASSERT (bson_iter_as_int64 (&iter) >= 1);
 
    bson_destroy (&stats);
 
@@ -3663,19 +3663,19 @@ test_find_and_modify (void)
                                                        &error),
                     error);
 
-   assert (bson_iter_init_find (&iter, &reply, "value"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "superduper"));
-   assert (BSON_ITER_HOLDS_INT32 (&citer));
-   assert (bson_iter_int32 (&citer) == 1234);
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "value"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "superduper"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&citer));
+   BSON_ASSERT (bson_iter_int32 (&citer) == 1234);
 
-   assert (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "updatedExisting"));
-   assert (BSON_ITER_HOLDS_BOOL (&citer));
-   assert (bson_iter_bool (&citer));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "updatedExisting"));
+   BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&citer));
+   BSON_ASSERT (bson_iter_bool (&citer));
 
    bson_destroy (&reply);
    bson_destroy (update);
@@ -3729,14 +3729,14 @@ test_large_return (void *ctx)
 
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
-   assert (cursor);
+   BSON_ASSERT (cursor);
    bson_destroy (&query);
 
    ASSERT_CURSOR_NEXT (cursor, &doc);
-   assert (doc);
+   BSON_ASSERT (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    mongoc_cursor_destroy (cursor);
 
@@ -3790,26 +3790,26 @@ test_many_return (void)
 
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
-   assert (cursor);
-   assert (mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (mongoc_cursor_is_alive (cursor));
    bson_destroy (&query);
 
    i = 0;
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      assert (doc);
+      BSON_ASSERT (doc);
       i++;
-      assert (mongoc_cursor_is_alive (cursor));
+      BSON_ASSERT (mongoc_cursor_is_alive (cursor));
    }
 
-   assert (i == N_BSONS);
+   BSON_ASSERT (i == N_BSONS);
 
-   assert (!mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   assert (!mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (!r);
+   BSON_ASSERT (!mongoc_cursor_is_alive (cursor));
    /* mongoc_cursor_next after done is considered an error */
-   assert (mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -3863,7 +3863,7 @@ test_find_limit (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3885,7 +3885,7 @@ test_find_limit (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3934,7 +3934,7 @@ test_find_batch_size (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3956,7 +3956,7 @@ test_find_batch_size (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3992,7 +3992,7 @@ test_command_fq (void *context)
                                    NULL,
                                    NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
+   BSON_ASSERT (r);
 
    if (bson_iter_init_find (&iter, doc, "db") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
@@ -4003,7 +4003,7 @@ test_command_fq (void *context)
 
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -4068,14 +4068,14 @@ test_get_index_info (void)
           bson_iter_find (&idx_spec_iter, "name") &&
           BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
           (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
-         assert (0 == strcmp (cur_idx_name, id_idx_name));
+         BSON_ASSERT (0 == strcmp (cur_idx_name, id_idx_name));
          ++num_idxs;
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
    }
 
-   assert (1 == num_idxs);
+   BSON_ASSERT (1 == num_idxs);
 
    mongoc_cursor_destroy (cursor);
 
@@ -4132,11 +4132,11 @@ test_get_index_info (void)
 
          ++num_idxs;
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
    }
 
-   assert (3 == num_idxs);
+   BSON_ASSERT (3 == num_idxs);
 
    mongoc_cursor_destroy (cursor);
 
@@ -4169,7 +4169,7 @@ test_find_indexes_err (void)
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listIndexes': 'collection'}");
 
    mock_server_replies_simple (request, "{'ok': 0, 'code': 1234567}");
-   assert (NULL == future_get_mongoc_cursor_ptr (future));
+   BSON_ASSERT (NULL == future_get_mongoc_cursor_ptr (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -4502,7 +4502,7 @@ test_aggregate_read_concern (void)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
    future_destroy (future);
@@ -4542,7 +4542,7 @@ test_aggregate_read_concern (void)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
    future_destroy (future);
@@ -4600,7 +4600,7 @@ test_aggregate_with_collation (int wire)
       ASSERT (future_get_bool (future));
       ASSERT_MATCH (doc, "{'_id': 123}");
       /* cursor is completed */
-      assert (!mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
       request_destroy (request);
    } else {
       ASSERT (!future_get_bool (future));

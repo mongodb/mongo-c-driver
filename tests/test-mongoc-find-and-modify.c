@@ -83,8 +83,9 @@ test_find_and_modify_bypass (bool bypass)
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_bypass_document_validation (opts, bypass);
-   assert (bypass ==
-           mongoc_find_and_modify_opts_get_bypass_document_validation (opts));
+   BSON_ASSERT (
+      bypass ==
+      mongoc_find_and_modify_opts_get_bypass_document_validation (opts));
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_set_flags (opts,
                                           MONGOC_FIND_AND_MODIFY_RETURN_NEW);
@@ -323,39 +324,39 @@ test_find_and_modify (void)
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_get_update (opts, &tmp);
-   assert (match_bson (&tmp, update, false));
+   BSON_ASSERT (match_bson (&tmp, update, false));
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_fields (opts,
                                            tmp_bson ("{'superduper': 1}"));
    mongoc_find_and_modify_opts_get_fields (opts, &tmp);
-   assert (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   BSON_ASSERT (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_sort (opts, tmp_bson ("{'superduper': 1}"));
    mongoc_find_and_modify_opts_get_sort (opts, &tmp);
-   assert (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   BSON_ASSERT (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_flags (opts,
                                           MONGOC_FIND_AND_MODIFY_RETURN_NEW);
-   assert (MONGOC_FIND_AND_MODIFY_RETURN_NEW ==
-           mongoc_find_and_modify_opts_get_flags (opts));
+   BSON_ASSERT (MONGOC_FIND_AND_MODIFY_RETURN_NEW ==
+                mongoc_find_and_modify_opts_get_flags (opts));
 
    ASSERT_OR_PRINT (mongoc_collection_find_and_modify_with_opts (
                        collection, &doc, opts, &reply, &error),
                     error);
 
-   assert (bson_iter_init_find (&iter, &reply, "value"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "superduper"));
-   assert (BSON_ITER_HOLDS_INT32 (&citer));
-   assert (bson_iter_int32 (&citer) == 1234);
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "value"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "superduper"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&citer));
+   BSON_ASSERT (bson_iter_int32 (&citer) == 1234);
 
-   assert (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "updatedExisting"));
-   assert (BSON_ITER_HOLDS_BOOL (&citer));
-   assert (bson_iter_bool (&citer));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "updatedExisting"));
+   BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&citer));
+   BSON_ASSERT (bson_iter_bool (&citer));
 
    bson_destroy (&reply);
    bson_destroy (update);
@@ -388,12 +389,13 @@ test_find_and_modify_opts (void)
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = mongoc_find_and_modify_opts_new ();
-   assert (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
+   BSON_ASSERT (mongoc_find_and_modify_opts_set_max_time_ms (opts, 42));
    ASSERT_CMPUINT32 (
       42, ==, mongoc_find_and_modify_opts_get_max_time_ms (opts));
-   assert (mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
+   BSON_ASSERT (
+      mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
    mongoc_find_and_modify_opts_get_extra (opts, &extra);
-   assert (match_bson (&extra, tmp_bson ("{'foo': 1}"), false));
+   BSON_ASSERT (match_bson (&extra, tmp_bson ("{'foo': 1}"), false));
    bson_destroy (&extra);
 
    future = future_collection_find_and_modify_with_opts (

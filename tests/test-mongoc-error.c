@@ -78,7 +78,7 @@ _test_command_error (int32_t error_api_version)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    if (error_api_version != 0) {
-      assert (mongoc_client_set_error_api (client, error_api_version));
+      BSON_ASSERT (mongoc_client_set_error_api (client, error_api_version));
    }
 
    future = future_client_command_simple (

@@ -48,38 +48,38 @@ test_set_new (void)
    }
 
    for (i = 0; i < 5; i++) {
-      assert (mongoc_set_get (set, i) == items + i);
+      BSON_ASSERT (mongoc_set_get (set, i) == items + i);
    }
 
    mongoc_set_rm (set, 0);
 
-   assert (destroyed == 1);
+   BSON_ASSERT (destroyed == 1);
 
    for (i = 5; i < 10; i++) {
       mongoc_set_add (set, i, items + i);
    }
 
    for (i = 5; i < 10; i++) {
-      assert (mongoc_set_get (set, i) == items + i);
+      BSON_ASSERT (mongoc_set_get (set, i) == items + i);
    }
 
    mongoc_set_rm (set, 9);
-   assert (destroyed == 2);
+   BSON_ASSERT (destroyed == 2);
    mongoc_set_rm (set, 5);
-   assert (destroyed == 3);
+   BSON_ASSERT (destroyed == 3);
 
-   assert (mongoc_set_get (set, 1) == items + 1);
-   assert (mongoc_set_get (set, 7) == items + 7);
-   assert (!mongoc_set_get (set, 5));
+   BSON_ASSERT (mongoc_set_get (set, 1) == items + 1);
+   BSON_ASSERT (mongoc_set_get (set, 7) == items + 7);
+   BSON_ASSERT (!mongoc_set_get (set, 5));
 
    mongoc_set_add (set, 5, items + 5);
-   assert (mongoc_set_get (set, 5) == items + 5);
+   BSON_ASSERT (mongoc_set_get (set, 5) == items + 5);
 
    mongoc_set_for_each (set, test_set_visit_cb, &visited);
-   assert (visited == 8);
+   BSON_ASSERT (visited == 8);
 
    mongoc_set_for_each (set, test_set_stop_after_cb, &stop_after);
-   assert (stop_after == 0);
+   BSON_ASSERT (stop_after == 0);
 
    mongoc_set_destroy (set);
 }

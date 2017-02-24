@@ -17,12 +17,12 @@ test_write_concern_append (void)
 
    /* cannot append invalid writeConcern */
    wc = NULL;
-   assert (!mongoc_write_concern_append (wc, cmd));
+   BSON_ASSERT (!mongoc_write_concern_append (wc, cmd));
 
    /* append valid writeConcern */
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
-   assert (mongoc_write_concern_append (wc, cmd));
+   BSON_ASSERT (mongoc_write_concern_append (wc, cmd));
 
    ASSERT (match_bson (
       cmd, tmp_bson ("{'foo': 1, 'writeConcern': {'w': 1}}"), true));

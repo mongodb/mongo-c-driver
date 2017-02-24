@@ -18,7 +18,6 @@
 #ifndef MONGOC_TESTS_H
 #define MONGOC_TESTS_H
 
-#include <assert.h>
 #include <bson.h>
 #include <stdio.h>
 #include <time.h>

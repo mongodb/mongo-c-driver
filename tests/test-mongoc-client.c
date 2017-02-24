@@ -274,10 +274,10 @@ test_client_cmd_write_concern (void)
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
       mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
-   assert (request);
+   BSON_ASSERT (request);
 
    mock_server_replies_ok_and_destroys (request);
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
 
@@ -286,14 +286,14 @@ test_client_cmd_write_concern (void)
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
       mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
-   assert (request);
+   BSON_ASSERT (request);
 
    mock_server_replies_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'cannot use w > 1 when a "
       "host is not replicated', 'code' : 2 }");
 
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
 
@@ -306,7 +306,7 @@ test_client_cmd_write_concern (void)
       request,
       "{ 'ok' : 1, 'n': 1, "
       "'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    mock_server_destroy (server);
@@ -393,7 +393,7 @@ test_mongoc_client_authenticate (void *context)
       if (r) {
          fprintf (stderr, "Authentication failure: \"%s\"", error.message);
       }
-      assert (!r);
+      BSON_ASSERT (!r);
    }
 
    /*
@@ -401,7 +401,7 @@ test_mongoc_client_authenticate (void *context)
     */
    database = mongoc_client_get_database (admin_client, "test");
    r = mongoc_database_remove_all_users (database, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -444,9 +444,9 @@ test_mongoc_client_authenticate_failure (void *context)
    collection = mongoc_client_get_collection (client, "test", "test");
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
    r = mongoc_cursor_error (cursor, &error);
-   assert (r);
+   BSON_ASSERT (r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
    mongoc_cursor_destroy (cursor);
@@ -457,7 +457,7 @@ test_mongoc_client_authenticate_failure (void *context)
     */
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, &empty, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
@@ -467,7 +467,7 @@ test_mongoc_client_authenticate_failure (void *context)
     */
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &q, &empty, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
@@ -508,7 +508,7 @@ test_mongoc_client_authenticate_timeout (void *context)
    ASSERT_CMPSTR (request->command_name, "saslStart");
 
    /* don't reply */
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
       error,
       MONGOC_ERROR_CLIENT,
@@ -553,13 +553,13 @@ test_wire_version (void)
 
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    r = mongoc_cursor_error (cursor, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
-   assert (error.domain == MONGOC_ERROR_PROTOCOL);
-   assert (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
+   BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -579,7 +579,7 @@ test_mongoc_client_command (void)
    bson_t cmd = BSON_INITIALIZER;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    bson_append_int32 (&cmd, "ping", 4, 1);
 
@@ -587,12 +587,12 @@ test_mongoc_client_command (void)
       client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
-   assert (doc);
+   BSON_ASSERT (r);
+   BSON_ASSERT (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   assert (!doc);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (!doc);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -658,7 +658,7 @@ test_mongoc_client_command_secondary (void)
    capture_logs (true);
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
 
@@ -669,7 +669,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
-      assert (test_framework_server_is_secondary (
+      BSON_ASSERT (test_framework_server_is_secondary (
          client, mongoc_cursor_get_hint (cursor)));
    }
 
@@ -1214,13 +1214,13 @@ test_unavailable_seeds (void)
 
    for (i = 0; i < (sizeof (uri_strs) / sizeof (const char *)); i++) {
       client = mongoc_client_new (uri_strs[i]);
-      assert (client);
+      BSON_ASSERT (client);
 
       collection = mongoc_client_get_collection (client, "test", "test");
       cursor =
          mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
-      assert (!mongoc_cursor_next (cursor, &doc));
-      assert (mongoc_cursor_error (cursor, &error));
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
       ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
       ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
@@ -1302,7 +1302,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
                           mock_server_get_host_and_port (down_servers[2]));
 
    uri = mongoc_uri_new (uri_str);
-   assert (uri);
+   BSON_ASSERT (uri);
 
    if (pooled) {
       /* must be >= minHeartbeatFrequencyMS=500 or the "reconnect"
@@ -1537,7 +1537,7 @@ test_recovering (void *ctx)
    for (read_mode = MONGOC_READ_PRIMARY; read_mode <= MONGOC_READ_NEAREST;
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      assert (!mongoc_topology_select (
+      BSON_ASSERT (!mongoc_topology_select (
          client->topology, MONGOC_SS_READ, prefs, &error));
    }
 
@@ -1557,14 +1557,14 @@ test_server_status (void)
    bson_t reply;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
 
@@ -1595,9 +1595,9 @@ test_get_database_names (void)
       1,
       "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'local'}]}");
    names = future_get_char_ptr_ptr (future);
-   assert (!strcmp (names[0], "a"));
-   assert (!strcmp (names[1], "local"));
-   assert (NULL == names[2]);
+   BSON_ASSERT (!strcmp (names[0], "a"));
+   BSON_ASSERT (!strcmp (names[1], "local"));
+   BSON_ASSERT (NULL == names[2]);
 
    bson_strfreev (names);
    request_destroy (request);
@@ -1610,7 +1610,7 @@ test_get_database_names (void)
       request, 0, 0, 0, 1, "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
 
    names = future_get_char_ptr_ptr (future);
-   assert (!names);
+   BSON_ASSERT (!names);
    ASSERT_CMPINT (MONGOC_ERROR_QUERY, ==, error.domain);
    ASSERT_CMPSTR ("err", error.message);
 
@@ -1632,15 +1632,15 @@ test_mongoc_client_ipv6 (void)
 
    uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
    client = mongoc_client_new (uri_str);
-   assert (client);
+   BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
@@ -1661,14 +1661,14 @@ test_mongoc_client_unix_domain_socket (void *context)
    client = mongoc_client_new (uri_str);
    test_framework_set_ssl_opts (client);
 
-   assert (client);
+   BSON_ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
@@ -1710,7 +1710,7 @@ test_mongoc_client_mismatched_me (void)
 
    mock_server_replies_simple (request, reply);
 
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
