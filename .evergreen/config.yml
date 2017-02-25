@@ -434,7 +434,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              "CC='${CC}' sh .evergreen/compile-unix-cmake.sh"
+              CC='${CC}' sh .evergreen/compile-unix-cmake.sh
         - func: "upload build"
 
     - name: debug-compile
