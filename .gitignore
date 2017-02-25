@@ -17,6 +17,7 @@ CMakeCache.txt
 CMakeFiles
 compile
 config.*
+!config.yml
 configure
 COPYING
 data
