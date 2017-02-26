@@ -1980,7 +1980,6 @@ test_single_error_ordered_bulk (void)
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
 
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
                  " 'nMatched':  0,"
@@ -2044,8 +2043,6 @@ test_multiple_error_ordered_bulk (void)
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
-
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
                  " 'nMatched':  0,"
@@ -2151,8 +2148,6 @@ test_single_error_unordered_bulk (void)
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
-
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched':  0,"
@@ -2513,7 +2508,6 @@ test_multiple_error_unordered_bulk (void)
    /* Assume the update at index 1 runs before the update at index 3,
     * although the spec does not require it. Same for inserts.
     */
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched': 0,"
