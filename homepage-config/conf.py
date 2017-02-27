@@ -56,6 +56,7 @@ html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None
 html_use_smartypants = False
 html_show_sourcelink = False
+html_use_index = False
 
 # Note: http://www.sphinx-doc.org/en/1.5.1/config.html#confval-html_copy_source
 # This will degrade the Javascript quicksearch if we ever use it.

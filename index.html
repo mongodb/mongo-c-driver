@@ -1,155 +1,124 @@
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>MongoDB C Driver</title>
-    <link rel="stylesheet" type="text/css" href="C.css">
-    <script type="text/javascript" src="jquery.js"></script>
-    <script type="text/javascript" src="jquery.syntax.js"></script>
-    <script type="text/javascript" src="yelp.js"></script>
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-      ga('create', 'UA-92642455-1', 'auto');
-      ga('send', 'pageview');
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>MongoDB C Driver &#8212; MongoDB C Driver 1.6.0</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
     </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-<body>
-<div class="page" role="main">
-    <div class="body">
-        <div class="hgroup">
-            <h1 class="title"><span class="title">MongoDB C Driver</span></h1>
-            <h2 class="subtitle"><span class="subtitle">A Cross Platform MongoDB Client Library for C</span>
-            </h2>
-        </div>
+  <body role="document">  
 
-        <div id="introduction" class="sect">
-            <div class="inner">
-                <div class="region">
-                    <div class="contents">
-                        <p class="p">The MongoDB C Driver, also known as "libmongoc", is the official client library for C applications, and provides a base for MongoDB drivers in higher-level languages.</p>
-                        <p class="p">The library is compatible with all major platforms. It depends on <span class="link"><a href="/libbson/current/index.html" title="bson:index">libbson</a></span> to
-                            create and parse BSON data.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="download" class="sect">
-            <div class="hgroup"><h2>Download</h2>
-            </div>
-            <div class="links topiclinks">
-                <div class="inner">
-                    <div class="region">
-                        <div class="linkdiv ">Latest release: <a class="linkdiv" href="https://github.com/mongodb/mongo-c-driver/releases/download/1.6.0/mongo-c-driver-1.6.0.tar.gz">
-                            <span class="title">mongo-c-driver-1.6.0.tar.gz</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="listing">
-            <h2>Example: Count documents in a collection</h2>
-            <div class="synopsis">
-                <div class="inner">
-                    <div class="region">
-                        <div class="contents">
-                            <div class="code"><pre class="contents syntax brush-clang">#include &lt;bson.h&gt;
-#include &lt;mongoc.h&gt;
-#include &lt;stdio.h&gt;
-
-int
-main ()
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   int64_t count;
-
-   mongoc_init ();
-
-   client = mongoc_client_new ("mongodb://localhost:27017/");
-   collection = mongoc_client_get_collection (client, "mydb", "mycoll");
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &amp;error);
-
-   if (count &lt; 0) {
-      fprintf (stderr, "%s\n", error.message);
-   } else {
-      printf ("%" PRId64 "\n", count);
-   }
-
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mongoc_cleanup ();
-
-   return count < 0 ? -1 : 0;
-}</pre>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="documentation" class="sect">
-            <div class="hgroup"><h2>Documentation</h2>
-            </div>
-            <div class="links topiclinks">
-                <div class="inner">
-                    <div class="region">
-                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/installing.html"> <span
-                                class="title">Installation</span></a>
-                        </div>
-                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/tutorial.html"> <span class="title">Tutorial</span></a>
-                        </div>
-                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/current/index.html"> <span class="title">libmongoc reference</span></a>
-                        </div>
-                        <div class="linkdiv "><a class="linkdiv" href="libbson/current/index.html"> <span class="title">libbson reference</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="help" class="sect">
-            <div class="hgroup"><h2>How To Ask For Help</h2>
-            </div>
-            <div class="links topiclinks">
-                <div class="inner">
-                    <div class="region">
-                        <p>For help using the driver:</p>
-                        <div class="linkdiv "><a class="linkdiv" href="http://groups.google.com/group/mongodb-user"> <span
-                                class="title">MongoDB Users Mailing List</span></a>
-                        </div>
-                        <p>To file a bug or feature request:</p>
-                        <div class="linkdiv "><a class="linkdiv" href="https://jira.mongodb.org/browse/CDRIVER"> <span
-                                class="title">MongoDB Jira Issue Tracker</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="older-versions" class="sect">
-            <div class="hgroup"><h2 class="title"><span class="title">Documentation for Older Versions</span>
-            </h2>
-            </div>
-            <div class="links topiclinks">
-                <div class="inner">
-                    <div class="region">
-                        <div class="linkdiv "><a class="linkdiv" href="libmongoc/index.html"><span class="title">libmongoc releases</span></a>
-                        </div>
-                        <div class="linkdiv "><a class="linkdiv" href="libbson/index.html"><span class="title">libbson releases</span></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="index">
+      <div class="body" role="main">
+        
+        
+  <div class="section" id="mongodb-c-driver">
+<h1>MongoDB C Driver<a class="headerlink" href="#mongodb-c-driver" title="Permalink to this headline">¶</a></h1>
+<p><strong>A Cross Platform MongoDB Client Library for C</strong></p>
+<p>The MongoDB C Driver, also known as &quot;libmongoc&quot;, is the official client library for C applications, and provides a base for MongoDB drivers in higher-level languages.</p>
+<p>The library is compatible with all major platforms. It depends on libbson to create and parse BSON data.</p>
+<div class="section" id="download">
+<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>Latest release:</p>
+<p><a class="reference external" href="https://github.com/mongodb/mongo-c-driver/releases/download/1.6.0/mongo-c-driver-1.6.0.tar.gz">mongo-c-driver-1.6.0.tar.gz</a></p>
 </div>
-</body>
+<div class="section" id="example-count-documents-in-a-collection">
+<h2>Example: Count documents in a collection<a class="headerlink" href="#example-count-documents-in-a-collection" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;bcon.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">print_query_count</span> <span class="p">(</span><span class="n">mongoc_collection_t</span> <span class="o">*</span><span class="n">collection</span><span class="p">,</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">query</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_error_t</span> <span class="n">error</span><span class="p">;</span>
+   <span class="kt">int64_t</span> <span class="n">count</span><span class="p">;</span>
+
+   <span class="n">count</span> <span class="o">=</span> <span class="n">mongoc_collection_count</span> <span class="p">(</span>
+      <span class="n">collection</span><span class="p">,</span> <span class="n">MONGOC_QUERY_NONE</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">error</span><span class="p">);</span>
+
+   <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Count failed: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">.</span><span class="n">message</span><span class="p">);</span>
+   <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;%&quot;</span> <span class="n">PRId64</span> <span class="s">&quot; documents counted.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+   <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="libmongoc/current/installing.html">Installation</a></p>
+<p><a class="reference external" href="libmongoc/current/tutorial.html">Tutorial</a></p>
+<p><a class="reference external" href="libmongoc/current/index.html">libmongoc reference</a></p>
+<p><a class="reference external" href="libbson/current/index.html">libbson reference</a></p>
+</div>
+<div class="section" id="how-to-ask-for-help">
+<h2>How To Ask For Help<a class="headerlink" href="#how-to-ask-for-help" title="Permalink to this headline">¶</a></h2>
+<p>For help using the driver: <a class="reference external" href="http://groups.google.com/group/mongodb-user">MongoDB Users Mailing List</a>.</p>
+<p>To file a bug or feature request: <a class="reference external" href="https://jira.mongodb.org/browse/CDRIVER">MongoDB Jira Issue Tracker</a>.</p>
+</div>
+<div class="section" id="documentation-for-older-versions">
+<h2>Documentation for Older Versions<a class="headerlink" href="#documentation-for-older-versions" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="libmongoc/index.html">libmongoc releases</a></p>
+<p><a class="reference external" href="libbson/index.html">libbson releases</a></p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">MongoDB C Driver</a><ul>
+<li><a class="reference internal" href="#download">Download</a></li>
+<li><a class="reference internal" href="#example-count-documents-in-a-collection">Example: Count documents in a collection</a></li>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#how-to-ask-for-help">How To Ask For Help</a></li>
+<li><a class="reference internal" href="#documentation-for-older-versions">Documentation for Older Versions</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
 </html>
