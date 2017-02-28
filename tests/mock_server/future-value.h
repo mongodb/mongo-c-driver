@@ -33,7 +33,7 @@ typedef mongoc_database_t * mongoc_database_ptr;
 typedef mongoc_gridfs_file_t * mongoc_gridfs_file_ptr;
 typedef mongoc_gridfs_t * mongoc_gridfs_ptr;
 typedef mongoc_iovec_t * mongoc_iovec_ptr;
-typedef mongoc_index_opt_t * const_mongoc_index_opt_t;
+typedef const mongoc_index_opt_t * const_mongoc_index_opt_t;
 typedef mongoc_server_description_t * mongoc_server_description_ptr;
 typedef mongoc_topology_t * mongoc_topology_ptr;
 typedef mongoc_write_concern_t * mongoc_write_concern_ptr;
