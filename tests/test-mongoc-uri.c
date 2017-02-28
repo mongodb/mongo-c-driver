@@ -1241,6 +1241,7 @@ test_mongoc_uri_ssl (void)
 }
 
 
+static void
 test_mongoc_uri_local_threshold_ms (void)
 {
    mongoc_uri_t *uri;
@@ -1248,37 +1249,38 @@ test_mongoc_uri_local_threshold_ms (void)
    uri = mongoc_uri_new ("mongodb://localhost/");
 
    /* localthresholdms isn't set, return the default */
-   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==,
-      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri),
+                  ==,
+                  MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
    ASSERT (
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 99));
    ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 99);
 
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
 
-
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?" MONGOC_URI_LOCALTHRESHOLDMS "=0");
+   uri =
+      mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_LOCALTHRESHOLDMS "=0");
 
    ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 0);
    ASSERT (
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 99));
    ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 99);
 
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
 
-
-   uri = mongoc_uri_new(
-      "mongodb://localhost/?" MONGOC_URI_LOCALTHRESHOLDMS "=-1");
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_LOCALTHRESHOLDMS
+                         "=-1");
 
    /* localthresholdms is invalid, return the default */
    capture_logs (true);
-   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==,
-      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri),
+                  ==,
+                  MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
    ASSERT_CAPTURED_LOG ("mongoc_uri_get_local_threshold_option",
-      MONGOC_LOG_LEVEL_WARNING, "Invalid localThresholdMS: -1");
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid localThresholdMS: -1");
 
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
 }
 
 
@@ -1302,5 +1304,6 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
-   TestSuite_Add (suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
+   TestSuite_Add (
+      suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
 }

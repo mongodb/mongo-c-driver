@@ -1375,7 +1375,6 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, "localthresholdms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
-
       retval = bson_iter_int32 (&iter);
 
       if (retval < 0) {
