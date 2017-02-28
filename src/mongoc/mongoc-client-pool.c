@@ -330,10 +330,10 @@ mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
 }
 
 
-mongoc_topology_description_t *
-_mongoc_client_pool_get_topology_description (mongoc_client_pool_t *pool)
+mongoc_topology_t *
+_mongoc_client_pool_get_topology (mongoc_client_pool_t *pool)
 {
-   return &pool->topology->description;
+   return pool->topology;
 }
 
 

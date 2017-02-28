@@ -73,6 +73,8 @@ mongoc_uri_t *
 test_framework_get_uri (void);
 size_t
 test_framework_mongos_count (void);
+char *
+test_framework_replset_name (void);
 size_t
 test_framework_replset_member_count (void);
 size_t

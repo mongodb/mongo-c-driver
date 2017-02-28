@@ -1187,6 +1187,34 @@ test_framework_mongos_count (void)
    return count;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_replset_name --
+ *
+ *       Returns the replica set name or NULL. You must free the string.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+char *
+test_framework_replset_name (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   char *replset_name;
+
+   call_ismaster (&reply);
+   if (!bson_iter_init_find (&iter, &reply, "setName")) {
+      return NULL;
+   }
+
+   replset_name = bson_strdup (bson_iter_utf8 (&iter, NULL));
+   bson_destroy (&reply);
+
+   return replset_name;
+}
+
 
 /*
  *--------------------------------------------------------------------------
