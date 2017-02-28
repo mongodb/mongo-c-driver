@@ -52,6 +52,9 @@ struct _mongoc_server_description_t {
    const char *connection_address;
    const char *me;
 
+   /* whether an APM server-opened callback has been fired before */
+   bool opened;
+
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */
    const char *set_name;

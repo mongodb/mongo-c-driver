@@ -30,7 +30,7 @@ https://github.com/mongodb/specifications/blob/master/source/server-discovery-an
 void
 _mongoc_topology_description_monitor_server_opening (
    const mongoc_topology_description_t *td,
-   const mongoc_server_description_t *sd);
+   mongoc_server_description_t *sd);
 
 void
 _mongoc_topology_description_monitor_server_changed (

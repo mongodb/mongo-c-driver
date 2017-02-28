@@ -28,14 +28,15 @@ https://github.com/mongodb/specifications/blob/master/source/server-discovery-an
 void
 _mongoc_topology_description_monitor_server_opening (
    const mongoc_topology_description_t *td,
-   const mongoc_server_description_t *sd)
+   mongoc_server_description_t *sd)
 {
-   if (td->apm_callbacks.server_opening) {
+   if (td->apm_callbacks.server_opening && !sd->opened) {
       mongoc_apm_server_opening_t event;
 
       bson_oid_copy (&td->topology_id, &event.topology_id);
       event.host = &sd->host;
       event.context = td->apm_context;
+      sd->opened = true;
       td->apm_callbacks.server_opening (&event);
    }
 }

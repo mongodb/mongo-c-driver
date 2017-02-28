@@ -833,8 +833,15 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
 
    mongoc_mutex_lock (&topology->mutex);
 
-   has_server = _mongoc_topology_update_no_lock (
-      sd->id, &sd->last_is_master, sd->round_trip_time_msec, topology, NULL);
+   mongoc_topology_description_handle_ismaster (&topology->description,
+                                                sd->id,
+                                                &sd->last_is_master,
+                                                sd->round_trip_time_msec,
+                                                NULL);
+
+   /* return false if server was removed from topology */
+   has_server = mongoc_topology_description_server_by_id (
+                   &topology->description, sd->id, NULL) != NULL;
 
    /* if pooled, wake threads waiting in mongoc_topology_server_by_id */
    mongoc_cond_broadcast (&topology->cond_client);

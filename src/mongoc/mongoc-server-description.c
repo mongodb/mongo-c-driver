@@ -679,6 +679,7 @@ mongoc_server_description_new_copy (
    copy = (mongoc_server_description_t *) bson_malloc0 (sizeof (*copy));
 
    copy->id = description->id;
+   copy->opened = description->opened;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
    copy->round_trip_time_msec = -1;
 
