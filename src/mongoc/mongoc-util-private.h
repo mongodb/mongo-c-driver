@@ -48,11 +48,6 @@
 
 #define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
-#ifdef _WIN32
-#define MONGOC_RAND_R rand_s
-#else
-#define MONGOC_RAND_R rand_r
-#endif
 
 /* Helper macros for stringifying things */
 #define MONGOC_STR(s) #s
@@ -60,6 +55,8 @@
 
 BSON_BEGIN_DECLS
 
+int
+_mongoc_rand_simple (unsigned int *seed);
 
 char *
 _mongoc_hex_md5 (const char *input);

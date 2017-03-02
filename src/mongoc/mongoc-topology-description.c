@@ -773,7 +773,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    mongoc_topology_description_suitable_servers (
       &suitable_servers, optype, topology, read_pref, local_threshold_ms);
    if (suitable_servers.len != 0) {
-      rand_n = MONGOC_RAND_R (&topology->rand_seed);
+      rand_n = _mongoc_rand_simple (&topology->rand_seed);
       sd = _mongoc_array_index (&suitable_servers,
                                 mongoc_server_description_t *,
                                 rand_n % suitable_servers.len);

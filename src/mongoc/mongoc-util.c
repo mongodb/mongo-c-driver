@@ -22,6 +22,26 @@
 #include "mongoc-trace-private.h"
 
 
+int
+_mongoc_rand_simple (unsigned int *seed)
+{
+#ifdef _WIN32
+   /* ignore the seed */
+   unsigned int ret = 0;
+   errno_t err;
+
+   err = rand_s (&ret);
+   if (0 != err) {
+      MONGOC_ERROR ("rand_s failed: %");
+   }
+
+   return (int) ret;
+#else
+   return rand_r (seed);
+#endif
+}
+
+
 char *
 _mongoc_hex_md5 (const char *input)
 {
