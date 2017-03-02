@@ -39,6 +39,9 @@ bool
 mongoc_uri_parse_host            (      mongoc_uri_t  *uri,
                                   const char          *str);
 
+int32_t
+mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
+
 BSON_END_DECLS
 
 

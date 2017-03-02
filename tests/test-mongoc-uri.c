@@ -1,6 +1,7 @@
 #include <mongoc.h>
 
 #include "mongoc-client-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-host-list-private.h"
 
@@ -415,7 +416,6 @@ test_mongoc_uri_functions (void)
    uri = mongoc_uri_new("mongodb://localhost/?serverselectiontimeoutms=3"
                            "&journal=true"
                            "&wtimeoutms=42"
-                           "&localthresholdms=17"
                            "&canonicalizeHostname=false");
 
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "serverselectiontimeoutms", 18), ==, 3);
@@ -425,10 +425,6 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 18), ==, 42);
    ASSERT(mongoc_uri_set_option_as_int32(uri, "wtimeoutms", 18));
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 19), ==, 18);
-
-   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "localthresholdms", 99), ==, 17);
-   ASSERT(mongoc_uri_set_option_as_int32(uri, "localthresholdms", 99));
-   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "localthresholdms", 42), ==, 99);
 
    /* socketcheckintervalms isn't set, return our fallback */
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "socketcheckintervalms", 123), ==, 123);
@@ -833,6 +829,7 @@ test_mongoc_uri_read_concern (void)
    mongoc_uri_destroy (uri);
 }
 
+
 static void
 test_mongoc_uri_long_hostname (void)
 {
@@ -882,6 +879,32 @@ test_mongoc_uri_long_hostname (void)
    bson_free (host_and_port);
    bson_free (host);
 }
+test_mongoc_uri_local_threshold_ms (void)
+{
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+
+   /* localthresholdms isn't set, return the default */
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==,
+                  MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+      ASSERT (
+      mongoc_uri_set_option_as_int32 (uri, "localthresholdms", 99));
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 99);
+
+   mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/?localthresholdms=0");
+
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 0);
+      ASSERT (
+      mongoc_uri_set_option_as_int32 (uri, "localthresholdms", 99));
+   ASSERT_CMPINT (mongoc_uri_get_local_threshold_option (uri), ==, 99);
+
+   mongoc_uri_destroy(uri);
+}
+
 
 void
 test_uri_install (TestSuite *suite)
@@ -896,4 +919,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add (suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
+   TestSuite_Add (suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
 }
