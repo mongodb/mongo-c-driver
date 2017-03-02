@@ -2145,7 +2145,7 @@ mongoc_client_get_server_descriptions (const mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (n);
 
-   topology = (mongoc_topology_t *) client->topology;
+   topology = client->topology;
 
    /* in case the client is pooled */
    mongoc_mutex_lock (&topology->mutex);
