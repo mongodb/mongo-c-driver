@@ -587,7 +587,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
        */
 
       if (suite->flags & TEST_DEBUGOUTPUT) {
-         test_msg ("Begin %s", name);
+         test_msg ("Begin %s, seed %u", name, test->seed);
       }
 
       if ((suite->flags & TEST_NOFORK)) {
