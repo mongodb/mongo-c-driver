@@ -702,6 +702,74 @@ test_cursor_new_invalid (void)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_cursor_new_invalid_filter (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'': 1}"), NULL, NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Empty keys are not allowed in 'filter'.");
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cursor_new_invalid_opts (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'projection': {'': 1}}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot use empty keys in 'opts'.");
+
+   mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'$invalid': 1}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot use $-modifiers in 'opts'.");
+
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_cursor_new_static (void)
 {
@@ -1521,6 +1589,10 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_find_batches, NULL, NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
    TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
    TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
