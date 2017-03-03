@@ -29,7 +29,6 @@ conveniently test libmongoc wire protocol operations.
 Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
-import glob
 from collections import namedtuple
 from os.path import basename, dirname, join as joinpath, normpath
 
