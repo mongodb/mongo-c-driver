@@ -226,7 +226,6 @@ _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
    switch (retval) {
    case -1:
       return MONGOC_ASYNC_CMD_ERROR;
-      break;
    case 0:
       break;
    case 1:
