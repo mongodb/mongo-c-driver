@@ -11,12 +11,6 @@ extensions = [
     'sphinx.ext.intersphinx',
 ]
 
-intersphinx_mapping = {
-    # TODO: update to http://mongoc.org/libbson/%(version)s once libbson 1.6.0
-    # is released.
-    'bson': ('http://mongoc.org/libbson/current', None),
-}
-
 # General information about the project.
 project = 'MongoDB C Driver'
 copyright = '2017, MongoDB, Inc'
@@ -41,6 +35,10 @@ rst_prolog = """
 language = 'en'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
+
+intersphinx_mapping = {
+    'bson': ('http://mongoc.org/libbson/' + release, None),
+}
 
 # -- Options for HTML output ----------------------------------------------
 
