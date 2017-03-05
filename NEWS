@@ -49,6 +49,19 @@ Peace,
     A. Jesse Jiryu Davis
 
 
+mongo-c-driver 1.5.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.5. This release fixes bugs
+parsing the localThresholdMS option from the MongoDB URI, and a crash in
+mongoc_cursor_destroy if "query" or "filter" are invalid. Thanks to Jeremy
+Mikola.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.4
 ====================
 
