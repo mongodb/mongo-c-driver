@@ -192,6 +192,15 @@ else()
    set(MONGOC_HAVE_SOCKLEN 0)
 endif()
 
+# Reasonable defaults. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
+set (ACCEPT_ARG2 "struct sockaddr")
+set (ACCEPT_ARG3 "socklen_t")
+set (GETPEERNAME_ARG2 "struct sockaddr")
+set (GETPEERNAME_ARG3 "socklen_t")
+set (GETSOCKNAME_ARG2 "struct sockaddr")
+set (GETSOCKNAME_ARG3 "socklen_t")
+set (GETSOCKOPT_ARG5 "socklen_t")
+
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)

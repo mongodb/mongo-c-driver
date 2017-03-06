@@ -42,6 +42,52 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #error Not a supported Sun compiler
 #endif
 ])], [c_compiler="sun"], [])
+
+AX_PROTOTYPE(accept, [
+   #include <sys/types.h>
+   #include <sys/socket.h>
+], [
+   int a = 0;
+   ARG2 *b = 0;
+   ARG3 *c = 0;
+   accept (a, b, c);],
+ARG2, [struct sockaddr, void],
+ARG3, [socklen_t, size_t, int])
+
+AX_PROTOTYPE(getpeername, [
+   #include <sys/types.h>
+   #include <sys/socket.h>
+], [
+   int a = 0;
+   ARG2 *b = 0;
+   ARG3 *c = 0;
+   getpeername (a, b, c);],
+ARG2, [struct sockaddr, void],
+ARG3, [socklen_t, size_t, int])
+
+AX_PROTOTYPE(getsockname, [
+   #include <sys/types.h>
+   #include <sys/socket.h>
+], [
+   int a = 0;
+   ARG2 *b = 0;
+   ARG3 *c = 0;
+   getsockname (a, b, c);],
+ARG2, [struct sockaddr, void],
+ARG3, [socklen_t, size_t, int])
+
+AX_PROTOTYPE(getsockopt, [
+   #include <sys/types.h>
+   #include <sys/socket.h>
+], [
+   int a = 0;
+   int b = 0;
+   int c = 0;
+   void *d = 0;
+   ARG5 *e = 0;
+   getsockopt (a, b, c, d, e);],
+ARG5, [socklen_t, int])
+
 AC_LANG_POP([C])
 
 if test "$c_compiler" = "unknown"; then
