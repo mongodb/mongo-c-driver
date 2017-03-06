@@ -168,9 +168,9 @@ Install the XCode Command Line Tools::
 
   $ xcode-select --install
 
-Some Homebrew packages are also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
+The ``pkg-config`` utility is also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
 
-  $ brew install automake autoconf libtool pkgconfig
+  $ brew install pkgconfig
 
 Download the latest release tarball
 
