@@ -585,7 +585,8 @@ mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
    bool failed = false;
    int ret;
    int optval;
-   mongoc_socklen_t optlen = sizeof optval;
+   /* getsockopt parameter types vary, we check in CheckCompiler.m4 */
+   MONGOC_GETSOCKOPT_ARG5 optlen = (MONGOC_GETSOCKOPT_ARG5) sizeof optval;
 
    ENTRY;
 
@@ -1196,8 +1197,9 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
 char *
 mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 {
-   struct sockaddr addr;
-   mongoc_socklen_t len = sizeof addr;
+   /* getpeername parameter types vary, we check in CheckCompiler.m4 */
+   MONGOC_GETPEERNAME_ARG2 addr;
+   MONGOC_GETPEERNAME_ARG3 len = (MONGOC_GETPEERNAME_ARG3) sizeof addr;
    char *ret;
    char host[BSON_HOST_NAME_MAX + 1];
 
