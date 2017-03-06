@@ -172,7 +172,7 @@ The ``pkg-config`` utility is also required. First `install Homebrew according t
 
   $ brew install pkgconfig
 
-Download the latest release tarball
+Download the latest release tarball:
 
 .. parsed-literal::
 
