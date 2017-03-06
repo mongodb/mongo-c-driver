@@ -4752,7 +4752,7 @@ test_create_index_fail (void *context)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "connection timeout");
+                          "No suitable servers");
 
    /* reply was initialized */
    ASSERT (bson_empty (&reply));
