@@ -505,44 +505,78 @@ mongoc_topology_description_all_sds_have_write_date (const mongoc_topology_descr
 bool
 _mongoc_topology_description_validate_max_staleness (
    const mongoc_topology_description_t *td,
-   int64_t                              max_staleness_seconds,
+   double                               max_staleness_seconds,
    bson_error_t                        *error)
 {
-   mongoc_topology_description_type_t td_type;
+   int i;
+   mongoc_server_description_t *sd;
+   int64_t idle_write_period_ms = -1;
 
-   /* Server Selection Spec: A driver MUST raise an error if the TopologyType
-    * is ReplicaSetWithPrimary or ReplicaSetNoPrimary and either of these
-    * conditions is false:
-    *
-    * maxStalenessSeconds * 1000 >= heartbeatFrequencyMS + idleWritePeriodMS
-    * maxStalenessSeconds >= smallestMaxStalenessSeconds
-    */
-
-   td_type = td->type;
-
-   if (td_type != MONGOC_TOPOLOGY_RS_WITH_PRIMARY &&
-       td_type != MONGOC_TOPOLOGY_RS_NO_PRIMARY) {
+   if (max_staleness_seconds == NO_MAX_STALENESS) {
       return true;
    }
 
-   if (max_staleness_seconds * 1000 <
-      td->heartbeat_msec + MONGOC_IDLE_WRITE_PERIOD_MS) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "maxStalenessSeconds is set to %" PRId64
-                      ", it must be at least heartbeatFrequencyMS (%" PRId64
-                      ") + server's idle write period (%d seconds)",
-                      max_staleness_seconds, td->heartbeat_msec,
-                      MONGOC_IDLE_WRITE_PERIOD_MS / 1000);
-      return false;
+   /* The isMaster response of a replica set member running some future
+    * MongoDB version may contain idleWritePeriodMillis. Choose the
+    * primary's value or else the most recently updated secondary's value,
+    * according to the Server Selection Spec.
+    */
+   if (td->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
+      mongoc_server_description_t *primary = NULL;
+
+      for (i = 0; i < td->servers->items_len; i++) {
+         sd = (mongoc_server_description_t *) mongoc_set_get_item (
+            td->servers, i);
+
+         if (sd->type == MONGOC_SERVER_RS_PRIMARY) {
+            primary = sd;
+            break;
+         }
+      }
+
+      BSON_ASSERT (primary);
+
+      idle_write_period_ms = primary->idle_write_period_ms;
+   } else if (td->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) {
+      mongoc_server_description_t *last_updated = NULL;
+
+      for (i = 0; i < td->servers->items_len; i++) {
+         sd = (mongoc_server_description_t *) mongoc_set_get_item (
+            td->servers, i);
+
+         if (sd->type != MONGOC_SERVER_RS_SECONDARY) {
+            continue;
+         }
+
+         if (!last_updated ||
+             sd->last_update_time_usec > last_updated->last_update_time_usec) {
+            last_updated = sd;
+         }
+      }
+
+      if (!last_updated) {
+         /* no secondaries */
+         return true;
+      }
+
+      idle_write_period_ms = last_updated->idle_write_period_ms;
+   } else {
+      /* topology is not a replica set */
+      return true;
    }
 
-   if (max_staleness_seconds < MONGOC_SMALLEST_MAX_STALENESS_SECONDS) {
+   if (idle_write_period_ms == -1) {
+      idle_write_period_ms = MONGOC_DEFAULT_IDLE_WRITE_PERIOD_MS;
+   }
+
+   if (max_staleness_seconds * 1000 <
+       td->heartbeat_msec + idle_write_period_ms) {
       bson_set_error (error, MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "maxStalenessSeconds is set to %" PRId64
-                      ", it must be at least %d seconds", max_staleness_seconds,
-                      MONGOC_SMALLEST_MAX_STALENESS_SECONDS);
+                      "maxStalenessSeconds must be at least"
+                      " heartbeatFrequencyMS (%" PRId64 ") +"
+                      " server's idleWritePeriodMillis (%" PRId64 ")",
+                      td->heartbeat_msec, idle_write_period_ms);
       return false;
    }
 

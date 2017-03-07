@@ -1467,17 +1467,18 @@ stream_not_found (mongoc_topology_t *topology,
 {
    mongoc_server_description_t *sd;
 
+   BSON_ASSERT (error);
+
    sd = mongoc_topology_server_by_id (topology, server_id, error);
 
-   if (error) {
-      if (sd && sd->error.code) {
-         memcpy (error, &sd->error, sizeof *error);
-      } else {
-         bson_set_error (error, MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find stream for node %s",
-                         connection_address);
-      }
+   if (sd && sd->error.code) {
+      memcpy (error, &sd->error, sizeof *error);
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "Could not find stream for node %s",
+                      connection_address);
    }
 
    if (sd) {
@@ -1489,14 +1490,10 @@ mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                    uint32_t          server_id,
                                    bool              reconnect_ok,
-                                   bson_error_t     *error /* OUT */)
+                                   bson_error_t     *error)
 {
    mongoc_topology_t *topology;
    mongoc_server_stream_t *server_stream;
-   bson_error_t err_local;
-   /* if fetch_stream fails we need a place to receive error details and pass
-    * them to mongoc_topology_invalidate_server. */
-   bson_error_t *err_ptr = error ? error : &err_local;
 
    ENTRY;
 
@@ -1507,27 +1504,27 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       server_stream = mongoc_cluster_fetch_stream_single (cluster,
                                                           server_id,
                                                           reconnect_ok,
-                                                          err_ptr);
+                                                          error);
 
    } else {
       server_stream = mongoc_cluster_fetch_stream_pooled (cluster,
                                                           server_id,
                                                           reconnect_ok,
-                                                          err_ptr);
+                                                          error);
 
    }
 
    if (!server_stream) {
-      /* Server Discovery And Monitoring Spec: "When an application operation
+      /* Server Discovery And Monitoring Spec: When an application operation
        * fails because of any network error besides a socket timeout, the
        * client MUST replace the server's description with a default
        * ServerDescription of type Unknown, and fill the ServerDescription's
-       * error field with useful information."
+       * error field with useful information.
        *
        * error was filled by fetch_stream_single/pooled, pass it to invalidate()
        */
       mongoc_cluster_disconnect_node (cluster, server_id);
-      mongoc_topology_invalidate_server (topology, server_id, err_ptr);
+      mongoc_topology_invalidate_server (topology, server_id, error);
    }
 
    RETURN (server_stream);

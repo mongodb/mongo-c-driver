@@ -387,6 +387,10 @@ test_server_selection_logic_cb (bson_t *test)
          sd->last_write_date_ms = bson_iter_as_int64 (&last_write_iter);
       }
 
+      if (bson_iter_init_find (&sd_iter, &server, "idleWritePeriodMillis")) {
+         sd->idle_write_period_ms = bson_iter_as_int64 (&sd_iter);
+      }
+
       if (bson_iter_init_find (&sd_iter, &server, "tags")) {
          bson_iter_bson (&sd_iter, &sd->tags);
       } else {
@@ -426,8 +430,15 @@ test_server_selection_logic_cb (bson_t *test)
 
    if (bson_iter_init_find (&read_pref_iter, &test_read_pref,
                             "maxStalenessSeconds")) {
-      mongoc_read_prefs_set_max_staleness_seconds (
-         read_prefs, bson_iter_as_int64 (&read_pref_iter));
+      if (BSON_ITER_HOLDS_DOUBLE (&read_pref_iter)) {
+         mongoc_read_prefs_set_max_staleness_seconds (
+            read_prefs,
+            bson_iter_double (&read_pref_iter));
+      } else {
+         mongoc_read_prefs_set_max_staleness_seconds (
+            read_prefs,
+            (double) bson_iter_as_int64 (&read_pref_iter));
+      }
    }
 
    /* get operation type */

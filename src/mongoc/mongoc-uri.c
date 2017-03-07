@@ -568,7 +568,6 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "sockettimeoutms") ||
        !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
-       !strcasecmp(key, "maxstalenessseconds") ||
        !strcasecmp(key, "minpoolsize") ||
        !strcasecmp(key, "maxidletimems") ||
        !strcasecmp(key, "waitqueuemultiple") ||
@@ -608,34 +607,11 @@ mongoc_uri_option_is_utf8 (const char *key)
 }
 
 static bool
-mongoc_uri_parse_int32 (const char *key,
-                        const char *value,
-                        int32_t    *result)
-{
-   char *endptr;
-   int64_t i;
-
-   errno = 0;
-   i = bson_ascii_strtoll (value, &endptr, 10);
-   if (errno || endptr < value + strlen (value)) {
-      MONGOC_WARNING ("Invalid %s: cannot parse integer\n", key);
-      return false;
-   }
-
-   if (i > INT32_MAX || i < INT32_MIN) {
-      MONGOC_WARNING ("Invalid %s: cannot fit in int32\n", key);
-      return false;
-   }
-
-   *result = (int32_t) i;
-   return true;
-}
-
-static bool
 mongoc_uri_parse_option (mongoc_uri_t *uri,
                          const char   *str)
 {
    int32_t v_int;
+   double v_double;
    const char *end_key;
    char *key = NULL;
    char *value = NULL;
@@ -653,10 +629,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    }
 
    if (mongoc_uri_option_is_int32(key)) {
-      if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
-         goto CLEANUP;
-      }
-
+      v_int = (int) strtol (value, NULL, 10);
       BSON_APPEND_INT32 (&uri->options, key, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
@@ -689,6 +662,19 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       if (!mongoc_uri_set_appname (uri, value)) {
          MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
          goto CLEANUP;
+      }
+   } else if (!strcasecmp (key, "maxstalenessseconds")) {
+      errno = 0;
+      v_double = strtod (value, NULL);
+      if (errno) {
+         MONGOC_WARNING ("Invalid maxStalenessSeconds: \"%s\"\n", value);
+         goto CLEANUP;
+      } else if (v_double == 0) {
+         MONGOC_WARNING ("Invalid: maxStalenessSeconds cannot be zero\n");
+         goto CLEANUP;
+      } else {
+         mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs,
+                                                      v_double);
       }
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
@@ -974,36 +960,11 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    uri->write_concern = write_concern;
 }
 
-/* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
-static int32_t
-_mongoc_uri_get_max_staleness_option (const mongoc_uri_t *uri)
-{
-   const bson_t *options;
-   bson_iter_t iter;
-   int32_t retval = MONGOC_NO_MAX_STALENESS;
-
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, "maxstalenessseconds") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-
-      retval = bson_iter_int32 (&iter);
-      if (retval == 0) {
-         MONGOC_WARNING ("Invalid: maxStalenessSeconds cannot be zero");
-         retval = -1;
-      } else if (retval < 0 && retval != -1) {
-         MONGOC_WARNING ("Invalid maxStalenessSeconds: %d", retval);
-         retval = MONGOC_NO_MAX_STALENESS;
-      }
-   }
-
-   return retval;
-}
 
 mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
-   int32_t max_staleness_seconds;
 
    uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
@@ -1027,9 +988,6 @@ mongoc_uri_new (const char *uri_string)
    uri->str = bson_strdup(uri_string);
 
    _mongoc_uri_assign_read_prefs_mode(uri);
-   max_staleness_seconds = _mongoc_uri_get_max_staleness_option (uri);
-   mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs,
-                                                max_staleness_seconds);
 
    if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);

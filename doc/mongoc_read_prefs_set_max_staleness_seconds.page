@@ -14,14 +14,14 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
-                                             int64_t              max_staleness_seconds);]]></code></synopsis>
+                                             double               max_staleness_seconds);]]></code></synopsis>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
-      <tr><td><p>max_staleness_seconds</p></td><td><p>A positive integer or <code>MONGOC_NO_MAX_STALENESS</code>.</p></td></tr>
+      <tr><td><p>max_staleness_seconds</p></td><td><p>A positive number or -1 (meaning no maximum).</p></td></tr>
     </table>
   </section>
 

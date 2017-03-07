@@ -165,7 +165,7 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-/* Don't process generate _mongoc_rpc_swab_to_le_reply_header from op-reply-header.def */
+#include "op-reply-header.def"
 #include "op-update.def"
 
 #undef RPC
@@ -195,8 +195,11 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-/* Don't process generate _mongoc_rpc_swab_from_le_reply_header from op-reply-header.def */
 #include "op-update.def"
+
+/* don't process op-reply-header.def, don't need to generate
+   _mongoc_rpc_swab_to_le_head_only / _mongoc_rpc_swab_from_le_head_only
+*/
 
 #undef RPC
 #undef ENUM_FIELD
@@ -784,9 +787,6 @@ _mongoc_populate_cmd_error (const bson_t *doc,
 
    if (bson_iter_init_find (&iter, doc, "errmsg") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
-      msg = bson_iter_utf8 (&iter, NULL);
-   } else if (bson_iter_init_find (&iter, doc, "$err") &&
-              BSON_ITER_HOLDS_UTF8 (&iter)) {
       msg = bson_iter_utf8 (&iter, NULL);
    }
 

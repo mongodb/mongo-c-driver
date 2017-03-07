@@ -18,16 +18,17 @@
 
 #ifdef MONGOC_ENABLE_SSL
 
-#include <errno.h>
-#include <string.h>
 #include <bson.h>
 
+#include <errno.h>
+#include <string.h>
+#include "mongoc-stream-tls.h"
+#include "mongoc-stream-tls-private.h"
+#include "mongoc-stream-private.h"
 #include "mongoc-log.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-error.h"
 
-#include "mongoc-stream-tls-private.h"
-#include "mongoc-stream-private.h"
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 # include "mongoc-stream-tls-openssl.h"
 # include "mongoc-openssl-private.h"
@@ -41,7 +42,6 @@
 # include "mongoc-secure-channel-private.h"
 # include "mongoc-stream-tls-secure-channel.h"
 #endif
-#include "mongoc-stream-tls.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"

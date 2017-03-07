@@ -4227,54 +4227,6 @@ test_find_read_concern (void)
    mock_server_destroy (server);
 }
 
-static void
-test_getmore_read_concern_live (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_read_concern_t *rc;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
-   mongoc_write_concern_t *wc;
-   const bson_t *doc;
-   bson_error_t error;
-   int i = 0;
-
-   client = test_framework_client_new ();
-   collection = get_test_collection (client, "test_read_concern");
-
-   rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
-   mongoc_collection_set_read_concern (collection, rc);
-
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
-   mongoc_collection_set_write_concern (collection, wc);
-
-   for (i=5000; i > 0; i--) {
-      mongoc_collection_insert (collection, MONGOC_INSERT_NONE, tmp_bson
-            ("{'a': 1}"), NULL, NULL);
-   }
-   cursor = mongoc_collection_find_with_opts (collection,
-         tmp_bson ("{}"),
-         NULL,
-         NULL);
-
-   while (mongoc_cursor_next (cursor, &doc)) {
-      i++;
-   }
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-
-   ASSERT_CMPINT (i, ==, 5000);
-   mongoc_cursor_destroy (cursor);
-
-   mongoc_read_concern_destroy (rc);
-   mongoc_write_concern_destroy (wc);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
 
 static void
 test_aggregate_read_concern (void)
@@ -4648,9 +4600,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive  (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern",
                   test_find_and_modify_write_concern_wire_32);
-   TestSuite_AddFull (suite, "/Collection/getmore_read_concern_live",
-         test_getmore_read_concern_live, NULL, NULL,
-         test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_Add (suite, "/Collection/find_and_modify/write_concern_pre_32",
                   test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite, "/Collection/large_return", test_large_return, NULL, NULL, test_framework_skip_if_slow_or_live);

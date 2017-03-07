@@ -1081,41 +1081,6 @@ test_command_with_opts_modern (void)
 
 
 static void
-test_command_no_errmsg (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   bson_t *cmd;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-
-   server = mock_server_with_autoismaster (0);
-   mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   mongoc_client_set_error_api (client, 2);
-
-   cmd = tmp_bson ("{'command': 1}");
-   future = future_client_command_simple (client, "admin", cmd, NULL, NULL,
-                                          &error);
-
-   request = mock_server_receives_command (server, "admin",
-                                           MONGOC_QUERY_SLAVE_OK, NULL);
-
-   /* auth errors have $err, not errmsg. we'd raised "Unknown command error",
-    * see CDRIVER-1928 */
-   mock_server_replies_simple (request, "{'ok': 0, 'code': 7, '$err': 'bad!'}");
-   ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 7, "bad!");
-
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-
-static void
 test_unavailable_seeds (void)
 {
    mock_server_t *servers[2];
@@ -2538,83 +2503,6 @@ test_client_appname_pooled_no_uri (void)
    test_client_appname (true, false);
 }
 
-/* test a disconnect with a NULL bson_error_t * passed to command_simple() */
-static void
-_test_null_error_pointer (bool pooled)
-{
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   future_t *future;
-   request_t *request;
-
-   capture_logs (true);
-
-   server = mock_server_with_autoismaster (0);
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-   }
-
-   /* connect */
-   future = future_client_command_simple (client, "test",
-                                          tmp_bson ("{'ping': 1}"), NULL, NULL,
-                                          NULL);
-   request = mock_server_receives_command (server, "test",
-                                           MONGOC_QUERY_SLAVE_OK, NULL);
-   mock_server_replies_ok_and_destroys (request);
-   ASSERT (future_get_bool (future));
-   future_destroy (future);
-
-   /* disconnect */
-   mock_server_destroy (server);
-   if (pooled) {
-      mongoc_cluster_disconnect_node (&client->cluster, 1);
-   } else {
-      mongoc_topology_scanner_node_t *scanner_node;
-
-      scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, 1);
-      mongoc_stream_destroy (scanner_node->stream);
-      scanner_node->stream = NULL;
-   }
-
-   /* doesn't abort with assertion failure */
-   future = future_client_command_simple (client, "test",
-                                          tmp_bson ("{'ping': 1}"), NULL, NULL,
-                                          NULL /* error */);
-
-   ASSERT (!future_get_bool (future));
-   future_destroy (future);
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-
-   mongoc_uri_destroy (uri);
-}
-
-static void
-test_null_error_pointer_single (void *ctx)
-{
-   _test_null_error_pointer (false);
-}
-
-static void
-test_null_error_pointer_pooled (void *ctx)
-{
-   _test_null_error_pointer (true);
-}
 
 void
 test_client_install (TestSuite *suite)
@@ -2653,7 +2541,6 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/command_with_opts/read_prefs", test_command_with_opts_read_prefs);
    TestSuite_AddLive (suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddLive (suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
-   TestSuite_AddLive (suite, "/Client/command/no_errmsg", test_command_no_errmsg);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
@@ -2717,10 +2604,4 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/select_server/pooled", test_mongoc_client_select_server_pooled);
    TestSuite_AddLive (suite, "/Client/select_server/err/single", test_mongoc_client_select_server_error_single);
    TestSuite_AddLive (suite, "/Client/select_server/err/pooled", test_mongoc_client_select_server_error_pooled);
-   TestSuite_AddFull (suite, "/Client/null_error_pointer/single",
-                      test_null_error_pointer_single, NULL, NULL,
-                      test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/Client/null_error_pointer/pooled",
-                      test_null_error_pointer_pooled, NULL, NULL,
-                      test_framework_skip_if_slow);
 }

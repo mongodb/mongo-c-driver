@@ -43,8 +43,6 @@ AS_IF([test "$enable_ssl" != "no"],[
    dnl PKG_CHECK_MODULES() doesn't check for headers
    dnl OSX for example has the lib, but not headers, so double confirm if OpenSSL works
    AS_IF([test "$enable_ssl" = "openssl" -o "$enable_openssl" = "auto"], [
-      old_CFLAGS=$CFLAGS
-      CFLAGS=$SSL_CFLAGS
       AC_CHECK_HEADERS([openssl/bio.h openssl/ssl.h openssl/err.h openssl/crypto.h],
          [have_ssl_headers=yes],
          [have_ssl_headers=no])
@@ -56,7 +54,6 @@ AS_IF([test "$enable_ssl" != "no"],[
          SSL_LIBS=""
          enable_ssl=auto
       fi
-      CFLAGS=$old_CFLAGS
    ])
    AS_IF([test "$enable_ssl" != "openssl" -a "$os_darwin" = "yes"],[
       SSL_LIBS="-framework Security -framework CoreFoundation"

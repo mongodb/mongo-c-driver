@@ -1,5 +1,5 @@
 {
-    "heartbeatFrequencyMS": 25000,
+    "heartbeatFrequencyMS": 1100,
     "in_latency_window": [
         {
             "address": "a:27017",
@@ -7,7 +7,7 @@
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
@@ -15,7 +15,7 @@
         }
     ],
     "read_preference": {
-        "maxStalenessSeconds": 50,
+        "maxStalenessSeconds": 11.11,
         "mode": "Nearest"
     },
     "suitable_servers": [
@@ -25,7 +25,7 @@
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
@@ -37,7 +37,7 @@
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "2"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
@@ -52,7 +52,7 @@
                 "lastUpdateTime": 0,
                 "lastWrite": {
                     "lastWriteDate": {
-                        "$numberLong": "25002"
+                        "$numberLong": "1"
                     }
                 },
                 "maxWireVersion": 5,
@@ -61,18 +61,6 @@
             {
                 "address": "b:27017",
                 "avg_rtt_ms": 50,
-                "lastUpdateTime": 0,
-                "lastWrite": {
-                    "lastWriteDate": {
-                        "$numberLong": "2"
-                    }
-                },
-                "maxWireVersion": 5,
-                "type": "RSSecondary"
-            },
-            {
-                "address": "c:27017",
-                "avg_rtt_ms": 5,
                 "lastUpdateTime": 0,
                 "lastWrite": {
                     "lastWriteDate": {

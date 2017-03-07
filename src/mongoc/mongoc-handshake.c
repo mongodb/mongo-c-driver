@@ -300,14 +300,12 @@ _set_platform_string (mongoc_handshake_t *handshake)
    bson_string_append_printf (str, " %s", MONGOC_COMPILER_VERSION);
 #endif
 
-   if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS)) > 0) {
-      bson_string_append_printf (
-         str, " CFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_CFLAGS));
+   if (strlen (MONGOC_USER_SET_CFLAGS) > 0) {
+      bson_string_append_printf (str, " CFLAGS=%s", MONGOC_USER_SET_CFLAGS);
    }
 
-   if (strlen (MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS)) > 0) {
-      bson_string_append_printf (
-         str, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
+   if (strlen (MONGOC_USER_SET_LDFLAGS) > 0) {
+      bson_string_append_printf (str, " LDFLAGS=%s", MONGOC_USER_SET_LDFLAGS);
    }
 
    handshake->platform = bson_string_free (str, false);

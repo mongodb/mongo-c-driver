@@ -24,10 +24,6 @@
 #include <bson.h>
 #include "mongoc.h"
 
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
-
 /* string comparison functions for Windows */
 #ifdef _WIN32
 # define strcasecmp  _stricmp
@@ -48,10 +44,6 @@
 #else
 # define MONGOC_RAND_R rand_r
 #endif
-
-/* Helper macros for stringifying things */
-#define MONGOC_STR(s) #s
-#define MONGOC_EVALUATE_STR(s) MONGOC_STR (s)
 
 BSON_BEGIN_DECLS
 

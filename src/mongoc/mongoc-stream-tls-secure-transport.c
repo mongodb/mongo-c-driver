@@ -18,23 +18,22 @@
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 
-#include <Security/Security.h>
-#include <Security/SecureTransport.h>
-#include <CoreFoundation/CoreFoundation.h>
-
-
 #include <bson.h>
 
 #include "mongoc-trace-private.h"
 #include "mongoc-log.h"
-#include "mongoc-secure-transport-private.h"
-#include "mongoc-ssl.h"
-#include "mongoc-error.h"
-#include "mongoc-counters-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-secure-transport-private.h"
+#include "mongoc-secure-transport-private.h"
+#include "mongoc-ssl.h"
+#include "mongoc-error.h"
+#include "mongoc-counters-private.h"
+
+#include <Security/Security.h>
+#include <Security/SecureTransport.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls-secure_transport"

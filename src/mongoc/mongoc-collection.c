@@ -445,16 +445,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    if (!bson_has_field (&command, "readConcern")) {
       mongoc_read_concern_destroy (cursor->read_concern);
-      cursor->read_concern = mongoc_read_concern_copy (
-         mongoc_collection_get_read_concern (collection));
-
-      if (cursor->read_concern->level != NULL) {
-         const bson_t *read_concern_bson;
-
-         read_concern_bson =
-            _mongoc_read_concern_get_bson (cursor->read_concern);
-         BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
-      }
+      cursor->read_concern = mongoc_read_concern_copy (mongoc_collection_get_read_concern (collection));
    }
 
 

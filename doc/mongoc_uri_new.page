@@ -45,8 +45,7 @@ mongoc_uri_new (const char *uri_string)
     <p><code mime="text/x-csrc">"mongodb://kerberosuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI"</code></p>
     <p><code mime="text/x-csrc">"mongodb://[::1]:27017/"</code></p>
     <p><code mime="text/x-csrc">"mongodb://10.0.0.1:27017,10.0.0.1:27018,[::1]:27019/?ssl=true"</code></p>
-    <p><code mime="text/x-csrc">"mongodb://%2Ftmp%2Fmongodb-27017.sock"</code></p>
-    <p><code mime="text/x-csrc">"mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock"</code></p>
+    <p><code mime="text/x-csrc">"mongodb:///tmp/mongodb-27017.sock"</code></p>
     <p><code mime="text/x-csrc">"mongodb://localhost,[::1]/mydb?authSource=mydb"</code></p>
   </section>
 

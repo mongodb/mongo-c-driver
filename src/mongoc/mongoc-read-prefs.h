@@ -28,9 +28,6 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_NO_MAX_STALENESS -1
-#define MONGOC_SMALLEST_MAX_STALENESS_SECONDS 90
-
 typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
 
 
@@ -64,10 +61,10 @@ BSON_API
 void                 mongoc_read_prefs_add_tag                   (mongoc_read_prefs_t       *read_prefs,
                                                                   const bson_t              *tag);
 BSON_API
-int64_t              mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
+double               mongoc_read_prefs_get_max_staleness_seconds (const mongoc_read_prefs_t *read_prefs);
 BSON_API
 void                 mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t       *read_prefs,
-                                                                  int64_t                    max_staleness_seconds);
+                                                                  double                     max_staleness_seconds);
 BSON_API
 bool                 mongoc_read_prefs_is_valid                  (const mongoc_read_prefs_t *read_prefs);
 

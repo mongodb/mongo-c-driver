@@ -63,6 +63,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
    sd->last_write_date_ms = -1;
+   sd->idle_write_period_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
@@ -120,6 +121,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
    sd->last_write_date_ms = -1;
+   sd->idle_write_period_ms = -1;
 
    bson_init_static (&sd->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&sd->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
@@ -697,13 +699,13 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
                                         int64_t                       heartbeat_frequency_ms,
                                         const mongoc_read_prefs_t    *read_prefs)
 {
-   int64_t max_staleness_seconds;
+   double max_staleness_seconds;
    size_t i;
 
    int64_t heartbeat_frequency_usec;
    int64_t max_last_write_date_usec;
    int64_t staleness_usec;
-   int64_t max_staleness_usec;
+   double max_staleness_usec;
 
    if (!read_prefs) {
       /* NULL read_prefs is PRIMARY, no maxStalenessSeconds to filter by */
@@ -713,11 +715,11 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
    max_staleness_seconds = mongoc_read_prefs_get_max_staleness_seconds (
       read_prefs);
 
-   if (max_staleness_seconds == MONGOC_NO_MAX_STALENESS) {
+   if (max_staleness_seconds == NO_MAX_STALENESS) {
       return;
    }
 
-   BSON_ASSERT (max_staleness_seconds > 0);
+   BSON_ASSERT (max_staleness_seconds >= 0);
    max_staleness_usec = max_staleness_seconds * 1000 * 1000;
    heartbeat_frequency_usec = heartbeat_frequency_ms * 1000;
 

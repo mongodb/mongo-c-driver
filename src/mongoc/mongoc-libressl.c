@@ -45,7 +45,7 @@ mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
       return false;
    }
 
-   file = tls_load_file (opt->pem_file, &file_len, (char *)opt->pem_pwd);
+   file = tls_load_file (opt->pem_file, &file_len, opt->pem_pwd);
    if (!file) {
       return false;
    }

@@ -60,15 +60,13 @@
     <title>Install with a Package Manager</title>
     <p>The libmongoc package is available on recent versions of Debian and Ubuntu.</p>
     <screen><output style="prompt">$ </output><input>apt-get install libmongoc-1.0-0</input></screen>
-    <p>On Fedora, a mongo-c-driver package is available in the default repositories and can be installed with:</p>
-    <screen><output style="prompt">$ </output><input>dnf install mongo-c-driver</input></screen>
-    <p>On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package
-      is available in the <link
-      href="https://fedoraproject.org/wiki/EPEL">EPEL</link> repository. To check
-      version available, see <link
-      href="https://apps.fedoraproject.org/packages/mongo-c-driver">https://apps.fedoraproject.org/packages/mongo-c-driver</link>.
-      The package can be installed with:</p>
-    <screen><output style="prompt">$ </output><input>yum install mongo-c-driver</input></screen>
+    <p>For RedHat-like systems, use Remi Collet's well-maintained RPMs. Commands to enable Remi's repository and install libmongoc depend on your exact system. For example, on CentOS 6:</p>
+    <screen><output style="prompt">$ </output><input>yum install http://rpms.remirepo.net/enterprise/remi-release-6.rpm</input>
+<output style="prompt">$ </output><input>yum install yum-utils</input>
+<output style="prompt">$ </output><input>yum-config-manager --enable remi</input>
+<output style="prompt">$ </output><input>yum update</input>
+<output style="prompt">$ </output><input>yum install mongo-c-driver</input></screen>
+    <p>The <link href="http://rpms.remirepo.net/wizard/">Configuration Wizard for Remi's RPM Repository</link> generates detailed instructions for your system.</p>
   </section>
 
   <section id="installing-unix">

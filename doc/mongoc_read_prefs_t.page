@@ -61,13 +61,6 @@
     <p>All interfaces use the same member selection logic to choose the member to which to direct read operations, basing the choice on read preference mode and tag sets.</p>
   </section>
 
-  <section id="max-staleness-seconds">
-    <title>Max Staleness</title>
-    <p>When connected to replica set running MongoDB 3.4 or later, the driver estimates the staleness of each secondary based on lastWriteDate values provided in server isMaster responses.</p>
-    <p>Max Staleness is the maximum replication lag in seconds (wall clock time) that a secondary can suffer and still be eligible for reads. The default is <code>MONGOC_NO_MAX_STALENESS</code>, which disables staleness checks. Otherwise, it must be a positive integer at least <code>MONGOC_SMALLEST_MAX_STALENESS_SECONDS</code> (90 seconds).</p>
-    <p>Max Staleness is also supported by sharded clusters of replica sets if all servers run MongoDB 3.4 or later.</p>
-  </section>
-
   <links type="topic" groups="function" style="2column">
     <title>Functions</title>
   </links>

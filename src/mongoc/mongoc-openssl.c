@@ -120,20 +120,7 @@ _mongoc_openssl_import_cert_store (LPWSTR store_name, DWORD dwFlags, X509_STORE*
                                store_name);                                  /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      LPTSTR msg = NULL;
-      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_ARGUMENT_ARRAY,
-                     NULL,
-                     GetLastError (),
-                     LANG_NEUTRAL,
-                     (LPTSTR) &msg,
-                     0,
-                     NULL);
-      MONGOC_ERROR ("Can't open CA store: 0x%.8X: '%s'",
-                    GetLastError (),
-                    msg);
-      LocalFree (msg);
+      MONGOC_WARNING ("error opening system CA store");
       return false;
    }
 
@@ -164,11 +151,11 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
        return false;
     }
 
-    retval = _mongoc_openssl_import_cert_store (L"root", CERT_SYSTEM_STORE_CURRENT_USER|CERT_STORE_READONLY_FLAG, store);
+    retval = _mongoc_openssl_import_cert_store (L"root", CERT_SYSTEM_STORE_CURRENT_USER, store);
     if (retval) {
        return retval;
     }
-    return _mongoc_openssl_import_cert_store (L"CA", CERT_SYSTEM_STORE_CURRENT_USER|CERT_STORE_READONLY_FLAG, store);
+    return _mongoc_openssl_import_cert_store (L"CA", CERT_SYSTEM_STORE_CURRENT_USER, store);
 }
 #endif
 

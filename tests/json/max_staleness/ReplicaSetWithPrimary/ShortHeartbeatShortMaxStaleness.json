@@ -1,31 +1,31 @@
 {
-    "heartbeatFrequencyMS": 25000,
+    "heartbeatFrequencyMS": 1000,
     "in_latency_window": [
         {
-            "address": "a:27017",
+            "address": "b:27017",
             "avg_rtt_ms": 5,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
-            "type": "RSPrimary"
+            "type": "RSSecondary"
         }
     ],
     "read_preference": {
-        "maxStalenessSeconds": 50,
+        "maxStalenessSeconds": 11,
         "mode": "Nearest"
     },
     "suitable_servers": [
         {
             "address": "a:27017",
-            "avg_rtt_ms": 5,
+            "avg_rtt_ms": 50,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "25002"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
@@ -33,11 +33,11 @@
         },
         {
             "address": "b:27017",
-            "avg_rtt_ms": 50,
+            "avg_rtt_ms": 5,
             "lastUpdateTime": 0,
             "lastWrite": {
                 "lastWriteDate": {
-                    "$numberLong": "2"
+                    "$numberLong": "1"
                 }
             },
             "maxWireVersion": 5,
@@ -48,11 +48,11 @@
         "servers": [
             {
                 "address": "a:27017",
-                "avg_rtt_ms": 5,
+                "avg_rtt_ms": 50,
                 "lastUpdateTime": 0,
                 "lastWrite": {
                     "lastWriteDate": {
-                        "$numberLong": "25002"
+                        "$numberLong": "1"
                     }
                 },
                 "maxWireVersion": 5,
@@ -60,18 +60,6 @@
             },
             {
                 "address": "b:27017",
-                "avg_rtt_ms": 50,
-                "lastUpdateTime": 0,
-                "lastWrite": {
-                    "lastWriteDate": {
-                        "$numberLong": "2"
-                    }
-                },
-                "maxWireVersion": 5,
-                "type": "RSSecondary"
-            },
-            {
-                "address": "c:27017",
                 "avg_rtt_ms": 5,
                 "lastUpdateTime": 0,
                 "lastWrite": {

@@ -1,94 +1,13 @@
-mongo-c-driver 1.5.4
-====================
-
-It is my pleasure to announce mongo-c-driver 1.5.4. This release fixes an error
-in cursor iteration when a readConcern is set. Thanks to Jeremy Mikola and
-Hannes Magnusson.
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.5.3
-====================
-
-This release fixes a bug that prevented connecting to IPv4-only MongoDB servers
-by hostname.
-
-https://jira.mongodb.org/browse/CDRIVER-1988
-
-The driver has reverted to its 1.5.1 behavior: it connects to MongoDB over IPv6
-if given an IPv6 connection string like "mongodb://[::1]", and requires an IPv4
-connection when given a hostname like "mongodb://localhost".
-
-Peace,
-
-  A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.5.2
-====================
-
-UPDATE: 1.5.2 suffered a severe bug and has been removed from GitHub.
-
-It is my pleasure to announce mongo-c-driver 1.5.2.
-
-Thanks to everyone who contributed to the development of this release.
-
-New bug fixes:
-  * CDRIVER-1975 allow mixed $ and non-$ query ops.
-  * CDRIVER-1972 Support for ipv6 hostnames.
-  * CDRIVER-1971 Missing exports of mongoc_gridfs_file_set_*() functions.
-  * CDRIVER-1970 update define constants for "find" opts to be unique.
-  * CDRIVER-1964 Windows CA stores should be opened with read-only flag.
-
-  * Hannes Magnusson
-  * A. Jesse Jiryu Davis
-  * Alexey Ponomarev
-  * Peter Beckman
-  * Rockford Wei
-
-Peace,
-
-    Hannes Magnusson
-
-
-mongo-c-driver 1.5.1
-====================
-
-It is my pleasure to announce mongo-c-driver 1.5.1. This is a bugfix release:
-
-  * Fix SEGFAULT with performance counters on NUMA (thanks to Jonathan Wang).
-  * Prevent rare assertion error in mongoc_cluster_stream_for_server.
-  * Improve error messages from auth failure.
-  * Escape quotes when appending CFLAGS to handshake metadata.
-  * Fix OpenSSL header lookups in non-default paths.
-  * Fix build failure with LibreSSL.
-
-Thanks to everyone who contributed to the development of this release.
-
-  * A. Jesse Jiryu Davis
-  * Hannes Magnusson
-  * Jeroen Ooms
-  * Jonathan Wang
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
 mongo-c-driver 1.5.0
 ====================
 
-It is my pleasure to announce the release of mongo-c-driver 1.5.0.
+It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support
     * New URI and read preference option, "maxStalenessSeconds"
-    * Set MongoDB client handshake data with mongoc_client_set_appname or
-      mongoc_client_pool_set_appname.
-    * writeConcern and readConcern enhancements.
+    * MongoDB Handshake
+    * writeConcern and readConcern enhancements
     * Collation allows users to specify language-specific rules for string
       comparison when sorting documents. See the code examples for
       mongoc_client_read_command_with_opts, mongoc_collection_count_with_opts,
@@ -104,10 +23,6 @@ New features and bug fixes:
   * Additional features for Application Performance Monitoring:
     * mongoc_topology_description_has_writable_server
     * mongoc_topology_description_has_readable_server
-    * Notifications when a server or topology description changes, and when a
-      monitoring heartbeat begins and succeeds or fails.
-    * mongoc_client_set_apm_callbacks can be used repeatedly to change or clear
-      the list of monitoring callbacks.
   * New functions accept flexible options as a BSON document:
     * mongoc_collection_find_with_opts
     * mongoc_client_read_command_with_opts
@@ -121,13 +36,6 @@ New features and bug fixes:
     * mongoc_collection_read_write_command_with_opts
     * mongoc_gridfs_find_with_opts
     * mongoc_gridfs_find_one_with_opts
-    * mongoc_bulk_operation_remove_one_with_opts
-    * mongoc_bulk_operation_remove_many_with_opts
-    * mongoc_bulk_operation_replace_one_with_opts
-    * mongoc_bulk_operation_update_one_with_opts
-    * mongoc_bulk_operation_update_many_with_opts
-  * mongoc_collection_find is now deprecated in favor of
-    mongoc_collection_find_with_opts.
   * New helper function to include read concern in one of the above function's
     options parameter: mongoc_read_concern_append.
   * mongoc_client_command no longer applies the client's read preference and
@@ -163,10 +71,7 @@ New features and bug fixes:
   * Bugfix: "PossiblePrimary"-type replicas could be selected for reads
   * Bugfixes: The random number generator used to select servers is now properly
     seeded, and secondary queries are now properly distributed according to
-    localThresholdMS, not just to the lowest-latency secondary. The latency
-    estimate is reset after a connection error.
-  * Fix crashes in mongoc_topology_invalidate_server and
-    mongoc_client_kill_cursor.
+    localThresholdMS, not just to the lowest-latency secondary.
   * mongoc_collection_insert, mongoc_collection_update, mongoc_collection_remove
     consistently use domain MONGOC_ERROR_BSON, code MONGOC_ERROR_BSON_INVALID
     if passed oversized BSON, and MONGOC_ERROR_COLLECTION for other errors.
@@ -176,8 +81,9 @@ New features and bug fixes:
     it logs and aborts instead of silently continuing, then failing to connect.
   * The driver now updates its view of the whole topology with information from
     each new connection handshake.
-  * Improved error reporting when the driver fails to reach the server, and
-    correctly distinguish "connection error" and "connection timeout".
+  * mongoc_client_set_apm_callbacks can be used repeatedly to change or clear
+    the list of monitoring callbacks.
+  * Improved error reporting when the driver fails to reach the server.
 
 Deprecations:
   * mongoc_collection_find is deprecated for mongoc_collection_find_with_opts.
