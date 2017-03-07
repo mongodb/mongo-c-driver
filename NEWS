@@ -1,3 +1,25 @@
+mongo-c-driver 1.6.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.6.1. This is a bugfix release:
+
+  * Correct the rules to parse localThresholdMS option from the MongoDB URI.
+  * Prevent crash in mongoc_cursor_destroy if "query" or "filter" are invalid.
+  * Include a file, mongoc-cluster-sspi.c, that had been omitted from the
+    release archive.
+  * Fix logic bugs in mongoc_bulk_operation_t validation code.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.6.0
 ====================
 
