@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -30,24 +30,21 @@
 
 BSON_BEGIN_DECLS
 
-BSON_API
-void
-mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t     *crypto,
-                             const void          *key,
-                             int                  key_len,
+BSON_EXPORT (void)
+mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
+                             const void *key,
+                             int key_len,
                              const unsigned char *d,
-                             int                  n,
-                             unsigned char       *md /* OUT */);
+                             int n,
+                             unsigned char *md /* OUT */);
 
-BSON_API
-bool
-mongoc_crypto_cng_sha1 (mongoc_crypto_t     *crypto,
+BSON_EXPORT (bool)
+mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
                         const unsigned char *input,
-                        const size_t         input_len,
-                        unsigned char       *output /* OUT */);
+                        const size_t input_len,
+                        unsigned char *output /* OUT */);
 
 BSON_END_DECLS
 
 #endif /* MONGOC_CRYPTO_CNG_H */
 #endif /* MONGOC_ENABLE_CRYPTO_CNG */
-

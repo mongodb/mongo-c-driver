@@ -14,6 +14,7 @@ noinst_LTLIBRARIES += libmongoc-priv.la
 MONGOC_CPPFLAGS_SHARED = \
 	-DMONGOC_COMPILATION \
 	$(LIBC_FEATURES) \
+	$(MAINTAINER_CFLAGS) \
 	$(OPTIMIZE_CFLAGS) \
 	$(COVERAGE_CFLAGS) \
 	-I$(top_srcdir)/src \
@@ -48,6 +49,7 @@ MONGOC_LIBADD_SHARED = \
 	$(SHM_LIB) \
 	$(SSL_LIBS) \
 	$(SASL_LIBS)
+
 if OS_WIN32
 MONGOC_LIBADD_SHARED += -lws2_32
 endif

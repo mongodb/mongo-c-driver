@@ -1,7 +1,173 @@
+mongo-c-driver 1.6.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.6.1. This is a bugfix release:
+
+  * Correct the rules to parse localThresholdMS option from the MongoDB URI.
+  * Prevent crash in mongoc_cursor_destroy if "query" or "filter" are invalid.
+  * Include a file, mongoc-cluster-sspi.c, that had been omitted from the
+    release archive.
+  * Fix logic bugs in mongoc_bulk_operation_t validation code.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.6.0
+====================
+
+It is my please to announce mongo-c-driver 1.6.0.
+
+New features and bug fixes:
+
+  * Enterprise authentication on Windows now uses the native GSSAPI library;
+    Cyrus SASL is no longer required for enterprise auth on Windows.
+  * BSON documents are more thoroughly validated before insert or update.
+  * New function mongoc_uri_set_mechanism_properties to replace all the
+    authMechanismProperties on an existing URI.
+  * mongoc_uri_get_mechanism_properties asserts its inputs are not NULL.
+  * For consistency with other MongoDB drivers, mongoc_collection_save is
+    deprecated in favor of mongoc_collection_insert or mongoc_collection_update.
+  * The driver is now built and continuously tested with MinGW-W64 on Windows.
+  * Experimental support for HPUX.
+  * The correct operation ids are now passed to Command Monitoring callbacks.
+  * Fix a crash if the driver couldn't connect to the server to create an index.
+  * The documentation is ported from Mallard XML to ReStructured Text, the
+    HTML documentation is restyled, and numerous man page syntax errors fixed.
+  * Getter functions for options in mongoc_find_and_modify_opts_t:
+    * mongoc_find_and_modify_opts_get_bypass_document_validation
+    * mongoc_find_and_modify_opts_get_fields
+    * mongoc_find_and_modify_opts_get_flags
+    * mongoc_find_and_modify_opts_get_max_time_ms
+    * mongoc_find_and_modify_opts_get_sort
+    * mongoc_find_and_modify_opts_get_update
+  * All public functions now have the __cdecl calling convention on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Aleksander Melnikov
+  * Jeroen Ooms
+  * Brian McCarthy
+  * Jonathan Wang
+  * Peter Beckman
+  * Remi Collet
+  * Rockford Wei
+  * Alexey Ponomarev
+  * Christopher Wang
+  * David Golden
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.5. This release fixes bugs
+parsing the localThresholdMS option from the MongoDB URI, and a crash in
+mongoc_cursor_destroy if "query" or "filter" are invalid. Thanks to Jeremy
+Mikola.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.4
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.4. This release fixes an error
+in cursor iteration when a readConcern is set. Thanks to Jeremy Mikola and
+Hannes Magnusson.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.3
+====================
+
+This release fixes a bug that prevented connecting to IPv4-only MongoDB servers
+by hostname.
+
+https://jira.mongodb.org/browse/CDRIVER-1988
+
+The driver has reverted to its 1.5.1 behavior: it connects to MongoDB over IPv6
+if given an IPv6 connection string like "mongodb://[::1]", and requires an IPv4
+connection when given a hostname like "mongodb://localhost".
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.2.
+
+Thanks to everyone who contributed to the development of this release.
+
+New bug fixes:
+  * CDRIVER-1975 allow mixed $ and non-$ query ops.
+  * CDRIVER-1972 Support for ipv6 hostnames.
+  * CDRIVER-1971 Missing exports of mongoc_gridfs_file_set_*() functions.
+  * CDRIVER-1970 update define constants for "find" opts to be unique.
+  * CDRIVER-1964 Windows CA stores should be opened with read-only flag.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * Alexey Ponomarev
+  * Peter Beckman
+  * Rockford Wei
+
+Peace,
+
+    Hannes Magnusson
+
+
+mongo-c-driver 1.5.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.1. This is a bugfix release:
+
+  * Fix SEGFAULT with performance counters on NUMA (thanks to Jonathan Wang).
+  * Prevent rare assertion error in mongoc_cluster_stream_for_server.
+  * Improve error messages from auth failure.
+  * Escape quotes when appending CFLAGS to handshake metadata.
+  * Fix OpenSSL header lookups in non-default paths.
+  * Fix build failure with LibreSSL.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeroen Ooms
+  * Jonathan Wang
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.5.0
 ====================
 
-It is my pleasure to announce the beta release of mongo-c-driver 1.5.0.
+It is my pleasure to announce mongo-c-driver 1.5.0.
 
 New features and bug fixes:
   * MongoDB 3.4 Support
@@ -36,6 +202,8 @@ New features and bug fixes:
     * mongoc_collection_read_write_command_with_opts
     * mongoc_gridfs_find_with_opts
     * mongoc_gridfs_find_one_with_opts
+  * mongoc_collection_find is now deprecated in favor of
+    mongoc_collection_find_with_opts.
   * New helper function to include read concern in one of the above function's
     options parameter: mongoc_read_concern_append.
   * mongoc_client_command no longer applies the client's read preference and

@@ -26,6 +26,16 @@ export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"
 export MONGOC_TEST_SERVER_LOG="json"
 
+if [ "$IPV4_ONLY" != "on" ]; then
+   export MONGOC_CHECK_IPV6="on"
+fi
+
+if [ "$CC" = "mingw" ]; then
+   chmod +x test-libmongoc.exe
+   cmd.exe /c .evergreen\\run-tests-mingw.bat
+   exit 0
+fi
+
 case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
@@ -42,6 +52,12 @@ case "$OS" in
       ;;
 
    *)
+      #if test -f /tmp/drivers.keytab; then
+         # See CDRIVER-2000
+         #export MONGOC_TEST_GSSAPI_USER="drivers%40LDAPTEST.10GEN.CC"
+         #export MONGOC_TEST_GSSAPI_HOST="LDAPTEST.10GEN.CC"
+         #kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC
+      #fi
       # This libtool wrapper script was built in a unique dir like
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.

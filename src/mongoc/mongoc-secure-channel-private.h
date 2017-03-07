@@ -17,7 +17,7 @@
 #ifndef MONGOC_SECURE_CHANNEL_PRIVATE_H
 #define MONGOC_SECURE_CHANNEL_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -36,24 +36,22 @@ BSON_BEGIN_DECLS
 
 
 char *
-_mongoc_secure_channel_extract_subject      (const char                         *filename,
-                                             const char                         *passphrase);
+_mongoc_secure_channel_extract_subject (const char *filename,
+                                        const char *passphrase);
 
 bool
-mongoc_secure_channel_setup_ca              (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                             mongoc_ssl_opt_t                   *opt);
+mongoc_secure_channel_setup_ca (
+   mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 bool
-mongoc_secure_channel_setup_crl             (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                             mongoc_ssl_opt_t                   *opt);
+mongoc_secure_channel_setup_crl (
+   mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 size_t
-mongoc_secure_channel_read                  (mongoc_stream_tls_t *tls,
-                                             void                *data,
-                                             size_t               data_length);
+mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
+                            void *data,
+                            size_t data_length);
 PCCERT_CONTEXT
-mongoc_secure_channel_setup_certificate     (mongoc_stream_tls_secure_channel_t *secure_channel,
-                                             mongoc_ssl_opt_t                   *opt);
-
-
+mongoc_secure_channel_setup_certificate (
+   mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 
 
 /* Both schannel buffer sizes must be > 0 */
@@ -61,29 +59,28 @@ mongoc_secure_channel_setup_certificate     (mongoc_stream_tls_secure_channel_t 
 #define MONGOC_SCHANNEL_BUFFER_FREE_SIZE 1024
 
 void
-_mongoc_secure_channel_init_sec_buffer      (SecBuffer                          *buffer,
-                                             unsigned long                       buf_type,
-                                             void                               *buf_data_ptr,
-                                             unsigned long                       buf_byte_size);
+_mongoc_secure_channel_init_sec_buffer (SecBuffer *buffer,
+                                        unsigned long buf_type,
+                                        void *buf_data_ptr,
+                                        unsigned long buf_byte_size);
 
 void
-_mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc                      *desc,
-                                             SecBuffer                          *buffer_array,
-                                             unsigned long                       buffer_count);
+_mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc *desc,
+                                             SecBuffer *buffer_array,
+                                             unsigned long buffer_count);
 
 bool
-mongoc_secure_channel_handshake_step_1      (mongoc_stream_tls_t *tls,
-                                             char                *hostname);
+mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,
+                                        char *hostname);
 bool
-mongoc_secure_channel_handshake_step_2      (mongoc_stream_tls_t *tls,
-                                             char                *hostname);
+mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
+                                        char *hostname);
 bool
-mongoc_secure_channel_handshake_step_3      (mongoc_stream_tls_t *tls,
-                                             char                *hostname);
+mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls,
+                                        char *hostname);
 
 
 BSON_END_DECLS
 
 
 #endif /* MONGOC_SECURE_CHANNEL_PRIVATE_H */
-

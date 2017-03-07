@@ -30,47 +30,43 @@
 
 
 #pragma pack(1)
-typedef struct
-{
+typedef struct {
    uint32_t offset;
    uint32_t slot;
-   char          category[24];
-   char          name[32];
-   char          description[64];
+   char category[24];
+   char name[32];
+   char description[64];
 } mongoc_counter_info_t;
 #pragma pack()
 
 
-BSON_STATIC_ASSERT(sizeof(mongoc_counter_info_t) == 128);
+BSON_STATIC_ASSERT (sizeof (mongoc_counter_info_t) == 128);
 
 
 #pragma pack(1)
-typedef struct
-{
+typedef struct {
    uint32_t size;
    uint32_t n_cpu;
    uint32_t n_counters;
    uint32_t infos_offset;
    uint32_t values_offset;
-   uint8_t  padding[44];
+   uint8_t padding[44];
 } mongoc_counters_t;
 #pragma pack()
 
 
-BSON_STATIC_ASSERT(sizeof(mongoc_counters_t) == 64);
+BSON_STATIC_ASSERT (sizeof (mongoc_counters_t) == 64);
 
 
-typedef struct
-{
+typedef struct {
    int64_t slots[8];
 } mongoc_counter_slots_t;
 
 
-BSON_STATIC_ASSERT(sizeof(mongoc_counter_slots_t) == 64);
+BSON_STATIC_ASSERT (sizeof (mongoc_counter_slots_t) == 64);
 
 
-typedef struct
-{
+typedef struct {
    mongoc_counter_slots_t *cpus;
 } mongoc_counter_t;
 
@@ -86,39 +82,40 @@ mongoc_counters_new_from_pid (unsigned pid)
    int fd;
 
    snprintf (name, sizeof name, "/mongoc-%u", pid);
-   name [sizeof name-1] = '\0';
+   name[sizeof name - 1] = '\0';
 
-   if (-1 == (fd = shm_open(name, O_RDONLY, 0))) {
-      perror("Failed to load shared memory segment");
+   if (-1 == (fd = shm_open (name, O_RDONLY, 0))) {
+      perror ("Failed to load shared memory segment");
       return NULL;
    }
 
    if (4 != pread (fd, &len, 4, 0)) {
-      perror("Failed to load shared memory segment");
+      perror ("Failed to load shared memory segment");
       return NULL;
    }
 
    if (!len) {
-      perror("Shared memory area is not yet initialized by owning process.");
+      perror ("Shared memory area is not yet initialized by owning process.");
       return NULL;
    }
 
    size = len;
 
-   if (MAP_FAILED == (mem = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
-      fprintf(stderr, "Failed to mmap shared memory segment of size: %u",
-             (unsigned)size);
-      close(fd);
+   if (MAP_FAILED == (mem = mmap (NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
+      fprintf (stderr,
+               "Failed to mmap shared memory segment of size: %u",
+               (unsigned) size);
+      close (fd);
       return NULL;
    }
 
-   counters = (mongoc_counters_t *)mem;
+   counters = (mongoc_counters_t *) mem;
    if (counters->size != len) {
-      perror("Corrupted shared memory segment.");
+      perror ("Corrupted shared memory segment.");
       return NULL;
    }
 
-   close(fd);
+   close (fd);
 
    return counters;
 }
@@ -127,22 +124,21 @@ mongoc_counters_new_from_pid (unsigned pid)
 static void
 mongoc_counters_destroy (mongoc_counters_t *counters)
 {
-   BSON_ASSERT(counters);
-   munmap((void *)counters, counters->size);
+   BSON_ASSERT (counters);
+   munmap ((void *) counters, counters->size);
 }
 
 
 static mongoc_counter_info_t *
-mongoc_counters_get_infos (mongoc_counters_t *counters,
-                           uint32_t          *n_infos)
+mongoc_counters_get_infos (mongoc_counters_t *counters, uint32_t *n_infos)
 {
    mongoc_counter_info_t *info;
-   char *base = (char *)counters;
+   char *base = (char *) counters;
 
-   BSON_ASSERT(counters);
-   BSON_ASSERT(n_infos);
+   BSON_ASSERT (counters);
+   BSON_ASSERT (n_infos);
 
-   info = (mongoc_counter_info_t *)(base + counters->infos_offset);
+   info = (mongoc_counter_info_t *) (base + counters->infos_offset);
    *n_infos = counters->n_counters;
 
    return info;
@@ -150,9 +146,9 @@ mongoc_counters_get_infos (mongoc_counters_t *counters,
 
 
 static int64_t
-mongoc_counters_get_value (mongoc_counters_t     *counters,
+mongoc_counters_get_value (mongoc_counters_t *counters,
                            mongoc_counter_info_t *info,
-                           mongoc_counter_t      *counter)
+                           mongoc_counter_t *counter)
 {
    int64_t value = 0;
    unsigned i;
@@ -166,9 +162,9 @@ mongoc_counters_get_value (mongoc_counters_t     *counters,
 
 
 static void
-mongoc_counters_print_info (mongoc_counters_t     *counters,
+mongoc_counters_print_info (mongoc_counters_t *counters,
                             mongoc_counter_info_t *info,
-                            FILE                  *file)
+                            FILE *file)
 {
    mongoc_counter_t ctr;
    int64_t value;
@@ -181,22 +177,24 @@ mongoc_counters_print_info (mongoc_counters_t     *counters,
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcast-align"
 #endif
-   ctr.cpus = (mongoc_counter_slots_t *)(((char *)counters)+ info->offset);
+   ctr.cpus = (mongoc_counter_slots_t *) (((char *) counters) + info->offset);
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 
-   value = mongoc_counters_get_value(counters, info, &ctr);
+   value = mongoc_counters_get_value (counters, info, &ctr);
 
-   fprintf(file, "%24s : %-24s : %-50s : %lld\n",
-           info->category, info->name, info->description,
-           (long long)value);
+   fprintf (file,
+            "%24s : %-24s : %-50s : %lld\n",
+            info->category,
+            info->name,
+            info->description,
+            (long long) value);
 }
 
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_counter_info_t *infos;
    mongoc_counters_t *counters;
@@ -205,11 +203,11 @@ main (int   argc,
    int pid;
 
    if (argc != 2) {
-      fprintf(stderr, "usage: %s PID\n", argv[0]);
+      fprintf (stderr, "usage: %s PID\n", argv[0]);
       return 1;
    }
 
-   pid = strtol(argv[1], NULL, 10);
+   pid = strtol (argv[1], NULL, 10);
    if (!(counters = mongoc_counters_new_from_pid (pid))) {
       fprintf (stderr, "Failed to load shared memory for pid %u.\n", pid);
       return EXIT_FAILURE;
@@ -230,8 +228,7 @@ main (int   argc,
 #include <stdio.h>
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    fprintf (stderr, "mongoc-stat is not supported on your platform.\n");
    return EXIT_FAILURE;

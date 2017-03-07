@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_SECURE_CHANNEL_PRIVATE_H
 #define MONGOC_STREAM_TLS_SECURE_CHANNEL_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
@@ -34,23 +34,23 @@ BSON_BEGIN_DECLS
 
 /* enum for the nonblocking SSL connection state machine */
 typedef enum {
-  ssl_connect_1,
-  ssl_connect_2,
-  ssl_connect_2_reading,
-  ssl_connect_2_writing,
-  ssl_connect_3,
-  ssl_connect_done
+   ssl_connect_1,
+   ssl_connect_2,
+   ssl_connect_2_reading,
+   ssl_connect_2_writing,
+   ssl_connect_3,
+   ssl_connect_done
 } ssl_connect_state;
 
 /* Structs to store Schannel handles */
 typedef struct {
-  CredHandle cred_handle;
-  TimeStamp time_stamp;
-} mongoc_secure_channel_cred ;
+   CredHandle cred_handle;
+   TimeStamp time_stamp;
+} mongoc_secure_channel_cred;
 
 typedef struct {
-  CtxtHandle ctxt_handle;
-  TimeStamp time_stamp;
+   CtxtHandle ctxt_handle;
+   TimeStamp time_stamp;
 } mongoc_secure_channel_ctxt;
 
 /**
@@ -58,8 +58,7 @@ typedef struct {
  *
  * Private storage for Secure Channel Streams
  */
-typedef struct
-{
+typedef struct {
    ssl_connect_state connecting_state;
    mongoc_secure_channel_cred *cred;
    mongoc_secure_channel_ctxt *ctxt;
@@ -68,7 +67,8 @@ typedef struct
    size_t encdata_offset, decdata_offset;
    unsigned char *encdata_buffer, *decdata_buffer;
    unsigned long req_flags, ret_flags;
-   int recv_unrecoverable_err; /* _mongoc_stream_tls_secure_channel_read had an unrecoverable err */
+   int recv_unrecoverable_err;  /* _mongoc_stream_tls_secure_channel_read had an
+                                   unrecoverable err */
    bool recv_sspi_close_notify; /* true if connection closed by close_notify */
    bool recv_connection_closed; /* true if connection closed, regardless how */
 } mongoc_stream_tls_secure_channel_t;
@@ -78,4 +78,3 @@ BSON_END_DECLS
 
 #endif /* MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 #endif /* MONGOC_STREAM_TLS_SECURE_CHANNEL_PRIVATE_H */
-

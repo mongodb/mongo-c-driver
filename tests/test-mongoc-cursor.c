@@ -27,20 +27,29 @@ test_get_host (void)
 
    uri = mongoc_uri_new (uri_str);
 
-   hosts = mongoc_uri_get_hosts(uri);
+   hosts = mongoc_uri_get_hosts (uri);
 
    client = test_framework_client_new ();
-   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                                false, &q, NULL, NULL, NULL);
-   r = mongoc_cursor_next(cursor, &doc);
-   if (!r && mongoc_cursor_error(cursor, &error)) {
+   cursor = _mongoc_cursor_new (client,
+                                "test.test",
+                                MONGOC_QUERY_NONE,
+                                0,
+                                1,
+                                1,
+                                false,
+                                &q,
+                                NULL,
+                                NULL,
+                                NULL);
+   r = mongoc_cursor_next (cursor, &doc);
+   if (!r && mongoc_cursor_error (cursor, &error)) {
       test_error ("%s", error.message);
-      abort();
+      abort ();
    }
 
    assert (doc == mongoc_cursor_current (cursor));
 
-   mongoc_cursor_get_host(cursor, &host);
+   mongoc_cursor_get_host (cursor, &host);
 
    /* In a production deployment the driver can discover servers not in the seed
     * list, but for this test assume the cursor uses one of the seeds. */
@@ -57,13 +66,13 @@ test_get_host (void)
    }
 
    if (!hosts) {
-      test_error ("cursor using host %s not in seeds: %s",
-                  host.host_and_port, uri_str);
+      test_error (
+         "cursor using host %s not in seeds: %s", host.host_and_port, uri_str);
       abort ();
    }
 
    bson_free (uri_str);
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
 }
@@ -95,61 +104,38 @@ test_clone (void)
       mongoc_collection_destroy (col);
    }
 
-   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                                false, &q, NULL, NULL, NULL);
-   ASSERT(cursor);
+   cursor = _mongoc_cursor_new (client,
+                                "test.test",
+                                MONGOC_QUERY_NONE,
+                                0,
+                                1,
+                                1,
+                                false,
+                                &q,
+                                NULL,
+                                NULL,
+                                NULL);
+   ASSERT (cursor);
 
-   r = mongoc_cursor_next(cursor, &doc);
-   if (!r || mongoc_cursor_error(cursor, &error)) {
-      test_error ("%s", error.message);
-      abort();
-   }
-   ASSERT (doc);
-
-   clone = mongoc_cursor_clone(cursor);
-   ASSERT(cursor);
-
-   r = mongoc_cursor_next(clone, &doc);
-   if (!r || mongoc_cursor_error(clone, &error)) {
-      test_error ("%s", error.message);
-      abort();
-   }
-   ASSERT (doc);
-
-   mongoc_cursor_destroy(cursor);
-   mongoc_cursor_destroy(clone);
-   mongoc_client_destroy(client);
-}
-
-
-static void
-test_invalid_query (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_error_t error;
-   const bson_t *doc = NULL;
-   bson_t *q;
-   bool r;
-
-   client = test_framework_client_new ();
-   assert (client);
-
-   q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
-
-   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                                false, q, NULL, NULL, NULL);
-   assert (!mongoc_cursor_is_alive (cursor));
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   mongoc_cursor_error (cursor, &error);
-   assert (strstr (error.message, "$query"));
-   assert (error.domain == MONGOC_ERROR_CURSOR);
-   assert (error.code == MONGOC_ERROR_CURSOR_INVALID_CURSOR);
-   assert (doc == NULL);
+   if (!r || mongoc_cursor_error (cursor, &error)) {
+      test_error ("%s", error.message);
+      abort ();
+   }
+   ASSERT (doc);
 
-   bson_destroy (q);
+   clone = mongoc_cursor_clone (cursor);
+   ASSERT (cursor);
+
+   r = mongoc_cursor_next (clone, &doc);
+   if (!r || mongoc_cursor_error (clone, &error)) {
+      test_error ("%s", error.message);
+      abort ();
+   }
+   ASSERT (doc);
+
    mongoc_cursor_destroy (cursor);
+   mongoc_cursor_destroy (clone);
    mongoc_client_destroy (client);
 }
 
@@ -165,7 +151,7 @@ test_limit (void)
    int i, n_docs;
    mongoc_cursor_t *cursor;
    bson_error_t error;
-   int64_t limits[] = { 5, -5 };
+   int64_t limits[] = {5, -5};
    const bson_t *doc = NULL;
    bool r;
 
@@ -182,8 +168,8 @@ test_limit (void)
 
    /* test positive and negative limit */
    for (i = 0; i < 2; i++) {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                       tmp_bson ("{}"), NULL, NULL);
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
       ASSERT_CMPINT64 ((int64_t) 0, ==, mongoc_cursor_get_limit (cursor));
       ASSERT (mongoc_cursor_set_limit (cursor, limits[i]));
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
@@ -194,7 +180,7 @@ test_limit (void)
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT_CMPINT (n_docs, ==, 5);
-      ASSERT (!mongoc_cursor_set_limit (cursor, 123));  /* no effect */
+      ASSERT (!mongoc_cursor_set_limit (cursor, 123)); /* no effect */
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
 
       mongoc_cursor_destroy (cursor);
@@ -202,13 +188,13 @@ test_limit (void)
       if (limits[i] > 0) {
          opts = tmp_bson ("{'limit': {'$numberLong': '%d'}}", limits[i]);
       } else {
-         opts = tmp_bson (
-            "{'singleBatch': true, 'limit': {'$numberLong': '%d'}}",
-            -limits[i]);
+         opts =
+            tmp_bson ("{'singleBatch': true, 'limit': {'$numberLong': '%d'}}",
+                      -limits[i]);
       }
 
-      cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
-                                                 opts, NULL);
+      cursor = mongoc_collection_find_with_opts (
+         collection, tmp_bson (NULL), opts, NULL);
 
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
       n_docs = 0;
@@ -218,6 +204,8 @@ test_limit (void)
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT_CMPINT (n_docs, ==, 5);
+
+      mongoc_cursor_destroy (cursor);
    }
 
    mongoc_bulk_operation_destroy (bulk);
@@ -253,9 +241,14 @@ test_kill_cursor_live (void)
    server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_OR_PRINT (server_id > 0, error);
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
-                                    0, 0, 0, /* batch size 2 */
-                                    b, NULL, NULL);
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0, /* batch size 2 */
+                                    b,
+                                    NULL,
+                                    NULL);
 
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (r);
@@ -265,19 +258,25 @@ test_kill_cursor_live (void)
    /* sends OP_KILLCURSORS or killCursors command to server */
    mongoc_cursor_destroy (cursor);
 
-   cursor = _mongoc_cursor_new (client, collection->ns, MONGOC_QUERY_NONE, 0, 0,
-                                0, false, b, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_new (client,
+                                collection->ns,
+                                MONGOC_QUERY_NONE,
+                                0,
+                                0,
+                                0,
+                                false,
+                                b,
+                                NULL,
+                                NULL,
+                                NULL);
 
    cursor->rpc.reply.cursor_id = cursor_id;
    cursor->sent = true;
-   cursor->end_of_event = true;  /* meaning, "finished reading first batch" */
+   cursor->end_of_event = true; /* meaning, "finished reading first batch" */
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CURSOR,
-                          16,
-                          "cursor is invalid");
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, 16, "cursor is invalid");
 
    mongoc_cursor_destroy (cursor);
    mongoc_bulk_operation_destroy (bulk);
@@ -288,8 +287,7 @@ test_kill_cursor_live (void)
 
 /* test OP_KILLCURSORS or the killCursors command with mock servers */
 static void
-_test_kill_cursors (bool pooled,
-                    bool use_killcursors_cmd)
+_test_kill_cursors (bool pooled, bool use_killcursors_cmd)
 {
    mock_rs_t *rs;
    mongoc_client_pool_t *pool = NULL;
@@ -306,11 +304,11 @@ _test_kill_cursors (bool pooled,
    const char *ns_out;
    int64_t cursor_id_out;
 
-   rs = mock_rs_with_autoismaster (
-      use_killcursors_cmd ? 4 : 3, /* wire version */
-      true,                        /* has primary */
-      5,                           /* number of secondaries */
-      0);                          /* number of arbiters */
+   rs =
+      mock_rs_with_autoismaster (use_killcursors_cmd ? 4 : 3, /* wire version */
+                                 true,                        /* has primary */
+                                 5,  /* number of secondaries */
+                                 0); /* number of arbiters */
 
    mock_rs_run (rs);
 
@@ -324,15 +322,20 @@ _test_kill_cursors (bool pooled,
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    q, NULL, prefs);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_request (rs);
 
    /* reply as appropriate to OP_QUERY or find command */
-   mock_rs_replies_to_find (request, MONGOC_QUERY_SLAVE_OK, 123, 1,
-                            "db.collection", "{'b': 1}", use_killcursors_cmd);
+   mock_rs_replies_to_find (request,
+                            MONGOC_QUERY_SLAVE_OK,
+                            123,
+                            1,
+                            "db.collection",
+                            "{'b': 1}",
+                            use_killcursors_cmd);
 
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
@@ -347,15 +350,17 @@ _test_kill_cursors (bool pooled,
    future = future_cursor_destroy (cursor);
 
    if (use_killcursors_cmd) {
-      kill_cursors = mock_rs_receives_command (
-         rs, "db",
-         MONGOC_QUERY_SLAVE_OK,
-         NULL);
+      kill_cursors =
+         mock_rs_receives_command (rs, "db", MONGOC_QUERY_SLAVE_OK, NULL);
 
       /* mock server framework can't test "cursors" array, CDRIVER-994 */
       ASSERT (BCON_EXTRACT ((bson_t *) request_get_doc (kill_cursors, 0),
-                            "killCursors", BCONE_UTF8 (ns_out),
-                            "cursors", "[", BCONE_INT64 (cursor_id_out), "]"));
+                            "killCursors",
+                            BCONE_UTF8 (ns_out),
+                            "cursors",
+                            "[",
+                            BCONE_INT64 (cursor_id_out),
+                            "]"));
 
       ASSERT_CMPSTR ("collection", ns_out);
       ASSERT_CMPINT64 ((int64_t) 123, ==, cursor_id_out);
@@ -366,7 +371,8 @@ _test_kill_cursors (bool pooled,
    }
 
    /* OP_KILLCURSORS was sent to the right secondary */
-   ASSERT_CMPINT (request_get_server_port (kill_cursors), ==,
+   ASSERT_CMPINT (request_get_server_port (kill_cursors),
+                  ==,
                   request_get_server_port (request));
 
    assert (future_wait (future));
@@ -417,10 +423,8 @@ test_kill_cursors_pooled_cmd (void)
 }
 
 
-#ifdef CDRIVER_1442
 static void
-_test_getmore_fail (bool has_primary,
-                    bool pooled)
+_test_getmore_fail (bool has_primary, bool pooled)
 {
    mock_rs_t *rs;
    mongoc_client_pool_t *pool = NULL;
@@ -449,12 +453,12 @@ _test_getmore_fail (bool has_primary,
    collection = mongoc_client_get_collection (client, "test", "test");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    q, NULL, prefs);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL);
+   request = mock_rs_receives_query (
+      rs, "test.test", MONGOC_QUERY_SLAVE_OK, 0, 0, "{'a': 1}", NULL);
    BSON_ASSERT (request);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
@@ -468,7 +472,7 @@ _test_getmore_fail (bool has_primary,
    request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
    BSON_ASSERT (request);
    mock_rs_hangs_up (request);
-   BSON_ASSERT (! future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    request_destroy (request);
 
    future_destroy (future);
@@ -476,7 +480,7 @@ _test_getmore_fail (bool has_primary,
 
    /* driver does not reconnect just to send killcursors */
    mock_rs_set_request_timeout_msec (rs, 100);
-   BSON_ASSERT (! mock_rs_receives_kill_cursors (rs, 123));
+   BSON_ASSERT (!mock_rs_receives_kill_cursors (rs, 123));
 
    future_wait (future);
    future_destroy (future);
@@ -521,15 +525,13 @@ test_getmore_fail_no_primary_single (void)
 {
    _test_getmore_fail (false, false);
 }
-#endif
 
 
 /* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
  * test_kill_cursors_single / pooled. Here, test explicit
  * mongoc_client_kill_cursor. */
 static void
-_test_client_kill_cursor (bool has_primary,
-                          bool wire_version_4)
+_test_client_kill_cursor (bool has_primary, bool wire_version_4)
 {
    mock_rs_t *rs;
    mongoc_client_t *client;
@@ -539,20 +541,19 @@ _test_client_kill_cursor (bool has_primary,
    request_t *request;
 
    rs = mock_rs_with_autoismaster (wire_version_4 ? 4 : 3,
-                                   has_primary,  /* maybe a primary*/
-                                   1,            /* definitely a secondary */
-                                   0);           /* no arbiter */
+                                   has_primary, /* maybe a primary*/
+                                   1,           /* definitely a secondary */
+                                   0);          /* no arbiter */
    mock_rs_run (rs);
    client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* make client open a connection - it won't open one to kill a cursor */
-   future = future_client_command_simple (client, "admin",
-                                          tmp_bson ("{'foo': 1}"),
-                                          read_prefs, NULL, &error);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'foo': 1}"), read_prefs, NULL, &error);
 
-   request = mock_rs_receives_command (rs, "admin",
-                                       MONGOC_QUERY_SLAVE_OK, NULL);
+   request =
+      mock_rs_receives_command (rs, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
 
    mock_rs_replies_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -571,13 +572,13 @@ _test_client_kill_cursor (bool has_primary,
       /* weird but true. see mongoc_client_kill_cursor's documentation */
       assert (mock_rs_request_is_to_primary (rs, request));
 
-      request_destroy (request);  /* server has no reply to OP_KILLCURSORS */
+      request_destroy (request); /* server has no reply to OP_KILLCURSORS */
    } else {
       /* TODO: catch and check warning */
       assert (!request);
    }
 
-   future_wait (future);  /* no return value */
+   future_wait (future); /* no return value */
    future_destroy (future);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_client_destroy (client);
@@ -645,8 +646,8 @@ _test_cursor_new_from_command (const char *cmd_json,
 
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (client, "test", collection_name);
-   mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
-                             NULL, NULL);
+   mongoc_collection_remove (
+      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'a'}"));
@@ -654,15 +655,14 @@ _test_cursor_new_from_command (const char *cmd_json,
    r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));
    ASSERT_OR_PRINT (r, error);
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
-                                NULL, &error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
-   mongoc_client_command_simple_with_server_id (client, "test",
-                                                tmp_bson (cmd_json),
-                                                NULL, server_id, &reply, &error);
-   cmd_cursor = mongoc_cursor_new_from_command_reply (client, &reply, server_id);
+   mongoc_client_command_simple_with_server_id (
+      client, "test", tmp_bson (cmd_json), NULL, server_id, &reply, &error);
+   cmd_cursor =
+      mongoc_cursor_new_from_command_reply (client, &reply, server_id);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cmd_cursor));
    ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
@@ -698,9 +698,8 @@ test_cursor_new_from_aggregate_no_initial (void *ctx)
 static void
 test_cursor_new_from_find (void *ctx)
 {
-   _test_cursor_new_from_command (
-      "{'find': 'test_cursor_new_from_find'}",
-      "test_cursor_new_from_find");
+   _test_cursor_new_from_command ("{'find': 'test_cursor_new_from_find'}",
+                                  "test_cursor_new_from_find");
 }
 
 
@@ -736,6 +735,110 @@ test_cursor_new_invalid (void)
 
 
 static void
+test_cursor_new_invalid_filter (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'': 1}"), NULL, NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Empty keys are not allowed in 'filter'.");
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cursor_new_invalid_opts (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'projection': {'': 1}}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot use empty keys in 'opts'.");
+
+   mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'$invalid': 1}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot use $-modifiers in 'opts'.");
+
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cursor_new_static (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   bson_t *bson_alloced;
+   bson_t bson_static;
+
+   bson_alloced = tmp_bson ("{ 'ok':1,"
+                            "  'cursor': {"
+                            "     'id': 0,"
+                            "     'ns': 'test.foo',"
+                            "     'firstBatch': [{'x': 1}, {'x': 2}]}}");
+
+   ASSERT (bson_init_static (
+      &bson_static, bson_get_data (bson_alloced), bson_alloced->len));
+
+   /* test heap-allocated bson */
+   client = test_framework_client_new ();
+   cursor = mongoc_cursor_new_from_command_reply (
+      client, bson_copy (bson_alloced), 0);
+
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+   mongoc_cursor_destroy (cursor);
+
+   /* test static bson */
+   cursor = mongoc_cursor_new_from_command_reply (client, &bson_static, 0);
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_cursor_hint_errors (void)
 {
    mongoc_client_t *client;
@@ -744,20 +847,22 @@ test_cursor_hint_errors (void)
 
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                    tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    capture_logs (true);
    ASSERT (!mongoc_cursor_set_hint (cursor, 0));
-   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint",
+                        MONGOC_LOG_LEVEL_ERROR,
                         "cannot set server_id to 0");
 
-   capture_logs (true);  /* clear logs */
+   capture_logs (true); /* clear logs */
    ASSERT (mongoc_cursor_set_hint (cursor, 123));
    ASSERT_CMPUINT32 ((uint32_t) 123, ==, mongoc_cursor_get_hint (cursor));
    ASSERT_NO_CAPTURED_LOGS ("mongoc_cursor_set_hint");
    ASSERT (!mongoc_cursor_set_hint (cursor, 42));
-   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint", MONGOC_LOG_LEVEL_ERROR,
+   ASSERT_CAPTURED_LOG ("mongoc_cursor_set_hint",
+                        MONGOC_LOG_LEVEL_ERROR,
                         "server_id already set");
 
    /* last set_hint had no effect */
@@ -770,8 +875,7 @@ test_cursor_hint_errors (void)
 
 
 static uint32_t
-server_id_for_read_mode (mongoc_client_t *client,
-                         mongoc_read_mode_t read_mode)
+server_id_for_read_mode (mongoc_client_t *client, mongoc_read_mode_t read_mode)
 {
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd;
@@ -779,8 +883,8 @@ server_id_for_read_mode (mongoc_client_t *client,
    uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
-                                &error);
+   sd =
+      mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs, &error);
 
    ASSERT_OR_PRINT (sd, error);
    server_id = sd->id;
@@ -793,10 +897,8 @@ server_id_for_read_mode (mongoc_client_t *client,
 
 
 static void
-_test_cursor_hint (bool pooled,
-                   bool use_primary)
+_test_cursor_hint (bool pooled, bool use_primary)
 {
-
    mock_rs_t *rs;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
@@ -822,8 +924,8 @@ _test_cursor_hint (bool pooled,
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q,
-                                    NULL, NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, NULL);
    ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
 
    if (use_primary) {
@@ -838,8 +940,8 @@ _test_cursor_hint (bool pooled,
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cursor));
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (rs, "test.test", expected_flags,
-                                     0, 0, "{'a': 1}", NULL);
+   request = mock_rs_receives_query (
+      rs, "test.test", expected_flags, 0, 0, "{'a': 1}", NULL);
 
    if (use_primary) {
       BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
@@ -929,8 +1031,8 @@ test_cursor_hint_mongos (void)
 
    for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
       prefs = mongoc_read_prefs_new (modes[i]);
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                       tmp_bson (NULL), NULL, prefs);
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, prefs);
 
       ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
       ASSERT (mongoc_cursor_set_hint (cursor, 1));
@@ -938,8 +1040,8 @@ test_cursor_hint_mongos (void)
 
       future = future_cursor_next (cursor, &doc);
 
-      request = mock_server_receives_query (server, "test.test",
-                                            expected_flag[i], 0, 0, "{}", NULL);
+      request = mock_server_receives_query (
+         server, "test.test", expected_flag[i], 0, 0, "{}", NULL);
 
       mock_server_replies_simple (request, "{}");
       assert (future_get_bool (future));
@@ -975,8 +1077,8 @@ test_cursor_hint_mongos_cmd (void)
 
    for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
       prefs = mongoc_read_prefs_new (modes[i]);
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
-                                       tmp_bson (NULL), NULL, prefs);
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, prefs);
 
       ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_cursor_get_hint (cursor));
       ASSERT (mongoc_cursor_set_hint (cursor, 1));
@@ -984,14 +1086,15 @@ test_cursor_hint_mongos_cmd (void)
 
       future = future_cursor_next (cursor, &doc);
 
-      request = mock_server_receives_command (server, "test", expected_flag[i],
-                                              0, 0, "{'find': 'test'}", NULL);
+      request = mock_server_receives_command (
+         server, "test", expected_flag[i], 0, 0, "{'find': 'test'}", NULL);
 
-      mock_server_replies_simple (request, "{'ok': 1,"
-         " 'cursor': {"
-         "    'id': 0,"
-         "    'ns': 'test.test',"
-         "    'firstBatch': [{}]}}");
+      mock_server_replies_simple (request,
+                                  "{'ok': 1,"
+                                  " 'cursor': {"
+                                  "    'id': 0,"
+                                  "    'ns': 'test.test',"
+                                  "    'firstBatch': [{}]}}");
 
       assert (future_get_bool (future));
 
@@ -1012,7 +1115,6 @@ test_cursor_hint_mongos_cmd (void)
 static void
 _test_cursor_hint_no_warmup (bool pooled)
 {
-
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -1029,8 +1131,8 @@ _test_cursor_hint_no_warmup (bool pooled)
    }
 
    collection = get_test_collection (client, "test_cursor_hint_no_warmup");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, q,
-                                    NULL, NULL);
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, NULL);
 
    /* no chance for topology scan, no server selection */
    ASSERT (mongoc_cursor_set_hint (cursor, 1));
@@ -1083,8 +1185,10 @@ test_tailable_alive (void)
    mongoc_collection_destroy (collection);
 
    collection = mongoc_database_create_collection (
-      database, collection_name,
-      tmp_bson ("{'capped': true, 'size': 10000}"), &error);
+      database,
+      collection_name,
+      tmp_bson ("{'capped': true, 'size': 10000}"),
+      &error);
 
    ASSERT_OR_PRINT (collection, error);
 
@@ -1094,9 +1198,15 @@ test_tailable_alive (void)
    ASSERT_OR_PRINT (r, error);
 
    /* test mongoc_collection_find and mongoc_collection_find_with_opts */
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
-      0, 0, 0, tmp_bson (NULL), NULL, NULL);
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_TAILABLE_CURSOR |
+                                       MONGOC_QUERY_AWAIT_DATA,
+                                    0,
+                                    0,
+                                    0,
+                                    tmp_bson (NULL),
+                                    NULL,
+                                    NULL);
 
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_next (cursor, &doc));
@@ -1114,8 +1224,10 @@ test_tailable_alive (void)
    mongoc_cursor_destroy (cursor);
 
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson (NULL),
-      tmp_bson ("{'tailable': true, 'awaitData': true}"), NULL);
+      collection,
+      tmp_bson (NULL),
+      tmp_bson ("{'tailable': true, 'awaitData': true}"),
+      NULL);
 
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_next (cursor, &doc));
@@ -1132,8 +1244,7 @@ test_tailable_alive (void)
 }
 
 
-typedef struct
-{
+typedef struct {
    int64_t skip;
    int64_t limit;
    int64_t batch_size;
@@ -1158,8 +1269,8 @@ _make_n_empty_docs (int64_t n)
 
 
 static void
-_test_cursor_n_return_op_query (mongoc_cursor_t      *cursor,
-                                mock_server_t        *server,
+_test_cursor_n_return_op_query (mongoc_cursor_t *cursor,
+                                mock_server_t *server,
                                 cursor_n_return_test *test)
 {
    bson_t *reply_docs;
@@ -1172,14 +1283,18 @@ _test_cursor_n_return_op_query (mongoc_cursor_t      *cursor,
 
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server, "db.coll",
+   request = mock_server_receives_query (server,
+                                         "db.coll",
                                          MONGOC_QUERY_SLAVE_OK,
                                          (uint32_t) test->skip,
                                          (uint32_t) test->expected_n_return[0],
-                                         NULL, NULL);
+                                         NULL,
+                                         NULL);
 
    reply_docs = _make_n_empty_docs (test->reply_length[0]);
-   mock_server_reply_multi (request, MONGOC_REPLY_NONE, reply_docs,
+   mock_server_reply_multi (request,
+                            MONGOC_REPLY_NONE,
+                            reply_docs,
                             (uint32_t) test->reply_length[0],
                             123 /* cursor_id */);
 
@@ -1201,7 +1316,9 @@ _test_cursor_n_return_op_query (mongoc_cursor_t      *cursor,
 
       reply_docs = _make_n_empty_docs (test->reply_length[reply_no]);
       cursor_finished = (reply_no == 2);
-      mock_server_reply_multi (request, MONGOC_REPLY_NONE, reply_docs,
+      mock_server_reply_multi (request,
+                               MONGOC_REPLY_NONE,
+                               reply_docs,
                                (uint32_t) test->reply_length[reply_no],
                                cursor_finished ? 0 : 123);
 
@@ -1222,13 +1339,14 @@ static void
 _make_reply_batch (bson_string_t *reply,
                    uint32_t n_docs,
                    bool first_batch,
-                   bool finished) {
-
+                   bool finished)
+{
    uint32_t j;
 
-   bson_string_append_printf (reply, "{'ok': 1, 'cursor': {"
-                                     "    'id': %d,"
-                                     "    'ns': 'db.coll',",
+   bson_string_append_printf (reply,
+                              "{'ok': 1, 'cursor': {"
+                              "    'id': %d,"
+                              "    'ns': 'db.coll',",
                               finished ? 0 : 123);
 
    if (first_batch) {
@@ -1246,8 +1364,8 @@ _make_reply_batch (bson_string_t *reply,
 
 
 static void
-_test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
-                                mock_server_t        *server,
+_test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
+                                mock_server_t *server,
                                 cursor_n_return_test *test)
 {
    bson_t find_cmd = BSON_INITIALIZER;
@@ -1276,8 +1394,8 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
    }
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server, "db",
-                                           MONGOC_QUERY_SLAVE_OK, NULL);
+   request =
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
 
    ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
 
@@ -1298,24 +1416,27 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
    for (reply_no = 1; reply_no < 3; reply_no++) {
       /* expect getMore command, send reply_length[reply_no] docs to client */
       future = future_cursor_next (cursor, &doc);
-      request = mock_server_receives_command (server, "db",
-                                              MONGOC_QUERY_SLAVE_OK, NULL);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
 
       bson_reinit (&getmore_cmd);
       BSON_APPEND_INT64 (&getmore_cmd, "getMore", 123);
       if (test->expected_n_return[reply_no] && test->batch_size) {
-         BSON_APPEND_INT64 (&getmore_cmd, "batchSize",
+         BSON_APPEND_INT64 (&getmore_cmd,
+                            "batchSize",
                             BSON_ABS (test->expected_n_return[reply_no]));
       } else {
-         BSON_APPEND_DOCUMENT (&getmore_cmd, "batchSize",
-                               tmp_bson ("{'$exists': false}"));
+         BSON_APPEND_DOCUMENT (
+            &getmore_cmd, "batchSize", tmp_bson ("{'$exists': false}"));
       }
 
       ASSERT (match_bson (request_get_doc (request, 0), &getmore_cmd, true));
 
       reply = bson_string_new (NULL);
       cursor_finished = (reply_no == 2);
-      _make_reply_batch (reply, (uint32_t) test->reply_length[reply_no], false,
+      _make_reply_batch (reply,
+                         (uint32_t) test->reply_length[reply_no],
+                         false,
                          cursor_finished);
 
       mock_server_replies_simple (request, reply->str);
@@ -1337,48 +1458,50 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t      *cursor,
 
 
 static void
-_test_cursor_n_return (bool find_cmd,
-                       bool find_with_opts)
+_test_cursor_n_return (bool find_cmd, bool find_with_opts)
 {
-   cursor_n_return_test tests[] = {
-      {
-         0,           /* skip              */
-         0,           /* limit             */
-         0,           /* batch_size        */
-         { 0, 0, 0 }, /* expected_n_return */
-         { 1, 1, 1 }  /* reply_length      */
-      }, {
-         7,           /* skip              */
-         0,           /* limit             */
-         0,           /* batch_size        */
-         { 0, 0, 0 }, /* expected_n_return */
-         { 1, 1, 1 }  /* reply_length      */
-      }, {
-         0,           /* skip              */
-         3,           /* limit             */
-         0,           /* batch_size        */
-         { 3, 2, 1 }, /* expected_n_return */
-         { 1, 1, 1 }  /* reply_length      */
-      }, {
-         0,           /* skip              */
-         5,           /* limit             */
-         2,           /* batch_size        */
-         { 2, 2, 1 }, /* expected_n_return */
-         { 2, 2, 1 }  /* reply_length      */
-      }, {
-         0,           /* skip              */
-         4,           /* limit             */
-         7,           /* batch_size        */
-         { 4, 2, 1 }, /* expected_n_return */
-         { 2, 1, 1 }  /* reply_length      */
-      }, {
-         0,           /* skip              */
-         -3,          /* limit             */
-         1,           /* batch_size        */
-         {-3,-3,-3 }, /* expected_n_return */
-         { 1, 1, 1 }  /* reply_length      */
-      }
-   };
+   cursor_n_return_test tests[] = {{
+                                      0,         /* skip              */
+                                      0,         /* limit             */
+                                      0,         /* batch_size        */
+                                      {0, 0, 0}, /* expected_n_return */
+                                      {1, 1, 1}  /* reply_length      */
+                                   },
+                                   {
+                                      7,         /* skip              */
+                                      0,         /* limit             */
+                                      0,         /* batch_size        */
+                                      {0, 0, 0}, /* expected_n_return */
+                                      {1, 1, 1}  /* reply_length      */
+                                   },
+                                   {
+                                      0,         /* skip              */
+                                      3,         /* limit             */
+                                      0,         /* batch_size        */
+                                      {3, 2, 1}, /* expected_n_return */
+                                      {1, 1, 1}  /* reply_length      */
+                                   },
+                                   {
+                                      0,         /* skip              */
+                                      5,         /* limit             */
+                                      2,         /* batch_size        */
+                                      {2, 2, 1}, /* expected_n_return */
+                                      {2, 2, 1}  /* reply_length      */
+                                   },
+                                   {
+                                      0,         /* skip              */
+                                      4,         /* limit             */
+                                      7,         /* batch_size        */
+                                      {4, 2, 1}, /* expected_n_return */
+                                      {2, 1, 1}  /* reply_length      */
+                                   },
+                                   {
+                                      0,            /* skip              */
+                                      -3,           /* limit             */
+                                      1,            /* batch_size        */
+                                      {-3, -3, -3}, /* expected_n_return */
+                                      {1, 1, 1}     /* reply_length      */
+                                   }};
 
    cursor_n_return_test *test;
    size_t i;
@@ -1388,8 +1511,8 @@ _test_cursor_n_return (bool find_cmd,
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   server = mock_server_with_autoismaster (find_cmd ? WIRE_VERSION_FIND_CMD
-                                                    : 0);
+   server =
+      mock_server_with_autoismaster (find_cmd ? WIRE_VERSION_FIND_CMD : 0);
 
    mock_server_run (server);
 
@@ -1417,14 +1540,17 @@ _test_cursor_n_return (bool find_cmd,
             BSON_APPEND_INT64 (&opts, "batchSize", test->batch_size);
          }
 
-         cursor = mongoc_collection_find_with_opts (collection, tmp_bson (NULL),
-                                                    &opts, NULL);
+         cursor = mongoc_collection_find_with_opts (
+            collection, tmp_bson (NULL), &opts, NULL);
       } else {
-         cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
+         cursor = mongoc_collection_find (collection,
+                                          MONGOC_QUERY_NONE,
                                           (uint32_t) test->skip,
                                           (uint32_t) test->limit,
                                           (uint32_t) test->batch_size,
-                                          tmp_bson (NULL), NULL, NULL);
+                                          tmp_bson (NULL),
+                                          NULL,
+                                          NULL);
       }
 
       if (find_cmd) {
@@ -1476,64 +1602,92 @@ test_cursor_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Cursor/get_host", test_get_host);
    TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
-   TestSuite_AddLive (suite, "/Cursor/invalid_query", test_invalid_query);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   TestSuite_Add (suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
-   TestSuite_Add (suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
-#ifdef CDRIVER_1442
-   TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/pooled",
+   TestSuite_Add (
+      suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
+   TestSuite_Add (
+      suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
+   TestSuite_Add (suite,
+                  "/Cursor/getmore_fail/with_primary/pooled",
                   test_getmore_fail_with_primary_pooled);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/single",
+   TestSuite_Add (suite,
+                  "/Cursor/getmore_fail/with_primary/single",
                   test_getmore_fail_with_primary_single);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/pooled",
+   TestSuite_Add (suite,
+                  "/Cursor/getmore_fail/no_primary/pooled",
                   test_getmore_fail_no_primary_pooled);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/single",
+   TestSuite_Add (suite,
+                  "/Cursor/getmore_fail/no_primary/single",
                   test_getmore_fail_no_primary_single);
-#endif
-
-   TestSuite_Add (suite, "/Cursor/client_kill_cursor/with_primary",
+   TestSuite_Add (suite,
+                  "/Cursor/client_kill_cursor/with_primary",
                   test_client_kill_cursor_with_primary);
-   TestSuite_Add (suite, "/Cursor/client_kill_cursor/without_primary",
+   TestSuite_Add (suite,
+                  "/Cursor/client_kill_cursor/without_primary",
                   test_client_kill_cursor_without_primary);
-   TestSuite_Add (suite, "/Cursor/client_kill_cursor/with_primary/wv4",
+   TestSuite_Add (suite,
+                  "/Cursor/client_kill_cursor/with_primary/wv4",
                   test_client_kill_cursor_with_primary_wire_version_4);
-   TestSuite_Add (suite, "/Cursor/client_kill_cursor/without_primary/wv4",
+   TestSuite_Add (suite,
+                  "/Cursor/client_kill_cursor/without_primary/wv4",
                   test_client_kill_cursor_without_primary_wire_version_4);
 
-   TestSuite_AddFull (suite, "/Cursor/new_from_agg",
-                      test_cursor_new_from_aggregate, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Cursor/new_from_agg",
+                      test_cursor_new_from_aggregate,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_max_wire_version_less_than_2);
-   TestSuite_AddFull (suite, "/Cursor/new_from_agg_no_initial",
-                      test_cursor_new_from_aggregate_no_initial, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Cursor/new_from_agg_no_initial",
+                      test_cursor_new_from_aggregate_no_initial,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_max_wire_version_less_than_2);
-   TestSuite_AddFull (suite, "/Cursor/new_from_find",
-                      test_cursor_new_from_find, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Cursor/new_from_find",
+                      test_cursor_new_from_find,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_AddFull (suite, "/Cursor/new_from_find_batches",
-                      test_cursor_new_from_find_batches, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Cursor/new_from_find_batches",
+                      test_cursor_new_from_find_batches,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
+   TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
-   TestSuite_Add (suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
-   TestSuite_Add (suite, "/Cursor/hint/single/primary", test_hint_single_primary);
-   TestSuite_Add (suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
-   TestSuite_Add (suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
+   TestSuite_Add (
+      suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
+   TestSuite_Add (
+      suite, "/Cursor/hint/single/primary", test_hint_single_primary);
+   TestSuite_Add (
+      suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
+   TestSuite_Add (
+      suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
    TestSuite_Add (suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
-   TestSuite_Add (suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
-   TestSuite_AddLive (suite, "/Cursor/hint/no_warmup/single",
-                      test_hint_no_warmup_single);
-   TestSuite_AddLive (suite, "/Cursor/hint/no_warmup/pooled",
-                      test_hint_no_warmup_pooled);
+   TestSuite_Add (
+      suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
-   TestSuite_Add (suite, "/Cursor/n_return/op_query",
-                  test_n_return_op_query);
-   TestSuite_Add (suite, "/Cursor/n_return/op_query/with_opts",
+   TestSuite_Add (suite, "/Cursor/n_return/op_query", test_n_return_op_query);
+   TestSuite_Add (suite,
+                  "/Cursor/n_return/op_query/with_opts",
                   test_n_return_op_query_with_opts);
-   TestSuite_Add (suite, "/Cursor/n_return/find_cmd",
-                  test_n_return_find_cmd);
-   TestSuite_Add (suite, "/Cursor/n_return/find_cmd/with_opts",
+   TestSuite_Add (suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
+   TestSuite_Add (suite,
+                  "/Cursor/n_return/find_cmd/with_opts",
                   test_n_return_find_cmd_with_opts);
 }

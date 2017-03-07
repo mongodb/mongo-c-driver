@@ -43,8 +43,7 @@ bulk6 (mongoc_collection_t *collection)
 }
 
 int
-main (int argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;

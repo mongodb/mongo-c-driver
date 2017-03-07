@@ -17,7 +17,7 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -29,24 +29,24 @@
 
 BSON_BEGIN_DECLS
 
-#define NO_MAX_STALENESS (-1.0)
-
-struct _mongoc_read_prefs_t
-{
+struct _mongoc_read_prefs_t {
    mongoc_read_mode_t mode;
-   bson_t             tags;
-   double             max_staleness_seconds;
+   bson_t tags;
+   int64_t max_staleness_seconds;
 };
 
 
 typedef struct _mongoc_apply_read_prefs_result_t {
-   bson_t              *query_with_read_prefs;
-   bool                 query_owned;
+   bson_t *query_with_read_prefs;
+   bool query_owned;
    mongoc_query_flags_t flags;
 } mongoc_apply_read_prefs_result_t;
 
 
-#define READ_PREFS_RESULT_INIT { NULL, false, MONGOC_QUERY_NONE }
+#define READ_PREFS_RESULT_INIT       \
+   {                                 \
+      NULL, false, MONGOC_QUERY_NONE \
+   }
 
 const char *
 _mongoc_read_mode_as_str (mongoc_read_mode_t mode);
@@ -63,7 +63,7 @@ apply_read_prefs_result_cleanup (mongoc_apply_read_prefs_result_t *result);
 
 bool
 _mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
-                             bson_error_t              *error);
+                             bson_error_t *error);
 
 BSON_END_DECLS
 

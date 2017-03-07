@@ -22,17 +22,17 @@
 
 struct _sync_queue_t {
    mongoc_array_t array;
-   mongoc_cond_t      cond;
-   mongoc_mutex_t     mutex;
+   mongoc_cond_t cond;
+   mongoc_mutex_t mutex;
 };
 
 
 sync_queue_t *
 q_new ()
 {
-   sync_queue_t *q = (sync_queue_t *)bson_malloc (sizeof(sync_queue_t));
+   sync_queue_t *q = (sync_queue_t *) bson_malloc (sizeof (sync_queue_t));
 
-   _mongoc_array_init (&q->array, sizeof(void *));
+   _mongoc_array_init (&q->array, sizeof (void *));
    mongoc_cond_init (&q->cond);
    mongoc_mutex_init (&q->mutex);
 
@@ -58,7 +58,7 @@ _get (sync_queue_t *q)
    size_t i;
 
    if (q->array.len) {
-      data = (void **)q->array.data;
+      data = (void **) q->array.data;
       item = data[0];
 
       /* shift the queue left */
@@ -76,13 +76,14 @@ void *
 q_get (sync_queue_t *q, int64_t timeout_msec)
 {
    void *item = NULL;
-   int64_t deadline;
+   int64_t remaining_usec = timeout_msec * 1000;
+   int64_t deadline = bson_get_monotonic_time () + timeout_msec * 1000;
 
    mongoc_mutex_lock (&q->mutex);
    if (timeout_msec) {
-      deadline = bson_get_monotonic_time () + timeout_msec * 1000;
-      while (!q->array.len && bson_get_monotonic_time () <= deadline) {
-         mongoc_cond_timedwait (&q->cond, &q->mutex, timeout_msec);
+      while (!q->array.len && remaining_usec > 0) {
+         mongoc_cond_timedwait (&q->cond, &q->mutex, remaining_usec / 1000);
+         remaining_usec = deadline - bson_get_monotonic_time ();
       }
    } else {
       /* no deadline */

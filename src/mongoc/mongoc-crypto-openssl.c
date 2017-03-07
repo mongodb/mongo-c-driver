@@ -26,53 +26,48 @@
 #include <openssl/hmac.h>
 
 
-
 void
-mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t     *crypto,
-                                 const void          *key,
-                                 int                  key_len,
+mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
+                                 const void *key,
+                                 int key_len,
                                  const unsigned char *d,
-                                 int                  n,
-                                 unsigned char       *md /* OUT */)
+                                 int n,
+                                 unsigned char *md /* OUT */)
 {
    /* U1 = HMAC(input, salt + 0001) */
-   HMAC (EVP_sha1 (),
-         key,
-         key_len,
-         d,
-         n,
-         md,
-         NULL);
+   HMAC (EVP_sha1 (), key, key_len, d, n, md, NULL);
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
-EVP_MD_CTX *EVP_MD_CTX_new(void)
+EVP_MD_CTX *
+EVP_MD_CTX_new (void)
 {
-    return bson_malloc0 (sizeof (EVP_MD_CTX));
+   return bson_malloc0 (sizeof (EVP_MD_CTX));
 }
 
-void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
+void
+EVP_MD_CTX_free (EVP_MD_CTX *ctx)
 {
-    EVP_MD_CTX_cleanup (ctx);
-    bson_free (ctx);
+   EVP_MD_CTX_cleanup (ctx);
+   bson_free (ctx);
 }
 #endif
 
 bool
-mongoc_crypto_openssl_sha1 (mongoc_crypto_t     *crypto,
+mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
                             const unsigned char *input,
-                            const size_t         input_len,
-                            unsigned char       *output /* OUT */)
+                            const size_t input_len,
+                            unsigned char *output /* OUT */)
 {
-   EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new();
+   EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new ();
    bool rval = false;
 
    if (1 != EVP_DigestInit_ex (digest_ctxp, EVP_sha1 (), NULL)) {
-	   goto cleanup;
+      goto cleanup;
    }
 
    if (1 != EVP_DigestUpdate (digest_ctxp, input, input_len)) {
-	   goto cleanup;
+      goto cleanup;
    }
 
    rval = (1 == EVP_DigestFinal_ex (digest_ctxp, output, NULL));

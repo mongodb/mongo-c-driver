@@ -29,25 +29,23 @@ test_read_generic_release_file (void)
 {
    char *name;
    char *version;
-   const char *paths [] = {
+   const char *paths[] = {
       OS_RELEASE_FILE_DIR "/lol-im-not-here.txt",
       OS_RELEASE_FILE_DIR "/also-not-here.txt",
       OS_RELEASE_FILE_DIR "/example-etc-fedora-release.txt",
       NULL,
    };
 
-   const char *paths2 [] = {
-      OS_RELEASE_FILE_DIR "/example-etc-xyz-release-no-delimiter.txt",
-      NULL,
+   const char *paths2[] = {
+      OS_RELEASE_FILE_DIR "/example-etc-xyz-release-no-delimiter.txt", NULL,
    };
 
-   const char *paths3 [] = {
-      OS_RELEASE_FILE_DIR "/empty-file.txt",
-      NULL,
+   const char *paths3[] = {
+      OS_RELEASE_FILE_DIR "/empty-file.txt", NULL,
    };
 
-   _mongoc_linux_distro_scanner_read_generic_release_file (paths, &name,
-                                                           &version);
+   _mongoc_linux_distro_scanner_read_generic_release_file (
+      paths, &name, &version);
    ASSERT (name);
    ASSERT (version);
    ASSERT_CMPSTR ("Fedora", name);
@@ -55,31 +53,30 @@ test_read_generic_release_file (void)
    bson_free (name);
    bson_free (version);
 
-   _mongoc_linux_distro_scanner_read_generic_release_file (paths2, &name,
-                                                           &version);
+   _mongoc_linux_distro_scanner_read_generic_release_file (
+      paths2, &name, &version);
    ASSERT (name);
    ASSERT_CMPSTR ("This one just has name, not that R word", name);
    ASSERT (version == NULL);
    bson_free (name);
 
-   _mongoc_linux_distro_scanner_read_generic_release_file (paths3, &name,
-                                                           &version);
+   _mongoc_linux_distro_scanner_read_generic_release_file (
+      paths3, &name, &version);
    ASSERT (name == NULL);
    ASSERT (version == NULL);
 
-   _mongoc_linux_distro_scanner_split_line_by_release (" release ", -1,
-                                                       &name, &version);
+   _mongoc_linux_distro_scanner_split_line_by_release (
+      " release ", -1, &name, &version);
    ASSERT (name == NULL);
    ASSERT (version == NULL);
 
-   _mongoc_linux_distro_scanner_split_line_by_release ("ends with release ", -1,
-                                                       &name, &version);
+   _mongoc_linux_distro_scanner_split_line_by_release (
+      "ends with release ", -1, &name, &version);
    ASSERT_CMPSTR ("ends with", name);
    ASSERT (version == NULL);
    bson_free (name);
 
-   _mongoc_linux_distro_scanner_split_line_by_release ("", -1,
-                                                       &name, &version);
+   _mongoc_linux_distro_scanner_split_line_by_release ("", -1, &name, &version);
    ASSERT_CMPSTR (name, "");
    ASSERT (version == NULL);
    bson_free (name);
@@ -92,10 +89,14 @@ test_read_key_value_file (void)
    char *name = NULL;
    char *version = NULL;
 
-   _mongoc_linux_distro_scanner_read_key_value_file (
-      OS_RELEASE_FILE_DIR "/example-lsb-file.txt",
-      "DISTRIB_ID", -1, &name,
-      "DISTRIB_RELEASE", -1, &version);
+   _mongoc_linux_distro_scanner_read_key_value_file (OS_RELEASE_FILE_DIR
+                                                     "/example-lsb-file.txt",
+                                                     "DISTRIB_ID",
+                                                     -1,
+                                                     &name,
+                                                     "DISTRIB_RELEASE",
+                                                     -1,
+                                                     &version);
 
    ASSERT (name);
    ASSERT_CMPSTR (name, "Ubuntu");
@@ -107,8 +108,12 @@ test_read_key_value_file (void)
 
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-lsb-file-with-super-long-line.txt",
-      "DISTRIB_ID", -1, &name,
-      "DISTRIB_RELEASE", -1, &version);
+      "DISTRIB_ID",
+      -1,
+      &name,
+      "DISTRIB_RELEASE",
+      -1,
+      &version);
    ASSERT (!name);
    ASSERT (version);
    ASSERT_CMPSTR (version, "12.04");
@@ -117,8 +122,12 @@ test_read_key_value_file (void)
 
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "NAME", -1, &name,
-      "VERSION_ID", -1, &version);
+      "NAME",
+      -1,
+      &name,
+      "VERSION_ID",
+      -1,
+      &version);
 
    ASSERT_CMPSTR (name, "Fedora");
    ASSERT_CMPSTR (version, "17");
@@ -129,16 +138,24 @@ test_read_key_value_file (void)
    /* Now try some weird inputs */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "ID=", -1, &name,
-      "VERSION_ID=", -1, &version);
+      "ID=",
+      -1,
+      &name,
+      "VERSION_ID=",
+      -1,
+      &version);
 
    ASSERT (name == NULL);
    ASSERT (version == NULL);
 
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "", -1, &name,
-      "", -1, &version);
+      "",
+      -1,
+      &name,
+      "",
+      -1,
+      &version);
 
    ASSERT (name == NULL);
    ASSERT (version == NULL);
@@ -146,8 +163,12 @@ test_read_key_value_file (void)
    /* Test case where we get one but not the other */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "NAME", -1, &name,
-      "VERSION_", -1, &version);
+      "NAME",
+      -1,
+      &name,
+      "VERSION_",
+      -1,
+      &version);
 
    ASSERT_CMPSTR (name, "Fedora");
    ASSERT (version == NULL);
@@ -156,18 +177,24 @@ test_read_key_value_file (void)
    /* Case where we say the key is the whole line */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-etc-os-release.txt",
-      "NAME", -1, &name,
-      "VERSION_ID=17", -1, &version);
+      "NAME",
+      -1,
+      &name,
+      "VERSION_ID=17",
+      -1,
+      &version);
    ASSERT_CMPSTR (name, "Fedora");
    ASSERT (version == NULL);
    bson_free (name);
 
    _mongoc_linux_distro_scanner_read_key_value_file (
-         OS_RELEASE_FILE_DIR "/example-etc-os-release-ubuntu1604.txt",
-         "NAME", -1,
-         &name,
-         "VERSION_ID", -1,
-         &version);
+      OS_RELEASE_FILE_DIR "/example-etc-os-release-ubuntu1604.txt",
+      "NAME",
+      -1,
+      &name,
+      "VERSION_ID",
+      -1,
+      &version);
    ASSERT_CMPSTR ("Ubuntu", name);
    ASSERT_CMPSTR ("16.04", version);
    bson_free (name);
@@ -177,8 +204,12 @@ test_read_key_value_file (void)
    /* Case where the key is duplicated, make sure we keep first version */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-key-value-file.txt",
-      "key", -1, &name,
-      "normalkey", -1, &version);
+      "key",
+      -1,
+      &name,
+      "normalkey",
+      -1,
+      &version);
    ASSERT_CMPSTR (name, "first value");
    ASSERT_CMPSTR (version, "normalval");
    bson_free (name);
@@ -187,8 +218,12 @@ test_read_key_value_file (void)
    /* Case where the key is duplicated, make sure we keep first version */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-key-value-file.txt",
-      "a-key-without-a-value", -1, &name,
-      "normalkey", -1, &version);
+      "a-key-without-a-value",
+      -1,
+      &name,
+      "normalkey",
+      -1,
+      &version);
    ASSERT_CMPSTR (name, "");
    ASSERT_CMPSTR (version, "normalval");
    bson_free (name);
@@ -199,8 +234,12 @@ test_read_key_value_file (void)
     * (No equals, no value) */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-key-value-file.txt",
-      "just-a-key", -1, &name,
-      "normalkey", -1, &version);
+      "just-a-key",
+      -1,
+      &name,
+      "normalkey",
+      -1,
+      &version);
    ASSERT (name == NULL);
    ASSERT_CMPSTR (version, "normalval");
    bson_free (name);
@@ -210,8 +249,12 @@ test_read_key_value_file (void)
     * (we stop reading at line 100) */
    _mongoc_linux_distro_scanner_read_key_value_file (
       OS_RELEASE_FILE_DIR "/example-key-value-file.txt",
-      "lastkey", -1, &name,
-      "normalkey", -1, &version);
+      "lastkey",
+      -1,
+      &name,
+      "normalkey",
+      -1,
+      &version);
    ASSERT (name == NULL);
    ASSERT_CMPSTR (version, "normalval");
    bson_free (version);
@@ -244,11 +287,14 @@ void
 test_linux_distro_scanner_install (TestSuite *suite)
 {
 #ifdef MONGOC_OS_IS_LINUX
-   TestSuite_Add (suite, "/LinuxDistroScanner/test_read_generic_release_file",
+   TestSuite_Add (suite,
+                  "/LinuxDistroScanner/test_read_generic_release_file",
                   test_read_generic_release_file);
-   TestSuite_Add (suite, "/LinuxDistroScanner/test_read_key_value_file",
+   TestSuite_Add (suite,
+                  "/LinuxDistroScanner/test_read_key_value_file",
                   test_read_key_value_file);
-   TestSuite_Add (suite, "/LinuxDistroScanner/test_distro_scanner_reads",
+   TestSuite_Add (suite,
+                  "/LinuxDistroScanner/test_distro_scanner_reads",
                   test_distro_scanner_reads);
 #endif
 }

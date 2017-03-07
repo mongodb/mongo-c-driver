@@ -1,5 +1,6 @@
 
-void fam_sort(mongoc_collection_t *collection)
+void
+fam_sort (mongoc_collection_t *collection)
 {
    mongoc_find_and_modify_opts_t *opts;
    bson_t *update;
@@ -17,15 +18,14 @@ void fam_sort(mongoc_collection_t *collection)
    BSON_APPEND_INT32 (&sort, "age", -1);
 
    /* Bump his goal tally */
-   update = BCON_NEW ("$set", "{",
-      "oldest", BCON_BOOL (true),
-   "}");
+   update = BCON_NEW ("$set", "{", "oldest", BCON_BOOL (true), "}");
 
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_set_sort (opts, &sort);
 
-   success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
+   success = mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, &reply, &error);
 
    if (success) {
       char *str;
@@ -34,7 +34,8 @@ void fam_sort(mongoc_collection_t *collection)
       printf ("%s\n", str);
       bson_free (str);
    } else {
-      fprintf(stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
+      fprintf (
+         stderr, "Got error: \"%s\" on line %d\n", error.message, __LINE__);
    }
 
    bson_destroy (&reply);
@@ -43,4 +44,3 @@ void fam_sort(mongoc_collection_t *collection)
    bson_destroy (&query);
    mongoc_find_and_modify_opts_destroy (opts);
 }
-

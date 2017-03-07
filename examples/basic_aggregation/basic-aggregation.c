@@ -28,8 +28,7 @@
 
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_database_t *database = NULL;
    mongoc_client_t *client = NULL;
@@ -38,8 +37,7 @@ main (int   argc,
    int res = 0;
 
    if (argc != 2) {
-      fprintf (stderr, "usage: %s CONNECTION-STRING\n",
-               argv[0]);
+      fprintf (stderr, "usage: %s CONNECTION-STRING\n", argv[0]);
       fprintf (stderr,
                "the connection string can be of the following forms:\n");
       fprintf (stderr, "localhost\t\t\t\tlocal machine\n");
@@ -54,7 +52,7 @@ main (int   argc,
    mongoc_init ();
 
    if (strncmp (argv[1], "mongodb://", 10) == 0) {
-      host_and_port = bson_strdup (argv [1]);
+      host_and_port = bson_strdup (argv[1]);
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s", argv[1]);
    }

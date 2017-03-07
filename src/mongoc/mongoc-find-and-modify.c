@@ -30,12 +30,12 @@
  * Returns: A newly allocated mongoc_find_and_modify_t. This should be freed
  *    with mongoc_find_and_modify_destroy().
  */
-mongoc_find_and_modify_opts_t*
+mongoc_find_and_modify_opts_t *
 mongoc_find_and_modify_opts_new (void)
 {
    mongoc_find_and_modify_opts_t *opts = NULL;
 
-   opts = (mongoc_find_and_modify_opts_t *)bson_malloc0 (sizeof *opts);
+   opts = (mongoc_find_and_modify_opts_t *) bson_malloc0 (sizeof *opts);
    bson_init (&opts->extra);
    opts->bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
 
@@ -44,7 +44,7 @@ mongoc_find_and_modify_opts_new (void)
 
 bool
 mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
-                                      const bson_t                  *sort)
+                                      const bson_t *sort)
 {
    BSON_ASSERT (opts);
 
@@ -56,9 +56,23 @@ mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
    return false;
 }
 
+void
+mongoc_find_and_modify_opts_get_sort (const mongoc_find_and_modify_opts_t *opts,
+                                      bson_t *sort)
+{
+   BSON_ASSERT (opts);
+   BSON_ASSERT (sort);
+
+   if (opts->sort) {
+      bson_copy_to (opts->sort, sort);
+   } else {
+      bson_init (sort);
+   }
+}
+
 bool
 mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
-                                        const bson_t                  *update)
+                                        const bson_t *update)
 {
    BSON_ASSERT (opts);
 
@@ -70,9 +84,23 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
    return false;
 }
 
+void
+mongoc_find_and_modify_opts_get_update (
+   const mongoc_find_and_modify_opts_t *opts, bson_t *update)
+{
+   BSON_ASSERT (opts);
+   BSON_ASSERT (update);
+
+   if (opts->update) {
+      bson_copy_to (opts->update, update);
+   } else {
+      bson_init (update);
+   }
+}
+
 bool
 mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
-                                        const bson_t                  *fields)
+                                        const bson_t *fields)
 {
    BSON_ASSERT (opts);
 
@@ -84,9 +112,24 @@ mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
    return false;
 }
 
+void
+mongoc_find_and_modify_opts_get_fields (
+   const mongoc_find_and_modify_opts_t *opts, bson_t *fields)
+{
+   BSON_ASSERT (opts);
+   BSON_ASSERT (fields);
+
+   if (opts->fields) {
+      bson_copy_to (opts->fields, fields);
+   } else {
+      bson_init (fields);
+   }
+}
+
 bool
-mongoc_find_and_modify_opts_set_flags (mongoc_find_and_modify_opts_t        *opts,
-                                       const mongoc_find_and_modify_flags_t  flags)
+mongoc_find_and_modify_opts_set_flags (
+   mongoc_find_and_modify_opts_t *opts,
+   const mongoc_find_and_modify_flags_t flags)
 {
    BSON_ASSERT (opts);
 
@@ -94,21 +137,40 @@ mongoc_find_and_modify_opts_set_flags (mongoc_find_and_modify_opts_t        *opt
    return true;
 }
 
-bool
-mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
-                                                            bool                           bypass)
+mongoc_find_and_modify_flags_t
+mongoc_find_and_modify_opts_get_flags (
+   const mongoc_find_and_modify_opts_t *opts)
 {
    BSON_ASSERT (opts);
 
-   opts->bypass_document_validation = bypass ?
-      MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE :
-      MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+   return opts->flags;
+}
+
+bool
+mongoc_find_and_modify_opts_set_bypass_document_validation (
+   mongoc_find_and_modify_opts_t *opts, bool bypass)
+{
+   BSON_ASSERT (opts);
+
+   opts->bypass_document_validation =
+      bypass ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
+             : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
    return true;
 }
 
 bool
-mongoc_find_and_modify_opts_set_max_time_ms (mongoc_find_and_modify_opts_t *opts,
-                                             uint32_t                       max_time_ms)
+mongoc_find_and_modify_opts_get_bypass_document_validation (
+   const mongoc_find_and_modify_opts_t *opts)
+{
+   BSON_ASSERT (opts);
+
+   return opts->bypass_document_validation ==
+          MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE;
+}
+
+bool
+mongoc_find_and_modify_opts_set_max_time_ms (
+   mongoc_find_and_modify_opts_t *opts, uint32_t max_time_ms)
 {
    BSON_ASSERT (opts);
 
@@ -116,14 +178,33 @@ mongoc_find_and_modify_opts_set_max_time_ms (mongoc_find_and_modify_opts_t *opts
    return true;
 }
 
+uint32_t
+mongoc_find_and_modify_opts_get_max_time_ms (
+   const mongoc_find_and_modify_opts_t *opts)
+{
+   BSON_ASSERT (opts);
+
+   return opts->max_time_ms;
+}
+
 bool
 mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
-                                    const bson_t                  *extra)
+                                    const bson_t *extra)
 {
    BSON_ASSERT (opts);
    BSON_ASSERT (extra);
 
    return bson_concat (&opts->extra, extra);
+}
+
+void
+mongoc_find_and_modify_opts_get_extra (
+   const mongoc_find_and_modify_opts_t *opts, bson_t *extra)
+{
+   BSON_ASSERT (opts);
+   BSON_ASSERT (extra);
+
+   bson_copy_to (&opts->extra, extra);
 }
 
 /**

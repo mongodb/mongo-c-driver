@@ -11,7 +11,7 @@ endif
 TEST_PROGS = test-libmongoc
 
 
-TEST_CFLAGS =
+TEST_CFLAGS = $(MAINTAINER_CFLAGS) -Wno-format-nonliteral
 
 if OS_SOLARIS
 TEST_CFLAGS += -D_REENTRANT

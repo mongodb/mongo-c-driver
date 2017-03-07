@@ -23,14 +23,13 @@
 #define MONGOC_LOG_DOMAIN "set"
 
 mongoc_set_t *
-mongoc_set_new (size_t               nitems,
-                mongoc_set_item_dtor dtor,
-                void                *dtor_ctx)
+mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
 {
-   mongoc_set_t *set = (mongoc_set_t *)bson_malloc (sizeof (*set));
+   mongoc_set_t *set = (mongoc_set_t *) bson_malloc (sizeof (*set));
 
    set->items_allocated = nitems;
-   set->items = (mongoc_set_item_t *)bson_malloc (sizeof (*set->items) * set->items_allocated);
+   set->items = (mongoc_set_item_t *) bson_malloc (sizeof (*set->items) *
+                                                   set->items_allocated);
    set->items_len = 0;
 
    set->dtor = dtor;
@@ -40,11 +39,10 @@ mongoc_set_new (size_t               nitems,
 }
 
 static int
-mongoc_set_id_cmp (const void *a_,
-                   const void *b_)
+mongoc_set_id_cmp (const void *a_, const void *b_)
 {
-   mongoc_set_item_t *a = (mongoc_set_item_t *)a_;
-   mongoc_set_item_t *b = (mongoc_set_item_t *)b_;
+   mongoc_set_item_t *a = (mongoc_set_item_t *) a_;
+   mongoc_set_item_t *b = (mongoc_set_item_t *) b_;
 
    if (a->id == b->id) {
       return 0;
@@ -54,14 +52,12 @@ mongoc_set_id_cmp (const void *a_,
 }
 
 void
-mongoc_set_add (mongoc_set_t *set,
-                uint32_t      id,
-                void         *item)
+mongoc_set_add (mongoc_set_t *set, uint32_t id, void *item)
 {
    if (set->items_len >= set->items_allocated) {
       set->items_allocated *= 2;
-      set->items = (mongoc_set_item_t *)bson_realloc (set->items,
-                                 sizeof (*set->items) * set->items_allocated);
+      set->items = (mongoc_set_item_t *) bson_realloc (
+         set->items, sizeof (*set->items) * set->items_allocated);
    }
 
    set->items[set->items_len].id = id;
@@ -70,14 +66,13 @@ mongoc_set_add (mongoc_set_t *set,
    set->items_len++;
 
    if (set->items_len > 1 && set->items[set->items_len - 2].id > id) {
-      qsort (set->items, set->items_len, sizeof (*set->items),
-             mongoc_set_id_cmp);
+      qsort (
+         set->items, set->items_len, sizeof (*set->items), mongoc_set_id_cmp);
    }
 }
 
 void
-mongoc_set_rm (mongoc_set_t *set,
-               uint32_t      id)
+mongoc_set_rm (mongoc_set_t *set, uint32_t id)
 {
    mongoc_set_item_t *ptr;
    mongoc_set_item_t key;
@@ -85,16 +80,17 @@ mongoc_set_rm (mongoc_set_t *set,
 
    key.id = id;
 
-   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
-                  mongoc_set_id_cmp);
+   ptr = (mongoc_set_item_t *) bsearch (
+      &key, set->items, set->items_len, sizeof (key), mongoc_set_id_cmp);
 
    if (ptr) {
-      set->dtor(ptr->item, set->dtor_ctx);
+      set->dtor (ptr->item, set->dtor_ctx);
 
       i = ptr - set->items;
 
       if (i != set->items_len - 1) {
-         memmove (set->items + i, set->items + i + 1,
+         memmove (set->items + i,
+                  set->items + i + 1,
                   (set->items_len - (i + 1)) * sizeof (key));
       }
 
@@ -103,23 +99,21 @@ mongoc_set_rm (mongoc_set_t *set,
 }
 
 void *
-mongoc_set_get (mongoc_set_t *set,
-                uint32_t      id)
+mongoc_set_get (mongoc_set_t *set, uint32_t id)
 {
    mongoc_set_item_t *ptr;
    mongoc_set_item_t key;
 
    key.id = id;
 
-   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
-                  mongoc_set_id_cmp);
+   ptr = (mongoc_set_item_t *) bsearch (
+      &key, set->items, set->items_len, sizeof (key), mongoc_set_id_cmp);
 
    return ptr ? ptr->item : NULL;
 }
 
 void *
-mongoc_set_get_item (mongoc_set_t *set,
-                     int           idx)
+mongoc_set_get_item (mongoc_set_t *set, int idx)
 {
    BSON_ASSERT (set);
    BSON_ASSERT (idx < set->items_len);
@@ -129,9 +123,7 @@ mongoc_set_get_item (mongoc_set_t *set,
 
 
 void *
-mongoc_set_get_item_and_id (mongoc_set_t *set,
-                            int           idx,
-                            uint32_t     *id /* OUT */)
+mongoc_set_get_item_and_id (mongoc_set_t *set, int idx, uint32_t *id /* OUT */)
 {
    BSON_ASSERT (set);
    BSON_ASSERT (id);
@@ -149,7 +141,7 @@ mongoc_set_destroy (mongoc_set_t *set)
    int i;
 
    for (i = 0; i < set->items_len; i++) {
-      set->dtor(set->items[i].item, set->dtor_ctx);
+      set->dtor (set->items[i].item, set->dtor_ctx);
    }
 
    bson_free (set->items);
@@ -157,9 +149,7 @@ mongoc_set_destroy (mongoc_set_t *set)
 }
 
 void
-mongoc_set_for_each (mongoc_set_t            *set,
-                     mongoc_set_for_each_cb_t cb,
-                     void                    *ctx)
+mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
    size_t i;
    mongoc_set_item_t *old_set;
@@ -167,7 +157,12 @@ mongoc_set_for_each (mongoc_set_t            *set,
 
    items_len = set->items_len;
 
-   old_set = (mongoc_set_item_t *)bson_malloc (sizeof (*old_set) * items_len);
+   /* prevent undefined behavior of memcpy(NULL) */
+   if (items_len == 0) {
+      return;
+   }
+
+   old_set = (mongoc_set_item_t *) bson_malloc (sizeof (*old_set) * items_len);
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
 
    for (i = 0; i < items_len; i++) {
@@ -181,9 +176,7 @@ mongoc_set_for_each (mongoc_set_t            *set,
 
 
 static mongoc_set_item_t *
-_mongoc_set_find (mongoc_set_t            *set,
-                  mongoc_set_for_each_cb_t cb,
-                  void                    *ctx)
+_mongoc_set_find (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
    size_t i;
    size_t items_len;
@@ -203,9 +196,7 @@ _mongoc_set_find (mongoc_set_t            *set,
 
 
 void *
-mongoc_set_find_item (mongoc_set_t            *set,
-                      mongoc_set_for_each_cb_t cb,
-                      void                    *ctx)
+mongoc_set_find_item (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
    mongoc_set_item_t *item;
 
@@ -218,9 +209,7 @@ mongoc_set_find_item (mongoc_set_t            *set,
 
 
 uint32_t
-mongoc_set_find_id (mongoc_set_t            *set,
-                    mongoc_set_for_each_cb_t cb,
-                    void                    *ctx)
+mongoc_set_find_id (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
    mongoc_set_item_t *item;
 

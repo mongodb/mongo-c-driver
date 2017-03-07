@@ -7,8 +7,7 @@
 #include <stdio.h>
 
 
-typedef struct
-{
+typedef struct {
    int server_changed_events;
    int server_opening_events;
    int server_closed_events;
@@ -33,11 +32,10 @@ server_changed (const mongoc_apm_server_changed_t *event)
    prev_sd = mongoc_apm_server_changed_get_previous_description (event);
    new_sd = mongoc_apm_server_changed_get_new_description (event);
 
-   printf (
-      "server changed: %s %s -> %s\n",
-      mongoc_apm_server_changed_get_host (event)->host_and_port,
-      mongoc_server_description_type (prev_sd),
-      mongoc_server_description_type (new_sd));
+   printf ("server changed: %s %s -> %s\n",
+           mongoc_apm_server_changed_get_host (event)->host_and_port,
+           mongoc_server_description_type (prev_sd),
+           mongoc_server_description_type (new_sd));
 }
 
 
@@ -147,20 +145,20 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
       (stats_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    context->heartbeat_started_events++;
 
-   printf (
-      "%s heartbeat started\n",
-      mongoc_apm_server_heartbeat_started_get_host (event)->host_and_port);
+   printf ("%s heartbeat started\n",
+           mongoc_apm_server_heartbeat_started_get_host (event)->host_and_port);
 }
 
 
 static void
-server_heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
+server_heartbeat_succeeded (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    stats_t *context;
    char *reply;
 
-   context = (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (
-      event);
+   context =
+      (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    context->heartbeat_succeeded_events++;
 
    reply = bson_as_json (
@@ -185,20 +183,18 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
    context->heartbeat_failed_events++;
    mongoc_apm_server_heartbeat_failed_get_error (event, &error);
 
-   printf (
-      "%s heartbeat failed: %s\n",
-      mongoc_apm_server_heartbeat_failed_get_host (event)->host_and_port,
-      error.message);
+   printf ("%s heartbeat failed: %s\n",
+           mongoc_apm_server_heartbeat_failed_get_host (event)->host_and_port,
+           error.message);
 }
 
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_apm_callbacks_t *cbs;
-   stats_t stats = { 0 };
+   stats_t stats = {0};
    const char *uristr = "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
@@ -207,7 +203,7 @@ main (int   argc,
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv [1];
+      uristr = argv[1];
    }
 
    client = mongoc_client_new (uristr);
@@ -229,8 +225,8 @@ main (int   argc,
    mongoc_apm_set_server_heartbeat_succeeded_cb (cbs,
                                                  server_heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb (cbs, server_heartbeat_failed);
-   mongoc_client_set_apm_callbacks (client, cbs,
-                                    (void *) &stats /* context pointer */);
+   mongoc_client_set_apm_callbacks (
+      client, cbs, (void *) &stats /* context pointer */);
 
    /* the driver connects on demand to perform first operation */
    BSON_APPEND_INT32 (&cmd, "buildinfo", 1);

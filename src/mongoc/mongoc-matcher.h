@@ -17,8 +17,8 @@
 #ifndef MONGOC_MATCHER_H
 #define MONGOC_MATCHER_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -30,14 +30,14 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_matcher_t mongoc_matcher_t;
 
 
-BSON_API
-mongoc_matcher_t *mongoc_matcher_new     (const bson_t           *query,
-                                          bson_error_t           *error)      BSON_GNUC_DEPRECATED;
-BSON_API
-bool              mongoc_matcher_match   (const mongoc_matcher_t *matcher,
-                                          const bson_t           *document)   BSON_GNUC_DEPRECATED;
-BSON_API
-void              mongoc_matcher_destroy (mongoc_matcher_t       *matcher)    BSON_GNUC_DEPRECATED;
+BSON_EXPORT (mongoc_matcher_t *)
+mongoc_matcher_new (const bson_t *query,
+                    bson_error_t *error) BSON_GNUC_DEPRECATED;
+BSON_EXPORT (bool)
+mongoc_matcher_match (const mongoc_matcher_t *matcher,
+                      const bson_t *document) BSON_GNUC_DEPRECATED;
+BSON_EXPORT (void)
+mongoc_matcher_destroy (mongoc_matcher_t *matcher) BSON_GNUC_DEPRECATED;
 
 
 BSON_END_DECLS

@@ -17,7 +17,7 @@
 #ifndef MONGOC_MEMCMP_PRIVATE_H
 #define MONGOC_MEMCMP_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -30,7 +30,7 @@
  * It returns 0 if the keys are equal, and -1 if they differ.
  * This function is not designed for lexicographical comparisons.
  */
-int mongoc_memcmp(const void * const b1_, const void * const b2_, size_t len);
+int
+mongoc_memcmp (const void *const b1_, const void *const b2_, size_t len);
 
 #endif /* MONGOC_MEMCMP_PRIVATE_H */
-

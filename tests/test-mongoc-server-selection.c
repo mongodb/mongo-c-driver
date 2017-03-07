@@ -22,22 +22,23 @@ test_rtt_calculation_cb (bson_t *test)
 
    BSON_ASSERT (test);
 
-   description = (mongoc_server_description_t *)bson_malloc0(sizeof *description);
-   mongoc_server_description_init(description, "localhost:27017", 1);
+   description =
+      (mongoc_server_description_t *) bson_malloc0 (sizeof *description);
+   mongoc_server_description_init (description, "localhost:27017", 1);
 
    /* parse RTT into server description */
-   assert(bson_iter_init_find(&iter, test, "avg_rtt_ms"));
-   description->round_trip_time_msec = bson_iter_int64(&iter);
+   assert (bson_iter_init_find (&iter, test, "avg_rtt_ms"));
+   description->round_trip_time_msec = bson_iter_int64 (&iter);
 
    /* update server description with new rtt */
-   assert(bson_iter_init_find(&iter, test, "new_rtt_ms"));
-   mongoc_server_description_update_rtt(description, bson_iter_int64(&iter));
+   assert (bson_iter_init_find (&iter, test, "new_rtt_ms"));
+   mongoc_server_description_update_rtt (description, bson_iter_int64 (&iter));
 
    /* ensure new RTT was calculated correctly */
-   assert(bson_iter_init_find(&iter, test, "new_avg_rtt"));
-   assert(description->round_trip_time_msec == bson_iter_int64(&iter));
+   assert (bson_iter_init_find (&iter, test, "new_avg_rtt"));
+   assert (description->round_trip_time_msec == bson_iter_int64 (&iter));
 
-   mongoc_server_description_destroy(description);
+   mongoc_server_description_destroy (description);
 }
 
 
@@ -55,15 +56,15 @@ test_all_spec_tests (TestSuite *suite)
 
    /* RTT calculation */
    ASSERT (realpath (JSON_DIR "/server_selection/rtt", resolved));
-   install_json_test_suite(suite, resolved, &test_rtt_calculation_cb);
+   install_json_test_suite (suite, resolved, &test_rtt_calculation_cb);
 
    /* SS logic */
    ASSERT (realpath (JSON_DIR "/server_selection/server_selection", resolved));
-   install_json_test_suite(suite, resolved, &test_server_selection_logic_cb);
+   install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
 }
 
 void
 test_server_selection_install (TestSuite *suite)
 {
-   test_all_spec_tests(suite);
+   test_all_spec_tests (suite);
 }

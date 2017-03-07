@@ -21,8 +21,7 @@
 
 
 static bool
-mongoc_dump_mkdir_p (const char *path,
-int         mode)
+mongoc_dump_mkdir_p (const char *path, int mode)
 {
 #ifdef _WIN32
    if (0 != _access (path, 0)) {
@@ -44,8 +43,8 @@ int         mode)
 
 static int
 mongoc_dump_collection (mongoc_client_t *client,
-                        const char      *database,
-                        const char      *collection)
+                        const char *database,
+                        const char *collection)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
@@ -77,9 +76,9 @@ mongoc_dump_collection (mongoc_client_t *client,
    cursor = mongoc_collection_find_with_opts (col, &query, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      if (BSON_UNLIKELY (doc->len != fwrite (bson_get_data (doc), 1, doc->len, stream))) {
-         fprintf (stderr, "Failed to write %u bytes to %s\n",
-                  doc->len, path);
+      if (BSON_UNLIKELY (doc->len !=
+                         fwrite (bson_get_data (doc), 1, doc->len, stream))) {
+         fprintf (stderr, "Failed to write %u bytes to %s\n", doc->len, path);
          ret = EXIT_FAILURE;
          goto cleanup;
       }
@@ -102,8 +101,8 @@ cleanup:
 
 static int
 mongoc_dump_database (mongoc_client_t *client,
-                      const char      *database,
-                      const char      *collection)
+                      const char *database,
+                      const char *collection)
 {
    mongoc_database_t *db;
    bson_error_t error;
@@ -129,8 +128,8 @@ mongoc_dump_database (mongoc_client_t *client,
 
    db = mongoc_client_get_database (client, database);
    str = mongoc_database_get_collection_names (db, &error);
-   for (i = 0; str [i]; i++) {
-      if (EXIT_SUCCESS != mongoc_dump_collection (client, database, str [i])) {
+   for (i = 0; str[i]; i++) {
+      if (EXIT_SUCCESS != mongoc_dump_collection (client, database, str[i])) {
          ret = EXIT_FAILURE;
          goto cleanup;
       }
@@ -146,8 +145,8 @@ cleanup:
 
 static int
 mongoc_dump (mongoc_client_t *client,
-             const char      *database,
-             const char      *collection)
+             const char *database,
+             const char *collection)
 {
    bson_error_t error;
    char **str;
@@ -163,13 +162,12 @@ mongoc_dump (mongoc_client_t *client,
    }
 
    if (!(str = mongoc_client_get_database_names (client, &error))) {
-      fprintf (stderr, "Failed to fetch database names: %s\n",
-               error.message);
+      fprintf (stderr, "Failed to fetch database names: %s\n", error.message);
       return EXIT_FAILURE;
    }
 
-   for (i = 0; str [i]; i++) {
-      if (EXIT_SUCCESS != mongoc_dump_database (client, str [i], NULL)) {
+   for (i = 0; str[i]; i++) {
+      if (EXIT_SUCCESS != mongoc_dump_database (client, str[i], NULL)) {
          bson_strfreev (str);
          return EXIT_FAILURE;
       }
@@ -185,22 +183,21 @@ static void
 usage (FILE *stream)
 {
    fprintf (stream,
-"Usage: mongoc-dump [OPTIONS]\n"
-"\n"
-"Options:\n"
-"\n"
-"  -h HOST      Optional hostname to connect to [127.0.0.1].\n"
-"  -p PORT      Optional port to connect to [27017].\n"
-"  -d DBNAME    Optional database name to dump.\n"
-"  -c COLNAME   Optional collection name to dump.\n"
-"  --ssl        Use SSL when connecting to server.\n"
-"\n");
+            "Usage: mongoc-dump [OPTIONS]\n"
+            "\n"
+            "Options:\n"
+            "\n"
+            "  -h HOST      Optional hostname to connect to [127.0.0.1].\n"
+            "  -p PORT      Optional port to connect to [27017].\n"
+            "  -d DBNAME    Optional database name to dump.\n"
+            "  -c COLNAME   Optional collection name to dump.\n"
+            "  --ssl        Use SSL when connecting to server.\n"
+            "\n");
 }
 
 
 int
-main (int argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    const char *collection = NULL;
@@ -215,25 +212,25 @@ main (int argc,
    mongoc_init ();
 
    for (i = 1; i < argc; i++) {
-      if (0 == strcmp (argv [i], "-c") && ((i + 1) < argc)) {
-         collection = argv [++i];
-      } else if (0 == strcmp (argv [i], "-d") && ((i + 1) < argc)) {
-         database = argv [++i];
-      } else if (0 == strcmp (argv [i], "--help")) {
+      if (0 == strcmp (argv[i], "-c") && ((i + 1) < argc)) {
+         collection = argv[++i];
+      } else if (0 == strcmp (argv[i], "-d") && ((i + 1) < argc)) {
+         database = argv[++i];
+      } else if (0 == strcmp (argv[i], "--help")) {
          usage (stdout);
          return EXIT_SUCCESS;
-      } else if (0 == strcmp (argv [i], "-h") && ((i + 1) < argc)) {
-         host = argv [++i];
-      } else if (0 == strcmp (argv [i], "--ssl")) {
+      } else if (0 == strcmp (argv[i], "-h") && ((i + 1) < argc)) {
+         host = argv[++i];
+      } else if (0 == strcmp (argv[i], "--ssl")) {
          ssl = true;
-      } else if (0 == strcmp (argv [i], "-p") && ((i + 1) < argc)) {
-         port = atoi (argv [++i]);
+      } else if (0 == strcmp (argv[i], "-p") && ((i + 1) < argc)) {
+         port = atoi (argv[++i]);
          if (!port) {
-            fprintf (stderr, "Invalid port \"%s\"", argv [i]);
+            fprintf (stderr, "Invalid port \"%s\"", argv[i]);
             return EXIT_FAILURE;
          }
       } else {
-         fprintf (stderr, "Unknown argument \"%s\"\n", argv [i]);
+         fprintf (stderr, "Unknown argument \"%s\"\n", argv[i]);
          return EXIT_FAILURE;
       }
    }

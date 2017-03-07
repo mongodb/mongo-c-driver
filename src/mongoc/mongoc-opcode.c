@@ -38,7 +38,7 @@ _mongoc_opcode_needs_primary (mongoc_opcode_t opcode)
 {
    bool needs_primary = false;
 
-   switch(opcode) {
+   switch (opcode) {
    case MONGOC_OPCODE_KILL_CURSORS:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_MSG:
@@ -46,10 +46,10 @@ _mongoc_opcode_needs_primary (mongoc_opcode_t opcode)
       needs_primary = false;
       break;
    case MONGOC_OPCODE_QUERY:
-      /* In some cases, queries may be run against secondaries.
-         However, more information is needed to make that decision.
-         Callers with access to read preferences and query flags may
-         route queries to a secondary when appropriate */
+   /* In some cases, queries may be run against secondaries.
+      However, more information is needed to make that decision.
+      Callers with access to read preferences and query flags may
+      route queries to a secondary when appropriate */
    case MONGOC_OPCODE_DELETE:
    case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_UPDATE:

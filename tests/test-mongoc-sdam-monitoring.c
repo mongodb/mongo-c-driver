@@ -15,10 +15,9 @@
 #endif
 
 
-typedef struct
-{
-   bson_t     events;
-   uint32_t   n_events;
+typedef struct {
+   bson_t events;
+   uint32_t n_events;
    bson_oid_t topology_id;
 } context_t;
 
@@ -32,8 +31,7 @@ context_init (context_t *context)
 }
 
 static void
-context_append (context_t *context,
-                bson_t    *event)
+context_append (context_t *context, bson_t *event)
 {
    char str[16];
    const char *key;
@@ -53,9 +51,7 @@ context_destroy (context_t *context)
 }
 
 static void
-append_array (bson_t       *bson,
-              const char   *key,
-              const bson_t *array)
+append_array (bson_t *bson, const char *key, const bson_t *array)
 {
    if (array->len) {
       BSON_APPEND_ARRAY (bson, key, array);
@@ -67,8 +63,7 @@ append_array (bson_t       *bson,
 }
 
 static void
-sd_to_bson (const mongoc_server_description_t *sd,
-            bson_t                            *bson)
+sd_to_bson (const mongoc_server_description_t *sd, bson_t *bson)
 {
    const mongoc_host_list_t *host_list;
 
@@ -89,14 +84,11 @@ sd_to_bson (const mongoc_server_description_t *sd,
       BSON_APPEND_UTF8 (bson, "setName", sd->set_name);
    }
 
-   BSON_APPEND_UTF8 (
-      bson, "type",
-      mongoc_server_description_type (sd));
+   BSON_APPEND_UTF8 (bson, "type", mongoc_server_description_type (sd));
 }
 
 static void
-td_to_bson (const mongoc_topology_description_t *td,
-            bson_t                              *bson)
+td_to_bson (const mongoc_topology_description_t *td, bson_t *bson)
 {
    size_t i;
    bson_t servers = BSON_INITIALIZER;
@@ -112,8 +104,8 @@ td_to_bson (const mongoc_topology_description_t *td,
    }
 
    bson_init (bson);
-   BSON_APPEND_UTF8 (bson, "topologyType",
-                     mongoc_topology_description_type (td));
+   BSON_APPEND_UTF8 (
+      bson, "topologyType", mongoc_topology_description_type (td));
 
    if (td->set_name) {
       BSON_APPEND_UTF8 (bson, "setName", td->set_name);
@@ -142,15 +134,19 @@ server_changed (const mongoc_apm_server_changed_t *event)
    host_and_port = mongoc_apm_server_changed_get_host (event)->host_and_port;
    sd_to_bson (mongoc_apm_server_changed_get_previous_description (event),
                &prev_sd);
-   sd_to_bson (mongoc_apm_server_changed_get_new_description (event),
-               &new_sd);
+   sd_to_bson (mongoc_apm_server_changed_get_new_description (event), &new_sd);
 
    context_append (ctx,
-                   BCON_NEW ("server_description_changed_event", "{",
-                             "topologyId", BCON_UTF8 ("42"),
-                             "address", BCON_UTF8 (host_and_port),
-                             "previousDescription", BCON_DOCUMENT (&prev_sd),
-                             "newDescription", BCON_DOCUMENT (&new_sd),
+                   BCON_NEW ("server_description_changed_event",
+                             "{",
+                             "topologyId",
+                             BCON_UTF8 ("42"),
+                             "address",
+                             BCON_UTF8 (host_and_port),
+                             "previousDescription",
+                             BCON_DOCUMENT (&prev_sd),
+                             "newDescription",
+                             BCON_DOCUMENT (&new_sd),
                              "}"));
 
    bson_destroy (&prev_sd);
@@ -171,9 +167,12 @@ server_opening (const mongoc_apm_server_opening_t *event)
 
    host_and_port = mongoc_apm_server_opening_get_host (event)->host_and_port;
    context_append (ctx,
-                   BCON_NEW ("server_opening_event", "{",
-                             "address", BCON_UTF8 (host_and_port),
-                             "topologyId", BCON_UTF8 ("42"),
+                   BCON_NEW ("server_opening_event",
+                             "{",
+                             "address",
+                             BCON_UTF8 (host_and_port),
+                             "topologyId",
+                             BCON_UTF8 ("42"),
                              "}"));
 }
 
@@ -191,9 +190,12 @@ server_closed (const mongoc_apm_server_closed_t *event)
 
    host_and_port = mongoc_apm_server_closed_get_host (event)->host_and_port;
    context_append (ctx,
-                   BCON_NEW ("server_closed_event", "{",
-                             "address", BCON_UTF8 (host_and_port),
-                             "topologyId", BCON_UTF8 ("42"),
+                   BCON_NEW ("server_closed_event",
+                             "{",
+                             "address",
+                             BCON_UTF8 (host_and_port),
+                             "topologyId",
+                             BCON_UTF8 ("42"),
                              "}"));
 }
 
@@ -216,10 +218,14 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
                &new_td);
 
    context_append (ctx,
-                   BCON_NEW ("topology_description_changed_event", "{",
-                             "newDescription", BCON_DOCUMENT (&new_td),
-                             "previousDescription", BCON_DOCUMENT (&prev_td),
-                             "topologyId", BCON_UTF8 ("42"),
+                   BCON_NEW ("topology_description_changed_event",
+                             "{",
+                             "newDescription",
+                             BCON_DOCUMENT (&new_td),
+                             "previousDescription",
+                             BCON_DOCUMENT (&prev_td),
+                             "topologyId",
+                             BCON_UTF8 ("42"),
                              "}"));
 
    bson_destroy (&prev_td);
@@ -238,9 +244,10 @@ topology_opening (const mongoc_apm_topology_opening_t *event)
 
    ctx = (context_t *) mongoc_apm_topology_opening_get_context (event);
    mongoc_apm_topology_opening_get_topology_id (event, &ctx->topology_id);
-   context_append (ctx, BCON_NEW ("topology_opening_event", "{",
-                                  "topologyId", BCON_UTF8 ("42"),
-                                  "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "topology_opening_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 static void
@@ -252,9 +259,10 @@ topology_closed (const mongoc_apm_topology_closed_t *event)
    ctx = (context_t *) mongoc_apm_topology_closed_get_context (event);
    mongoc_apm_topology_closed_get_topology_id (event, &topology_id);
    ASSERT (bson_oid_equal (&topology_id, &ctx->topology_id));
-   context_append (ctx, BCON_NEW ("topology_closed_event", "{",
-                                  "topologyId", BCON_UTF8 ("42"),
-                                  "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "topology_closed_event", "{", "topologyId", BCON_UTF8 ("42"), "}"));
 }
 
 /* no standard tests in the specs repo for heartbeat events, so invent some */
@@ -266,9 +274,12 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    host = mongoc_apm_server_heartbeat_started_get_host (event);
-   context_append (ctx, BCON_NEW ("heartbeat_started_event", "{",
-                                  "host", BCON_UTF8 (host->host_and_port),
-                                  "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_started_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "}"));
 }
 
 static void
@@ -278,11 +289,15 @@ server_heartbeat_succeeded (
    context_t *ctx;
    const mongoc_host_list_t *host;
 
-   ctx = (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   ctx =
+      (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    host = mongoc_apm_server_heartbeat_succeeded_get_host (event);
-   context_append (ctx, BCON_NEW ("heartbeat_succeeded_event", "{",
-                                  "host", BCON_UTF8 (host->host_and_port),
-                                  "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_succeeded_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "}"));
 }
 
 static void
@@ -293,9 +308,12 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    host = mongoc_apm_server_heartbeat_failed_get_host (event);
-   context_append (ctx, BCON_NEW ("heartbeat_failed_event", "{",
-                                  "host", BCON_UTF8 (host->host_and_port),
-                                  "}"));
+   context_append (ctx,
+                   BCON_NEW ("heartbeat_failed_event",
+                             "{",
+                             "host",
+                             BCON_UTF8 (host->host_and_port),
+                             "}"));
 }
 
 static mongoc_apm_callbacks_t *
@@ -316,7 +334,7 @@ topology_event_callbacks (void)
 
 static void
 client_set_topology_event_callbacks (mongoc_client_t *client,
-                                context_t       *context)
+                                     context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -327,7 +345,7 @@ client_set_topology_event_callbacks (mongoc_client_t *client,
 
 static void
 pool_set_topology_event_callbacks (mongoc_client_pool_t *pool,
-                              context_t            *context)
+                                   context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -354,7 +372,7 @@ heartbeat_event_callbacks (void)
 
 static void
 client_set_heartbeat_event_callbacks (mongoc_client_t *client,
-                                     context_t       *context)
+                                      context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -365,7 +383,7 @@ client_set_heartbeat_event_callbacks (mongoc_client_t *client,
 
 static void
 pool_set_heartbeat_event_callbacks (mongoc_client_pool_t *pool,
-                                   context_t            *context)
+                                    context_t *context)
 {
    mongoc_apm_callbacks_t *callbacks;
 
@@ -427,7 +445,8 @@ test_sdam_monitoring_cb (bson_t *test)
             bson_iter_bson (&outcome_iter, &events_expected);
             check_json_apm_events (&context.events, &events_expected);
          } else {
-            fprintf (stderr, "ERROR: unparsed test field %s\n",
+            fprintf (stderr,
+                     "ERROR: unparsed test field %s\n",
                      bson_iter_key (&outcome_iter));
             assert (false);
          }
@@ -479,8 +498,8 @@ _test_topology_events (bool pooled)
       client_set_topology_event_callbacks (client, &context);
    }
 
-   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"),
-                                     NULL, NULL, &error);
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    if (pooled) {
@@ -510,21 +529,20 @@ _test_topology_events (bool pooled)
    context_destroy (&context);
 }
 
-static void 
+static void
 test_topology_events_single (void)
 {
    _test_topology_events (false);
 }
 
-static void 
+static void
 test_topology_events_pooled (void)
 {
    _test_topology_events (true);
 }
 
 static bool
-responder (request_t *request,
-           void      *data)
+responder (request_t *request, void *data)
 {
    if (!strcmp (request->command_name, "foo")) {
       mock_server_replies_simple (request, "{'ok': 1}");
@@ -536,8 +554,7 @@ responder (request_t *request,
 }
 
 static void
-_test_heartbeat_events (bool pooled,
-                        bool succeeded)
+_test_heartbeat_events (bool pooled, bool succeeded)
 {
    context_t context;
    mock_server_t *server;
@@ -568,9 +585,8 @@ _test_heartbeat_events (bool pooled,
    }
 
    /* trigger "ismaster" handshake */
-   future = future_client_command_simple (client, "admin",
-                                          tmp_bson ("{'foo': 1}"),
-                                          NULL, NULL, &error);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* topology scanner calls ismaster once */
    request = mock_server_receives_ismaster (server);

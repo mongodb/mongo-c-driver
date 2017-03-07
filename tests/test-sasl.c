@@ -16,7 +16,9 @@
 
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <mongoc-sasl-private.h>
+#endif
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -43,18 +45,17 @@ should_run_gssapi_kerberos (void)
 }
 
 
-struct closure_t
-{
+struct closure_t {
    mongoc_client_pool_t *pool;
-   int                   finished;
-   mongoc_mutex_t        mutex;
+   int finished;
+   mongoc_mutex_t mutex;
 };
 
 
 static void *
 gssapi_kerberos_worker (void *data)
 {
-   struct closure_t *closure = (struct closure_t *)data;
+   struct closure_t *closure = (struct closure_t *) data;
    mongoc_client_pool_t *pool = closure->pool;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -66,15 +67,9 @@ gssapi_kerberos_worker (void *data)
 
    for (i = 0; i < NLOOPS; i++) {
       client = mongoc_client_pool_pop (pool);
-      collection = mongoc_client_get_collection (client, "test", "collection");
-      cursor = mongoc_collection_find (collection,
-                                       MONGOC_QUERY_NONE,
-                                       0,
-                                       0,
-                                       0,
-                                       &query,
-                                       NULL,
-                                       NULL);
+      collection = mongoc_client_get_collection (client, "kerberos", "test");
+      cursor = mongoc_collection_find (
+         collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
 
       if (!mongoc_cursor_next (cursor, &doc) &&
           mongoc_cursor_error (cursor, &error)) {
@@ -104,7 +99,7 @@ test_gssapi_kerberos (void *context)
    char *user = test_framework_getenv (GSSAPI_USER);
    char *uri_str;
    mongoc_uri_t *uri;
-   struct closure_t closure = { 0 };
+   struct closure_t closure = {0};
    int i;
    mongoc_thread_t threads[NTHREADS];
 
@@ -114,15 +109,15 @@ test_gssapi_kerberos (void *context)
 
    uri_str = bson_strdup_printf (
       "mongodb://%s@%s/?authMechanism=GSSAPI&serverselectiontimeoutms=1000",
-      user, host);
+      user,
+      host);
 
    uri = mongoc_uri_new (uri_str);
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      mongoc_thread_create (&threads[i],
-                            gssapi_kerberos_worker,
-                            (void *)&closure);
+      mongoc_thread_create (
+         &threads[i], gssapi_kerberos_worker, (void *) &closure);
    }
 
    for (i = 0; i < NTHREADS; i++) {
@@ -142,6 +137,7 @@ test_gssapi_kerberos (void *context)
 }
 
 
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 static void
 test_sasl_properties (void)
 {
@@ -176,6 +172,7 @@ test_sasl_properties (void)
    _mongoc_sasl_destroy (&sasl);
    mongoc_uri_destroy (uri);
 }
+#endif
 
 
 void
@@ -187,5 +184,7 @@ test_sasl_install (TestSuite *suite)
                       NULL,
                       NULL,
                       should_run_gssapi_kerberos);
+#ifdef MONGOC_ENABLE_SASL_CYRUS
    TestSuite_Add (suite, "/SASL/properties", test_sasl_properties);
+#endif
 }

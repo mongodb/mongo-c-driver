@@ -24,63 +24,59 @@
 #include "mongoc-thread-private.h"
 
 #if defined(__APPLE__)
-# include <mach/mach_time.h>
+#include <mach/mach_time.h>
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #if !defined(_WIN32)
-# include <sys/types.h>
-# include <inttypes.h>
-# include <sys/utsname.h>
-# include <sys/wait.h>
-# include <unistd.h>
-# include <sys/time.h>
+#include <sys/types.h>
+#include <inttypes.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <sys/time.h>
 
 #else
-# include <windows.h>
+#include <windows.h>
 #endif
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)
-# include <time.h>
-# include <sys/time.h>
+#include <time.h>
+#include <sys/time.h>
 #endif
 
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
 
-static mongoc_once_t   once = MONGOC_ONCE_INIT;
-static mongoc_mutex_t  gTestMutex;
-static TestSuite      *gTestSuite;
+static mongoc_once_t once = MONGOC_ONCE_INIT;
+static mongoc_mutex_t gTestMutex;
+static TestSuite *gTestSuite;
 
 
-#define TEST_VERBOSE     (1 << 0)
-#define TEST_NOFORK      (1 << 1)
-#define TEST_HELPONLY    (1 << 2)
+#define TEST_VERBOSE (1 << 0)
+#define TEST_NOFORK (1 << 1)
+#define TEST_HELPONLY (1 << 2)
 #define TEST_DEBUGOUTPUT (1 << 3)
-#define TEST_TRACE       (1 << 4)
-#define TEST_VALGRIND    (1 << 5)
+#define TEST_TRACE (1 << 4)
+#define TEST_VALGRIND (1 << 5)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
 
 #if !defined(BSON_HAVE_TIMESPEC)
-struct timespec
-{
+struct timespec {
    time_t tv_sec;
-   long   tv_nsec;
+   long tv_nsec;
 };
 #endif
 
 
 #if defined(_WIN32) && !defined(BSON_HAVE_SNPRINTF)
 static int
-snprintf (char *str,
-          size_t size,
-          const char *format,
-          ...)
+snprintf (char *str, size_t size, const char *format, ...)
 {
    int r = -1;
    va_list ap;
@@ -100,8 +96,7 @@ snprintf (char *str,
 
 
 static void
-test_msg (const char *format,
-          ...)
+test_msg (const char *format, ...)
 {
    va_list ap;
 
@@ -114,8 +109,7 @@ test_msg (const char *format,
 
 
 void
-test_error (const char *format,
-            ...)
+test_error (const char *format, ...)
 {
    va_list ap;
 
@@ -133,16 +127,16 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 #if defined(BSON_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
    clock_gettime (CLOCK_MONOTONIC, ts);
 #elif defined(__APPLE__)
-   static mach_timebase_info_data_t info = { 0 };
+   static mach_timebase_info_data_t info = {0};
    static double ratio;
    uint64_t atime;
 
    if (!info.denom) {
-      mach_timebase_info(&info);
+      mach_timebase_info (&info);
       ratio = info.numer / info.denom;
    }
 
-   atime = mach_absolute_time() * ratio;
+   atime = mach_absolute_time () * ratio;
    ts->tv_sec = atime * 1e-9;
    ts->tv_nsec = atime - (ts->tv_sec * 1e9);
 #elif defined(_WIN32)
@@ -152,8 +146,13 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 
    /* milliseconds -> microseconds -> nanoseconds*/
    ts->tv_nsec = (ticks % 1000) * 1000 * 1000;
+#elif defined(__hpux__)
+   uint64_t nsec = gethrtime ();
+
+   ts->tv_sec = (int64_t) (nsec / 1e9);
+   ts->tv_nsec = (int32_t) (nsec - (double) ts->tv_sec * 1e9);
 #else
-# warning "Monotonic clock is not yet supported on your platform."
+#warning "Monotonic clock is not yet supported on your platform."
 #endif
 }
 
@@ -194,27 +193,24 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
       test->seed = seed;
       return;
    } else {
-      test->seed = (unsigned)time (NULL) * (unsigned)getpid ();
+      test->seed = (unsigned) time (NULL) * (unsigned) getpid ();
    }
 #else
-   test->seed = (unsigned)time (NULL);
+   test->seed = (unsigned) time (NULL);
 #endif
 }
 
 
-static MONGOC_ONCE_FUN(_test_suite_ensure_mutex_once)
+static MONGOC_ONCE_FUN (_test_suite_ensure_mutex_once)
 {
-   mongoc_mutex_init(&gTestMutex);
+   mongoc_mutex_init (&gTestMutex);
 
    MONGOC_ONCE_RETURN;
 }
 
 
 void
-TestSuite_Init (TestSuite *suite,
-                const char *name,
-                int argc,
-                char **argv)
+TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 {
    const char *filename;
    int i;
@@ -224,31 +220,31 @@ TestSuite_Init (TestSuite *suite,
 
    suite->name = strdup (name);
    suite->flags = 0;
-   suite->prgname = strdup (argv [0]);
+   suite->prgname = strdup (argv[0]);
    suite->silent = false;
 
    for (i = 0; i < argc; i++) {
-      if (0 == strcmp ("-v", argv [i])) {
+      if (0 == strcmp ("-v", argv[i])) {
          suite->flags |= TEST_VERBOSE;
-      } else if (0 == strcmp ("-d", argv [i])) {
+      } else if (0 == strcmp ("-d", argv[i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
-      } else if ((0 == strcmp ("-f", argv [i])) ||
-                 (0 == strcmp ("--no-fork", argv [i]))) {
+      } else if ((0 == strcmp ("-f", argv[i])) ||
+                 (0 == strcmp ("--no-fork", argv[i]))) {
          suite->flags |= TEST_NOFORK;
-      } else if ((0 == strcmp ("-t", argv [i])) ||
-                 (0 == strcmp ("--trace", argv [i]))) {
+      } else if ((0 == strcmp ("-t", argv[i])) ||
+                 (0 == strcmp ("--trace", argv[i]))) {
 #ifdef MONGOC_TRACE
          suite->flags |= TEST_TRACE;
 #else
          test_error ("-t requires mongoc compiled with --enable-tracing.");
          exit (EXIT_FAILURE);
 #endif
-      } else if (0 == strcmp ("-F", argv [i])) {
+      } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {
             test_error ("-F requires a filename argument.");
             exit (EXIT_FAILURE);
          }
-         filename = argv [++i];
+         filename = argv[++i];
          if (0 != strcmp ("-", filename)) {
 #ifdef _WIN32
             if (0 != fopen_s (&suite->outfile, filename, "w")) {
@@ -261,21 +257,21 @@ TestSuite_Init (TestSuite *suite,
                test_error ("Failed to open log file: %s", filename);
             }
          }
-      } else if ((0 == strcmp ("-h", argv [i])) ||
-                 (0 == strcmp ("--help", argv [i]))) {
+      } else if ((0 == strcmp ("-h", argv[i])) ||
+                 (0 == strcmp ("--help", argv[i]))) {
          suite->flags |= TEST_HELPONLY;
-      } else if ((0 == strcmp ("-s", argv [i])) ||
-                 (0 == strcmp ("--silent", argv [i]))) {
+      } else if ((0 == strcmp ("-s", argv[i])) ||
+                 (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
-      } else if ((0 == strcmp ("-l", argv [i]))) {
+      } else if ((0 == strcmp ("-l", argv[i]))) {
          if (argc - 1 == i) {
             test_error ("-l requires an argument.");
             exit (EXIT_FAILURE);
          }
-         suite->testname = strdup (argv [++i]);
+         suite->testname = strdup (argv[++i]);
       }
    }
-   
+
    if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
       suite->flags |= TEST_VALGRIND;
    }
@@ -328,52 +324,62 @@ TestSuite_CheckDummy (void)
 static void
 TestSuite_AddHelper (void *cb_)
 {
-   TestFunc cb = (TestFunc)cb_;
+   TestFunc cb = (TestFunc) cb_;
 
-   cb();
+   cb ();
 }
 
 void
-TestSuite_Add (TestSuite  *suite, /* IN */
-               const char *name,  /* IN */
-               TestFunc    func)  /* IN */
+TestSuite_Add (TestSuite *suite, /* IN */
+               const char *name, /* IN */
+               TestFunc func)    /* IN */
 {
-   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckDummy);
+   TestSuite_AddFull (suite,
+                      name,
+                      TestSuite_AddHelper,
+                      NULL,
+                      (void *) func,
+                      TestSuite_CheckDummy);
 }
 
 
 void
-TestSuite_AddLive (TestSuite  *suite, /* IN */
-                   const char *name,  /* IN */
-                   TestFunc    func)  /* IN */
+TestSuite_AddLive (TestSuite *suite, /* IN */
+                   const char *name, /* IN */
+                   TestFunc func)    /* IN */
 {
-   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckLive);
+   TestSuite_AddFull (suite,
+                      name,
+                      TestSuite_AddHelper,
+                      NULL,
+                      (void *) func,
+                      TestSuite_CheckLive);
 }
 
 
 void
-TestSuite_AddWC (TestSuite  *suite, /* IN */
+TestSuite_AddWC (TestSuite *suite,  /* IN */
                  const char *name,  /* IN */
-                 TestFuncWC  func,  /* IN */
-                 TestFuncDtor dtor,  /* IN */
-                 void       *ctx)   /* IN */
+                 TestFuncWC func,   /* IN */
+                 TestFuncDtor dtor, /* IN */
+                 void *ctx)         /* IN */
 {
    TestSuite_AddFull (suite, name, func, dtor, ctx, TestSuite_CheckDummy);
 }
 
 
 void
-TestSuite_AddFull (TestSuite  *suite,   /* IN */
-                   const char *name,    /* IN */
-                   TestFuncWC  func,    /* IN */
-                   TestFuncDtor dtor,    /* IN */
-                   void       *ctx,
+TestSuite_AddFull (TestSuite *suite,  /* IN */
+                   const char *name,  /* IN */
+                   TestFuncWC func,   /* IN */
+                   TestFuncDtor dtor, /* IN */
+                   void *ctx,
                    int (*check) (void)) /* IN */
 {
    Test *test;
    Test *iter;
 
-   test = (Test *)calloc (1, sizeof *test);
+   test = (Test *) calloc (1, sizeof *test);
    test->name = strdup (name);
    test->func = func;
    test->check = check;
@@ -387,7 +393,8 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
       return;
    }
 
-   for (iter = suite->tests; iter->next; iter = iter->next) { }
+   for (iter = suite->tests; iter->next; iter = iter->next) {
+   }
 
    iter->next = test;
 }
@@ -399,16 +406,14 @@ _print_getlasterror_win (const char *msg)
 {
    LPTSTR err_msg;
 
-   FormatMessage (
-      FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM |
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      GetLastError (),
-      MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-      &err_msg,
-      0,
-      NULL);
+   FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                     FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL,
+                  GetLastError (),
+                  MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  &err_msg,
+                  0,
+                  NULL);
 
    test_error ("%s: %s", msg, err_msg);
 
@@ -429,17 +434,17 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    si.cb = sizeof (si);
    ZeroMemory (&pi, sizeof (pi));
 
-   cmdline = bson_strdup_printf ("%s --silent --no-fork -l %s",
-                                 suite->prgname, test->name);
+   cmdline = bson_strdup_printf (
+      "%s --silent --no-fork -l %s", suite->prgname, test->name);
 
    if (!CreateProcess (NULL,
                        cmdline,
-                       NULL,    /* Process handle not inheritable  */
-                       NULL,    /* Thread handle not inheritable   */
-                       FALSE,   /* Set handle inheritance to FALSE */
-                       0,       /* No creation flags               */
-                       NULL,    /* Use parent's environment block  */
-                       NULL,    /* Use parent's starting directory */
+                       NULL,  /* Process handle not inheritable  */
+                       NULL,  /* Thread handle not inheritable   */
+                       FALSE, /* Set handle inheritance to FALSE */
+                       0,     /* No creation flags               */
+                       NULL,  /* Use parent's environment block  */
+                       NULL,  /* Use parent's starting directory */
                        &si,
                        &pi)) {
       test_error ("CreateProcess failed (%d).", GetLastError ());
@@ -465,7 +470,7 @@ done:
 
    return exit_code;
 }
-#else  /* Unix */
+#else /* Unix */
 static int
 TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                           Test *test)       /* IN */
@@ -474,7 +479,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    int exit_code = -1;
    int fd;
    int pipefd[2];
-   const char *envp[] = { "MONGOC_TEST_SERVER_LOG=stdout", NULL };
+   const char *envp[] = {"MONGOC_TEST_SERVER_LOG=stdout", NULL};
    char buf[4096];
    ssize_t nread;
 
@@ -489,7 +494,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       }
    }
 
-   if (-1 == (child = fork())) {
+   if (-1 == (child = fork ())) {
       return -1;
    }
 
@@ -504,15 +509,25 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
          dup2 (pipefd[1], STDOUT_FILENO);
          close (pipefd[0]);
          close (pipefd[1]);
-         execle (suite->prgname, suite->prgname, "--no-fork", "--silent", "-l",
-                 test->name, (char *) 0, envp);
+         execle (suite->prgname,
+                 suite->prgname,
+                 "--no-fork",
+                 "--silent",
+                 "-l",
+                 test->name,
+                 (char *) 0,
+                 envp);
       } else {
          /* suppress child output */
          fd = open ("/dev/null", O_WRONLY);
          dup2 (fd, STDOUT_FILENO);
          close (fd);
 
-         execl (suite->prgname, suite->prgname, "--no-fork", "-l", test->name,
+         execl (suite->prgname,
+                suite->prgname,
+                "--no-fork",
+                "-l",
+                test->name,
                 (char *) 0);
       }
 
@@ -538,31 +553,18 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 
 /* replace " with \", newline with \n, tab with four spaces */
 static void
-_append_json_escaped (bson_string_t *buf,
-                      const char    *s)
+_append_json_escaped (bson_string_t *buf, const char *s)
 {
-   while (*s) {
-      if (*s == '"') {
-         bson_string_append_c (buf, '\\');
-         bson_string_append_c (buf, '\"');
-      } else if (*s == '\n') {
-         bson_string_append_c (buf, '\\');
-         bson_string_append_c (buf, 'n');
-      } else if (*s == '\t') {
-         bson_string_append (buf, "    ");
-      } else {
-         bson_string_append_c (buf, *s);
-      }
-
-      s++;
-   }
+   char *escaped = bson_utf8_escape_for_json (s, -1);
+   bson_string_append (buf, escaped);
+   bson_free (escaped);
 }
 
 
 static int
-TestSuite_RunTest (TestSuite *suite,       /* IN */
-                   Test *test,             /* IN */
-                   int *count)             /* INOUT */
+TestSuite_RunTest (TestSuite *suite, /* IN */
+                   Test *test,       /* IN */
+                   int *count)       /* INOUT */
 {
    struct timespec ts1;
    struct timespec ts2;
@@ -573,7 +575,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    int status = 0;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-   name [sizeof name - 1] = '\0';
+   name[sizeof name - 1] = '\0';
 
    buf = bson_string_new (NULL);
 
@@ -679,19 +681,21 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
    Test *iter;
 
    fprintf (stream,
-"usage: %s [OPTIONS]\n"
-"\n"
-"Options:\n"
-"    -h, --help    Show this help menu.\n"
-"    -f, --no-fork Do not spawn a process per test (abort on first error).\n"
-"    -l NAME       Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
-"    -v            Be verbose with logs.\n"
-"    -s, --silent  Suppress all output.\n"
-"    -F FILENAME   Write test results (JSON) to FILENAME.\n"
-"    -d            Print debug output (useful if a test hangs).\n"
-"    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
-"\n"
-"Tests:\n",
+            "usage: %s [OPTIONS]\n"
+            "\n"
+            "Options:\n"
+            "    -h, --help    Show this help menu.\n"
+            "    -f, --no-fork Do not spawn a process per test (abort on first "
+            "error).\n"
+            "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
+            "\"/Client/*\".\n"
+            "    -v            Be verbose with logs.\n"
+            "    -s, --silent  Suppress all output.\n"
+            "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
+            "    -d            Print debug output (useful if a test hangs).\n"
+            "    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
+            "\n"
+            "Tests:\n",
             suite->prgname);
 
    for (iter = suite->tests; iter; iter = iter->next) {
@@ -706,7 +710,7 @@ static void
 TestSuite_PrintJsonSystemHeader (FILE *stream)
 {
 #ifdef _WIN32
-#  define INFO_BUFFER_SIZE 32767
+#define INFO_BUFFER_SIZE 32767
 
    SYSTEM_INFO si;
    DWORD version = 0;
@@ -714,14 +718,14 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
    DWORD minor_version = 0;
    DWORD build = 0;
 
-   GetSystemInfo(&si);
-   version = GetVersion();
+   GetSystemInfo (&si);
+   version = GetVersion ();
 
-   major_version = (DWORD)(LOBYTE(LOWORD(version)));
-   minor_version = (DWORD)(HIBYTE(LOWORD(version)));
+   major_version = (DWORD) (LOBYTE (LOWORD (version)));
+   minor_version = (DWORD) (HIBYTE (LOWORD (version)));
 
    if (version < 0x80000000) {
-      build = (DWORD)(HIWORD(version));
+      build = (DWORD) (HIWORD (version));
    }
 
    fprintf (stream,
@@ -734,11 +738,12 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
             "      \"npages\": %d\n"
             "    }\n"
             "  },\n",
-            major_version, minor_version, build,
+            major_version,
+            minor_version,
+            build,
             si.dwProcessorType,
             si.dwPageSize,
-            0
-   );
+            0);
 #else
    struct utsname u;
    uint64_t pagesize;
@@ -751,40 +756,40 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
 
    pagesize = sysconf (_SC_PAGE_SIZE);
 
-#  if defined(_SC_PHYS_PAGES)
+#if defined(_SC_PHYS_PAGES)
    npages = sysconf (_SC_PHYS_PAGES);
-#  endif
+#endif
    fprintf (stream,
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
             "    \"release\": \"%s\",\n"
             "    \"machine\": \"%s\",\n"
             "    \"memory\": {\n"
-            "      \"pagesize\": %"PRIu64",\n"
-            "      \"npages\": %"PRIu64"\n"
+            "      \"pagesize\": %" PRIu64 ",\n"
+            "      \"npages\": %" PRIu64 "\n"
             "    }\n"
             "  },\n",
             u.sysname,
             u.release,
             u.machine,
             pagesize,
-            npages
-   );
+            npages);
 #endif
 }
 
-char *egetenv (const char *name)
+char *
+egetenv (const char *name)
 {
-   return getenv(name) ? getenv(name) : "";
+   return getenv (name) ? getenv (name) : "";
 }
 static void
 TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
                            FILE *stream)     /* IN */
 {
    char *hostname = test_framework_get_host ();
-   char *udspath  = test_framework_get_unix_domain_socket_path_escaped ();
-   int   port     = test_framework_get_port ();
-   bool  ssl      = test_framework_get_ssl ();
+   char *udspath = test_framework_get_unix_domain_socket_path_escaped ();
+   int port = test_framework_get_port ();
+   bool ssl = test_framework_get_ssl ();
 
    ASSERT (suite);
 
@@ -807,7 +812,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"framework\": {\n"
             "    \"monitoringVerbose\": %s,\n"
             "    \"mockServerLog\": \"%s\",\n"
-            "    \"futureTimeoutMS\": %"PRIu64",\n"
+            "    \"futureTimeoutMS\": %" PRIu64 ",\n"
             "    \"majorityReadConcern\": %s,\n"
             "    \"skipLiveTests\": %s,\n"
             "    \"IPv6\": %s\n"
@@ -817,12 +822,18 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"tracing\": %s\n"
             "  },\n"
             "  \"results\": [\n",
-            egetenv ("MONGOC_TEST_USER"), egetenv ("MONGOC_TEST_PASSWORD"),
-            hostname, port, egetenv ("MONGOC_TEST_URI"),
-            egetenv ("MONGOC_TEST_GSSAPI_HOST"), egetenv ("MONGOC_TEST_GSSAPI_USER"),
+            egetenv ("MONGOC_TEST_USER"),
+            egetenv ("MONGOC_TEST_PASSWORD"),
+            hostname,
+            port,
+            egetenv ("MONGOC_TEST_URI"),
+            egetenv ("MONGOC_TEST_GSSAPI_HOST"),
+            egetenv ("MONGOC_TEST_GSSAPI_USER"),
             udspath,
             ssl ? "true" : "false",
-            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true": "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION")
+               ? "true"
+               : "false",
             egetenv ("MONGOC_TEST_SSL_PEM_FILE"),
             egetenv ("MONGOC_TEST_SSL_PEM_PWD"),
             egetenv ("MONGOC_TEST_SSL_CA_FILE"),
@@ -831,12 +842,14 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             getenv ("MONGOC_TEST_MONITORING_VERBOSE") ? "true" : "false",
             egetenv ("MONGOC_TEST_SERVER_LOG"),
             get_future_timeout_ms (),
-            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
-            test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN")
+               ? "true"
+               : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SKIP_LIVE") ? "true"
+                                                                 : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false"
-   );
+            (suite->flags & TEST_TRACE) ? "true" : "false");
 
    bson_free (hostname);
    bson_free (udspath);
@@ -897,9 +910,8 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
    ASSERT (testname);
 
    for (test = suite->tests; test; test = test->next) {
-      snprintf (name, sizeof name, "%s%s",
-                suite->name, test->name);
-      name [sizeof name - 1] = '\0';
+      snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+      name[sizeof name - 1] = '\0';
       if (star) {
          /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
          match = (0 == strncmp (name, testname, strlen (testname) - 1));
@@ -973,7 +985,7 @@ TestSuite_Destroy (TestSuite *suite)
       tmp = test->next;
 
       if (test->dtor) {
-         test->dtor(test->ctx);
+         test->dtor (test->ctx);
       }
       free (test->name);
       free (test);
@@ -1020,8 +1032,7 @@ test_suite_valgrind (void)
 
 
 void
-test_suite_mock_server_log (const char *msg,
-                            ...)
+test_suite_mock_server_log (const char *msg, ...)
 {
    va_list ap;
    char *formatted_msg;
@@ -1034,8 +1045,8 @@ test_suite_mock_server_log (const char *msg,
       va_end (ap);
 
       if (gTestSuite->mock_server_log_buf) {
-         bson_string_append_printf (gTestSuite->mock_server_log_buf,
-                                    "%s\n", formatted_msg);
+         bson_string_append_printf (
+            gTestSuite->mock_server_log_buf, "%s\n", formatted_msg);
       } else {
          fprintf (gTestSuite->mock_server_log, "%s\n", formatted_msg);
          fflush (gTestSuite->mock_server_log);

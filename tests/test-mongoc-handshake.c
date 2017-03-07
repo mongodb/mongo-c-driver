@@ -140,7 +140,7 @@ _check_arch_string_valid (const char *arch)
 static void
 _check_os_version_valid (const char *os_version)
 {
-#if defined (__linux__) || defined (_WIN32)
+#if defined(__linux__) || defined(_WIN32)
    /* On linux we search the filesystem for os version or use uname.
     * On windows we call GetSystemInfo(). */
    ASSERT (os_version);
@@ -173,14 +173,15 @@ test_mongoc_handshake_data_append_success (void)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-   char big_string [HANDSHAKE_MAX_SIZE];
+   char big_string[HANDSHAKE_MAX_SIZE];
 
    memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
-   big_string [HANDSHAKE_MAX_SIZE - 1] = '\0';
+   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
    _reset_handshake ();
    /* Make sure setting the handshake works */
-   ASSERT (mongoc_handshake_data_append (driver_name, driver_version, platform));
+   ASSERT (
+      mongoc_handshake_data_append (driver_name, driver_version, platform));
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -257,12 +258,12 @@ test_mongoc_handshake_data_append_success (void)
    ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
    val = bson_iter_utf8 (&md_iter, NULL);
    ASSERT (val);
-   if (strlen(val) < 250) { /* standard val are < 100, may be truncated on some platform */
+   if (strlen (val) <
+       250) { /* standard val are < 100, may be truncated on some platform */
       ASSERT (strstr (val, platform) != NULL);
    }
 
-   mock_server_replies_simple (request,
-                               "{'ok': 1, 'ismaster': true}");
+   mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
    request_destroy (request);
 
    /* Cleanup */
@@ -335,17 +336,15 @@ test_mongoc_handshake_too_big (void)
    ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* avoid rare test timeouts */
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 20000);
    client = mongoc_client_new_from_uri (uri);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
    /* Send a ping, mock server deals with it */
-   future = future_client_command_simple (client,
-                                          "admin",
-                                          tmp_bson ("{'ping': 1}"),
-                                          NULL,
-                                          NULL,
-                                          NULL);
+   future = future_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_ismaster (server);
 
    /* Make sure the isMaster request has a handshake field, and it's not huge */
@@ -356,9 +355,7 @@ test_mongoc_handshake_too_big (void)
    ASSERT (bson_has_field (ismaster_doc, HANDSHAKE_FIELD));
 
    /* isMaster with handshake isn't too big */
-   bson_iter_init_find (&iter,
-                        ismaster_doc,
-                        HANDSHAKE_FIELD);
+   bson_iter_init_find (&iter, ismaster_doc, HANDSHAKE_FIELD);
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
    bson_iter_document (&iter, &len, &dummy);
 
@@ -368,9 +365,8 @@ test_mongoc_handshake_too_big (void)
    mock_server_replies_simple (request, "{'ok': 1}");
    request_destroy (request);
 
-   request = mock_server_receives_command (server, "admin",
-                                           MONGOC_QUERY_SLAVE_OK,
-                                           "{'ping': 1}");
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
@@ -465,19 +461,25 @@ test_mongoc_handshake_cannot_send (void)
 void
 test_handshake_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/MongoDB/handshake/appname_in_uri",
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/appname_in_uri",
                   test_mongoc_handshake_appname_in_uri);
-   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_single",
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/appname_frozen_single",
                   test_mongoc_handshake_appname_frozen_single);
-   TestSuite_Add (suite, "/MongoDB/handshake/appname_frozen_pooled",
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/appname_frozen_pooled",
                   test_mongoc_handshake_appname_frozen_pooled);
 
-   TestSuite_Add (suite, "/MongoDB/handshake/success",
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/success",
                   test_mongoc_handshake_data_append_success);
-   TestSuite_Add (suite, "/MongoDB/handshake/failure",
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/failure",
                   test_mongoc_handshake_data_append_after_cmd);
-   TestSuite_Add (suite, "/MongoDB/handshake/too_big",
-                  test_mongoc_handshake_too_big);
-   TestSuite_Add (suite, "/MongoDB/handshake/cannot_send",
+   TestSuite_Add (
+      suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/cannot_send",
                   test_mongoc_handshake_cannot_send);
 }

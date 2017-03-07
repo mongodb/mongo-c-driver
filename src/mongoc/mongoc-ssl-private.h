@@ -17,8 +17,8 @@
 #ifndef MONGOC_SSL_PRIVATE_H
 #define MONGOC_SSL_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -27,14 +27,15 @@
 BSON_BEGIN_DECLS
 
 
-char *mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
+char *
+mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
 
-void _mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t* src,
-                               mongoc_ssl_opt_t* dst);
-void _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t* opt);
+void
+_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst);
+void
+_mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt);
 
 BSON_END_DECLS
 
 
 #endif /* MONGOC_SSL_PRIVATE_H */
-

@@ -80,14 +80,15 @@ future_resolve (future_t *future, future_value_t return_value)
 bool
 future_wait_max (future_t *future, int64_t timeout_ms)
 {
-   int64_t deadline = bson_get_monotonic_time () + timeout_ms;
+   int64_t remaining_usec = timeout_ms * 1000;
+   int64_t deadline = bson_get_monotonic_time () + timeout_ms * 1000;
    bool resolved;
 
    mongoc_mutex_lock (&future->mutex);
-   while (!future->resolved && bson_get_monotonic_time () <= deadline) {
-      mongoc_cond_timedwait (&future->cond,
-                             &future->mutex,
-                             get_future_timeout_ms ());
+   while (!future->resolved && remaining_usec > 0) {
+      mongoc_cond_timedwait (&future->cond, &future->mutex,
+                             remaining_usec / 1000);
+      remaining_usec = deadline - bson_get_monotonic_time ();
    }
    resolved = future->resolved;
    mongoc_mutex_unlock (&future->mutex);

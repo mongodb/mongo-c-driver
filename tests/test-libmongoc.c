@@ -34,66 +34,114 @@
 #include <strings.h>
 #endif
 
-extern void test_array_install                     (TestSuite *suite);
-extern void test_async_install                     (TestSuite *suite);
-extern void test_buffer_install                    (TestSuite *suite);
-extern void test_bulk_install                      (TestSuite *suite);
-extern void test_client_install                    (TestSuite *suite);
-extern void test_client_max_staleness_install      (TestSuite *suite);
-extern void test_client_pool_install               (TestSuite *suite);
-extern void test_cluster_install                   (TestSuite *suite);
-extern void test_collection_install                (TestSuite *suite);
-extern void test_collection_find_install           (TestSuite *suite);
-extern void test_collection_find_with_opts_install (TestSuite *suite);
-extern void test_command_monitoring_install        (TestSuite *suite);
-extern void test_cursor_install                    (TestSuite *suite);
-extern void test_database_install                  (TestSuite *suite);
-extern void test_error_install                     (TestSuite *suite);
-extern void test_exhaust_install                   (TestSuite *suite);
-extern void test_find_and_modify_install           (TestSuite *suite);
-extern void test_gridfs_file_page_install          (TestSuite *suite);
-extern void test_gridfs_install                    (TestSuite *suite);
-extern void test_linux_distro_scanner_install      (TestSuite *suite);
-extern void test_list_install                      (TestSuite *suite);
-extern void test_log_install                       (TestSuite *suite);
-extern void test_matcher_install                   (TestSuite *suite);
-extern void test_handshake_install                 (TestSuite *suite);
-extern void test_queue_install                     (TestSuite *suite);
-extern void test_read_prefs_install                (TestSuite *suite);
-extern void test_rpc_install                       (TestSuite *suite);
-extern void test_sdam_install                      (TestSuite *suite);
-extern void test_sdam_monitoring_install           (TestSuite *suite);
-extern void test_server_selection_install          (TestSuite *suite);
+extern void
+test_array_install (TestSuite *suite);
+extern void
+test_async_install (TestSuite *suite);
+extern void
+test_buffer_install (TestSuite *suite);
+extern void
+test_bulk_install (TestSuite *suite);
+extern void
+test_client_install (TestSuite *suite);
+extern void
+test_client_max_staleness_install (TestSuite *suite);
+extern void
+test_client_pool_install (TestSuite *suite);
+extern void
+test_cluster_install (TestSuite *suite);
+extern void
+test_collection_install (TestSuite *suite);
+extern void
+test_collection_find_install (TestSuite *suite);
+extern void
+test_collection_find_with_opts_install (TestSuite *suite);
+extern void
+test_command_monitoring_install (TestSuite *suite);
+extern void
+test_cursor_install (TestSuite *suite);
+extern void
+test_database_install (TestSuite *suite);
+extern void
+test_error_install (TestSuite *suite);
+extern void
+test_exhaust_install (TestSuite *suite);
+extern void
+test_find_and_modify_install (TestSuite *suite);
+extern void
+test_gridfs_file_page_install (TestSuite *suite);
+extern void
+test_gridfs_install (TestSuite *suite);
+extern void
+test_linux_distro_scanner_install (TestSuite *suite);
+extern void
+test_list_install (TestSuite *suite);
+extern void
+test_log_install (TestSuite *suite);
+extern void
+test_matcher_install (TestSuite *suite);
+extern void
+test_handshake_install (TestSuite *suite);
+extern void
+test_queue_install (TestSuite *suite);
+extern void
+test_read_prefs_install (TestSuite *suite);
+extern void
+test_rpc_install (TestSuite *suite);
+extern void
+test_sdam_install (TestSuite *suite);
+extern void
+test_sdam_monitoring_install (TestSuite *suite);
+extern void
+test_server_selection_install (TestSuite *suite);
 #if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
 #endif
-extern void test_set_install                       (TestSuite *suite);
-extern void test_socket_install                    (TestSuite *suite);
-extern void test_stream_install                    (TestSuite *suite);
-extern void test_thread_install                    (TestSuite *suite);
-extern void test_topology_install                  (TestSuite *suite);
-extern void test_topology_description_install      (TestSuite *suite);
-extern void test_topology_reconcile_install        (TestSuite *suite);
-extern void test_topology_scanner_install          (TestSuite *suite);
-extern void test_uri_install                       (TestSuite *suite);
-extern void test_usleep_install                    (TestSuite *suite);
-extern void test_util_install                      (TestSuite *suite);
-extern void test_version_install                   (TestSuite *suite);
-extern void test_write_command_install             (TestSuite *suite);
-extern void test_write_concern_install             (TestSuite *suite);
+extern void
+test_set_install (TestSuite *suite);
+extern void
+test_socket_install (TestSuite *suite);
+extern void
+test_stream_install (TestSuite *suite);
+extern void
+test_thread_install (TestSuite *suite);
+extern void
+test_topology_install (TestSuite *suite);
+extern void
+test_topology_description_install (TestSuite *suite);
+extern void
+test_topology_reconcile_install (TestSuite *suite);
+extern void
+test_topology_scanner_install (TestSuite *suite);
+extern void
+test_uri_install (TestSuite *suite);
+extern void
+test_usleep_install (TestSuite *suite);
+extern void
+test_util_install (TestSuite *suite);
+extern void
+test_version_install (TestSuite *suite);
+extern void
+test_write_command_install (TestSuite *suite);
+extern void
+test_write_concern_install (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
-extern void test_stream_tls_install                (TestSuite *suite);
-extern void test_x509_install                      (TestSuite *suite);
-extern void test_stream_tls_error_install          (TestSuite *suite);
+extern void
+test_stream_tls_install (TestSuite *suite);
+extern void
+test_x509_install (TestSuite *suite);
+extern void
+test_stream_tls_error_install (TestSuite *suite);
 #endif
 #ifdef MONGOC_ENABLE_SASL
-extern void test_sasl_install                      (TestSuite *suite);
+extern void
+test_sasl_install (TestSuite *suite);
 #endif
 
 
 typedef struct {
-   mongoc_log_level_t  level;
-   char               *msg;
+   mongoc_log_level_t level;
+   char *msg;
 } log_entry_t;
 
 static mongoc_mutex_t captured_logs_mutex;
@@ -105,8 +153,7 @@ static mongoc_ssl_opt_t gSSLOptions;
 
 
 static log_entry_t *
-log_entry_create (mongoc_log_level_t  level,
-                  const char         *msg)
+log_entry_create (mongoc_log_level_t level, const char *msg)
 {
    log_entry_t *log_entry;
 
@@ -152,8 +199,7 @@ clear_captured_logs (void)
 
 
 bool
-has_captured_log (mongoc_log_level_t  level,
-                  const char         *msg)
+has_captured_log (mongoc_log_level_t level, const char *msg)
 {
    size_t i;
    log_entry_t *log_entry;
@@ -197,12 +243,14 @@ print_captured_logs (const char *prefix)
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       if (prefix) {
-         fprintf (stderr, "%s%s %s\n",
+         fprintf (stderr,
+                  "%s%s %s\n",
                   prefix,
                   mongoc_log_level_str (log_entry->level),
                   log_entry->msg);
       } else {
-         fprintf (stderr, "%s %s\n",
+         fprintf (stderr,
+                  "%s %s\n",
                   mongoc_log_level_str (log_entry->level),
                   log_entry->msg);
       }
@@ -216,15 +264,15 @@ print_captured_logs (const char *prefix)
 int64_t
 get_future_timeout_ms ()
 {
-    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
-                                        DEFAULT_FUTURE_TIMEOUT_MS);
+   return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
+                                       DEFAULT_FUTURE_TIMEOUT_MS);
 }
 
 static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *log_domain,
-             const char         *message,
-             void               *user_data)
+log_handler (mongoc_log_level_t log_level,
+             const char *log_domain,
+             const char *message,
+             void *user_data)
 {
    TestSuite *suite;
    log_entry_t *log_entry;
@@ -259,15 +307,13 @@ gen_collection_name (const char *str)
 {
    return bson_strdup_printf ("%s_%u_%u",
                               str,
-                              (unsigned)bson_get_monotonic_time(),
-                              (unsigned)gettestpid());
-
+                              (unsigned) bson_get_monotonic_time (),
+                              (unsigned) gettestpid ());
 }
 
 
 mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *prefix)
+get_test_collection (mongoc_client_t *client, const char *prefix)
 {
    mongoc_collection_t *ret;
    char *str;
@@ -344,11 +390,12 @@ test_framework_getenv_bool (const char *name)
       if (!strcasecmp (value, "off")) {
          ret = false;
       } else if (!strcasecmp (value, "") || !strcasecmp (value, "on")) {
-         ret  = true;
+         ret = true;
       } else {
          fprintf (stderr,
                   "Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".\n",
-                  name, value);
+                  name,
+                  value);
          abort ();
       }
    }
@@ -374,8 +421,7 @@ test_framework_getenv_bool (const char *name)
  *--------------------------------------------------------------------------
  */
 int64_t
-test_framework_getenv_int64 (const char *name,
-                             int64_t default_value)
+test_framework_getenv_int64 (const char *name, int64_t default_value)
 {
    char *value = test_framework_getenv (name);
    char *endptr;
@@ -407,7 +453,7 @@ test_framework_get_unix_domain_socket_path (void)
    }
 
    return bson_strdup_printf ("/tmp/mongodb-%d.sock",
-         test_framework_get_port());
+                              test_framework_get_port ());
 }
 
 
@@ -680,23 +726,24 @@ test_framework_get_admin_password (void)
  *--------------------------------------------------------------------------
  */
 static bool
-test_framework_get_user_password (char **user,
-                                  char **password)
+test_framework_get_user_password (char **user, char **password)
 {
    /* TODO: uri-escape username and password */
    *user = test_framework_get_admin_user ();
    *password = test_framework_get_admin_password ();
 
    if ((*user && !*password) || (!*user && *password)) {
-      fprintf (stderr, "Specify both MONGOC_TEST_USER and"
-         " MONGOC_TEST_PASSWORD, or neither\n");
+      fprintf (stderr,
+               "Specify both MONGOC_TEST_USER and"
+               " MONGOC_TEST_PASSWORD, or neither\n");
       abort ();
    }
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (*user && *password) {
-      fprintf (stderr, "You need to configure with --enable-ssl"
-                       " when providing user+password (for SCRAM-SHA-1)\n");
+      fprintf (stderr,
+               "You need to configure with --enable-ssl"
+               " when providing user+password (for SCRAM-SHA-1)\n");
       abort ();
    }
 #endif
@@ -726,8 +773,7 @@ test_framework_add_user_password (const char *uri_str,
                                   const char *password)
 {
    return bson_strdup_printf (
-      "mongodb://%s:%s@%s",
-      user, password, uri_str + strlen ("mongodb://"));
+      "mongodb://%s:%s@%s", user, password, uri_str + strlen ("mongodb://"));
 }
 
 
@@ -754,9 +800,7 @@ test_framework_add_user_password_from_env (const char *uri_str)
    char *uri_str_auth;
 
    if (test_framework_get_user_password (&user, &password)) {
-      uri_str_auth = test_framework_add_user_password (uri_str,
-                                                       user,
-                                                       password);
+      uri_str_auth = test_framework_add_user_password (uri_str, user, password);
 
       bson_free (user);
       bson_free (password);
@@ -786,14 +830,12 @@ test_framework_add_user_password_from_env (const char *uri_str)
 bool
 test_framework_get_ssl (void)
 {
-   char *ssl_option_names[] = {
-      "MONGOC_TEST_SSL_PEM_FILE",
-      "MONGOC_TEST_SSL_PEM_PWD",
-      "MONGOC_TEST_SSL_CA_FILE",
-      "MONGOC_TEST_SSL_CA_DIR",
-      "MONGOC_TEST_SSL_CRL_FILE",
-      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION"
-   };
+   char *ssl_option_names[] = {"MONGOC_TEST_SSL_PEM_FILE",
+                               "MONGOC_TEST_SSL_PEM_PWD",
+                               "MONGOC_TEST_SSL_CA_FILE",
+                               "MONGOC_TEST_SSL_CA_DIR",
+                               "MONGOC_TEST_SSL_CRL_FILE",
+                               "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION"};
    char *ssl_option_value;
    size_t i;
 
@@ -836,9 +878,7 @@ test_framework_get_unix_domain_socket_uri_str ()
 
    path = test_framework_get_unix_domain_socket_path_escaped ();
    test_uri_str = bson_strdup_printf (
-      "mongodb://%s/%s",
-      path,
-      test_framework_get_ssl () ? "?ssl=true" : "");
+      "mongodb://%s/%s", path, test_framework_get_ssl () ? "?ssl=true" : "");
 
    test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
 
@@ -862,20 +902,17 @@ test_framework_get_unix_domain_socket_uri_str ()
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster_with_host_and_port (char *host,
-                                  uint16_t port,
-                                  bson_t *reply)
+call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 {
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri_str = bson_strdup_printf (
-      "mongodb://%s:%hu%s",
-      host,
-      port,
-      test_framework_get_ssl () ? "?ssl=true" : "");
+   uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
+                                 host,
+                                 port,
+                                 test_framework_get_ssl () ? "?ssl=true" : "");
 
    uri = mongoc_uri_new (uri_str);
    assert (uri);
@@ -888,10 +925,8 @@ call_ismaster_with_host_and_port (char *host,
    test_framework_set_ssl_opts (client);
 #endif
 
-   if (!mongoc_client_command_simple (client, "admin",
-                                      tmp_bson ("{'isMaster': 1}"),
-                                      NULL, reply, &error)) {
-
+   if (!mongoc_client_command_simple (
+          client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, reply, &error)) {
       fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
       fprintf (stderr, "URI = %s\n", uri_str);
       abort ();
@@ -945,8 +980,8 @@ set_name (bson_t *ismaster_response)
 
 static void
 add_option_to_uri_str (bson_string_t *uri_string,
-                       const char    *option,
-                       const char    *value)
+                       const char *option,
+                       const char *value)
 {
    if (strchr (uri_string->str, '?')) {
       bson_string_append_c (uri_string, '&');
@@ -992,12 +1027,12 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    bool first;
    char *host;
    uint16_t port;
-   
+
    env_uri_str = _uri_str_from_env ();
    if (env_uri_str) {
       uri_string = bson_string_new (env_uri_str);
       if (database_name) {
-         if (uri_string->str[uri_string->len-1] != '/') {
+         if (uri_string->str[uri_string->len - 1] != '/') {
             bson_string_append (uri_string, "/");
          }
          bson_string_append (uri_string, database_name);
@@ -1169,9 +1204,12 @@ test_framework_replset_member_count (void)
    size_t count = 0;
 
    client = test_framework_client_new ();
-   r = mongoc_client_command_simple (client, "admin",
-                                     tmp_bson ("{'replSetGetStatus': 1}"), NULL,
-                                     &reply, &error);
+   r = mongoc_client_command_simple (client,
+                                     "admin",
+                                     tmp_bson ("{'replSetGetStatus': 1}"),
+                                     NULL,
+                                     &reply,
+                                     &error);
 
    if (r) {
       if (bson_iter_init_find (&iter, &reply, "members") &&
@@ -1182,8 +1220,8 @@ test_framework_replset_member_count (void)
          }
       }
    } else if (!strstr (error.message, "not running with --replSet") &&
-              !strstr (error.message, "replSetGetStatus is not supported through mongos"))
-   {
+              !strstr (error.message,
+                       "replSetGetStatus is not supported through mongos")) {
       /* failed for some other reason */
       ASSERT_OR_PRINT (false, error);
    }
@@ -1331,7 +1369,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 #ifndef MONGOC_ENABLE_SSL
       fprintf (stderr,
                "SSL test config variables are specified in the environment, but"
-                     " SSL isn't enabled\n");
+               " SSL isn't enabled\n");
       abort ();
 #else
       mongoc_client_pool_set_ssl_opts (pool, &gSSLOptions);
@@ -1380,18 +1418,18 @@ test_framework_global_ssl_opts_init (void)
    gSSLOptions.ca_file = test_framework_getenv ("MONGOC_TEST_SSL_CA_FILE");
    gSSLOptions.ca_dir = test_framework_getenv ("MONGOC_TEST_SSL_CA_DIR");
    gSSLOptions.crl_file = test_framework_getenv ("MONGOC_TEST_SSL_CRL_FILE");
-   gSSLOptions.weak_cert_validation = test_framework_getenv_bool (
-      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
+   gSSLOptions.weak_cert_validation =
+      test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
 }
 
 static void
 test_framework_global_ssl_opts_cleanup (void)
 {
-   bson_free ((void *)gSSLOptions.pem_file);
-   bson_free ((void *)gSSLOptions.pem_pwd);
-   bson_free ((void *)gSSLOptions.ca_file);
-   bson_free ((void *)gSSLOptions.ca_dir);
-   bson_free ((void *)gSSLOptions.crl_file);
+   bson_free ((void *) gSSLOptions.pem_file);
+   bson_free ((void *) gSSLOptions.pem_pwd);
+   bson_free ((void *) gSSLOptions.ca_file);
+   bson_free ((void *) gSSLOptions.ca_dir);
+   bson_free ((void *) gSSLOptions.crl_file);
 }
 #endif
 
@@ -1405,9 +1443,9 @@ test_framework_is_mongos (void)
 
    call_ismaster (&reply);
 
-   is_mongos = (bson_iter_init_find (&iter, &reply, "msg")
-                && BSON_ITER_HOLDS_UTF8 (&iter)
-                && !strcasecmp (bson_iter_utf8 (&iter, NULL), "isdbgrid"));
+   is_mongos = (bson_iter_init_find (&iter, &reply, "msg") &&
+                BSON_ITER_HOLDS_UTF8 (&iter) &&
+                !strcasecmp (bson_iter_utf8 (&iter, NULL), "isdbgrid"));
 
    bson_destroy (&reply);
 
@@ -1418,12 +1456,11 @@ test_framework_is_mongos (void)
 bool
 test_framework_is_replset (void)
 {
-   return test_framework_replset_member_count() > 0;
+   return test_framework_replset_member_count () > 0;
 }
 
 bool
-test_framework_server_is_secondary (mongoc_client_t *client,
-                                    uint32_t server_id)
+test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
 {
    bson_t reply;
    bson_iter_t iter;
@@ -1445,7 +1482,8 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 }
 
 
-int test_framework_skip_if_auth (void)
+int
+test_framework_skip_if_auth (void)
 {
    char *user;
 
@@ -1460,7 +1498,8 @@ int test_framework_skip_if_auth (void)
 }
 
 
-int test_framework_skip_if_no_auth (void)
+int
+test_framework_skip_if_no_auth (void)
 {
    char *user;
 
@@ -1482,7 +1521,8 @@ int test_framework_skip_if_no_auth (void)
 }
 
 
-int test_framework_skip_if_offline (void)
+int
+test_framework_skip_if_offline (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_OFFLINE") ? 0 : 1;
 }
@@ -1512,6 +1552,17 @@ test_framework_skip_if_windows (void)
 }
 
 
+int
+test_framework_skip_if_apple (void)
+{
+#ifdef __APPLE__
+   return false;
+#else
+   return true;
+#endif
+}
+
+
 /* skip if no Unix domain socket */
 int
 test_framework_skip_if_no_uds (void)
@@ -1527,7 +1578,7 @@ test_framework_skip_if_no_uds (void)
    }
 
    path = test_framework_get_unix_domain_socket_path ();
-   ret = access (path, R_OK|W_OK) == 0 ? 1 : 0;
+   ret = access (path, R_OK | W_OK) == 0 ? 1 : 0;
 
    bson_free (path);
 
@@ -1545,8 +1596,8 @@ test_framework_max_wire_version_at_least (int version)
 
    call_ismaster (&reply);
 
-   at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion")
-                && bson_iter_as_int64 (&iter) >= version);
+   at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion") &&
+               bson_iter_as_int64 (&iter) >= version);
 
    bson_destroy (&reply);
 
@@ -1590,9 +1641,10 @@ test_framework_get_server_version (void)
    server_version_t ret = 0;
 
    client = test_framework_client_new ();
-   ASSERT_OR_PRINT (mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'buildinfo': 1}"),
-      NULL, &reply, &error), error);
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
+      error);
 
    ret = _parse_server_version (&reply);
 
@@ -1639,31 +1691,31 @@ test_framework_str_to_version (const char *version_str)
 static void
 test_version_cmp (void)
 {
-   server_version_t v2_6_12        = 102106112100;
-   server_version_t v3_0_0         = 103100100100;
-   server_version_t v3_0_1         = 103100101100;
-   server_version_t v3_0_10        = 103100110100;
+   server_version_t v2_6_12 = 102106112100;
+   server_version_t v3_0_0 = 103100100100;
+   server_version_t v3_0_1 = 103100101100;
+   server_version_t v3_0_10 = 103100110100;
    server_version_t v3_2_0_rc1_pre = 103102100051;
 
    ASSERT (v2_6_12 == test_framework_str_to_version ("2.6.12"));
    ASSERT (v2_6_12 == _parse_server_version (
-      tmp_bson ("{'versionArray': [2, 6, 12, 0]}")));
+                         tmp_bson ("{'versionArray': [2, 6, 12, 0]}")));
 
    ASSERT (v3_0_0 == test_framework_str_to_version ("3"));
-   ASSERT (v3_0_0 == _parse_server_version (
-      tmp_bson ("{'versionArray': [3, 0, 0, 0]}")));
+   ASSERT (v3_0_0 ==
+           _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 0, 0]}")));
 
    ASSERT (v3_0_1 == test_framework_str_to_version ("3.0.1"));
-   ASSERT (v3_0_1 == _parse_server_version (
-      tmp_bson ("{'versionArray': [3, 0, 1, 0]}")));
+   ASSERT (v3_0_1 ==
+           _parse_server_version (tmp_bson ("{'versionArray': [3, 0, 1, 0]}")));
 
    ASSERT (v3_0_10 == test_framework_str_to_version ("3.0.10"));
    ASSERT (v3_0_10 == _parse_server_version (
-      tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
+                         tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
 
    ASSERT (v3_2_0_rc1_pre == test_framework_str_to_version ("3.2.0.-49"));
    ASSERT (v3_2_0_rc1_pre == _parse_server_version (
-      tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
+                                tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
 
    ASSERT (v3_2_0_rc1_pre > test_framework_str_to_version ("3.1.9"));
    ASSERT (v3_2_0_rc1_pre < test_framework_str_to_version ("3.2"));
@@ -1675,7 +1727,7 @@ test_framework_skip_if_single (void)
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return (test_framework_is_mongos () || test_framework_is_replset());
+   return (test_framework_is_mongos () || test_framework_is_replset ());
 }
 
 int
@@ -1684,7 +1736,7 @@ test_framework_skip_if_mongos (void)
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_is_mongos() ? 0 : 1;
+   return test_framework_is_mongos () ? 0 : 1;
 }
 
 int
@@ -1693,7 +1745,7 @@ test_framework_skip_if_replset (void)
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return test_framework_is_replset() ? 0 : 1;
+   return test_framework_is_replset () ? 0 : 1;
 }
 
 int
@@ -1723,7 +1775,8 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
-int test_framework_skip_if_max_wire_version_less_than_1 (void)
+int
+test_framework_skip_if_max_wire_version_less_than_1 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1731,7 +1784,8 @@ int test_framework_skip_if_max_wire_version_less_than_1 (void)
    return test_framework_max_wire_version_at_least (2);
 }
 
-int test_framework_skip_if_max_wire_version_less_than_2 (void)
+int
+test_framework_skip_if_max_wire_version_less_than_2 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1739,7 +1793,8 @@ int test_framework_skip_if_max_wire_version_less_than_2 (void)
    return test_framework_max_wire_version_at_least (2);
 }
 
-int test_framework_skip_if_max_wire_version_less_than_4 (void)
+int
+test_framework_skip_if_max_wire_version_less_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1747,7 +1802,8 @@ int test_framework_skip_if_max_wire_version_less_than_4 (void)
    return test_framework_max_wire_version_at_least (4);
 }
 
-int test_framework_skip_if_max_wire_version_more_than_4 (void)
+int
+test_framework_skip_if_max_wire_version_more_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1755,7 +1811,8 @@ int test_framework_skip_if_max_wire_version_more_than_4 (void)
    return test_framework_max_wire_version_at_least (5) ? 0 : 1;
 }
 
-int test_framework_skip_if_max_wire_version_less_than_5 (void)
+int
+test_framework_skip_if_max_wire_version_less_than_5 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
@@ -1763,38 +1820,45 @@ int test_framework_skip_if_max_wire_version_less_than_5 (void)
    return test_framework_max_wire_version_at_least (5);
 }
 
-int test_framework_skip_if_not_rs_version_5 (void)
+int
+test_framework_skip_if_not_rs_version_5 (void)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
    return (test_framework_max_wire_version_at_least (5) &&
-           test_framework_is_replset ()) ? 1 : 0;
+           test_framework_is_replset ())
+             ? 1
+             : 0;
 }
-
-int test_framework_skip_if_rs_version_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (test_framework_max_wire_version_at_least (5) &&
-           test_framework_is_replset ()) ? 0 : 1;
-}
-
-static char MONGOC_TEST_UNIQUE [32];
 
 int
-main (int   argc,
-      char *argv[])
+test_framework_skip_if_rs_version_5 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ())
+             ? 0
+             : 1;
+}
+
+static char MONGOC_TEST_UNIQUE[32];
+
+int
+main (int argc, char *argv[])
 {
    TestSuite suite;
    int ret;
 
    mongoc_init ();
 
-   bson_snprintf (MONGOC_TEST_UNIQUE, sizeof MONGOC_TEST_UNIQUE,
-                  "test_%u_%u", (unsigned)time (NULL),
-                  (unsigned)gettestpid ());
+   bson_snprintf (MONGOC_TEST_UNIQUE,
+                  sizeof MONGOC_TEST_UNIQUE,
+                  "test_%u_%u",
+                  (unsigned) time (NULL),
+                  (unsigned) gettestpid ());
 
    mongoc_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
@@ -1868,9 +1932,9 @@ main (int   argc,
 
    TestSuite_Destroy (&suite);
 
-   capture_logs (false);  /* clear entries */
+   capture_logs (false); /* clear entries */
    _mongoc_array_destroy (&captured_logs);
-   mongoc_cleanup();
+   mongoc_cleanup ();
 
    return ret;
 }

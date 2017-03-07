@@ -23,28 +23,64 @@
 #include "mongoc-error.h"
 #include "mongoc-sasl-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-trace-private.h"
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
-#ifndef SASL_CALLBACK_FN
-#  define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
-#endif
-
-void
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
-                            const char    *mechanism)
+int
+_mongoc_sasl_log (mongoc_sasl_t *sasl, int level, const char *message)
 {
+   TRACE ("SASL Log; level=%d: message=%s", level, message);
+   return SASL_OK;
+}
+
+bool
+_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
+                            const char *mechanism,
+                            bson_error_t *error)
+{
+   bson_string_t *str = bson_string_new ("");
+   const char **mechs = sasl_global_listmech ();
+   int i = 0;
+   bool ok = false;
+
    BSON_ASSERT (sasl);
 
-   bson_free (sasl->mechanism);
-   sasl->mechanism = mechanism ? bson_strdup (mechanism) : NULL;
+   for (i = 0; mechs[i]; i++) {
+      if (!strcmp (mechs[i], mechanism)) {
+         ok = true;
+         break;
+      }
+      bson_string_append (str, mechs[i]);
+      if (mechs[i + 1]) {
+         bson_string_append (str, ",");
+      }
+   }
+
+   if (ok) {
+      bson_free (sasl->mechanism);
+      sasl->mechanism = mechanism ? bson_strdup (mechanism) : NULL;
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_SASL,
+                      SASL_NOMECH,
+                      "SASL Failure: Unsupported mechanism by client: %s. "
+                      "Available mechanisms: %s",
+                      mechanism,
+                      str->str);
+   }
+
+   bson_string_free (str, 0);
+   return ok;
 }
 
 
 static int
-_mongoc_sasl_get_pass (mongoc_sasl_t  *sasl,
-                       int             param_id,
-                       const char    **result,
-                       unsigned       *result_len)
+_mongoc_sasl_get_pass (mongoc_sasl_t *sasl,
+                       int param_id,
+                       const char **result,
+                       unsigned *result_len)
 {
    BSON_ASSERT (sasl);
    BSON_ASSERT (param_id == SASL_CB_PASS);
@@ -62,8 +98,7 @@ _mongoc_sasl_get_pass (mongoc_sasl_t  *sasl,
 
 
 void
-_mongoc_sasl_set_pass (mongoc_sasl_t *sasl,
-                       const char    *pass)
+_mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass)
 {
    BSON_ASSERT (sasl);
 
@@ -73,10 +108,27 @@ _mongoc_sasl_set_pass (mongoc_sasl_t *sasl,
 
 
 static int
-_mongoc_sasl_get_user (mongoc_sasl_t  *sasl,
-                       int             param_id,
-                       const char    **result,
-                       unsigned       *result_len)
+_mongoc_sasl_canon_user (sasl_conn_t *conn,
+                         mongoc_sasl_t *sasl,
+                         const char *in,
+                         unsigned inlen,
+                         unsigned flags,
+                         const char *user_realm,
+                         char *out,
+                         unsigned out_max,
+                         unsigned *out_len)
+{
+   TRACE ("Canonicalizing %s (%" PRIu32 ")\n", in, inlen);
+   strcpy (out, in);
+   *out_len = inlen;
+   return SASL_OK;
+}
+
+static int
+_mongoc_sasl_get_user (mongoc_sasl_t *sasl,
+                       int param_id,
+                       const char **result,
+                       unsigned *result_len)
 {
    BSON_ASSERT (sasl);
    BSON_ASSERT ((param_id == SASL_CB_USER) || (param_id == SASL_CB_AUTHNAME));
@@ -94,8 +146,7 @@ _mongoc_sasl_get_user (mongoc_sasl_t  *sasl,
 
 
 void
-_mongoc_sasl_set_user (mongoc_sasl_t *sasl,
-                       const char    *user)
+_mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user)
 {
    BSON_ASSERT (sasl);
 
@@ -105,8 +156,7 @@ _mongoc_sasl_set_user (mongoc_sasl_t *sasl,
 
 
 void
-_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl,
-                               const char    *service_host)
+_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host)
 {
    BSON_ASSERT (sasl);
 
@@ -116,8 +166,7 @@ _mongoc_sasl_set_service_host (mongoc_sasl_t *sasl,
 
 
 void
-_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl,
-                               const char    *service_name)
+_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name)
 {
    BSON_ASSERT (sasl);
 
@@ -127,8 +176,7 @@ _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl,
 
 
 void
-_mongoc_sasl_set_properties (mongoc_sasl_t      *sasl,
-                             const mongoc_uri_t *uri)
+_mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -171,9 +219,8 @@ _mongoc_sasl_set_properties (mongoc_sasl_t      *sasl,
       canonicalize = bson_iter_bool (&iter);
    }
 
-   if (bson_iter_init_find_case (&iter,
-                                 &properties,
-                                 "CANONICALIZE_HOST_NAME") &&
+   if (bson_iter_init_find_case (
+          &iter, &properties, "CANONICALIZE_HOST_NAME") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       /* newer "authMechanismProperties" URI syntax takes precedence */
       canonicalize = !strcasecmp (bson_iter_utf8 (&iter, NULL), "true");
@@ -188,12 +235,12 @@ _mongoc_sasl_set_properties (mongoc_sasl_t      *sasl,
 void
 _mongoc_sasl_init (mongoc_sasl_t *sasl)
 {
-   sasl_callback_t callbacks [] = {
-      { SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl },
-      { SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl },
-      { SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_sasl_get_pass), sasl },
-      { SASL_CB_LIST_END }
-   };
+   sasl_callback_t callbacks[] = {
+      {SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl},
+      {SASL_CB_USER, SASL_CALLBACK_FN (_mongoc_sasl_get_user), sasl},
+      {SASL_CB_PASS, SASL_CALLBACK_FN (_mongoc_sasl_get_pass), sasl},
+      {SASL_CB_CANON_USER, SASL_CALLBACK_FN (_mongoc_sasl_canon_user), sasl},
+      {SASL_CB_LIST_END}};
 
    BSON_ASSERT (sasl);
 
@@ -231,11 +278,15 @@ _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
 
 
 static bool
-_mongoc_sasl_is_failure (int           status,
-                         bson_error_t *error)
+_mongoc_sasl_is_failure (int status, bson_error_t *error)
 {
    bool ret = (status < 0);
 
+   TRACE ("Got status: %d ok is %d, continue=%d interact=%d\n",
+          status,
+          SASL_OK,
+          SASL_CONTINUE,
+          SASL_INTERACT);
    if (ret) {
       switch (status) {
       case SASL_NOMEM:
@@ -244,12 +295,24 @@ _mongoc_sasl_is_failure (int           status,
                          status,
                          "SASL Failure: insufficient memory.");
          break;
-      case SASL_NOMECH:
+      case SASL_NOMECH: {
+         bson_string_t *str = bson_string_new ("available mechanisms: ");
+         const char **mechs = sasl_global_listmech ();
+         int i = 0;
+
+         for (i = 0; mechs[i]; i++) {
+            bson_string_append (str, mechs[i]);
+            if (mechs[i + 1]) {
+               bson_string_append (str, ",");
+            }
+         }
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
                          status,
-                         "SASL Failure: failure to negotiate mechanism");
-         break;
+                         "SASL Failure: failure to negotiate mechanism (%s)",
+                         str->str);
+         bson_string_free (str, 0);
+      } break;
       case SASL_BADPARAM:
          bson_set_error (error,
                          MONGOC_ERROR_SASL,
@@ -273,11 +336,11 @@ _mongoc_sasl_is_failure (int           status,
 
 
 static bool
-_mongoc_sasl_start (mongoc_sasl_t      *sasl,
-                    uint8_t       *outbuf,
-                    uint32_t       outbufmax,
-                    uint32_t      *outbuflen,
-                    bson_error_t       *error)
+_mongoc_sasl_start (mongoc_sasl_t *sasl,
+                    uint8_t *outbuf,
+                    uint32_t outbufmax,
+                    uint32_t *outbuflen,
+                    bson_error_t *error)
 {
    const char *service_name = "mongodb";
    const char *service_host = "";
@@ -299,15 +362,18 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
       service_host = sasl->service_host;
    }
 
-   status = sasl_client_new (service_name, service_host, NULL, NULL,
-                             sasl->callbacks, 0, &sasl->conn);
+   status = sasl_client_new (
+      service_name, service_host, NULL, NULL, sasl->callbacks, 0, &sasl->conn);
+   TRACE ("Created new sasl client %s",
+          status == SASL_OK ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
 
-   status = sasl_client_start (sasl->conn, sasl->mechanism,
-                               &sasl->interact, &raw, &raw_len,
-                               &mechanism);
+   status = sasl_client_start (
+      sasl->conn, sasl->mechanism, &sasl->interact, &raw, &raw_len, &mechanism);
+   TRACE ("Started the sasl client %s",
+          status == SASL_CONTINUE ? "successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
@@ -323,7 +389,7 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
    }
 
 
-   status = sasl_encode64 (raw, raw_len, (char *)outbuf, outbufmax, outbuflen);
+   status = sasl_encode64 (raw, raw_len, (char *) outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
@@ -335,11 +401,11 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
 bool
 _mongoc_sasl_step (mongoc_sasl_t *sasl,
                    const uint8_t *inbuf,
-                   uint32_t       inbuflen,
-                   uint8_t       *outbuf,
-                   uint32_t       outbufmax,
-                   uint32_t      *outbuflen,
-                   bson_error_t  *error)
+                   uint32_t inbuflen,
+                   uint8_t *outbuf,
+                   uint32_t outbufmax,
+                   uint32_t *outbuflen,
+                   bson_error_t *error)
 {
    const char *raw = NULL;
    unsigned rawlen = 0;
@@ -350,11 +416,11 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbuflen);
 
+   TRACE ("Running %d, inbuflen: %" PRIu32, sasl->step, inbuflen);
    sasl->step++;
 
    if (sasl->step == 1) {
-      return _mongoc_sasl_start (sasl, outbuf, outbufmax, outbuflen,
-                                 error);
+      return _mongoc_sasl_start (sasl, outbuf, outbufmax, outbuflen, error);
    } else if (sasl->step >= 10) {
       bson_set_error (error,
                       MONGOC_ERROR_SASL,
@@ -363,27 +429,32 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
       return false;
    }
 
+   TRACE ("Running %d, inbuflen: %" PRIu32, sasl->step, inbuflen);
    if (!inbuflen) {
       bson_set_error (error,
                       MONGOC_ERROR_SASL,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "SASL Failure: no payload provided from server.");
+                      "SASL Failure: no payload provided from server: %s",
+                      sasl_errdetail (sasl->conn));
       return false;
    }
 
-   status = sasl_decode64 ((char *)inbuf, inbuflen, (char *)outbuf, outbufmax,
-                           outbuflen);
+   status = sasl_decode64 (
+      (char *) inbuf, inbuflen, (char *) outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
 
-   status = sasl_client_step (sasl->conn, (char *)outbuf, *outbuflen,
-                              &sasl->interact, &raw, &rawlen);
+   TRACE ("%s", "Running client_step");
+   status = sasl_client_step (
+      sasl->conn, (char *) outbuf, *outbuflen, &sasl->interact, &raw, &rawlen);
+   TRACE ("%s sent a client step",
+          status == SASL_OK ? "Successfully" : "UNSUCCESSFULLY");
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }
 
-   status = sasl_encode64 (raw, rawlen, (char *)outbuf, outbufmax, outbuflen);
+   status = sasl_encode64 (raw, rawlen, (char *) outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return false;
    }

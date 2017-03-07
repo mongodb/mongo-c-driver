@@ -3,6 +3,7 @@ bin_PROGRAMS += mongoc-stat
 mongoc_stat_SOURCES = src/tools/mongoc-stat.c
 mongoc_stat_CFLAGS = \
 	$(LIBC_FEATURES) \
+	$(MAINTAINER_CFLAGS) \
 	$(OPTIMIZE_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/mongoc \

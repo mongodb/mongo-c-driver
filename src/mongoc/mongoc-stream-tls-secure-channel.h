@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_SECURE_CHANNEL_H
 #define MONGOC_STREAM_TLS_SECURE_CHANNEL_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
@@ -26,15 +26,13 @@
 
 BSON_BEGIN_DECLS
 
-BSON_API
-mongoc_stream_t *
-mongoc_stream_tls_secure_channel_new (mongoc_stream_t  *base_stream,
-                                      const char       *host,
+BSON_EXPORT (mongoc_stream_t *)
+mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
+                                      const char *host,
                                       mongoc_ssl_opt_t *opt,
-                                      int               client);
+                                      int client);
 
 BSON_END_DECLS
 
 #endif /* MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 #endif /* MONGOC_STREAM_TLS_SECURE_CHANNEL_H */
-

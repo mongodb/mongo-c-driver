@@ -17,7 +17,7 @@
 #ifndef MONGOC_SASL_PRIVATE_H
 #define MONGOC_SASL_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -33,43 +33,53 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_sasl_t mongoc_sasl_t;
 
 
-struct _mongoc_sasl_t
-{
-   sasl_callback_t  callbacks [4];
-   sasl_conn_t     *conn;
-   bool             done;
-   int              step;
-   char            *mechanism;
-   char            *user;
-   char            *pass;
-   char            *service_name;
-   char            *service_host;
-   bool             canonicalize_host_name;
+struct _mongoc_sasl_t {
+   sasl_callback_t callbacks[4];
+   sasl_conn_t *conn;
+   bool done;
+   int step;
+   char *mechanism;
+   char *user;
+   char *pass;
+   char *service_name;
+   char *service_host;
+   bool canonicalize_host_name;
    sasl_interact_t *interact;
 };
 
 
-void _mongoc_sasl_init             (mongoc_sasl_t      *sasl);
-void _mongoc_sasl_set_pass         (mongoc_sasl_t      *sasl,
-                                    const char         *pass);
-void _mongoc_sasl_set_user         (mongoc_sasl_t      *sasl,
-                                    const char         *user);
-void _mongoc_sasl_set_mechanism    (mongoc_sasl_t      *sasl,
-                                    const char         *mechanism);
-void _mongoc_sasl_set_service_name (mongoc_sasl_t      *sasl,
-                                    const char         *service_name);
-void _mongoc_sasl_set_service_host (mongoc_sasl_t      *sasl,
-                                    const char         *service_host);
-void _mongoc_sasl_set_properties   (mongoc_sasl_t      *sasl,
-                                    const mongoc_uri_t *uri);
-void _mongoc_sasl_destroy          (mongoc_sasl_t      *sasl);
-bool _mongoc_sasl_step             (mongoc_sasl_t      *sasl,
-                                    const uint8_t      *inbuf,
-                                    uint32_t            inbuflen,
-                                    uint8_t            *outbuf,
-                                    uint32_t            outbufmax,
-                                    uint32_t           *outbuflen,
-                                    bson_error_t       *error);
+#ifndef SASL_CALLBACK_FN
+#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
+#endif
+
+void
+_mongoc_sasl_init (mongoc_sasl_t *sasl);
+void
+_mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
+void
+_mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user);
+bool
+_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
+                            const char *mechanism,
+                            bson_error_t *error);
+void
+_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name);
+void
+_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host);
+void
+_mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
+int
+_mongoc_sasl_log (mongoc_sasl_t *sasl, int level, const char *message);
+void
+_mongoc_sasl_destroy (mongoc_sasl_t *sasl);
+bool
+_mongoc_sasl_step (mongoc_sasl_t *sasl,
+                   const uint8_t *inbuf,
+                   uint32_t inbuflen,
+                   uint8_t *outbuf,
+                   uint32_t outbufmax,
+                   uint32_t *outbuflen,
+                   bson_error_t *error);
 
 
 BSON_END_DECLS

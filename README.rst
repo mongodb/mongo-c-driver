@@ -13,7 +13,7 @@ Libbson will automatically be built if you do not have it installed on your syst
 Documentation / Support / Feedback
 ==================================
 
-The documentation is available at http://api.mongodb.org/c/current/.
+The documentation is available at http://mongoc.org/.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
@@ -83,63 +83,8 @@ MongoDB project, please report it according to the `instructions here
 <http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
 
 
-Building the Driver from Source
-===============================
+Installation
+============
 
 Detailed installation instructions are in the manual:
-http://api.mongodb.org/c/current/installing.html
-
-From a tarball
---------------
-
-Download the latest release from `the release page <https://github.com/mongodb/mongo-c-driver/releases>`_, then::
-
-  $ tar xzf mongo-c-driver-$ver.tar.gz
-  $ cd mongo-c-driver-$ver
-  $ ./configure
-  $ make
-  $ sudo make install
-
-To see all of the options available to you during configuration, run::
-
-  $ ./configure --help
-
-To build on Windows Vista or newer with Visual Studio 2015, do the following::
-
-  cd mongo-c-driver-$ver
-  cd src\libbson
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 14 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
-  cd ..\..
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 14 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
-
-Building From Git
-=================
-
-You can use the following to checkout and build mongo-c-driver::
-
-  $ git clone https://github.com/mongodb/mongo-c-driver.git
-  $ cd mongo-c-driver
-  $ git checkout x.y.z  # To build a particular release
-  $ ./autogen.sh --with-libbson=bundled
-  $ make
-  $ sudo make install
-
-Building from Git on using Visual Studio 2015::
-
-  git clone https://github.com/mongodb/mongo-c-driver.git
-  cd mongo-c-driver
-  git checkout x.y.z # for your specific release
-  git submodule init
-  git submodule update # libbson is a submodule
-  cd src\libbson
-  cmake -DCMAKE_INSTALL_PREFIX=C:\libmongoc -G "Visual Studio 14 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
-  cd ..\..
-  cmake -DCMAKE_INSTALL_PREFIX=C:\libmongoc -DENABLE_SSL=WINDOWS -DBSON_ROOT_DIR=C:\libmongoc -G "Visual Studio 14 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
+http://mongoc.org/libmongoc/current/installing.html

@@ -10,18 +10,28 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 
 CONFIGURE_FLAGS="-DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF"
-if [ "$SASL" = "no" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
-else
+case "$SASL" in
+   no)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
+   ;;
+   sasl)
    case "$CC" in
       *Win64)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
+         CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=CYRUS"
       ;;
       *)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
+         CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
       ;;
    esac
-fi
+   ;;
+   sspi)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=SSPI"
+   ;;
+   *)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
+   ;;
+esac
+
 case "$SSL" in
    openssl)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL"
@@ -43,8 +53,15 @@ case "$SSL" in
    esac
 esac
 
-# Resolve the compiler name to correct MSBuild location
+export CONFIGURE_FLAGS
+
 case "$CC" in
+   mingw*)
+      git submodule update --init
+      cmd.exe /c .evergreen\\compile-windows-mingw.bat
+      exit 0
+   ;;
+   # Resolve the compiler name to correct MSBuild location
    "Visual Studio 10 2010")
       BUILD="/cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe"
    ;;

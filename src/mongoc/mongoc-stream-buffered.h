@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_BUFFERED_H
 #define MONGOC_STREAM_BUFFERED_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -29,9 +29,8 @@
 BSON_BEGIN_DECLS
 
 
-BSON_API
-mongoc_stream_t *mongoc_stream_buffered_new (mongoc_stream_t *base_stream,
-                                             size_t           buffer_size);
+BSON_EXPORT (mongoc_stream_t *)
+mongoc_stream_buffered_new (mongoc_stream_t *base_stream, size_t buffer_size);
 
 
 BSON_END_DECLS

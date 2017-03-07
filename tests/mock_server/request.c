@@ -23,24 +23,35 @@
 #include "../TestSuite.h"
 
 
-static bool is_command_ns (const char *ns);
+static bool
+is_command_ns (const char *ns);
 
-static void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
-static void request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
 
-static void request_from_update (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_update (request_t *request, const mongoc_rpc_t *rpc);
 
-static void request_from_delete (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_delete (request_t *request, const mongoc_rpc_t *rpc);
 
-static void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 
-static void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
+static void
+request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
 
-static char *query_flags_str (uint32_t flags);
-static char *insert_flags_str (uint32_t flags);
-static char *update_flags_str (uint32_t flags);
-static char *delete_flags_str (uint32_t flags);
+static char *
+query_flags_str (uint32_t flags);
+static char *
+insert_flags_str (uint32_t flags);
+static char *
+update_flags_str (uint32_t flags);
+static char *
+delete_flags_str (uint32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -50,19 +61,17 @@ request_new (const mongoc_buffer_t *buffer,
              uint16_t client_port,
              sync_queue_t *replies)
 {
-   request_t *request = (request_t *)bson_malloc0 (sizeof *request);
+   request_t *request = (request_t *) bson_malloc0 (sizeof *request);
    uint8_t *data;
 
-   data = (uint8_t *)bson_malloc ((size_t)msg_len);
+   data = (uint8_t *) bson_malloc ((size_t) msg_len);
    memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
    request->data = data;
    request->data_len = (size_t) msg_len;
    request->replies = replies;
 
-   if (!_mongoc_rpc_scatter (&request->request_rpc, data,
-                             (size_t) msg_len)) {
-      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__,
-                      "Failed to scatter");
+   if (!_mongoc_rpc_scatter (&request->request_rpc, data, (size_t) msg_len)) {
+      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, "Failed to scatter");
       bson_free (data);
       bson_free (request);
       return NULL;
@@ -112,15 +121,13 @@ request_new (const mongoc_buffer_t *buffer,
 }
 
 const bson_t *
-request_get_doc (const request_t *request,
-                 int n)
+request_get_doc (const request_t *request, int n)
 {
    return _mongoc_array_index (&request->docs, const bson_t *, n);
 }
 
 bool
-request_matches_flags (const request_t *request,
-                       mongoc_query_flags_t flags)
+request_matches_flags (const request_t *request, mongoc_query_flags_t flags)
 {
    const mongoc_rpc_t *rpc;
 
@@ -174,7 +181,8 @@ request_matches_query (const request_t *request,
 
    if (strcmp (rpc->query.collection, ns)) {
       test_error ("request's namespace is '%s', expected '%s'",
-                    request->request_rpc.query.collection, ns);
+                  request->request_rpc.query.collection,
+                  ns);
       return false;
    }
 
@@ -183,34 +191,34 @@ request_matches_query (const request_t *request,
    }
 
    if (rpc->query.skip != skip) {
-      test_error ("requests's skip = %d, expected %d",
-                    rpc->query.skip, skip);
+      test_error ("requests's skip = %d, expected %d", rpc->query.skip, skip);
       return false;
    }
 
    n_return_equal = (rpc->query.n_return == n_return);
 
-   if (! n_return_equal && abs (rpc->query.n_return) == 1) {
+   if (!n_return_equal && abs (rpc->query.n_return) == 1) {
       /* quirk: commands from mongoc_client_command_simple have n_return 1,
        * from mongoc_topology_scanner_t have n_return -1
        */
       n_return_equal = abs (rpc->query.n_return) == n_return;
    }
 
-   if (! n_return_equal) {
+   if (!n_return_equal) {
       test_error ("requests's n_return = %d, expected %d",
-                  rpc->query.n_return, n_return);
+                  rpc->query.n_return,
+                  n_return);
       return false;
    }
 
    if (request->docs.len) {
-      doc = request_get_doc(request, 0);
+      doc = request_get_doc (request, 0);
    } else {
       doc = NULL;
    }
 
-   if (!match_json (doc, is_command, __FILE__, __LINE__,
-                    BSON_FUNC, query_json)) {
+   if (!match_json (
+          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -221,8 +229,7 @@ request_matches_query (const request_t *request,
       doc = NULL;
    }
 
-   if (!match_json (doc, false,
-                    __FILE__, __LINE__, BSON_FUNC, fields_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -251,7 +258,8 @@ request_matches_insert (const request_t *request,
 
    if (strcmp (rpc->insert.collection, ns)) {
       test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection, ns);
+                  request->request_rpc.get_more.collection,
+                  ns);
       return false;
    }
 
@@ -262,8 +270,8 @@ request_matches_insert (const request_t *request,
       return false;
    }
 
-   ASSERT_CMPINT ((int)request->docs.len, ==, 1);
-   doc = request_get_doc(request, 0);
+   ASSERT_CMPINT ((int) request->docs.len, ==, 1);
+   doc = request_get_doc (request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, doc_json)) {
       return false;
    }
@@ -291,7 +299,8 @@ request_matches_bulk_insert (const request_t *request,
 
    if (strcmp (rpc->insert.collection, ns)) {
       test_error ("insert's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection, ns);
+                  request->request_rpc.get_more.collection,
+                  ns);
       return false;
    }
 
@@ -302,9 +311,9 @@ request_matches_bulk_insert (const request_t *request,
       return false;
    }
 
-   if ((int)request->docs.len != n) {
-      test_error ("expected %d docs inserted, got %d",
-                  n, (int)request->docs.len);
+   if ((int) request->docs.len != n) {
+      test_error (
+         "expected %d docs inserted, got %d", n, (int) request->docs.len);
       return false;
    }
 
@@ -333,7 +342,8 @@ request_matches_update (const request_t *request,
 
    if (strcmp (rpc->update.collection, ns)) {
       test_error ("update's namespace is '%s', expected '%s'",
-                  request->request_rpc.update.collection, ns);
+                  request->request_rpc.update.collection,
+                  ns);
       return false;
    }
 
@@ -344,13 +354,13 @@ request_matches_update (const request_t *request,
       return false;
    }
 
-   ASSERT_CMPINT ((int)request->docs.len, ==, 2);
-   doc = request_get_doc(request, 0);
+   ASSERT_CMPINT ((int) request->docs.len, ==, 2);
+   doc = request_get_doc (request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
 
-   doc = request_get_doc(request, 1);
+   doc = request_get_doc (request, 1);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
       return false;
    }
@@ -379,7 +389,8 @@ request_matches_delete (const request_t *request,
 
    if (strcmp (rpc->delete_.collection, ns)) {
       test_error ("delete's namespace is '%s', expected '%s'",
-                  request->request_rpc.delete_.collection, ns);
+                  request->request_rpc.delete_.collection,
+                  ns);
       return false;
    }
 
@@ -390,8 +401,8 @@ request_matches_delete (const request_t *request,
       return false;
    }
 
-   ASSERT_CMPINT ((int)request->docs.len, ==, 1);
-   doc = request_get_doc(request, 0);
+   ASSERT_CMPINT ((int) request->docs.len, ==, 1);
+   doc = request_get_doc (request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
@@ -419,19 +430,22 @@ request_matches_getmore (const request_t *request,
 
    if (strcmp (rpc->get_more.collection, ns)) {
       test_error ("request's namespace is '%s', expected '%s'",
-                  request->request_rpc.get_more.collection, ns);
+                  request->request_rpc.get_more.collection,
+                  ns);
       return false;
    }
 
    if (rpc->get_more.n_return != n_return) {
       test_error ("requests's n_return = %d, expected %d",
-                  rpc->get_more.n_return, n_return);
+                  rpc->get_more.n_return,
+                  n_return);
       return false;
    }
 
    if (rpc->get_more.cursor_id != cursor_id) {
       test_error ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
-                  rpc->get_more.cursor_id, cursor_id);
+                  rpc->get_more.cursor_id,
+                  cursor_id);
       return false;
    }
 
@@ -441,8 +455,7 @@ request_matches_getmore (const request_t *request,
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
-request_matches_kill_cursors (const request_t *request,
-                              int64_t cursor_id)
+request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
 {
    const mongoc_rpc_t *rpc;
 
@@ -462,7 +475,8 @@ request_matches_kill_cursors (const request_t *request,
 
    if (rpc->kill_cursors.cursors[0] != cursor_id) {
       test_error ("request's cursor_id %" PRId64 ", expected %" PRId64,
-                  rpc->kill_cursors.cursors[0], cursor_id);
+                  rpc->kill_cursors.cursors[0],
+                  cursor_id);
       return false;
    }
 
@@ -609,13 +623,12 @@ query_flags_str (uint32_t flags)
       }
    }
 
-   return bson_string_free (str, false);  /* detach buffer */
+   return bson_string_free (str, false); /* detach buffer */
 }
 
 
 static void
-request_from_query (request_t *request,
-                    const mongoc_rpc_t *rpc)
+request_from_query (request_t *request, const mongoc_rpc_t *rpc)
 {
    int32_t len;
    bson_t *query;
@@ -638,7 +651,8 @@ request_from_query (request_t *request,
       if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
          request->command_name = bson_strdup (bson_iter_key (&iter));
       } else {
-         fprintf (stderr, "WARNING: no command name for %s\n",
+         fprintf (stderr,
+                  "WARNING: no command name for %s\n",
                   request->request_rpc.query.collection);
       }
    }
@@ -667,13 +681,13 @@ request_from_query (request_t *request,
    bson_free (str);
 
    if (rpc->query.skip) {
-      bson_string_append_printf (query_as_str, " skip=%d",
-                                 (int) rpc->query.skip);
+      bson_string_append_printf (
+         query_as_str, " skip=%d", (int) rpc->query.skip);
    }
 
    if (rpc->query.n_return) {
-      bson_string_append_printf (query_as_str, " n_return=%d",
-                                 (int) rpc->query.n_return);
+      bson_string_append_printf (
+         query_as_str, " n_return=%d", (int) rpc->query.n_return);
    }
 
    request->as_str = bson_string_free (query_as_str, false);
@@ -703,12 +717,11 @@ length_prefix (void *data)
 
 
 static void
-request_from_insert (request_t *request,
-                     const mongoc_rpc_t *rpc)
+request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
 {
-   uint8_t *pos = (uint8_t *)request->request_rpc.insert.documents->iov_base;
+   uint8_t *pos = (uint8_t *) request->request_rpc.insert.documents->iov_base;
    uint8_t *end = request->data + request->data_len;
-   bson_string_t *insert_as_str = bson_string_new("OP_INSERT");
+   bson_string_t *insert_as_str = bson_string_new ("OP_INSERT");
    bson_t *doc;
    size_t n_documents;
    size_t i;
@@ -724,7 +737,7 @@ request_from_insert (request_t *request,
 
    n_documents = request->docs.len;
 
-   bson_string_append_printf (insert_as_str, " %d ", (int)n_documents);
+   bson_string_append_printf (insert_as_str, " %d ", (int) n_documents);
 
    for (i = 0; i < n_documents; i++) {
       str = bson_as_json (request_get_doc (request, (int) i), NULL);
@@ -735,7 +748,6 @@ request_from_insert (request_t *request,
       if (i < n_documents - 1) {
          bson_string_append (insert_as_str, ", ");
       }
-
    }
 
    bson_string_append (insert_as_str, " flags=");
@@ -783,13 +795,12 @@ update_flags_str (uint32_t flags)
       }
    }
 
-   return bson_string_free (str, false);  /* detach buffer */
+   return bson_string_free (str, false); /* detach buffer */
 }
 
 
 static void
-request_from_update (request_t *request,
-                     const mongoc_rpc_t *rpc)
+request_from_update (request_t *request, const mongoc_rpc_t *rpc)
 {
    int32_t len;
    bson_t *doc;
@@ -807,7 +818,7 @@ request_from_update (request_t *request,
    bson_free (str);
 
    bson_string_append (update_as_str, ", ");
-   
+
    memcpy (&len, rpc->update.update, 4);
    len = BSON_UINT32_FROM_LE (len);
    doc = bson_new_from_data (rpc->update.update, (size_t) len);
@@ -840,8 +851,7 @@ delete_flags_str (uint32_t flags)
 
 
 static void
-request_from_delete (request_t *request,
-                     const mongoc_rpc_t *rpc)
+request_from_delete (request_t *request, const mongoc_rpc_t *rpc)
 {
    int32_t len;
    bson_t *doc;
@@ -869,8 +879,7 @@ request_from_delete (request_t *request,
 
 
 static void
-request_from_killcursors (request_t *request,
-                          const mongoc_rpc_t *rpc)
+request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc)
 {
    /* protocol allows multiple cursor ids but we only implement one */
    assert (rpc->kill_cursors.n_cursors == 1);
@@ -880,12 +889,11 @@ request_from_killcursors (request_t *request,
 
 
 static void
-request_from_getmore (request_t *request,
-                      const mongoc_rpc_t *rpc)
+request_from_getmore (request_t *request, const mongoc_rpc_t *rpc)
 {
-   request->as_str = bson_strdup_printf (
-      "OP_GETMORE %s %" PRId64 " n_return=%d",
-      rpc->get_more.collection,
-      rpc->get_more.cursor_id,
-      rpc->get_more.n_return);
+   request->as_str =
+      bson_strdup_printf ("OP_GETMORE %s %" PRId64 " n_return=%d",
+                          rpc->get_more.collection,
+                          rpc->get_more.cursor_id,
+                          rpc->get_more.n_return);
 }

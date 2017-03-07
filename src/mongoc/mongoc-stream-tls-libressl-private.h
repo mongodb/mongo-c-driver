@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H
 #define MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
@@ -34,10 +34,9 @@ BSON_BEGIN_DECLS
  *
  * Private storage for LibreSSL Streams
  */
-typedef struct
-{
-    struct tls        *ctx;
-    struct tls_config *config;
+typedef struct {
+   struct tls *ctx;
+   struct tls_config *config;
 } mongoc_stream_tls_libressl_t;
 
 
@@ -45,4 +44,3 @@ BSON_END_DECLS
 
 #endif /* MONGOC_ENABLE_SSL_LIBRESSL */
 #endif /* MONGOC_STREAM_TLS_LIBRESSL_PRIVATE_H */
-

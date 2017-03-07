@@ -9,27 +9,27 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
 
-#define TIMEOUT 10000  /* milliseconds */
+#define TIMEOUT 10000 /* milliseconds */
 #define NSERVERS 10
 
 struct result {
-   int32_t  max_wire_version;
-   bool     finished;
+   int32_t max_wire_version;
+   bool finished;
 };
 
 
 static void
 test_ismaster_helper (mongoc_async_cmd_result_t result,
-                      const bson_t             *bson,
-                      int64_t                   rtt_msec,
-                      void                     *data,
-                      bson_error_t             *error)
+                      const bson_t *bson,
+                      int64_t rtt_msec,
+                      void *data,
+                      bson_error_t *error)
 {
-   struct result *r = (struct result *)data;
+   struct result *r = (struct result *) data;
    bson_iter_t iter;
 
    if (result != MONGOC_ASYNC_CMD_SUCCESS) {
-      fprintf(stderr, "error: %s\n", error->message);
+      fprintf (stderr, "error: %s\n", error->message);
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
@@ -49,7 +49,7 @@ test_ismaster_impl (bool with_ssl)
    mongoc_socket_t *conn_sock;
    mongoc_async_cmd_setup_t setup = NULL;
    void *setup_ctx = NULL;
-   struct sockaddr_in server_addr = { 0 };
+   struct sockaddr_in server_addr = {0};
    uint16_t ports[NSERVERS];
    struct result results[NSERVERS];
    int r;
@@ -58,11 +58,11 @@ test_ismaster_impl (bool with_ssl)
    bson_t q = BSON_INITIALIZER;
 
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_ssl_opt_t sopt = { 0 };
-   mongoc_ssl_opt_t copt = { 0 };
+   mongoc_ssl_opt_t sopt = {0};
+   mongoc_ssl_opt_t copt = {0};
 #endif
 
-   assert(bson_append_int32 (&q, "isMaster", 8, 1));
+   assert (bson_append_int32 (&q, "isMaster", 8, 1));
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
@@ -90,15 +90,16 @@ test_ismaster_impl (bool with_ssl)
       server_addr.sin_family = AF_INET;
       server_addr.sin_port = htons (ports[i]);
       server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
-      r = mongoc_socket_connect (conn_sock,
-                                 (struct sockaddr *)&server_addr,
-                                 sizeof (server_addr),
-                                 0);
+      r = mongoc_socket_connect (
+         conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), 0);
 
       errcode = mongoc_socket_errno (conn_sock);
       if (!(r == 0 || MONGOC_ERRNO_IS_AGAIN (errcode))) {
-         fprintf (stderr, "mongoc_socket_connect unexpected return: "
-                          "%d (errno: %d)\n", r, errcode);
+         fprintf (stderr,
+                  "mongoc_socket_connect unexpected return: "
+                  "%d (errno: %d)\n",
+                  r,
+                  errcode);
          fflush (stderr);
          abort ();
       }
@@ -110,9 +111,10 @@ test_ismaster_impl (bool with_ssl)
          copt.ca_file = CERT_CA;
          copt.weak_cert_validation = 1;
 
-         sock_streams[i] = mongoc_stream_tls_new_with_hostname (sock_streams[i], NULL, &copt, 1);
+         sock_streams[i] = mongoc_stream_tls_new_with_hostname (
+            sock_streams[i], NULL, &copt, 1);
          setup = mongoc_async_cmd_tls_setup;
-         setup_ctx = (void *)"127.0.0.1";
+         setup_ctx = (void *) "127.0.0.1";
       }
 #endif
 
@@ -125,7 +127,7 @@ test_ismaster_impl (bool with_ssl)
                         "admin",
                         &q,
                         &test_ismaster_helper,
-                        (void *)&results[i],
+                        (void *) &results[i],
                         TIMEOUT);
    }
 
@@ -155,15 +157,16 @@ test_ismaster_impl (bool with_ssl)
 static void
 test_ismaster (void)
 {
-   test_ismaster_impl(false);
+   test_ismaster_impl (false);
 }
 
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+/* CDRIVER-1992: temporarily disable test on Windows */
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
 static void
 test_ismaster_ssl (void)
 {
-   test_ismaster_impl(true);
+   test_ismaster_impl (true);
 }
 #endif
 
@@ -172,7 +175,7 @@ void
 test_async_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
    TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #endif
 }

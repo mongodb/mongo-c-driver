@@ -29,7 +29,7 @@
 
 #define MAX_NUM_TESTS 100
 
-typedef void (* test_hook)(bson_t *test);
+typedef void (*test_hook) (bson_t *test);
 
 bson_t *
 get_bson_from_json_file (char *filename);
@@ -37,38 +37,37 @@ get_bson_from_json_file (char *filename);
 int
 collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         const char *dir_path,
-                        int         paths_index,
-                        int         max_paths);
+                        int paths_index,
+                        int max_paths);
 
 void
 assemble_path (const char *parent_path,
                const char *child_name,
-               char       *dst /* OUT */);
+               char *dst /* OUT */);
 
 void
-install_json_test_suite(TestSuite  *suite,
-                        const char *dir_path,
-                        test_hook   callback);
+install_json_test_suite (TestSuite *suite,
+                         const char *dir_path,
+                         test_hook callback);
 
 mongoc_topology_description_type_t
-topology_type_from_test(const char *type);
+topology_type_from_test (const char *type);
 
 mongoc_server_description_t *
 server_description_by_hostname (mongoc_topology_description_t *topology,
                                 const char *address);
 
 void
-process_sdam_test_ismaster_responses (bson_t                        *phase,
+process_sdam_test_ismaster_responses (bson_t *phase,
                                       mongoc_topology_description_t *td);
 
 void
-check_json_apm_events (const bson_t *events,
-                       const bson_t *expectations);
+check_json_apm_events (const bson_t *events, const bson_t *expectations);
 
 void
 test_server_selection_logic_cb (bson_t *test);
 
 mongoc_server_description_type_t
-server_type_from_test(const char *type);
+server_type_from_test (const char *type);
 
 #endif

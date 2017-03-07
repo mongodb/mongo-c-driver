@@ -45,8 +45,8 @@ test_set_error_api_pooled (void)
    pool = test_framework_client_pool_new ();
 
    for (i = 0; i < sizeof (unsupported_versions) / sizeof (int32_t); i++) {
-      ASSERT (!mongoc_client_pool_set_error_api (pool,
-                                                 unsupported_versions[i]));
+      ASSERT (
+         !mongoc_client_pool_set_error_api (pool, unsupported_versions[i]));
       ASSERT_CAPTURED_LOG ("mongoc_client_pool_set_error_api",
                            MONGOC_LOG_LEVEL_ERROR,
                            "Unsupported Error API Version");
@@ -81,10 +81,10 @@ _test_command_error (int32_t error_api_version)
       assert (mongoc_client_set_error_api (client, error_api_version));
    }
 
-   future = future_client_command_simple (client, "db", tmp_bson ("{'foo': 1}"),
-                                          NULL, &reply, &error);
-   request = mock_server_receives_command (server, "db",
-                                           MONGOC_QUERY_SLAVE_OK, NULL);
+   future = future_client_command_simple (
+      client, "db", tmp_bson ("{'foo': 1}"), NULL, &reply, &error);
+   request =
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 42, 'errmsg': 'foo'}");
    ASSERT (!future_get_bool (future));
@@ -127,8 +127,10 @@ test_command_error_v2 (void)
 void
 test_error_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/Error/set_api/single", test_set_error_api_single);
-   TestSuite_AddLive (suite, "/Error/set_api/pooled", test_set_error_api_pooled);
+   TestSuite_AddLive (
+      suite, "/Error/set_api/single", test_set_error_api_single);
+   TestSuite_AddLive (
+      suite, "/Error/set_api/pooled", test_set_error_api_pooled);
    TestSuite_Add (suite, "/Error/command/default", test_command_error_default);
    TestSuite_Add (suite, "/Error/command/v1", test_command_error_v1);
    TestSuite_Add (suite, "/Error/command/v2", test_command_error_v2);

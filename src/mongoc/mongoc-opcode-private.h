@@ -19,6 +19,7 @@
 
 #include "mongoc-opcode.h"
 
-bool _mongoc_opcode_needs_primary(mongoc_opcode_t opcode);
+bool
+_mongoc_opcode_needs_primary (mongoc_opcode_t opcode);
 
 #endif /* MONGOC_OPCODE_PRIVATE_H */

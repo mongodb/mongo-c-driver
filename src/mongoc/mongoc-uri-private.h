@@ -17,7 +17,7 @@
 #ifndef MONGOC_URI_PRIVATE_H
 #define MONGOC_URI_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -28,16 +28,14 @@ BSON_BEGIN_DECLS
 
 
 void
-mongoc_uri_lowercase_hostname    (      const char   *src,
-                                        char         *buf /* OUT */,
-                                        int           len);
+mongoc_uri_lowercase_hostname (const char *src, char *buf /* OUT */, int len);
 bool
-mongoc_uri_append_host           (      mongoc_uri_t *uri,
-                                  const char         *host,
-                                        uint16_t      port);
+mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port);
 bool
-mongoc_uri_parse_host            (      mongoc_uri_t  *uri,
-                                  const char          *str);
+mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str);
+
+int32_t
+mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
 
 BSON_END_DECLS
 

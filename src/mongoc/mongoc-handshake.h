@@ -18,8 +18,8 @@
 #ifndef MONGOC_HANDSHAKE_H
 #define MONGOC_HANDSHAKE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -52,7 +52,8 @@ BSON_BEGIN_DECLS
  *
  *
  * @driver_name: An optional string storing the name of the wrapping driver
- * @driver_version: An optional string storing the version of the wrapping driver.
+ * @driver_version: An optional string storing the version of the wrapping
+ * driver.
  * @platform: An optional string storing any information about the current
  *            platform, for example configure options or compile flags.
  *
@@ -60,7 +61,8 @@ BSON_BEGIN_DECLS
  * Returns true if the given fields are set successfully. Otherwise, it returns
  * false and logs an error.
  *
- * The default handshake data the driver sends with "isMaster" looks something like:
+ * The default handshake data the driver sends with "isMaster" looks something
+ * like:
  *  client: {
  *    driver: {
  *      name: "mongoc",
@@ -83,8 +85,7 @@ BSON_BEGIN_DECLS
  *  }
  *
  */
-BSON_API
-bool
+BSON_EXPORT (bool)
 mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
                               const char *platform);

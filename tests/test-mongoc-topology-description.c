@@ -38,8 +38,8 @@ _test_has_readable_writable_server (bool pooled)
    ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
 
    /* trigger connection */
-   r = mongoc_client_command_simple (client, "admin", tmp_bson ("{'ping': 1}"),
-                                     NULL, NULL, &error);
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    ASSERT (mongoc_topology_description_has_writable_server (td));
@@ -79,8 +79,7 @@ test_has_readable_writable_server_pooled (void)
 
 
 static mongoc_server_description_t *
-_sd_for_host (mongoc_topology_description_t *td,
-              const char                    *host)
+_sd_for_host (mongoc_topology_description_t *td, const char *host)
 {
    int i;
    mongoc_server_description_t *sd;
@@ -142,10 +141,11 @@ test_get_servers (void)
 void
 test_topology_description_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/TopologyDescription/readable_writable/single",
+   TestSuite_AddLive (suite,
+                      "/TopologyDescription/readable_writable/single",
                       test_has_readable_writable_server_single);
-   TestSuite_AddLive (suite, "/TopologyDescription/readable_writable/pooled",
+   TestSuite_AddLive (suite,
+                      "/TopologyDescription/readable_writable/pooled",
                       test_has_readable_writable_server_pooled);
-   TestSuite_Add (suite, "/TopologyDescription/get_servers",
-                  test_get_servers);
+   TestSuite_Add (suite, "/TopologyDescription/get_servers", test_get_servers);
 }

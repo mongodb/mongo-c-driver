@@ -16,8 +16,7 @@
 
 
 static const mongoc_topology_scanner_node_t *
-get_node (mongoc_topology_t *topology,
-          const char *host_and_port)
+get_node (mongoc_topology_t *topology, const char *host_and_port)
 {
    const mongoc_topology_scanner_t *ts;
    const mongoc_topology_scanner_node_t *node;
@@ -43,10 +42,7 @@ get_node (mongoc_topology_t *topology,
 
 
 void
-rs_response_to_ismaster (mock_server_t *server,
-                         bool primary,
-                         bool has_tags,
-                         ...)
+rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
 {
    va_list ap;
    bson_string_t *hosts;
@@ -66,25 +62,23 @@ rs_response_to_ismaster (mock_server_t *server,
          bson_string_append (hosts, ",");
       }
 
-      bson_string_append_printf (hosts,
-                                 "'%s'",
-                                 mock_server_get_host_and_port (host));
+      bson_string_append_printf (
+         hosts, "'%s'", mock_server_get_host_and_port (host));
    }
 
    va_end (ap);
 
-   ismaster_response = bson_strdup_printf (
-      "{'ok': 1, "
-      " 'setName': 'rs',"
-      " 'ismaster': %s,"
-      " 'secondary': %s,"
-      " 'tags': {%s},"
-      " 'hosts': [%s]"
-      "}",
-      primary ? "true" : "false",
-      primary ? "false" : "true",
-      has_tags ? "'key': 'value'" : "",
-      hosts->str);
+   ismaster_response = bson_strdup_printf ("{'ok': 1, "
+                                           " 'setName': 'rs',"
+                                           " 'ismaster': %s,"
+                                           " 'secondary': %s,"
+                                           " 'tags': {%s},"
+                                           " 'hosts': [%s]"
+                                           "}",
+                                           primary ? "true" : "false",
+                                           primary ? "false" : "true",
+                                           has_tags ? "'key': 'value'" : "",
+                                           hosts->str);
 
    mock_server_auto_ismaster (server, ismaster_response);
 
@@ -106,8 +100,8 @@ selects_server (mongoc_client_t *client,
    mongoc_server_description_t *sd;
    bool result;
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
-                                read_prefs, &error);
+   sd = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ, read_prefs, &error);
 
    if (!sd) {
       fprintf (stderr, "%s\n", error.message);
@@ -132,7 +126,7 @@ _test_topology_reconcile_rs (bool pooled)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
-   debug_stream_stats_t debug_stream_stats = { 0 };
+   debug_stream_stats_t debug_stream_stats = {0};
    mongoc_read_prefs_t *secondary_read_prefs;
    mongoc_read_prefs_t *primary_read_prefs;
    mongoc_read_prefs_t *tag_read_prefs;
@@ -148,9 +142,8 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server1, true, false, server0, server1);
 
    /* provide secondary in seed list */
-   uri_str = bson_strdup_printf (
-      "mongodb://%s/?replicaSet=rs",
-      mock_server_get_host_and_port (server0));
+   uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
+                                 mock_server_get_host_and_port (server0));
 
    uri = mongoc_uri_new (uri_str);
 
@@ -174,8 +167,8 @@ _test_topology_reconcile_rs (bool pooled)
     * server0 is selected, server1 is discovered and added to scanner.
     */
    assert (selects_server (client, secondary_read_prefs, server0));
-   assert (get_node (client->topology,
-                     mock_server_get_host_and_port (server1)));
+   assert (
+      get_node (client->topology, mock_server_get_host_and_port (server1)));
 
    /*
     * select again with mode "primary": server1 is selected.
@@ -185,7 +178,7 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0);  /* server1 absent */
+   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0); /* server1 absent */
 
    assert (selects_server (client, tag_read_prefs, server0));
    assert (!client->topology->stale);
@@ -261,10 +254,9 @@ _test_topology_reconcile_sharded (bool pooled)
    mock_server_run (secondary);
 
    /* provide both servers in seed list */
-   uri_str = bson_strdup_printf (
-      "mongodb://%s,%s",
-      mock_server_get_host_and_port (mongos),
-      mock_server_get_host_and_port (secondary));
+   uri_str = bson_strdup_printf ("mongodb://%s,%s",
+                                 mock_server_get_host_and_port (mongos),
+                                 mock_server_get_host_and_port (secondary));
 
    uri = mongoc_uri_new (uri_str);
 
@@ -276,14 +268,13 @@ _test_topology_reconcile_sharded (bool pooled)
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_read_prefs, &error);
+   future = future_topology_select (
+      client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
 
    /* mongos */
    request = mock_server_receives_ismaster (mongos);
    mock_server_replies_simple (
-      request,
-      "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
+      request, "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
 
    request_destroy (request);
 
@@ -292,15 +283,15 @@ _test_topology_reconcile_sharded (bool pooled)
 
    /* replica set secondary - topology removes it */
    request = mock_server_receives_ismaster (secondary);
-   secondary_response = bson_strdup_printf (
-      "{'ok': 1, "
-      " 'setName': 'rs',"
-      " 'ismaster': false,"
-      " 'secondary': true,"
-      " 'hosts': ['%s', '%s']"
-      "}",
-      mock_server_get_host_and_port (mongos),
-      mock_server_get_host_and_port (secondary));
+   secondary_response =
+      bson_strdup_printf ("{'ok': 1, "
+                          " 'setName': 'rs',"
+                          " 'ismaster': false,"
+                          " 'secondary': true,"
+                          " 'hosts': ['%s', '%s']"
+                          "}",
+                          mock_server_get_host_and_port (mongos),
+                          mock_server_get_host_and_port (secondary));
 
    mock_server_replies_simple (request, secondary_response);
 
@@ -317,9 +308,9 @@ _test_topology_reconcile_sharded (bool pooled)
       /* wait a second for scanner thread to remove secondary */
       int64_t start = bson_get_monotonic_time ();
       while (get_node (client->topology,
-                       mock_server_get_host_and_port (secondary)))
-      {
-         assert (bson_get_monotonic_time () - start < 1000000);
+                       mock_server_get_host_and_port (secondary))) {
+         ASSERT_CMPTIME ((int) (bson_get_monotonic_time () - start),
+                         (int) 1000000);
       }
    } else {
       assert (!get_node (client->topology,
@@ -362,12 +353,22 @@ test_topology_reconcile_sharded_pooled (void)
 void
 test_topology_reconcile_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite, "/TOPOLOGY/reconcile/rs/pooled",
-                  test_topology_reconcile_rs_pooled, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_AddFull (suite, "/TOPOLOGY/reconcile/rs/single",
-                  test_topology_reconcile_rs_single, NULL, NULL, test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/pooled",
+   TestSuite_AddFull (suite,
+                      "/TOPOLOGY/reconcile/rs/pooled",
+                      test_topology_reconcile_rs_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddFull (suite,
+                      "/TOPOLOGY/reconcile/rs/single",
+                      test_topology_reconcile_rs_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_Add (suite,
+                  "/TOPOLOGY/reconcile/sharded/pooled",
                   test_topology_reconcile_sharded_pooled);
-   TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/single",
+   TestSuite_Add (suite,
+                  "/TOPOLOGY/reconcile/sharded/single",
                   test_topology_reconcile_sharded_single);
 }

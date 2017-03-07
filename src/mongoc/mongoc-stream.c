@@ -35,7 +35,7 @@
 #define MONGOC_LOG_DOMAIN "stream"
 
 #ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
-# define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
+#define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
 #endif
 
 
@@ -58,7 +58,7 @@ mongoc_stream_close (mongoc_stream_t *stream)
 
    BSON_ASSERT (stream->close);
 
-   ret = stream->close(stream);
+   ret = stream->close (stream);
 
    RETURN (ret);
 }
@@ -70,7 +70,8 @@ mongoc_stream_close (mongoc_stream_t *stream)
  *
  * Frees any resources referenced by @stream, including the memory allocation
  * for @stream.
- * This handler is called upon stream failure, such as network errors, invalid replies
+ * This handler is called upon stream failure, such as network errors, invalid
+ * replies
  * or replicaset reconfigures deleteing the stream
  */
 void
@@ -81,9 +82,9 @@ mongoc_stream_failed (mongoc_stream_t *stream)
    BSON_ASSERT (stream);
 
    if (stream->failed) {
-	   stream->failed(stream);
+      stream->failed (stream);
    } else {
-	   stream->destroy(stream);
+      stream->destroy (stream);
    }
 
    EXIT;
@@ -106,7 +107,7 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 
    BSON_ASSERT (stream->destroy);
 
-   stream->destroy(stream);
+   stream->destroy (stream);
 
    EXIT;
 }
@@ -124,7 +125,7 @@ int
 mongoc_stream_flush (mongoc_stream_t *stream)
 {
    BSON_ASSERT (stream);
-   return stream->flush(stream);
+   return stream->flush (stream);
 }
 
 
@@ -140,9 +141,9 @@ mongoc_stream_flush (mongoc_stream_t *stream)
  */
 ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
-                      mongoc_iovec_t  *iov,
-                      size_t           iovcnt,
-                      int32_t          timeout_msec)
+                      mongoc_iovec_t *iov,
+                      size_t iovcnt,
+                      int32_t timeout_msec)
 {
    ssize_t ret;
 
@@ -159,7 +160,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
    }
 
    DUMP_IOVEC (writev, iov, iovcnt);
-   ret = stream->writev(stream, iov, iovcnt, timeout_msec);
+   ret = stream->writev (stream, iov, iovcnt, timeout_msec);
 
    RETURN (ret);
 }
@@ -177,9 +178,9 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  */
 ssize_t
 mongoc_stream_write (mongoc_stream_t *stream,
-                     void            *buf,
-                     size_t           count,
-                     int32_t          timeout_msec)
+                     void *buf,
+                     size_t count,
+                     int32_t timeout_msec)
 {
    mongoc_iovec_t iov;
    ssize_t ret;
@@ -216,10 +217,10 @@ mongoc_stream_write (mongoc_stream_t *stream,
  */
 ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
-                     mongoc_iovec_t  *iov,
-                     size_t           iovcnt,
-                     size_t           min_bytes,
-                     int32_t          timeout_msec)
+                     mongoc_iovec_t *iov,
+                     size_t iovcnt,
+                     size_t min_bytes,
+                     int32_t timeout_msec)
 {
    ssize_t ret;
 
@@ -257,10 +258,10 @@ mongoc_stream_readv (mongoc_stream_t *stream,
  */
 ssize_t
 mongoc_stream_read (mongoc_stream_t *stream,
-                    void            *buf,
-                    size_t           count,
-                    size_t           min_bytes,
-                    int32_t          timeout_msec)
+                    void *buf,
+                    size_t count,
+                    size_t min_bytes,
+                    int32_t timeout_msec)
 {
    mongoc_iovec_t iov;
    ssize_t ret;
@@ -283,15 +284,15 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
 int
 mongoc_stream_setsockopt (mongoc_stream_t *stream,
-                          int              level,
-                          int              optname,
-                          void            *optval,
-                          socklen_t        optlen)
+                          int level,
+                          int optname,
+                          void *optval,
+                          mongoc_socklen_t optlen)
 {
    BSON_ASSERT (stream);
 
    if (stream->setsockopt) {
-      return stream->setsockopt(stream, level, optname, optval, optlen);
+      return stream->setsockopt (stream, level, optname, optval, optlen);
    }
 
    return 0;
@@ -329,18 +330,20 @@ mongoc_stream_get_tls_stream (mongoc_stream_t *stream) /* IN */
 {
    BSON_ASSERT (stream);
 
-   for (;stream && stream->type != MONGOC_STREAM_TLS;
-        stream = stream->get_base_stream (stream));
+   for (; stream && stream->type != MONGOC_STREAM_TLS;
+        stream = stream->get_base_stream (stream))
+      ;
 
    return stream;
 }
 
 ssize_t
 mongoc_stream_poll (mongoc_stream_poll_t *streams,
-                    size_t                nstreams,
-                    int32_t               timeout)
+                    size_t nstreams,
+                    int32_t timeout)
 {
-   mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *)bson_malloc(sizeof(*poller) * nstreams);
+   mongoc_stream_poll_t *poller =
+      (mongoc_stream_poll_t *) bson_malloc (sizeof (*poller) * nstreams);
 
    int i;
    int last_type = 0;
@@ -349,7 +352,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    errno = 0;
 
    for (i = 0; i < nstreams; i++) {
-      poller[i].stream = mongoc_stream_get_root_stream(streams[i].stream);
+      poller[i].stream = mongoc_stream_get_root_stream (streams[i].stream);
       poller[i].events = streams[i].events;
       poller[i].revents = 0;
 
@@ -361,12 +364,12 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
       }
    }
 
-   if (! poller[0].stream->poll) {
+   if (!poller[0].stream->poll) {
       errno = EINVAL;
       goto CLEANUP;
    }
 
-   rval = poller[0].stream->poll(poller, nstreams, timeout);
+   rval = poller[0].stream->poll (poller, nstreams, timeout);
 
    if (rval > 0) {
       for (i = 0; i < nstreams; i++) {
@@ -375,7 +378,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    }
 
 CLEANUP:
-   bson_free(poller);
+   bson_free (poller);
 
    return rval;
 }
@@ -405,8 +408,7 @@ CLEANUP:
  */
 
 bool
-mongoc_stream_wait (mongoc_stream_t *stream,
-                    int64_t expire_at)
+mongoc_stream_wait (mongoc_stream_t *stream, int64_t expire_at)
 {
    mongoc_stream_poll_t poller;
    int64_t now;
@@ -422,7 +424,7 @@ mongoc_stream_wait (mongoc_stream_t *stream,
    poller.events = POLLOUT;
    poller.revents = 0;
 
-   now = bson_get_monotonic_time();
+   now = bson_get_monotonic_time ();
 
    for (;;) {
       /* TODO CDRIVER-804 use int64_t for timeouts consistently */
@@ -439,9 +441,9 @@ mongoc_stream_wait (mongoc_stream_t *stream,
       } else if (ret < 0) {
          /* poll itself failed */
 
-         TRACE("errno is: %d", errno);
-         if (MONGOC_ERRNO_IS_AGAIN(errno)) {
-            now = bson_get_monotonic_time();
+         TRACE ("errno is: %d", errno);
+         if (MONGOC_ERRNO_IS_AGAIN (errno)) {
+            now = bson_get_monotonic_time ();
 
             if (expire_at < now) {
                RETURN (false);
@@ -472,17 +474,17 @@ mongoc_stream_check_closed (mongoc_stream_t *stream)
       return true;
    }
 
-   ret = stream->check_closed(stream);
+   ret = stream->check_closed (stream);
 
    RETURN (ret);
 }
 
 bool
 _mongoc_stream_writev_full (mongoc_stream_t *stream,
-                            mongoc_iovec_t  *iov,
-                            size_t           iovcnt,
-                            int32_t          timeout_msec,
-                            bson_error_t    *error)
+                            mongoc_iovec_t *iov,
+                            size_t iovcnt,
+                            int32_t timeout_msec,
+                            bson_error_t *error)
 {
    size_t total_bytes = 0;
    int i;
@@ -493,30 +495,39 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
       total_bytes += iov[i].iov_len;
    }
 
-   r = mongoc_stream_writev(stream, iov, iovcnt, timeout_msec);
-   TRACE("writev returned: %ld", r);
+   r = mongoc_stream_writev (stream, iov, iovcnt, timeout_msec);
+   TRACE ("writev returned: %ld", r);
 
    if (r < 0) {
       if (error) {
          char buf[128];
          char *errstr;
 
-         errstr = bson_strerror_r(errno, buf, sizeof(buf));
+         errstr = bson_strerror_r (errno, buf, sizeof (buf));
 
-         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                         "Failure during socket delivery: %s (%d)", errstr, errno);
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failure during socket delivery: %s (%d)",
+                         errstr,
+                         errno);
       }
 
-      RETURN(false);
+      RETURN (false);
    }
 
    if (r != total_bytes) {
-      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %" PRIu64 "/%" PRId64 " in %dms) during socket delivery",
-                      (uint64_t) r, (int64_t)total_bytes, timeout_msec);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failure to send all requested bytes (only sent: %" PRIu64
+                      "/%" PRId64 " in %dms) during socket delivery",
+                      (uint64_t) r,
+                      (int64_t) total_bytes,
+                      timeout_msec);
 
-      RETURN(false);
+      RETURN (false);
    }
 
-   RETURN(true);
+   RETURN (true);
 }

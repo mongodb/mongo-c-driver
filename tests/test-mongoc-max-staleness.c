@@ -13,7 +13,7 @@
 #define MONGOC_LOG_DOMAIN "client-test-max-staleness"
 
 
-static double
+static int64_t
 get_max_staleness (const mongoc_client_t *client)
 {
    const mongoc_read_prefs_t *prefs;
@@ -31,41 +31,60 @@ test_mongoc_client_max_staleness (void)
    mongoc_client_t *client;
 
    client = mongoc_client_new (NULL);
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    client = mongoc_client_new ("mongodb://a/?readPreference=secondary");
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), -1);
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
+   mongoc_client_destroy (client);
+
+   /* -1 is the default, means "no max staleness" */
+   client = mongoc_client_new ("mongodb://a/?maxStalenessSeconds=-1");
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (
+      "mongodb://a/?readPreference=primary&maxStalenessSeconds=-1");
+
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    /* no maxStalenessSeconds with primary mode */
    ASSERT (!mongoc_client_new ("mongodb://a/?maxStalenessSeconds=120"));
    ASSERT (!mongoc_client_new (
-              "mongodb://a/?readPreference=primary&maxStalenessSeconds=120"));
+      "mongodb://a/?readPreference=primary&maxStalenessSeconds=120"));
 
    capture_logs (true);
 
    /* zero is prohibited */
+   client = mongoc_client_new (
+      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0");
+
+   ASSERT_CAPTURED_LOG (
+      "maxStalenessSeconds=0", MONGOC_LOG_LEVEL_WARNING, "cannot be zero");
+
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (
+      "mongodb://a/?maxStalenessSeconds=120&readPreference=secondary");
+
+   ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) 120);
+   mongoc_client_destroy (client);
+
+   /* float is ignored */
+   capture_logs (true);
    ASSERT (!mongoc_client_new (
-      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0"));
+      "mongodb://a/?readPreference=secondary&maxStalenessSeconds=10.5"));
 
-   ASSERT_CAPTURED_LOG ("maxStalenessSeconds=0", MONGOC_LOG_LEVEL_WARNING,
-                        "cannot be zero");
+   ASSERT_CAPTURED_LOG ("maxStalenessSeconds=10.5",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid maxStalenessSeconds");
 
-   client = mongoc_client_new (
-      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=120");
-
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 120);
-   mongoc_client_destroy (client);
-
-   client = mongoc_client_new (
-      "mongodb://host/?readPreference=secondary&maxStalenessSeconds=10.5");
-
-   ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 10.5);
-   mongoc_client_destroy (client);
-
+   /* 1 is allowed, it'll be rejected once we begin server selection */
    client = mongoc_client_new (
       "mongodb://a/?readPreference=secondary&maxStalenessSeconds=1");
+
    ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 1);
    mongoc_client_destroy (client);
 }
@@ -90,10 +109,12 @@ test_mongos_max_staleness_read_pref (void)
    /* count command with mode "secondary", no maxStalenessSeconds */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (collection, MONGOC_QUERY_NONE,
-                                     NULL, 0, 0, NULL, &error);
+   future = future_collection_count (
+      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK,
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
       "{'$readPreference': {'mode': 'secondary', "
       "                     'maxStalenessSeconds': {'$exists': false}}}");
 
@@ -103,16 +124,19 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* count command with mode "secondary", maxStalenessSeconds = 120 */
-   mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
+   /* count command with mode "secondary". maxStalenessSeconds=1 is allowed by
+    * client, although in real life mongos will reject it */
+   mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
 
    mongoc_collection_set_read_prefs (collection, prefs);
-   future = future_collection_count (collection, MONGOC_QUERY_NONE,
-                                     NULL, 0, 0, NULL, &error);
+   future = future_collection_count (
+      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK,
-      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 120}}");
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -152,16 +176,16 @@ _test_last_write_date (bool pooled)
    }
 
    collection = get_test_collection (client, "test_last_write_date");
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
-                                 tmp_bson ("{}"), NULL, &error);
+   r = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
    s0 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
-                                 tmp_bson ("{}"), NULL, &error);
+   r = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
    _mongoc_usleep (1000 * 1000);
@@ -235,7 +259,6 @@ _test_last_write_date_absent (bool pooled)
 }
 
 
-
 static void
 test_last_write_date_absent (void *ctx)
 {
@@ -256,28 +279,40 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    ASSERT (realpath (JSON_DIR "/max_staleness", resolved));
-   install_json_test_suite (suite, resolved,
-                            &test_server_selection_logic_cb);
+   install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
 }
 
 void
 test_client_max_staleness_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (suite, "/Client/max_staleness",
-                  test_mongoc_client_max_staleness);
-   TestSuite_Add (suite, "/Client/max_staleness/mongos",
+   TestSuite_Add (
+      suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
+   TestSuite_Add (suite,
+                  "/Client/max_staleness/mongos",
                   test_mongos_max_staleness_read_pref);
-   TestSuite_AddFull (suite, "/Client/last_write_date",
-                      test_last_write_date, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Client/last_write_date",
+                      test_last_write_date,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_not_rs_version_5);
-   TestSuite_AddFull (suite, "/Client/last_write_date/pooled",
-                      test_last_write_date_pooled, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Client/last_write_date/pooled",
+                      test_last_write_date_pooled,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_not_rs_version_5);
-   TestSuite_AddFull (suite, "/Client/last_write_date_absent",
-                      test_last_write_date_absent, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Client/last_write_date_absent",
+                      test_last_write_date_absent,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_rs_version_5);
-   TestSuite_AddFull (suite, "/Client/last_write_date_absent/pooled",
-                      test_last_write_date_absent_pooled, NULL, NULL,
+   TestSuite_AddFull (suite,
+                      "/Client/last_write_date_absent/pooled",
+                      test_last_write_date_absent_pooled,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_rs_version_5);
 }

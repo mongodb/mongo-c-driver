@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_SOCKET_H
 #define MONGOC_STREAM_SOCKET_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include "mongoc-socket.h"
@@ -31,10 +31,10 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t;
 
 
-BSON_API
-mongoc_stream_t *mongoc_stream_socket_new        (mongoc_socket_t        *socket);
-BSON_API
-mongoc_socket_t *mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);
+BSON_EXPORT (mongoc_stream_t *)
+mongoc_stream_socket_new (mongoc_socket_t *socket);
+BSON_EXPORT (mongoc_socket_t *)
+mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);
 
 
 BSON_END_DECLS

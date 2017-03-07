@@ -46,8 +46,7 @@
  * Ensure fast searches for files via [ filename ]
  */
 static bool
-_mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
-                             bson_error_t    *error)
+_mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
 {
    bson_t keys;
    mongoc_index_opt_t opt;
@@ -67,7 +66,9 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
 
    bson_destroy (&keys);
 
-   if (!r) { RETURN (r); }
+   if (!r) {
+      RETURN (r);
+   }
 
    bson_init (&keys);
 
@@ -79,7 +80,9 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
 
    bson_destroy (&keys);
 
-   if (!r) { RETURN (r); }
+   if (!r) {
+      RETURN (r);
+   }
 
    RETURN (1);
 }
@@ -87,9 +90,9 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
 
 mongoc_gridfs_t *
 _mongoc_gridfs_new (mongoc_client_t *client,
-                    const char      *db,
-                    const char      *prefix,
-                    bson_error_t    *error)
+                    const char *db,
+                    const char *prefix,
+                    bson_error_t *error)
 {
    mongoc_gridfs_t *gridfs;
    const mongoc_read_prefs_t *read_prefs;
@@ -111,7 +114,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    /* make sure prefix is short enough to bucket the chunks and files
     * collections
     */
-   prefix_len = (uint32_t)strlen (prefix);
+   prefix_len = (uint32_t) strlen (prefix);
    BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
 
    gridfs = (mongoc_gridfs_t *) bson_malloc0 (sizeof *gridfs);
@@ -122,13 +125,13 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    read_concern = mongoc_client_get_read_concern (client);
    write_concern = mongoc_client_get_write_concern (client);
 
-   bson_snprintf (buf, sizeof(buf), "%s.chunks", prefix);
-   gridfs->chunks = _mongoc_collection_new (client, db, buf, read_prefs,
-                                            read_concern, write_concern);
+   bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
+   gridfs->chunks = _mongoc_collection_new (
+      client, db, buf, read_prefs, read_concern, write_concern);
 
-   bson_snprintf (buf, sizeof(buf), "%s.files", prefix);
-   gridfs->files = _mongoc_collection_new (client, db, buf, read_prefs,
-                                           read_concern, write_concern);
+   bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
+   gridfs->files = _mongoc_collection_new (
+      client, db, buf, read_prefs, read_concern, write_concern);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 
@@ -142,8 +145,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
 
 bool
-mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
-                    bson_error_t    *error)
+mongoc_gridfs_drop (mongoc_gridfs_t *gridfs, bson_error_t *error)
 {
    bool r;
 
@@ -181,8 +183,7 @@ mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs)
 
 /** find all matching gridfs files */
 mongoc_gridfs_file_list_t *
-mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
-                    const bson_t    *query)
+mongoc_gridfs_find (mongoc_gridfs_t *gridfs, const bson_t *query)
 {
    return _mongoc_gridfs_file_list_new (gridfs, query, 0);
 }
@@ -191,8 +192,8 @@ mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
 /** find a single gridfs file */
 mongoc_gridfs_file_t *
 mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
-                        const bson_t    *query,
-                        bson_error_t    *error)
+                        const bson_t *query,
+                        bson_error_t *error)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_gridfs_file_t *file;
@@ -202,7 +203,7 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
    list = _mongoc_gridfs_file_list_new (gridfs, query, 1);
 
    file = mongoc_gridfs_file_list_next (list);
-   mongoc_gridfs_file_list_error(list, error);
+   mongoc_gridfs_file_list_error (list, error);
 
    mongoc_gridfs_file_list_destroy (list);
 
@@ -213,8 +214,8 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
 /** find all matching gridfs files */
 mongoc_gridfs_file_list_t *
 mongoc_gridfs_find_with_opts (mongoc_gridfs_t *gridfs,
-                              const bson_t    *filter,
-                              const bson_t    *opts)
+                              const bson_t *filter,
+                              const bson_t *opts)
 {
    return _mongoc_gridfs_file_list_new_with_opts (gridfs, filter, opts);
 }
@@ -223,9 +224,9 @@ mongoc_gridfs_find_with_opts (mongoc_gridfs_t *gridfs,
 /** find a single gridfs file */
 mongoc_gridfs_file_t *
 mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
-                                  const bson_t    *filter,
-                                  const bson_t    *opts,
-                                  bson_error_t    *error)
+                                  const bson_t *filter,
+                                  const bson_t *opts,
+                                  bson_error_t *error)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_gridfs_file_t *file;
@@ -235,7 +236,7 @@ mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
    list = _mongoc_gridfs_file_list_new_with_opts (gridfs, filter, opts);
 
    file = mongoc_gridfs_file_list_next (list);
-   mongoc_gridfs_file_list_error(list, error);
+   mongoc_gridfs_file_list_error (list, error);
 
    mongoc_gridfs_file_list_destroy (list);
 
@@ -246,8 +247,8 @@ mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
 /** find a single gridfs file by filename */
 mongoc_gridfs_file_t *
 mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
-                                    const char      *filename,
-                                    bson_error_t    *error)
+                                    const char *filename,
+                                    bson_error_t *error)
 {
    mongoc_gridfs_file_t *file;
 
@@ -270,8 +271,8 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
  * The stream is fully consumed in creating the file
  */
 mongoc_gridfs_file_t *
-mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
-                                       mongoc_stream_t          *stream,
+mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
+                                       mongoc_stream_t *stream,
                                        mongoc_gridfs_file_opt_t *opt)
 {
    mongoc_gridfs_file_t *file;
@@ -285,15 +286,15 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
    BSON_ASSERT (gridfs);
    BSON_ASSERT (stream);
 
-   iov.iov_base = (void *)buf;
+   iov.iov_base = (void *) buf;
    iov.iov_len = 0;
 
    file = _mongoc_gridfs_file_new (gridfs, opt);
    timeout = gridfs->client->cluster.sockettimeoutms;
 
-   for (;; ) {
-      r = mongoc_stream_read (stream, iov.iov_base, MONGOC_GRIDFS_STREAM_CHUNK,
-                              0, timeout);
+   for (;;) {
+      r = mongoc_stream_read (
+         stream, iov.iov_base, MONGOC_GRIDFS_STREAM_CHUNK, 0, timeout);
 
       if (r > 0) {
          iov.iov_len = r;
@@ -316,7 +317,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
 
 /** create an empty gridfs file */
 mongoc_gridfs_file_t *
-mongoc_gridfs_create_file (mongoc_gridfs_t          *gridfs,
+mongoc_gridfs_create_file (mongoc_gridfs_t *gridfs,
                            mongoc_gridfs_file_opt_t *opt)
 {
    mongoc_gridfs_file_t *file;
@@ -350,8 +351,8 @@ mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs)
 
 bool
 mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
-                                  const char      *filename,
-                                  bson_error_t    *error)
+                                  const char *filename,
+                                  bson_error_t *error)
 {
    mongoc_bulk_operation_t *bulk_files = NULL;
    mongoc_bulk_operation_t *bulk_chunks = NULL;
@@ -390,10 +391,17 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    BSON_APPEND_UTF8 (&q, "filename", filename);
    BSON_APPEND_INT32 (&fields, "_id", 1);
 
-   cursor = _mongoc_cursor_new (gridfs->client, gridfs->files->ns,
-                                MONGOC_QUERY_NONE, 0, 0, 0,
+   cursor = _mongoc_cursor_new (gridfs->client,
+                                gridfs->files->ns,
+                                MONGOC_QUERY_NONE,
+                                0,
+                                0,
+                                0,
                                 false /* is command */,
-                                &q, &fields, NULL, NULL);
+                                &q,
+                                &fields,
+                                NULL,
+                                NULL);
 
    BSON_ASSERT (cursor);
 
@@ -410,8 +418,10 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
       goto failure;
    }
 
-   bulk_files = mongoc_collection_create_bulk_operation (gridfs->files, false, NULL);
-   bulk_chunks = mongoc_collection_create_bulk_operation (gridfs->chunks, false, NULL);
+   bulk_files =
+      mongoc_collection_create_bulk_operation (gridfs->files, false, NULL);
+   bulk_chunks =
+      mongoc_collection_create_bulk_operation (gridfs->chunks, false, NULL);
 
    files_q = BCON_NEW ("_id", "{", "$in", BCON_ARRAY (&ar), "}");
    chunks_q = BCON_NEW ("files_id", "{", "$in", BCON_ARRAY (&ar), "}");
@@ -420,7 +430,8 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    mongoc_bulk_operation_remove (bulk_chunks, chunks_q);
 
    files_ret = mongoc_bulk_operation_execute (bulk_files, NULL, &files_error);
-   chunks_ret = mongoc_bulk_operation_execute (bulk_chunks, NULL, &chunks_error);
+   chunks_ret =
+      mongoc_bulk_operation_execute (bulk_chunks, NULL, &chunks_error);
 
    if (error) {
       if (!files_ret) {

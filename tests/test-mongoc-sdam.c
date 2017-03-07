@@ -10,11 +10,10 @@
 #endif
 
 
-
 static void
-_topology_has_description(mongoc_topology_description_t *topology,
-                          bson_t *server,
-                          const char *address)
+_topology_has_description (mongoc_topology_description_t *topology,
+                           bson_t *server,
+                           const char *address)
 {
    mongoc_server_description_t *sd;
    bson_iter_t server_iter;
@@ -23,17 +22,18 @@ _topology_has_description(mongoc_topology_description_t *topology,
    sd = server_description_by_hostname (topology, address);
    assert (sd);
 
-   bson_iter_init(&server_iter, server);
+   bson_iter_init (&server_iter, server);
    while (bson_iter_next (&server_iter)) {
-      if (strcmp("setName", bson_iter_key (&server_iter)) == 0) {
-         set_name = bson_iter_utf8(&server_iter, NULL);
+      if (strcmp ("setName", bson_iter_key (&server_iter)) == 0) {
+         set_name = bson_iter_utf8 (&server_iter, NULL);
          if (set_name) {
             assert (sd->set_name);
             ASSERT_CMPSTR (sd->set_name, set_name);
          }
-      } else if (strcmp("type", bson_iter_key (&server_iter)) == 0) {
-         assert (sd->type == server_type_from_test(bson_iter_utf8(&server_iter, NULL)));
-      } else if (strcmp("setVersion", bson_iter_key (&server_iter)) == 0) {
+      } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
+         assert (sd->type ==
+                 server_type_from_test (bson_iter_utf8 (&server_iter, NULL)));
+      } else if (strcmp ("setVersion", bson_iter_key (&server_iter)) == 0) {
          int64_t expected_set_version;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
             expected_set_version = MONGOC_NO_SET_VERSION;
@@ -41,7 +41,7 @@ _topology_has_description(mongoc_topology_description_t *topology,
             expected_set_version = bson_iter_as_int64 (&server_iter);
          }
          assert (sd->set_version == expected_set_version);
-      } else if (strcmp("electionId", bson_iter_key (&server_iter)) == 0) {
+      } else if (strcmp ("electionId", bson_iter_key (&server_iter)) == 0) {
          bson_oid_t expected_oid;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
             bson_oid_init_from_string (&expected_oid,
@@ -53,7 +53,8 @@ _topology_has_description(mongoc_topology_description_t *topology,
 
          ASSERT_CMPOID (&sd->election_id, &expected_oid);
       } else {
-         fprintf (stderr, "ERROR: unparsed field %s\n", bson_iter_key(&server_iter));
+         fprintf (
+            stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
          assert (0);
       }
    }
@@ -84,11 +85,11 @@ test_sdam_cb (bson_t *test)
    const char *hostname;
 
    /* parse out the uri and use it to create a client */
-   assert (bson_iter_init_find(&iter, test, "uri"));
-   client = mongoc_client_new(bson_iter_utf8(&iter, NULL));
+   assert (bson_iter_init_find (&iter, test, "uri"));
+   client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
 
    /* for each phase, parse and validate */
-   assert (bson_iter_init_find(&iter, test, "phases"));
+   assert (bson_iter_init_find (&iter, test, "phases"));
    bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
@@ -99,7 +100,7 @@ test_sdam_cb (bson_t *test)
                                             &client->topology->description);
 
       /* parse out "outcome" and validate */
-      assert (bson_iter_init_find(&phase_field_iter, &phase, "outcome"));
+      assert (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
       bson_iter_bson (&phase_field_iter, &outcome);
       bson_iter_init (&outcome_iter, &outcome);
 
@@ -107,7 +108,8 @@ test_sdam_cb (bson_t *test)
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
             ASSERT_CMPINT (
-               bson_count_keys (&servers), ==,
+               bson_count_keys (&servers),
+               ==,
                (int) client->topology->description.servers->items_len);
 
             bson_iter_init (&servers_iter, &servers);
@@ -117,23 +119,25 @@ test_sdam_cb (bson_t *test)
                hostname = bson_iter_key (&servers_iter);
                bson_iter_bson (&servers_iter, &server);
 
-               _topology_has_description(&client->topology->description,
-                                         &server,
-                                         hostname);
+               _topology_has_description (
+                  &client->topology->description, &server, hostname);
             }
 
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
-            set_name = bson_iter_utf8(&outcome_iter, NULL);
+            set_name = bson_iter_utf8 (&outcome_iter, NULL);
             if (set_name) {
                assert (&client->topology->description.set_name);
                ASSERT_CMPSTR (client->topology->description.set_name, set_name);
             }
-         } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) == 0) {
-            ASSERT_CMPSTR (
-               mongoc_topology_description_type (&client->topology->description),
-               bson_iter_utf8(&outcome_iter, NULL));
+         } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
+                    0) {
+            ASSERT_CMPSTR (mongoc_topology_description_type (
+                              &client->topology->description),
+                           bson_iter_utf8 (&outcome_iter, NULL));
          } else {
-            fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
+            fprintf (stderr,
+                     "ERROR: unparsed test field %s\n",
+                     bson_iter_key (&outcome_iter));
             assert (false);
          }
       }
@@ -154,24 +158,27 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    /* Single */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/single", resolved));
-   install_json_test_suite(suite, resolved, &test_sdam_cb);
+   ASSERT (
+      realpath (JSON_DIR "/server_discovery_and_monitoring/single", resolved));
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Replica set */
    ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/rs", resolved));
-   install_json_test_suite(suite, resolved, &test_sdam_cb);
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Sharded */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
-   install_json_test_suite(suite, resolved, &test_sdam_cb);
+   ASSERT (
+      realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental", resolved));
-   install_json_test_suite(suite, resolved, &test_sdam_cb);
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental",
+                     resolved));
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
 }
 
 void
 test_sdam_install (TestSuite *suite)
 {
-   test_all_spec_tests(suite);
+   test_all_spec_tests (suite);
 }

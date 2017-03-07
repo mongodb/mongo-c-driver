@@ -22,31 +22,28 @@
 #include <CommonCrypto/CommonDigest.h>
 
 
-
 void
-mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t     *crypto,
-                                       const void          *key,
-                                       int                  key_len,
+mongoc_crypto_common_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
+                                       const void *key,
+                                       int key_len,
                                        const unsigned char *d,
-                                       int                  n,
-                                       unsigned char       *md /* OUT */)
+                                       int n,
+                                       unsigned char *md /* OUT */)
 {
    /* U1 = HMAC(input, salt + 0001) */
-   CCHmac (kCCHmacAlgSHA1,
-           key,
-           key_len,
-           d,
-           n,
-           md);
+   CCHmac (kCCHmacAlgSHA1, key, key_len, d, n, md);
 }
 
 bool
-mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t     *crypto,
+mongoc_crypto_common_crypto_sha1 (mongoc_crypto_t *crypto,
                                   const unsigned char *input,
-                                  const size_t         input_len,
-                                  unsigned char       *output /* OUT */)
+                                  const size_t input_len,
+                                  unsigned char *output /* OUT */)
 {
-   return CC_SHA1 (input, input_len, output);
+   if (CC_SHA1 (input, input_len, output)) {
+      return true;
+   }
+   return false;
 }
 
 

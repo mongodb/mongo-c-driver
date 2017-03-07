@@ -80,8 +80,7 @@ _mongoc_topology_description_monitor_server_closed (
 /* Send TopologyOpeningEvent when first called on this topology description.
  * td is not const: we set its "opened" field here */
 void
-_mongoc_topology_description_monitor_opening (
-   mongoc_topology_description_t *td)
+_mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
 {
    mongoc_topology_description_t *prev_td = NULL;
    size_t i;
@@ -94,8 +93,8 @@ _mongoc_topology_description_monitor_opening (
    if (td->apm_callbacks.topology_changed) {
       /* prepare to call monitor_changed */
       prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
-      mongoc_topology_description_init (prev_td, MONGOC_TOPOLOGY_UNKNOWN,
-                                        td->heartbeat_msec);
+      mongoc_topology_description_init (
+         prev_td, MONGOC_TOPOLOGY_UNKNOWN, td->heartbeat_msec);
    }
 
    td->opened = true;

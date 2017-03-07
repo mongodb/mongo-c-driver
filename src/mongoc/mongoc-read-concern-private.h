@@ -17,7 +17,7 @@
 #ifndef MONGOC_READ_CONCERN_PRIVATE_H
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
-#if !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -28,16 +28,17 @@
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_read_concern_t
-{
-   char   *level;
-   bool    frozen;
-   bson_t  compiled;
+struct _mongoc_read_concern_t {
+   char *level;
+   bool frozen;
+   bson_t compiled;
 };
 
 
-bool          _mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
-const bson_t *_mongoc_read_concern_get_bson   (mongoc_read_concern_t       *read_concern);
+bool
+_mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
+const bson_t *
+_mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern);
 
 BSON_END_DECLS
 

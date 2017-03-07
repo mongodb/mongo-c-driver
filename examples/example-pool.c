@@ -1,4 +1,5 @@
-/* gcc example-pool.c -o example-pool $(pkg-config --cflags --libs libmongoc-1.0) */
+/* gcc example-pool.c -o example-pool $(pkg-config --cflags --libs
+ * libmongoc-1.0) */
 
 /* ./example-pool [CONNECTION_STRING] */
 
@@ -26,8 +27,8 @@ worker (void *data)
        * probably only want to hold onto the client for the portion of the
        * request performing database queries.
        */
-      r = mongoc_client_command_simple (client, "admin", &ping, NULL, NULL,
-                                        &error);
+      r = mongoc_client_command_simple (
+         client, "admin", &ping, NULL, NULL, &error);
 
       if (!r) {
          fprintf (stderr, "%s\n", error.message);
@@ -48,7 +49,8 @@ worker (void *data)
    return NULL;
 }
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
    const char *uristr = "mongodb://127.0.0.1/?appname=pool-example";
    mongoc_uri_t *uri;
@@ -61,7 +63,7 @@ int main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv [1];
+      uristr = argv[1];
    }
 
    uri = mongoc_uri_new (uristr);

@@ -1434,3 +1434,4 @@ future_client_get_gridfs (
    future_start (future, background_mongoc_client_get_gridfs);
    return future;
 }
+

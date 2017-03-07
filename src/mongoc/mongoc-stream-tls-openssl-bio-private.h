@@ -17,8 +17,8 @@
 #ifndef MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
 #define MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -34,7 +34,7 @@ BIO_METHOD *
 mongoc_stream_tls_openssl_bio_meth_new ();
 
 void
-mongoc_stream_tls_openssl_bio_set_data ();
+mongoc_stream_tls_openssl_bio_set_data (BIO *b, void *ptr);
 
 int
 mongoc_stream_tls_openssl_bio_create (BIO *b);
@@ -43,29 +43,19 @@ int
 mongoc_stream_tls_openssl_bio_destroy (BIO *b);
 
 int
-mongoc_stream_tls_openssl_bio_read (BIO  *b,
-                                    char *buf,
-                                    int   len);
+mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len);
 
 int
-mongoc_stream_tls_openssl_bio_write (BIO        *b,
-                                     const char *buf,
-                                     int         len);
+mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len);
 
 long
-mongoc_stream_tls_openssl_bio_ctrl (BIO  *b,
-                                    int   cmd,
-                                    long  num,
-                                    void *ptr);
+mongoc_stream_tls_openssl_bio_ctrl (BIO *b, int cmd, long num, void *ptr);
 
 int
-mongoc_stream_tls_openssl_bio_gets (BIO  *b,
-                                    char *buf,
-                                    int   len);
+mongoc_stream_tls_openssl_bio_gets (BIO *b, char *buf, int len);
 
 int
-mongoc_stream_tls_openssl_bio_puts (BIO        *b,
-                                    const char *str);
+mongoc_stream_tls_openssl_bio_puts (BIO *b, const char *str);
 
 BSON_END_DECLS
 

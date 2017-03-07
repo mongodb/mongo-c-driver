@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 
-const char* COLLECTION_NAME = "things";
+const char *COLLECTION_NAME = "things";
 
 #include "../doc-common-insert.c"
 #include "explain.c"
@@ -28,18 +28,18 @@ const char* COLLECTION_NAME = "things";
 
 
 int
-main (int   argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_database_t *database = NULL;
    mongoc_client_t *client = NULL;
    mongoc_collection_t *collection = NULL;
    char *host_and_port;
    int res = 0;
-   char* other_host_and_port = NULL;
+   char *other_host_and_port = NULL;
 
    if (argc < 2 || argc > 3) {
-      fprintf (stderr, "usage: %s MONGOD-1-CONNECTION-STRING "
+      fprintf (stderr,
+               "usage: %s MONGOD-1-CONNECTION-STRING "
                "[MONGOD-2-HOST-NAME:MONGOD-2-PORT]\n",
                argv[0]);
       fprintf (stderr,
@@ -57,7 +57,7 @@ main (int   argc,
    mongoc_init ();
 
    if (strncmp (argv[1], "mongodb://", 10) == 0) {
-      host_and_port = bson_strdup (argv [1]);
+      host_and_port = bson_strdup (argv[1]);
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s", argv[1]);
    }
@@ -66,7 +66,7 @@ main (int   argc,
    client = mongoc_client_new (host_and_port);
 
    if (!client) {
-      fprintf(stderr, "Invalid hostname or port: %s\n", host_and_port);
+      fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
       res = 2;
       goto cleanup;
    }

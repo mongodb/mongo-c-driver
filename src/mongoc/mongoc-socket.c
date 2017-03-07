@@ -30,7 +30,7 @@
 
 
 #define OPERATION_EXPIRED(expire_at) \
-   ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time())))
+   ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time ())))
 
 
 /*
@@ -94,12 +94,12 @@ _mongoc_socket_setnonblock (int sd)
 
 static bool
 #ifdef _WIN32
-_mongoc_socket_wait (SOCKET   sd,           /* IN */
+_mongoc_socket_wait (SOCKET sd, /* IN */
 #else
-_mongoc_socket_wait (int      sd,           /* IN */
+_mongoc_socket_wait (int sd, /* IN */
 #endif
-                     int      events,       /* IN */
-                     int64_t  expire_at)    /* IN */
+                     int events,        /* IN */
+                     int64_t expire_at) /* IN */
 {
 #ifdef _WIN32
    WSAPOLLFD pfd;
@@ -122,7 +122,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
    pfd.revents = 0;
 
-   now = bson_get_monotonic_time();
+   now = bson_get_monotonic_time ();
 
    for (;;) {
       if (expire_at < 0) {
@@ -130,7 +130,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
       } else if (expire_at == 0) {
          timeout = 0;
       } else {
-         timeout = (int)((expire_at - now) / 1000L);
+         timeout = (int) ((expire_at - now) / 1000L);
          if (timeout < 0) {
             timeout = 0;
          }
@@ -139,7 +139,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #ifdef _WIN32
       ret = WSAPoll (&pfd, 1, timeout);
       if (ret == SOCKET_ERROR) {
-         errno = WSAGetLastError();
+         errno = WSAGetLastError ();
          ret = -1;
       }
 #else
@@ -147,7 +147,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
 
       if (ret > 0) {
-         /* Something happened, so return that */
+/* Something happened, so return that */
 #ifdef _WIN32
          RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
 #else
@@ -156,9 +156,9 @@ _mongoc_socket_wait (int      sd,           /* IN */
       } else if (ret < 0) {
          /* poll itself failed */
 
-         TRACE("errno is: %d", errno);
-         if (MONGOC_ERRNO_IS_AGAIN(errno)) {
-            now = bson_get_monotonic_time();
+         TRACE ("errno is: %d", errno);
+         if (MONGOC_ERRNO_IS_AGAIN (errno)) {
+            now = bson_get_monotonic_time ();
 
             if (expire_at < now) {
                RETURN (false);
@@ -202,9 +202,9 @@ _mongoc_socket_wait (int      sd,           /* IN */
  */
 
 ssize_t
-mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
-                    size_t                nsds,         /* IN */
-                    int32_t               timeout)      /* IN */
+mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
+                    size_t nsds,               /* IN */
+                    int32_t timeout)           /* IN */
 {
 #ifdef _WIN32
    WSAPOLLFD *pfds;
@@ -219,9 +219,9 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
    BSON_ASSERT (sds);
 
 #ifdef _WIN32
-   pfds = (WSAPOLLFD *)bson_malloc(sizeof(*pfds) * nsds);
+   pfds = (WSAPOLLFD *) bson_malloc (sizeof (*pfds) * nsds);
 #else
-   pfds = (struct pollfd *)bson_malloc(sizeof(*pfds) * nsds);
+   pfds = (struct pollfd *) bson_malloc (sizeof (*pfds) * nsds);
 #endif
 
    for (i = 0; i < nsds; i++) {
@@ -248,7 +248,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
       sds[i].revents = pfds[i].revents;
    }
 
-   bson_free(pfds);
+   bson_free (pfds);
 
    return ret;
 }
@@ -258,7 +258,7 @@ static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 #else
-_mongoc_socket_setnodelay (int sd)    /* IN */
+_mongoc_socket_setnodelay (int sd) /* IN */
 #endif
 {
 #ifdef _WIN32
@@ -271,12 +271,12 @@ _mongoc_socket_setnodelay (int sd)    /* IN */
    ENTRY;
 
    errno = 0;
-   ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY,
-                     (char *)&optval, sizeof optval);
+   ret = setsockopt (
+      sd, IPPROTO_TCP, TCP_NODELAY, (char *) &optval, sizeof optval);
 
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
-      MONGOC_WARNING ("WSAGetLastError(): %d", (int)WSAGetLastError ());
+      MONGOC_WARNING ("WSAGetLastError(): %d", (int) WSAGetLastError ());
    }
 #endif
 
@@ -304,7 +304,7 @@ int
 mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
 {
    BSON_ASSERT (sock);
-   TRACE("Current errno: %d", sock->errno_);
+   TRACE ("Current errno: %d", sock->errno_);
    return sock->errno_;
 }
 
@@ -333,7 +333,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 #else
    sock->errno_ = errno;
 #endif
-   TRACE("setting errno: %d", sock->errno_);
+   TRACE ("setting errno: %d %s", sock->errno_, strerror (sock->errno_));
 }
 
 
@@ -357,7 +357,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 static bool
 _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
 {
-   TRACE("errno is: %d", sock->errno_);
+   TRACE ("errno is: %d", sock->errno_);
    return MONGOC_ERRNO_IS_AGAIN (sock->errno_);
 }
 
@@ -381,8 +381,8 @@ _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
  */
 
 mongoc_socket_t *
-mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
-                      int64_t          expire_at) /* IN */
+mongoc_socket_accept (mongoc_socket_t *sock, /* IN */
+                      int64_t expire_at)     /* IN */
 {
    return mongoc_socket_accept_ex (sock, expire_at, NULL);
 }
@@ -406,13 +406,13 @@ mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
  */
 
 mongoc_socket_t *
-mongoc_socket_accept_ex (mongoc_socket_t *sock,      /* IN */
-                         int64_t          expire_at, /* IN */
-                         uint16_t *port)             /* OUT */
+mongoc_socket_accept_ex (mongoc_socket_t *sock, /* IN */
+                         int64_t expire_at,     /* IN */
+                         uint16_t *port)        /* OUT */
 {
    mongoc_socket_t *client;
-   struct sockaddr_in addr = { 0 };
-   socklen_t addrlen = sizeof addr;
+   struct sockaddr_in addr = {0};
+   mongoc_socklen_t addrlen = sizeof addr;
    bool try_again = false;
    bool failed = false;
 #ifdef _WIN32
@@ -453,7 +453,7 @@ again:
       RETURN (NULL);
    }
 
-   client = (mongoc_socket_t *)bson_malloc0 (sizeof *client);
+   client = (mongoc_socket_t *) bson_malloc0 (sizeof *client);
    client->sd = sd;
 
    if (port) {
@@ -485,9 +485,9 @@ again:
  */
 
 int
-mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
-                    const struct sockaddr *addr,    /* IN */
-                    socklen_t              addrlen) /* IN */
+mongoc_socket_bind (mongoc_socket_t *sock,       /* IN */
+                    const struct sockaddr *addr, /* IN */
+                    mongoc_socklen_t addrlen)    /* IN */
 {
    int ret;
 
@@ -539,10 +539,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
          sock->sd = INVALID_SOCKET;
       } else {
          _mongoc_socket_capture_errno (sock);
-         RETURN(-1);
+         RETURN (-1);
       }
    }
-   RETURN(0);
+   RETURN (0);
 #else
    if (sock->sd != -1) {
       shutdown (sock->sd, SHUT_RDWR);
@@ -550,10 +550,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
          sock->sd = -1;
       } else {
          _mongoc_socket_capture_errno (sock);
-         RETURN(-1);
+         RETURN (-1);
       }
    }
-   RETURN(0);
+   RETURN (0);
 #endif
 }
 
@@ -576,16 +576,16 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
  */
 
 int
-mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
-                       const struct sockaddr *addr,      /* IN */
-                       socklen_t              addrlen,   /* IN */
-                       int64_t                expire_at) /* IN */
+mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
+                       const struct sockaddr *addr, /* IN */
+                       mongoc_socklen_t addrlen,    /* IN */
+                       int64_t expire_at)           /* IN */
 {
    bool try_again = false;
    bool failed = false;
    int ret;
    int optval;
-   socklen_t optlen = sizeof optval;
+   mongoc_socklen_t optlen = sizeof optval;
 
    ENTRY;
 
@@ -609,8 +609,8 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
          optval = -1;
-         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
-                           (char *)&optval, &optlen);
+         ret = getsockopt (
+            sock->sd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen);
          if ((ret == 0) && (optval == 0)) {
             RETURN (0);
          } else {
@@ -672,8 +672,8 @@ mongoc_socket_destroy (mongoc_socket_t *sock) /* IN */
  */
 
 int
-mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
-                      unsigned int     backlog) /* IN */
+mongoc_socket_listen (mongoc_socket_t *sock, /* IN */
+                      unsigned int backlog)  /* IN */
 {
    int ret;
 
@@ -744,7 +744,7 @@ mongoc_socket_new (int domain,   /* IN */
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
-   sock = (mongoc_socket_t *)bson_malloc0 (sizeof *sock);
+   sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
 
@@ -785,11 +785,11 @@ fail:
  */
 
 ssize_t
-mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
-                    void            *buf,       /* OUT */
-                    size_t           buflen,    /* IN */
-                    int              flags,     /* IN */
-                    int64_t          expire_at) /* IN */
+mongoc_socket_recv (mongoc_socket_t *sock, /* IN */
+                    void *buf,             /* OUT */
+                    size_t buflen,         /* IN */
+                    int flags,             /* IN */
+                    int64_t expire_at)     /* IN */
 {
    ssize_t ret = 0;
    bool failed = false;
@@ -803,7 +803,7 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 again:
    sock->errno_ = 0;
 #ifdef _WIN32
-   ret = recv (sock->sd, (char *)buf, (int)buflen, flags);
+   ret = recv (sock->sd, (char *) buf, (int) buflen, flags);
    failed = (ret == SOCKET_ERROR);
 #else
    ret = recv (sock->sd, buf, buflen, flags);
@@ -844,11 +844,11 @@ again:
  */
 
 int
-mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
-                          int              level,   /* IN */
-                          int              optname, /* IN */
-                          const void      *optval,  /* IN */
-                          socklen_t        optlen)  /* IN */
+mongoc_socket_setsockopt (mongoc_socket_t *sock,   /* IN */
+                          int level,               /* IN */
+                          int optname,             /* IN */
+                          const void *optval,      /* IN */
+                          mongoc_socklen_t optlen) /* IN */
 {
    int ret;
 
@@ -885,10 +885,10 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
  */
 
 ssize_t
-mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
-                    const void      *buf,       /* IN */
-                    size_t           buflen,    /* IN */
-                    int64_t          expire_at) /* IN */
+mongoc_socket_send (mongoc_socket_t *sock, /* IN */
+                    const void *buf,       /* IN */
+                    size_t buflen,         /* IN */
+                    int64_t expire_at)     /* IN */
 {
    mongoc_iovec_t iov;
 
@@ -896,7 +896,7 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
    BSON_ASSERT (buf);
    BSON_ASSERT (buflen);
 
-   iov.iov_base = (void *)buf;
+   iov.iov_base = (void *) buf;
    iov.iov_len = buflen;
 
    return mongoc_socket_sendv (sock, &iov, 1, expire_at);
@@ -923,9 +923,9 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  */
 
 static ssize_t
-_mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
-                               mongoc_iovec_t  *iov,    /* IN */
-                               size_t           iovcnt) /* IN */
+_mongoc_socket_try_sendv_slow (mongoc_socket_t *sock, /* IN */
+                               mongoc_iovec_t *iov,   /* IN */
+                               size_t iovcnt)         /* IN */
 {
    ssize_t ret = 0;
    size_t i;
@@ -938,7 +938,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
    BSON_ASSERT (iovcnt);
 
    for (i = 0; i < iovcnt; i++) {
-      wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
+      wrote = send (sock->sd, iov[i].iov_base, iov[i].iov_len, 0);
 #ifdef _WIN32
       if (wrote == SOCKET_ERROR) {
 #else
@@ -954,7 +954,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
 
       ret += wrote;
 
-      if (wrote != iov [i].iov_len) {
+      if (wrote != iov[i].iov_len) {
          RETURN (ret);
       }
    }
@@ -983,9 +983,9 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
  */
 
 static ssize_t
-_mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
-                          mongoc_iovec_t  *iov,    /* IN */
-                          size_t           iovcnt) /* IN */
+_mongoc_socket_try_sendv (mongoc_socket_t *sock, /* IN */
+                          mongoc_iovec_t *iov,   /* IN */
+                          size_t iovcnt)         /* IN */
 {
 #ifdef _WIN32
    DWORD dwNumberofBytesSent = 0;
@@ -1004,20 +1004,24 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
 #ifdef _WIN32
-   ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
-                  0, NULL, NULL);
-   TRACE("WSASend sent: %ld (out of: %ld), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
+   ret = WSASend (
+      sock->sd, (LPWSABUF) iov, iovcnt, &dwNumberofBytesSent, 0, NULL, NULL);
+   TRACE ("WSASend sent: %ld (out of: %ld), ret: %d",
+          dwNumberofBytesSent,
+          iov->iov_len,
+          ret);
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
    msg.msg_iovlen = (int) iovcnt;
-   ret = sendmsg (sock->sd, &msg,
-# ifdef MSG_NOSIGNAL
+   ret = sendmsg (sock->sd,
+                  &msg,
+#ifdef MSG_NOSIGNAL
                   MSG_NOSIGNAL);
-# else
+#else
                   0);
-# endif
-   TRACE("Send %ld out of %ld bytes", ret, iov->iov_len);
+#endif
+   TRACE ("Send %ld out of %ld bytes", ret, iov->iov_len);
 #endif
 
 
@@ -1028,17 +1032,17 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 #endif
       _mongoc_socket_capture_errno (sock);
 
-      /*
-       * Check to see if we have sent an iovec too large for sendmsg to
-       * complete. If so, we need to fallback to the slow path of multiple
-       * send() commands.
-       */
+/*
+ * Check to see if we have sent an iovec too large for sendmsg to
+ * complete. If so, we need to fallback to the slow path of multiple
+ * send() commands.
+ */
 #ifdef _WIN32
       if (mongoc_socket_errno (sock) == WSAEMSGSIZE) {
 #else
       if (mongoc_socket_errno (sock) == EMSGSIZE) {
 #endif
-         RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
+         RETURN (_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
       }
 
       RETURN (-1);
@@ -1076,10 +1080,10 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
  */
 
 ssize_t
-mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
-                     mongoc_iovec_t   *in_iov,    /* IN */
-                     size_t            iovcnt,    /* IN */
-                     int64_t           expire_at) /* IN */
+mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
+                     mongoc_iovec_t *in_iov, /* IN */
+                     size_t iovcnt,          /* IN */
+                     int64_t expire_at)      /* IN */
 {
    ssize_t ret = 0;
    ssize_t sent;
@@ -1092,12 +1096,13 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
    BSON_ASSERT (in_iov);
    BSON_ASSERT (iovcnt);
 
-   iov = bson_malloc(sizeof(*iov) * iovcnt);
-   memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
+   iov = bson_malloc (sizeof (*iov) * iovcnt);
+   memcpy (iov, in_iov, sizeof (*iov) * iovcnt);
 
    for (;;) {
-      sent = _mongoc_socket_try_sendv (sock, &iov [cur], iovcnt - cur);
-      TRACE("Sent %ld (of %ld) out of iovcnt=%ld", sent, iov[cur].iov_len, iovcnt);
+      sent = _mongoc_socket_try_sendv (sock, &iov[cur], iovcnt - cur);
+      TRACE (
+         "Sent %ld (of %ld) out of iovcnt=%ld", sent, iov[cur].iov_len, iovcnt);
 
       /*
        * If we failed with anything other than EAGAIN or EWOULDBLOCK,
@@ -1107,7 +1112,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
       if (sent == -1) {
          if (!_mongoc_socket_errno_is_again (sock)) {
             ret = -1;
-            GOTO(CLEANUP);
+            GOTO (CLEANUP);
          }
       }
 
@@ -1121,9 +1126,11 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
          /*
           * Subtract the sent amount from what we still need to send.
           */
-         while ((cur < iovcnt) && (sent >= (ssize_t)iov [cur].iov_len)) {
-            TRACE("still got bytes left: sent -= iov_len: %ld -= %ld", sent, iov[cur].iov_len);
-            sent -= iov [cur++].iov_len;
+         while ((cur < iovcnt) && (sent >= (ssize_t) iov[cur].iov_len)) {
+            TRACE ("still got bytes left: sent -= iov_len: %ld -= %ld",
+                   sent,
+                   iov[cur].iov_len);
+            sent -= iov[cur++].iov_len;
          }
 
          /*
@@ -1131,7 +1138,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * sending data over the socket.
           */
          if (cur == iovcnt) {
-            TRACE("%s", "Finished the iovecs");
+            TRACE ("%s", "Finished the iovecs");
             break;
          }
 
@@ -1139,37 +1146,38 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * Increment the current iovec buffer to its proper offset and adjust
           * the number of bytes to write.
           */
-         TRACE("Seeked io_base+%ld", sent);
-         TRACE("Subtracting iov_len -= sent; %ld -= %ld", iov[cur].iov_len, sent);
-         iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
-         iov [cur].iov_len -= sent;
-         TRACE("iov_len remaining %ld", iov[cur].iov_len);
+         TRACE ("Seeked io_base+%ld", sent);
+         TRACE (
+            "Subtracting iov_len -= sent; %ld -= %ld", iov[cur].iov_len, sent);
+         iov[cur].iov_base = ((char *) iov[cur].iov_base) + sent;
+         iov[cur].iov_len -= sent;
+         TRACE ("iov_len remaining %ld", iov[cur].iov_len);
 
          BSON_ASSERT (iovcnt - cur);
-         BSON_ASSERT (iov [cur].iov_len);
+         BSON_ASSERT (iov[cur].iov_len);
       } else if (OPERATION_EXPIRED (expire_at)) {
-         GOTO(CLEANUP);
+         GOTO (CLEANUP);
       }
 
       /*
        * Block on poll() until our desired condition is met.
        */
       if (!_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
-         GOTO(CLEANUP);
+         GOTO (CLEANUP);
       }
    }
 
 CLEANUP:
-   bson_free(iov);
+   bson_free (iov);
 
    RETURN (ret);
 }
 
 
 int
-mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
-                           struct sockaddr *addr,    /* OUT */
-                           socklen_t       *addrlen) /* INOUT */
+mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
+                           struct sockaddr *addr,     /* OUT */
+                           mongoc_socklen_t *addrlen) /* INOUT */
 {
    int ret;
 
@@ -1189,9 +1197,9 @@ char *
 mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 {
    struct sockaddr addr;
-   socklen_t len = sizeof addr;
+   mongoc_socklen_t len = sizeof addr;
    char *ret;
-   char host [BSON_HOST_NAME_MAX + 1];
+   char host[BSON_HOST_NAME_MAX + 1];
 
    ENTRY;
 
@@ -1211,7 +1219,7 @@ bool
 mongoc_socket_check_closed (mongoc_socket_t *sock) /* IN */
 {
    bool closed = false;
-   char buf [1];
+   char buf[1];
    ssize_t r;
 
    if (_mongoc_socket_wait (sock->sd, POLLIN, 0)) {
@@ -1250,21 +1258,21 @@ mongoc_socket_check_closed (mongoc_socket_t *sock) /* IN */
  */
 
 void
-mongoc_socket_inet_ntop (struct addrinfo *rp,        /* IN */
-                         char            *buf,       /* INOUT */
-                         size_t           buflen)    /* IN */
+mongoc_socket_inet_ntop (struct addrinfo *rp, /* IN */
+                         char *buf,           /* INOUT */
+                         size_t buflen)       /* IN */
 {
    void *ptr;
    char tmp[256];
 
    switch (rp->ai_family) {
    case AF_INET:
-      ptr = &((struct sockaddr_in *)rp->ai_addr)->sin_addr;
+      ptr = &((struct sockaddr_in *) rp->ai_addr)->sin_addr;
       inet_ntop (rp->ai_family, ptr, tmp, sizeof (tmp));
       bson_snprintf (buf, buflen, "ipv4 %s", tmp);
       break;
    case AF_INET6:
-      ptr = &((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr;
+      ptr = &((struct sockaddr_in6 *) rp->ai_addr)->sin6_addr;
       inet_ntop (rp->ai_family, ptr, tmp, sizeof (tmp));
       bson_snprintf (buf, buflen, "ipv6 %s", tmp);
       break;

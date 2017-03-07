@@ -15,10 +15,13 @@ AS_IF([test "$enable_sasl" != "no"],[
         AC_MSG_ERROR([You must install the Cyrus SASL libraries and development headers to enable SASL support.])
       fi
 
+      old_CFLAGS=$CFLAGS
+      CFLAGS=$SASL_CFLAGS
       AC_CHECK_HEADER([sasl/sasl.h],[have_sasl_headers=yes],[have_sasl_headers=no])
       if test "$have_sasl_headers" = "no" -a "$enable_sasl" = "yes" ; then
         AC_MSG_ERROR([You must install the Cyrus SASL development headers to enable SASL support.])
       fi
+      CFLAGS=$old_CFLAGS
 
       if test "$have_sasl_headers" -a "$have_sasl2_lib" = "yes" ; then
         sasl_mode=sasl2
@@ -51,6 +54,8 @@ AC_SUBST(SASL_LIBS)
 dnl Let mongoc-config.h.in know about SASL status.
 if test "$sasl_mode" != "no" ; then
   AC_SUBST(MONGOC_ENABLE_SASL, 1)
+  AC_SUBST(MONGOC_ENABLE_SASL_CYRUS, 1)
+  AC_SUBST(MONGOC_ENABLE_SASL_SSPI, 0)
   
   AC_CHECK_LIB([sasl2],[sasl_client_done],
                [have_sasl_client_done=yes],
@@ -64,5 +69,7 @@ if test "$sasl_mode" != "no" ; then
 
 else
   AC_SUBST(MONGOC_ENABLE_SASL, 0)
+  AC_SUBST(MONGOC_ENABLE_SASL_CYRUS, 0)
+  AC_SUBST(MONGOC_ENABLE_SASL_SSPI, 0)
   AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)
 fi
