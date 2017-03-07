@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
 Build-Depends: debhelper (>= 9),
                dh-autoreconf,
-               libbson-dev (>= 1.5.4),
+               libbson-dev (>= 1.6.1),
                libssl-dev,
                pkg-config,
                yelp-tools,
@@ -18,7 +18,7 @@ Package: libmongoc-dev
 Section: libdevel
 Architecture: any
 Depends: libmongoc-1.0-0 (= ${binary:Version}),
-         libbson-dev (>= 1.5.4),
+         libbson-dev (>= 1.6.1),
          libssl-dev,
          ${misc:Depends}
 Description: MongoDB C client library - dev files
