@@ -1,2 +1,4 @@
-# yelp-build embeds jQuery and jQuery.Syntax, so we can't use libjs-jquery
+# Sphinx embeds jQuery
 libmongoc-doc: embedded-javascript-library
+# This man page shows some long URIs that we cannot linebreak
+libmongoc-doc: manpage-has-errors-from-man usr/share/man/man3/mongoc_uri_new.3.gz 73: warning [p 1, 5.5i]: cannot adjust line
