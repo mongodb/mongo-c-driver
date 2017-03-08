@@ -41,6 +41,12 @@ language = 'en'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
 
+# don't fetch libbson's inventory from mongoc.org during build - Debian and
+# Fedora package builds must work offline - maintain a recent copy here
+intersphinx_mapping = {
+    'bson': ('http://mongoc.org/libbson/' + release, 'libbson-objects.inv'),
+}
+
 # -- Options for HTML output ----------------------------------------------
 
 html_theme_path = ['.']
