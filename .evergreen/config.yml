@@ -378,6 +378,29 @@ tasks:
               sphinx-build --version
 
               ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
+              
+              # Check that docs were included, but sphinx temp files weren't.
+              set -o xtrace
+              set -o errexit
+              tarfile=mongo-c-driver-*.tar.gz
+              docs='mongo-c-driver-*/doc/html/index.html mongo-c-driver-*/doc/man/mongoc_client_t.3'
+              tmpfiles='mongo-c-driver-*/doc/html/.doctrees \
+                        mongo-c-driver-*/doc/html/.buildinfo \
+                        mongo-c-driver-*/doc/man/.doctrees \
+                        mongo-c-driver-*/doc/man/.buildinfo'
+
+              for doc in $docs; do
+                # Check this doc is in the archive.
+                tar --wildcards -tzf $tarfile $doc
+              done
+
+              for tmpfile in $tmpfiles; do
+                # Check this temp file doesn't exist.
+                if tar --wildcards -tzf $tarfile $tmpfile > /dev/null 2>&1; then
+                  echo "Found temp file in archive: $tmpfile"
+                  exit 1
+                fi
+              done
         - func: "upload docs"
         - func: "upload release"
         - func: "upload build"
