@@ -45,11 +45,7 @@
 BSON_BEGIN_DECLS
 
 
-#ifdef MONGOC_HAVE_SOCKLEN
-typedef socklen_t mongoc_socklen_t;
-#else
-typedef int mongoc_socklen_t;
-#endif
+typedef MONGOC_SOCKET_ARG3 mongoc_socklen_t;
 
 typedef struct _mongoc_socket_t mongoc_socket_t;
 

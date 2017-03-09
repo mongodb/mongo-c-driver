@@ -43,6 +43,8 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #endif
 ])], [c_compiler="sun"], [])
 
+# The type of parameters for accept, getpeername, getsockname, getsockopt
+# all vary the same way by platform.
 AX_PROTOTYPE(accept, [
    #include <sys/types.h>
    #include <sys/socket.h>
@@ -54,39 +56,10 @@ AX_PROTOTYPE(accept, [
 ARG2, [struct sockaddr, void],
 ARG3, [socklen_t, size_t, int])
 
-AX_PROTOTYPE(getpeername, [
-   #include <sys/types.h>
-   #include <sys/socket.h>
-], [
-   int a = 0;
-   ARG2 *b = 0;
-   ARG3 *c = 0;
-   getpeername (a, b, c);],
-ARG2, [struct sockaddr, void],
-ARG3, [socklen_t, size_t, int])
-
-AX_PROTOTYPE(getsockname, [
-   #include <sys/types.h>
-   #include <sys/socket.h>
-], [
-   int a = 0;
-   ARG2 *b = 0;
-   ARG3 *c = 0;
-   getsockname (a, b, c);],
-ARG2, [struct sockaddr, void],
-ARG3, [socklen_t, size_t, int])
-
-AX_PROTOTYPE(getsockopt, [
-   #include <sys/types.h>
-   #include <sys/socket.h>
-], [
-   int a = 0;
-   int b = 0;
-   int c = 0;
-   void *d = 0;
-   ARG5 *e = 0;
-   getsockopt (a, b, c, d, e);],
-ARG5, [socklen_t, int])
+MONGOC_SOCKET_ARG2="$ACCEPT_ARG2"
+AC_SUBST(MONGOC_SOCKET_ARG2)
+MONGOC_SOCKET_ARG3="$ACCEPT_ARG3"
+AC_SUBST(MONGOC_SOCKET_ARG3)
 
 AC_LANG_POP([C])
 

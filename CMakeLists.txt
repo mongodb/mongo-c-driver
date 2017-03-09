@@ -177,6 +177,9 @@ if (MINGW)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_RAND_S")
 endif ()
 
+# Reasonable default. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
+set (MONGOC_SOCKET_ARG2 "struct sockaddr")
+
 include(CheckTypeSize)
 if (MSVC)
    SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
@@ -188,18 +191,11 @@ SET(CMAKE_EXTRA_INCLUDE_FILES)
 
 if (HAVE_SOCKLEN)
    set(MONGOC_HAVE_SOCKLEN 1)
+   set (MONGOC_SOCKET_ARG3 "socklen_t")
 else()
    set(MONGOC_HAVE_SOCKLEN 0)
+   set (MONGOC_SOCKET_ARG3 "int")
 endif()
-
-# Reasonable defaults. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
-set (ACCEPT_ARG2 "struct sockaddr")
-set (ACCEPT_ARG3 "socklen_t")
-set (GETPEERNAME_ARG2 "struct sockaddr")
-set (GETPEERNAME_ARG3 "socklen_t")
-set (GETSOCKNAME_ARG2 "struct sockaddr")
-set (GETSOCKNAME_ARG3 "socklen_t")
-set (GETSOCKOPT_ARG5 "socklen_t")
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
