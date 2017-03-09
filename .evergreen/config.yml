@@ -418,7 +418,7 @@ tasks:
 
               # Check that docs were included, but sphinx temp files weren't.
               tarfile=mongo-c-driver-*.tar.gz
-              docs='mongo-c-driver-*/doc/html/index.html mongo-c-driver-*/doc/man/bson_t.3'
+              docs='mongo-c-driver-*/doc/html/index.html mongo-c-driver-*/doc/man/mongoc_client_t.3'
               tmpfiles='mongo-c-driver-*/doc/html/.doctrees \
                         mongo-c-driver-*/doc/html/.buildinfo \
                         mongo-c-driver-*/doc/man/.doctrees \
