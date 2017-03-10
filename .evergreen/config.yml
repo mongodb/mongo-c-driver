@@ -439,6 +439,7 @@ tasks:
                 fi
               done
 
+              set +o xtrace
               echo "Checking that all C files are included in tarball"
               # Check that all C files were included.
               TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/mongoc/*.c' | cut -d / -f 4 | sort`
@@ -448,11 +449,6 @@ tasks:
                 echo $TAR_CFILES > tar_cfiles.txt
                 echo $SRC_CFILES | diff -y - tar_cfiles.txt
               fi
-
-              end=$(date +%s)
-              echo '"end": ' $end ', ' >> test-results.json
-              sum=$(expr $end - $start)
-              echo '"elapsed": ' $sum ' } ] }' >> test-results.json
 
         - func: "upload docs"
         - func: "upload man pages"
