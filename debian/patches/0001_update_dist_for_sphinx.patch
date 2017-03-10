@@ -14,12 +14,14 @@ Index: mongo-c-driver/Makefile.am
  	@if test -d "$(srcdir)/.git"; then                                              \
  		(cd "$(srcdir)" &&                                                           \
        $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
-@@ -65,6 +68,9 @@ dist-hook:
+@@ -65,6 +68,11 @@ dist-hook:
  	  echo A git checkout is required to generate a ChangeLog >&2;                  \
  	fi
  
 +clean-local:
-+	rm -rf $(CLEANFILES)
++	-rm -rf $(CLEANFILES)
++	-rm -rf doc/html/.buildinfo doc/html/.doctrees
++	-rm -rf doc/man/.buildinfo doc/man/.doctrees
 +
  uninstall-local:
  	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
@@ -59,7 +61,7 @@ Index: mongo-c-driver/doc/html/Makefile.am
 +   doc/html/.nojekyll \
 +   doc/html/objects.inv
 +
-+CLEANFILES += $(SPHINX_HTML_FILES) doc/html/.doctrees doc/man/.buildinfo
++CLEANFILES += $(SPHINX_HTML_FILES)
  
  .PHONY: doc/html
  
@@ -107,8 +109,7 @@ Index: mongo-c-driver/doc/man/Makefile.am
 +++ mongo-c-driver/doc/man/Makefile.am
 @@ -1,21 +1,15 @@
 -BUILT_MAN_FILES = $(wildcard doc/man/*.3)
--CLEANFILES += $(wildcard doc/man/*.3)
-+CLEANFILES += $(wildcard doc/man/*.3) doc/man/.doctrees doc/man/.buildinfo
+ CLEANFILES += $(wildcard doc/man/*.3)
  
 -dist_man_MANS = $(BUILT_MAN_FILES)
 -# Automake (at least up to 1.10) mishandles dist_man_MANS inside conditionals.
