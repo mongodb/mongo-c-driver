@@ -9,7 +9,7 @@ SPHINX_HTML_FILES = \
    doc/html/.nojekyll \
    doc/html/objects.inv
 
-CLEANFILES += $(SPHINX_HTML_FILES) doc/html/.doctrees doc/man/.buildinfo
+CLEANFILES += $(SPHINX_HTML_FILES)
 
 .PHONY: doc/html
 
