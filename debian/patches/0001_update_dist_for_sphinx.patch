@@ -4,47 +4,21 @@ Index: mongo-c-driver/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/Makefile.am
 +++ mongo-c-driver/Makefile.am
-@@ -55,6 +55,9 @@ EXTRA_DIST += \
- EXTRA_DIST += $(wildcard orchestration_configs/*/*)
- 
- dist-hook:
-+	-rm -rf $(distdir)/doc/html/.buildinfo $(distdir)/doc/html/.doctrees
-+	-rm -rf $(distdir)/doc/man/.buildinfo $(distdir)/doc/man/.doctrees
-+
- 	@if test -d "$(srcdir)/.git"; then                                              \
- 		(cd "$(srcdir)" &&                                                           \
-       $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
-@@ -65,6 +68,11 @@ dist-hook:
+@@ -65,6 +65,9 @@ dist-hook:
  	  echo A git checkout is required to generate a ChangeLog >&2;                  \
  	fi
  
 +clean-local:
 +	-rm -rf $(CLEANFILES)
-+	-rm -rf doc/html/.buildinfo doc/html/.doctrees
-+	-rm -rf doc/man/.buildinfo doc/man/.doctrees
 +
  uninstall-local:
  	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
  	-rm -r $(mongocdocdir)
-Index: mongo-c-driver/doc/Makefile.am
-===================================================================
---- mongo-c-driver.orig/doc/Makefile.am
-+++ mongo-c-driver/doc/Makefile.am
-@@ -10,9 +10,3 @@ EXTRA_DIST += \
-   doc/mongoc-theme/theme.conf \
-   doc/taglist.py \
-   $(wildcard doc/includes/*.txt)
--
--dist-hook: man html
--
--clean-local:
--	-rm -rf doc/man/.buildinfo doc/man/.doctrees
--	-rm -rf doc/html/.buildinfo doc/html/.doctrees doc/html/_static
 Index: mongo-c-driver/doc/html/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/doc/html/Makefile.am
 +++ mongo-c-driver/doc/html/Makefile.am
-@@ -1,42 +1,23 @@
+@@ -1,42 +1,25 @@
 -CLEANFILES += $(wildcard doc/html/*.html)
 -CLEANFILES += $(wildcard doc/html/*.css)
 -CLEANFILES += $(wildcard doc/html/*.js)
@@ -73,6 +47,7 @@ Index: mongo-c-driver/doc/html/Makefile.am
 +$(SPHINX_HTML_FILES):
  	-mkdir -p doc/html
  	$(SPHINX_BUILD) -qEW $(top_srcdir)/doc doc/html
++	rm -rf doc/html/.buildinfo doc/html/.doctrees
  
 -SPHINX_HTML_FILES = \
 -   doc/html/.nojekyll \
@@ -100,14 +75,14 @@ Index: mongo-c-driver/doc/html/Makefile.am
 -   doc/html/_static/websupport.js \
 -   doc/html/objects.inv \
 -   doc/html/searchindex.js
--
+ 
  EXTRA_DIST += doc/html
 -EXTRA_DIST += $(SPHINX_HTML_FILES)
 Index: mongo-c-driver/doc/man/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/doc/man/Makefile.am
 +++ mongo-c-driver/doc/man/Makefile.am
-@@ -1,21 +1,15 @@
+@@ -1,21 +1,16 @@
 -BUILT_MAN_FILES = $(wildcard doc/man/*.3)
  CLEANFILES += $(wildcard doc/man/*.3)
  
@@ -132,7 +107,21 @@ Index: mongo-c-driver/doc/man/Makefile.am
 +doc/man:
  	-mkdir -p doc/man
  	$(SPHINX_BUILD) -qEW -b man $(top_srcdir)/doc doc/man
++	rm -rf doc/man/.buildinfo doc/man/.doctrees
  
 -man: $(MAN_FILES_TO_BUILD)
 -EXTRA_DIST += $(MAN_FILES_TO_BUILD)
 +EXTRA_DIST += doc/man
+Index: mongo-c-driver/doc/Makefile.am
+===================================================================
+--- mongo-c-driver.orig/doc/Makefile.am
++++ mongo-c-driver/doc/Makefile.am
+@@ -11,8 +11,3 @@ EXTRA_DIST += \
+   doc/taglist.py \
+   $(wildcard doc/includes/*.txt)
+ 
+-dist-hook: man html
+-
+-clean-local:
+-	-rm -rf doc/man/.buildinfo doc/man/.doctrees
+-	-rm -rf doc/html/.buildinfo doc/html/.doctrees doc/html/_static
