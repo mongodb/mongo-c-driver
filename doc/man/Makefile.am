@@ -1,4 +1,4 @@
-CLEANFILES += $(wildcard doc/man/*.3) doc/man/.doctrees doc/man/.buildinfo
+CLEANFILES += $(wildcard doc/man/*.3)
 
 .PHONY: doc/man
 
