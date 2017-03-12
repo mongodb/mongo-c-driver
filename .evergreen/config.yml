@@ -53,7 +53,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: mongoc.tar.gz
-        remote_file: mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz
+        remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
