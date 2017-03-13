@@ -57,6 +57,8 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
                 type == MONGOC_TOPOLOGY_SINGLE ||
                 type == MONGOC_TOPOLOGY_RS_NO_PRIMARY);
 
+   srand(time(0));
+
    memset (description, 0, sizeof (*description));
 
    bson_oid_init (&description->topology_id, NULL);
