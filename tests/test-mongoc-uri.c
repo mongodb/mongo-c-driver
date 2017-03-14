@@ -264,6 +264,23 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian@realm");
    mongoc_uri_destroy (uri);
 
+   /* should fail on invalid escaped characters */
+   capture_logs (true);
+   uri = mongoc_uri_new ("mongodb://u%ser:pwd@localhost:27017");
+   ASSERT (!uri);
+   ASSERT_CAPTURED_LOG (
+      "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+
+   uri = mongoc_uri_new ("mongodb://user:p%wd@localhost:27017");
+   ASSERT (!uri);
+   ASSERT_CAPTURED_LOG (
+      "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+
+   uri = mongoc_uri_new ("mongodb://user:pwd@local% host:27017");
+   ASSERT (!uri);
+   ASSERT_CAPTURED_LOG (
+      "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
+
    /* while you shouldn't do this, lets test for it */
    uri =
       mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/db%2ename");
@@ -690,10 +707,14 @@ test_mongoc_uri_unescape (void)
       ASSERT (!strcmp (str, _e));           \
       bson_free (str);                      \
    } while (0)
-#define ASSERT_URIDECODE_FAIL(_s)           \
-   do {                                     \
-      char *str = mongoc_uri_unescape (_s); \
-      ASSERT (!str);                        \
+#define ASSERT_URIDECODE_FAIL(_s)                                       \
+   do {                                                                 \
+      char *str;                                                        \
+      capture_logs (true);                                              \
+      str = mongoc_uri_unescape (_s);                                   \
+      ASSERT (!str);                                                    \
+      ASSERT_CAPTURED_LOG (                                             \
+         "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence"); \
    } while (0)
 
    ASSERT_URIDECODE_STR ("", "");

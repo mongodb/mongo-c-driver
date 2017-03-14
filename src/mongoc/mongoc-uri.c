@@ -1525,6 +1525,7 @@ mongoc_uri_unescape (const char *escaped_string)
 #endif
              !isprint (hex)) {
             bson_string_free (str, true);
+            MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
          bson_string_append_c (str, hex);
