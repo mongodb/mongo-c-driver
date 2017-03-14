@@ -1,6 +1,11 @@
 #!/bin/sh
-set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
+# AUTH_HOST=${auth_host} # Evergreen variable
+# AUTH_PLAIN=${auth_plain} # Evergreen variable
+# AUTH_MONGODBCR=${auth_mongodbcr} # Evergreen variable
+# AUTH_GSSAPI=${auth_gssapi} # Evergreen variable
+# AUTH_CROSSREALM=${auth_crossrealm} # Evergreen variable
+# AUTH_GSSAPI_UTF8=${auth_gssapi_utf8} # Evergreen variable
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -19,14 +24,6 @@ case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
       chmod +x ./Debug/* src/libbson/Debug/*
-      # Evergreen fails apply a patchbuild with this file as binary
-      # We therefore have the registry file encoded as base64, then decode it
-      # before we load the registry changes
-      # Removing \r is important as base64 decoding will otherwise fail!
-      # When BUILD-2708 is fixed, we can remove these lines, and the file
-      cat .evergreen/regedit.base64 | tr -d '\r' > tmp.base64
-      base64 --decode tmp.base64 > .evergreen/kerberos.reg
-      regedit.exe /S .evergreen/kerberos.reg
       PING="./Debug/mongoc-ping.exe"
       ;;
 
@@ -57,18 +54,18 @@ fi
 if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008
    if [ "${OS%_*}" != "cygwin" ]; then
-      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@ldaptest.10gen.cc/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true"
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true"
    fi
 fi
 
-$PING 'mongodb://drivers-team:mongor0x$xgen@ldaptest.10gen.cc/?authMechanism=PLAIN'
-$PING 'mongodb://drivers:mongor0x$xgen@ldaptest.10gen.cc/mongodb-cr?authMechanism=MONGODB-CR'
+$PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN"
+$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR"
 
 if [ $SASL -eq 1 ]; then
-   $PING "mongodb://drivers%40LDAPTEST.10GEN.CC:powerbook17@ldaptest.10gen.cc/?authMechanism=GSSAPI"
+   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI"
    if [ "${OS%_*}" = "cygwin" ]; then
-      $PING "mongodb://drivers%40LDAPTEST2.10GEN.CC:weakbook17@ldaptest.10gen.cc/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC"
-      $PING "mongodb://schrÃ¶dinger%40LDAPTEST.10GEN.CC:regnidÃ¶rhcs@ldaptest.10gen.cc/?authMechanism=GSSAPI"
+      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC"
+      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI"
    fi
 fi
 

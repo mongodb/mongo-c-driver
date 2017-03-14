@@ -274,10 +274,10 @@ functions:
     - command: shell.exec
       type: test
       params:
+        silent: true
         working_dir: "mongoc"
         script: |
-          set -o errexit
-          sh .evergreen/run-auth-tests.sh
+           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' sh .evergreen/run-auth-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -321,6 +321,7 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
+           # TODO BUILD-2557
            if test -w /etc/hosts; then
               SUDO=""
            else
