@@ -610,32 +610,6 @@ test_framework_get_port (void)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_get_host_list --
- *
- *       Get the single host and port of the test server (not actually a
- *       list).
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-void
-test_framework_get_host_list (mongoc_host_list_t *host_list)
-{
-   char *host = test_framework_get_host ();
-   uint16_t port = test_framework_get_port ();
-   char *host_and_port = bson_strdup_printf ("%s:%hu", host, port);
-
-   _mongoc_host_list_from_string (host_list, host_and_port);
-
-   bson_free (host_and_port);
-   bson_free (host);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * test_framework_get_admin_user --
  *
  *       Get the username of an admin user on the test MongoDB server.

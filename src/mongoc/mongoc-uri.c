@@ -65,14 +65,6 @@ mongoc_uri_do_unescape (char **str)
    }
 }
 
-void
-mongoc_uri_lowercase (const char *src, char *buf /* OUT */)
-{
-   for (; *src; ++src, ++buf) {
-      *buf = tolower (*src);
-   }
-}
-
 bool
 mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port)
 {
@@ -86,7 +78,7 @@ mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port)
    }
 
    link_ = (mongoc_host_list_t *) bson_malloc0 (sizeof *link_);
-   mongoc_uri_lowercase (host, link_->host);
+   mongoc_lowercase (host, link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port,
                      sizeof link_->host_and_port,
@@ -241,23 +233,6 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri, const char *str, const char **end)
 }
 
 static bool
-mongoc_uri_parse_port (uint16_t *port, const char *str)
-{
-   unsigned long ul_port;
-
-   ul_port = strtoul (str, NULL, 10);
-
-   if (ul_port == 0 || ul_port > UINT16_MAX) {
-      /* Parse error or port number out of range. mongod prohibits port 0. */
-      return false;
-   }
-
-   *port = (uint16_t) ul_port;
-   return true;
-}
-
-
-static bool
 mongoc_uri_parse_host6 (mongoc_uri_t *uri, const char *str)
 {
    uint16_t port = MONGOC_DEFAULT_PORT;
@@ -267,7 +242,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t *uri, const char *str)
    bool r;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
-      if (!mongoc_uri_parse_port (&port, portstr + 1)) {
+      if (!mongoc_parse_port (&port, portstr + 1)) {
          return false;
       }
    }
@@ -300,13 +275,19 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str)
 
    if ((hostname = scan_to_unichar (str, ':', "?/,", &end_host))) {
       end_host++;
-      if (!mongoc_uri_parse_port (&port, end_host)) {
+      if (!mongoc_parse_port (&port, end_host)) {
          bson_free (hostname);
          return false;
       }
    } else {
       hostname = bson_strdup (str);
       port = MONGOC_DEFAULT_PORT;
+   }
+
+   if (strchr (hostname, '/')) {
+      MONGOC_WARNING ("Unix Domain Sockets must be escaped (e.g. / = %%2F)");
+      bson_free (hostname);
+      return false;
    }
 
    mongoc_uri_do_unescape (&hostname);
@@ -320,44 +301,6 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str)
    bson_free (hostname);
 
    return r;
-}
-
-
-bool
-_mongoc_host_list_from_string (mongoc_host_list_t *host_list,
-                               const char *host_and_port)
-{
-   bool rval = false;
-   char *uri_str = NULL;
-   mongoc_uri_t *uri = NULL;
-   const mongoc_host_list_t *uri_hl;
-
-   BSON_ASSERT (host_list);
-   BSON_ASSERT (host_and_port);
-
-   uri_str = bson_strdup_printf ("mongodb://%s/", host_and_port);
-   if (!uri_str)
-      goto CLEANUP;
-
-   uri = mongoc_uri_new (uri_str);
-   if (!uri)
-      goto CLEANUP;
-
-   uri_hl = mongoc_uri_get_hosts (uri);
-   if (uri_hl->next)
-      goto CLEANUP;
-
-   memcpy (host_list, uri_hl, sizeof (*uri_hl));
-
-   rval = true;
-
-CLEANUP:
-
-   bson_free (uri_str);
-   if (uri)
-      mongoc_uri_destroy (uri);
-
-   return rval;
 }
 
 
@@ -690,7 +633,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
    }
 
    lkey = bson_strdup (key);
-   mongoc_uri_lowercase (key, lkey);
+   mongoc_lowercase (key, lkey);
 
    if (bson_has_field (&uri->options, lkey)) {
       MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);

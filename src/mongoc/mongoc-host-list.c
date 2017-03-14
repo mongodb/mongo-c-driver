@@ -61,3 +61,42 @@ _mongoc_host_list_destroy_all (mongoc_host_list_t *host)
       host = tmp;
    }
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_host_list_from_string --
+ *
+ *       Populate a mongoc_host_list_t from a fully qualified address
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_host_list_from_string (mongoc_host_list_t *link_, const char *address)
+{
+   char *sport;
+   uint16_t port;
+
+   mongoc_lowercase (address, link_->host);
+   sport = strrchr (address, ':');
+   if (sport) {
+      bson_snprintf (
+         link_->host_and_port, sizeof link_->host_and_port, "%s", address);
+      link_->host[strlen (link_->host) - strlen (sport)] = '\0';
+
+      mongoc_parse_port (&port, sport + 1);
+      link_->port = port;
+   } else {
+      link_->port = MONGOC_DEFAULT_PORT;
+   }
+
+   if (*address == '[' && strchr (address, ']')) {
+      link_->family = AF_INET6;
+   } else if (strchr (address, '/') && strstr (address, ".sock")) {
+      link_->family = AF_UNIX;
+   } else {
+      link_->family = AF_INET;
+   }
+   link_->next = NULL;
+   return true;
+}

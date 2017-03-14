@@ -47,8 +47,6 @@ char *
 test_framework_get_host (void);
 uint16_t
 test_framework_get_port (void);
-void
-test_framework_get_host_list (mongoc_host_list_t *host_list);
 char *
 test_framework_get_admin_user (void);
 char *

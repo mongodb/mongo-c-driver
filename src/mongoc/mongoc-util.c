@@ -264,3 +264,27 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
 
    return true;
 }
+
+void
+mongoc_lowercase (const char *src, char *buf /* OUT */)
+{
+   for (; *src; ++src, ++buf) {
+      *buf = tolower (*src);
+   }
+}
+
+bool
+mongoc_parse_port (uint16_t *port, const char *str)
+{
+   unsigned long ul_port;
+
+   ul_port = strtoul (str, NULL, 10);
+
+   if (ul_port == 0 || ul_port > UINT16_MAX) {
+      /* Parse error or port number out of range. mongod prohibits port 0. */
+      return false;
+   }
+
+   *port = (uint16_t) ul_port;
+   return true;
+}

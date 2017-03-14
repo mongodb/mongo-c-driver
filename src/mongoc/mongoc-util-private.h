@@ -91,6 +91,12 @@ _mongoc_validate_replace (const bson_t *insert, bson_error_t *error);
 bool
 _mongoc_validate_update (const bson_t *update, bson_error_t *error);
 
+void
+mongoc_lowercase (const char *src, char *buf /* OUT */);
+
+bool
+mongoc_parse_port (uint16_t *port, const char *str);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */
