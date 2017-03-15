@@ -39,7 +39,9 @@ fi
 case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-      chmod +x ./Debug/* src/libbson/Debug/*
+      export PATH=$PATH:`pwd`/tests:`pwd`/Release:`pwd`/src/libbson/Release
+      chmod +x ./Debug/* src/libbson/Debug/* || true
+      chmod +x ./Release/* src/libbson/Release/* || true
       ;;
 
    darwin)
@@ -73,7 +75,7 @@ esac
 
 case "$OS" in
    cygwin*)
-      ./Debug/test-libmongoc.exe -d -F test-results.json
+      test-libmongoc.exe -d -F test-results.json
       ;;
 
    sunos)
