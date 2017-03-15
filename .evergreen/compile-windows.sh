@@ -58,6 +58,7 @@ case "$SSL" in
 esac
 
 export CONFIGURE_FLAGS
+export INSTALL_DIR
 
 case "$CC" in
    mingw*)

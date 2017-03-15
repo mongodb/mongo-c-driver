@@ -1,5 +1,5 @@
 rem Ensure Cygwin executables like sh.exe are not in PATH
-set PATH=C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongo-c-driver\bin
+set PATH=C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson
 
 echo CONFIGURE_FLAGS %CONFIGURE_FLAGS%
 
@@ -8,13 +8,13 @@ set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bi
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 
 cd src\libbson
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver %CONFIGURE_FLAGS%
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% %CONFIGURE_FLAGS%
 
 %CMAKE_MAKE_PROGRAM%
 %CMAKE_MAKE_PROGRAM% install
 
 cd ..\..
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_PREFIX_PATH=C:\mongo-c-driver -DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver %CONFIGURE_FLAGS%
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_PREFIX_PATH=%INSTALL_DIR% %CONFIGURE_FLAGS%
 
 %CMAKE_MAKE_PROGRAM%
 %CMAKE_MAKE_PROGRAM% install
