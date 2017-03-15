@@ -5,7 +5,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92642455-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
     <title>mongoc_uri_t &#8212; MongoDB C Driver 1.6.1</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
@@ -187,35 +196,35 @@
 <td>0</td>
 <td>The driver will not acknowledge write operations but will pass or handle any network and socket errors that it receives to the client. If you disable write concern but enable the getLastError command’s w option, w overrides the w option.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td>1</td>
 <td>Provides basic acknowledgment of write operations. By specifying 1, you require that a standalone mongod instance, or the primary for replica sets, acknowledge all write operations. For drivers released after the default write concern change, this is the default write concern setting.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td>majority</td>
 <td>For replica sets, if you specify the special majority value to w option, write operations will only return successfully after a majority of the configured replica set members have acknowledged the write operation.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td>n</td>
 <td>For replica sets, if you specify a number n greater than 1, operations with this write concern return only after n members of the set have acknowledged the write. If you set n to a number that is greater than the number of available set members or members that hold data, MongoDB will wait, potentially indefinitely, for these members to become available.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td>tags</td>
 <td>For replica sets, you can specify a tag set to require that all members of the set that have these tags configured return confirmation of the write operation.</td>
 </tr>
 <tr class="row-even"><td>wtimeoutMS</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 <td>The time in milliseconds to wait for replication to succeed, as specified in the w option, before timing out. When wtimeoutMS is 0, write operations will never time out.</td>
 </tr>
 <tr class="row-odd"><td>journal</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
 <td>Controls whether write operations will wait until the mongod acknowledges the write operations and commits the data to the on disk journal.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td>true</td>
 <td>Enables journal commit acknowledgment write concern. Equivalent to specifying the getLastError command with the j option enabled.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td>false</td>
 <td>Does not require that mongod commit write operations to the journal before acknowledging the write operation. This is the default option for the journal parameter.</td>
 </tr>
@@ -411,7 +420,7 @@
       <div class="clearer"></div>
     </div>
   <div class="colophon">
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
   </div>
 
   </body>

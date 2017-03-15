@@ -5,7 +5,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92642455-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
     <title>mongoc_collection_write_command_with_opts() &#8212; MongoDB C Driver 1.6.1</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
@@ -66,14 +75,14 @@
 <p>Execute a command on the server, applying logic that is specific to commands that write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use <a class="symbol reference internal" href="mongoc_collection_command_simple.html"><span class="doc">mongoc_collection_command_simple()</span></a>.</p>
 <p>Use this function for commands that write such as &quot;drop&quot; or &quot;createRole&quot; (but not for &quot;insert&quot;, &quot;update&quot;, or &quot;delete&quot;, see <a class="reference internal" href="#basic-write-operations">Basic Write Operations</a>). Write concern is applied from <code class="docutils literal"><span class="pre">opts</span></code>, or else from <code class="docutils literal"><span class="pre">collection</span></code>. The write concern is omitted for MongoDB before 3.2. Collation is applied from <code class="docutils literal"><span class="pre">opts</span></code> (<a class="reference internal" href="mongoc_client_read_command_with_opts.html#mongoc-client-read-command-with-opts-example"><span class="std std-ref">see example for</span></a>). Collation requires MongoDB 3.2 or later, otherwise an error is returned. No read concern or read preferences are applied.</p>
 <p>To target a specific server, include an integer &quot;serverId&quot; field in <code class="docutils literal"><span class="pre">opts</span></code> with an id obtained first by calling <a class="symbol reference internal" href="mongoc_client_select_server.html"><span class="doc">mongoc_client_select_server()</span></a>, then <a class="symbol reference internal" href="mongoc_server_description_id.html"><span class="doc">mongoc_server_description_id()</span></a> on its return value.</p>
-<p><code class="docutils literal"><span class="pre">reply</span></code> is always initialized, and must be freed with <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_destroy.html" title="(in Libbson v1.6.0)"><code class="docutils literal"><span class="pre">bson_destroy()</span></code></a>.</p>
+<p><code class="docutils literal"><span class="pre">reply</span></code> is always initialized, and must be freed with <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_destroy.html" title="(in Libbson v1.6.1)"><code class="docutils literal"><span class="pre">bson_destroy()</span></code></a>.</p>
 </div>
 <div class="section" id="parameters">
 <h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">collection</span></code>: A <a class="symbol reference internal" href="mongoc_collection_t.html"><span class="doc">mongoc_collection_t</span></a>.</li>
-<li><code class="docutils literal"><span class="pre">command</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing the command specification.</li>
-<li><code class="docutils literal"><span class="pre">opts</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing additional options.</li>
+<li><code class="docutils literal"><span class="pre">command</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing the command specification.</li>
+<li><code class="docutils literal"><span class="pre">opts</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing additional options.</li>
 <li><code class="docutils literal"><span class="pre">reply</span></code>: A location for the resulting document.</li>
 <li><code class="docutils literal"><span class="pre">error</span></code>: An optional location for a <a class="symbol reference internal" href="errors.html"><span class="doc">bson_error_t</span></a> or <code class="docutils literal"><span class="pre">NULL</span></code>.</li>
 </ul>
@@ -186,7 +195,7 @@
       <div class="clearer"></div>
     </div>
   <div class="colophon">
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
   </div>
 
   </body>

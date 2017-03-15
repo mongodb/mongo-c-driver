@@ -5,7 +5,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92642455-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
     <title>mongoc_client_get_server_status() &#8212; MongoDB C Driver 1.6.1</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
@@ -65,7 +74,7 @@
 <p>Queries the server for the current server status. The result is stored in <code class="docutils literal"><span class="pre">reply</span></code>.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last"><code class="docutils literal"><span class="pre">reply</span></code> is always initialized, even in the case of failure. Always call <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_destroy.html" title="(in Libbson v1.6.0)"><code class="docutils literal"><span class="pre">bson_destroy()</span></code></a> to release it.</p>
+<p class="last"><code class="docutils literal"><span class="pre">reply</span></code> is always initialized, even in the case of failure. Always call <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_destroy.html" title="(in Libbson v1.6.1)"><code class="docutils literal"><span class="pre">bson_destroy()</span></code></a> to release it.</p>
 </div>
 </div>
 <div class="section" id="parameters">
@@ -73,7 +82,7 @@
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">client</span></code>: A <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>.</li>
 <li><code class="docutils literal"><span class="pre">read_prefs</span></code>: A <a class="symbol reference internal" href="mongoc_read_prefs_t.html"><span class="doc">mongoc_read_prefs_t</span></a>.</li>
-<li><code class="docutils literal"><span class="pre">reply</span></code>: A location for the result <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a>.</li>
+<li><code class="docutils literal"><span class="pre">reply</span></code>: A location for the result <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a>.</li>
 <li><code class="docutils literal"><span class="pre">error</span></code>: An optional location for a <a class="symbol reference internal" href="errors.html"><span class="doc">bson_error_t</span></a> or <code class="docutils literal"><span class="pre">NULL</span></code>.</li>
 </ul>
 </div>
@@ -176,7 +185,7 @@
       <div class="clearer"></div>
     </div>
   <div class="colophon">
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
   </div>
 
   </body>

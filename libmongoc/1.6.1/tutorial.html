@@ -5,7 +5,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92642455-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
     <title>Tutorial &#8212; MongoDB C Driver 1.6.1</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
@@ -186,10 +195,10 @@ C:\&gt; connect
 </div>
 <div class="section" id="creating-bson-documents">
 <h2><a class="toc-backref" href="#id6">Creating BSON Documents</a><a class="headerlink" href="#creating-bson-documents" title="Permalink to this headline">¶</a></h2>
-<p>Documents are stored in MongoDB's data format, BSON. The C driver uses <a class="reference external" href="http://mongoc.org/libbson/current/index.html" title="(in Libbson v1.6.0)"><span class="xref doc">libbson</span></a> to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.</p>
+<p>Documents are stored in MongoDB's data format, BSON. The C driver uses <a class="reference external" href="http://mongoc.org/libbson/current/index.html" title="(in Libbson v1.6.1)"><span class="xref doc">libbson</span></a> to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.</p>
 <div class="section" id="appending-bson">
 <h3>Appending BSON<a class="headerlink" href="#appending-bson" title="Permalink to this headline">¶</a></h3>
-<p>A BSON document, represented as a <a class="reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><span class="xref doc">bson_t</span></a> in code, can be constructed one field at a time using libbson's append functions.</p>
+<p>A BSON document, represented as a <a class="reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><span class="xref doc">bson_t</span></a> in code, can be constructed one field at a time using libbson's append functions.</p>
 <p>For example, to create a document like this:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>{
    born : ISODate(&quot;1906-12-09&quot;),
@@ -294,7 +303,7 @@ C:\&gt; connect
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>See the <a class="reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><span class="xref doc">libbson documentation</span></a> for all of the types that can be appended to a <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.0)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a>.</p>
+<p>See the <a class="reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><span class="xref doc">libbson documentation</span></a> for all of the types that can be appended to a <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.1)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a>.</p>
 </div>
 <div class="section" id="using-bcon">
 <h3>Using BCON<a class="headerlink" href="#using-bcon" title="Permalink to this headline">¶</a></h3>
@@ -354,7 +363,7 @@ C:\&gt; connect
 </div>
 <div class="section" id="creating-bson-from-json">
 <h3>Creating BSON from JSON<a class="headerlink" href="#creating-bson-from-json" title="Permalink to this headline">¶</a></h3>
-<p>For <em>single</em> documents, BSON can be created from JSON strings via <a class="reference external" href="http://mongoc.org/libbson/current/bson_new_from_json.html" title="(in Libbson v1.6.0)"><span class="xref doc">bson_new_from_json</span></a>.</p>
+<p>For <em>single</em> documents, BSON can be created from JSON strings via <a class="reference external" href="http://mongoc.org/libbson/current/bson_new_from_json.html" title="(in Libbson v1.6.1)"><span class="xref doc">bson_new_from_json</span></a>.</p>
 <div class="highlight-c"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
 
 <span class="kt">int</span>
@@ -381,7 +390,7 @@ C:\&gt; connect
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>To initialize BSON from a sequence of JSON documents, use <a class="reference external" href="http://mongoc.org/libbson/current/bson_json_reader_t.html" title="(in Libbson v1.6.0)"><span class="xref doc">bson_json_reader_t</span></a>.</p>
+<p>To initialize BSON from a sequence of JSON documents, use <a class="reference external" href="http://mongoc.org/libbson/current/bson_json_reader_t.html" title="(in Libbson v1.6.1)"><span class="xref doc">bson_json_reader_t</span></a>.</p>
 </div>
 </div>
 <div class="section" id="basic-crud-operations">
@@ -1000,7 +1009,7 @@ C:\&gt; executing
       <div class="clearer"></div>
     </div>
   <div class="colophon">
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
   </div>
 
   </body>

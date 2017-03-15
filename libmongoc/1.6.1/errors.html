@@ -5,7 +5,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
+    <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92642455-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
     <title>Error Reporting &#8212; MongoDB C Driver 1.6.1</title>
     
     <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
@@ -54,8 +63,8 @@
 <h1>Error Reporting<a class="headerlink" href="#error-reporting" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>Many C Driver functions report errors by returning <code class="docutils literal"><span class="pre">false</span></code> or -1 and filling out a <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_error_t.html" title="(in Libbson v1.6.0)"><code class="xref symbol docutils literal"><span class="pre">bson_error_t</span></code></a> structure with an error domain, error code, and message. Use <code class="docutils literal"><span class="pre">domain</span></code> to determine which subsystem generated the error, and <code class="docutils literal"><span class="pre">code</span></code> for the specific error. <code class="docutils literal"><span class="pre">message</span></code> is a human-readable error description.</p>
-<p>See also: <a class="reference external" href="http://mongoc.org/libbson/current/errors.html" title="(in Libbson v1.6.0)"><span class="xref doc">Handling Errors in libbson</span></a>.</p>
+<p>Many C Driver functions report errors by returning <code class="docutils literal"><span class="pre">false</span></code> or -1 and filling out a <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_error_t.html" title="(in Libbson v1.6.1)"><code class="xref symbol docutils literal"><span class="pre">bson_error_t</span></code></a> structure with an error domain, error code, and message. Use <code class="docutils literal"><span class="pre">domain</span></code> to determine which subsystem generated the error, and <code class="docutils literal"><span class="pre">code</span></code> for the specific error. <code class="docutils literal"><span class="pre">message</span></code> is a human-readable error description.</p>
+<p>See also: <a class="reference external" href="http://mongoc.org/libbson/current/errors.html" title="(in Libbson v1.6.1)"><span class="xref doc">Handling Errors in libbson</span></a>.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="7%" />
@@ -73,15 +82,15 @@
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_TOO_BIG</span></code></td>
 <td>You tried to send a message larger than the server's max message size.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_AUTHENTICATE</span></code></td>
 <td>Wrong credentials, or failure sending or receiving authentication messages.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER</span></code></td>
 <td>You tried an SSL connection but the driver was not built with SSL.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_IN_EXHAUST</span></code></td>
 <td>You began iterating an exhaust cursor, then tried to begin another operation with the same <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>.</td>
 </tr>
@@ -89,11 +98,11 @@
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_NAME_RESOLUTION</span></code></td>
 <td>DNS failure.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_SOCKET</span></code></td>
 <td>Timeout communicating with server, or connection closed.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_CONNECT</span></code></td>
 <td>Failed to connect to server.</td>
 </tr>
@@ -101,7 +110,7 @@
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_INVALID_REPLY</span></code></td>
 <td>Corrupt response from server.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</span></code></td>
 <td>The server version is too old or too new to communicate with the driver.</td>
 </tr>
@@ -133,11 +142,11 @@
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND_INVALID_ARG</span></code></td>
 <td>Many functions set this error code when passed bad parameters. Print the error message for details.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</span></code></td>
 <td>You tried to use a command option the server does not support.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_DUPLICATE_KEY</span></code></td>
 <td>An insert or update failed because because of a duplicate <code class="docutils literal"><span class="pre">_id</span></code> or other unique-index violation.</td>
 </tr>
@@ -165,11 +174,11 @@
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_CHUNK_MISSING</span></code></td>
 <td>The GridFS file is missing a document in its <code class="docutils literal"><span class="pre">chunks</span></code> collection.</td>
 </tr>
-<tr class="row-even"><td>&nbsp;</td>
+<tr class="row-even"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_INVALID_FILENAME</span></code></td>
 <td>You passed a NULL filename to <a class="symbol reference internal" href="mongoc_gridfs_remove_by_filename.html"><span class="doc">mongoc_gridfs_remove_by_filename()</span></a>.</td>
 </tr>
-<tr class="row-odd"><td>&nbsp;</td>
+<tr class="row-odd"><td>&#160;</td>
 <td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR</span></code></td>
 <td>You called <a class="symbol reference internal" href="mongoc_gridfs_file_set_id.html"><span class="doc">mongoc_gridfs_file_set_id()</span></a> after <a class="symbol reference internal" href="mongoc_gridfs_file_save.html"><span class="doc">mongoc_gridfs_file_save()</span></a>.</td>
 </tr>
@@ -258,7 +267,7 @@ and other command helper functions</td>
       <div class="clearer"></div>
     </div>
   <div class="colophon">
-    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
   </div>
 
   </body>
