@@ -178,9 +178,6 @@ if (MINGW)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_RAND_S")
 endif ()
 
-# Reasonable default. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
-set (MONGOC_SOCKET_ARG2 "struct sockaddr")
-
 include(CheckTypeSize)
 if (MSVC)
    SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
@@ -197,6 +194,54 @@ else()
    set(MONGOC_HAVE_SOCKLEN 0)
    set (MONGOC_SOCKET_ARG3 "int")
 endif()
+
+function (mongoc_get_accept_args ARG2 ARG3)
+   SET (VAR 0)
+   foreach (ARG2_VAL "struct sockaddr" "void")
+   foreach (ARG3_VAL "socklen_t" "size_t" "int")
+
+   MATH (EXPR VAR "${VAR}+1")
+
+   FILE (WRITE ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx
+   "#include <sys/types.h>
+    #include <sys/socket.h>
+
+    int main ()
+    {
+      int a = 0;
+      ${ARG2_VAL} *b = 0;
+      ${ARG3_VAL} *c = 0;
+      accept (a, b, c);
+      return 0;
+   }
+  ")
+
+  TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx CMAKE_FLAGS
+  "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+
+  if (RES)
+     message (
+        STATUS
+        "Detected parameters: accept (int, ${ARG2_VAL} *, ${ARG3_VAL} *)")
+
+     set (${ARG2} ${ARG2_VAL} PARENT_SCOPE)
+     set (${ARG3} ${ARG3_VAL} PARENT_SCOPE)
+     return ()
+  endif ()
+
+  endforeach ()
+  endforeach ()
+
+endfunction ()
+
+# Reasonable defaults.
+set (MONGOC_SOCKET_ARG2 "struct sockaddr")
+set (MONGOC_SOCKET_ARG3 "socklen_t")
+
+if (NOT MSVC)
+   mongoc_get_accept_args (MONGOC_SOCKET_ARG2 MONGOC_SOCKET_ARG3)
+endif ()
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
