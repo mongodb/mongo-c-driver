@@ -226,7 +226,8 @@ Let's start by generating Visual Studio project files for libbson, a dependency 
 
   cd mongo-c-driver-|release|\\src\\libbson
   cmake -G "Visual Studio 14 2015 Win64" \\
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver"
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+    "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
 
 (Run ``cmake -LH .`` for a list of other options.)
 
@@ -234,13 +235,13 @@ Now that we have project files generated, we can either open the project in Visu
 
 .. code-block:: none
 
-  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
 
 Now that libbson is compiled, let's install it using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
 
 .. code-block:: none
 
-  msbuild.exe INSTALL.vcxproj
+  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
 
 You should now see libbson installed in ``C:\mongo-c-driver``
 
@@ -251,12 +252,17 @@ Now let's do the same for the MongoDB C driver.
   cd mongo-c-driver-|release|
   cmake -G "Visual Studio 14 2015 Win64" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
-    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
+    "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
 
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
+  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
+  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
 
-All of the MongoDB C Driver's components will now be found in ``C:\mongo-c-driver``.
+All of the MongoDB C Driver's components will now have been build in release
+mode and can be found in ``C:\mongo-c-driver``.
+To build and install debug binaries, remove the
+``"-DCMAKE_BUILD_TYPE=Release"`` argument to ``cmake`` and
+``/p:Configuration=Release`` to ``msbuild.exe``.
 
 Native TLS Support on Windows (Secure Channel)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -275,5 +281,25 @@ OpenSSL is available, configure the driver like so:
 
   cmake -G "Visual Studio 14 2015 Win64" \
     "-DENABLE_SSL=WINDOWS" \
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+
+
+Native SASL Support on Windows (SSPI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MongoDB C Driver supports the Windows native Kerberos and Active Directory
+interface, SSPI. Using the native libraries there is no need to install any
+dependencies, such as cyrus-sasl.  By default however, the driver will compile
+against cyrus-sasl.
+
+
+To compile against the Windows native SSPI, configure the driver like so:
+
+.. code-block:: none
+
+  cmake -G "Visual Studio 14 2015 Win64" \
+    "-DENABLE_SASL=SSPI" \
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+
