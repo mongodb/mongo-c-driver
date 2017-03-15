@@ -179,23 +179,67 @@ endif ()
 
 # Reasonable default. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
 set (MONGOC_SOCKET_ARG2 "struct sockaddr")
+set (MONGOC_SOCKET_ARG3 "socklen_t")
+
+if (NOT WIN32)
+
+set(MONGOC_ACCEPT_ARG2_LIST "struct sockaddr" "void")
+set(MONGOC_ACCEPT_ARG3_LIST "socklen_t" "size_t" "int")
+
+list(LENGTH MONGOC_ACCEPT_ARG2_LIST MONGOC_ACCEPT_ARG2_LIST_LEN)
+math(EXPR MONGOC_ACCEPT_ARG2_LIST_LEN_R "${MONGOC_ACCEPT_ARG2_LIST_LEN} - 1")
+list(LENGTH MONGOC_ACCEPT_ARG3_LIST MONGOC_ACCEPT_ARG3_LIST_LEN)
+math(EXPR MONGOC_ACCEPT_ARG3_LIST_LEN_R "${MONGOC_ACCEPT_ARG3_LIST_LEN} - 1")
+
+foreach(MONGOC_ACCEPT_ARG2_L RANGE ${MONGOC_ACCEPT_ARG2_LIST_LEN_R})
+foreach(MONGOC_ACCEPT_ARG3_L RANGE ${MONGOC_ACCEPT_ARG3_LIST_LEN_R})
+
+list(GET MONGOC_ACCEPT_ARG2_LIST ${MONGOC_ACCEPT_ARG2_L} MONGOC_ACCEPT_ARG2_VAL)
+list(GET MONGOC_ACCEPT_ARG3_LIST ${MONGOC_ACCEPT_ARG3_L} MONGOC_ACCEPT_ARG3_VAL)
+
+FILE(WRITE accept_test.cxx
+"#include <sys/types.h>
+ #include <sys/socket.h>
+
+ int main ()
+ {
+   int a = 0;
+   ${MONGOC_ACCEPT_ARG2_VAL} *b = 0;
+   ${MONGOC_ACCEPT_ARG3_VAL} *c = 0;
+   accept (a, b, c);
+   return 0;
+}
+")
+  message(STATUS "${MONGOC_ACCEPT_ARG2_VAL} & ${MONGOC_ACCEPT_ARG3_VAL} ${RES}")
+  TRY_COMPILE(RES ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/accept_test.cxx CMAKE_FLAGS
+  "-DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE
+  LOG2)
+  if (RES)
+   set(MONGOC_SOCKET_ARG2 ${MONGOC_ACCEPT_ARG2_VAL})
+   set(MONGOC_SOCKET_ARG3 ${MONGOC_ACCEPT_ARG3_VAL})
+  endif ()
+endforeach()
+endforeach()
 
 include(CheckTypeSize)
-if (MSVC)
-   SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
-else()
-   SET(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-endif ()
+SET(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
 CHECK_TYPE_SIZE(socklen_t HAVE_SOCKLEN)
 SET(CMAKE_EXTRA_INCLUDE_FILES)
 
 if (HAVE_SOCKLEN)
    set(MONGOC_HAVE_SOCKLEN 1)
-   set (MONGOC_SOCKET_ARG3 "socklen_t")
 else()
    set(MONGOC_HAVE_SOCKLEN 0)
-   set (MONGOC_SOCKET_ARG3 "int")
 endif()
+
+else()
+    # WIN32
+   set(MONGOC_HAVE_SOCKLEN 1)
+endif()
+
+
+message(STATUS "accept arguments type is: ${MONGOC_SOCKET_ARG2} and  ${MONGOC_SOCKET_ARG3}")
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
