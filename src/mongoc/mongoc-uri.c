@@ -575,10 +575,9 @@ mongoc_uri_option_is_utf8 (const char *key)
       return false;
    }
 
-   if (!strcasecmp (key, MONGOC_URI_USERNAME) ||
-       !strcasecmp (key, MONGOC_URI_PASSWORD) ||
+   if (!strcasecmp (key, "username") || !strcasecmp (key, "password") ||
        !strcasecmp (key, MONGOC_URI_AUTHSOURCE) ||
-       !strcasecmp (key, MONGOC_URI_DATABASE)) {
+       !strcasecmp (key, "database")) {
       return false;
    }
 

@@ -52,6 +52,7 @@ html_use_smartypants = False
 html_sidebars = {
     '**': ['globaltoc.html'],
     'errors': [],  # Make more room for the big table.
+    'mongoc_uri_t': [],  # Make more room for the big table.
 }
 html_show_sourcelink = False
 

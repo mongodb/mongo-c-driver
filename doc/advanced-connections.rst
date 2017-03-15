@@ -144,5 +144,5 @@ See :doc:`mongoc_ssl_opt_t` for more information on the various SSL related opti
 Additional Connection Options
 -----------------------------
 
-A variety of connection options for the MongoDB URI can be found `here <http://docs.mongodb.org/manual/reference/connection-string/>`_.
+The full list of connection options can be found in the :symbol:`mongoc_uri_t` docs.
 
