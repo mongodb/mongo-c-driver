@@ -5,6 +5,7 @@
 #include <mongoc-collection-private.h>
 #include <mongoc-write-concern-private.h>
 #include <mongoc-read-concern-private.h>
+#include <mongoc-handshake-private.h>
 
 #include "TestSuite.h"
 
@@ -4762,6 +4763,20 @@ test_create_index_fail (void *context)
    mongoc_client_destroy (client);
 }
 
+static int
+_skip_if_offline_or_s390x (void)
+{
+   const mongoc_handshake_t *handshake;
+
+   handshake = _mongoc_handshake_get ();
+
+   if (!strcmp (handshake->os_architecture, "s390x")) {
+      return 0;
+   }
+
+   return test_framework_skip_if_offline ();
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -4946,5 +4961,5 @@ test_collection_install (TestSuite *suite)
                       test_create_index_fail,
                       NULL,
                       NULL,
-                      test_framework_skip_if_offline);
+                      _skip_if_offline_or_s390x);
 }
