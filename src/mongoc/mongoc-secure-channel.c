@@ -33,6 +33,11 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-secure-channel"
 
+/* mingw doesn't define this */
+#ifndef SECBUFFER_ALERT
+#define SECBUFFER_ALERT 17
+#endif
+
 
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)

@@ -6058,16 +6058,36 @@ tasks:
         - func: "fetch build"
           vars:
             BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "run auth tests"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
 
-    - name: authentication-tests-sasl
-      tags: ["authentication-tests", "sasl"]
+    - name: authentication-tests-sasl-cyrus
+      tags: ["authentication-tests", "sasl", "cyrus"]
       depends_on:
         - name: "debug-compile-sasl-nossl"
       commands:
         - func: "fetch build"
           vars:
             BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-sasl-sspi
+      tags: ["authentication-tests", "sasl", "sspi"]
+      depends_on:
+        - name: "debug-compile-sspi-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-nossl"
         - func: "run auth tests"
 
     - name: authentication-tests-nosasl
@@ -6141,7 +6161,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6165,7 +6185,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6185,7 +6205,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .nossl !.nosasl"
     - ".3.4 .nossl !.nosasl"
@@ -6228,7 +6248,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6248,7 +6268,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6271,7 +6291,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6295,7 +6315,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6319,7 +6339,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6339,7 +6359,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".authentication-tests .nosasl !.ssl"
+    - ".authentication-tests .nosasl !.ssl !.sspi"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
@@ -6359,7 +6379,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6381,7 +6401,7 @@ buildvariants:
     - "debug-compile"
     - "debug-compile-nosasl-openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .nosasl !.ssl" # Revert me: CDRIVER-2000
+    - ".authentication-tests .nosasl !.ssl !.sspi" # Revert me: CDRIVER-2000
     - ".authentication-tests .openssl"
     - ".latest .nossl" # No MongoDB SSL builds available for any version
     - ".3.4 .nossl" # No MongoDB SSL builds available for any version
@@ -6420,7 +6440,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
@@ -6451,6 +6471,7 @@ buildvariants:
     - ".authentication-tests .nosasl !.ssl" # Revert Me: CDRIVER-2040
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6479,6 +6500,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6506,6 +6528,7 @@ buildvariants:
     - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6533,6 +6556,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6560,6 +6584,7 @@ buildvariants:
     - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6589,6 +6614,7 @@ buildvariants:
     - ".debug-compile .nossl .sspi"
     - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6608,7 +6634,9 @@ buildvariants:
   - windows-64-vs2013-compile
   tasks:
     - ".debug-compile .nossl .nosasl"
+    - ".debug-compile .winssl .sspi"
     - ".latest .nossl .nosasl .server"
+    - ".latest .winssl .sspi .server"
 
 - name: power8-rhel71
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"
@@ -6648,7 +6676,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6671,7 +6699,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6692,7 +6720,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6714,7 +6742,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6735,7 +6763,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl"
+    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"

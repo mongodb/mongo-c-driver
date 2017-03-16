@@ -20,6 +20,11 @@
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
 
+/* mingw doesn't define this */
+#ifndef CRYPT_STRING_NOCRLF
+#define CRYPT_STRING_NOCRLF 0x40000000
+#endif
+
 #include "mongoc-util-private.h"
 #include "mongoc-sspi-private.h"
 
