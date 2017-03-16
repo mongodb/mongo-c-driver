@@ -86,6 +86,9 @@ mongoc_uri_destroy (mongoc_uri_t *uri);
 BSON_EXPORT (mongoc_uri_t *)
 mongoc_uri_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
 BSON_EXPORT (mongoc_uri_t *)
+mongoc_uri_new_with_error (const char *uri_string,
+                           bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+BSON_EXPORT (mongoc_uri_t *)
 mongoc_uri_new_for_host_port (const char *hostname,
                               uint16_t port) BSON_GNUC_WARN_UNUSED_RESULT;
 BSON_EXPORT (const mongoc_host_list_t *)

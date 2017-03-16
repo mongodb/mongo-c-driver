@@ -49,6 +49,12 @@ struct _mongoc_uri_t {
    mongoc_write_concern_t *write_concern;
 };
 
+#define MONGOC_URI_ERROR(error, format, msg)         \
+   bson_set_error (error,                            \
+                   MONGOC_ERROR_COMMAND,             \
+                   MONGOC_ERROR_COMMAND_INVALID_ARG, \
+                   format,                           \
+                   msg);
 bool
 _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                  const char *option,
@@ -739,7 +745,9 @@ CLEANUP:
 
 
 static bool
-mongoc_uri_parse_options (mongoc_uri_t *uri, const char *str)
+mongoc_uri_parse_options (mongoc_uri_t *uri,
+                          const char *str,
+                          bson_error_t *error)
 {
    const char *end_option;
    char *option;
@@ -747,6 +755,7 @@ mongoc_uri_parse_options (mongoc_uri_t *uri, const char *str)
 again:
    if ((option = scan_to_unichar (str, '&', "", &end_option))) {
       if (!mongoc_uri_parse_option (uri, option)) {
+         MONGOC_URI_ERROR (error, "Unknown option or value for '%s'", option);
          bson_free (option);
          return false;
       }
@@ -755,6 +764,7 @@ again:
       goto again;
    } else if (*str) {
       if (!mongoc_uri_parse_option (uri, str)) {
+         MONGOC_URI_ERROR (error, "Unknown option or value for '%s'", str);
          return false;
       }
    }
@@ -793,17 +803,21 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri)
 }
 
 static bool
-mongoc_uri_parse (mongoc_uri_t *uri, const char *str)
+mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    if (!mongoc_uri_parse_scheme (str, &str)) {
+      MONGOC_URI_ERROR (
+         error, "%s", "Invalid URI Schema, expecting 'mongodb://'");
       return false;
    }
 
    if (!*str || !mongoc_uri_parse_userpass (uri, str, &str)) {
+      MONGOC_URI_ERROR (error, "%s", "Invalid username or password in URI");
       return false;
    }
 
    if (!*str || !mongoc_uri_parse_hosts (uri, str, &str)) {
+      MONGOC_URI_ERROR (error, "%s", "Invalid host string in URI");
       return false;
    }
 
@@ -812,6 +826,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str)
          str++;
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
+               MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
                return false;
             }
          }
@@ -819,13 +834,13 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str)
          if (*str == '?') {
             str++;
             if (*str) {
-               if (!mongoc_uri_parse_options (uri, str)) {
+               if (!mongoc_uri_parse_options (uri, str, error)) {
                   return false;
                }
             }
          }
       } else {
-         MONGOC_WARNING ("Expected end of hostname delimiter");
+         MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
          return false;
       }
    }
@@ -946,8 +961,8 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
 }
 
 
-static void
-_mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri) /* IN */
+static bool
+_mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
 {
    const char *str;
    bson_iter_t iter;
@@ -977,16 +992,14 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri) /* IN */
       } else if (0 == strcasecmp ("nearest", str)) {
          mongoc_read_prefs_set_mode (uri->read_prefs, MONGOC_READ_NEAREST);
       } else {
-         MONGOC_WARNING (
-            "Unsupported readPreference value [readPreference=%s].", str);
+         MONGOC_URI_ERROR (
+            error,
+            "Unsupported readPreference value [readPreference=%s].",
+            str);
+         return false;
       }
    }
-
-   /* Warn on conflict, since read preference will be validated later */
-   if (mongoc_read_prefs_get_mode (uri->read_prefs) == MONGOC_READ_PRIMARY &&
-       !bson_empty (mongoc_read_prefs_get_tags (uri->read_prefs))) {
-      MONGOC_WARNING ("Primary read preference mode conflicts with tags.");
-   }
+   return true;
 }
 
 
@@ -1090,7 +1103,7 @@ _mongoc_uri_get_max_staleness_option (const mongoc_uri_t *uri)
 }
 
 mongoc_uri_t *
-mongoc_uri_new (const char *uri_string)
+mongoc_uri_new_with_error (const char *uri_string, bson_error_t *error)
 {
    mongoc_uri_t *uri;
    int32_t max_staleness_seconds;
@@ -1109,20 +1122,24 @@ mongoc_uri_new (const char *uri_string)
       uri_string = "mongodb://127.0.0.1/";
    }
 
-   if (!mongoc_uri_parse (uri, uri_string)) {
+   if (!mongoc_uri_parse (uri, uri_string, error)) {
       mongoc_uri_destroy (uri);
       return NULL;
    }
 
    uri->str = bson_strdup (uri_string);
 
-   _mongoc_uri_assign_read_prefs_mode (uri);
+   if (!_mongoc_uri_assign_read_prefs_mode (uri, error)) {
+      mongoc_uri_destroy (uri);
+      return NULL;
+   }
    max_staleness_seconds = _mongoc_uri_get_max_staleness_option (uri);
    mongoc_read_prefs_set_max_staleness_seconds (uri->read_prefs,
                                                 max_staleness_seconds);
 
    if (!mongoc_read_prefs_is_valid (uri->read_prefs)) {
       mongoc_uri_destroy (uri);
+      MONGOC_URI_ERROR (error, "%s", "Invalid readPreferences");
       return NULL;
    }
 
@@ -1130,7 +1147,22 @@ mongoc_uri_new (const char *uri_string)
 
    if (!mongoc_write_concern_is_valid (uri->write_concern)) {
       mongoc_uri_destroy (uri);
+      MONGOC_URI_ERROR (error, "%s", "Invalid writeConcern");
       return NULL;
+   }
+
+   return uri;
+}
+
+mongoc_uri_t *
+mongoc_uri_new (const char *uri_string)
+{
+   bson_error_t error = {0};
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (error.domain) {
+      MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
    }
 
    return uri;

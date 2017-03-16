@@ -625,6 +625,55 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_mongoc_uri_new_with_error (void)
+{
+   bson_error_t error = {0};
+
+   capture_logs (true);
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://", NULL));
+   ASSERT (mongoc_uri_new_with_error ("mongodb://localhost", NULL));
+
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error ("mongo://localhost", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/?readPreference=unknown", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/"
+      "?appname="
+      "WayToLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToBe"
+      "ValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRes"
+      "ultInAnError",
+      &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (
+      !mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error ("mongodb:///tmp/mongodb.sock", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   error.domain = 0;
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
+   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+}
+
 
 #undef ASSERT_SUPPRESS
 
@@ -775,7 +824,7 @@ test_mongoc_uri_read_prefs (void)
                                                   "}");
    bson_t *tags_empty = BCON_NEW ("0", "{", "}");
 
-   const char *conflicts = "Primary read preference mode conflicts with tags";
+   const char *conflicts = "Invalid readPreferences";
 
    const read_prefs_test tests[] = {
       {"mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL},
@@ -1311,6 +1360,7 @@ void
 test_uri_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
+   TestSuite_Add (suite, "/Uri/new_with_error", test_mongoc_uri_new_with_error);
    TestSuite_Add (
       suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
    TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
