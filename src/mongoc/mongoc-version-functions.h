@@ -23,17 +23,19 @@
 #ifndef MONGOC_VERSION_FUNCTIONS_H
 #define MONGOC_VERSION_FUNCTIONS_H
 
-#include "bson.h" /* for "bool" */
+#include <bson.h> /* for "bool" */
 
-BSON_EXPORT (int)
+#include "mongoc-macros.h"
+
+MONGOC_EXPORT (int)
 mongoc_get_major_version (void);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_get_minor_version (void);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_get_micro_version (void);
-BSON_EXPORT (const char *)
+MONGOC_EXPORT (const char *)
 mongoc_get_version (void);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_check_version (int required_major,
                       int required_minor,
                       int required_micro);

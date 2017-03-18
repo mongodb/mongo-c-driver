@@ -23,6 +23,8 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
+
 
 BSON_BEGIN_DECLS
 
@@ -70,17 +72,17 @@ typedef struct {
 } mongoc_index_opt_t;
 
 
-BSON_EXPORT (const mongoc_index_opt_t *)
+MONGOC_EXPORT (const mongoc_index_opt_t *)
 mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
-BSON_EXPORT (const mongoc_index_opt_geo_t *)
+MONGOC_EXPORT (const mongoc_index_opt_geo_t *)
 mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
-BSON_EXPORT (const mongoc_index_opt_wt_t *)
+MONGOC_EXPORT (const mongoc_index_opt_wt_t *)
 mongoc_index_opt_wt_get_default (void) BSON_GNUC_CONST;
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_index_opt_init (mongoc_index_opt_t *opt);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_index_opt_geo_init (mongoc_index_opt_geo_t *opt);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_index_opt_wt_init (mongoc_index_opt_wt_t *opt);
 
 BSON_END_DECLS

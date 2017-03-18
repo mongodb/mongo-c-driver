@@ -22,11 +22,14 @@
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
+
 #include <bson.h>
+
+#include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
                                 const char *host,
                                 mongoc_ssl_opt_t *opt,

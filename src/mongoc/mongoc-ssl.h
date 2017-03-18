@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 
@@ -42,7 +43,7 @@ struct _mongoc_ssl_opt_t {
 };
 
 
-BSON_EXPORT (const mongoc_ssl_opt_t *)
+MONGOC_EXPORT (const mongoc_ssl_opt_t *)
 mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
 
 

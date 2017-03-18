@@ -344,6 +344,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
    ${SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-macros.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h

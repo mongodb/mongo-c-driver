@@ -23,13 +23,14 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 #include "mongoc-stream.h"
 
 
 BSON_BEGIN_DECLS
 
 
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_buffered_new (mongoc_stream_t *base_stream, size_t buffer_size);
 
 

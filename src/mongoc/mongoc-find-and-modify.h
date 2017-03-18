@@ -23,6 +23,8 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
+
 BSON_BEGIN_DECLS
 
 typedef enum {
@@ -34,67 +36,67 @@ typedef enum {
 
 typedef struct _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t;
 
-BSON_EXPORT (mongoc_find_and_modify_opts_t *)
+MONGOC_EXPORT (mongoc_find_and_modify_opts_t *)
 mongoc_find_and_modify_opts_new (void);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
                                       const bson_t *sort);
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_find_and_modify_opts_get_sort (const mongoc_find_and_modify_opts_t *opts,
                                       bson_t *sort);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
                                         const bson_t *update);
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_find_and_modify_opts_get_update (
    const mongoc_find_and_modify_opts_t *opts, bson_t *update);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
                                         const bson_t *fields);
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_find_and_modify_opts_get_fields (
    const mongoc_find_and_modify_opts_t *opts, bson_t *fields);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_flags (
    mongoc_find_and_modify_opts_t *opts,
    const mongoc_find_and_modify_flags_t flags);
 
-BSON_EXPORT (mongoc_find_and_modify_flags_t)
+MONGOC_EXPORT (mongoc_find_and_modify_flags_t)
 mongoc_find_and_modify_opts_get_flags (
    const mongoc_find_and_modify_opts_t *opts);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_bypass_document_validation (
    mongoc_find_and_modify_opts_t *opts, bool bypass);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_get_bypass_document_validation (
    const mongoc_find_and_modify_opts_t *opts);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_max_time_ms (
    mongoc_find_and_modify_opts_t *opts, uint32_t max_time_ms);
 
-BSON_EXPORT (uint32_t)
+MONGOC_EXPORT (uint32_t)
 mongoc_find_and_modify_opts_get_max_time_ms (
    const mongoc_find_and_modify_opts_t *opts);
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
                                     const bson_t *extra);
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_find_and_modify_opts_get_extra (
    const mongoc_find_and_modify_opts_t *opts, bson_t *extra);
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *opts);
 
 BSON_END_DECLS

@@ -22,7 +22,8 @@
 #endif
 
 #include <bson.h>
-#include <mongoc-config.h>
+#include "mongoc-macros.h"
+#include "mongoc-config.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -55,60 +56,60 @@ typedef struct {
    int revents;
 } mongoc_socket_poll_t;
 
-BSON_EXPORT (mongoc_socket_t *)
+MONGOC_EXPORT (mongoc_socket_t *)
 mongoc_socket_accept (mongoc_socket_t *sock, int64_t expire_at);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_bind (mongoc_socket_t *sock,
                     const struct sockaddr *addr,
                     mongoc_socklen_t addrlen);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_close (mongoc_socket_t *socket);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_connect (mongoc_socket_t *sock,
                        const struct sockaddr *addr,
                        mongoc_socklen_t addrlen,
                        int64_t expire_at);
-BSON_EXPORT (char *)
+MONGOC_EXPORT (char *)
 mongoc_socket_getnameinfo (mongoc_socket_t *sock);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_socket_destroy (mongoc_socket_t *sock);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_errno (mongoc_socket_t *sock);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_getsockname (mongoc_socket_t *sock,
                            struct sockaddr *addr,
                            mongoc_socklen_t *addrlen);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_listen (mongoc_socket_t *sock, unsigned int backlog);
-BSON_EXPORT (mongoc_socket_t *)
+MONGOC_EXPORT (mongoc_socket_t *)
 mongoc_socket_new (int domain, int type, int protocol);
-BSON_EXPORT (ssize_t)
+MONGOC_EXPORT (ssize_t)
 mongoc_socket_recv (mongoc_socket_t *sock,
                     void *buf,
                     size_t buflen,
                     int flags,
                     int64_t expire_at);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_socket_setsockopt (mongoc_socket_t *sock,
                           int level,
                           int optname,
                           const void *optval,
                           mongoc_socklen_t optlen);
-BSON_EXPORT (ssize_t)
+MONGOC_EXPORT (ssize_t)
 mongoc_socket_send (mongoc_socket_t *sock,
                     const void *buf,
                     size_t buflen,
                     int64_t expire_at);
-BSON_EXPORT (ssize_t)
+MONGOC_EXPORT (ssize_t)
 mongoc_socket_sendv (mongoc_socket_t *sock,
                      mongoc_iovec_t *iov,
                      size_t iovcnt,
                      int64_t expire_at);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_socket_check_closed (mongoc_socket_t *sock);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_socket_inet_ntop (struct addrinfo *rp, char *buf, size_t buflen);
-BSON_EXPORT (ssize_t)
+MONGOC_EXPORT (ssize_t)
 mongoc_socket_poll (mongoc_socket_poll_t *sds, size_t nsds, int32_t timeout);
 
 

@@ -40,6 +40,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-iovec.h \
 	src/mongoc/mongoc-log.h \
 	src/mongoc/mongoc-matcher.h \
+	src/mongoc/mongoc-macros.h \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-read-concern.h \
 	src/mongoc/mongoc-read-prefs.h \

@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 #include "mongoc-gridfs.h"
 #include "mongoc-stream.h"
 
@@ -30,7 +31,7 @@
 BSON_BEGIN_DECLS
 
 
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
 
 
