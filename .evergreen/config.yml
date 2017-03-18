@@ -456,22 +456,6 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
-    - name: release-cmake-compile
-      tags: ["release-eng", "cmake-compile"]
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              CC='${CC}' sh .evergreen/compile-unix-cmake.sh
-        - func: "upload build"
-
     - name: debug-compile
       tags: ["debug-compile"]
       commands:
@@ -588,6 +572,42 @@ tasks:
               set -o xtrace
               RELEASE=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
+
+    - name: link-with-cmake
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from CMake's find_package command.
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-pkg-config
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from "pkg-config".
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
 
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
@@ -6139,14 +6159,30 @@ buildvariants:
   run_on:
     - ubuntu1404-build
   tasks:
-    - "make-release-archive"
-    - ".release-eng"
+    - name: "make-release-archive"
+      distros: # Run on any of these variants, whichever will schedule us first
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
+    - name: "link-with-cmake"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "link-with-pkg-config"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
 
 
 - name: clang34ubuntu

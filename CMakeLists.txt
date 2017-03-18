@@ -148,10 +148,11 @@ set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 if (NOT ENABLE_SASL STREQUAL OFF)
    if (ENABLE_SASL STREQUAL AUTO OR ENABLE_SASL STREQUAL CYRUS)
+      # Sets SASL_LIBS.
       include(FindSASL2)
    endif()
 
-   if (SASL2_FOUND)
+   if (SASL_FOUND)
       set (MONGOC_ENABLE_SASL 1)
       set (MONGOC_ENABLE_SASL_CYRUS 1)
    elseif ((ENABLE_SASL STREQUAL SSPI OR ENABLE_SASL STREQUAL AUTO) AND WIN32)
@@ -281,8 +282,6 @@ include_directories("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories("${SOURCE_DIR}/src/mongoc")
 include_directories (${BSON_INCLUDE_DIRS})
 link_directories (${BSON_LIBRARY_DIRS})
-
-set(LIBS ${LIBS} ${BSON_LIBRARIES})
 
 if (UNIX AND NOT APPLE)
    set(LIBS ${LIBS} rt)
@@ -429,10 +428,10 @@ if (NOT ENABLE_SSL STREQUAL OFF)
            ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
            ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
       )
-      set (LIBS ${LIBS} ${OPENSSL_LIBRARIES})
+      set (SSL_LIBS ${OPENSSL_LIBRARIES})
       include_directories (${OPENSSL_INCLUDE_DIR})
       if(WIN32)
-         set(LIBS ${LIBS} crypt32.lib)
+         set(SSL_LIBS ${SSL_LIBS} crypt32.lib)
       endif()
    elseif (SECURE_TRANSPORT)
       set (SOURCES ${SOURCES}
@@ -441,7 +440,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
               ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
       )
-      set (LIBS ${LIBS} "-framework CoreFoundation -framework Security")
+      set (SSL_LIBS "-framework CoreFoundation -framework Security")
    elseif (SECURE_CHANNEL)
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
@@ -449,7 +448,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
               ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
       )
-      set(LIBS ${LIBS} secur32.lib crypt32.lib Bcrypt.lib)
+      set(SSL_LIBS secur32.lib crypt32.lib Bcrypt.lib)
    elseif (LIBRESSL)
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
@@ -457,7 +456,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
               ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
               ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
       )
-      set(LIBS ${LIBS} "-ltls -lcrypto")
+      set(SSL_LIBS -ltls -lcrypto)
    endif ()
 endif () # ENABLE_SSL
 
@@ -467,8 +466,7 @@ if (MONGOC_ENABLE_SASL)
    if (MONGOC_ENABLE_SASL_CYRUS)
       message (STATUS "Compiling against Cyrus SASL")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
-      set (LIBS ${LIBS} ${SASL2_LIBRARY})
-      include_directories(${SASL2_INCLUDE_DIR})
+      include_directories(${SASL_INCLUDE_DIRS})
    elseif (MONGOC_ENABLE_SASL_SSPI)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
@@ -482,14 +480,18 @@ add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-target_link_libraries(mongoc_shared ${LIBS})
-target_link_libraries(mongoc_static ${LIBS})
+set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+target_link_libraries(mongoc_shared ${BSON_LIBRARIES} ${LIBS})
+target_link_libraries(mongoc_static ${BSON_LIBRARIES} ${LIBS})
 
 set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
 set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
 
-set_target_properties(mongoc_shared PROPERTIES VERSION ${MONGOC_VERSION} SOVERSION ${MONGOC_MAJOR_VERSION})
-set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION} SOVERSION ${MONGOC_MAJOR_VERSION})
+# CMake wants to make different symlinks than the Autotools, see
+# https://cmake.org/pipermail/cmake/2007-September/016501.html
+# This hack sets up standard symlink, libmongoc-1.0.so -> libmongoc-1.0.0.so
+set_target_properties(mongoc_shared PROPERTIES VERSION 0 SOVERSION ${MONGOC_MAJOR_VERSION})
+set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
 
 set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
@@ -681,6 +683,16 @@ install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
   DESTINATION lib/pkgconfig
 )
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-static-1.0.pc
+@ONLY)
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-static-1.0.pc
+  DESTINATION lib/pkgconfig
+)
+
+# Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in

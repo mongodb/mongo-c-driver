@@ -118,15 +118,55 @@ The example below establishes a connection to a standalone server on ``localhost
      return 0;
   }
 
-On a UNIX-like system, the code can be compiled and run like so:
+Include and link libmongoc in your C program
+--------------------------------------------
 
-.. code-block:: none
+Include mongoc.h
+^^^^^^^^^^^^^^^^
 
-  $ gcc -o connect connect.c $(pkg-config --cflags --libs libmongoc-1.0)
-  $ ./connect
-  { "ok" : 1.000000 }
+All libmongoc's functions and types are available in one header file. Simply include ``mongoc.h``:
 
-Alternatively, if `pkg-config <http://www.freedesktop.org/wiki/Software/pkg-config/>`_ is not available, paths and libraries can be managed manually.
+.. literalinclude:: ../examples/hello_mongoc.c
+  :caption: hello_mongoc.c
+  :start-after: -- sphinx-include-start --
+
+CMake
+'''''
+
+The libmongoc installation includes a `CMake config-file package`_, so you can use CMake's `find_package`_ command to find libmongoc's header and library paths and link to libmongoc:
+
+.. literalinclude:: ../examples/cmake/find_package/CMakeLists.txt
+  :caption: CMakeLists.txt
+  :start-after: -- sphinx-include-start --
+
+By default, libmongoc is dynamically linked. You can use libmongoc as a static library instead: Use the included ``libmongoc-static-1.0`` config-file package:
+
+.. literalinclude:: ../examples/cmake/find_package_static/CMakeLists.txt
+  :start-after: -- sphinx-include-start --
+  :emphasize-lines: 1, 6
+
+.. _CMake config-file package: https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#config-file-packages
+.. _find_package: https://cmake.org/cmake/help/latest/command/find_package.html
+
+pkg-config
+''''''''''
+
+If you're not using CMake, use `pkg-config`_ on the command line to set header and library paths:
+
+.. literalinclude:: ../examples/compile-with-pkg-config.sh
+  :start-after: -- sphinx-include-start --
+
+Or to statically link to libmongoc:
+
+.. literalinclude:: ../examples/compile-with-pkg-config-static.sh
+  :start-after: -- sphinx-include-start --
+
+.. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
+
+Specifying header and include paths manually
+''''''''''''''''''''''''''''''''''''''''''''
+
+If you aren't using CMake and pkg-config is unavailable, paths and libraries can be managed manually.
 
 .. code-block:: none
 

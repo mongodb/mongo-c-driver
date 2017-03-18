@@ -8,6 +8,9 @@
 # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
 # but you should use the standard CMAKE_PREFIX_PATH instead.
 message (STATUS "Searching for libbson CMake package")
+
+message ("TODO CHECK STATIC")
+
 find_package (libbson-1.0
    "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
    HINTS

@@ -68,6 +68,35 @@ dist-hook:
 	  echo A git checkout is required to generate a ChangeLog >&2;                  \
 	fi
 
+# Make libmongoc-static-1.0.a symlink to libmongoc-1.0.a. If libmongoc is built with
+# CMake instead of the Autotools, the static archive is named
+# libmongoc-static-1.0.a by default. For the sake of projects that want to
+# statically link to libmongoc, ensure the static archive is present with the
+# name no matter how it was built.
+
+# Also, copy CMake config-file packages to lib/cmake/ for use with CMake's
+# "find_package" command.
+
+if ENABLE_STATIC
+enable_static=1
+endif
+
+install-exec-hook:
+	$(MKDIR_P) $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
+	cp -f build/cmake/libmongoc-1.0-config.cmake $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
+	cp -f build/cmake/libmongoc-1.0-config-version.cmake $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
+
+	rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0
+
+	if [ ! -z "$(enable_static)" ]; then                                                                      \
+	  $(MKDIR_P) $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0;                                              \
+	  cd $(DESTDIR)$(libdir);                                                                                 \
+	  rm -f libmongoc-static-1.0.a;                                                                           \
+	  $(LN_S) libmongoc-1.0.a libmongoc-static-1.0.a;                                                         \
+	  cp -f $(abs_builddir)/build/cmake/libmongoc-static-1.0-config.cmake cmake/libmongoc-static-1.0;         \
+	  cp -f $(abs_builddir)/build/cmake/libmongoc-static-1.0-config-version.cmake cmake/libmongoc-static-1.0; \
+	fi
+
 clean-local:
 	-rm -rf $(CLEANFILES)
 	-rm -rf doc/html/.buildinfo doc/html/.doctrees
@@ -76,3 +105,5 @@ clean-local:
 uninstall-local:
 	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
 	-rm -r $(mongocdocdir)
+	-rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
+	-rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-1.0-static

@@ -134,3 +134,11 @@ EXTRA_DIST += \
 	examples/find_and_modify_with_opts/opts.c \
 	examples/find_and_modify_with_opts/sort.c \
 	examples/find_and_modify_with_opts/update.c
+
+# These files are included when we generate docs from tutorial.rst
+EXTRA_DIST += \
+	examples/hello_mongoc.c \
+	examples/compile-with-pkg-config.sh \
+	examples/compile-with-pkg-config-static.sh \
+	examples/cmake/find_package/CMakeLists.txt \
+	examples/cmake/find_package_static/CMakeLists.txt

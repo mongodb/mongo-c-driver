@@ -57,7 +57,12 @@ m4_include([build/autotools/SetupAutomake.m4])
 AC_CONFIG_FILES([
     Makefile
     src/libmongoc-1.0.pc
+    src/libmongoc-static-1.0.pc
     src/libmongoc-ssl-1.0.pc
+    build/cmake/libmongoc-1.0-config-version.cmake
+    build/cmake/libmongoc-static-1.0-config.cmake
+    build/cmake/libmongoc-1.0-config.cmake
+    build/cmake/libmongoc-static-1.0-config-version.cmake
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
 ])

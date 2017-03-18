@@ -28,7 +28,7 @@ project (hello_mongoc LANGUAGES C)
 # building libmongoc.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (libmongoc-1.0 1.7 REQUIRED)
+find_package (libmongoc-static-1.0 1.7 REQUIRED)
 
 message ("--   mongoc found version \"${MONGOC_VERSION}\"")
 message ("--   mongoc include path \"${MONGOC_INCLUDE_DIRS}\"")
