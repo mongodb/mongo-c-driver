@@ -688,7 +688,12 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
          MONGOC_WARNING ("Cannot set appname: %s is invalid", value);
          goto CLEANUP;
       }
-   } else {
+   } else if (!strcasecmp (key, "family")) {
+	  if (!mongoc_uri_parse_family(uri, value)) {
+		 MONGOC_WARNING ("Cannot set family: %s is invalid", value);
+		 goto CLEANUP;
+	  }
+   }else {
       bson_append_utf8 (&uri->options, key, -1, value, -1);
    }
 
@@ -1272,6 +1277,35 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
    }
 
    return retval;
+}
+
+bool
+mongoc_uri_parse_family(mongoc_uri_t *uri, const char *value)
+{
+   mongoc_host_list_t * hl = 0;
+   int family = AF_UNSPEC;
+
+   BSON_ASSERT (uri);
+   BSON_ASSERT (value);
+
+   if(!strcasecmp("ipv4", value))
+	   family = AF_INET;
+   else if(!strcasecmp("ipv6", value))
+	   family = AF_INET6;
+   else if(!strcasecmp("unix", value))
+	   family = AF_UNIX;
+   else if(!strcasecmp("unspec", value))
+	   family = AF_UNIX;
+   else
+	   return false;
+
+
+   for (hl = uri->hosts; hl; hl = hl->next)
+   {
+	   hl->family = family;
+   }
+   return true;
+
 }
 
 const bson_t *
