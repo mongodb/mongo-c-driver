@@ -4734,7 +4734,6 @@ test_insert_duplicate_key (void)
    mongoc_client_destroy (client);
 }
 
-/* fails on Ubuntu zSeries, iff OpenSSL is not compiled in */
 static void
 test_create_index_fail (void *context)
 {
@@ -4744,7 +4743,8 @@ test_create_index_fail (void *context)
    bson_t reply;
    bson_error_t error;
 
-   client = mongoc_client_new ("mongodb://example.com/?connectTimeoutMS=10");
+   client =
+      mongoc_client_new ("mongodb://example.doesntexist/?connectTimeoutMS=10");
    collection = mongoc_client_get_collection (client, "test", "test");
    r = mongoc_collection_create_index_with_opts (
       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &reply, &error);
