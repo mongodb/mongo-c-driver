@@ -629,10 +629,13 @@ static void
 test_mongoc_uri_new_with_error (void)
 {
    bson_error_t error = {0};
+   mongoc_uri_t *uri;
 
    capture_logs (true);
    ASSERT (!mongoc_uri_new_with_error ("mongodb://", NULL));
-   ASSERT (mongoc_uri_new_with_error ("mongodb://localhost", NULL));
+   uri = mongoc_uri_new_with_error ("mongodb://localhost", NULL);
+   ASSERT (uri);
+   mongoc_uri_destroy (uri);
 
    ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
    ASSERT (error.domain == MONGOC_ERROR_COMMAND);
