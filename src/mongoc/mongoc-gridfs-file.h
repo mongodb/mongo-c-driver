@@ -29,20 +29,19 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_GRIDFS_FILE_STR_HEADER(name)                                \
-   BSON_API                                                                \
-   const char *mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
-   BSON_API                                                                \
-   void mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file,         \
-                                       const char *str);
+#define MONGOC_GRIDFS_FILE_STR_HEADER(name)                    \
+   MONGOC_EXPORT (const char *)                                \
+   mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
+   MONGOC_EXPORT (void)                                        \
+   mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file, const char *str);
 
 
-#define MONGOC_GRIDFS_FILE_BSON_HEADER(name)                                 \
-   BSON_API                                                                  \
-   const bson_t *mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
-   BSON_API                                                                  \
-   void mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file,           \
-                                       const bson_t *bson);
+#define MONGOC_GRIDFS_FILE_BSON_HEADER(name)                   \
+   MONGOC_EXPORT (const bson_t *)                              \
+   mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file); \
+   MONGOC_EXPORT (void)                                        \
+   mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t *file,  \
+                                  const bson_t *bson);
 
 
 typedef struct _mongoc_gridfs_file_t mongoc_gridfs_file_t;
