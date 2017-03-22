@@ -6,7 +6,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #   BUILD_LIBMONGOC_WITH_CMAKE Build mongoc with CMake. Default: use Autotools.
 #   LINK_STATIC                Whether to statically link to libmongoc
 #   BUILD_SAMPLE_WITH_CMAKE    Link program w/ CMake. Default: use pkg-config.
-#   ENABLE_SSL                 Set -DENABLE_SSL or --enable-ssl to this value.
+#   ENABLE_SSL                 Set -DENABLE_SSL or --enable-ssl.
 
 
 echo "BUILD_LIBMONGOC_WITH_CMAKE=$BUILD_LIBMONGOC_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
@@ -43,8 +43,11 @@ cd $BUILD_DIR
 $TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 
 if [ "$ENABLE_SSL" ]; then
-  SSL_CONFIGURE_OPTION="--enable-ssl=$ENABLE_SSL"
-  SSL_CMAKE_OPTION="-DENABLE_SSL=$ENABLE_SSL"
+  SSL_CONFIGURE_OPTION="--enable-ssl"
+  SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=ON"
+else
+  SSL_CONFIGURE_OPTION="--disable-ssl"
+  SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
 fi
 
 if [ "$BUILD_LIBMONGOC_WITH_CMAKE" ]; then

@@ -587,10 +587,32 @@ tasks:
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from CMake's find_package command.
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE=1 sh .evergreen/link-sample-program.sh
+              export BUILD_SAMPLE_WITH_CMAKE=1
+              export ENABLE_SSL=
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-cmake-ssl
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from CMake's find_package command.
+              export BUILD_SAMPLE_WITH_CMAKE=1
+              export ENABLE_SSL=1
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
     - name: link-with-pkg-config
       depends_on:
@@ -605,10 +627,32 @@ tasks:
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from "pkg-config".
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 BUILD_SAMPLE_WITH_CMAKE= sh .evergreen/link-sample-program.sh
+              export BUILD_SAMPLE_WITH_CMAKE=
+              export ENABLE_SSL=
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-pkg-config-ssl
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from "pkg-config".
+              export BUILD_SAMPLE_WITH_CMAKE=
+              export ENABLE_SSL=1
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
