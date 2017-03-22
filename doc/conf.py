@@ -39,7 +39,7 @@ master_doc = 'index'
 # don't fetch libbson's inventory from mongoc.org during build - Debian and
 # Fedora package builds must work offline - maintain a recent copy here
 intersphinx_mapping = {
-    'bson': ('http://mongoc.org/libbson/' + release, 'libbson-objects.inv'),
+    'bson': ('http://mongoc.org/libbson/current', 'libbson-objects.inv'),
 }
 
 # -- Options for HTML output ----------------------------------------------
