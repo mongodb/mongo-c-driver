@@ -86,9 +86,8 @@ install-exec-hook:
 	cp -f build/cmake/libmongoc-1.0-config.cmake $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
 	cp -f build/cmake/libmongoc-1.0-config-version.cmake $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
 
-	rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0
-
 	if [ ! -z "$(enable_static)" ]; then                                                                      \
+	  rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0;                                                  \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0;                                              \
 	  cd $(DESTDIR)$(libdir);                                                                                 \
 	  rm -f libmongoc-static-1.0.a;                                                                           \
