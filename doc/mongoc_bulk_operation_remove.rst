@@ -14,6 +14,8 @@ Synopsis
 
 Remove documents as part of a bulk operation. This only queues the operation. To execute it, call :symbol:`mongoc_bulk_operation_execute()`.
 
+This function is superseded by :symbol:`mongoc_bulk_operation_remove_one_with_opts()` and :symbol:`mongoc_bulk_operation_remove_many_with_opts()`.
+
 Parameters
 ----------
 

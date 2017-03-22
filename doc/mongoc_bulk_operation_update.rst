@@ -16,9 +16,9 @@ Synopsis
 
 This function queues an update as part of a bulk operation. This does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute()`.
 
-.. warning::
+``document`` MUST only contain fields whose key starts with ``$``. See the update document specification for more details.
 
-  ``document`` MUST only contain fields whose key starts with ``$``. See the update document specification for more details.
+This function is superseded by :symbol:`mongoc_bulk_operation_update_one_with_opts()` and :symbol:`mongoc_bulk_operation_update_many_with_opts()`.
 
 Parameters
 ----------
@@ -31,7 +31,7 @@ Parameters
 See Also
 --------
 
-:symbol:`mongoc_bulk_operation_update_one()`
+:symbol:`mongoc_bulk_operation_update_one_with_opts()`
 
 :symbol:`mongoc_bulk_operation_update_many_with_opts()`
 

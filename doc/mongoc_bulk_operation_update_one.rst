@@ -16,6 +16,8 @@ Synopsis
 
 This function queues an update as part of a bulk operation. It will only modify a single document on the MongoDB server. This function does not execute the operation. To execute the entirety of the bulk operation call :symbol:`mongoc_bulk_operation_execute()`.
 
+This function is superseded by :symbol:`mongoc_bulk_operation_update_one_with_opts()`.
+
 Parameters
 ----------
 
