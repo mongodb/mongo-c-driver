@@ -220,6 +220,20 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_get_hosts (uri)->next->next);
    mongoc_uri_destroy (uri);
 
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_HEARTBEATFREQUENCYMS
+                         "=600");
+   ASSERT (uri);
+   ASSERT_CMPINT32 (
+      600,
+      ==,
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 0));
+
+   mongoc_uri_destroy (uri);
+
+   /* heartbeat frequency too short */
+   ASSERT (!mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_HEARTBEATFREQUENCYMS "=499"));
+
    /* should use the " MONGOC_URI_AUTHSOURCE " over db when both are specified
     */
    uri = mongoc_uri_new (
@@ -486,6 +500,7 @@ test_mongoc_uri_functions (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_database_t *db;
+   int32_t i;
 
    uri = mongoc_uri_new (
       "mongodb://foo:bar@localhost:27017/baz?" MONGOC_URI_AUTHSOURCE "=source");
@@ -550,6 +565,26 @@ test_mongoc_uri_functions (void)
    ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18));
    ASSERT_CMPINT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 18);
+
+   ASSERT (mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500));
+
+   i = mongoc_uri_get_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 1000);
+
+   ASSERT_CMPINT32 (i, ==, 500);
+
+   capture_logs (true);
+
+   /* Server Discovery and Monitoring Spec: "the driver MUST NOT permit users to
+    * configure it less than minHeartbeatFrequencyMS (500ms)." */
+   ASSERT (!mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 499));
+
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_option_as_int32",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Invalid \"heartbeatfrequencyms\" of 499: must be at least 500");
 
    /* socketcheckintervalms isn't set, return our fallback */
    ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (

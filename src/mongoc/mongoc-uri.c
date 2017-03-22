@@ -649,7 +649,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
          goto UNSUPPORTED_VALUE;
       }
 
-      mongoc_uri_set_option_as_int32 (uri, lkey, v_int);
+      if (!mongoc_uri_set_option_as_int32 (uri, lkey, v_int)) {
+         goto CLEANUP;
+      }
    } else if (!strcmp (lkey, MONGOC_URI_W)) {
       if (*value == '-' || isdigit (*value)) {
          v_int = (int) strtol (value, NULL, 10);
@@ -1683,6 +1685,17 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
    BSON_ASSERT (option);
 
    if (!mongoc_uri_option_is_int32 (option)) {
+      return false;
+   }
+
+   /* Server Discovery and Monitoring Spec: "the driver MUST NOT permit users to
+    * configure it less than minHeartbeatFrequencyMS (500ms)." */
+   if (!bson_strcasecmp (option, MONGOC_URI_HEARTBEATFREQUENCYMS) &&
+       value < MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS) {
+      MONGOC_WARNING ("Invalid \"%s\" of %d: must be at least %d",
+                      option,
+                      value,
+                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
       return false;
    }
 
