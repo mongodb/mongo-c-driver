@@ -267,6 +267,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_option_is_bool
     mongoc_uri_option_is_int32
     mongoc_uri_option_is_utf8
+    mongoc_uri_set_auth_mechanism
     mongoc_uri_set_auth_source
     mongoc_uri_set_database
     mongoc_uri_set_mechanism_properties

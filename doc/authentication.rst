@@ -171,3 +171,7 @@ The ``MONGODB-X509`` mechanism authenticates a username derived from the disting
 
   The MongoDB C Driver will attempt to determine the x509 derived username when none is provided, and as of MongoDB 3.4 providing the username is not required at all.
 
+.. only:: html
+
+  .. taglist:: See Also:
+    :tags: authmechanism

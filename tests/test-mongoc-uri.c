@@ -457,7 +457,16 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'one', 'b': 'two'}");
 
+   ASSERT (mongoc_uri_set_auth_mechanism (uri, "MONGODB-CR"));
+   ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-CR");
+
    /* prohibited */
+   ASSERT (!mongoc_uri_set_option_as_utf8 (
+      uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
+
+   ASSERT (!mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_AUTHMECHANISM, 1));
+
    ASSERT (!mongoc_uri_set_option_as_utf8 (
       uri, MONGOC_URI_AUTHMECHANISMPROPERTIES, "a:three"));
 

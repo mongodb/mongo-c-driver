@@ -1,3 +1,9 @@
+Next Release
+============
+
+  * New function mongoc_uri_set_auth_mechanism to update the authentication
+    mechanism of a mongoc_uri_t after it is created from a string.
+
 mongo-c-driver 1.6.0
 ====================
 

@@ -57,5 +57,7 @@ This code produces the output:
 See Also
 --------
 
-:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_set_mechanism_properties`
+.. only:: html
 
+  .. taglist:: See Also:
+    :tags: authmechanism

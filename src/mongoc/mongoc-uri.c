@@ -898,6 +898,26 @@ mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri)
 
 
 bool
+mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri, const char *value)
+{
+   size_t len;
+
+   BSON_ASSERT (value);
+
+   len = strlen (value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (
+      &uri->credentials, MONGOC_URI_AUTHMECHANISM, value);
+
+   return true;
+}
+
+
+bool
 mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
                                      bson_t *properties /* OUT */)
 {

@@ -155,6 +155,9 @@ mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value);
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)
+mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri,
+                               const char *value);
+MONGOC_EXPORT (bool)
 mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
                                      bson_t *properties);
 MONGOC_EXPORT (bool)

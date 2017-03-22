@@ -53,3 +53,7 @@ See Also
 
 :ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_get_mechanism_properties`
 
+.. only:: html
+
+  .. taglist:: See Also:
+    :tags: authmechanism
