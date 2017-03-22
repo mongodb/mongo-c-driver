@@ -579,6 +579,9 @@ tasks:
         - name: "make-release-archive"
           variant: releng
       commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
         - command: shell.exec
           type: test
           params:
@@ -599,6 +602,9 @@ tasks:
         - name: "make-release-archive"
           variant: releng
       commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
         - command: shell.exec
           type: test
           params:
@@ -619,6 +625,9 @@ tasks:
         - name: "make-release-archive"
           variant: releng
       commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
         - command: shell.exec
           type: test
           params:
@@ -639,6 +648,9 @@ tasks:
         - name: "make-release-archive"
           variant: releng
       commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
         - command: shell.exec
           type: test
           params:
