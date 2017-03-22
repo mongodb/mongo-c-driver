@@ -93,10 +93,18 @@ def add_ga_javascript(app, pagename, templatename, context, doctree):
 </script>""" % googleanalytics_id
 
 
+def add_canonical_link(app, pagename, templatename, context, doctree):
+    link = ('<link rel="canonical"'
+            ' href="http://mongoc.org/libbson/current/%s.html"/>' % pagename)
+
+    context['metatags'] = context.get('metatags', '') + link
+
+
 def setup(app):
     app.connect('doctree-read', process_nodes)
     app.connect('env-updated', create_nojekyll)
     app.connect('html-page-context', add_ga_javascript)
+    app.connect('html-page-context', add_canonical_link)
 
 
 def process_nodes(app, doctree):
