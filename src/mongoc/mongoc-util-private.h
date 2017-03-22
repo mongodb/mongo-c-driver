@@ -82,6 +82,10 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  mongoc_error_code_t code,
                                  uint32_t *server_id,
                                  bson_error_t *error);
+
+bool
+_mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error);
+
 bool
 _mongoc_validate_new_document (const bson_t *insert, bson_error_t *error);
 

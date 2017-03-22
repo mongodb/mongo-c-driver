@@ -53,6 +53,11 @@ mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk,
 MONGOC_EXPORT (void)
 mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                               const bson_t *document);
+MONGOC_EXPORT (bool)
+mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
+                                        const bson_t *document,
+                                        const bson_t *opts,
+                                        bson_error_t *error); /* OUT */
 MONGOC_EXPORT (void)
 mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,
                               const bson_t *selector);

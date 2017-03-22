@@ -334,19 +334,43 @@ void
 mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                               const bson_t *document)
 {
+   ENTRY;
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (document);
+
+   if (!mongoc_bulk_operation_insert_with_opts (
+          bulk, document, NULL /* opts */, &bulk->result.error)) {
+      MONGOC_WARNING ("%s", bulk->result.error.message);
+   }
+
+   EXIT;
+}
+
+bool
+mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
+                                        const bson_t *document,
+                                        const bson_t *opts,
+                                        bson_error_t *error)
+{
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_iter_t iter;
 
    ENTRY;
 
    BSON_ASSERT (bulk);
    BSON_ASSERT (document);
 
-   BULK_EXIT_IF_PRIOR_ERROR;
+   BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_validate_new_document (document, &bulk->result.error)) {
-      MONGOC_WARNING ("%s", bulk->result.error.message);
-      EXIT;
+   if (opts && bson_iter_init_find_case (&iter, opts, "legacyIndex") &&
+       bson_iter_as_bool (&iter)) {
+      if (!_mongoc_validate_legacy_index (document, error)) {
+         return false;
+      }
+   } else if (!_mongoc_validate_new_document (document, error)) {
+      return false;
    }
 
    if (bulk->commands.len) {
@@ -355,7 +379,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
 
       if (SHOULD_APPEND (last, MONGOC_WRITE_COMMAND_INSERT)) {
          _mongoc_write_command_insert_append (last, document);
-         EXIT;
+         return true;
       }
    }
 
@@ -368,7 +392,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
 
    _mongoc_array_append_val (&bulk->commands, command);
 
-   EXIT;
+   return true;
 }
 
 bool

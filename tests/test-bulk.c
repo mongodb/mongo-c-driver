@@ -2,6 +2,7 @@
 #include <mongoc-bulk-operation-private.h>
 #include <mongoc-client-private.h>
 #include <mongoc-cursor-private.h>
+#include <mongoc-collection-private.h>
 
 #include "TestSuite.h"
 
@@ -478,6 +479,8 @@ test_insert_check_keys (void)
    bson_t reply;
    bson_error_t error;
    bool r;
+
+   capture_logs (true);
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
@@ -1571,6 +1574,198 @@ static void
 test_replace_one_with_opts_invalid_second (void)
 {
    _test_replace_one_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+_test_insert_invalid (bool with_opts, bool invalid_first)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t *bad_insert = tmp_bson ("{'a.b': 1}");
+   bson_t *good_insert = tmp_bson ("{'x': 1}");
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+   const char *err = "document to insert contains invalid keys";
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_validate");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   BSON_ASSERT (mongoc_collection_remove (
+      collection, MONGOC_REMOVE_NONE, tmp_bson (NULL), NULL, NULL));
+
+   capture_logs (true);
+
+   if (with_opts) {
+      if (invalid_first) {
+         /* document is rejected immediately */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, bad_insert, NULL, &error);
+
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                err);
+
+         /* now a valid document */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, good_insert, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      } else {
+         /* first a valid document */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, good_insert, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+
+         /* invalid document is rejected without invalidating batch */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, bad_insert, NULL, &error);
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                err);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      }
+   } else { /* not "with_opts" */
+      if (invalid_first) {
+         /* invalid, then valid */
+         mongoc_bulk_operation_insert (bulk, bad_insert);
+         mongoc_bulk_operation_insert (bulk, good_insert);
+
+         /* not added */
+         ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                err);
+      } else {
+         /* valid, then invalid */
+         mongoc_bulk_operation_insert (bulk, good_insert);
+         mongoc_bulk_operation_insert (bulk, bad_insert);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                err);
+      }
+   }
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_insert_invalid_first (void)
+{
+   _test_insert_invalid (true, false);
+}
+
+
+static void
+test_insert_invalid_second (void)
+{
+   _test_insert_invalid (false, false);
+}
+
+
+static void
+test_insert_with_opts_invalid_first (void)
+{
+   _test_insert_invalid (true, true);
+}
+
+
+static void
+test_insert_with_opts_invalid_second (void)
+{
+   _test_insert_invalid (false, true);
+}
+
+
+/* CDRIVER-2018, special dispensation for PHP driver and system.indexes */
+static void
+test_insert_into_system_indexes (void)
+{
+   mongoc_client_t *client;
+   const char *db_name;
+   mongoc_collection_t *collection;
+   mongoc_collection_t *system_indexes;
+   mongoc_bulk_operation_t *bulk;
+   bool r;
+   bson_error_t error;
+   uint32_t i;
+   mongoc_cursor_t *cursor;
+   const bson_t *index_info;
+   bson_iter_t iter;
+   bool found = false;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_system_indexes");
+   db_name = collection->db;
+   system_indexes = mongoc_client_get_collection (client, db_name,
+                                                  "system.indexes");
+
+   mongoc_collection_drop (collection, NULL);
+
+   bulk = mongoc_collection_create_bulk_operation (system_indexes, false, NULL);
+   r = mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'key': {'a.b': 1}, 'ns': '%s', 'name': 'foo'}",
+                collection->ns),
+      tmp_bson ("{'legacyIndex': true}"),
+      &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   /* even modern MongoDB lets us insert into system.indexes to create index */
+   i = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (i, error);
+   cursor = mongoc_collection_find_indexes (collection, &error);
+   ASSERT_OR_PRINT (cursor, error);
+   while (mongoc_cursor_next (cursor, &index_info)) {
+      if (bson_iter_init_find (&iter, index_info, "name") &&
+          !strcmp (bson_iter_utf8 (&iter, NULL), "foo")) {
+         found = true;
+         break;
+      }
+   }
+
+   r = mongoc_cursor_error (cursor, &error);
+   ASSERT_OR_PRINT (!r, error);
+   BSON_ASSERT (found);
+
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (system_indexes);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -4040,6 +4235,20 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts_invalid_second",
                       test_replace_one_with_opts_invalid_second);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/insert_invalid_first", test_insert_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_invalid_second",
+                      test_insert_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_with_opts_invalid_first",
+                      test_insert_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_with_opts_invalid_second",
+                      test_insert_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_into_system_indexes",
+                      test_insert_into_system_indexes);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_one_after_invalid",
                       test_remove_one_after_invalid);
