@@ -656,11 +656,7 @@ _mongoc_write_command_delete_legacy (
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
    r = bson_iter_init (&iter, command->documents);
-   if (!r) {
-      BSON_ASSERT (false);
-      EXIT;
-   }
-
+   BSON_ASSERT (r);
    if (!command->n_documents || !bson_iter_next (&iter)) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
@@ -677,11 +673,7 @@ _mongoc_write_command_delete_legacy (
       r = (bson_iter_recurse (&iter, &q_iter) &&
            bson_iter_find (&q_iter, "q") && BSON_ITER_HOLDS_DOCUMENT (&q_iter));
 
-      if (!r) {
-         BSON_ASSERT (false);
-         EXIT;
-      }
-
+      BSON_ASSERT (r);
       bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
@@ -810,11 +802,7 @@ _mongoc_write_command_insert_legacy (
    singly = !command->u.insert.allow_bulk_op_insert;
 
    r = bson_iter_init (&iter, command->documents);
-
-   if (!r) {
-      BSON_ASSERT (false);
-      EXIT;
-   }
+   BSON_ASSERT (r);
 
    if (!command->n_documents || !bson_iter_next (&iter)) {
       bson_set_error (error,
@@ -1338,10 +1326,7 @@ again:
                                &ar);
 
       do {
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            BSON_ASSERT (false);
-         }
-
+         BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
          bson_iter_document (&iter, &len, &data);
 
          /* append array element like "0": { ... doc ... } */
@@ -1357,10 +1342,7 @@ again:
             break;
          }
 
-         if (!bson_init_static (&tmp, data, len)) {
-            BSON_ASSERT (false);
-         }
-
+         BSON_ASSERT (bson_init_static (&tmp, data, len));
          BSON_APPEND_DOCUMENT (&ar, key, &tmp);
 
          bson_destroy (&tmp);
