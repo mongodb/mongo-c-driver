@@ -1357,6 +1357,11 @@ again:
       too_large_error (error, i, len, max_bson_obj_size, NULL);
       result->failed = true;
       ret = false;
+
+      /* The current document is too large for MongoDB.  Continue to the next. */
+      if (!bson_iter_next (&iter)) {
+         GOTO (cleanup);
+      }
    } else {
       ret = mongoc_cluster_run_command_monitored (&client->cluster,
                                                   server_stream,
@@ -1387,6 +1392,7 @@ again:
       GOTO (again);
    }
 
+cleanup:
    bson_destroy (&cmd);
    EXIT;
 }
