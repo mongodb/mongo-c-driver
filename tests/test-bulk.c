@@ -634,6 +634,52 @@ test_upsert_unordered (void)
 
 
 static void
+test_upsert_unordered_oversized (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *u;
+   bool r;
+   bson_error_t error;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "upsert_oversized");
+   bulk = mongoc_collection_create_bulk_operation (
+      collection, false /* ordered */, NULL);
+
+   /* much too large */
+   u = tmp_bson ("{'$set': {'x': '%s', 'y': '%s'}}",
+                 huge_string (client),
+                 huge_string (client));
+
+   r = mongoc_bulk_operation_update_one_with_opts (
+      bulk, tmp_bson (NULL), u, tmp_bson ("{'upsert': true}"), &error);
+
+   ASSERT_OR_PRINT (r, error);
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_BSON,
+                          MONGOC_ERROR_BSON_INVALID,
+                          "Document 0 is too large");
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 0,"
+                 " 'nMatched':  0,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_upserted_index (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
@@ -4264,6 +4310,12 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/upsert_ordered", test_upsert_ordered);
    TestSuite_AddLive (
       suite, "/BulkOperation/upsert_unordered", test_upsert_unordered);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/upsert_unordered_oversized",
+                      test_upsert_unordered_oversized,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/upsert_large",
                       test_upsert_large,
