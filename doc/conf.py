@@ -14,7 +14,7 @@ extensions = [
 intersphinx_mapping = {
     # TODO: update to http://mongoc.org/libbson/%(version)s once libbson 1.6.0
     # is released.
-    'bson': ('http://mongoc.org/libbson/current', None),
+    'bson': ('../src/libbson/doc/html', None),
 }
 
 # General information about the project.
