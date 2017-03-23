@@ -177,61 +177,64 @@ if (MINGW)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_RAND_S")
 endif ()
 
+
+function(mongoc_get_accept_args ARG2 ARG3)
+   SET(VAR 0)
+   foreach (ARG2_VAL "struct sockaddr" "void")
+   foreach (ARG3_VAL "socklen_t" "size_t" "int")
+
+   MATH(EXPR VAR "${VAR}+1")
+
+   FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx
+   "#include <sys/types.h>
+    #include <sys/socket.h>
+
+    int main ()
+    {
+      int a = 0;
+      ${ARG2_VAL} *b = 0;
+      ${ARG3_VAL} *c = 0;
+      accept (a, b, c);
+      return 0;
+   }
+  ")
+
+  TRY_COMPILE(RES ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx CMAKE_FLAGS
+  "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+
+  if (RES)
+     message(STATUS "Detected accept args is ${ARG2_VAL} and ${ARG3_VAL}")
+     set(${ARG2} ${ARG2_VAL} PARENT_SCOPE)
+     set(${ARG3} ${ARG3_VAL} PARENT_SCOPE)
+     return ()
+  endif ()
+
+  endforeach()
+  endforeach()
+
+endfunction()
+
+
 # Reasonable default. CheckCompiler.m4 checks thoroughly for HP-UX's sake.
 set (MONGOC_SOCKET_ARG2 "struct sockaddr")
 set (MONGOC_SOCKET_ARG3 "socklen_t")
 
+
 if (NOT WIN32)
 
-set(MONGOC_ACCEPT_ARG2_LIST "struct sockaddr" "void")
-set(MONGOC_ACCEPT_ARG3_LIST "socklen_t" "size_t" "int")
+   mongoc_get_accept_args(MONGOC_SOCKET_ARG2 MONGOC_SOCKET_ARG3)
 
-list(LENGTH MONGOC_ACCEPT_ARG2_LIST MONGOC_ACCEPT_ARG2_LIST_LEN)
-math(EXPR MONGOC_ACCEPT_ARG2_LIST_LEN_R "${MONGOC_ACCEPT_ARG2_LIST_LEN} - 1")
-list(LENGTH MONGOC_ACCEPT_ARG3_LIST MONGOC_ACCEPT_ARG3_LIST_LEN)
-math(EXPR MONGOC_ACCEPT_ARG3_LIST_LEN_R "${MONGOC_ACCEPT_ARG3_LIST_LEN} - 1")
+   include(CheckTypeSize)
+   SET(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
+   CHECK_TYPE_SIZE(socklen_t HAVE_SOCKLEN)
+   SET(CMAKE_EXTRA_INCLUDE_FILES)
 
-foreach(MONGOC_ACCEPT_ARG2_L RANGE ${MONGOC_ACCEPT_ARG2_LIST_LEN_R})
-foreach(MONGOC_ACCEPT_ARG3_L RANGE ${MONGOC_ACCEPT_ARG3_LIST_LEN_R})
-
-list(GET MONGOC_ACCEPT_ARG2_LIST ${MONGOC_ACCEPT_ARG2_L} MONGOC_ACCEPT_ARG2_VAL)
-list(GET MONGOC_ACCEPT_ARG3_LIST ${MONGOC_ACCEPT_ARG3_L} MONGOC_ACCEPT_ARG3_VAL)
-
-FILE(WRITE accept_test.cxx
-"#include <sys/types.h>
- #include <sys/socket.h>
-
- int main ()
- {
-   int a = 0;
-   ${MONGOC_ACCEPT_ARG2_VAL} *b = 0;
-   ${MONGOC_ACCEPT_ARG3_VAL} *c = 0;
-   accept (a, b, c);
-   return 0;
-}
-")
-  message(STATUS "${MONGOC_ACCEPT_ARG2_VAL} & ${MONGOC_ACCEPT_ARG3_VAL} ${RES}")
-  TRY_COMPILE(RES ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/accept_test.cxx CMAKE_FLAGS
-  "-DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE
-  LOG2)
-  if (RES)
-   set(MONGOC_SOCKET_ARG2 ${MONGOC_ACCEPT_ARG2_VAL})
-   set(MONGOC_SOCKET_ARG3 ${MONGOC_ACCEPT_ARG3_VAL})
-  endif ()
-endforeach()
-endforeach()
-
-include(CheckTypeSize)
-SET(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-CHECK_TYPE_SIZE(socklen_t HAVE_SOCKLEN)
-SET(CMAKE_EXTRA_INCLUDE_FILES)
-
-if (HAVE_SOCKLEN)
-   set(MONGOC_HAVE_SOCKLEN 1)
-else()
-   set(MONGOC_HAVE_SOCKLEN 0)
-endif()
+   if (HAVE_SOCKLEN)
+      set(MONGOC_HAVE_SOCKLEN 1)
+   else()
+      set(MONGOC_HAVE_SOCKLEN 0)
+   endif()
 
 else()
     # WIN32
