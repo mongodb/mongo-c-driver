@@ -1358,7 +1358,7 @@ again:
       result->failed = true;
       ret = false;
 
-      /* The current document is too large for MongoDB.  Continue to the next. */
+      /* the current document is too large, continue to the next */
       if (!bson_iter_next (&iter)) {
          GOTO (cleanup);
       }
