@@ -283,6 +283,8 @@ include_directories("${SOURCE_DIR}/src/mongoc")
 include_directories (${BSON_INCLUDE_DIRS})
 link_directories (${BSON_LIBRARY_DIRS})
 
+set(LIBS ${LIBS} ${BSON_LIBRARIES})
+
 if (UNIX AND NOT APPLE)
    set(LIBS ${LIBS} rt)
 endif()
@@ -480,9 +482,10 @@ add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
-target_link_libraries(mongoc_shared ${BSON_LIBRARIES} ${LIBS})
-target_link_libraries(mongoc_static ${BSON_LIBRARIES} ${LIBS})
+set (LIBS ${LIBS} ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+
+target_link_libraries(mongoc_shared ${LIBS})
+target_link_libraries(mongoc_static ${LIBS})
 
 set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
 set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
