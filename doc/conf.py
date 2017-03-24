@@ -77,7 +77,8 @@ from docutils.nodes import title
 def create_nojekyll(app, env):
     if app.builder.format == 'html':
         path = os.path.join(app.builder.outdir, '.nojekyll')
-        open(path, 'wt').close()
+        with open(path, 'wt') as f:
+            f.write('foo')
 
 
 def add_ga_javascript(app, pagename, templatename, context, doctree):
