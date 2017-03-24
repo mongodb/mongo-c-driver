@@ -4452,6 +4452,86 @@ test_getmore_read_concern_live (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+test_aggregate_secondary (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *pref;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "aggregate_secondary");
+   pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("[]"), NULL, pref);
+
+   ASSERT (cursor);
+   mongoc_cursor_next (cursor, &doc);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   if (test_framework_is_replset ()) {
+      ASSERT (test_framework_server_is_secondary (
+         client, mongoc_cursor_get_hint (cursor)));
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_aggregate_secondary_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *pref;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   server = mock_mongos_new (2 /* wire version */);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("[]"), NULL, pref);
+
+   ASSERT (cursor);
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'aggregate': 'collection', 'pipeline': []},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_simple (request,
+                               "{ 'ok':1,"
+                               "  'cursor': {"
+                               "     'id': 0,"
+                               "     'ns': 'db.collection',"
+                               "     'firstBatch': []}}");
+
+   ASSERT (!future_get_bool (future));  /* cursor_next returns false */
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (pref);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 
 static void
 test_aggregate_read_concern (void)
@@ -4871,6 +4951,11 @@ test_collection_install (TestSuite *suite)
                   test_aggregate_inherit_collection);
    TestSuite_AddLive (
       suite, "/Collection/aggregate/large", test_aggregate_large);
+   TestSuite_AddLive (
+      suite, "/Collection/aggregate/secondary", test_aggregate_secondary);
+   TestSuite_Add (suite,
+                  "/Collection/aggregate/secondary/sharded",
+                  test_aggregate_secondary_sharded);
    TestSuite_Add (
       suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite,

@@ -61,7 +61,8 @@
 
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
-                               mongoc_query_flags_t flags)
+                               mongoc_query_flags_t flags,
+                               const mongoc_read_prefs_t *prefs)
 {
    return _mongoc_cursor_new (collection->client,
                               collection->ns,
@@ -72,7 +73,7 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                               false, /* is_command */
                               NULL,  /* query */
                               NULL,  /* fields */
-                              NULL,  /* read prefs */
+                              prefs, /* read prefs */
                               NULL); /* read concern */
 }
 
@@ -335,9 +336,9 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   cursor = _mongoc_collection_cursor_new (collection, flags);
+   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
 
-   if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
+   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
    }
 
@@ -466,7 +467,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
       }
    }
-
 
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, &command);
@@ -1475,7 +1475,8 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
    /* Set slaveOk but no read preference: Index Enumeration Spec says
     * "listIndexes can be run on a secondary" when directly connected but
     * "run listIndexes on the primary node in replicaSet mode". */
-   cursor = _mongoc_collection_cursor_new (collection, MONGOC_QUERY_SLAVE_OK);
+   cursor = _mongoc_collection_cursor_new (
+      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
@@ -1491,7 +1492,8 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
             error->code = 0;
             error->domain = 0;
             cursor = _mongoc_collection_cursor_new (collection,
-                                                    MONGOC_QUERY_SLAVE_OK);
+                                                    MONGOC_QUERY_SLAVE_OK,
+                                                    NULL /* read prefs */);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
