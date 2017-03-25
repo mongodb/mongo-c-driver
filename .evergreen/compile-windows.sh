@@ -7,6 +7,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       CC            Which compiler to use
 #       SSL           Which SSL Library to use
 #       SASL          Enable or disable SASL
+#       RELEASE       Enable release-build MSVC flags (default: debug flags)
 
 
 INSTALL_DIR="C:/mongoc"
@@ -101,7 +102,7 @@ fi
 
 
 # CMake can't compile against bundled libbson, so we have to
-# compile it and install it seperately, and the configure mongoc
+# compile it and install it separately, and then configure mongoc
 # to build against the installed libbson
 git submodule update --init
 cd src/libbson
