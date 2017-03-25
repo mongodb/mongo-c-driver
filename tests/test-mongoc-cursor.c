@@ -178,6 +178,8 @@ test_limit (void)
       }
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT(!mongoc_cursor_is_alive(cursor));
+      ASSERT(!mongoc_cursor_more(cursor));
       ASSERT_CMPINT (n_docs, ==, 5);
       ASSERT (!mongoc_cursor_set_limit (cursor, 123)); /* no effect */
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
@@ -669,6 +671,38 @@ _test_cursor_new_from_command (const char *cmd_json,
    mongoc_cursor_destroy (cmd_cursor);
    mongoc_server_description_destroy (sd);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_cursor_empty_collection (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test_cursor_empty_collection");
+   mongoc_collection_remove (
+      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+
+   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
+
+   mongoc_cursor_next(cursor, &doc);
+
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+   ASSERT (!mongoc_cursor_is_alive (cursor));
+   ASSERT (!mongoc_cursor_more (cursor));
+
+   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1634,6 +1668,7 @@ test_cursor_install (TestSuite *suite)
                   "/Cursor/client_kill_cursor/without_primary/wv4",
                   test_client_kill_cursor_without_primary_wire_version_4);
 
+   TestSuite_AddLive (suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_agg",
                       test_cursor_new_from_aggregate,

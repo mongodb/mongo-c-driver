@@ -1778,12 +1778,14 @@ _mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson)
 
    /*
     * If we reached our limit, make sure we mark this as done and do not try to
-    * make further progress.
+    * make further progress.  We also set end_of_event so that
+    * mongoc_cursor_more will be false.
     */
    limit = mongoc_cursor_get_limit (cursor);
 
    if (limit && cursor->count >= llabs (limit)) {
       cursor->done = true;
+      cursor->end_of_event = true;
       RETURN (false);
    }
 
@@ -1850,8 +1852,7 @@ _mongoc_cursor_more (mongoc_cursor_t *cursor)
       return false;
    }
 
-   return (!cursor->sent || cursor->rpc.reply.cursor_id ||
-           !cursor->end_of_event);
+   return !(cursor->sent && cursor->done && cursor->end_of_event);
 }
 
 

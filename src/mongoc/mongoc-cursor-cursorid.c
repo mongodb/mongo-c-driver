@@ -152,9 +152,14 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
        BSON_ITER_HOLDS_DOCUMENT (&cid->batch_iter)) {
       bson_iter_document (&cid->batch_iter, &data_len, &data);
 
-      if (bson_init_static (&cid->current_doc, data, data_len)) {
-         *bson = &cid->current_doc;
-      }
+      /* bson_iter_next guarantees valid BSON, so this must succeed */
+      bson_init_static (&cid->current_doc, data, data_len);
+      *bson = &cid->current_doc;
+
+      cursor->end_of_event = false;
+   }
+   else {
+      cursor->end_of_event = true;
    }
 }
 
