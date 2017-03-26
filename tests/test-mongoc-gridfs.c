@@ -287,6 +287,15 @@ test_find_with_opts (void)
    ASSERT (!file);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
 
+   /* ensure "error" is cleared if we successfully find no file */
+   file = mongoc_gridfs_find_one_with_opts (
+      gridfs, tmp_bson ("{'x': 'doesntexist'}"), NULL, &error);
+
+   ASSERT (!file);
+   ASSERT_CMPINT (error.domain, ==, 0);
+   ASSERT_CMPINT (error.code, ==, 0);
+   ASSERT_CMPSTR (error.message, "");
+
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
@@ -1184,6 +1193,26 @@ test_inherit_client_config (void)
    mock_server_destroy (server);
 }
 
+static void
+test_find_one_empty (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_client_t *client;
+   bson_error_t error = { 1, 2, "hello" };
+
+   client = test_framework_client_new ();
+   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "list", &error), error);
+   ASSERT (!mongoc_gridfs_find_one (gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
+
+   /* ensure "error" is cleared if we successfully find no file */
+   ASSERT_CMPINT (error.domain, ==, 0);
+   ASSERT_CMPINT (error.code, ==, 0);
+   ASSERT_CMPSTR (error.message, "");
+
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
 void
 test_gridfs_install (TestSuite *suite)
 {
@@ -1191,6 +1220,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/GridFS/create_from_stream", test_create_from_stream);
    TestSuite_AddLive (suite, "/GridFS/list", test_list);
+   TestSuite_AddLive (suite, "/GridFS/find_one_empty", test_find_one_empty);
    TestSuite_AddLive (suite, "/GridFS/find_with_opts", test_find_with_opts);
    TestSuite_AddLive (suite, "/GridFS/properties", test_properties);
    TestSuite_AddLive (suite, "/GridFS/empty", test_empty);
