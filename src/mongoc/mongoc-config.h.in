@@ -137,6 +137,16 @@
 
 
 /*
+ * Use ASN1_STRING_get0_data () rather then the deprecated ASN1_STRING_data
+ */
+#define MONGOC_HAVE_ASN1_STRING_GET0_DATA @MONGOC_HAVE_ASN1_STRING_GET0_DATA@
+
+#if MONGOC_HAVE_ASN1_STRING_GET0_DATA != 1
+#  undef MONGOC_HAVE_ASN1_STRING_GET0_DATA
+#endif
+
+
+/*
  * MONGOC_ENABLE_SASL is set from configure to determine if we are
  * compiled with SASL support.
  */

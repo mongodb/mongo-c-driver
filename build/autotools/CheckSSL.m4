@@ -56,6 +56,7 @@ AS_IF([test "$enable_ssl" != "no"],[
          SSL_LIBS=""
          enable_ssl=auto
       fi
+      AC_CHECK_DECLS([ASN1_STRING_get0_data], [have_ASN1_STRING_get0_data=yes], [have_ASN1_STRING_get0_data=no], [[#include <openssl/asn1.h>]])
       CFLAGS=$old_CFLAGS
    ])
    AS_IF([test "$enable_ssl" != "openssl" -a "$os_darwin" = "yes"],[
@@ -69,7 +70,6 @@ AS_IF([test "$enable_ssl" != "no"],[
    AC_MSG_CHECKING([which TLS library to use])
    AC_MSG_RESULT([$enable_ssl])
 ], [enable_ssl=no])
-
 
 
 
@@ -112,6 +112,12 @@ else
    AC_SUBST(MONGOC_ENABLE_CRYPTO_LIBCRYPTO, 0)
    AC_SUBST(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO, 0)
 fi
+if test "$have_ASN1_STRING_get0_data" = "yes"; then
+   AC_SUBST(MONGOC_HAVE_ASN1_STRING_GET0_DATA, 1)
+else
+   AC_SUBST(MONGOC_HAVE_ASN1_STRING_GET0_DATA, 0)
+fi
+
 if test "x$enable_crypto_system_profile" = xyes; then
    if test "$enable_ssl" = "openssl"; then
       AC_SUBST(MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE, 1)

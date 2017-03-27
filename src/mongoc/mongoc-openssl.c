@@ -48,6 +48,9 @@ _mongoc_openssl_thread_startup (void);
 static void
 _mongoc_openssl_thread_cleanup (void);
 #endif
+#ifndef MONGOC_HAVE_ASN1_STRING_GET0_DATA
+#define ASN1_STRING_get0_data ASN1_STRING_data
+#endif
 
 /**
  * _mongoc_openssl_init:
@@ -255,7 +258,6 @@ _mongoc_openssl_check_cert (SSL *ssl,
    X509_NAME *subject_name;
    X509_NAME_ENTRY *entry;
    ASN1_STRING *entry_data;
-   char *check;
    int length;
    int idx;
    int r = 0;
@@ -313,7 +315,9 @@ _mongoc_openssl_check_cert (SSL *ssl,
             /* skip entries that can't apply, I.e. IP entries if we've got a
              * DNS host */
             if (name->type == target) {
-               check = (char *) ASN1_STRING_data (name->d.ia5);
+               const char *check;
+
+               check = (const char *)ASN1_STRING_get0_data (name->d.ia5);
                length = ASN1_STRING_length (name->d.ia5);
 
                switch (target) {
@@ -362,6 +366,8 @@ _mongoc_openssl_check_cert (SSL *ssl,
                entry_data = X509_NAME_ENTRY_get_data (entry);
 
                if (entry_data) {
+                  char *check;
+
                   /* TODO: I've heard tell that old versions of SSL crap out
                    * when calling ASN1_STRING_to_UTF8 on already utf8 data.
                    * Check up on that */
