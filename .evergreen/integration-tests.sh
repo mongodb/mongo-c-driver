@@ -90,7 +90,12 @@ case "$OS" in
       . bin/activate
       git clone https://github.com/10gen/mongo-orchestration.git
       cd mongo-orchestration
-      pip install .
+      # Our zSeries machines are static-provisioned, cache corruptions persist.
+      if [ $(uname -m) = "s390x" ]; then
+         echo "Disabling pip cache"
+         PIP_PARAM="--no-cache-dir"
+      fi
+      pip $PIP_PARAM install .
       cd ../..
       nohup mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       if [ "$SSL" != "nossl" ]; then
