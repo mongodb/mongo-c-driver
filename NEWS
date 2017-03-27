@@ -1,3 +1,21 @@
+mongo-c-driver 1.6.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.6.2. This release further
+improves HP-UX compatibility, especially when building with CMake, adds missing
+Windows SSPI files to the distribution tarball, and fixes distribution issues
+we introduced when porting the documentation from Mallard to Sphinx.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Aleksander Melnikov
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.6.1
 ====================
 
