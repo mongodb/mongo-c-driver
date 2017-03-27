@@ -25,6 +25,8 @@ Details: ``mongoc_cursor_more`` is unreliable because it does not contact the se
 
 This is unreliable with regular queries because it returns true for a new cursor before iteration, even if the cursor will match no documents. It is also true if the collection has been dropped on the server since the previous fetch, or if the cursor has finished its final batch and the next batch will be empty.
 
+See also :symbol:`mongoc_cursor_is_alive()`.
+
 Returns
 -------
 
