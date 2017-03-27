@@ -25,6 +25,7 @@ TEST_CFLAGS += \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
+	$(CPPFLAGS) \
 	-DBINARY_DIR="\"$(top_srcdir)/tests/binary\"" \
 	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
 	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \

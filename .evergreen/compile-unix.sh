@@ -40,6 +40,24 @@ echo "OS: $OS"
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
+if [ "$SSL" == "openssl-11" ]; then
+	SSL="openssl";
+
+	curl -o ssl.tar.gz https://www.openssl.org/source/openssl-1.1.0e.tar.gz
+	tar zxvf ssl.tar.gz
+	root=$(pwd)
+	cd openssl-1.1.0*
+	./config --prefix=$root/openssl
+	cpus=$(grep -c '^processor' /proc/cpuinfo)
+	make -j${cpus}
+	make install_sw
+	cd ..
+
+	# x505_vfy.h has issues in 1.1.0e, I've fixed it in 1.1.0f
+	export CPPFLAGS=-Wno-redundant-decls
+	export PKG_CONFIG_PATH=${root}/openssl/lib/pkgconfig
+	export LD_LIBRARY_PATH=".:openssl/lib"
+fi
 INSTALL_DIR=$(pwd)/install-dir
 
 # Default configure flags for debug builds and release builds
@@ -135,7 +153,7 @@ CFLAGS="$CFLAGS -Werror"
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
       export PATH=/usr/local/Cellar/llvm/3.8.1/bin/:$PATH
    ;;
 
@@ -143,7 +161,7 @@ case "$OS" in
       # Make linux builds a tad faster by parallelise the build
       cpus=$(grep -c '^processor' /proc/cpuinfo)
       MAKEFLAGS="-j${cpus}"
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 
    sunos)
@@ -152,7 +170,7 @@ case "$OS" in
          export SASL_CFLAGS="-I/opt/csw/include/"
          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
       fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 esac
 
@@ -175,6 +193,9 @@ if [ "$LIBBSON" = "external" ]; then
    cd ../../
    export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
+
+echo "OpenSSL Version:"
+pkg-config --modversion libssl || true
 
 $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
 $SCAN_BUILD make all
