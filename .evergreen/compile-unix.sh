@@ -21,6 +21,7 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
+INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
 echo "MARCH: $MARCH"
@@ -40,25 +41,35 @@ echo "OS: $OS"
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
-if [ "$SSL" == "openssl-11" ]; then
-	SSL="openssl";
-
-	curl -o ssl.tar.gz https://www.openssl.org/source/openssl-1.1.0e.tar.gz
+if [ "${SSL%-*-fips}" = "openssl" ]; then
+   curl -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
+   tar zxvf fips.tar.gz
+   cd openssl-fips-2.0.14
+   ./config --prefix=$INSTALL_DIR -fPIC
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j${cpus} || true
+   make install || true
+   cd ..
+   SSL_EXTRA_FLAGS="--openssldir=$INSTALL_DIR --with-fipsdir=$INSTALL_DIR fips"
+   export OPENSSL_FIPS=1
+   SSL=${SSL%-fips}
+fi
+if [ "${SSL%-*}" = "openssl" ]; then
+	curl -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
 	tar zxvf ssl.tar.gz
-	root=$(pwd)
-	cd openssl-1.1.0*
-	./config --prefix=$root/openssl
+	cd $SSL
+	./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
 	cpus=$(grep -c '^processor' /proc/cpuinfo)
-	make -j${cpus}
-	make install_sw
+	make -j${cpus} || true
+	make install_sw || true
 	cd ..
 
-	# x505_vfy.h has issues in 1.1.0e, I've fixed it in 1.1.0f
+	# x505_vfy.h has issues in 1.1.0e
 	export CPPFLAGS=-Wno-redundant-decls
-	export PKG_CONFIG_PATH=${root}/openssl/lib/pkgconfig
-	export LD_LIBRARY_PATH=".:openssl/lib"
+	export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+	export LD_LIBRARY_PATH=".:$INSTALL_DIR/lib"
+	SSL="openssl";
 fi
-INSTALL_DIR=$(pwd)/install-dir
 
 # Default configure flags for debug builds and release builds
 DEBUG_FLAGS="\
@@ -194,8 +205,10 @@ if [ "$LIBBSON" = "external" ]; then
    export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
 
+export PATH=$INSTALL_DIR:$PATH
 echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
+openssl md5 README.rst || true
 
 $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
 $SCAN_BUILD make all

@@ -703,7 +703,7 @@ tasks:
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: debug-compile-nosasl-openssl-11
+    - name: debug-compile-nosasl-openssl-0.9.8
       commands:
         - command: shell.exec
           type: test
@@ -712,7 +712,67 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-11 sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl-1.0.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl-1.0.1
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl-1.0.2
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2k sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl-1.1.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0e sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl-1.0.1-fips
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-darwinssl
@@ -6309,6 +6369,21 @@ buildvariants:
     - ".3.4 .nossl !.nosasl"
       # Debian 8.1 only supports MongoDB 3.4+
 
+- name: openssl
+  display_name: "OpenSSL"
+  run_on:
+    - archlinux-build
+    - debian81-build
+    - ubuntu1604-build
+    - rhel70
+  tasks:
+    - "debug-compile-nosasl-openssl-0.9.8"
+    - "debug-compile-nosasl-openssl-1.0.0"
+    - "debug-compile-nosasl-openssl-1.0.1"
+    - "debug-compile-nosasl-openssl-1.0.2"
+    - "debug-compile-nosasl-openssl-1.1.0"
+    - "debug-compile-nosasl-openssl-1.0.1-fips"
+
 - name: clang37
   display_name: "clang 3.7 (Archlinux)"
   expansions:
@@ -6318,7 +6393,6 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
-    - "debug-compile-nosasl-openssl-11"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
