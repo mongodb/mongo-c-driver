@@ -98,8 +98,10 @@ CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-ssl=${SSL}"
 [ "$VALGRIND" = "yes" ] && TARGET="valgrind" || TARGET="test"
 
 if [ "$RELEASE" = "yes" ]; then
-   # Overwrite the git checkout with the packaged archive
-   $TAR xf ../mongoc.tar.gz -C . --strip-components=1
+   # Build from the release tarball.
+   mkdir build-dir
+   $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
+   cd build-dir
    CONFIGURE_SCRIPT="./configure"
 fi
 

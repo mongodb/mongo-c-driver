@@ -14,6 +14,19 @@ INSTALL_DIR="C:/mongoc"
 CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF"
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
+CC=${CC:-"Visual Studio 14 2015 Win64"}
+
+echo "CC: $CC"
+echo "RELEASE: $RELEASE"
+
+if [ "$RELEASE" ]; then
+   # Build from the release tarball.
+   mkdir build-dir
+   tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
+   cd build-dir
+else
+   git submodule update --init
+fi
 
 case "$SASL" in
    no)
@@ -63,8 +76,11 @@ export INSTALL_DIR
 
 case "$CC" in
    mingw*)
-      git submodule update --init
-      cmd.exe /c .evergreen\\compile-windows-mingw.bat
+      if [ "$RELEASE" ]; then
+         cmd.exe /c ..\\.evergreen\\compile-windows-mingw.bat
+      else
+         cmd.exe /c .evergreen\\compile-windows-mingw.bat
+      fi
       exit 0
    ;;
    # Resolve the compiler name to correct MSBuild location
@@ -100,11 +116,9 @@ else
    export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
 fi
 
-
 # CMake can't compile against bundled libbson, so we have to
 # compile it and install it separately, and then configure mongoc
 # to build against the installed libbson
-git submodule update --init
 cd src/libbson
 "$CMAKE" -G "$CC" $CONFIGURE_FLAGS
 "$BUILD" $BUILD_FLAGS ALL_BUILD.vcxproj
