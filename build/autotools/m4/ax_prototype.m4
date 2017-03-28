@@ -168,7 +168,7 @@ dnl Assumes that function is a macro containing the name of the function in uppe
 dnl and that tag_VAL is a macro containing the value associated to tag.
 dnl
 AC_DEFUN([AX_PROTOTYPE_DEFINES],[ifelse($1,,[],
-	[AC_DEFINE(function[]_$1, $1_VAL)
+	[AC_DEFINE(function[]_$1, $1_VAL, [ ])
 	AC_SUBST(function[]_$1, "$1_VAL")
 	AX_PROTOTYPE_DEFINES(builtin([shift],$@))])])
 
