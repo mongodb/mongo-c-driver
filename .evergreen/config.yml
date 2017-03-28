@@ -91,7 +91,19 @@ functions:
       params:
         continue_on_err: true
         # EVG-1105: Use s3.get extract_to: mongoc/
-        script: "set -o xtrace && mkdir mongoc && tar xf build.tar.gz -C mongoc/"
+        script: |
+           set -o xtrace   # Write all commands first to stderr
+           set -o errexit  # Exit the script with error if any of the commands fail
+
+           mkdir mongoc
+
+           if command -v gtar 2>/dev/null; then
+              TAR=gtar
+           else
+              TAR=tar
+           fi
+
+           $TAR xf build.tar.gz -C mongoc/
 
   "upload docs" :
     - command: shell.exec
