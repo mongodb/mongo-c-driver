@@ -1037,6 +1037,59 @@ test_missing_chunk (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+test_missing_file (void)
+{
+   mongoc_client_t *client;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   bson_error_t error;
+   char buf[] = "contents contents";
+   mongoc_iovec_t iov;
+
+   iov.iov_base = buf;
+   iov.iov_len = sizeof buf;
+
+   client = test_framework_client_new ();
+   gridfs =
+      mongoc_client_get_gridfs (client, "test_missing_file", NULL, &error);
+   ASSERT_OR_PRINT (gridfs, error);
+
+   file = mongoc_gridfs_create_file (gridfs, NULL);
+   ASSERT_CMPSSIZE_T (
+      mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, (ssize_t) sizeof buf);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   BSON_ASSERT (mongoc_gridfs_file_save (file));
+
+   /* remove the file */
+   BSON_ASSERT (mongoc_gridfs_file_remove (file, &error));
+
+   /* readv fails */
+   ASSERT_CMPSSIZE_T (mongoc_gridfs_file_readv (file, &iov, 1, sizeof buf, 0),
+                      ==,
+                      (ssize_t) -1);
+   BSON_ASSERT (mongoc_gridfs_file_error (file, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_GRIDFS,
+                          MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                          "missing chunk number 0");
+
+   memset (&error, 0, sizeof error);
+
+   /* writev fails */
+   ASSERT_CMPSSIZE_T (
+      mongoc_gridfs_file_writev (file, &iov, 1, 0), ==, (ssize_t) -1);
+   BSON_ASSERT (mongoc_gridfs_file_error (file, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_GRIDFS,
+                          MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                          "missing chunk number 0");
+
+   mongoc_gridfs_file_destroy (file);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
 static mongoc_gridfs_t *
 _get_gridfs (mock_server_t *server, mongoc_client_t *client)
 {
@@ -1246,6 +1299,7 @@ test_gridfs_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
+   TestSuite_AddLive (suite, "/GridFS/missing_file", test_missing_file);
    TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id);
    TestSuite_Add (
       suite, "/GridFS/inherit_client_config", test_inherit_client_config);

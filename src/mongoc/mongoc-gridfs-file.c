@@ -470,7 +470,6 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
             /* we need a new page, but we've read enough bytes to stop */
             RETURN (bytes_read);
          } else if (!_mongoc_gridfs_file_refresh_page (file)) {
-            /* more to read, just on a new page */
             return -1;
          }
       }
@@ -536,7 +535,9 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
          } else {
             /** flush the buffer, the next pass through will bring in a new page
              */
-            _mongoc_gridfs_file_flush_page (file);
+            if (!_mongoc_gridfs_file_flush_page (file)) {
+               return -1;
+            }
          }
       }
    }
@@ -711,6 +712,22 @@ divide_round_up (int64_t num, int64_t denom)
 }
 
 
+static void
+missing_chunk (mongoc_gridfs_file_t *file)
+{
+   bson_set_error (&file->error,
+                   MONGOC_ERROR_GRIDFS,
+                   MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                   "missing chunk number %" PRId32,
+                   file->n);
+
+   if (file->cursor) {
+      mongoc_cursor_destroy (file->cursor);
+      file->cursor = NULL;
+   }
+}
+
+
 /**
  * _mongoc_gridfs_file_refresh_page:
  *
@@ -808,8 +825,11 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * iterate until we're on the right chunk */
       while (file->cursor_range[0] <= file->n) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
-            /* copy cursor error, if any. might just lack a matching chunk. */
-            mongoc_cursor_error (file->cursor, &file->error);
+            /* copy cursor error; if there's none, we're missing a chunk */
+            if (!mongoc_cursor_error (file->cursor, &file->error)) {
+               missing_chunk (file);
+            }
+
             RETURN (0);
          }
 
@@ -824,11 +844,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
          if (strcmp (key, "n") == 0) {
             if (file->n != bson_iter_int32 (&iter)) {
-               bson_set_error (&file->error,
-                               MONGOC_ERROR_GRIDFS,
-                               MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                               "missing chunk number %" PRId32,
-                               file->n);
+               missing_chunk (file);
                RETURN (0);
             }
          } else if (strcmp (key, "data") == 0) {

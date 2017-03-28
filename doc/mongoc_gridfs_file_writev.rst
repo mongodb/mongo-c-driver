@@ -32,5 +32,4 @@ The ``timeout_msec`` parameter is unused.
 Returns
 -------
 
-Returns the number of bytes written or -1 upon error and errno is set.
-
+Returns the number of bytes written, or -1 on failure. Use :symbol:`mongoc_gridfs_file_error` to retrieve error details.
