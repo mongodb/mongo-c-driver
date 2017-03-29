@@ -6282,6 +6282,69 @@ tasks:
             BUILD_NAME: "debug-compile-nosasl-openssl"
         - func: "run auth tests"
 
+    - name: authentication-tests-openssl-0.9.8
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-0.9.8"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-0.9.8"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl-1.0.0
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-1.0.0"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.0"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl-1.0.1
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-1.0.1"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.1"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl-1.0.2
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-1.0.2"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.2"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl-1.1.0
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-1.1.0"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-1.1.0"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl-1.0.1-fips
+      depends_on:
+        - name: "debug-compile-nosasl-openssl-1.0.1-fips"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.1-fips"
+        - func: "run auth tests"
+
+    - name: authentication-tests-libressl-2.5
+      depends_on:
+        - name: "debug-compile-nosasl-libressl-2.5"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-libressl-2.5"
+        - func: "run auth tests"
+
     - name: authentication-tests-darwinssl
       tags: ["authentication-tests", "nosasl", "ssl", "darwinssl"]
       depends_on:
@@ -6382,12 +6445,10 @@ buildvariants:
       # Debian 8.1 only supports MongoDB 3.4+
 
 - name: openssl
-  display_name: "OpenSSL"
+  display_name: "OpenSSL / LibreSSL"
   run_on:
     - archlinux-build
-    - debian81-build
-    - ubuntu1604-build
-    - rhel70
+    - archlinux-test
   tasks:
     - "debug-compile-nosasl-openssl-0.9.8"
     - "debug-compile-nosasl-openssl-1.0.0"
@@ -6396,6 +6457,14 @@ buildvariants:
     - "debug-compile-nosasl-openssl-1.1.0"
     - "debug-compile-nosasl-openssl-1.0.1-fips"
     - "debug-compile-nosasl-libressl-2.5"
+    - "authentication-tests-openssl-0.9.8"
+    - "authentication-tests-openssl-1.0.0"
+    - "authentication-tests-openssl-1.0.1"
+    - "authentication-tests-openssl-1.0.2"
+    - "authentication-tests-openssl-1.1.0"
+    - "authentication-tests-openssl-1.0.1-fips"
+    - "authentication-tests-libressl-2.5"
+
 
 - name: clang37
   display_name: "clang 3.7 (Archlinux)"

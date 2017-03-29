@@ -28,13 +28,13 @@ case "$OS" in
       ;;
 
    darwin)
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       ;;
 
    sunos)
       PATH="/opt/mongodbtoolchain/bin:$PATH"
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="install-dir/lib:/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       ;;
 
@@ -43,13 +43,15 @@ case "$OS" in
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.
       sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
 esac
 
 if test -f /tmp/drivers.keytab; then
    kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
 fi
+export PATH=install-dir/bin:$PATH
+openssl version || true
 
 if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008
