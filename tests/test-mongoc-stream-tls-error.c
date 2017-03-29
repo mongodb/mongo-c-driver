@@ -12,6 +12,8 @@
 
 #define TIMEOUT 10000 /* milliseconds */
 
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -325,6 +327,7 @@ test_mongoc_tls_handshake_stall (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
 test_stream_tls_error_install (TestSuite *suite)

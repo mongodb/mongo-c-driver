@@ -9,6 +9,9 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+
 static void
 test_mongoc_tls_no_certs (void)
 {
@@ -382,6 +385,7 @@ test_mongoc_tls_trust_dir (void)
 }
 #endif
 
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
 test_stream_tls_install (TestSuite *suite)
