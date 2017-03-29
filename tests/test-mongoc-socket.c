@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <mongoc.h>
+#include <mongoc-util-private.h>
 
 #include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
@@ -98,6 +99,7 @@ static void *
 socket_test_client (void *data_)
 {
    socket_test_data_t *data = (socket_test_data_t *) data_;
+   int64_t start;
    mongoc_socket_t *conn_sock;
    char buf[5];
    ssize_t r;
@@ -149,8 +151,12 @@ socket_test_client (void *data_)
    }
    mongoc_mutex_unlock (&data->cond_mutex);
 
-   closed = mongoc_stream_check_closed (stream);
-   BSON_ASSERT (closed == true);
+   /* wait up to a second for the client to detect server's shutdown */
+   start = bson_get_monotonic_time ();
+   while (!mongoc_stream_check_closed (stream)) {
+      ASSERT_CMPINT64 (bson_get_monotonic_time (), <, start + 1000 * 1000);
+      _mongoc_usleep (1000);
+   }
 
    mongoc_stream_destroy (stream);
 
