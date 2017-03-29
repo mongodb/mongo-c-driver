@@ -508,36 +508,23 @@ mongoc_socket_bind (mongoc_socket_t *sock,       /* IN */
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_socket_close --
- *
- *       Closes the underlying socket.
- *
- *       In general, you probably don't want to handle the result from
- *       this. That could cause race conditions in the case of preemtion
- *       during system call (EINTR).
- *
- * Returns:
- *       0 on success, -1 on failure.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
+   bool owned;
+
    ENTRY;
 
    BSON_ASSERT (sock);
 
+   owned = (sock->pid == (int) getpid ());
+
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
-      shutdown (sock->sd, SD_BOTH);
+      if (owned) {
+         shutdown (sock->sd, SD_BOTH);
+      }
+
       if (0 == closesocket (sock->sd)) {
          sock->sd = INVALID_SOCKET;
       } else {
@@ -548,7 +535,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    RETURN (0);
 #else
    if (sock->sd != -1) {
-      shutdown (sock->sd, SHUT_RDWR);
+      if (owned) {
+        shutdown (sock->sd, SHUT_RDWR);
+      }
+
       if (0 == close (sock->sd)) {
          sock->sd = -1;
       } else {
@@ -702,9 +692,9 @@ mongoc_socket_listen (mongoc_socket_t *sock, /* IN */
  *
  * mongoc_socket_new --
  *
- *       Create a new socket.
+ *       Create a new socket and store the current process id on it.
  *
- *       Free the result mongoc_socket_destroy().
+ *       Free the result with mongoc_socket_destroy().
  *
  * Returns:
  *       A newly allocated socket.
@@ -751,6 +741,7 @@ mongoc_socket_new (int domain,   /* IN */
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
+   sock->pid = (int) getpid ();
 
    RETURN (sock);
 
