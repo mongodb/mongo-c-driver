@@ -34,9 +34,11 @@ AS_IF([test "$enable_ssl" != "no"],[
       ])
    ])
    AS_IF([test "$enable_ssl" = "libressl"],[
-      AC_CHECK_LIB([tls],[tls_init],[
-         SSL_LIBS="-ltls -lcrypto"
-         enable_ssl=libressl
+      PKG_CHECK_MODULES(SSL, [libtls], [enable_ssl=libressl], [
+         AC_CHECK_LIB([tls],[tls_init],[
+            SSL_LIBS="-ltls -lcrypto"
+            enable_ssl=libressl
+         ])
       ])
    ])
 
