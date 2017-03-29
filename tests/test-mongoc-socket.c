@@ -318,7 +318,7 @@ sendv_test_client (void *data_)
 
 
 static void
-test_mongoc_socket_check_closed (void *ctx)
+test_mongoc_socket_check_closed (void)
 {
    socket_test_data_t data = {0};
    mongoc_thread_t threads[2];
@@ -341,7 +341,6 @@ test_mongoc_socket_check_closed (void *ctx)
    mongoc_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 }
-
 
 static void
 test_mongoc_socket_sendv (void *ctx)
@@ -371,12 +370,8 @@ test_mongoc_socket_sendv (void *ctx)
 void
 test_socket_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite,
-                      "/Socket/check_closed",
-                      test_mongoc_socket_check_closed,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_apple);
+   TestSuite_Add (
+      suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
    TestSuite_AddFull (suite,
                       "/Socket/sendv",
                       test_mongoc_socket_sendv,
