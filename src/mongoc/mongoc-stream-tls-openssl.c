@@ -651,7 +651,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
       RETURN (NULL);
    }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L && !defined(LIBRESSL_VERSION_NUMBER)
    if (!opt->allow_invalid_hostname) {
       struct in_addr addr;
       X509_VERIFY_PARAM *param = X509_VERIFY_PARAM_new ();
