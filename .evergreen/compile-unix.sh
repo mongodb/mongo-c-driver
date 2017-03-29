@@ -67,8 +67,22 @@ if [ "${SSL%-*}" = "openssl" ]; then
 	# x505_vfy.h has issues in 1.1.0e
 	export CPPFLAGS=-Wno-redundant-decls
 	export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-	export LD_LIBRARY_PATH=".:$INSTALL_DIR/lib"
+	export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
 	SSL="openssl";
+fi
+if [ "${SSL%-*}" = "libressl" ]; then
+	curl -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
+	tar zxvf ssl.tar.gz
+	cd $SSL
+        ./configure --prefix=$INSTALL_DIR
+	cpus=$(grep -c '^processor' /proc/cpuinfo)
+	make -j${cpus}
+	make install
+	cd ..
+
+	export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+	export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
+	SSL="libressl";
 fi
 
 # Default configure flags for debug builds and release builds
@@ -205,12 +219,19 @@ if [ "$LIBBSON" = "external" ]; then
    export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
 
-export PATH=$INSTALL_DIR:$PATH
+export PATH=$INSTALL_DIR/bin:$PATH
 echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
-openssl md5 README.rst || true
 
 $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
+# This needs to be exported _after_ running autogen as the $CONFIGURE_SCRIPT might
+# use git to fetch the submodules, which uses libcurl which is linked against
+# the system openssl which isn't abi compatible with our custom openssl/libressl
+export LD_LIBRARY_PATH=$EXTRA_LIB_PATH:$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$EXTRA_LIB_PATH:$DYLD_LIBRARY_PATH
+openssl version
+# This should fail when using fips capable OpenSSL when fips mode is enabled
+openssl md5 README.rst || true
 $SCAN_BUILD make all
 $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
 

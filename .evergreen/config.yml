@@ -775,6 +775,18 @@ tasks:
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-nosasl-libressl-2.5
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: debug-compile-nosasl-darwinssl
       tags: ["debug-compile", "nosasl", "darwinssl"]
       commands:
@@ -6383,6 +6395,7 @@ buildvariants:
     - "debug-compile-nosasl-openssl-1.0.2"
     - "debug-compile-nosasl-openssl-1.1.0"
     - "debug-compile-nosasl-openssl-1.0.1-fips"
+    - "debug-compile-nosasl-libressl-2.5"
 
 - name: clang37
   display_name: "clang 3.7 (Archlinux)"
