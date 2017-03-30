@@ -1118,10 +1118,10 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
 
    request_id = ++cursor->client->cluster.request_id;
 
-   rpc.query.msg_len = 0;
-   rpc.query.request_id = request_id;
-   rpc.query.response_to = 0;
-   rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = request_id;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_NONE;
    rpc.query.collection = cursor->ns;
    rpc.query.skip = 0;
@@ -1575,10 +1575,10 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       request_id = ++cluster->request_id;
 
       rpc.get_more.cursor_id = cursor->rpc.reply.cursor_id;
-      rpc.get_more.msg_len = 0;
-      rpc.get_more.request_id = request_id;
-      rpc.get_more.response_to = 0;
-      rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_GET_MORE;
       rpc.get_more.zero = 0;
       rpc.get_more.collection = cursor->ns;
 

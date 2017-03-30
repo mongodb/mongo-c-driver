@@ -685,10 +685,10 @@ _mongoc_write_command_delete_legacy (
 
       request_id = ++client->cluster.request_id;
 
-      rpc.delete_.msg_len = 0;
-      rpc.delete_.request_id = request_id;
-      rpc.delete_.response_to = 0;
-      rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
       rpc.delete_.collection = ns;
 
@@ -872,10 +872,10 @@ again:
    if (n_docs_in_batch) {
       request_id = ++client->cluster.request_id;
 
-      rpc.insert.msg_len = 0;
-      rpc.insert.request_id = request_id;
-      rpc.insert.response_to = 0;
-      rpc.insert.opcode = MONGOC_OPCODE_INSERT;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_INSERT;
       rpc.insert.flags =
          ((command->flags.ordered) ? MONGOC_INSERT_NONE
                                    : MONGOC_INSERT_CONTINUE_ON_ERROR);
@@ -1074,10 +1074,10 @@ _mongoc_write_command_update_legacy (
    while (bson_iter_next (&iter)) {
       request_id = ++client->cluster.request_id;
 
-      rpc.update.msg_len = 0;
-      rpc.update.request_id = request_id;
-      rpc.update.response_to = 0;
-      rpc.update.opcode = MONGOC_OPCODE_UPDATE;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
       rpc.update.collection = ns;
       rpc.update.flags = MONGOC_UPDATE_NONE;

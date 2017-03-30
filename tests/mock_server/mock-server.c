@@ -1751,11 +1751,11 @@ _mock_server_reply_with_stream (mock_server_t *server,
       server->last_response_id++;
    }
 
-   r.reply.request_id = server->last_response_id;
+   r.header.request_id = server->last_response_id;
    mongoc_mutex_unlock (&server->mutex);
-   r.reply.msg_len = 0;
-   r.reply.response_to = reply->response_to;
-   r.reply.opcode = MONGOC_OPCODE_REPLY;
+   r.header.msg_len = 0;
+   r.header.response_to = reply->response_to;
+   r.header.opcode = MONGOC_OPCODE_REPLY;
    r.reply.flags = flags;
    r.reply.cursor_id = cursor_id;
    r.reply.start_from = 0;

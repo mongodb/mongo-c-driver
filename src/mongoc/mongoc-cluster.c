@@ -209,7 +209,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    bson_snprintf (cmd_ns, sizeof cmd_ns, "%s.$cmd", db_name);
    request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, command, flags);
-   rpc.query.request_id = request_id;
+   rpc.header.request_id = request_id;
    _mongoc_rpc_gather (&rpc, &ar);
    _mongoc_rpc_swab_to_le (&rpc);
 
@@ -2203,10 +2203,10 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
       }
 
       if (need_gle) {
-         gle.query.msg_len = 0;
-         gle.query.request_id = ++cluster->request_id;
-         gle.query.response_to = 0;
-         gle.query.opcode = MONGOC_OPCODE_QUERY;
+         gle.header.msg_len = 0;
+         gle.header.request_id = ++cluster->request_id;
+         gle.header.response_to = 0;
+         gle.header.opcode = MONGOC_OPCODE_QUERY;
          gle.query.flags = MONGOC_QUERY_NONE;
 
          switch (rpcs[i].header.opcode) {

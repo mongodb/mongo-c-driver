@@ -1841,10 +1841,10 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
 
    ++cluster->request_id;
 
-   rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = cluster->request_id;
-   rpc.kill_cursors.response_to = 0;
-   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = cluster->request_id;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;

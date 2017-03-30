@@ -108,10 +108,10 @@ test_mongoc_rpc_delete_gather (void)
 
    bson_init (&sel);
 
-   rpc.delete_.msg_len = 0;
-   rpc.delete_.request_id = 1234;
-   rpc.delete_.response_to = -1;
-   rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete_.zero = 0;
    rpc.delete_.collection = "test.test";
    rpc.delete_.flags = MONGOC_DELETE_SINGLE_REMOVE;
@@ -139,10 +139,10 @@ test_mongoc_rpc_delete_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT_CMPINT (rpc.delete_.msg_len, ==, 39);
-   ASSERT_CMPINT (rpc.delete_.request_id, ==, 1234);
-   ASSERT_CMPINT (rpc.delete_.response_to, ==, -1);
-   ASSERT_CMPINT (rpc.delete_.opcode, ==, MONGOC_OPCODE_DELETE);
+   ASSERT_CMPINT (rpc.header.msg_len, ==, 39);
+   ASSERT_CMPINT (rpc.header.request_id, ==, 1234);
+   ASSERT_CMPINT (rpc.header.response_to, ==, -1);
+   ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_DELETE);
    ASSERT_CMPINT (rpc.delete_.zero, ==, 0);
    ASSERT (!strcmp ("test.test", rpc.delete_.collection));
    ASSERT_CMPINT (rpc.delete_.flags, ==, MONGOC_DELETE_SINGLE_REMOVE);
@@ -160,10 +160,10 @@ test_mongoc_rpc_get_more_gather (void)
 
    memset (&rpc, 0xFFFFFFFF, sizeof rpc);
 
-   rpc.get_more.msg_len = 0;
-   rpc.get_more.request_id = 1234;
-   rpc.get_more.response_to = -1;
-   rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
    rpc.get_more.collection = "test.test";
    rpc.get_more.n_return = 5;
@@ -188,10 +188,10 @@ test_mongoc_rpc_get_more_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT (rpc.get_more.msg_len == 42);
-   ASSERT (rpc.get_more.request_id == 1234);
-   ASSERT (rpc.get_more.response_to == -1);
-   ASSERT (rpc.get_more.opcode == MONGOC_OPCODE_GET_MORE);
+   ASSERT (rpc.header.msg_len == 42);
+   ASSERT (rpc.header.request_id == 1234);
+   ASSERT (rpc.header.response_to == -1);
+   ASSERT (rpc.header.opcode == MONGOC_OPCODE_GET_MORE);
    ASSERT (rpc.get_more.zero == 0);
    ASSERT (!strcmp ("test.test", rpc.get_more.collection));
    ASSERT (rpc.get_more.n_return == 5);
@@ -219,10 +219,10 @@ test_mongoc_rpc_insert_gather (void)
       iov[i].iov_len = b.len;
    }
 
-   rpc.insert.msg_len = 0;
-   rpc.insert.request_id = 1234;
-   rpc.insert.response_to = -1;
-   rpc.insert.opcode = MONGOC_OPCODE_INSERT;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_INSERT;
    rpc.insert.flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
    rpc.insert.collection = "test.test";
    rpc.insert.documents = iov;
@@ -255,10 +255,10 @@ test_mongoc_rpc_insert_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT_CMPINT (rpc.insert.msg_len, ==, 130);
-   ASSERT_CMPINT (rpc.insert.request_id, ==, 1234);
-   ASSERT_CMPINT (rpc.insert.response_to, ==, (uint32_t) -1);
-   ASSERT_CMPINT (rpc.insert.opcode, ==, MONGOC_OPCODE_INSERT);
+   ASSERT_CMPINT (rpc.header.msg_len, ==, 130);
+   ASSERT_CMPINT (rpc.header.request_id, ==, 1234);
+   ASSERT_CMPINT (rpc.header.response_to, ==, (uint32_t) -1);
+   ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_INSERT);
    ASSERT_CMPINT (rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    ASSERT (!strcmp ("test.test", rpc.insert.collection));
    reader =
@@ -287,10 +287,10 @@ test_mongoc_rpc_kill_cursors_gather (void)
 
    memset (&rpc, 0xFFFFFFFF, sizeof rpc);
 
-   rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = 1234;
-   rpc.kill_cursors.response_to = -1;
-   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
    rpc.kill_cursors.n_cursors = 5;
    rpc.kill_cursors.cursors = cursors;
@@ -315,10 +315,10 @@ test_mongoc_rpc_kill_cursors_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT_CMPINT (rpc.kill_cursors.msg_len, ==, 64);
-   ASSERT_CMPINT (rpc.kill_cursors.request_id, ==, 1234);
-   ASSERT_CMPINT (rpc.kill_cursors.response_to, ==, -1);
-   ASSERT_CMPINT (rpc.kill_cursors.opcode, ==, MONGOC_OPCODE_KILL_CURSORS);
+   ASSERT_CMPINT (rpc.header.msg_len, ==, 64);
+   ASSERT_CMPINT (rpc.header.request_id, ==, 1234);
+   ASSERT_CMPINT (rpc.header.response_to, ==, -1);
+   ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_KILL_CURSORS);
    ASSERT_CMPINT (rpc.kill_cursors.zero, ==, 0);
    ASSERT_CMPINT (rpc.kill_cursors.n_cursors, ==, 5);
    ASSERT (!memcmp (rpc.kill_cursors.cursors, cursors, 5 * 8));
@@ -335,10 +335,10 @@ test_mongoc_rpc_msg_gather (void)
 
    memset (&rpc, 0xFFFFFFFF, sizeof rpc);
 
-   rpc.msg.msg_len = 0;
-   rpc.msg.request_id = 1234;
-   rpc.msg.response_to = -1;
-   rpc.msg.opcode = MONGOC_OPCODE_MSG;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_MSG;
    rpc.msg.msg = "this is a test message.";
 
    assert_rpc_equal ("msg1.dat", &rpc);
@@ -360,10 +360,10 @@ test_mongoc_rpc_msg_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT (rpc.msg.msg_len == 40);
-   ASSERT (rpc.msg.request_id == 1234);
-   ASSERT (rpc.msg.response_to == -1);
-   ASSERT (rpc.msg.opcode == MONGOC_OPCODE_MSG);
+   ASSERT (rpc.header.msg_len == 40);
+   ASSERT (rpc.header.request_id == 1234);
+   ASSERT (rpc.header.response_to == -1);
+   ASSERT (rpc.header.opcode == MONGOC_OPCODE_MSG);
    ASSERT (!strcmp (rpc.msg.msg, "this is a test message."));
 
    assert_rpc_equal ("msg1.dat", &rpc);
@@ -381,10 +381,10 @@ test_mongoc_rpc_query_gather (void)
 
    bson_init (&b);
 
-   rpc.query.msg_len = 0;
-   rpc.query.request_id = 1234;
-   rpc.query.response_to = -1;
-   rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
    rpc.query.collection = "test.test";
    rpc.query.skip = 5;
@@ -414,10 +414,10 @@ test_mongoc_rpc_query_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT (rpc.query.msg_len == 48);
-   ASSERT (rpc.query.request_id == 1234);
-   ASSERT (rpc.query.response_to == (uint32_t) -1);
-   ASSERT (rpc.query.opcode == MONGOC_OPCODE_QUERY);
+   ASSERT (rpc.header.msg_len == 48);
+   ASSERT (rpc.header.request_id == 1234);
+   ASSERT (rpc.header.response_to == (uint32_t) -1);
+   ASSERT (rpc.header.opcode == MONGOC_OPCODE_QUERY);
    ASSERT (rpc.query.flags == MONGOC_QUERY_SLAVE_OK);
    ASSERT (!strcmp (rpc.query.collection, "test.test"));
    ASSERT (rpc.query.skip == 5);
@@ -448,10 +448,10 @@ test_mongoc_rpc_reply_gather (void)
       bson_writer_end (writer);
    }
 
-   rpc.reply.msg_len = 0;
-   rpc.reply.request_id = 1234;
-   rpc.reply.response_to = -1;
-   rpc.reply.opcode = MONGOC_OPCODE_REPLY;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_REPLY;
    rpc.reply.flags = MONGOC_REPLY_AWAIT_CAPABLE;
    rpc.reply.cursor_id = 12345678;
    rpc.reply.start_from = 50;
@@ -487,10 +487,10 @@ test_mongoc_rpc_reply_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT_CMPINT (rpc.reply.msg_len, ==, 536);
-   ASSERT_CMPINT (rpc.reply.request_id, ==, 1234);
-   ASSERT_CMPINT (rpc.reply.response_to, ==, -1);
-   ASSERT_CMPINT (rpc.reply.opcode, ==, MONGOC_OPCODE_REPLY);
+   ASSERT_CMPINT (rpc.header.msg_len, ==, 536);
+   ASSERT_CMPINT (rpc.header.request_id, ==, 1234);
+   ASSERT_CMPINT (rpc.header.response_to, ==, -1);
+   ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_REPLY);
    ASSERT_CMPINT (rpc.reply.flags, ==, MONGOC_REPLY_AWAIT_CAPABLE);
    ASSERT (rpc.reply.cursor_id == 12345678LL);
    ASSERT_CMPINT (rpc.reply.start_from, ==, 50);
@@ -534,10 +534,10 @@ test_mongoc_rpc_reply_scatter2 (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT (rpc.reply.msg_len == 16236);
-   ASSERT (rpc.reply.request_id == 0);
-   ASSERT (rpc.reply.response_to == 1234);
-   ASSERT (rpc.reply.opcode == MONGOC_OPCODE_REPLY);
+   ASSERT (rpc.header.msg_len == 16236);
+   ASSERT (rpc.header.request_id == 0);
+   ASSERT (rpc.header.response_to == 1234);
+   ASSERT (rpc.header.opcode == MONGOC_OPCODE_REPLY);
    ASSERT (rpc.reply.flags == 0);
    ASSERT (rpc.reply.cursor_id == 12345678);
    ASSERT (rpc.reply.start_from == 0);
@@ -569,10 +569,10 @@ test_mongoc_rpc_update_gather (void)
    bson_init (&sel);
    bson_init (&up);
 
-   rpc.update.msg_len = 0;
-   rpc.update.request_id = 1234;
-   rpc.update.response_to = -1;
-   rpc.update.opcode = MONGOC_OPCODE_UPDATE;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
    rpc.update.collection = "test.test";
    rpc.update.flags = MONGOC_UPDATE_MULTI_UPDATE;
@@ -603,10 +603,10 @@ test_mongoc_rpc_update_scatter (void)
    ASSERT (r);
    _mongoc_rpc_swab_from_le (&rpc);
 
-   ASSERT_CMPINT (rpc.update.msg_len, ==, 44);
-   ASSERT_CMPINT (rpc.update.request_id, ==, 1234);
-   ASSERT_CMPINT (rpc.update.response_to, ==, -1);
-   ASSERT_CMPINT (rpc.update.opcode, ==, MONGOC_OPCODE_UPDATE);
+   ASSERT_CMPINT (rpc.header.msg_len, ==, 44);
+   ASSERT_CMPINT (rpc.header.request_id, ==, 1234);
+   ASSERT_CMPINT (rpc.header.response_to, ==, -1);
+   ASSERT_CMPINT (rpc.header.opcode, ==, MONGOC_OPCODE_UPDATE);
    ASSERT_CMPINT (rpc.update.flags, ==, MONGOC_UPDATE_MULTI_UPDATE);
    ASSERT (!strcmp (rpc.update.collection, "test.test"));
 

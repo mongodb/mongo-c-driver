@@ -24,83 +24,78 @@
 
 #define RPC(_name, _code)                                               \
    static void _mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
+                                           mongoc_rpc_header_t *header, \
                                            mongoc_array_t *array)       \
    {                                                                    \
       mongoc_iovec_t iov;                                               \
       BSON_ASSERT (rpc);                                                \
       BSON_ASSERT (array);                                              \
-      rpc->msg_len = 0;                                                 \
+      header->msg_len = 0;                                              \
       _code                                                             \
    }
-#define INT32_FIELD(_name)                \
-   iov.iov_base = (void *) &rpc->_name;   \
-   iov.iov_len = 4;                       \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
+#define INT32_FIELD(_name)                   \
+   iov.iov_base = (void *) &rpc->_name;      \
+   iov.iov_len = 4;                          \
+   header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
 #define ENUM_FIELD INT32_FIELD
-#define INT64_FIELD(_name)                \
-   iov.iov_base = (void *) &rpc->_name;   \
-   iov.iov_len = 8;                       \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
+#define INT64_FIELD(_name)                   \
+   iov.iov_base = (void *) &rpc->_name;      \
+   iov.iov_len = 8;                          \
+   header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
-#define CSTRING_FIELD(_name)              \
-   BSON_ASSERT (rpc->_name);              \
-   iov.iov_base = (void *) rpc->_name;    \
-   iov.iov_len = strlen (rpc->_name) + 1; \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
+#define CSTRING_FIELD(_name)                 \
+   BSON_ASSERT (rpc->_name);                 \
+   iov.iov_base = (void *) rpc->_name;       \
+   iov.iov_len = strlen (rpc->_name) + 1;    \
+   header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
-#define BSON_FIELD(_name)                    \
-   do {                                      \
-      int32_t __l;                           \
-      memcpy (&__l, rpc->_name, 4);          \
-      __l = BSON_UINT32_FROM_LE (__l);       \
-      iov.iov_base = (void *) rpc->_name;    \
-      iov.iov_len = __l;                     \
-      BSON_ASSERT (iov.iov_len);             \
-      rpc->msg_len += (int32_t) iov.iov_len; \
-      _mongoc_array_append_val (array, iov); \
+#define BSON_FIELD(_name)                       \
+   do {                                         \
+      int32_t __l;                              \
+      memcpy (&__l, rpc->_name, 4);             \
+      __l = BSON_UINT32_FROM_LE (__l);          \
+      iov.iov_base = (void *) rpc->_name;       \
+      iov.iov_len = __l;                        \
+      header->msg_len += (int32_t) iov.iov_len; \
+      _mongoc_array_append_val (array, iov);    \
    } while (0);
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
       _code                          \
    }
-#define BSON_ARRAY_FIELD(_name)              \
-   if (rpc->_name##_len) {                   \
-      iov.iov_base = (void *) rpc->_name;    \
-      iov.iov_len = rpc->_name##_len;        \
-      BSON_ASSERT (iov.iov_len);             \
-      rpc->msg_len += (int32_t) iov.iov_len; \
-      _mongoc_array_append_val (array, iov); \
+#define BSON_ARRAY_FIELD(_name)                 \
+   if (rpc->_name##_len) {                      \
+      iov.iov_base = (void *) rpc->_name;       \
+      iov.iov_len = rpc->_name##_len;           \
+      header->msg_len += (int32_t) iov.iov_len; \
+      _mongoc_array_append_val (array, iov);    \
    }
-#define IOVEC_ARRAY_FIELD(_name)                           \
-   do {                                                    \
-      ssize_t _i;                                          \
-      BSON_ASSERT (rpc->n_##_name);                        \
-      for (_i = 0; _i < rpc->n_##_name; _i++) {            \
-         BSON_ASSERT (rpc->_name[_i].iov_len);             \
-         rpc->msg_len += (int32_t) rpc->_name[_i].iov_len; \
-         _mongoc_array_append_val (array, rpc->_name[_i]); \
-      }                                                    \
+#define IOVEC_ARRAY_FIELD(_name)                              \
+   do {                                                       \
+      ssize_t _i;                                             \
+      BSON_ASSERT (rpc->n_##_name);                           \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {               \
+         BSON_ASSERT (rpc->_name[_i].iov_len);                \
+         header->msg_len += (int32_t) rpc->_name[_i].iov_len; \
+         _mongoc_array_append_val (array, rpc->_name[_i]);    \
+      }                                                       \
    } while (0);
-#define RAW_BUFFER_FIELD(_name)           \
-   iov.iov_base = (void *) rpc->_name;    \
-   iov.iov_len = rpc->_name##_len;        \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
+#define RAW_BUFFER_FIELD(_name)              \
+   iov.iov_base = (void *) rpc->_name;       \
+   iov.iov_len = rpc->_name##_len;           \
+   BSON_ASSERT (iov.iov_len);                \
+   header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
-#define INT64_ARRAY_FIELD(_len, _name)    \
-   iov.iov_base = (void *) &rpc->_len;    \
-   iov.iov_len = 4;                       \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
-   _mongoc_array_append_val (array, iov); \
-   iov.iov_base = (void *) rpc->_name;    \
-   iov.iov_len = rpc->_len * 8;           \
-   BSON_ASSERT (iov.iov_len);             \
-   rpc->msg_len += (int32_t) iov.iov_len; \
+#define INT64_ARRAY_FIELD(_len, _name)       \
+   iov.iov_base = (void *) &rpc->_len;       \
+   iov.iov_len = 4;                          \
+   header->msg_len += (int32_t) iov.iov_len; \
+   _mongoc_array_append_val (array, iov);    \
+   iov.iov_base = (void *) rpc->_name;       \
+   iov.iov_len = rpc->_len * 8;              \
+   BSON_ASSERT (iov.iov_len);                \
+   header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
 
 
@@ -438,28 +433,28 @@ _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 {
    switch ((mongoc_opcode_t) rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
-      _mongoc_rpc_gather_reply (&rpc->reply, array);
+      _mongoc_rpc_gather_reply (&rpc->reply, &rpc->header, array);
       return;
    case MONGOC_OPCODE_MSG:
-      _mongoc_rpc_gather_msg (&rpc->msg, array);
+      _mongoc_rpc_gather_msg (&rpc->msg, &rpc->header, array);
       return;
    case MONGOC_OPCODE_UPDATE:
-      _mongoc_rpc_gather_update (&rpc->update, array);
+      _mongoc_rpc_gather_update (&rpc->update, &rpc->header, array);
       return;
    case MONGOC_OPCODE_INSERT:
-      _mongoc_rpc_gather_insert (&rpc->insert, array);
+      _mongoc_rpc_gather_insert (&rpc->insert, &rpc->header, array);
       return;
    case MONGOC_OPCODE_QUERY:
-      _mongoc_rpc_gather_query (&rpc->query, array);
+      _mongoc_rpc_gather_query (&rpc->query, &rpc->header, array);
       return;
    case MONGOC_OPCODE_GET_MORE:
-      _mongoc_rpc_gather_get_more (&rpc->get_more, array);
+      _mongoc_rpc_gather_get_more (&rpc->get_more, &rpc->header, array);
       return;
    case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_gather_delete (&rpc->delete_, array);
+      _mongoc_rpc_gather_delete (&rpc->delete_, &rpc->header, array);
       return;
    case MONGOC_OPCODE_KILL_CURSORS:
-      _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, array);
+      _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, &rpc->header, array);
       return;
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
@@ -723,10 +718,10 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
                           const bson_t *command,
                           mongoc_query_flags_t flags)
 {
-   rpc->query.msg_len = 0;
-   rpc->query.request_id = 0;
-   rpc->query.response_to = 0;
-   rpc->query.opcode = MONGOC_OPCODE_QUERY;
+   rpc->header.msg_len = 0;
+   rpc->header.request_id = 0;
+   rpc->header.response_to = 0;
+   rpc->header.opcode = MONGOC_OPCODE_QUERY;
    rpc->query.collection = cmd_ns;
    rpc->query.skip = 0;
    rpc->query.n_return = -1;
