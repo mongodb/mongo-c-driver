@@ -22,6 +22,7 @@ TEST_CFLAGS += \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
+	$(SNAPPY_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
@@ -37,7 +38,9 @@ TEST_LIBS = \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
+	$(SNAPPY_LIBS) \
 	$(SSL_LIBS)
+
 if EXPLICIT_LIBS
 TEST_LIBS += $(BSON_LIBS)
 endif

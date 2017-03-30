@@ -37,6 +37,13 @@ LT_INIT
 
 m4_include([build/autotools/ReadCommandLineArguments.m4])
 m4_include([build/autotools/CheckSasl.m4])
+if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
+   m4_include([build/autotools/CheckSnappy.m4])
+else
+   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
+   AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 0)
+   enable_snappy=no
+fi
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
 m4_include([build/autotools/MaintainerFlags.m4])

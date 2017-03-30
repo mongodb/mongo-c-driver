@@ -233,6 +233,27 @@
 #define MONGOC_SOCKET_ARG3 @MONGOC_SOCKET_ARG3@
 
 /*
+ * Enable wire protocol compression negotiation
+ *
+ */
+#define MONGOC_ENABLE_COMPRESSION @MONGOC_ENABLE_COMPRESSION@
+
+#if MONGOC_ENABLE_COMPRESSION != 1
+#  undef MONGOC_ENABLE_COMPRESSION
+#endif
+
+/*
+ * Set if we have snappy compression support
+ *
+ */
+#define MONGOC_ENABLE_COMPRESSION_SNAPPY @MONGOC_ENABLE_COMPRESSION_SNAPPY@
+
+#if MONGOC_ENABLE_COMPRESSION_SNAPPY != 1
+#  undef MONGOC_ENABLE_COMPRESSION_SNAPPY
+#endif
+
+
+/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:

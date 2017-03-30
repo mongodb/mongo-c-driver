@@ -121,6 +121,14 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_HAVE_SOCKLEN;
 #endif
 
+#ifdef MONGOC_ENABLE_COMPRESSION
+   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION;
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY;
+#endif
+
    return bf;
 }
 

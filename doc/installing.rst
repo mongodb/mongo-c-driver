@@ -102,6 +102,7 @@ If ``configure`` completed successfully, you'll see something like the following
     Shared memory performance counters               : yes
     SASL                                             : sasl2
     SSL                                              : openssl
+    Snappy Compression                               : yes
     Libbson                                          : bundled
 
   Documentation:
