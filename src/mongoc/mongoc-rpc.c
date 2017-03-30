@@ -33,6 +33,11 @@
       header->msg_len = 0;                                              \
       _code                                                             \
    }
+#define UINT8_FIELD(_name)                   \
+   iov.iov_base = (void *) &rpc->_name;      \
+   iov.iov_len = 1;                          \
+   header->msg_len += (int32_t) iov.iov_len; \
+   _mongoc_array_append_val (array, iov);
 #define INT32_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
    iov.iov_len = 4;                          \
@@ -106,11 +111,13 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
+#include "op-compressed.def"
 #include "op-update.def"
 
 
 #undef RPC
 #undef ENUM_FIELD
+#undef UINT8_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -130,6 +137,7 @@
       BSON_ASSERT (rpc);                                                    \
       _code                                                                 \
    }
+#define UINT8_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
@@ -159,8 +167,7 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-/* Don't process generate _mongoc_rpc_swab_to_le_reply_header from
- * op-reply-header.def */
+#include "op-compressed.def"
 #include "op-update.def"
 
 #undef RPC
@@ -189,12 +196,12 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
-/* Don't process generate _mongoc_rpc_swab_from_le_reply_header from
- * op-reply-header.def */
+#include "op-compressed.def"
 #include "op-update.def"
 
 #undef RPC
 #undef ENUM_FIELD
+#undef UINT8_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -214,6 +221,7 @@
       BSON_ASSERT (rpc);                                                \
       _code                                                             \
    }
+#define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
@@ -291,11 +299,13 @@
 #include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
+#include "op-compressed.def"
 #include "op-update.def"
 
 
 #undef RPC
 #undef ENUM_FIELD
+#undef UINT8_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -316,6 +326,13 @@
       BSON_ASSERT (buflen);                                           \
       _code return true;                                              \
    }
+#define UINT8_FIELD(_name)       \
+   if (buflen < 1) {             \
+      return false;              \
+   }                             \
+   memcpy (&rpc->_name, buf, 1); \
+   buflen -= 1;                  \
+   buf += 1;
 #define INT32_FIELD(_name)       \
    if (buflen < 4) {             \
       return false;              \
@@ -412,11 +429,13 @@
 #include "op-query.def"
 #include "op-reply.def"
 #include "op-reply-header.def"
+#include "op-compressed.def"
 #include "op-update.def"
 
 
 #undef RPC
 #undef ENUM_FIELD
+#undef UINT8_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -455,6 +474,9 @@ _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
       return;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, &rpc->header, array);
+      return;
+   case MONGOC_OPCODE_COMPRESSED:
+      _mongoc_rpc_gather_compressed (&rpc->compressed, &rpc->header, array);
       return;
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
@@ -495,6 +517,9 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_swab_to_le_kill_cursors (&rpc->kill_cursors);
+      break;
+   case MONGOC_OPCODE_COMPRESSED:
+      _mongoc_rpc_swab_to_le_compressed (&rpc->compressed);
       break;
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
@@ -537,6 +562,9 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_swab_from_le_kill_cursors (&rpc->kill_cursors);
       break;
+   case MONGOC_OPCODE_COMPRESSED:
+      _mongoc_rpc_swab_from_le_compressed (&rpc->compressed);
+      break;
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
@@ -573,6 +601,9 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_printf_kill_cursors (&rpc->kill_cursors);
       break;
+   case MONGOC_OPCODE_COMPRESSED:
+      _mongoc_rpc_printf_compressed (&rpc->compressed);
+      break;
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
@@ -598,6 +629,9 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
    opcode = (mongoc_opcode_t) BSON_UINT32_FROM_LE (rpc->header.opcode);
 
    switch (opcode) {
+   case MONGOC_OPCODE_COMPRESSED: {
+      return _mongoc_rpc_scatter_compressed (&rpc->compressed, buf, buflen);
+   }
    case MONGOC_OPCODE_REPLY:
       return _mongoc_rpc_scatter_reply (&rpc->reply, buf, buflen);
    case MONGOC_OPCODE_MSG:
@@ -683,6 +717,7 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
    case MONGOC_OPCODE_MSG:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_KILL_CURSORS:
+   case MONGOC_OPCODE_COMPRESSED:
       return false;
    case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_UPDATE:

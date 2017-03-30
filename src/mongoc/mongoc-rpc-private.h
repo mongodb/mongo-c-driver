@@ -39,6 +39,7 @@ BSON_BEGIN_DECLS
    } mongoc_rpc_##_name##_t;
 #define ENUM_FIELD(_name) uint32_t _name;
 #define INT32_FIELD(_name) int32_t _name;
+#define UINT8_FIELD(_name) uint8_t _name;
 #define INT64_FIELD(_name) int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name) \
    int32_t _len;                       \
@@ -69,6 +70,7 @@ BSON_BEGIN_DECLS
 #include "op-reply.def"
 #include "op-reply-header.def"
 #include "op-update.def"
+#include "op-compressed.def"
 /* restore default packing */
 #pragma pack()
 
@@ -84,6 +86,7 @@ typedef union {
    mongoc_rpc_reply_t reply;
    mongoc_rpc_reply_header_t reply_header;
    mongoc_rpc_update_t update;
+   mongoc_rpc_compressed_t compressed;
 } mongoc_rpc_t;
 
 
@@ -95,6 +98,7 @@ BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 
 #undef RPC
 #undef ENUM_FIELD
+#undef UINT8_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD

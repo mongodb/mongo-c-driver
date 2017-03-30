@@ -15,6 +15,7 @@ MONGOC_DEF_FILES = \
 	src/mongoc/op-reply.def \
 	src/mongoc/op-reply-header.def \
 	src/mongoc/op-update.def \
+	src/mongoc/op-compressed.def \
 	src/mongoc/mongoc-counters.defs
 
 INST_H_FILES = \

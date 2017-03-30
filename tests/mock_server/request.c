@@ -86,6 +86,8 @@ request_new (const mongoc_buffer_t *buffer,
    _mongoc_array_init (&request->docs, sizeof (bson_t *));
 
    switch (request->opcode) {
+   case MONGOC_OPCODE_COMPRESSED:
+      break;
    case MONGOC_OPCODE_QUERY:
       request_from_query (request, &request->request_rpc);
       break;

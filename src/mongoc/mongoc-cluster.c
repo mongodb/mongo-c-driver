@@ -1849,6 +1849,9 @@ _mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
    case MONGOC_OPCODE_QUERY:
       mongoc_counter_op_egress_query_inc ();
       break;
+   case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_egress_compressed_inc ();
+      break;
    default:
       BSON_ASSERT (false);
       break;
@@ -1901,6 +1904,9 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
       break;
    case MONGOC_OPCODE_QUERY:
       mongoc_counter_op_ingress_query_inc ();
+      break;
+   case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_ingress_compressed_inc ();
       break;
    default:
       BSON_ASSERT (false);
