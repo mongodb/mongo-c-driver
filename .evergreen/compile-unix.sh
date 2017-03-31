@@ -32,16 +32,7 @@ echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
 
-
-# Get the kernel name, lowercased
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-echo "OS: $OS"
-
-# Automatically retrieve the machine architecture, lowercase, unless provided
-# as an environment variable (e.g. to force 32bit)
-[ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-
-if [ "${SSL%-*-fips}" = "openssl" ]; then
+install_openssl_fips() {
    curl -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
    tar zxvf fips.tar.gz
    cd openssl-fips-2.0.14
@@ -53,37 +44,60 @@ if [ "${SSL%-*-fips}" = "openssl" ]; then
    SSL_EXTRA_FLAGS="--openssldir=$INSTALL_DIR --with-fipsdir=$INSTALL_DIR fips"
    export OPENSSL_FIPS=1
    SSL=${SSL%-fips}
-fi
-if [ "${SSL%-*}" = "openssl" ]; then
-	curl -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
-	tar zxvf ssl.tar.gz
-	cd $SSL
-	./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
-	cpus=$(grep -c '^processor' /proc/cpuinfo)
-	make -j${cpus} || true
-	make install_sw || true
-	cd ..
+}
+install_openssl () {
+   curl -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
+   tar zxvf ssl.tar.gz
+   cd $SSL
+   ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j${cpus} || true
+   make install_sw || true
+   cd ..
 
-	# x505_vfy.h has issues in 1.1.0e
-	export CPPFLAGS=-Wno-redundant-decls
-	export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-	export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
-	SSL="openssl";
-fi
-if [ "${SSL%-*}" = "libressl" ]; then
-	curl -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
-	tar zxvf ssl.tar.gz
-	cd $SSL
-        ./configure --prefix=$INSTALL_DIR
-	cpus=$(grep -c '^processor' /proc/cpuinfo)
-	make -j${cpus}
-	make install
-	cd ..
+   # x505_vfy.h has issues in 1.1.0e
+   export CPPFLAGS=-Wno-redundant-decls
+   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
+   SSL="openssl";
+}
 
-	export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-	export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
-	SSL="libressl";
-fi
+install_libressl () {
+   curl -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
+   tar zxvf ssl.tar.gz
+   cd $SSL
+   ./configure --prefix=$INSTALL_DIR
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j${cpus}
+   make install
+   cd ..
+
+   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
+   SSL="libressl";
+}
+# Get the kernel name, lowercased
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+echo "OS: $OS"
+
+# Automatically retrieve the machine architecture, lowercase, unless provided
+# as an environment variable (e.g. to force 32bit)
+[ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
+
+case "$SSL" in
+   openssl-*-fips)
+      install_openssl_fips;
+      install_openssl;
+   ;;
+
+   openssl-*)
+      install_openssl;
+  ;;
+
+  libressl-*)
+     install_libressl;
+     ;;
+esac
 
 # Default configure flags for debug builds and release builds
 DEBUG_FLAGS="\
