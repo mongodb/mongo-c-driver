@@ -166,25 +166,6 @@ assert_n_removed (int n, const bson_t *reply)
 }
 
 
-#define ASSERT_COUNT(n, collection)                                     \
-   do {                                                                 \
-      int count = (int) mongoc_collection_count (                       \
-         collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, NULL);        \
-      if ((n) != count) {                                               \
-         fprintf (stderr,                                               \
-                  "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
-                  "%s:%d  %s()\n",                                      \
-                  mongoc_collection_get_name (collection),              \
-                  count,                                                \
-                  n,                                                    \
-                  __FILE__,                                             \
-                  __LINE__,                                             \
-                  BSON_FUNC);                                           \
-         abort ();                                                      \
-      }                                                                 \
-   } while (0)
-
-
 /*--------------------------------------------------------------------------
  *
  * oid_created_on_client --

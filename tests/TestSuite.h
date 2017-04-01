@@ -393,6 +393,44 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                      \
    } while (0)
 
+#define ASSERT_COUNT(n, collection)                                     \
+   do {                                                                 \
+      int count = (int) mongoc_collection_count (                       \
+         collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, NULL);        \
+      if ((n) != count) {                                               \
+         fprintf (stderr,                                               \
+                  "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
+                  "%s:%d  %s()\n",                                      \
+                  mongoc_collection_get_name (collection),              \
+                  count,                                                \
+                  n,                                                    \
+                  __FILE__,                                             \
+                  __LINE__,                                             \
+                  BSON_FUNC);                                           \
+         abort ();                                                      \
+      }                                                                 \
+   } while (0)
+
+#define ASSERT_CURSOR_COUNT(_n, _cursor)                                 \
+   do {                                                                  \
+      int _count = 0;                                                    \
+      const bson_t *_doc;                                                \
+      while (mongoc_cursor_next (_cursor, &_doc)) {                      \
+         _count++;                                                       \
+      }                                                                  \
+      if ((_n) != _count) {                                              \
+         fprintf (stderr,                                                \
+                  "FAIL\n\nAssert Failure: cursor count is %d, not %d\n" \
+                  "%s:%d  %s()\n",                                       \
+                  _count,                                                \
+                  _n,                                                    \
+                  __FILE__,                                              \
+                  __LINE__,                                              \
+                  BSON_FUNC);                                            \
+         abort ();                                                       \
+      }                                                                  \
+   } while (0)
+
 #define MAX_TEST_NAME_LENGTH 500
 
 
