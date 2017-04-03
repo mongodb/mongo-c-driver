@@ -44,6 +44,7 @@ struct _mongoc_uri_t {
    char *database;
    bson_t options;
    bson_t credentials;
+   bson_t compressors;
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
@@ -581,6 +582,10 @@ mongoc_uri_option_is_utf8 (const char *key)
       return false;
    }
 
+   if (!strcasecmp (key, MONGOC_URI_COMPRESSORS)) {
+      return false;
+   }
+
    if (!strcasecmp (key, MONGOC_URI_APPNAME) ||
        !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME) ||
        !strcasecmp (key, MONGOC_URI_REPLICASET) ||
@@ -715,6 +720,10 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
    } else if (!strcmp (lkey, MONGOC_URI_APPNAME)) {
       /* Part of uri->options */
       if (!mongoc_uri_set_appname (uri, value)) {
+         goto UNSUPPORTED_VALUE;
+      }
+   } else if (!strcmp (lkey, MONGOC_URI_COMPRESSORS)) {
+      if (!mongoc_uri_set_compressors (uri, value)) {
          goto UNSUPPORTED_VALUE;
       }
    } else if (mongoc_uri_option_is_utf8 (lkey)) {
@@ -1132,6 +1141,7 @@ mongoc_uri_new_with_error (const char *uri_string, bson_error_t *error)
    uri = (mongoc_uri_t *) bson_malloc0 (sizeof *uri);
    bson_init (&uri->options);
    bson_init (&uri->credentials);
+   bson_init (&uri->compressors);
 
    /* Initialize read_prefs, since parsing may add to it */
    uri->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -1360,6 +1370,61 @@ mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value)
    return true;
 }
 
+bool
+_mongoc_uri_is_supported_compressor (const char *compressor)
+{
+#ifdef MONGOC_ENABLE_COMPRESSION
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   if (!strcasecmp (compressor, "snappy")) {
+      return true;
+   }
+#endif
+#endif
+   return false;
+}
+
+bool
+mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
+{
+   const char *end_compressor;
+   char *entry;
+
+   bson_destroy (&uri->compressors);
+   bson_init (&uri->compressors);
+
+   if (value && !bson_utf8_validate (value, strlen (value), false)) {
+      return false;
+   }
+   while ((entry = scan_to_unichar (value, ',', "", &end_compressor))) {
+      if (_mongoc_uri_is_supported_compressor (entry)) {
+         mongoc_uri_bson_append_or_replace_key (
+            &uri->compressors, entry, "yes");
+      } else {
+         MONGOC_WARNING ("Unsupported compressor: '%s'", entry);
+      }
+      value = end_compressor + 1;
+      bson_free (entry);
+   }
+   if (value) {
+      if (_mongoc_uri_is_supported_compressor (value)) {
+         mongoc_uri_bson_append_or_replace_key (
+            &uri->compressors, value, "yes");
+      } else {
+         MONGOC_WARNING ("Unsupported compressor: '%s'", value);
+      }
+   }
+
+   return true;
+}
+
+const bson_t *
+mongoc_uri_get_compressors (const mongoc_uri_t *uri)
+{
+   BSON_ASSERT (uri);
+   return &uri->compressors;
+}
+
+
 /* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
 int32_t
 mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
@@ -1400,6 +1465,7 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
       bson_free (uri->username);
       bson_destroy (&uri->options);
       bson_destroy (&uri->credentials);
+      bson_destroy (&uri->compressors);
       mongoc_read_prefs_destroy (uri->read_prefs);
       mongoc_read_concern_destroy (uri->read_concern);
       mongoc_write_concern_destroy (uri->write_concern);
@@ -1441,6 +1507,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
 
    bson_copy_to (&uri->options, &copy->options);
    bson_copy_to (&uri->credentials, &copy->credentials);
+   bson_copy_to (&uri->compressors, &copy->compressors);
 
    return copy;
 }

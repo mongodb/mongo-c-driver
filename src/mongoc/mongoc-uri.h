@@ -41,6 +41,7 @@
 #define MONGOC_URI_AUTHSOURCE "authsource"
 #define MONGOC_URI_CANONICALIZEHOSTNAME "canonicalizehostname"
 #define MONGOC_URI_CONNECTTIMEOUTMS "connecttimeoutms"
+#define MONGOC_URI_COMPRESSORS "compressors"
 #define MONGOC_URI_GSSAPISERVICENAME "gssapiservicename"
 #define MONGOC_URI_HEARTBEATFREQUENCYMS "heartbeatfrequencyms"
 #define MONGOC_URI_JOURNAL "journal"
@@ -95,6 +96,8 @@ MONGOC_EXPORT (const char *)
 mongoc_uri_get_database (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)
 mongoc_uri_set_database (mongoc_uri_t *uri, const char *database);
+MONGOC_EXPORT (const bson_t *)
+mongoc_uri_get_compressors (const mongoc_uri_t *uri);
 MONGOC_EXPORT (const bson_t *)
 mongoc_uri_get_options (const mongoc_uri_t *uri);
 MONGOC_EXPORT (const char *)
@@ -152,11 +155,12 @@ MONGOC_EXPORT (const char *)
 mongoc_uri_get_appname (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)
 mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value);
+MONGOC_EXPORT (bool)
+mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value);
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)
-mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri,
-                               const char *value);
+mongoc_uri_set_auth_mechanism (mongoc_uri_t *uri, const char *value);
 MONGOC_EXPORT (bool)
 mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
                                      bson_t *properties);

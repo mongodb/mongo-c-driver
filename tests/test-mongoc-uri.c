@@ -478,8 +478,7 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT (!mongoc_uri_set_option_as_utf8 (
       uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
 
-   ASSERT (!mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_AUTHMECHANISM, 1));
+   ASSERT (!mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_AUTHMECHANISM, 1));
 
    ASSERT (!mongoc_uri_set_option_as_utf8 (
       uri, MONGOC_URI_AUTHMECHANISMPROPERTIES, "a:three"));
@@ -793,6 +792,75 @@ test_mongoc_uri_new_for_host_port (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_mongoc_uri_compressors (void)
+{
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   capture_logs (true);
+   mongoc_uri_set_compressors (uri, "snappy,unknown");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "unknown"));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported compressor: 'unknown'");
+#endif
+
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   capture_logs (true);
+   mongoc_uri_set_compressors (uri, "snappy");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "unknown"));
+   ASSERT_NO_CAPTURED_LOGS ("snappy uri");
+
+   /* Overwrite the previous URI, effectively disabling snappy */
+   capture_logs (true);
+   mongoc_uri_set_compressors (uri, "unknown");
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "unknown"));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported compressor: 'unknown'");
+#endif
+
+   capture_logs (true);
+   mongoc_uri_set_compressors (uri, "");
+   ASSERT (bson_empty (mongoc_uri_get_compressors (uri)));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported compressor: ''");
+
+
+   /* Disable compression */
+   capture_logs (true);
+   mongoc_uri_set_compressors (uri, NULL);
+   ASSERT (bson_empty (mongoc_uri_get_compressors (uri)));
+   ASSERT_NO_CAPTURED_LOGS ("Disable compression");
+
+
+   mongoc_uri_destroy (uri);
+
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   uri = mongoc_uri_new ("mongodb://localhost/?compressors=snappy");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   mongoc_uri_destroy (uri);
+
+   capture_logs (true);
+   uri =
+      mongoc_uri_new ("mongodb://localhost/?compressors=snappy,somethingElse");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "somethingElse"));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported compressor: 'somethingElse'");
+   mongoc_uri_destroy (uri);
+#endif
+}
 
 static void
 test_mongoc_uri_unescape (void)
@@ -1410,6 +1478,7 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/new_with_error", test_mongoc_uri_new_with_error);
    TestSuite_Add (
       suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
+   TestSuite_Add (suite, "/Uri/compressors", test_mongoc_uri_compressors);
    TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
    TestSuite_Add (suite, "/Uri/read_prefs", test_mongoc_uri_read_prefs);
    TestSuite_Add (suite, "/Uri/read_concern", test_mongoc_uri_read_concern);
