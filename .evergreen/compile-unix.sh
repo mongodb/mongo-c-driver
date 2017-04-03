@@ -193,7 +193,8 @@ case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
-      export PATH=/usr/local/Cellar/llvm/3.8.1/bin/:$PATH
+      # llvm-cov is installed from brew
+      export PATH=/usr/local/opt/llvm/bin:$PATH
    ;;
 
    linux)
