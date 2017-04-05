@@ -55,7 +55,6 @@ static mongoc_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
 
 
-#define TEST_VERBOSE (1 << 0)
 #define TEST_NOFORK (1 << 1)
 #define TEST_HELPONLY (1 << 2)
 #define TEST_DEBUGOUTPUT (1 << 3)
@@ -223,9 +222,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->silent = false;
 
    for (i = 0; i < argc; i++) {
-      if (0 == strcmp ("-v", argv[i])) {
-         suite->flags |= TEST_VERBOSE;
-      } else if (0 == strcmp ("-d", argv[i])) {
+      if (0 == strcmp ("-d", argv[i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
       } else if ((0 == strcmp ("-f", argv[i])) ||
                  (0 == strcmp ("--no-fork", argv[i]))) {
@@ -298,7 +295,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          abort ();
       }
 
-      suite->flags &= ~(TEST_DEBUGOUTPUT | TEST_VERBOSE);
+      suite->flags &= ~(TEST_DEBUGOUTPUT);
    }
 
    mongoc_once (&once, &_test_suite_ensure_mutex_once);
@@ -688,7 +685,6 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
             "error).\n"
             "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
             "\"/Client/*\".\n"
-            "    -v            Be verbose with logs.\n"
             "    -s, --silent  Suppress all output.\n"
             "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
             "    -d            Print debug output (useful if a test hangs).\n"

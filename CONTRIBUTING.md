@@ -19,20 +19,18 @@ operating systems and architectures.
 
  * Linux (RHEL 5 and newer)
  * FreeBSD (10 and newer)
- * Windows (Vista a newer)
+ * Windows (Vista and newer)
+ * macOS (10.8 and newer)
  * Solaris x86_64/SPARC (11 and newer)
- * SmartOS (Solaris based)
- * Possibly more if users show an interest.
  * ARM/SPARC/x86/x86_64
 
 
 ### Licensing
 
 Some of the mongo-c-driver users embed the library statically in their
-products.  Therefore, the driver needs to be liberally licensed (as opposed to
-the authors usual preference of LGPL-2+). Therefore, all contributions must
-also be under this license. As a policy, we have chosen Apache 2.0 as the
-license for the project.
+products.  Therefore, the driver and all contributions must be liberally
+licensed.  As a policy, we have chosen Apache 2.0 as the license for the
+project.
 
 
 ### Coding Style
@@ -41,59 +39,13 @@ We try not to be pedantic with taking contributions that are not properly
 formatted, but we will likely perform a followup commit that cleans things up.
 The basics are, in vim:
 
+```
  : set ts=3 sw=3 et
+```
 
 3 space tabs, insert spaces instead of tabs.
 
-Place a space between the function name and the parameter as such:
-
-```c
-static void
-my_func (Param *p)
-
-my_func (p);
-```
-
-Not all of the code does this today, but it should be cleaned up at some point.
-
-Just look at the code around for more pedantic styling choices.
-
-
-### Enum, Struct, Variable Naming
-
-The naming conventions for mongo-c-driver should feel very object oriented.
-In fact, mongo-c-driver is OOP. Those that have used the GLib library will
-feel right at home, as the author has spent many years contributing to that
-project as well.
-
-Structs are suffixed in `_t`, and underscores.
-
-```c
-typedef struct _my_struct_t my_struct_t;
-
-struct _my_struct_t
-{
-   int foo;
-};
-```
-
-Function names should be prefixed by the type name, without the `_t`.
-
-```c
-int my_struct_get_foo (my_struct_t *my);
-```
-
-Enums are also named with the `_t` suffix.
-
-
-```c
-typedef enum
-{
-   MY_FLAGS_A = 1,
-   MY_FLAGS_B = 1 << 1,
-   MY_FLAGS_C = 1 << 2,
-} my_flags_t;
-```
+For all the gory details, see [.clang-format](.clang-format)
 
 ### Adding a new error code or domain                                              
                                                                                    
@@ -134,8 +86,8 @@ In another terminal, use the `mongo` shell to create a user:
 $ mongo --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
 ```
 
-To authenticate against MongoDB 3.0+ requires SCRAM-SHA-1, which in turn
-requires a driver built with OpenSSL:
+Authentication in MongoDB 3.0 and later uses SCRAM-SHA-1, which in turn
+requires a driver built with SSL:
 
 ```
 $ ./configure --enable-ssl`
@@ -182,17 +134,7 @@ as environment variables:
 * `MONGOC_TEST_GSSAPI_USER` 
 
 URI-escape the username, for example write "user@realm" as "user%40realm".
-The user must be authorized to query `test.collection`.
-
-The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a
-separate `mongod` with Kerberos and set its host and Kerberos principal name
-as environment variables:
-
-* `MONGOC_TEST_GSSAPI_HOST` 
-* `MONGOC_TEST_GSSAPI_USER` 
-
-URI-escape the username, for example write "user@realm" as "user%40realm".
-The user must be authorized to query `test.collection`.
+The user must be authorized to query `kerberos.test`.
 
 MongoDB 3.2 adds support for readConcern, but does not enable support for
 read concern majority by default. mongod must be launched using
@@ -228,7 +170,6 @@ variable. The following options can be provided:
     -h, --help    Show this help menu.
     -f, --no-fork Do not spawn a process per test (abort on first error).
     -l NAME       Run test by name, e.g. "/Client/command" or "/Client/*".
-    -v            Be verbose with logs.
     -s, --silent  Suppress all output.
     -F FILENAME   Write test results (JSON) to FILENAME.
     -d            Print debug output (useful if a test hangs).
