@@ -116,11 +116,12 @@ def process_nodes(app, doctree):
     metadata = env.metadata[env.docname]
 
     # A page like installing.rst sets its name with ":man_page: mongoc_installing"
-    page_name = metadata.get('man_page', env.docname)
+    page_name = metadata.get('man_page')
     if not page_name:
         print('Not creating man page for %s' % env.docname)
-    page_title = find_node(doctree, title)
+        return
 
+    page_title = find_node(doctree, title)
     man_pages.append((env.docname, page_name, page_title.astext(), [author], 3))
 
 

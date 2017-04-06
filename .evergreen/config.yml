@@ -452,6 +452,12 @@ tasks:
                 fi
               done
 
+              echo "Checking that index.3 wasn't built"
+              if tar --wildcards -tzf $tarfile 'mongo-c-driver-*/doc/man/index.3' > /dev/null 2>&1; then
+                echo "Found index.3 in archive"
+                exit 1
+              fi
+
               set +o xtrace
               echo "Checking that all C files are included in tarball"
               # Check that all C files were included.
