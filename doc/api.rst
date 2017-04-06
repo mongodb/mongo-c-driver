@@ -1,5 +1,3 @@
-:man_page: mongoc_api
-
 API Reference
 =============
 

@@ -115,12 +115,10 @@ def process_nodes(app, doctree):
     env = app.env
     metadata = env.metadata[env.docname]
 
-    # Skip: manpage builder inlines these pages' TOCs & includes all other pages
-    if env.docname in ['index', 'api']:
-        return
-
     # A page like installing.rst sets its name with ":man_page: mongoc_installing"
     page_name = metadata.get('man_page', env.docname)
+    if not page_name:
+        print('Not creating man page for %s' % env.docname)
     page_title = find_node(doctree, title)
 
     man_pages.append((env.docname, page_name, page_title.astext(), [author], 3))
