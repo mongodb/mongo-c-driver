@@ -33,7 +33,7 @@ Parameters
 See Also
 --------
 
-:symbol:`mongoc_bulk_operation_update_many_with_opts() <mongoc_bulk_operation_update>`
+:symbol:`mongoc_bulk_operation_update_many_with_opts()`
 
 Errors
 ------
