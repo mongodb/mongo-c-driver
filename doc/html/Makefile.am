@@ -19,5 +19,6 @@ doc/html: $(SPHINX_HTML_FILES)
 $(SPHINX_HTML_FILES):
 	-mkdir -p doc/html
 	$(SPHINX_BUILD) -qEW $(top_srcdir)/doc doc/html
+	rm -rf doc/html/.doctrees doc/html/.buildinfo
 
 EXTRA_DIST += doc/html

@@ -11,5 +11,6 @@ man3_MANS = $(wildcard doc/man/*.3)
 doc/man:
 	-mkdir -p doc/man
 	$(SPHINX_BUILD) -qEW -b man $(top_srcdir)/doc doc/man
+	rm -rf doc/man/.doctrees doc/man/.buildinfo
 
 EXTRA_DIST += doc/man
