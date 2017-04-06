@@ -216,6 +216,8 @@ Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers.
   $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
   $ export CPPFLAGS="-I/usr/local/opt/openssl/include"
 
+.. _build-on-windows:
+
 Building on Windows
 -------------------
 
@@ -264,6 +266,8 @@ mode and can be found in ``C:\mongo-c-driver``.
 To build and install debug binaries, remove the
 ``"-DCMAKE_BUILD_TYPE=Release"`` argument to ``cmake`` and
 ``/p:Configuration=Release`` to ``msbuild.exe``.
+
+To use the driver libraries in your program, see :doc:`visual-studio-guide`.
 
 Native TLS Support on Windows (Secure Channel)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

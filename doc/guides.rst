@@ -13,3 +13,4 @@ Guides
    bulk
    aggregate
    distinct-mapreduce
+   visual-studio-guide

@@ -95,6 +95,13 @@ For Windows users, the code can be compiled and run with the following commands.
 
 .. _tutorial_connecting:
 
+Use libmongoc in a Microsoft Visual Studio Project
+--------------------------------------------------
+
+See the :doc:`libmongoc and Visual Studio guide <visual-studio-guide>`.
+
+.. _making-a-connection:
+
 Making a Connection
 -------------------
 
