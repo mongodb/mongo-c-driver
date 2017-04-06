@@ -10,4 +10,5 @@ EXTRA_DIST += \
   doc/mongoc-theme/theme.conf \
   doc/taglist.py \
   doc/libbson-objects.inv \
-  $(wildcard doc/includes/*.txt)
+  $(wildcard doc/includes/*.txt) \
+  $(wildcard doc/static/*)
