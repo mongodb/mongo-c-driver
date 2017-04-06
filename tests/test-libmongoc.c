@@ -793,6 +793,91 @@ test_framework_add_user_password_from_env (const char *uri_str)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_get_compressors --
+ *
+ *      Get the list of compressors to enable
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL if the variable is not set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_compressors ()
+{
+   return test_framework_getenv ("MONGOC_TEST_COMPRESSORS");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_has_compressors --
+ *
+ *      Check if the test suite has been configured to use compression
+ *
+ * Returns:
+ *       true if compressors should be used.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+test_framework_has_compressors ()
+{
+   bool retval;
+   char *compressors = test_framework_get_compressors ();
+
+   retval = !!compressors;
+   bson_free (compressors);
+
+   return retval;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_compressors_from_env --
+ *
+ *       Add supported compressors to the URI
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_add_compressors_from_env (const char *uri_str)
+{
+   char *compressors;
+
+   compressors = test_framework_get_compressors ();
+   if (compressors) {
+      char *retval = NULL;
+
+      if (!strstr ("?", uri_str)) {
+         retval = bson_strdup_printf (
+            "%s&%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
+      } else {
+         retval = bson_strdup_printf (
+            "%s/?%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
+      }
+      bson_free (compressors);
+      return retval;
+   }
+
+   return bson_strdup (uri_str);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_get_ssl --
  *
  *       Should we connect to the test MongoDB server over SSL?
@@ -899,6 +984,12 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
    mongoc_uri_set_option_as_bool (
       uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   if (test_framework_has_compressors ()) {
+      char *compressors = test_framework_get_compressors ();
+
+      mongoc_uri_set_compressors (uri, compressors);
+      bson_free (compressors);
+   }
 
    client = mongoc_client_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
@@ -1066,6 +1157,12 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       bson_destroy (&ismaster_response);
    }
 
+   if (test_framework_has_compressors ()) {
+      char *compressors = test_framework_get_compressors ();
+
+      add_option_to_uri_str (uri_string, MONGOC_URI_COMPRESSORS, compressors);
+      bson_free (compressors);
+   }
    /* make tests a little more resilient to transient errors */
    add_option_to_uri_str (
       uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
@@ -1094,12 +1191,15 @@ char *
 test_framework_get_uri_str ()
 {
    char *uri_str_no_auth;
+   char *uri_str_auth;
    char *uri_str;
 
    uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri_str = test_framework_add_compressors_from_env (uri_str_auth);
 
    bson_free (uri_str_no_auth);
+   bson_free (uri_str_auth);
 
    return uri_str;
 }

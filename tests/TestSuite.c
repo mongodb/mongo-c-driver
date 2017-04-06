@@ -795,6 +795,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"addr\": { \"host\": \"%s\", \"port\": %d, \"uri\": \"%s\" },\n"
             "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
             "  \"uds\": \"%s\", \n"
+            "  \"compressors\": \"%s\", \n"
             "  \"SSL\": {\n"
             "    \"enabled\": %s,\n"
             "    \"weak_cert_validation\": %s,\n"
@@ -825,6 +826,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             egetenv ("MONGOC_TEST_GSSAPI_HOST"),
             egetenv ("MONGOC_TEST_GSSAPI_USER"),
             udspath,
+            egetenv ("MONGOC_TEST_COMPRESSORS"),
             ssl ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION")
                ? "true"
