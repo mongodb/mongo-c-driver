@@ -322,6 +322,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, command, flags);
    rpc.header.request_id = request_id;
+   _mongoc_cluster_inc_egress_rpc (&rpc);
    _mongoc_rpc_gather (&rpc, &ar);
    _mongoc_rpc_swab_to_le (&rpc);
 
@@ -413,6 +414,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    } else {
       GOTO (done);
    }
+   _mongoc_cluster_inc_ingress_rpc (&rpc);
 
    if (_mongoc_populate_cmd_error (
           reply_ptr, cluster->client->error_api_version, error)) {
