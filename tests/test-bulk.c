@@ -1632,10 +1632,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
             bulk, bad_insert, NULL, &error);
 
          BSON_ASSERT (!r);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                err);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
 
          /* now a valid document */
          r = mongoc_bulk_operation_insert_with_opts (
@@ -1655,10 +1653,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
          r = mongoc_bulk_operation_insert_with_opts (
             bulk, bad_insert, NULL, &error);
          BSON_ASSERT (!r);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                err);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
 
          ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
          r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
@@ -1678,10 +1674,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
          r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
          BSON_ASSERT (!r);
          BSON_ASSERT (bson_empty (&reply));
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                err);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
       } else {
          /* valid, then invalid */
          mongoc_bulk_operation_insert (bulk, good_insert);
@@ -1693,10 +1687,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
          r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
          BSON_ASSERT (!r);
          BSON_ASSERT (bson_empty (&reply));
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                err);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
       }
    }
 
@@ -1755,8 +1747,8 @@ test_insert_into_system_indexes (void)
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_insert_system_indexes");
    db_name = collection->db;
-   system_indexes = mongoc_client_get_collection (client, db_name,
-                                                  "system.indexes");
+   system_indexes =
+      mongoc_client_get_collection (client, db_name, "system.indexes");
 
    mongoc_collection_drop (collection, NULL);
 
@@ -3627,6 +3619,7 @@ test_bulk_write_concern_over_1000 (void)
       abort ();
    }
 
+   bson_destroy (&reply);
    bson_free (str);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_client_destroy (client);
