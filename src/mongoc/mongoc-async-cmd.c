@@ -132,6 +132,7 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
    acmd->rpc.query.query = bson_get_data (&acmd->cmd);
    acmd->rpc.query.fields = NULL;
 
+   /* This will always be isMaster, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
    acmd->iovec = (mongoc_iovec_t *) acmd->array.data;
    acmd->niovec = acmd->array.len;

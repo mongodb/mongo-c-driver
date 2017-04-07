@@ -151,6 +151,15 @@ _mongoc_populate_cmd_error (const bson_t *doc,
 
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen);
+
+bool
+_mongoc_rpc_compress (mongoc_rpc_t *rpc,
+                      int compressor_id,
+                      char *data,
+                      size_t size,
+                      char *output,
+                      size_t output_length);
+
 BSON_END_DECLS
 
 

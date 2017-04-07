@@ -55,6 +55,14 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-rpc-private.h"
 
+#ifdef MONGOC_ENABLE_COMPRESSION
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+#include <snappy-c.h>
+#endif
+#endif
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -201,6 +209,43 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
    }
 }
 
+
+size_t
+_mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
+                              size_t iovcnt,
+                              int skip,
+                              char *buffer)
+{
+   int n;
+   size_t buffer_offset = 0;
+   int total_iov_len = 0;
+   int difference = 0;
+
+   for (n = 0; n < iovcnt; n++) {
+      total_iov_len += iov[n].iov_len;
+
+      if (total_iov_len <= skip) {
+         continue;
+      }
+
+      /* If this iovec starts before the skip, and takes the total count
+       * beyond the skip, we need to figure out the portion of the iovec
+       * we should skip passed */
+      if (total_iov_len - iov[n].iov_len < skip) {
+         difference = skip - (total_iov_len - iov[n].iov_len);
+      } else {
+         difference = 0;
+      }
+
+      memcpy (buffer + buffer_offset,
+              iov[n].iov_base + difference,
+              iov[n].iov_len - difference);
+      buffer_offset += iov[n].iov_len - difference;
+   }
+
+   return buffer_offset;
+}
+
 /* Allows caller to safely overwrite error->message with a formatted string,
  * even if the formatted string includes original error->message. */
 static void
@@ -280,6 +325,11 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
    bool ret = false;
+#ifdef MONGOC_ENABLE_COMPRESSION
+   int32_t compressor_id = 0;
+   size_t output_length = 0;
+   char *output;
+#endif
 
    ENTRY;
 
@@ -325,6 +375,46 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    _mongoc_cluster_inc_egress_rpc (&rpc);
    _mongoc_rpc_gather (&rpc, &ar);
    _mongoc_rpc_swab_to_le (&rpc);
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+   if (server_id) {
+      mongoc_server_stream_t *server_stream = mongoc_cluster_stream_for_server (
+         cluster, server_id, false /* don't reconnect */, error);
+      compressor_id =
+         mongoc_server_description_compressor_id (server_stream->sd);
+      mongoc_server_stream_cleanup (server_stream);
+
+      if (compressor_id) {
+         size_t allocate = rpc.header.msg_len - 16;
+         char *data;
+         int size;
+
+         BSON_ASSERT (allocate > 0);
+         data = bson_malloc0 (allocate);
+         size = _mongoc_cluster_buffer_iovec (
+            (mongoc_iovec_t *) ar.data, ar.len, 16, data);
+         BSON_ASSERT (size);
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+         output_length = snappy_max_compressed_length (size);
+#else
+#error \
+   "FIXME for other compressors.. _mongoc_rpc_compressed_length(compressor, size)?"
+#endif
+         output = (char *) bson_malloc0 (output_length);
+         if (_mongoc_rpc_compress (
+                &rpc, compressor_id, data, size, output, output_length)) {
+            _mongoc_array_destroy (&ar);
+            _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
+            _mongoc_cluster_inc_egress_rpc (&rpc);
+            _mongoc_rpc_gather (&rpc, &ar);
+         } else {
+            MONGOC_WARNING ("Could not compress data");
+         }
+         bson_free (data);
+      }
+   }
+#endif
 
    if (monitored && callbacks->started) {
       mongoc_apm_command_started_init (&started_event,
@@ -504,6 +594,12 @@ done:
    if (reply_ptr == &reply_local) {
       bson_destroy (reply_ptr);
    }
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   if (output_length) {
+      bson_free (output);
+   }
+#endif
 
    RETURN (ret);
 }
@@ -2195,6 +2291,12 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    bool need_gle;
    char cmdname[140];
    int32_t max_msg_size;
+   bool ret = false;
+#ifdef MONGOC_ENABLE_COMPRESSION
+   int32_t compressor_id = 0;
+   size_t output_length;
+   char *output;
+#endif
 
    ENTRY;
 
@@ -2210,7 +2312,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
                       "A cursor derived from this client is in exhaust.");
-      RETURN (false);
+      GOTO (done);
    }
 
    if (!write_concern) {
@@ -2219,10 +2321,13 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
 
    if (!_mongoc_cluster_check_interval (
           cluster, server_stream->sd->id, error)) {
-      RETURN (false);
+      GOTO (done);
    }
 
    _mongoc_array_clear (&cluster->iov);
+#ifdef MONGOC_ENABLE_COMPRESSION
+   compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
+#endif
 
    /*
     * TODO: We can probably remove the need for sendv and just do send since
@@ -2232,9 +2337,41 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
     */
 
    for (i = 0; i < rpcs_len; i++) {
-      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
       need_gle = _mongoc_rpc_needs_gle (&rpcs[i], write_concern);
+      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+      if (compressor_id) {
+         size_t allocate = rpcs[i].header.msg_len - 16;
+         char *data;
+         int size;
+
+         BSON_ASSERT (allocate > 0);
+         data = bson_malloc0 (allocate);
+         size = _mongoc_cluster_buffer_iovec (
+            (mongoc_iovec_t *) cluster->iov.data, cluster->iov.len, 16, data);
+         BSON_ASSERT (size);
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+         output_length = snappy_max_compressed_length (size);
+#else
+#error \
+   "FIXME for other compressors.. _mongoc_rpc_compressed_length(compressor, size)?"
+#endif
+         output = (char *) bson_malloc0 (output_length);
+         if (_mongoc_rpc_compress (
+                &rpcs[i], compressor_id, data, size, output, output_length)) {
+            _mongoc_array_destroy (&cluster->iov);
+            _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
+            _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
+            _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
+         } else {
+            MONGOC_WARNING ("Could not compress data");
+         }
+         bson_free (data);
+      }
+#endif
 
       max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
@@ -2246,7 +2383,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                          "max allowed message size. Was %u, allowed %u.",
                          rpcs[i].header.msg_len,
                          max_msg_size);
-         RETURN (false);
+         GOTO (done);
       }
 
       if (need_gle) {
@@ -2296,7 +2433,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                     iovcnt,
                                     cluster->sockettimeoutms,
                                     error)) {
-      RETURN (false);
+      GOTO (done);
    }
 
    if (cluster->client->topology->single_threaded) {
@@ -2308,7 +2445,17 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
       }
    }
 
-   RETURN (true);
+   ret = true;
+
+done:
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+   if (compressor_id) {
+      bson_free (output);
+   }
+#endif
+
+   RETURN (ret);
 }
 
 

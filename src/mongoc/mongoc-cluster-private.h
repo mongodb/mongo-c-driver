@@ -90,6 +90,12 @@ int32_t
 mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
                                       uint32_t server_id);
 
+size_t
+_mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
+                              size_t iovcnt,
+                              int skip,
+                              char *buffer);
+
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                 mongoc_rpc_t *rpcs,

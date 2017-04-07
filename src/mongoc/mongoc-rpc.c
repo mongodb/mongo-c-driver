@@ -676,6 +676,40 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
    }
    return false;
 }
+
+bool
+_mongoc_rpc_compress (mongoc_rpc_t *rpc,
+                      int compressor_id,
+                      char *data,
+                      size_t size,
+                      char *output,
+                      size_t output_length)
+{
+   switch (compressor_id) {
+   case MONGOC_COMPRESSOR_SNAPPY_ID:
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+      if (snappy_compress (data, size, output, &output_length) == SNAPPY_OK) {
+         rpc->header.msg_len = 0;
+         rpc->compressed.original_opcode = rpc->header.opcode;
+         rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
+         rpc->compressed.uncompressed_size = size;
+         rpc->compressed.compressor_id = compressor_id;
+         rpc->compressed.compressed_message = (const uint8_t *) output;
+         rpc->compressed.compressed_message_len = output_length;
+         return true;
+      }
+      break;
+#else
+      MONGOC_ERROR ("Client attempting to use compress with snappy, but snappy "
+                    "compression is not compiled in");
+      return false;
+#endif
+   default:
+      return false;
+   }
+
+   return false;
+}
 bool
 _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
 {

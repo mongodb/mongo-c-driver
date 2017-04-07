@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "TestSuite.h"
+#include "mongoc-cluster-private.h"
 
 
 static uint8_t *
@@ -633,6 +634,64 @@ test_mongoc_rpc_update_scatter (void)
 }
 
 
+static void
+test_mongoc_rpc_buffer_iov (void)
+{
+   mongoc_array_t ar;
+   mongoc_rpc_t rpc;
+   bson_t b;
+   size_t allocate;
+   char *no_header, *full_opcode;
+   char *matching_opcode;
+   int size;
+   mongoc_iovec_t iov;
+
+   bson_init (&b);
+   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
+
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = 1234;
+   rpc.header.response_to = -1;
+   rpc.header.opcode = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.collection = "test.test";
+   rpc.query.skip = 5;
+   rpc.query.n_return = 1;
+   rpc.query.query = bson_get_data (&b);
+   rpc.query.fields = bson_get_data (&b);
+
+   _mongoc_rpc_gather (&rpc, &ar);
+
+   allocate = rpc.header.msg_len - 16;
+
+   BSON_ASSERT (allocate > 0);
+   full_opcode = bson_malloc0 (allocate + 16);
+   size = _mongoc_cluster_buffer_iovec (
+      (mongoc_iovec_t *) ar.data, ar.len, 0, full_opcode);
+   ASSERT_CMPINT (size, ==, 48);
+
+   iov.iov_len = size;
+   iov.iov_base = full_opcode;
+   no_header = bson_malloc0 (allocate);
+   size = _mongoc_cluster_buffer_iovec (&iov, 1, 16, no_header);
+
+   ASSERT_CMPINT (size, ==, 32);
+
+   matching_opcode = bson_malloc0 (rpc.header.msg_len);
+   memcpy (matching_opcode, full_opcode, 16);
+   memcpy (matching_opcode + 16, no_header, 32);
+
+   ASSERT_MEMCMP (full_opcode + 16, no_header, 32);
+   ASSERT_MEMCMP (matching_opcode, full_opcode, 48);
+
+   bson_free (no_header);
+   bson_free (full_opcode);
+   bson_free (matching_opcode);
+
+   _mongoc_array_destroy (&ar);
+}
+
+
 void
 test_rpc_install (TestSuite *suite)
 {
@@ -657,4 +716,5 @@ test_rpc_install (TestSuite *suite)
    TestSuite_Add (suite, "/Rpc/reply/scatter2", test_mongoc_rpc_reply_scatter2);
    TestSuite_Add (suite, "/Rpc/update/gather", test_mongoc_rpc_update_gather);
    TestSuite_Add (suite, "/Rpc/update/scatter", test_mongoc_rpc_update_scatter);
+   TestSuite_Add (suite, "/Rpc/buffer/iov", test_mongoc_rpc_buffer_iov);
 }

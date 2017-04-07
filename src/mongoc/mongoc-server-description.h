@@ -49,4 +49,10 @@ MONGOC_EXPORT (const bson_t *)
 mongoc_server_description_ismaster (
    const mongoc_server_description_t *description);
 
+#ifdef MONGOC_ENABLE_COMPRESSION
+MONGOC_EXPORT (int32_t)
+mongoc_server_description_compressor_id (
+   const mongoc_server_description_t *description);
+#endif
+
 #endif
