@@ -149,6 +149,8 @@ _mongoc_populate_cmd_error (const bson_t *doc,
                             int32_t error_api_version,
                             bson_error_t *error);
 
+bool
+_mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen);
 BSON_END_DECLS
 
 

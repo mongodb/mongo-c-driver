@@ -22,6 +22,14 @@
 #include "mongoc-trace-private.h"
 
 
+#ifdef MONGOC_ENABLE_COMPRESSION
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+#include <snappy-c.h>
+#endif
+#endif
+
 #define RPC(_name, _code)                                               \
    static void _mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
                                            mongoc_rpc_header_t *header, \
@@ -610,7 +618,64 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
    }
 }
 
+#define MONGOC_COMPRESSOR_NOOP 0
+#define MONGOC_COMPRESSOR_SNAPPY_ID 1
+#define MONGOC_COMPRESSOR_ZLIB_ID 2
 
+
+bool
+_mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
+{
+   switch (rpc->compressed.compressor_id) {
+   case MONGOC_COMPRESSOR_SNAPPY_ID: {
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+      snappy_status status;
+      size_t uncompressed_size = rpc->compressed.uncompressed_size;
+
+      BSON_ASSERT (uncompressed_size <= buflen);
+      memcpy (buf, (void *) (&buflen), 4);
+      memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
+      memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
+      memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
+
+      status =
+         snappy_uncompress ((const char *) rpc->compressed.compressed_message,
+                            rpc->compressed.compressed_message_len,
+                            (char *) buf + 16,
+                            &uncompressed_size);
+
+      if (status != SNAPPY_OK) {
+         return false;
+      }
+
+      return _mongoc_rpc_scatter (rpc, buf, buflen);
+#else
+      MONGOC_WARNING ("Received snappy compressed opcode, but snappy "
+                      "compression is not compiled in");
+      return false;
+#endif
+      break;
+   }
+
+   case MONGOC_COMPRESSOR_ZLIB_ID: {
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
+                      "compression is not yet implemented");
+      return false;
+#else
+      MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
+                      "compression is not compiled in");
+      return false;
+#endif
+      break;
+   }
+
+   default:
+      MONGOC_WARNING ("Unknown compressor ID %d",
+                      rpc->compressed.compressor_id);
+   }
+   return false;
+}
 bool
 _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
 {

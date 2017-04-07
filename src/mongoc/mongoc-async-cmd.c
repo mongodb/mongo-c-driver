@@ -354,6 +354,24 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
                          "Invalid reply from server.");
          return MONGOC_ASYNC_CMD_ERROR;
       }
+      if (acmd->rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
+         uint8_t *buf = NULL;
+         size_t len = acmd->rpc.compressed.uncompressed_size +
+                      sizeof (mongoc_rpc_header_t);
+
+         buf = bson_malloc0 (len);
+         if (!_mongoc_rpc_decompress (&acmd->rpc, buf, len)) {
+            bson_free (buf);
+            bson_set_error (&acmd->error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                            "Could not decompress server reply");
+            return MONGOC_ASYNC_CMD_ERROR;
+         }
+
+         _mongoc_buffer_destroy (&acmd->buffer);
+         _mongoc_buffer_init (&acmd->buffer, buf, len, NULL, NULL);
+      }
 
       _mongoc_rpc_swab_from_le (&acmd->rpc);
 

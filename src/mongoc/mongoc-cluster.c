@@ -397,7 +397,45 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    doc_len = (size_t) msg_len - reply_header_size;
 
    _mongoc_rpc_swab_from_le (&rpc);
-   if (rpc.header.opcode == MONGOC_OPCODE_REPLY &&
+   if (rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
+      bson_t tmp = BSON_INITIALIZER;
+      uint8_t *buf = NULL;
+      size_t len =
+         rpc.compressed.uncompressed_size + sizeof (mongoc_rpc_header_t);
+
+      reply_buf = bson_malloc0 (msg_len);
+      memcpy (reply_buf, reply_header_buf, reply_header_size);
+
+      if (doc_len != mongoc_stream_read (stream,
+                                         reply_buf + reply_header_size,
+                                         doc_len,
+                                         doc_len,
+                                         cluster->sockettimeoutms)) {
+         RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "socket error or timeout");
+         GOTO (done);
+      }
+      if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
+         GOTO (done);
+      }
+      _mongoc_cluster_inc_ingress_rpc (&rpc);
+
+      buf = bson_malloc0 (len);
+      if (!_mongoc_rpc_decompress (&rpc, buf, len)) {
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Could not decompress server reply");
+         bson_free (reply_buf);
+         bson_free (buf);
+         GOTO (done);
+      }
+
+      _mongoc_rpc_get_first_document (&rpc, &tmp);
+      bson_copy_to (&tmp, reply_ptr);
+      bson_free (reply_buf);
+      bson_free (buf);
+   } else if (rpc.header.opcode == MONGOC_OPCODE_REPLY &&
               rpc.reply_header.n_returned == 1) {
       reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
       BSON_ASSERT (reply_buf);
@@ -410,6 +448,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
+         GOTO (done);
       }
    } else {
       GOTO (done);
