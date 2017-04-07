@@ -48,6 +48,38 @@ Finally, include "mongoc.h" in your project's "stdafx.h":
 
   #include <mongoc.h>
 
+Static linking
+--------------
+
+Following the instructions above, you have dynamically linked your application to the libbson and libmongoc DLLs. This is usually the right choice. If you want to link statically instead, update your "Additional Dependencies" list by removing ``bson-1.0.lib`` and ``mongoc-1.0.lib`` and replacing them with these libraries:
+
+.. code-block:: text
+
+  C:\mongo-c-driver\lib\bson-static-1.0.lib
+  C:\mongo-c-driver\lib\mongoc-static-1.0.lib
+  ws2_32.lib
+  Secur32.lib
+  Crypt32.lib
+  BCrypt.lib
+
+.. image::
+  static/msvc-add-dependencies-static.png
+
+(To explain the purpose of each library: ``bson-static-1.0.lib`` and ``mongoc-static-1.0.lib`` are static archives of the driver code. The socket library ``ws2_32`` is required by libbson, which uses the socket routine ``gethostname`` to help guarantee ObjectId uniqueness. The ``BCrypt`` library is used by libmongoc for SSL connections to MongoDB, and ``Secur32`` and ``Crypt32`` are required for enterprise authentication methods like Kerberos.)
+
+Finally, define two preprocessor symbols before including ``mongoc.h`` in your ``stdafx.h``:
+
+.. code-block:: c
+
+  #define BSON_STATIC
+  #define MONGOC_STATIC
+  #include <mongoc.h>
+
+Making these changes to your project is only required for static linking; for most people, the dynamic-linking instructions above are preferred.
+
+Next Steps
+----------
+
 Now you can build and debug applications in Visual Studio that use libbson and libmongoc. Proceed to :ref:`making-a-connection` in the tutorial to learn how connect to MongoDB and perform operations.
 
 .. turn "rarrow" above into right-arrow with no spaces around it
