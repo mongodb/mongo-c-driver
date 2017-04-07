@@ -113,6 +113,7 @@ Additional environment variables:
   [Evergreen](https://github.com/evergreen-ci/evergreen).
 * `MONGOC_TEST_MONITORING_VERBOSE`: set to `on` for verbose output from
   Application Performance Monitoring tests.
+* `MONGOC_TEST_COMPRESSORS=snappy,zlib`: wire protocol compressors to use
 
 If you start `mongod` with SSL, set these variables to configure how
 `make test` connects to it:
