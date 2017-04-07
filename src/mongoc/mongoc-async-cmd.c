@@ -357,19 +357,11 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 
       _mongoc_rpc_swab_from_le (&acmd->rpc);
 
-      if (acmd->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      if (!_mongoc_rpc_get_first_document (&acmd->rpc, &acmd->reply)) {
          bson_set_error (&acmd->error,
                          MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Invalid reply from server.");
-         return MONGOC_ASYNC_CMD_ERROR;
-      }
-
-      if (!_mongoc_rpc_reply_get_first (&acmd->rpc.reply, &acmd->reply)) {
-         bson_set_error (&acmd->error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Failed to decode reply BSON document.");
+                         "Invalid reply from server");
          return MONGOC_ASYNC_CMD_ERROR;
       }
 

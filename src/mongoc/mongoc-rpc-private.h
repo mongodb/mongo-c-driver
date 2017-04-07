@@ -128,6 +128,8 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
                                        const uint8_t *buf,
                                        size_t buflen);
 bool
+_mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply);
+bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);
 void
 _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,

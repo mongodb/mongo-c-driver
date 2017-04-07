@@ -629,9 +629,8 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
    opcode = (mongoc_opcode_t) BSON_UINT32_FROM_LE (rpc->header.opcode);
 
    switch (opcode) {
-   case MONGOC_OPCODE_COMPRESSED: {
+   case MONGOC_OPCODE_COMPRESSED:
       return _mongoc_rpc_scatter_compressed (&rpc->compressed, buf, buflen);
-   }
    case MONGOC_OPCODE_REPLY:
       return _mongoc_rpc_scatter_reply (&rpc->reply, buf, buflen);
    case MONGOC_OPCODE_MSG:
@@ -667,6 +666,16 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
    return _mongoc_rpc_scatter_reply_header (&rpc->reply_header, buf, buflen);
 }
 
+bool
+_mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
+{
+   if (rpc->header.opcode == MONGOC_OPCODE_REPLY &&
+       _mongoc_rpc_reply_get_first (&rpc->reply, reply)) {
+      return true;
+   }
+
+   return false;
+}
 
 bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson)
@@ -847,6 +856,42 @@ _mongoc_populate_query_error (const bson_t *doc,
    EXIT;
 }
 
+bool
+_mongoc_rpc_is_failure (mongoc_rpc_t *rpc,
+                        bool is_command,
+                        int32_t error_api_version,
+                        bson_error_t *error)
+{
+   if (rpc->header.opcode == MONGOC_OPCODE_REPLY) {
+      if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
+         bson_t b;
+
+         if (_mongoc_rpc_get_first_document (rpc, &b)) {
+            _mongoc_populate_query_error (&b, error_api_version, error);
+            bson_destroy (&b);
+         } else {
+            bson_set_error (error,
+                            MONGOC_ERROR_QUERY,
+                            MONGOC_ERROR_QUERY_FAILURE,
+                            "Unknown query failure.");
+         }
+
+         return true;
+      }
+
+      if (rpc->reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "The cursor is invalid or has expired.");
+
+         return true;
+      }
+   }
+
+   return false;
+}
+
 
 /* returns true if the reply is a server error
  *
@@ -874,7 +919,16 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
    }
 
    if (is_command) {
-      if (_mongoc_rpc_reply_get_first (&rpc->reply, &b)) {
+      if (rpc->reply.n_returned != 1) {
+         bson_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Expected only one reply document, got %d",
+                         rpc->reply.n_returned);
+         RETURN (true);
+      }
+
+      if (_mongoc_rpc_get_first_document (rpc, &b)) {
          r = _mongoc_populate_cmd_error (&b, error_api_version, error);
          bson_destroy (&b);
          RETURN (r);
@@ -885,27 +939,11 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          "Failed to decode document from the server.");
          RETURN (true);
       }
-   } else if ((rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if (_mongoc_rpc_reply_get_first (&rpc->reply, &b)) {
-         _mongoc_populate_query_error (&b, error_api_version, error);
-         bson_destroy (&b);
-      } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_QUERY,
-                         MONGOC_ERROR_QUERY_FAILURE,
-                         "Unknown query failure.");
-      }
-
+   } else if (_mongoc_rpc_is_failure (
+                 rpc, is_command, error_api_version, error)) {
       RETURN (true);
    }
 
-   if ((rpc->reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CURSOR,
-                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                      "The cursor is invalid or has expired.");
-      RETURN (true);
-   }
 
    RETURN (false);
 }

@@ -89,6 +89,118 @@ static void
 _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_inc_egress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_egress_total_inc ();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_egress_delete_inc ();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_egress_update_inc ();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_egress_insert_inc ();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_egress_killcursors_inc ();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_egress_getmore_inc ();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_egress_reply_inc ();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_egress_msg_inc ();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_egress_query_inc ();
+      break;
+   case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_egress_compressed_inc ();
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_inc_ingress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_ingress_total_inc ();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_ingress_delete_inc ();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_ingress_update_inc ();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_ingress_insert_inc ();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_ingress_killcursors_inc ();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_ingress_getmore_inc ();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc ();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_ingress_msg_inc ();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_ingress_query_inc ();
+      break;
+   case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_ingress_compressed_inc ();
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
+   }
+}
+
 /* Allows caller to safely overwrite error->message with a formatted string,
  * even if the formatted string includes original error->message. */
 static void
@@ -281,25 +393,25 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
           &rpc, reply_header_buf, reply_header_size)) {
       GOTO (done);
    }
+   doc_len = (size_t) msg_len - reply_header_size;
 
    _mongoc_rpc_swab_from_le (&rpc);
-   if (rpc.header.opcode != MONGOC_OPCODE_REPLY ||
-       rpc.reply_header.n_returned != 1) {
+   if (rpc.header.opcode == MONGOC_OPCODE_REPLY &&
+              rpc.reply_header.n_returned == 1) {
+      reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
+      BSON_ASSERT (reply_buf);
+
+      if (doc_len != mongoc_stream_read (stream,
+                                         (void *) reply_buf,
+                                         doc_len,
+                                         doc_len,
+                                         cluster->sockettimeoutms)) {
+         RUN_CMD_ERR (MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "socket error or timeout");
+      }
+   } else {
       GOTO (done);
-   }
-
-   doc_len = (size_t) msg_len - reply_header_size;
-   reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
-   BSON_ASSERT (reply_buf);
-
-   if (doc_len != mongoc_stream_read (stream,
-                                      (void *) reply_buf,
-                                      doc_len,
-                                      doc_len,
-                                      cluster->sockettimeoutms)) {
-      RUN_CMD_ERR (MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "socket error or timeout");
    }
 
    if (_mongoc_populate_cmd_error (
@@ -1800,118 +1912,6 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
 {
    return _mongoc_cluster_stream_for_optype (
       cluster, MONGOC_SS_WRITE, NULL, error);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_inc_egress_rpc --
- *
- *       Helper to increment the counter for a particular RPC based on
- *       it's opcode.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static BSON_INLINE void
-_mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
-{
-   mongoc_counter_op_egress_total_inc ();
-
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_DELETE:
-      mongoc_counter_op_egress_delete_inc ();
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      mongoc_counter_op_egress_update_inc ();
-      break;
-   case MONGOC_OPCODE_INSERT:
-      mongoc_counter_op_egress_insert_inc ();
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      mongoc_counter_op_egress_killcursors_inc ();
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      mongoc_counter_op_egress_getmore_inc ();
-      break;
-   case MONGOC_OPCODE_REPLY:
-      mongoc_counter_op_egress_reply_inc ();
-      break;
-   case MONGOC_OPCODE_MSG:
-      mongoc_counter_op_egress_msg_inc ();
-      break;
-   case MONGOC_OPCODE_QUERY:
-      mongoc_counter_op_egress_query_inc ();
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      mongoc_counter_op_egress_compressed_inc ();
-      break;
-   default:
-      BSON_ASSERT (false);
-      break;
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_inc_ingress_rpc --
- *
- *       Helper to increment the counter for a particular RPC based on
- *       it's opcode.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static BSON_INLINE void
-_mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
-{
-   mongoc_counter_op_ingress_total_inc ();
-
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_DELETE:
-      mongoc_counter_op_ingress_delete_inc ();
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      mongoc_counter_op_ingress_update_inc ();
-      break;
-   case MONGOC_OPCODE_INSERT:
-      mongoc_counter_op_ingress_insert_inc ();
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      mongoc_counter_op_ingress_killcursors_inc ();
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      mongoc_counter_op_ingress_getmore_inc ();
-      break;
-   case MONGOC_OPCODE_REPLY:
-      mongoc_counter_op_ingress_reply_inc ();
-      break;
-   case MONGOC_OPCODE_MSG:
-      mongoc_counter_op_ingress_msg_inc ();
-      break;
-   case MONGOC_OPCODE_QUERY:
-      mongoc_counter_op_ingress_query_inc ();
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      mongoc_counter_op_ingress_compressed_inc ();
-      break;
-   default:
-      BSON_ASSERT (false);
-      break;
-   }
 }
 
 static bool
