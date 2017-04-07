@@ -16,10 +16,6 @@ Synopsis
 
 Sets the SSL options to use when connecting to SSL enabled MongoDB servers.
 
-Beginning in version 1.2.0, once a client has any SSL options set, all
-connections use SSL, even if ``ssl=true`` is omitted from the MongoDB URI.
-Before, SSL options were ignored unless ``ssl=true`` was included in the URI.
-
 The ``mongoc_ssl_opt_t`` struct is copied by the client along with the strings
 it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to

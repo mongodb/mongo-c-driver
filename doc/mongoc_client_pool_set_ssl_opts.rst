@@ -19,10 +19,6 @@ client pools. It ensures that all clients retrieved from
 :symbol:`mongoc_client_pool_pop()` or :symbol:`mongoc_client_pool_try_pop()`
 are configured with the same SSL settings.
 
-Beginning in version 1.2.0, once a pool has any SSL options set, all
-connections use SSL, even if ``ssl=true`` is omitted from the MongoDB URI.
-Before, SSL options were ignored unless ``ssl=true`` was included in the URI.
-
 The ``mongoc_ssl_opt_t`` struct is copied by the pool along with the strings
 it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
