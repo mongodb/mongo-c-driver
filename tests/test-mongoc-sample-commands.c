@@ -18,7 +18,7 @@
  *
  * One page on the MongoDB docs site shows a set of common tasks, with example
  * code for each driver plus the mongo shell. The source files for these code
- * examples are delimited with "Start Example 1" / "End Example 1" and so on.
+ * examples are delimited with "Start Example N" / "End Example N" and so on.
  *
  * These are the C examples for that page.
  */
@@ -88,10 +88,10 @@ test_example_one (mongoc_client_t *client, mongoc_database_t *db)
    }
    /* End Example 1 */
    ASSERT_COUNT (1, collection);
-   /* Start Example 1 post */
+   /* Start Example 1 Post */
    bson_destroy (doc);
    mongoc_collection_destroy (collection);
-   /* End Example 1 post */
+   /* End Example 1 Post */
 }
 
 
@@ -187,12 +187,12 @@ test_example_three (mongoc_client_t *client, mongoc_database_t *db)
 
    /* End Example 3 */
    ASSERT_COUNT (3, collection);
-   /* Start Example 3 post */
+   /* Start Example 3 Post */
    bson_destroy (&reply);
 done:
    mongoc_collection_destroy (collection);
    mongoc_bulk_operation_destroy (bulk);
-   /* End Example 3 post */
+   /* End Example 3 Post */
 }
 
 
