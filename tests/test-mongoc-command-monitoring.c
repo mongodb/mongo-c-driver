@@ -1739,7 +1739,8 @@ void
 test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (suite, "/command_monitoring/get_error", test_get_error);
+   TestSuite_AddMockServerTest (
+      suite, "/command_monitoring/get_error", test_get_error);
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/single",
                       test_set_callbacks_single);
@@ -1771,18 +1772,22 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/new/pooled",
                       test_bulk_op_pooled);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/single/cmd",
-                  test_query_operation_id_single_cmd);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/pooled/cmd",
-                  test_query_operation_id_pooled_cmd);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/single/op_query",
-                  test_query_operation_id_single_op_query);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/pooled/op_query",
-                  test_query_operation_id_pooled_op_query);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/single/cmd",
+      test_query_operation_id_single_cmd);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/pooled/cmd",
+      test_query_operation_id_pooled_cmd);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/single/op_query",
+      test_query_operation_id_single_op_query);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/pooled/op_query",
+      test_query_operation_id_pooled_op_query);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (
       suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);

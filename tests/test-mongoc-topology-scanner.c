@@ -404,23 +404,25 @@ test_topology_scanner_blocking_initiator (void)
 void
 test_topology_scanner_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
+   TestSuite_AddMockServerTest (
+      suite, "/TOPOLOGY/scanner", test_topology_scanner);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
+   TestSuite_AddMockServerTest (
+      suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
 #ifndef _WIN32
    TestSuite_Add (suite,
                   "/TOPOLOGY/scanner_connection_error",
                   test_topology_scanner_connection_error);
 #endif
-   TestSuite_Add (suite,
-                  "/TOPOLOGY/scanner_socket_timeout",
-                  test_topology_scanner_socket_timeout);
-   TestSuite_Add (suite,
-                  "/TOPOLOGY/blocking_initiator",
-                  test_topology_scanner_blocking_initiator);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/scanner_socket_timeout",
+                                test_topology_scanner_socket_timeout);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/blocking_initiator",
+                                test_topology_scanner_blocking_initiator);
 }

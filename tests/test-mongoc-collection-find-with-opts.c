@@ -982,66 +982,80 @@ test_find_with_opts_collation_error (void *ctx)
 void
 test_collection_find_with_opts_install (TestSuite *suite)
 {
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/dollar_or", test_dollar_or);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/snapshot_dollar_or",
-                  test_snapshot_dollar_or);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/key_named_filter",
-                  test_key_named_filter);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/query/subdoc_named_filter",
-                  test_op_query_subdoc_named_filter);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_with_opts/snapshot_dollar_or",
+                                test_snapshot_dollar_or);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_with_opts/key_named_filter",
+                                test_key_named_filter);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_with_opts/query/subdoc_named_filter",
+      test_op_query_subdoc_named_filter);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/newoption", test_newoption);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/cmd/subdoc_named_filter",
-                  test_find_cmd_subdoc_named_filter_with_option);
-   TestSuite_Add (suite, "/Collection/find_with_opts/orderby", test_sort);
-   TestSuite_Add (suite, "/Collection/find_with_opts/fields", test_fields);
-   TestSuite_Add (suite, "/Collection/find_with_opts/slice", test_slice);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/modifiers/integer",
-                  test_int_modifiers);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/modifiers/index_spec",
-                  test_index_spec_modifiers);
-   TestSuite_Add (suite, "/Collection/find_with_opts/comment", test_comment);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_with_opts/cmd/subdoc_named_filter",
+      test_find_cmd_subdoc_named_filter_with_option);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/orderby", test_sort);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/fields", test_fields);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/slice", test_slice);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_with_opts/modifiers/integer",
+                                test_int_modifiers);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_with_opts/modifiers/index_spec",
+      test_index_spec_modifiers);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/comment", test_comment);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/modifiers/bool", test_snapshot);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/showdiskloc", test_diskloc);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/returnkey", test_returnkey);
-   TestSuite_Add (suite, "/Collection/find_with_opts/skip", test_skip);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/skip", test_skip);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/batch_size", test_batch_size);
-   TestSuite_Add (suite, "/Collection/find_with_opts/limit", test_limit);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/limit", test_limit);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/singlebatch", test_singlebatch);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/singlebatch/no_limit",
-                  test_singlebatch_no_limit);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/unrecognized_dollar",
-                  test_unrecognized_dollar_option);
-   TestSuite_Add (suite, "/Collection/find_with_opts/flags", test_query_flags);
-   TestSuite_Add (suite, "/Collection/find_with_opts/exhaust", test_exhaust);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/await/getmore_cmd",
-                  test_getmore_cmd_await);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_with_opts/singlebatch/no_limit",
+      test_singlebatch_no_limit);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_with_opts/unrecognized_dollar",
+      test_unrecognized_dollar_option);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/flags", test_query_flags);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find_with_opts/exhaust", test_exhaust);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_with_opts/await/getmore_cmd",
+                                test_getmore_cmd_await);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_with_opts/server_id", test_find_w_server_id);
-   TestSuite_Add (suite,
-                  "/Collection/find_cmd_with_opts/server_id",
-                  test_find_cmd_w_server_id);
-   TestSuite_Add (suite,
-                  "/Collection/find_with_opts/server_id/sharded",
-                  test_find_w_server_id_sharded);
-   TestSuite_Add (suite,
-                  "/Collection/find_cmd_with_opts/server_id/sharded",
-                  test_find_cmd_w_server_id_sharded);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_cmd_with_opts/server_id",
+                                test_find_cmd_w_server_id);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_with_opts/server_id/sharded",
+                                test_find_w_server_id_sharded);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_cmd_with_opts/server_id/sharded",
+      test_find_cmd_w_server_id_sharded);
    TestSuite_AddLive (suite,
                       "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);

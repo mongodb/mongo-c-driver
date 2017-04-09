@@ -679,28 +679,30 @@ test_read_prefs_mongos_tags (void)
 void
 test_read_prefs_install (TestSuite *suite)
 {
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/standalone/null", test_read_prefs_standalone_null);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/standalone/primary",
-                  test_read_prefs_standalone_primary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/standalone/secondary",
-                  test_read_prefs_standalone_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/standalone/primary",
+                                test_read_prefs_standalone_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/standalone/secondary",
+                                test_read_prefs_standalone_secondary);
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/standalone/tags", test_read_prefs_standalone_tags);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/rsprimary/primary", test_read_prefs_primary_rsprimary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/rssecondary/secondary",
-                  test_read_prefs_secondary_rssecondary);
-   TestSuite_Add (suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/rssecondary/secondary",
+                                test_read_prefs_secondary_rssecondary);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/primary", test_read_prefs_mongos_primary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/secondary", test_read_prefs_mongos_secondary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/mongos/secondaryPreferred",
-                  test_read_prefs_mongos_secondary_preferred);
-   TestSuite_Add (suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/mongos/secondaryPreferred",
+                                test_read_prefs_mongos_secondary_preferred);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
 }

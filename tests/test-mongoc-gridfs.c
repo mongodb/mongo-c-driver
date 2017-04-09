@@ -1251,11 +1251,12 @@ test_find_one_empty (void)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_client_t *client;
-   bson_error_t error = { 1, 2, "hello" };
+   bson_error_t error = {1, 2, "hello"};
 
    client = test_framework_client_new ();
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "list", &error), error);
-   ASSERT (!mongoc_gridfs_find_one (gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
+   ASSERT (!mongoc_gridfs_find_one (
+      gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
 
    /* ensure "error" is cleared if we successfully find no file */
    ASSERT_CMPINT (error.domain, ==, 0);
@@ -1301,6 +1302,6 @@ test_gridfs_install (TestSuite *suite)
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/GridFS/missing_file", test_missing_file);
    TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }

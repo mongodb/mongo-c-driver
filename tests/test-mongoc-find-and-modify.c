@@ -496,29 +496,32 @@ test_find_and_modify_install (TestSuite *suite)
 {
    TestSuite_AddLive (
       suite, "/find_and_modify/find_and_modify", test_find_and_modify);
-   TestSuite_Add (suite,
-                  "/find_and_modify/find_and_modify/bypass/true",
-                  test_find_and_modify_bypass_true);
-   TestSuite_Add (suite,
-                  "/find_and_modify/find_and_modify/bypass/false",
-                  test_find_and_modify_bypass_false);
-   TestSuite_Add (suite,
-                  "/find_and_modify/find_and_modify/write_concern",
-                  test_find_and_modify_write_concern_wire_32);
-   TestSuite_Add (suite,
-                  "/find_and_modify/find_and_modify/write_concern_pre_32",
-                  test_find_and_modify_write_concern_wire_pre_32);
+   TestSuite_AddMockServerTest (suite,
+                                "/find_and_modify/find_and_modify/bypass/true",
+                                test_find_and_modify_bypass_true);
+   TestSuite_AddMockServerTest (suite,
+                                "/find_and_modify/find_and_modify/bypass/false",
+                                test_find_and_modify_bypass_false);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/find_and_modify/find_and_modify/write_concern",
+      test_find_and_modify_write_concern_wire_32);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/find_and_modify/find_and_modify/write_concern_pre_32",
+      test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
                       test_find_and_modify_write_concern_wire_32_failure,
                       NULL,
                       NULL,
                       should_run_fam_wc);
-   TestSuite_Add (suite, "/find_and_modify/opts", test_find_and_modify_opts);
-   TestSuite_Add (suite,
-                  "/find_and_modify/collation/ok",
-                  test_find_and_modify_collation_ok);
-   TestSuite_Add (suite,
-                  "/find_and_modify/collation/fail",
-                  test_find_and_modify_collation_fail);
+   TestSuite_AddMockServerTest (
+      suite, "/find_and_modify/opts", test_find_and_modify_opts);
+   TestSuite_AddMockServerTest (suite,
+                                "/find_and_modify/collation/ok",
+                                test_find_and_modify_collation_ok);
+   TestSuite_AddMockServerTest (suite,
+                                "/find_and_modify/collation/fail",
+                                test_find_and_modify_collation_fail);
 }

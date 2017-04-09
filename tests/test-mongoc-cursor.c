@@ -178,8 +178,8 @@ test_limit (void)
       }
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-      ASSERT(!mongoc_cursor_is_alive(cursor));
-      ASSERT(!mongoc_cursor_more(cursor));
+      ASSERT (!mongoc_cursor_is_alive (cursor));
+      ASSERT (!mongoc_cursor_more (cursor));
       ASSERT_CMPINT (n_docs, ==, 5);
       ASSERT (!mongoc_cursor_set_limit (cursor, 123)); /* no effect */
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
@@ -685,18 +685,20 @@ test_cursor_empty_collection (void)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
-   collection = mongoc_client_get_collection (client, "test", "test_cursor_empty_collection");
+   collection = mongoc_client_get_collection (
+      client, "test", "test_cursor_empty_collection");
    mongoc_collection_remove (
       collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
 
-   cursor = mongoc_collection_find_with_opts (collection, tmp_bson ("{}"), NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL, NULL);
 
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
    ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
 
-   mongoc_cursor_next(cursor, &doc);
+   mongoc_cursor_next (cursor, &doc);
 
    ASSERT (!mongoc_cursor_error (cursor, &error));
    ASSERT (!mongoc_cursor_is_alive (cursor));
@@ -1637,38 +1639,42 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
-   TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
-   TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/kill/single", test_kill_cursors_single);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/with_primary/pooled",
-                  test_getmore_fail_with_primary_pooled);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/with_primary/single",
-                  test_getmore_fail_with_primary_single);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/no_primary/pooled",
-                  test_getmore_fail_no_primary_pooled);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/no_primary/single",
-                  test_getmore_fail_no_primary_single);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/with_primary",
-                  test_client_kill_cursor_with_primary);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/without_primary",
-                  test_client_kill_cursor_without_primary);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/with_primary/wv4",
-                  test_client_kill_cursor_with_primary_wire_version_4);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/without_primary/wv4",
-                  test_client_kill_cursor_without_primary_wire_version_4);
-
-   TestSuite_AddLive (suite, "/Cursor/empty_collection", test_cursor_empty_collection);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/with_primary/pooled",
+                                test_getmore_fail_with_primary_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/with_primary/single",
+                                test_getmore_fail_with_primary_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/no_primary/pooled",
+                                test_getmore_fail_no_primary_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/no_primary/single",
+                                test_getmore_fail_no_primary_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/client_kill_cursor/with_primary",
+                                test_client_kill_cursor_with_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/client_kill_cursor/without_primary",
+                                test_client_kill_cursor_without_primary);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/client_kill_cursor/with_primary/wv4",
+      test_client_kill_cursor_with_primary_wire_version_4);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/client_kill_cursor/without_primary/wv4",
+      test_client_kill_cursor_without_primary_wire_version_4);
+   TestSuite_AddLive (
+      suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_agg",
                       test_cursor_new_from_aggregate,
@@ -1700,28 +1706,31 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
    TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/single/primary", test_hint_single_primary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
-   TestSuite_Add (suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
-   TestSuite_Add (suite, "/Cursor/n_return/op_query", test_n_return_op_query);
-   TestSuite_Add (suite,
-                  "/Cursor/n_return/op_query/with_opts",
-                  test_n_return_op_query_with_opts);
-   TestSuite_Add (suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
-   TestSuite_Add (suite,
-                  "/Cursor/n_return/find_cmd/with_opts",
-                  test_n_return_find_cmd_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/op_query", test_n_return_op_query);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/n_return/op_query/with_opts",
+                                test_n_return_op_query_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/n_return/find_cmd/with_opts",
+                                test_n_return_find_cmd_with_opts);
 }

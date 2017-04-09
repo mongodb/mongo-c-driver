@@ -680,19 +680,19 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/pooled",
       test_topology_events_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
       test_heartbeat_events_single_succeeded);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
       test_heartbeat_events_single_failed);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
       test_heartbeat_events_pooled_succeeded);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
       test_heartbeat_events_pooled_failed);

@@ -4185,7 +4185,7 @@ test_bulk_install (TestSuite *suite)
                                   _test_legacy_write_err,
                                   NULL,
                                   (void *) err_test,
-                                  NULL);
+                                  TestSuite_CheckMockServerAllowed);
 
                err_test++;
 
@@ -4197,7 +4197,7 @@ test_bulk_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
    TestSuite_Add (suite, "/BulkOperation/error", test_bulk_error);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/BulkOperation/error/unordered", test_bulk_error_unordered);
    TestSuite_AddLive (
       suite, "/BulkOperation/insert_ordered", test_insert_ordered);
@@ -4346,53 +4346,60 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_error_unordered_bulk",
                       test_single_error_unordered_bulk);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/ordered",
-                  test_write_concern_legacy_ordered);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/ordered/multi_err",
-                  test_write_concern_legacy_ordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/unordered",
-                  test_write_concern_legacy_unordered);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/unordered/multi_err",
-                  test_write_concern_legacy_unordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/write_command/ordered",
-                  test_write_concern_write_command_ordered);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/legacy/ordered",
+                                test_write_concern_legacy_ordered);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/legacy/ordered/multi_err",
+      test_write_concern_legacy_ordered_multi_err);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/legacy/unordered",
+                                test_write_concern_legacy_unordered);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/legacy/unordered/multi_err",
+      test_write_concern_legacy_unordered_multi_err);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/write_command/ordered",
+      test_write_concern_write_command_ordered);
+   TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered/multi_err",
       test_write_concern_write_command_ordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/write_command/unordered",
-                  test_write_concern_write_command_unordered);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/write_command/unordered",
+      test_write_concern_write_command_unordered);
+   TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/unordered/multi_err",
       test_write_concern_write_command_unordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/legacy/v1",
-                  test_write_concern_error_legacy_v1);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/write_command/v1",
-                  test_write_concern_error_write_command_v1);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/legacy/v2",
-                  test_write_concern_error_legacy_v2);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/write_command/v2",
-                  test_write_concern_error_write_command_v2);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/error/legacy/v1",
+                                test_write_concern_error_legacy_v1);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/error/write_command/v1",
+      test_write_concern_error_write_command_v1);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/error/legacy/v2",
+                                test_write_concern_error_legacy_v2);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/error/write_command/v2",
+      test_write_concern_error_write_command_v2);
    TestSuite_AddLive (suite,
                       "/BulkOperation/multiple_error_unordered_bulk",
                       test_multiple_error_unordered_bulk);
-   TestSuite_Add (suite,
-                  "/BulkOperation/wtimeout_duplicate_key/legacy",
-                  test_wtimeout_plus_duplicate_key_err_legacy);
-   TestSuite_Add (suite,
-                  "/BulkOperation/wtimeout_duplicate_key/write_commands",
-                  test_wtimeout_plus_duplicate_key_err_write_commands);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/wtimeout_duplicate_key/legacy",
+                                test_wtimeout_plus_duplicate_key_err_legacy);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/wtimeout_duplicate_key/write_commands",
+      test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull (suite,
                       "/BulkOperation/large_inserts_ordered",
                       test_large_inserts_ordered,
@@ -4421,55 +4428,55 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/write_concern/over_1000",
                       test_bulk_write_concern_over_1000);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/legacy/secondary",
-                  test_hint_single_legacy_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/legacy/primary",
-                  test_hint_single_legacy_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/command/secondary",
-                  test_hint_single_command_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/command/primary",
-                  test_hint_single_command_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/legacy/secondary",
-                  test_hint_pooled_legacy_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/legacy/primary",
-                  test_hint_pooled_legacy_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/command/secondary",
-                  test_hint_pooled_command_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/command/primary",
-                  test_hint_pooled_command_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/legacy/secondary",
+                                test_hint_single_legacy_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/legacy/primary",
+                                test_hint_single_legacy_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/command/secondary",
+                                test_hint_single_command_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/command/primary",
+                                test_hint_single_command_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/legacy/secondary",
+                                test_hint_pooled_legacy_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/legacy/primary",
+                                test_hint_pooled_legacy_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/command/secondary",
+                                test_hint_pooled_command_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/command/primary",
+                                test_hint_pooled_command_primary);
    TestSuite_AddLive (suite, "/BulkOperation/reply_w0", test_bulk_reply_w0);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w0/wire5",
-                  test_bulk_collation_w0_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w0/wire4",
-                  test_bulk_collation_w0_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w1/wire5",
-                  test_bulk_collation_w1_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w1/wire4",
-                  test_bulk_collation_w1_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w0/wire5",
-                  test_bulk_collation_multi_w0_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w0/wire4",
-                  test_bulk_collation_multi_w0_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w1/wire5",
-                  test_bulk_collation_multi_w1_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w1/wire4",
-                  test_bulk_collation_multi_w1_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w0/wire5",
+                                test_bulk_collation_w0_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w0/wire4",
+                                test_bulk_collation_w0_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w1/wire5",
+                                test_bulk_collation_w1_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w1/wire4",
+                                test_bulk_collation_w1_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w0/wire5",
+                                test_bulk_collation_multi_w0_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w0/wire4",
+                                test_bulk_collation_multi_w0_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w1/wire5",
+                                test_bulk_collation_multi_w1_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w1/wire4",
+                                test_bulk_collation_multi_w1_wire4);
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
                   test_bulk_update_one_error_message);

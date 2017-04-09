@@ -287,7 +287,6 @@ mock_server_set_ssl_opts (mock_server_t *server, mongoc_ssl_opt_t *opts)
  *
  *--------------------------------------------------------------------------
  */
-
 uint16_t
 mock_server_run (mock_server_t *server)
 {
@@ -295,6 +294,9 @@ mock_server_run (mock_server_t *server)
    struct sockaddr_in bind_addr;
    int optval;
    uint16_t bound_port;
+
+   /* CDRIVER-2115: don't run mock server tests on 32-bit */
+   BSON_ASSERT (sizeof (void *) * 8 >= 64);
 
    MONGOC_INFO ("Starting mock server on port %d.", server->port);
 

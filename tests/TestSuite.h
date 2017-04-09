@@ -474,6 +474,10 @@ int
 TestSuite_CheckLive (void);
 void
 TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
+int
+TestSuite_CheckMockServerAllowed (void);
+void
+TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func);
 void
 TestSuite_AddWC (TestSuite *suite,
                  const char *name,

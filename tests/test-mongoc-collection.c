@@ -3023,6 +3023,10 @@ test_aggregate_legacy (void *data)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    /* wire protocol version 0 */
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
@@ -3074,6 +3078,10 @@ test_aggregate_modern (void *data)
    request_t *request;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    /* wire protocol version 1 */
    server = mock_server_with_autoismaster (1);
@@ -4520,7 +4528,7 @@ test_aggregate_secondary_sharded (void)
                                "     'ns': 'db.collection',"
                                "     'firstBatch': []}}");
 
-   ASSERT (!future_get_bool (future));  /* cursor_next returns false */
+   ASSERT (!future_get_bool (future)); /* cursor_next returns false */
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    request_destroy (request);
@@ -4858,27 +4866,32 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/large",
-                  test_legacy_bulk_insert_large);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_middle",
-                  test_legacy_bulk_insert_oversized_middle);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_middle_continue",
-                  test_legacy_bulk_insert_oversized_continue_middle);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_first",
-                  test_legacy_bulk_insert_oversized_first);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_first_continue",
-                  test_legacy_bulk_insert_oversized_first_continue);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_last",
-                  test_legacy_bulk_insert_oversized_last);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_last_continue",
-                  test_legacy_bulk_insert_oversized_last_continue);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/bulk_insert/legacy/large",
+                                test_legacy_bulk_insert_large);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_middle",
+      test_legacy_bulk_insert_oversized_middle);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_middle_continue",
+      test_legacy_bulk_insert_oversized_continue_middle);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_first",
+      test_legacy_bulk_insert_oversized_first);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_first_continue",
+      test_legacy_bulk_insert_oversized_first_continue);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/bulk_insert/legacy/oversized_last",
+                                test_legacy_bulk_insert_oversized_last);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_last_continue",
+      test_legacy_bulk_insert_oversized_last_continue);
 
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
@@ -4888,10 +4901,11 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
-   TestSuite_Add (suite,
-                  "/Collection/insert/oversize/mongos",
-                  test_legacy_insert_oversize_mongos);
-   TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/insert/oversize/mongos",
+                                test_legacy_insert_oversize_mongos);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_AddLive (suite, "/Collection/save", test_save);
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
@@ -4899,10 +4913,10 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/index", test_index);
    TestSuite_AddLive (
       suite, "/Collection/index_w_write_concern", test_index_w_write_concern);
-   TestSuite_Add (suite,
-                  "/Collection/index/collation/wire4",
-                  test_index_with_collation_fail);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/index/collation/wire4",
+                                test_index_with_collation_fail);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/index/collation/wire5", test_index_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
@@ -4929,14 +4943,16 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/count", test_count);
-   TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
-   TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/count_with_opts", test_count_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/count/read_pref", test_count_read_pref);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/count/read_concern", test_count_read_concern);
-   TestSuite_Add (suite,
-                  "/Collection/count/collation/wire4",
-                  test_count_with_collation_fail);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/count/collation/wire4",
+                                test_count_with_collation_fail);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/count/collation/wire5", test_count_with_collation_ok);
    TestSuite_AddFull (suite,
                       "/Collection/count/read_concern_live",
@@ -4946,17 +4962,17 @@ test_collection_install (TestSuite *suite)
                       mongod_supports_majority_read_concern);
    TestSuite_AddLive (suite, "/Collection/drop", test_drop);
    TestSuite_AddLive (suite, "/Collection/aggregate", test_aggregate);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/inherit/collection",
-                  test_aggregate_inherit_collection);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/inherit/collection",
+                                test_aggregate_inherit_collection);
    TestSuite_AddLive (
       suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_AddLive (
       suite, "/Collection/aggregate/secondary", test_aggregate_secondary);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/secondary/sharded",
-                  test_aggregate_secondary_sharded);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/secondary/sharded",
+                                test_aggregate_secondary_sharded);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate/bypass_document_validation",
@@ -4964,17 +4980,17 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/collation/wire4",
-                  test_aggregate_with_collation_fail);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/collation/wire5",
-                  test_aggregate_with_collation_ok);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/collation/wire4",
+                                test_aggregate_with_collation_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/collation/wire5",
+                                test_aggregate_with_collation_ok);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate_w_server_id/sharded",
-                  test_aggregate_w_server_id_sharded);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate_w_server_id/sharded",
+                                test_aggregate_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate_w_server_id/option",
                       test_aggregate_server_id_option,
@@ -4989,8 +5005,9 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
    TestSuite_AddLive (suite, "/Collection/stats", test_stats);
-   TestSuite_Add (suite, "/Collection/stats/read_pref", test_stats_read_pref);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/stats/read_pref", test_stats_read_pref);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_read_concern", test_find_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/getmore_read_concern_live",
@@ -5000,12 +5017,13 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (
       suite, "/Collection/find_and_modify", test_find_and_modify);
-   TestSuite_Add (suite,
-                  "/Collection/find_and_modify/write_concern",
-                  test_find_and_modify_write_concern_wire_32);
-   TestSuite_Add (suite,
-                  "/Collection/find_and_modify/write_concern_pre_32",
-                  test_find_and_modify_write_concern_wire_pre_32);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_and_modify/write_concern",
+                                test_find_and_modify_write_concern_wire_32);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_and_modify/write_concern_pre_32",
+      test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite,
                       "/Collection/large_return",
                       test_large_return,
@@ -5013,8 +5031,9 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
-   TestSuite_Add (suite, "/Collection/limit", test_find_limit);
-   TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
+   TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/batch_size", test_find_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/command_fully_qualified",
                       test_command_fq,
@@ -5022,7 +5041,7 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);

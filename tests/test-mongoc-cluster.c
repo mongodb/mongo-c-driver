@@ -155,6 +155,10 @@ _test_cluster_node_disconnect (bool pooled)
    uint16_t client_port_0, client_port_1;
    bson_error_t error;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    capture_logs (true);
 
    server = mock_server_with_autoismaster (0);
@@ -315,6 +319,10 @@ _test_write_disconnect (bool legacy)
    future_t *future;
    request_t *request;
    mongoc_topology_scanner_node_t *scanner_node;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -497,12 +505,12 @@ test_cluster_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_Add (suite,
-                  "/Cluster/command/timeout/single",
-                  test_cluster_command_timeout_single);
-   TestSuite_Add (suite,
-                  "/Cluster/command/timeout/pooled",
-                  test_cluster_command_timeout_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command/timeout/single",
+                                test_cluster_command_timeout_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command/timeout/pooled",
+                                test_cluster_command_timeout_pooled);
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,
@@ -515,10 +523,10 @@ test_cluster_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_Add (suite,
-                  "/Cluster/write_command/socket_check",
-                  test_write_command_socket_check);
-   TestSuite_Add (suite,
-                  "/Cluster/legacy_write/socket_check",
-                  test_legacy_write_socket_check);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/write_command/socket_check",
+                                test_write_command_socket_check);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/legacy_write/socket_check",
+                                test_legacy_write_socket_check);
 }

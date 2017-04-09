@@ -62,6 +62,10 @@ test_ismaster_impl (bool with_ssl)
    mongoc_ssl_opt_t copt = {0};
 #endif
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
 
    for (i = 0; i < NSERVERS; i++) {
@@ -174,8 +178,9 @@ test_ismaster_ssl (void)
 void
 test_async_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
+   TestSuite_AddMockServerTest (suite, "/Async/ismaster", test_ismaster);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
-   TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
+   TestSuite_AddMockServerTest (
+      suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #endif
 }

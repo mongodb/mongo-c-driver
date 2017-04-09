@@ -132,6 +132,10 @@ _test_topology_reconcile_rs (bool pooled)
    mongoc_read_prefs_t *primary_read_prefs;
    mongoc_read_prefs_t *tag_read_prefs;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server0 = mock_server_new ();
    server1 = mock_server_new ();
    mock_server_run (server0);
@@ -248,6 +252,10 @@ _test_topology_reconcile_sharded (bool pooled)
    request_t *request;
    char *secondary_response;
    mongoc_server_description_t *sd;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    mongos = mock_server_new ();
    secondary = mock_server_new ();

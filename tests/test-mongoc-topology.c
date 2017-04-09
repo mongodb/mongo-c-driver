@@ -159,6 +159,10 @@ _test_server_selection (bool try_once)
    request_t *request;
    mongoc_server_description_t *sd;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -471,8 +475,6 @@ test_max_wire_version_race_condition (void *ctx)
 }
 
 
-/* disabled on Solaris, CDRIVER-1995 */
-#ifndef __sun
 static void
 test_cooldown_standalone (void *ctx)
 {
@@ -484,6 +486,10 @@ test_cooldown_standalone (void *ctx)
    bson_error_t error;
    request_t *request;
    mongoc_server_description_t *sd;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -549,6 +555,10 @@ test_cooldown_rs (void *ctx)
    bson_error_t error;
    request_t *request;
    mongoc_server_description_t *sd;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    for (i = 0; i < 2; i++) {
       servers[i] = mock_server_new ();
@@ -638,7 +648,6 @@ test_cooldown_rs (void *ctx)
    mock_server_destroy (servers[0]);
    mock_server_destroy (servers[1]);
 }
-#endif /* __sun */
 
 
 static void
@@ -909,6 +918,10 @@ test_rtt (void *ctx)
    mongoc_server_description_t *sd;
    int64_t rtt_msec;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -1037,8 +1050,6 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
-/* disabled on Solaris, CDRIVER-1995 */
-#ifndef __sun
    TestSuite_AddFull (suite,
                       "/Topology/cooldown/standalone",
                       test_cooldown_standalone,
@@ -1051,31 +1062,30 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-#endif
    TestSuite_AddFull (suite,
                       "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,
                       NULL,
                       NULL,
                       test_framework_skip_if_offline);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Topology/try_once/succeed", test_select_after_try_once);
    TestSuite_AddLive (
       suite, "/Topology/invalid_server_id", test_invalid_server_id);
-   TestSuite_Add (suite,
-                  "/Topology/server_removed/single",
-                  test_server_removed_during_handshake_single);
-   TestSuite_Add (suite,
-                  "/Topology/server_removed/pooled",
-                  test_server_removed_during_handshake_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/server_removed/single",
+                                test_server_removed_during_handshake_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/server_removed/pooled",
+                                test_server_removed_during_handshake_pooled);
    TestSuite_AddFull (suite,
                       "/Topology/rtt",
                       test_rtt,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
 }

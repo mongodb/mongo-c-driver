@@ -317,6 +317,17 @@ TestSuite_CheckDummy (void)
    return 1;
 }
 
+int
+TestSuite_CheckMockServerAllowed (void)
+{
+   /* CDRIVER-2115: don't run mock server tests on 32-bit */
+   if (sizeof (void *) * 8 >= 64) {
+      return 1;
+   } else {
+      return 0;
+   }
+}
+
 static void
 TestSuite_AddHelper (void *cb_)
 {
@@ -350,6 +361,16 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
                       NULL,
                       (void *) func,
                       TestSuite_CheckLive);
+}
+
+
+void
+TestSuite_AddMockServerTest (TestSuite *suite,
+                             const char *name,
+                             TestFunc func)
+{
+   TestSuite_AddFull (suite, name, (void *) func, NULL, NULL,
+                      TestSuite_CheckMockServerAllowed);
 }
 
 

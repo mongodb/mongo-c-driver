@@ -300,9 +300,9 @@ test_client_max_staleness_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_Add (
       suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
-   TestSuite_Add (suite,
-                  "/Client/max_staleness/mongos",
-                  test_mongos_max_staleness_read_pref);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/max_staleness/mongos",
+                                test_mongos_max_staleness_read_pref);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date",
                       test_last_write_date,
