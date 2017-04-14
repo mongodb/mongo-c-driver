@@ -59,7 +59,7 @@ if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   cd ../..
 
   # Our CMake build system always installs both dynamic and static libmongoc.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $SSL_CMAKE_OPTION .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION .
   make
   make install
   EXPECT_STATIC=1

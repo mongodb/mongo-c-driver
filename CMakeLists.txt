@@ -33,7 +33,28 @@ if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
    message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
 endif()
 
-include(FindBSON REQUIRED)
+# The input variable BSON_ROOT_DIR is respected for backwards compatibility,
+# but you should use the standard CMAKE_PREFIX_PATH instead.
+message (STATUS "Searching for libbson CMake packages")
+find_package (libbson-1.0
+   "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+   HINTS
+   ${BSON_ROOT_DIR}
+   REQUIRED)
+
+find_package (libbson-static-1.0
+   "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+   HINTS
+   ${BSON_ROOT_DIR}
+   REQUIRED)
+
+message ("--   libbson found version \"${BSON_VERSION}\"")
+message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
+message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+
+message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
+message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
 
 if (NOT (ENABLE_SSL STREQUAL DARWIN
          OR ENABLE_SSL STREQUAL WINDOWS
@@ -290,13 +311,9 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories("${SOURCE_DIR}/src/mongoc")
-include_directories (${BSON_INCLUDE_DIRS})
-link_directories (${BSON_LIBRARY_DIRS})
-
-set(LIBS ${LIBS} ${BSON_LIBRARIES})
 
 if (UNIX AND NOT APPLE)
-   set(LIBS ${LIBS} rt)
+   set(SHM_LIB -lrt)
 endif()
 
 if (APPLE)
@@ -483,7 +500,7 @@ if (MONGOC_ENABLE_SASL)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-      set (LIBS ${LIBS} secur32.lib crypt32.lib Shlwapi.lib)
+      set (SASL_LIBS ${SASL_LIBS} secur32.lib crypt32.lib Shlwapi.lib)
    endif()
 endif()
 
@@ -492,13 +509,15 @@ add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-set (LIBS ${LIBS} ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
 
-target_link_libraries(mongoc_shared ${LIBS})
-target_link_libraries(mongoc_static ${LIBS})
+target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
+target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
+target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
 
-set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
-set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
+target_include_directories (mongoc_static PUBLIC ${BSON_STATIC_INCLUDE_DIRS})
+target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
 
 # CMake wants to make different symlinks than the Autotools, see
 # https://cmake.org/pipermail/cmake/2007-September/016501.html
@@ -519,7 +538,7 @@ function(mongoc_add_test test use_shared)
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
       else()
-         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+         target_compile_definitions(${test} PUBLIC "MONGOC_COMPILATION")
          target_link_libraries(${test} mongoc_static)
       endif()
       if(WIN32)
@@ -534,7 +553,6 @@ function(mongoc_add_example example use_shared)
       if (${use_shared})
          target_link_libraries(${example} mongoc_shared)
       else()
-         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
          target_link_libraries(${example} mongoc_static)
       endif()
       if(WIN32)
