@@ -346,6 +346,18 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                  \
    } while (0)
 
+#define ASSERT_HAS_NOT_FIELD(_bson, _field)                                \
+   do {                                                                    \
+      if (bson_has_field ((_bson), (_field))) {                            \
+         fprintf (                                                         \
+            stderr,                                                        \
+            "FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
+            (_field),                                                      \
+            bson_as_extended_json (_bson, NULL));                          \
+         abort ();                                                         \
+      }                                                                    \
+   } while (0)
+
 /* don't check durations when testing with valgrind */
 #define ASSERT_CMPTIME(actual, maxduration)      \
    do {                                          \
