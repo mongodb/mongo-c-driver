@@ -567,36 +567,13 @@ mongoc_uri_option_is_bool (const char *key)
 bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
-   if (mongoc_uri_option_is_bool (key) || mongoc_uri_option_is_int32 (key)) {
-      return false;
-   }
-
-   if (!strcasecmp (key, MONGOC_URI_READPREFERENCETAGS) ||
-       !strcasecmp (key, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
-      return false;
-   }
-
-   if (!strcasecmp (key, "username") || !strcasecmp (key, "password") ||
-       !strcasecmp (key, MONGOC_URI_AUTHSOURCE) ||
-       !strcasecmp (key, "database")) {
-      return false;
-   }
-
-   if (!strcasecmp (key, MONGOC_URI_COMPRESSORS)) {
-      return false;
-   }
-
-   if (!strcasecmp (key, MONGOC_URI_APPNAME) ||
-       !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME) ||
-       !strcasecmp (key, MONGOC_URI_REPLICASET) ||
-       !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
-       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
-       !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
-       !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE)) {
-      return true;
-   }
-
-   return false;
+   return !strcasecmp (key, MONGOC_URI_APPNAME) ||
+          !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME) ||
+          !strcasecmp (key, MONGOC_URI_REPLICASET) ||
+          !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
+          !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
+          !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD) ||
+          !strcasecmp (key, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
 }
 
 static bool
