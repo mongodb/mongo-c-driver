@@ -18,6 +18,7 @@
 int
 main (int argc, char *argv[])
 {
+   const char *uri_str = "mongodb://localhost:27017";
    mongoc_client_t *client;
    mongoc_database_t *database;
    mongoc_collection_t *collection;
@@ -32,9 +33,16 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    /*
+    * Optionally get MongoDB URI from command line
+    */
+   if (argc > 1) {
+      uri_str = argv[1];
+   }
+
+   /*
     * Create a new client instance
     */
-   client = mongoc_client_new ("mongodb://localhost:27017");
+   client = mongoc_client_new (uri_str);
 
    /*
     * Register the application name so we can track it in the profile logs
