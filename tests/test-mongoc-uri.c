@@ -1425,6 +1425,64 @@ test_mongoc_uri_ssl (void)
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
+      "=foo.pem");
+   ASSERT (mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
+      "=foo.pem");
+   ASSERT (mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true");
+   ASSERT (mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=false");
+   ASSERT (mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
+      "=foo.pem");
+   ASSERT (!mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
+      "=foo.pem");
+   ASSERT (!mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
+      "=true");
+   ASSERT (!mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES
+      "=false");
+   ASSERT (!mongoc_uri_get_ssl (uri));
+   mongoc_uri_destroy (uri);
 }
 
 

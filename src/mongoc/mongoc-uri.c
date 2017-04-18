@@ -1650,8 +1650,18 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
 
    BSON_ASSERT (uri);
 
-   return (bson_iter_init_find_case (&iter, &uri->options, MONGOC_URI_SSL) &&
-           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   if (bson_iter_init_find_case (&iter, &uri->options, MONGOC_URI_SSL) &&
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      return bson_iter_bool (&iter);
+   }
+   if (bson_has_field (&uri->options, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
+       bson_has_field (&uri->options, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE) ||
+       bson_has_field (&uri->options, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
+       bson_has_field (&uri->options, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES)) {
+      return true;
+   }
+
+   return false;
 }
 
 /*
