@@ -29,22 +29,9 @@
  */
 
 static bool
-server_has_write_commands (mongoc_client_t *client)
+server_has_write_commands ()
 {
-   bson_t *ismaster_cmd = tmp_bson ("{'ismaster': 1}");
-   bson_t ismaster;
-   bson_iter_t iter;
-   bool expect;
-
-   BSON_ASSERT (mongoc_client_command_simple (
-      client, "admin", ismaster_cmd, NULL, &ismaster, NULL));
-
-   expect = (bson_iter_init_find_case (&iter, &ismaster, "maxWireVersion") &&
-             BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) > 1);
-
-   bson_destroy (&ismaster);
-
-   return expect;
+   return test_framework_max_wire_version_at_least (1);
 }
 
 
@@ -237,7 +224,7 @@ test_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_bulk");
    BSON_ASSERT (collection);
@@ -393,7 +380,7 @@ test_insert (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_insert");
    BSON_ASSERT (collection);
@@ -539,7 +526,7 @@ test_upsert (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upsert");
    BSON_ASSERT (collection);
@@ -676,7 +663,7 @@ test_upserted_index (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upserted_index");
    BSON_ASSERT (collection);
@@ -801,7 +788,7 @@ test_update_one (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update_one");
    BSON_ASSERT (collection);
@@ -874,7 +861,7 @@ test_replace_one (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_replace_one");
    BSON_ASSERT (collection);
@@ -1008,7 +995,7 @@ test_upsert_large (void *ctx)
    memset (large_str, 'a', sz);
    large_str[sz - 1] = '\0';
    client = test_framework_client_new ();
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
    collection = get_test_collection (client, "test_upsert_large");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
@@ -1064,7 +1051,7 @@ test_upsert_huge (void *ctx)
    client = test_framework_client_new ();
    BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upsert_huge");
    BSON_ASSERT (collection);
@@ -1144,7 +1131,7 @@ test_update (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update");
    BSON_ASSERT (collection);
@@ -1904,7 +1891,7 @@ test_index_offset (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_index_offset");
    BSON_ASSERT (collection);
@@ -1960,7 +1947,7 @@ test_single_ordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_ordered_bulk");
    BSON_ASSERT (collection);
@@ -2011,7 +1998,7 @@ test_insert_continue_on_error (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_insert_continue_on_error");
    BSON_ASSERT (collection);
@@ -2059,7 +2046,7 @@ test_update_continue_on_error (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update_continue_on_error");
    BSON_ASSERT (collection);
@@ -2125,7 +2112,7 @@ test_remove_continue_on_error (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_remove_continue_on_error");
    BSON_ASSERT (collection);
@@ -2176,7 +2163,7 @@ test_single_error_ordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_error_ordered_bulk");
    BSON_ASSERT (collection);
@@ -2232,7 +2219,7 @@ test_multiple_error_ordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_multiple_error_ordered_bulk");
@@ -2296,7 +2283,7 @@ test_single_unordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_unordered_bulk");
    BSON_ASSERT (collection);
@@ -2343,7 +2330,7 @@ test_single_error_unordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_single_error_unordered_bulk");
@@ -2700,7 +2687,7 @@ test_multiple_error_unordered_bulk (void)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_multiple_error_unordered_bulk");
@@ -2932,7 +2919,7 @@ test_large_inserts_ordered (void *ctx)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc,
@@ -3270,7 +3257,7 @@ test_bulk_edge_case_372 (bool ordered)
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "CDRIVER_372");
    BSON_ASSERT (collection);

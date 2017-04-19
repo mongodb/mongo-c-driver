@@ -971,6 +971,7 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
+   mongoc_server_stream_t *server_stream = NULL;
 
    uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
                                  host,
@@ -996,12 +997,22 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
    test_framework_set_ssl_opts (client);
 #endif
 
-   if (!mongoc_client_command_simple (
-          client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, reply, &error)) {
+
+   server_stream =
+      mongoc_cluster_stream_for_reads (&client->cluster, NULL, &error);
+   if (!mongoc_cluster_run_command_private (&client->cluster,
+                                            server_stream->stream,
+                                            0,
+                                            MONGOC_QUERY_SLAVE_OK,
+                                            "admin",
+                                            tmp_bson ("{'isMaster': 1}"),
+                                            reply,
+                                            &error)) {
       fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
       fprintf (stderr, "URI = %s\n", uri_str);
       abort ();
    }
+   mongoc_server_stream_cleanup (server_stream);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);

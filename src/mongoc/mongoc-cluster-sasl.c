@@ -221,14 +221,14 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
       TRACE ("Sending: %s", bson_as_extended_json (&cmd, NULL));
-      if (!mongoc_cluster_run_command (cluster,
-                                       stream,
-                                       0,
-                                       MONGOC_QUERY_SLAVE_OK,
-                                       "$external",
-                                       &cmd,
-                                       &reply,
-                                       error)) {
+      if (!mongoc_cluster_run_command_private (cluster,
+                                               stream,
+                                               0,
+                                               MONGOC_QUERY_SLAVE_OK,
+                                               "$external",
+                                               &cmd,
+                                               &reply,
+                                               error)) {
          TRACE ("Replied with: %s", bson_as_extended_json (&reply, NULL));
          bson_destroy (&cmd);
          bson_destroy (&reply);

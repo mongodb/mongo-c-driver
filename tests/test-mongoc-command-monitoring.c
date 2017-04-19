@@ -1569,13 +1569,13 @@ test_client_cmd (void)
                                    0,
                                    0,
                                    0,
-                                   tmp_bson ("{'ismaster': 1}"),
+                                   tmp_bson ("{'ping': 1}"),
                                    NULL,
                                    NULL);
 
    ASSERT (mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "ismaster");
-   ASSERT_MATCH (&test.cmd, "{'ismaster': 1}");
+   ASSERT_CMPSTR (test.cmd_name, "ping");
+   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
    ASSERT_CMPSTR (test.db, "admin");
    ASSERT_CMPINT (1, ==, test.started_calls);
    ASSERT_CMPINT (1, ==, test.succeeded_calls);
@@ -1621,11 +1621,11 @@ test_client_cmd_simple (void)
    client = test_framework_client_new ();
    set_cmd_test_callbacks (client, (void *) &test);
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
-   ASSERT_CMPSTR (test.cmd_name, "ismaster");
-   ASSERT_MATCH (&test.cmd, "{'ismaster': 1}");
+   ASSERT_CMPSTR (test.cmd_name, "ping");
+   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
    ASSERT_CMPSTR (test.db, "admin");
    ASSERT_CMPINT (1, ==, test.started_calls);
    ASSERT_CMPINT (1, ==, test.succeeded_calls);
@@ -1670,7 +1670,7 @@ test_client_cmd_op_ids (void)
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
 
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -1686,7 +1686,7 @@ test_client_cmd_op_ids (void)
 
    /* again. test that we use a new op_id. */
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -1718,7 +1718,7 @@ test_killcursors_deprecated (void)
 
    /* connect */
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    set_cmd_test_callbacks (client, (void *) &test);

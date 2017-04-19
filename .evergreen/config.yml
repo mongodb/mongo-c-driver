@@ -483,6 +483,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
+              export MONGOC_DEBUG_COMPRESSION=yes
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes MONGOC_36_EXPERIMENT=yes" sh .evergreen/compile.sh
         - func: "upload build"
 

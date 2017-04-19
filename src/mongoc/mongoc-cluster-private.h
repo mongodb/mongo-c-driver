@@ -137,14 +137,14 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       bson_error_t *error);
 
 bool
-mongoc_cluster_run_command (mongoc_cluster_t *cluster,
-                            mongoc_stream_t *stream,
-                            uint32_t server_id,
-                            mongoc_query_flags_t flags,
-                            const char *db_name,
-                            const bson_t *command,
-                            bson_t *reply,
-                            bson_error_t *error);
+mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
+                                    mongoc_stream_t *stream,
+                                    uint32_t server_id,
+                                    mongoc_query_flags_t flags,
+                                    const char *db_name,
+                                    const bson_t *command,
+                                    bson_t *reply,
+                                    bson_error_t *error);
 
 
 BSON_END_DECLS

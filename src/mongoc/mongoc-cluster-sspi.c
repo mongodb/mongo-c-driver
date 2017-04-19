@@ -224,14 +224,14 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
-      if (!mongoc_cluster_run_command (cluster,
-                                       stream,
-                                       0,
-                                       MONGOC_QUERY_SLAVE_OK,
-                                       "$external",
-                                       &cmd,
-                                       &reply,
-                                       error)) {
+      if (!mongoc_cluster_run_command_private (cluster,
+                                               stream,
+                                               0,
+                                               MONGOC_QUERY_SLAVE_OK,
+                                               "$external",
+                                               &cmd,
+                                               &reply,
+                                               error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
          break;
