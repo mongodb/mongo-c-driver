@@ -211,10 +211,7 @@ MONGOC_URI_READPREFERENCE                  readpreference                    Spe
                                                                              * secondary
                                                                              * secondaryPreferred
                                                                              * nearest
-MONGOC_URI_READPREFERENCETAGS              readpreferencetags                Specifies a tag set as a comma-separated list of colon-separated key-value pairs.
-
-                                                                             Cannot be combined with preference "primary".
-
+MONGOC_URI_READPREFERENCETAGS              readpreferencetags                A representation of a tag set. See also :ref:`mongoc-read-prefs-tag-sets`.
 MONGOC_URI_LOCALTHRESHOLDMS                localthresholdms                  How far to distribute queries, beyond the server with the fastest round-trip time. By default, only servers within 15ms of the fastest round-trip time receive queries.
 MONGOC_URI_MAXSTALENESSSECONDS             maxstalenessseconds               The maximum replication lag, in wall clock time, that a secondary can suffer and still be eligible. The smallest allowed value for maxStalenessSeconds is 90 seconds.
 ========================================== ================================= =======================================================================================================================================================================
