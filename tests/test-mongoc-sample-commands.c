@@ -1643,9 +1643,7 @@ test_example_44 (mongoc_database_t *db)
          ASSERT_HAS_FIELD (doc, "status");
          ASSERT_HAS_NOT_FIELD (doc, "size");
          ASSERT_HAS_NOT_FIELD (doc, "instock");
-
       }
-
    }
    /* Start Example 44 Post */
    mongoc_cursor_destroy (cursor);
@@ -1681,9 +1679,7 @@ test_example_45 (mongoc_database_t *db)
          ASSERT_HAS_FIELD (doc, "status");
          ASSERT_HAS_NOT_FIELD (doc, "size");
          ASSERT_HAS_NOT_FIELD (doc, "instock");
-
       }
-
    }
    /* Start Example 45 Post */
    mongoc_cursor_destroy (cursor);
@@ -1718,9 +1714,7 @@ test_example_46 (mongoc_database_t *db)
          ASSERT_HAS_NOT_FIELD (doc, "status");
          ASSERT_HAS_FIELD (doc, "size");
          ASSERT_HAS_NOT_FIELD (doc, "instock");
-
       }
-
    }
    /* Start Example 46 Post */
    mongoc_cursor_destroy (cursor);
@@ -1762,9 +1756,7 @@ test_example_47 (mongoc_database_t *db)
          ASSERT_HAS_FIELD (&size, "uom");
          ASSERT_HAS_NOT_FIELD (&size, "h");
          ASSERT_HAS_NOT_FIELD (&size, "w");
-
       }
-
    }
    /* Start Example 47 Post */
    mongoc_cursor_destroy (cursor);
@@ -1804,9 +1796,7 @@ test_example_48 (mongoc_database_t *db)
          ASSERT_HAS_NOT_FIELD (&size, "uom");
          ASSERT_HAS_FIELD (&size, "h");
          ASSERT_HAS_FIELD (&size, "w");
-
       }
-
    }
    /* Start Example 48 Post */
    mongoc_cursor_destroy (cursor);
@@ -1852,13 +1842,9 @@ test_example_49 (mongoc_database_t *db)
                bson_iter_bson (&iter, &subdoc);
                ASSERT_HAS_NOT_FIELD (&subdoc, "warehouse");
                ASSERT_HAS_FIELD (&subdoc, "qty");
-
             }
-
          }
-
       }
-
    }
    /* Start Example 49 Post */
    mongoc_cursor_destroy (cursor);
@@ -1900,9 +1886,7 @@ test_example_50 (mongoc_database_t *db)
          ASSERT_HAS_FIELD (doc, "instock");
          bson_lookup_doc (doc, "instock", &subdoc);
          ASSERT_CMPUINT32 (1, ==, bson_count_keys (&subdoc));
-
       }
-
    }
    /* Start Example 50 Post */
    mongoc_cursor_destroy (cursor);
@@ -2134,7 +2118,8 @@ test_example_52 (mongoc_database_t *db)
       "}");
 
    /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector, update, NULL, &error);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector,
+                                 update, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2144,7 +2129,19 @@ test_example_52 (mongoc_database_t *db)
    }
    /* End Example 52 */
    {
+      bson_t *filter;
+      mongoc_cursor_t *cursor;
+      const bson_t *doc;
 
+      filter = BCON_NEW ("item", BCON_UTF8 ("paper"));
+      cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
+      while (mongoc_cursor_next (cursor, &doc)) {
+         ASSERT_CMPSTR (bson_lookup_utf8 (doc, "size.uom"), "cm");
+         ASSERT_CMPSTR (bson_lookup_utf8 (doc, "status"), "P");
+         ASSERT_HAS_FIELD (doc, "lastModified");
+      }
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (filter);
    }
    /* Start Example 52 Post */
 done:
@@ -2187,7 +2184,22 @@ test_example_53 (mongoc_database_t *db)
    }
    /* End Example 53 */
    {
+      bson_t *filter;
+      mongoc_cursor_t *cursor;
+      const bson_t *doc;
 
+      filter = BCON_NEW (
+         "qty", "{",
+         "$lt", BCON_INT64 (50),
+         "}");
+      cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
+      while (mongoc_cursor_next (cursor, &doc)) {
+         ASSERT_CMPSTR (bson_lookup_utf8 (doc, "size.uom"), "in");
+         ASSERT_CMPSTR (bson_lookup_utf8 (doc, "status"), "P");
+         ASSERT_HAS_FIELD (doc, "lastModified");
+      }
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (filter);
    }
    /* Start Example 53 Post */
 done:
@@ -2231,7 +2243,26 @@ test_example_54 (mongoc_database_t *db)
    }
    /* End Example 54 */
    {
+      bson_t *filter;
+      bson_t *opts;
+      mongoc_cursor_t *cursor;
+      const bson_t *doc;
 
+      filter = BCON_NEW ("item", BCON_UTF8 ("paper"));
+      opts = BCON_NEW ("projection", "{", "_id", BCON_INT64 (0), "}");
+      cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+      while (mongoc_cursor_next (cursor, &doc)) {
+         bson_t subdoc;
+
+         ASSERT_CMPUINT32 (2, ==, bson_count_keys (doc));
+         ASSERT_HAS_FIELD (doc, "item");
+         ASSERT_HAS_FIELD (doc, "instock");
+         bson_lookup_doc (doc, "instock", &subdoc);
+         ASSERT_CMPUINT32 (2, ==, bson_count_keys (&subdoc));
+      }
+      mongoc_cursor_destroy (cursor);
+      bson_destroy (opts);
+      bson_destroy (filter);
    }
    /* Start Example 54 Post */
 done:
