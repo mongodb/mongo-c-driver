@@ -1131,28 +1131,6 @@ Peace,
 
   A. Jesse Jiryu Davis
 
-It is my pleasure to announce to you the MongoDB C driver 1.1.11.
-
-This is a patch release with bug fixes:
-
-  * Undetected network errors when sending messages to the server
-  * Off-by-one error in mongoc_gridfs_file_seek with mode SEEK_END
-  * Memory leak parsing a URI that contains an invalid option
-  * The libbson submodule's URL now uses the recommended https://, not git://
-
-Thanks to everyone who contributed to the development of this point release for
-libmongoc.
-
-  * A. Jesse Jiryu Davis
-  * Hannes Magnusson
-  * Jason Carey
-  * Jose Sebastian Battig
-  * rubicks
-
-Peace,
-
-  A. Jesse Jiryu Davis
-
 
 mongo-c-driver 1.1.11
 =====================
