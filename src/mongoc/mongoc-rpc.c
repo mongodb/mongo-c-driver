@@ -21,16 +21,8 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-compression-private.h"
 
-
-#ifdef MONGOC_ENABLE_COMPRESSION
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-#include <zlib.h>
-#endif
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-#include <snappy-c.h>
-#endif
-#endif
 
 #define RPC(_name, _code)                                               \
    static void _mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
@@ -623,70 +615,24 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
 {
-   switch (rpc->compressed.compressor_id) {
-   case MONGOC_COMPRESSOR_SNAPPY_ID: {
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-      snappy_status status;
-      size_t uncompressed_size = rpc->compressed.uncompressed_size;
+   size_t uncompressed_size = rpc->compressed.uncompressed_size;
+   bool ok;
 
-      BSON_ASSERT (uncompressed_size <= buflen);
-      memcpy (buf, (void *) (&buflen), 4);
-      memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
-      memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
-      memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
+   BSON_ASSERT (uncompressed_size <= buflen);
+   memcpy (buf, (void *) (&buflen), 4);
+   memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
+   memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
+   memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
 
-      status =
-         snappy_uncompress ((const char *) rpc->compressed.compressed_message,
-                            rpc->compressed.compressed_message_len,
-                            (char *) buf + 16,
-                            &uncompressed_size);
-
-      if (status != SNAPPY_OK) {
-         return false;
-      }
-
+   ok = mongoc_uncompress (rpc->compressed.compressor_id,
+                           rpc->compressed.compressed_message,
+                           rpc->compressed.compressed_message_len,
+                           buf + 16,
+                           &uncompressed_size);
+   if (ok) {
       return _mongoc_rpc_scatter (rpc, buf, buflen);
-#else
-      MONGOC_WARNING ("Received snappy compressed opcode, but snappy "
-                      "compression is not compiled in");
-      return false;
-#endif
-      break;
    }
 
-   case MONGOC_COMPRESSOR_ZLIB_ID: {
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      int ok;
-      size_t uncompressed_size = rpc->compressed.uncompressed_size;
-
-      BSON_ASSERT (uncompressed_size <= buflen);
-      memcpy (buf, (void *) (&buflen), 4);
-      memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
-      memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
-      memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
-
-      ok = uncompress ((unsigned char *) buf + 16,
-                       &uncompressed_size,
-                       (unsigned char *) rpc->compressed.compressed_message,
-                       rpc->compressed.compressed_message_len);
-
-      if (ok != Z_OK) {
-         return false;
-      }
-
-      return _mongoc_rpc_scatter (rpc, buf, buflen);
-#else
-      MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
-                      "compression is not compiled in");
-      return false;
-#endif
-      break;
-   }
-
-   default:
-      MONGOC_WARNING ("Unknown compressor ID %d",
-                      rpc->compressed.compressor_id);
-   }
    return false;
 }
 
@@ -698,48 +644,16 @@ _mongoc_rpc_compress (mongoc_rpc_t *rpc,
                       char *output,
                       size_t output_length)
 {
-   switch (compressor_id) {
-   case MONGOC_COMPRESSOR_SNAPPY_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-      if (snappy_compress (data, size, output, &output_length) == SNAPPY_OK) {
-         rpc->header.msg_len = 0;
-         rpc->compressed.original_opcode = rpc->header.opcode;
-         rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
-         rpc->compressed.uncompressed_size = size;
-         rpc->compressed.compressor_id = compressor_id;
-         rpc->compressed.compressed_message = (const uint8_t *) output;
-         rpc->compressed.compressed_message_len = output_length;
-         return true;
-      }
-      break;
-#else
-      MONGOC_ERROR ("Client attempting to use compress with snappy, but snappy "
-                    "compression is not compiled in");
-      return false;
-#endif
-   case MONGOC_COMPRESSOR_ZLIB_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      if (compress ((unsigned char *) output,
-                    &output_length,
-                    (unsigned char *) data,
-                    size) == Z_OK) {
-         rpc->header.msg_len = 0;
-         rpc->compressed.original_opcode = rpc->header.opcode;
-         rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
-         rpc->compressed.uncompressed_size = size;
-         rpc->compressed.compressor_id = compressor_id;
-         rpc->compressed.compressed_message = (const uint8_t *) output;
-         rpc->compressed.compressed_message_len = output_length;
-         return true;
-      }
-      break;
-#else
-      MONGOC_ERROR ("Client attempting to use compress with zlib, but zlib "
-                    "compression is not compiled in");
-      return false;
-#endif
-   default:
-      return false;
+   if (mongoc_compress (compressor_id, data, size, output, &output_length)) {
+      rpc->header.msg_len = 0;
+      rpc->compressed.original_opcode = rpc->header.opcode;
+      rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
+
+      rpc->compressed.uncompressed_size = size;
+      rpc->compressed.compressor_id = compressor_id;
+      rpc->compressed.compressed_message = (const uint8_t *) output;
+      rpc->compressed.compressed_message_len = output_length;
+      return true;
    }
 
    return false;

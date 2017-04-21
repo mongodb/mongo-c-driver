@@ -23,6 +23,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-uri.h"
 #include "mongoc-util-private.h"
+#include "mongoc-compression-private.h"
 
 #include <stdio.h>
 
@@ -968,22 +969,14 @@ int32_t
 mongoc_server_description_compressor_id (
    const mongoc_server_description_t *description)
 {
+   int id;
    bson_iter_t iter;
    bson_iter_init (&iter, &description->compressors);
 
    while (bson_iter_next (&iter)) {
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-      if (strcasecmp ("snappy", bson_iter_utf8 (&iter, NULL)) == 0) {
-         return MONGOC_COMPRESSOR_SNAPPY_ID;
-      }
-#endif
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      if (strcasecmp ("zlib", bson_iter_utf8 (&iter, NULL)) == 0) {
-         return MONGOC_COMPRESSOR_ZLIB_ID;
-      }
-#endif
-      if (strcasecmp ("noop", bson_iter_utf8 (&iter, NULL)) == 0) {
-         return MONGOC_COMPRESSOR_NOOP_ID;
+      id = mongoc_compressor_name_to_id (bson_iter_utf8 (&iter, NULL));
+      if (id != -1) {
+         return id;
       }
    }
 

@@ -54,15 +54,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-rpc-private.h"
-
-#ifdef MONGOC_ENABLE_COMPRESSION
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-#include <zlib.h>
-#endif
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-#include <snappy-c.h>
-#endif
-#endif
+#include "mongoc-compression-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -403,42 +395,16 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          (mongoc_iovec_t *) ar.data, ar.len, 16, data);
       BSON_ASSERT (size);
 
-      switch (compressor_id) {
-      case MONGOC_COMPRESSOR_SNAPPY_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-         output_length = snappy_max_compressed_length (size);
-#else
+      output_length =
+         mongoc_compressor_max_compressed_length (compressor_id, size);
+      if (!output_length) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Received snappy compression ID, but snappy "
-                         "compression is not compiled in");
+                         "Could not determine compression bounds for %s",
+                         mongoc_compressor_id_to_name (compressor_id));
          monitored = false;
          GOTO (done);
-#endif
-         break;
-      case MONGOC_COMPRESSOR_ZLIB_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-         output_length = compressBound (size);
-#else
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Received zlib compression ID, but zlib compression "
-                         "is not compiled in");
-         monitored = false;
-         GOTO (done);
-#endif
-         break;
-      default:
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid or unsupported compressor id '%d'",
-                         compressor_id);
-         monitored = false;
-         GOTO (done);
-         break;
       }
       output = (char *) bson_malloc0 (output_length);
       if (_mongoc_rpc_compress (
@@ -448,7 +414,8 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          _mongoc_cluster_inc_egress_rpc (&rpc);
          _mongoc_rpc_gather (&rpc, &ar);
       } else {
-         MONGOC_WARNING ("Could not compress data");
+         MONGOC_WARNING ("Could not compress data with %s",
+                         mongoc_compressor_id_to_name (compressor_id));
       }
       bson_free (data);
    }
@@ -2400,42 +2367,17 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
             (mongoc_iovec_t *) cluster->iov.data, cluster->iov.len, 16, data);
          BSON_ASSERT (size);
 
-         switch (compressor_id) {
-         case MONGOC_COMPRESSOR_SNAPPY_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-            output_length = snappy_max_compressed_length (size);
-#else
+         output_length =
+            mongoc_compressor_max_compressed_length (compressor_id, size);
+         if (!output_length) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Received snappy compression ID, but snappy "
-                            "compression is not compiled in");
-            monitored = false;
+                            "Could not determine compression bounds for %s",
+                            mongoc_compressor_id_to_name (compressor_id));
             GOTO (done);
-#endif
-            break;
-         case MONGOC_COMPRESSOR_ZLIB_ID:
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-            output_length = compressBound (size);
-#else
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Received zlib compression ID, but zlib "
-                            "compression is not compiled in");
-            monitored = false;
-            GOTO (done);
-#endif
-            break;
-         default:
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid or unsupported compressor id '%d'",
-                            compressor_id);
-            GOTO (done);
-            break;
          }
+
          output = (char *) bson_malloc0 (output_length);
          if (_mongoc_rpc_compress (
                 &rpcs[i], compressor_id, data, size, output, output_length)) {
@@ -2444,7 +2386,8 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
             _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
             _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
          } else {
-            MONGOC_WARNING ("Could not compress data");
+            MONGOC_WARNING ("Could not compress data with %s",
+                            mongoc_compressor_id_to_name (compressor_id));
          }
          bson_free (data);
       }

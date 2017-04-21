@@ -34,6 +34,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-compression-private.h"
 
 
 struct _mongoc_uri_t {
@@ -1348,24 +1349,6 @@ mongoc_uri_set_appname (mongoc_uri_t *uri, const char *value)
 }
 
 bool
-_mongoc_uri_is_supported_compressor (const char *compressor)
-{
-#ifdef MONGOC_ENABLE_COMPRESSION
-#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-   if (!strcasecmp (compressor, "snappy")) {
-      return true;
-   }
-#endif
-#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-   if (!strcasecmp (compressor, "zlib")) {
-      return true;
-   }
-#endif
-#endif
-   return false;
-}
-
-bool
 mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
 {
    const char *end_compressor;
@@ -1378,7 +1361,7 @@ mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
       return false;
    }
    while ((entry = scan_to_unichar (value, ',', "", &end_compressor))) {
-      if (_mongoc_uri_is_supported_compressor (entry)) {
+      if (mongoc_compressor_supported (entry)) {
          mongoc_uri_bson_append_or_replace_key (
             &uri->compressors, entry, "yes");
       } else {
@@ -1388,7 +1371,7 @@ mongoc_uri_set_compressors (mongoc_uri_t *uri, const char *value)
       bson_free (entry);
    }
    if (value) {
-      if (_mongoc_uri_is_supported_compressor (value)) {
+      if (mongoc_compressor_supported (value)) {
          mongoc_uri_bson_append_or_replace_key (
             &uri->compressors, value, "yes");
       } else {

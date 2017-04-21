@@ -75,6 +75,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-collection-private.h \
 	src/mongoc/mongoc-counters-private.h \
+	src/mongoc/mongoc-compression-private.h \
 	src/mongoc/mongoc-cursor-array-private.h \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
 	src/mongoc/mongoc-cursor-transform-private.h \
@@ -162,6 +163,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-cluster.c \
 	src/mongoc/mongoc-cluster-sspi.c \
 	src/mongoc/mongoc-collection.c \
+	src/mongoc/mongoc-compression.c \
 	src/mongoc/mongoc-counters.c \
 	src/mongoc/mongoc-cursor.c \
 	src/mongoc/mongoc-cursor-array.c \

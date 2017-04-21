@@ -327,6 +327,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-compression.c
    ${SOURCE_DIR}/src/mongoc/mongoc-counters.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
