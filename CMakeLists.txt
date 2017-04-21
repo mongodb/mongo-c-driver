@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project (libmongoc)
+project (libmongoc C)
 
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
