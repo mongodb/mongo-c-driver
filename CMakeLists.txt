@@ -212,7 +212,7 @@ function (mongoc_get_accept_args ARG2 ARG3)
 
    MATH (EXPR VAR "${VAR}+1")
 
-   FILE (WRITE ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx
+   FILE (WRITE ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c
    "#include <sys/types.h>
     #include <sys/socket.h>
 
@@ -227,7 +227,7 @@ function (mongoc_get_accept_args ARG2 ARG3)
   ")
 
   TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.cxx CMAKE_FLAGS
+  ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c CMAKE_FLAGS
   "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
 
   if (RES)
