@@ -289,10 +289,6 @@ configure_file (
 
 include_directories("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories("${SOURCE_DIR}/src/mongoc")
-include_directories (${BSON_INCLUDE_DIRS})
-link_directories (${BSON_LIBRARY_DIRS})
-
-set(LIBS ${LIBS} ${BSON_LIBRARIES})
 
 if (UNIX AND NOT APPLE)
    set(LIBS ${LIBS} rt)
@@ -492,11 +488,15 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 set (LIBS ${LIBS} ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
 
-target_link_libraries(mongoc_shared ${LIBS})
-target_link_libraries(mongoc_static ${LIBS})
+target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
+target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
+target_compile_definitions (mongoc_shared PUBLIC ${BSON_DEFINTIONS})
+set_target_properties (mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
 
-set_target_properties(mongoc_shared PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
-set_target_properties(mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
+target_include_directories (mongoc_static PUBLIC ${BSON_STATIC_INCLUDE_DIRS})
+target_compile_definitions (mongoc_static PUBLIC ${BSON_STATIC_DEFINTIONS})
+set_target_properties (mongoc_static PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;MONGOC_STATIC")
 
 # CMake wants to make different symlinks than the Autotools, see
 # https://cmake.org/pipermail/cmake/2007-September/016501.html
@@ -517,7 +517,7 @@ function(mongoc_add_test test use_shared)
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
       else()
-         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
          target_link_libraries(${test} mongoc_static)
       endif()
       if(WIN32)
@@ -532,7 +532,7 @@ function(mongoc_add_example example use_shared)
       if (${use_shared})
          target_link_libraries(${example} mongoc_shared)
       else()
-         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION;BSON_COMPILATION")
+         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
          target_link_libraries(${example} mongoc_static)
       endif()
       if(WIN32)

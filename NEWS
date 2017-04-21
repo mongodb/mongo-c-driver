@@ -1,6 +1,8 @@
 Next Release
 ============
 
+  * Now requires the use of CMake config files for libbson to build libmongoc
+    with CMake
   * New function mongoc_uri_set_auth_mechanism to update the authentication
     mechanism of a mongoc_uri_t after it is created from a string.
   * New function mongoc_bulk_operation_insert_with_opts provides immediate
