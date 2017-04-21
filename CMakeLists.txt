@@ -687,6 +687,11 @@ install(
 set(VERSION "${MONGOC_VERSION}")
 set(prefix "${CMAKE_INSTALL_PREFIX}")
 set(libdir "\${prefix}/lib")
+
+foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+   set(pkg_config_libs "${pkg_config_libs} ${FLAG}")
+endforeach()
+
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
   ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
