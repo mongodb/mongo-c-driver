@@ -3,13 +3,13 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
-#   BUILD_LIBMONGOC_WITH_CMAKE Build mongoc with CMake. Default: use Autotools.
+#   BUILD_MONGOC_WITH_CMAKE    Build mongoc with CMake. Default: use Autotools.
 #   LINK_STATIC                Whether to statically link to libmongoc
 #   BUILD_SAMPLE_WITH_CMAKE    Link program w/ CMake. Default: use pkg-config.
 #   ENABLE_SSL                 Set -DENABLE_SSL or --enable-ssl.
 
 
-echo "BUILD_LIBMONGOC_WITH_CMAKE=$BUILD_LIBMONGOC_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
+echo "BUILD_MONGOC_WITH_CMAKE=$BUILD_MONGOC_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
 
@@ -50,7 +50,7 @@ else
   SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
 fi
 
-if [ "$BUILD_LIBMONGOC_WITH_CMAKE" ]; then
+if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   # Our CMake script doesn't build bundled libbson (CDRIVER-1948) so fake it.
   cd src/libbson
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR .
