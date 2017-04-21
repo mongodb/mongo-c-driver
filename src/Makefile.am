@@ -28,6 +28,7 @@ MONGOC_CPPFLAGS_SHARED = \
 	$(PTHREAD_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SNAPPY_CFLAGS) \
+	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-fvisibility=hidden
 
@@ -54,6 +55,7 @@ MONGOC_LIBADD_SHARED = \
 	$(SHM_LIB) \
 	$(SSL_LIBS) \
 	$(SNAPPY_LIBS) \
+	$(ZLIB_LIBS) \
 	$(SASL_LIBS)
 
 if OS_WIN32

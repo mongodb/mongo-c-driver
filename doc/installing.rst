@@ -103,6 +103,7 @@ If ``configure`` completed successfully, you'll see something like the following
     SASL                                             : sasl2
     SSL                                              : openssl
     Snappy Compression                               : yes
+    Zlib Compression                                 : yes
     Libbson                                          : bundled
 
   Documentation:

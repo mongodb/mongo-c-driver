@@ -20,10 +20,12 @@
 #include "mongoc.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-trace-private.h"
+#include "mongoc-util-private.h"
 
 
 #ifdef MONGOC_ENABLE_COMPRESSION
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+#include <zlib.h>
 #endif
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
 #include <snappy-c.h>
@@ -618,11 +620,6 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
    }
 }
 
-#define MONGOC_COMPRESSOR_NOOP 0
-#define MONGOC_COMPRESSOR_SNAPPY_ID 1
-#define MONGOC_COMPRESSOR_ZLIB_ID 2
-
-
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
 {
@@ -659,9 +656,25 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
 
    case MONGOC_COMPRESSOR_ZLIB_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
-                      "compression is not yet implemented");
-      return false;
+      int ok;
+      size_t uncompressed_size = rpc->compressed.uncompressed_size;
+
+      BSON_ASSERT (uncompressed_size <= buflen);
+      memcpy (buf, (void *) (&buflen), 4);
+      memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
+      memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
+      memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
+
+      ok = uncompress ((unsigned char *) buf + 16,
+                       &uncompressed_size,
+                       (unsigned char *) rpc->compressed.compressed_message,
+                       rpc->compressed.compressed_message_len);
+
+      if (ok != Z_OK) {
+         return false;
+      }
+
+      return _mongoc_rpc_scatter (rpc, buf, buflen);
 #else
       MONGOC_WARNING ("Received zlib compressed opcode, but zlib "
                       "compression is not compiled in");
@@ -701,6 +714,27 @@ _mongoc_rpc_compress (mongoc_rpc_t *rpc,
       break;
 #else
       MONGOC_ERROR ("Client attempting to use compress with snappy, but snappy "
+                    "compression is not compiled in");
+      return false;
+#endif
+   case MONGOC_COMPRESSOR_ZLIB_ID:
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      if (compress ((unsigned char *) output,
+                    &output_length,
+                    (unsigned char *) data,
+                    size) == Z_OK) {
+         rpc->header.msg_len = 0;
+         rpc->compressed.original_opcode = rpc->header.opcode;
+         rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
+         rpc->compressed.uncompressed_size = size;
+         rpc->compressed.compressor_id = compressor_id;
+         rpc->compressed.compressed_message = (const uint8_t *) output;
+         rpc->compressed.compressed_message_len = output_length;
+         return true;
+      }
+      break;
+#else
+      MONGOC_ERROR ("Client attempting to use compress with zlib, but zlib "
                     "compression is not compiled in");
       return false;
 #endif

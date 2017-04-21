@@ -26,11 +26,9 @@ AS_IF([test "x$enable_snappy" != "xno"],[
 ])
 
 if test "x$have_snappy" = "xyes"; then
-   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 1)
    enable_snappy=yes
 else
-   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 0)
    enable_snappy=no
 fi

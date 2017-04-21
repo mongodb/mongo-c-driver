@@ -129,6 +129,10 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY;
 #endif
 
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB;
+#endif
+
    return bf;
 }
 

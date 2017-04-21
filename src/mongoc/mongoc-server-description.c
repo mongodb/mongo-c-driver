@@ -972,8 +972,18 @@ mongoc_server_description_compressor_id (
    bson_iter_init (&iter, &description->compressors);
 
    while (bson_iter_next (&iter)) {
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
       if (strcasecmp ("snappy", bson_iter_utf8 (&iter, NULL)) == 0) {
-         return 1;
+         return MONGOC_COMPRESSOR_SNAPPY_ID;
+      }
+#endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+      if (strcasecmp ("zlib", bson_iter_utf8 (&iter, NULL)) == 0) {
+         return MONGOC_COMPRESSOR_ZLIB_ID;
+      }
+#endif
+      if (strcasecmp ("noop", bson_iter_utf8 (&iter, NULL)) == 0) {
+         return MONGOC_COMPRESSOR_NOOP_ID;
       }
    }
 

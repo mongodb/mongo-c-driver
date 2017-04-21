@@ -23,6 +23,7 @@ TEST_CFLAGS += \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SNAPPY_CFLAGS) \
+	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
@@ -39,6 +40,7 @@ TEST_LIBS = \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
 	$(SNAPPY_LIBS) \
+	$(ZLIB_LIBS) \
 	$(SSL_LIBS)
 
 if EXPLICIT_LIBS

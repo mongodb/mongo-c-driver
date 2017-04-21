@@ -53,6 +53,13 @@
 #define MONGOC_STR(s) #s
 #define MONGOC_EVALUATE_STR(s) MONGOC_STR (s)
 
+
+/* Compressor IDs */
+#define MONGOC_COMPRESSOR_NOOP_ID 0
+#define MONGOC_COMPRESSOR_SNAPPY_ID 1
+#define MONGOC_COMPRESSOR_ZLIB_ID 2
+
+
 BSON_BEGIN_DECLS
 
 int

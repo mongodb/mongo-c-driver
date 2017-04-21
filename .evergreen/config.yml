@@ -484,7 +484,7 @@ tasks:
               set -o errexit
               set -o xtrace
               export MONGOC_DEBUG_COMPRESSION=yes
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes MONGOC_36_EXPERIMENT=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes MONGOC_36_EXPERIMENT=yes" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-experimental
@@ -505,7 +505,7 @@ tasks:
           vars:
             AUTH: "noauth"
             SSL: "nossl"
-            COMPRESSORS: snappy
+            COMPRESSORS: zlib,snappy
 
 
 

@@ -1356,6 +1356,11 @@ _mongoc_uri_is_supported_compressor (const char *compressor)
       return true;
    }
 #endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   if (!strcasecmp (compressor, "zlib")) {
+      return true;
+   }
+#endif
 #endif
    return false;
 }
