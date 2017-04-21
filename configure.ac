@@ -61,6 +61,9 @@ AC_SUBST(MONGOC_CC)
 AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
+# Substitute our dependencies into the pkg-config files.
+AC_SUBST(pkg_config_libs, "${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB}")
+
 AC_CONFIG_FILES([
     Makefile
     src/libmongoc-1.0.pc
