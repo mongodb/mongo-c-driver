@@ -30,16 +30,12 @@ project (hello_mongoc LANGUAGES C)
 # Specify the minimum version you require.
 find_package (libmongoc-static-1.0 1.7 REQUIRED)
 
-message ("--   mongoc found version \"${MONGOC_VERSION}\"")
-message ("--   mongoc include path \"${MONGOC_INCLUDE_DIRS}\"")
-message ("--   mongoc library path \"${MONGOC_LIBRARY_DIRS}\"")
-
-
-link_directories (${MONGOC_LIBRARY_DIRS})
-include_directories (${MONGOC_INCLUDE_DIRS})
+message ("--   mongoc found version \"${MONGOC_STATIC_VERSION}\"")
+message ("--   mongoc include path \"${MONGOC_STATIC_INCLUDE_DIRS}\"")
+message ("--   mongoc libraries \"${MONGOC_STATIC_LIBRARIES}\"")
 
 # The "hello_mongoc.c" sample program is shared among four tests.
 add_executable (hello_mongoc ../../hello_mongoc.c)
-target_include_directories (hello_mongoc PRIVATE "${MONGOC_INCLUDE_DIRS}")
-target_link_libraries (hello_mongoc PRIVATE "${MONGOC_LIBRARIES}")
-target_compile_definitions (hello_mongoc PRIVATE "${MONGOC_DEFINITIONS}")
+target_include_directories (hello_mongoc PRIVATE "${MONGOC_STATIC_INCLUDE_DIRS}")
+target_link_libraries (hello_mongoc PRIVATE "${MONGOC_STATIC_LIBRARIES}")
+target_compile_definitions (hello_mongoc PRIVATE "${MONGOC_STATIC_DEFINITIONS}")
