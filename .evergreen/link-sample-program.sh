@@ -52,6 +52,7 @@ fi
 
 if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   # Our CMake script doesn't build bundled libbson (CDRIVER-1948) so fake it.
+  git submodule update
   cd src/libbson
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR .
   make

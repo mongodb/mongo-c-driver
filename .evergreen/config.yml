@@ -25,6 +25,7 @@ functions:
       params:
         working_dir: "mongoc"
         script: |
+           git submodule update
            if [ "${is_patch}" = "true" ]; then
               VERSION=$(git describe --abbrev=7)-patch-${version_id}
            else
