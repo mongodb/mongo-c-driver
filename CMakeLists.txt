@@ -33,7 +33,20 @@ if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
    message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
 endif()
 
-include(FindBSON REQUIRED)
+# The input variable BSON_ROOT_DIR is respected for backwards compatibility,
+# but you should use the standard CMAKE_PREFIX_PATH instead.
+message (STATUS "Searching for libbson CMake package")
+find_package (libbson-1.0
+   "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+   HINTS
+   ${BSON_ROOT_DIR}
+   REQUIRED)
+
+find_package (libbson-static-1.0
+   "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+   HINTS
+   ${BSON_ROOT_DIR}
+   REQUIRED)
 
 if (NOT (ENABLE_SSL STREQUAL DARWIN
          OR ENABLE_SSL STREQUAL WINDOWS

@@ -28,6 +28,7 @@ if [ -d .git ]; then
     git submodule update
 
     cd src/libbson
+    git checkout 8d40ca4b39af55116c70bb61f56efe80c8439082
     NOCONFIGURE=1 ./autogen.sh
     cd ../../
 elif [ ! -f src/libbson/autogen.sh ]; then

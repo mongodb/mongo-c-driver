@@ -52,7 +52,6 @@ fi
 
 if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   # Our CMake script doesn't build bundled libbson (CDRIVER-1948) so fake it.
-  git submodule update
   cd src/libbson
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR .
   make
@@ -60,7 +59,7 @@ if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   cd ../..
 
   # Our CMake build system always installs both dynamic and static libmongoc.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR $SSL_CMAKE_OPTION .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION .
   make
   make install
   EXPECT_STATIC=1
@@ -174,7 +173,7 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   fi
 
   cd $EXAMPLE_DIR
-  $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR .
+  $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
   make
 else
   # Test our pkg-config file.

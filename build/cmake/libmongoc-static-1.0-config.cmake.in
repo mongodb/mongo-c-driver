@@ -19,6 +19,10 @@ set (MONGOC_STATIC_VERSION @MONGOC_VERSION@)
 
 find_package (libbson-static-1.0 "@MONGOC_MAJOR_VERSION@.@MONGOC_MINOR_VERSION@" REQUIRED)
 
+message ("--   bson found version \"${BSON_STATIC_VERSION}\"")
+message ("--   bson include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+message ("--   bson libraries \"${BSON_STATIC_LIBRARIES}\"")
+
 # In a pure-CMake project this is inserted by configure_package_config_file(),
 # but we want to be able to build this file the same from the Autotools, so
 # let's manually insert this code.
@@ -32,7 +36,7 @@ macro(set_and_check _var _file)
 endmacro()
 
 set_and_check (MONGOC_STATIC_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include/libmongoc-1.0")
-set (MONGOC_STATIC_INCLUDE_DIRS ${MONGOC_STATIC_INCLUDE_DIRS} ${BSON_STATIC_INCLUDE_DIRS})
+list (APPEND MONGOC_STATIC_INCLUDE_DIRS ${BSON_STATIC_INCLUDE_DIRS})
 
 # We want to provide an absolute path to the library and we know the
 # directory and the base name, but not the suffix, so we use CMake's

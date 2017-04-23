@@ -36,9 +36,9 @@ msbuild.exe INSTALL.vcxproj
 cd ..\..
 rem Build libmongoc
 if "%ENABLE_SSL%"=="1" (
-  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS .
+  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS .
 ) else (
-  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF .
+  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF .
 )
 
 msbuild.exe /m ALL_BUILD.vcxproj
@@ -121,7 +121,7 @@ if "%ENABLE_SSL%"=="1" (
   set MONGODB_EXAMPLE_URI="mongodb://localhost/?ssl=true&sslclientcertificatekeyfile=client.pem&sslcertificateauthorityfile=ca.pem&sslallowinvalidhostnames=true"
 )
 
-%CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR% .
+%CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
 msbuild.exe ALL_BUILD.vcxproj
 
 rem Yes, they should've named it "dependencies".
