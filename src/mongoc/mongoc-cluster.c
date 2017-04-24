@@ -379,7 +379,12 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
       size_t allocate = rpc.header.msg_len - 16;
       char *data;
       int size;
+      int32_t compression_level = -1;
 
+      if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+         compression_level = mongoc_uri_get_option_as_int32 (
+            cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+      }
 
       BSON_ASSERT (allocate > 0);
       data = bson_malloc0 (allocate);
@@ -399,8 +404,13 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          GOTO (done);
       }
       output = (char *) bson_malloc0 (output_length);
-      if (_mongoc_rpc_compress (
-             &rpc, compressor_id, data, size, output, output_length)) {
+      if (_mongoc_rpc_compress (&rpc,
+                                compressor_id,
+                                compression_level,
+                                data,
+                                size,
+                                output,
+                                output_length)) {
          _mongoc_array_destroy (&ar);
          _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
          _mongoc_cluster_inc_egress_rpc (&rpc);
@@ -2352,6 +2362,12 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
          size_t allocate = rpcs[i].header.msg_len - 16;
          char *data;
          int size;
+         int32_t compression_level;
+
+         if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+            compression_level = mongoc_uri_get_option_as_int32 (
+               cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+         }
 
          BSON_ASSERT (allocate > 0);
          data = bson_malloc0 (allocate);
@@ -2371,8 +2387,13 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
          }
 
          output = (char *) bson_malloc0 (output_length);
-         if (_mongoc_rpc_compress (
-                &rpcs[i], compressor_id, data, size, output, output_length)) {
+         if (_mongoc_rpc_compress (&rpcs[i],
+                                   compressor_id,
+                                   compression_level,
+                                   data,
+                                   size,
+                                   output,
+                                   output_length)) {
             _mongoc_array_destroy (&cluster->iov);
             _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
             _mongoc_cluster_inc_egress_rpc (&rpcs[i]);

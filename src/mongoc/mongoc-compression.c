@@ -166,6 +166,7 @@ mongoc_uncompress (int32_t compressor_id,
 
 bool
 mongoc_compress (int32_t compressor_id,
+                 int32_t compression_level,
                  char *uncompressed,
                  size_t uncompressed_len,
                  char *compressed,
@@ -174,6 +175,7 @@ mongoc_compress (int32_t compressor_id,
    switch (compressor_id) {
    case MONGOC_COMPRESSOR_SNAPPY_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+      /* No compression_level option for snappy */
       return snappy_compress (
                 uncompressed, uncompressed_len, compressed, compressed_len) ==
              SNAPPY_OK;
@@ -186,10 +188,11 @@ mongoc_compress (int32_t compressor_id,
 
    case MONGOC_COMPRESSOR_ZLIB_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-      return compress ((unsigned char *) compressed,
-                       compressed_len,
-                       (unsigned char *) uncompressed,
-                       uncompressed_len) == Z_OK;
+      return compress2 ((unsigned char *) compressed,
+                        compressed_len,
+                        (unsigned char *) uncompressed,
+                        uncompressed_len,
+                        compression_level) == Z_OK;
       break;
 #else
       MONGOC_ERROR ("Client attempting to use compress with zlib, but zlib "

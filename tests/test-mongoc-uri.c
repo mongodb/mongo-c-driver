@@ -869,6 +869,66 @@ test_mongoc_uri_compressors (void)
                         "Unsupported compressor: 'somethingElse'");
    mongoc_uri_destroy (uri);
 #endif
+
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   uri = mongoc_uri_new ("mongodb://localhost/?compressors=snappy,zlib");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   mongoc_uri_destroy (uri);
+#endif
+
+   uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   mongoc_uri_destroy (uri);
+
+   capture_logs (true);
+   uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib,somethingElse");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "somethingElse"));
+   ASSERT_CAPTURED_LOG ("mongoc_uri_set_compressors",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported compressor: 'somethingElse'");
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?compressors=zlib&zlibCompressionLevel=-1");
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 1),
+      ==,
+      -1);
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?compressors=zlib&zlibCompressionLevel=9");
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 1),
+      ==,
+      9);
+   mongoc_uri_destroy (uri);
+
+   capture_logs (true);
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?compressors=zlib&zlibCompressionLevel=-2");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_compressors",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Invalid \"zlibcompressionlevel\" of -2: must be between -1 and 9");
+   mongoc_uri_destroy (uri);
+
+   capture_logs (true);
+   uri = mongoc_uri_new (
+      "mongodb://localhost/?compressors=zlib&zlibCompressionLevel=10");
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_compressors",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Invalid \"zlibcompressionlevel\" of 10: must be between -1 and 9");
+   mongoc_uri_destroy (uri);
+
+#endif
 }
 
 static void

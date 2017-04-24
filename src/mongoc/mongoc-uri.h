@@ -71,6 +71,7 @@
 #define MONGOC_URI_WAITQUEUEMULTIPLE "waitqueuemultiple"
 #define MONGOC_URI_WAITQUEUETIMEOUTMS "waitqueuetimeoutms"
 #define MONGOC_URI_WTIMEOUTMS "wtimeoutms"
+#define MONGOC_URI_ZLIBCOMPRESSIONLEVEL "zlibcompressionlevel"
 
 BSON_BEGIN_DECLS
 

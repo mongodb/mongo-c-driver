@@ -549,7 +549,8 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_WTIMEOUTMS);
+          !strcasecmp (key, MONGOC_URI_WTIMEOUTMS) ||
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
 }
 
 bool
@@ -1738,6 +1739,14 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                       option,
                       value,
                       MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+      return false;
+   }
+
+   /* zlib levels are from -1 (default) through 9 (best compression) */
+   if (!bson_strcasecmp (option, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) &&
+       (value < -1 || value > 9)) {
+      MONGOC_WARNING (
+         "Invalid \"%s\" of %d: must be between -1 and 9", option, value);
       return false;
    }
 

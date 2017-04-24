@@ -639,12 +639,18 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
 bool
 _mongoc_rpc_compress (mongoc_rpc_t *rpc,
                       int compressor_id,
+                      int32_t compression_level,
                       char *data,
                       size_t size,
                       char *output,
                       size_t output_length)
 {
-   if (mongoc_compress (compressor_id, data, size, output, &output_length)) {
+   if (mongoc_compress (compressor_id,
+                        compression_level,
+                        data,
+                        size,
+                        output,
+                        &output_length)) {
       rpc->header.msg_len = 0;
       rpc->compressed.original_opcode = rpc->header.opcode;
       rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;

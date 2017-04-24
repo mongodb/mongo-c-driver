@@ -59,6 +59,7 @@ mongoc_uncompress (int32_t compressor_id,
 
 bool
 mongoc_compress (int32_t compressor_id,
+                 int32_t compression_level,
                  char *uncompressed,
                  size_t uncompressed_len,
                  char *compressed,
