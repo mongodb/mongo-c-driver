@@ -696,11 +696,20 @@ test_mongoc_uri_new_with_error (void)
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/"
       "?appname="
-      "WayToLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToBe"
-      "ValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRes"
-      "ultInAnError",
+      "WayTooLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToB"
+      "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
+      "sultInAnError",
       &error));
    ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+
+   uri = mongoc_uri_new ("mongodb://localhost");
+   ASSERT (!mongoc_uri_set_option_as_utf8 (
+      uri,
+      MONGOC_URI_APPNAME,
+      "WayTooLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToB"
+      "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
+      "sultInAnError"));
+   mongoc_uri_destroy (uri);
 
    error.domain = 0;
    ASSERT (

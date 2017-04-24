@@ -1949,8 +1949,11 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
    if (!mongoc_uri_option_is_utf8 (option)) {
       return false;
    }
-
-   mongoc_uri_bson_append_or_replace_key (&uri->options, option, value);
+   if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
+      return mongoc_uri_set_appname (uri, value);
+   } else {
+      mongoc_uri_bson_append_or_replace_key (&uri->options, option, value);
+   }
 
    return true;
 }
