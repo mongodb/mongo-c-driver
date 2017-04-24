@@ -74,6 +74,8 @@
       }                                                       \
    } while (0)
 
+#define IS_NOT_COMMAND(name) (!!strcasecmp (command_name, name))
+
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                     uint32_t server_id,
@@ -370,24 +372,14 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    _mongoc_rpc_swab_to_le (&rpc);
 
 #ifdef MONGOC_ENABLE_COMPRESSION
-   if (compressor_id) {
+   if (compressor_id && IS_NOT_COMMAND ("ismaster") &&
+       IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
+       IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
+       IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser")) {
       size_t allocate = rpc.header.msg_len - 16;
       char *data;
       int size;
 
-#ifdef MONGOC_DEBUG_COMPRESSION
-#define DISALLOWED_COMPRESSION(name) \
-   BSON_ASSERT (!!strcasecmp (command_name, name))
-
-      DISALLOWED_COMPRESSION ("ismaster");
-      DISALLOWED_COMPRESSION ("saslstart");
-      DISALLOWED_COMPRESSION ("saslcontinue");
-      DISALLOWED_COMPRESSION ("getnonce");
-      DISALLOWED_COMPRESSION ("authenticate");
-      DISALLOWED_COMPRESSION ("createuser");
-
-#undef DISALLOWED_COMPRESSION
-#endif
 
       BSON_ASSERT (allocate > 0);
       data = bson_malloc0 (allocate);
