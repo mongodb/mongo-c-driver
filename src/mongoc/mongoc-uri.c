@@ -763,7 +763,7 @@ again:
 
 
 static bool
-mongoc_uri_finalize_auth (mongoc_uri_t *uri)
+mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 {
    bson_iter_t iter;
    const char *source = NULL;
@@ -780,6 +780,10 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri)
           !strcasecmp (mechanism, "MONGODB-X509")) {
          if (source) {
             if (strcasecmp (source, "$external")) {
+               MONGOC_URI_ERROR (
+                  error,
+                  "%s",
+                  "GSSAPI and X509 require \"$external\" authSource");
                return false;
             }
          } else {
@@ -834,7 +838,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       }
    }
 
-   return mongoc_uri_finalize_auth (uri);
+   return mongoc_uri_finalize_auth (uri, error);
 }
 
 
