@@ -1855,7 +1855,7 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
    }
 
    r = mongoc_cluster_sendv_to_server (
-      cluster, &rpc, 1, server_stream, NULL, &error);
+      cluster, &rpc, server_stream, NULL, &error);
 
    if (has_ns) {
       if (r) {

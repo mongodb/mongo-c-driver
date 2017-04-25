@@ -1160,7 +1160,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                         &rpc,
-                                        1,
                                         server_stream,
                                         NULL,
                                         &cursor->error)) {
@@ -1611,7 +1610,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       }
 
       if (!mongoc_cluster_sendv_to_server (
-             cluster, &rpc, 1, server_stream, NULL, &cursor->error)) {
+             cluster, &rpc, server_stream, NULL, &cursor->error)) {
          GOTO (fail);
       }
    }

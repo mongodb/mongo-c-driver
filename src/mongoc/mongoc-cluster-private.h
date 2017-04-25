@@ -99,7 +99,6 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                 mongoc_rpc_t *rpcs,
-                                size_t rpcs_len,
                                 mongoc_server_stream_t *server_stream,
                                 const mongoc_write_concern_t *write_concern,
                                 bson_error_t *error);

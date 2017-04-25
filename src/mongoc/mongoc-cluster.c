@@ -92,6 +92,7 @@ static void
 _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
 
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2281,7 +2282,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
  *       True if successful.
  *
  * Side effects:
- *       @rpcs may be mutated and should be considered invalid after calling
+ *       @rpc may be mutated and should be considered invalid after calling
  *       this method.
  *
  *       @error may be set.
@@ -2291,8 +2292,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
 
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
-                                mongoc_rpc_t *rpcs,
-                                size_t rpcs_len,
+                                mongoc_rpc_t *rpc,
                                 mongoc_server_stream_t *server_stream,
                                 const mongoc_write_concern_t *write_concern,
                                 bson_error_t *error)
@@ -2303,7 +2303,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    const bson_t *b;
    mongoc_rpc_t gle;
    size_t iovcnt;
-   size_t i;
    bool need_gle;
    char cmdname[140];
    int32_t max_msg_size;
@@ -2317,8 +2316,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    ENTRY;
 
    BSON_ASSERT (cluster);
-   BSON_ASSERT (rpcs);
-   BSON_ASSERT (rpcs_len);
+   BSON_ASSERT (rpc);
    BSON_ASSERT (server_stream);
 
    server_id = server_stream->sd->id;
@@ -2352,109 +2350,107 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
     * just useless work (and technically the request_id changes).
     */
 
-   for (i = 0; i < rpcs_len; i++) {
-      need_gle = _mongoc_rpc_needs_gle (&rpcs[i], write_concern);
-      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
-      _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
+   need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
+   _mongoc_cluster_inc_egress_rpc (rpc);
+   _mongoc_rpc_gather (rpc, &cluster->iov);
 
 #ifdef MONGOC_ENABLE_COMPRESSION
-      if (compressor_id) {
-         size_t allocate = rpcs[i].header.msg_len - 16;
-         char *data;
-         int size;
-         int32_t compression_level;
+   if (compressor_id) {
+      size_t allocate = rpc->header.msg_len - 16;
+      char *data;
+      int size;
+      int32_t compression_level;
 
-         if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
-            compression_level = mongoc_uri_get_option_as_int32 (
-               cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
-         }
-
-         BSON_ASSERT (allocate > 0);
-         data = bson_malloc0 (allocate);
-         size = _mongoc_cluster_buffer_iovec (
-            (mongoc_iovec_t *) cluster->iov.data, cluster->iov.len, 16, data);
-         BSON_ASSERT (size);
-
-         output_length =
-            mongoc_compressor_max_compressed_length (compressor_id, size);
-         if (!output_length) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Could not determine compression bounds for %s",
-                            mongoc_compressor_id_to_name (compressor_id));
-            GOTO (done);
-         }
-
-         output = (char *) bson_malloc0 (output_length);
-         if (_mongoc_rpc_compress (&rpcs[i],
-                                   compressor_id,
-                                   compression_level,
-                                   data,
-                                   size,
-                                   output,
-                                   output_length)) {
-            _mongoc_array_destroy (&cluster->iov);
-            _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-            _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
-            _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
-         } else {
-            MONGOC_WARNING ("Could not compress data with %s",
-                            mongoc_compressor_id_to_name (compressor_id));
-         }
-         bson_free (data);
+      if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+         compression_level = mongoc_uri_get_option_as_int32 (
+            cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
       }
-#endif
 
-      max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
+      BSON_ASSERT (allocate > 0);
+      data = bson_malloc0 (allocate);
+      size = _mongoc_cluster_buffer_iovec (
+         (mongoc_iovec_t *) cluster->iov.data, cluster->iov.len, 16, data);
+      BSON_ASSERT (size);
 
-      if (rpcs[i].header.msg_len > max_msg_size) {
+      output_length =
+         mongoc_compressor_max_compressed_length (compressor_id, size);
+      if (!output_length) {
          bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_TOO_BIG,
-                         "Attempted to send an RPC larger than the "
-                         "max allowed message size. Was %u, allowed %u.",
-                         rpcs[i].header.msg_len,
-                         max_msg_size);
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Could not determine compression bounds for %s",
+                         mongoc_compressor_id_to_name (compressor_id));
          GOTO (done);
       }
 
-      if (need_gle) {
-         gle.header.msg_len = 0;
-         gle.header.request_id = ++cluster->request_id;
-         gle.header.response_to = 0;
-         gle.header.opcode = MONGOC_OPCODE_QUERY;
-         gle.query.flags = MONGOC_QUERY_NONE;
+      output = (char *) bson_malloc0 (output_length);
+      if (_mongoc_rpc_compress (rpc,
+                                compressor_id,
+                                compression_level,
+                                data,
+                                size,
+                                output,
+                                output_length)) {
+         _mongoc_array_destroy (&cluster->iov);
+         _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
+         _mongoc_cluster_inc_egress_rpc (rpc);
+         _mongoc_rpc_gather (rpc, &cluster->iov);
+      } else {
+         MONGOC_WARNING ("Could not compress data with %s",
+                         mongoc_compressor_id_to_name (compressor_id));
+      }
+      bson_free (data);
+   }
+#endif
 
-         switch (rpcs[i].header.opcode) {
-         case MONGOC_OPCODE_INSERT:
-            DB_AND_CMD_FROM_COLLECTION (cmdname, rpcs[i].insert.collection);
-            break;
-         case MONGOC_OPCODE_DELETE:
-            DB_AND_CMD_FROM_COLLECTION (cmdname, rpcs[i].delete_.collection);
-            break;
-         case MONGOC_OPCODE_UPDATE:
-            DB_AND_CMD_FROM_COLLECTION (cmdname, rpcs[i].update.collection);
-            break;
-         default:
-            BSON_ASSERT (false);
-            DB_AND_CMD_FROM_COLLECTION (cmdname, "admin.$cmd");
-            break;
-         }
+   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
-         gle.query.collection = cmdname;
-         gle.query.skip = 0;
-         gle.query.n_return = 1;
-         b = _mongoc_write_concern_get_gle (
-            (mongoc_write_concern_t *) write_concern);
-         gle.query.query = bson_get_data (b);
-         gle.query.fields = NULL;
-         _mongoc_rpc_gather (&gle, &cluster->iov);
-         _mongoc_rpc_swab_to_le (&gle);
+   if (rpc->header.msg_len > max_msg_size) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_TOO_BIG,
+                      "Attempted to send an RPC larger than the "
+                      "max allowed message size. Was %u, allowed %u.",
+                      rpc->header.msg_len,
+                      max_msg_size);
+      GOTO (done);
+   }
+
+   if (need_gle) {
+      gle.header.msg_len = 0;
+      gle.header.request_id = ++cluster->request_id;
+      gle.header.response_to = 0;
+      gle.header.opcode = MONGOC_OPCODE_QUERY;
+      gle.query.flags = MONGOC_QUERY_NONE;
+
+      switch (rpc->header.opcode) {
+      case MONGOC_OPCODE_INSERT:
+         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->insert.collection);
+         break;
+      case MONGOC_OPCODE_DELETE:
+         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->delete_.collection);
+         break;
+      case MONGOC_OPCODE_UPDATE:
+         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->update.collection);
+         break;
+      default:
+         BSON_ASSERT (false);
+         DB_AND_CMD_FROM_COLLECTION (cmdname, "admin.$cmd");
+         break;
       }
 
-      _mongoc_rpc_swab_to_le (&rpcs[i]);
+      gle.query.collection = cmdname;
+      gle.query.skip = 0;
+      gle.query.n_return = 1;
+      b = _mongoc_write_concern_get_gle (
+         (mongoc_write_concern_t *) write_concern);
+      gle.query.query = bson_get_data (b);
+      gle.query.fields = NULL;
+      _mongoc_rpc_gather (&gle, &cluster->iov);
+      _mongoc_rpc_swab_to_le (&gle);
    }
+
+   _mongoc_rpc_swab_to_le (rpc);
 
    iov = (mongoc_iovec_t *) cluster->iov.data;
    iovcnt = cluster->iov.len;
