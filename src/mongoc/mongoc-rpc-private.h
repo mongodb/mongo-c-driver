@@ -28,7 +28,8 @@
 #include "mongoc-iovec.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-flags.h"
-
+/* forward declaration */
+struct _mongoc_cluster_t;
 
 BSON_BEGIN_DECLS
 
@@ -152,14 +153,11 @@ _mongoc_populate_cmd_error (const bson_t *doc,
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen);
 
-bool
-_mongoc_rpc_compress (mongoc_rpc_t *rpc,
-                      int compressor_id,
-                      int32_t compression_level,
-                      char *data,
-                      size_t size,
-                      char *output,
-                      size_t output_length);
+char *
+_mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
+                      int32_t compressor_id,
+                      mongoc_rpc_t *rpc,
+                      bson_error_t *error);
 
 BSON_END_DECLS
 

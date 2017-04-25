@@ -22,6 +22,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-compression-private.h"
+#include "mongoc-cluster-private.h"
 
 
 #define RPC(_name, _code)                                               \
@@ -636,15 +637,43 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
    return false;
 }
 
-bool
-_mongoc_rpc_compress (mongoc_rpc_t *rpc,
-                      int compressor_id,
-                      int32_t compression_level,
-                      char *data,
-                      size_t size,
-                      char *output,
-                      size_t output_length)
+char *
+_mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
+                      int32_t compressor_id,
+                      mongoc_rpc_t *rpc,
+                      bson_error_t *error)
 {
+   char *output;
+   size_t output_length = 0;
+   size_t allocate = rpc->header.msg_len - 16;
+   char *data;
+   int size;
+   int32_t compression_level = -1;
+
+   if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
+      compression_level = mongoc_uri_get_option_as_int32 (
+         cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
+   }
+
+   BSON_ASSERT (allocate > 0);
+   data = bson_malloc0 (allocate);
+   size = _mongoc_cluster_buffer_iovec (
+      cluster->iov.data, cluster->iov.len, 16, data);
+   BSON_ASSERT (size);
+
+   output_length =
+      mongoc_compressor_max_compressed_length (compressor_id, size);
+   if (!output_length) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not determine compression bounds for %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+      bson_free (data);
+      return NULL;
+   }
+
+   output = (char *) bson_malloc0 (output_length);
    if (mongoc_compress (compressor_id,
                         compression_level,
                         data,
@@ -659,10 +688,19 @@ _mongoc_rpc_compress (mongoc_rpc_t *rpc,
       rpc->compressed.compressor_id = compressor_id;
       rpc->compressed.compressed_message = (const uint8_t *) output;
       rpc->compressed.compressed_message_len = output_length;
-      return true;
-   }
+      bson_free (data);
 
-   return false;
+
+      _mongoc_array_destroy (&cluster->iov);
+      _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
+      _mongoc_rpc_gather (rpc, &cluster->iov);
+      return output;
+   } else {
+      MONGOC_WARNING ("Could not compress data with %s",
+                      mongoc_compressor_id_to_name (compressor_id));
+   }
+   bson_free (data);
+   return NULL;
 }
 bool
 _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)

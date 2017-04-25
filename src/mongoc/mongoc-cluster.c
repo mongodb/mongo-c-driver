@@ -306,7 +306,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    int64_t started;
    const char *command_name;
    mongoc_apm_callbacks_t *callbacks;
-   mongoc_array_t ar; /* data to server */
    const size_t reply_header_size = sizeof (mongoc_rpc_reply_header_t);
    uint8_t reply_header_buf[sizeof (mongoc_rpc_reply_header_t)];
    uint8_t *reply_buf;     /* reply body */
@@ -323,8 +322,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    mongoc_apm_command_failed_t failed_event;
    bool ret = false;
 #ifdef MONGOC_ENABLE_COMPRESSION
-   size_t output_length = 0;
-   char *output;
+   char *output = NULL;
 #endif
 
    ENTRY;
@@ -340,7 +338,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    reply_ptr = reply ? reply : &reply_local;
    bson_init (reply_ptr);
    callbacks = &cluster->client->apm_callbacks;
-   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
    if (!error) {
       error = &err_local;
@@ -364,12 +361,15 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
       GOTO (done);
    }
 
+   _mongoc_array_clear (&cluster->iov);
+
    bson_snprintf (cmd_ns, sizeof cmd_ns, "%s.$cmd", db_name);
    request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, command, flags);
    rpc.header.request_id = request_id;
+
    _mongoc_cluster_inc_egress_rpc (&rpc);
-   _mongoc_rpc_gather (&rpc, &ar);
+   _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
 #ifdef MONGOC_ENABLE_COMPRESSION
@@ -377,50 +377,11 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
        IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
        IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
        IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser")) {
-      size_t allocate = rpc.header.msg_len - 16;
-      char *data;
-      int size;
-      int32_t compression_level = -1;
-
-      if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
-         compression_level = mongoc_uri_get_option_as_int32 (
-            cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
-      }
-
-      BSON_ASSERT (allocate > 0);
-      data = bson_malloc0 (allocate);
-      size = _mongoc_cluster_buffer_iovec (
-         (mongoc_iovec_t *) ar.data, ar.len, 16, data);
-      BSON_ASSERT (size);
-
-      output_length =
-         mongoc_compressor_max_compressed_length (compressor_id, size);
-      if (!output_length) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Could not determine compression bounds for %s",
-                         mongoc_compressor_id_to_name (compressor_id));
+      output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
+      if (output == NULL) {
          monitored = false;
          GOTO (done);
       }
-      output = (char *) bson_malloc0 (output_length);
-      if (_mongoc_rpc_compress (&rpc,
-                                compressor_id,
-                                compression_level,
-                                data,
-                                size,
-                                output,
-                                output_length)) {
-         _mongoc_array_destroy (&ar);
-         _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
-         _mongoc_cluster_inc_egress_rpc (&rpc);
-         _mongoc_rpc_gather (&rpc, &ar);
-      } else {
-         MONGOC_WARNING ("Could not compress data with %s",
-                         mongoc_compressor_id_to_name (compressor_id));
-      }
-      bson_free (data);
    }
 #endif
 
@@ -451,8 +412,8 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
     * send and receive
     */
    if (!_mongoc_stream_writev_full (stream,
-                                    (mongoc_iovec_t *) ar.data,
-                                    ar.len,
+                                    cluster->iov.data,
+                                    cluster->iov.len,
                                     cluster->sockettimeoutms,
                                     error)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
@@ -575,7 +536,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    }
 
 done:
-   _mongoc_array_destroy (&ar);
 
    if (!ret && error->code == 0) {
       /* generic error */
@@ -602,11 +562,8 @@ done:
    if (reply_ptr == &reply_local) {
       bson_destroy (reply_ptr);
    }
-
 #ifdef MONGOC_ENABLE_COMPRESSION
-   if (output_length) {
-      bson_free (output);
-   }
+   bson_free (output);
 #endif
 
    RETURN (ret);
@@ -2298,18 +2255,15 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                 bson_error_t *error)
 {
    uint32_t server_id;
-   mongoc_iovec_t *iov;
    mongoc_topology_scanner_node_t *scanner_node;
    const bson_t *b;
    mongoc_rpc_t gle;
-   size_t iovcnt;
    bool need_gle;
    char cmdname[140];
    int32_t max_msg_size;
    bool ret = false;
 #ifdef MONGOC_ENABLE_COMPRESSION
    int32_t compressor_id = 0;
-   size_t output_length;
    char *output = NULL;
 #endif
 
@@ -2356,50 +2310,10 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
 
 #ifdef MONGOC_ENABLE_COMPRESSION
    if (compressor_id) {
-      size_t allocate = rpc->header.msg_len - 16;
-      char *data;
-      int size;
-      int32_t compression_level;
-
-      if (compressor_id == MONGOC_COMPRESSOR_ZLIB_ID) {
-         compression_level = mongoc_uri_get_option_as_int32 (
-            cluster->uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1);
-      }
-
-      BSON_ASSERT (allocate > 0);
-      data = bson_malloc0 (allocate);
-      size = _mongoc_cluster_buffer_iovec (
-         (mongoc_iovec_t *) cluster->iov.data, cluster->iov.len, 16, data);
-      BSON_ASSERT (size);
-
-      output_length =
-         mongoc_compressor_max_compressed_length (compressor_id, size);
-      if (!output_length) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Could not determine compression bounds for %s",
-                         mongoc_compressor_id_to_name (compressor_id));
+      output = _mongoc_rpc_compress (cluster, compressor_id, rpc, error);
+      if (output == NULL) {
          GOTO (done);
       }
-
-      output = (char *) bson_malloc0 (output_length);
-      if (_mongoc_rpc_compress (rpc,
-                                compressor_id,
-                                compression_level,
-                                data,
-                                size,
-                                output,
-                                output_length)) {
-         _mongoc_array_destroy (&cluster->iov);
-         _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-         _mongoc_cluster_inc_egress_rpc (rpc);
-         _mongoc_rpc_gather (rpc, &cluster->iov);
-      } else {
-         MONGOC_WARNING ("Could not compress data with %s",
-                         mongoc_compressor_id_to_name (compressor_id));
-      }
-      bson_free (data);
    }
 #endif
 
@@ -2452,14 +2366,9 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
 
    _mongoc_rpc_swab_to_le (rpc);
 
-   iov = (mongoc_iovec_t *) cluster->iov.data;
-   iovcnt = cluster->iov.len;
-
-   BSON_ASSERT (cluster->iov.len);
-
    if (!_mongoc_stream_writev_full (server_stream->stream,
-                                    iov,
-                                    iovcnt,
+                                    cluster->iov.data,
+                                    cluster->iov.len,
                                     cluster->sockettimeoutms,
                                     error)) {
       GOTO (done);
