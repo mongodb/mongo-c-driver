@@ -1095,7 +1095,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
       }
 
       if (bson_iter_init_find (&iter, opts, "size")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+         if (!BSON_ITER_HOLDS_INT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1113,7 +1113,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
       }
 
       if (bson_iter_init_find (&iter, opts, "max")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+         if (!BSON_ITER_HOLDS_INT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,

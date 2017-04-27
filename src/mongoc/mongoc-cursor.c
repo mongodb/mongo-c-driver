@@ -831,16 +831,16 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    } while (false)
 
 
-#define OPT_CHECK_INT()                                                       \
-   do {                                                                       \
-      if (!BSON_ITER_HOLDS_INT64 (&iter) && !BSON_ITER_HOLDS_INT32 (&iter)) { \
-         bson_set_error (&cursor->error,                                      \
-                         MONGOC_ERROR_COMMAND,                                \
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,                    \
-                         "invalid option %s, should be integer",              \
-                         key);                                                \
-         return NULL;                                                         \
-      }                                                                       \
+#define OPT_CHECK_INT()                                          \
+   do {                                                          \
+      if (!BSON_ITER_HOLDS_INT (&iter)) {                        \
+         bson_set_error (&cursor->error,                         \
+                         MONGOC_ERROR_COMMAND,                   \
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,       \
+                         "invalid option %s, should be integer", \
+                         key);                                   \
+         return NULL;                                            \
+      }                                                          \
    } while (false)
 
 

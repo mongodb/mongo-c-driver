@@ -175,7 +175,7 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
       RETURN (true);
    }
 
-   if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+   if (!BSON_ITER_HOLDS_INT (&iter)) {
       bson_set_error (
          error, domain, code, "The serverId option must be an integer");
       RETURN (false);
@@ -196,8 +196,10 @@ bool
 _mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error)
 {
    /* insert into system.indexes on pre-2.6 MongoDB, allow "." in keys */
-   if (!bson_validate (doc, BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
-                            BSON_VALIDATE_DOLLAR_KEYS, NULL)) {
+   if (!bson_validate (doc,
+                       BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
+                          BSON_VALIDATE_DOLLAR_KEYS,
+                       NULL)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,

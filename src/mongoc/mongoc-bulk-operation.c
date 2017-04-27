@@ -190,8 +190,7 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
    BULK_RETURN_IF_PRIOR_ERROR;
 
    if (opts && bson_iter_init_find (&iter, opts, "limit")) {
-      if ((!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) ||
-          !bson_iter_as_int64 (&iter)) {
+      if ((!BSON_ITER_HOLDS_INT (&iter)) || !bson_iter_as_int64 (&iter)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -231,8 +230,7 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
    BULK_RETURN_IF_PRIOR_ERROR;
 
    if (opts && bson_iter_init_find (&iter, opts, "limit")) {
-      if ((!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) ||
-          bson_iter_as_int64 (&iter)) {
+      if ((!BSON_ITER_HOLDS_INT (&iter)) || bson_iter_as_int64 (&iter)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,

@@ -231,14 +231,12 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs, const bson_t *data)
          value = bson_iter_value (&iter);
          bson_value_copy (value, &file->files_id);
       } else if (0 == strcmp (key, "length")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter) &&
-             !BSON_ITER_HOLDS_DOUBLE (&iter)) {
+         if (!BSON_ITER_HOLDS_NUMBER (&iter)) {
             GOTO (failure);
          }
          file->length = bson_iter_as_int64 (&iter);
       } else if (0 == strcmp (key, "chunkSize")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter) &&
-             !BSON_ITER_HOLDS_DOUBLE (&iter)) {
+         if (!BSON_ITER_HOLDS_NUMBER (&iter)) {
             GOTO (failure);
          }
          if (bson_iter_as_int64 (&iter) > INT32_MAX) {

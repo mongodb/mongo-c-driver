@@ -386,7 +386,7 @@ test_server_selection_logic_cb (bson_t *test)
          BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&sd_iter) &&
                       bson_iter_recurse (&sd_iter, &last_write_iter) &&
                       bson_iter_find (&last_write_iter, "lastWriteDate") &&
-                      BSON_ITER_HOLDS_INT64 (&last_write_iter));
+                      BSON_ITER_HOLDS_INT (&last_write_iter));
          sd->last_write_date_ms = bson_iter_as_int64 (&last_write_iter);
       }
 

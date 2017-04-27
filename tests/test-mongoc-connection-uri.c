@@ -38,7 +38,7 @@ run_uri_test (const char *uri_string,
             host = bson_iter_utf8 (&host_iter, NULL);
          }
          if (bson_iter_find (&host_iter, "port") &&
-             BSON_ITER_HOLDS_INT32 (&host_iter)) {
+             BSON_ITER_HOLDS_INT (&host_iter)) {
             port = bson_iter_as_int64 (&host_iter);
          }
 
