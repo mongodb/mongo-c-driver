@@ -415,8 +415,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       bson_append_document_begin (&command, "cursor", 6, &child);
 
       if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-          (BSON_ITER_HOLDS_INT32 (&iter) || BSON_ITER_HOLDS_INT64 (&iter) ||
-           BSON_ITER_HOLDS_DOUBLE (&iter))) {
+          BSON_ITER_HOLDS_NUMBER (&iter)) {
          batch_size = (int32_t) bson_iter_as_int64 (&iter);
          BSON_APPEND_INT32 (&child, "batchSize", batch_size);
          has_batch_size = true;
@@ -1491,9 +1490,8 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
              * an empty array. Also we need to clear out the error. */
             error->code = 0;
             error->domain = 0;
-            cursor = _mongoc_collection_cursor_new (collection,
-                                                    MONGOC_QUERY_SLAVE_OK,
-                                                    NULL /* read prefs */);
+            cursor = _mongoc_collection_cursor_new (
+               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
