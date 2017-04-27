@@ -160,6 +160,10 @@ For quick checks during development, disable long-running tests:
 
 * `MONGOC_TEST_SKIP_SLOW=on`
 
+Some tests run against a local mock server, these can be skipped with:
+
+* `MONGOC_TEST_SKIP_MOCK=on`
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

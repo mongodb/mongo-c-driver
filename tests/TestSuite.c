@@ -320,6 +320,10 @@ TestSuite_CheckDummy (void)
 int
 TestSuite_CheckMockServerAllowed (void)
 {
+   if (test_framework_getenv_bool ("MONGOC_TEST_SKIP_MOCK")) {
+      return 0;
+   }
+
    /* CDRIVER-2115: don't run mock server tests on 32-bit */
    if (sizeof (void *) * 8 >= 64) {
       return 1;
@@ -365,12 +369,10 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
 
 
 void
-TestSuite_AddMockServerTest (TestSuite *suite,
-                             const char *name,
-                             TestFunc func)
+TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func)
 {
-   TestSuite_AddFull (suite, name, (void *) func, NULL, NULL,
-                      TestSuite_CheckMockServerAllowed);
+   TestSuite_AddFull (
+      suite, name, (void *) func, NULL, NULL, TestSuite_CheckMockServerAllowed);
 }
 
 
