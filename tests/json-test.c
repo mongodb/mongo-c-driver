@@ -613,7 +613,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
 
       assemble_path (dir_path, entry->d_name, child_path);
 
-      if (0 == stat (child_path, &dir_stat) && dir_stat.st_mode & S_IFDIR) {
+      if (0 == stat (child_path, &dir_stat) && S_ISDIR (dir_stat.st_mode)) {
          /* recursively call on child directories */
          paths_index =
             collect_tests_from_dir (paths, child_path, paths_index, max_paths);

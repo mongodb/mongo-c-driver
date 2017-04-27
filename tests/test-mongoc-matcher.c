@@ -30,8 +30,8 @@ test_mongoc_matcher_basic (void)
                      "$not",
                      "invalid",
                      "}",
-                     //      "zip", "{", "$in", "[", BCON_INT32(11201),
-                     //      BCON_INT32(90210), "]", "}",
+                     /*      "zip", "{", "$in", "[", BCON_INT32(11201), */
+                     /*      BCON_INT32(90210), "]", "}", */
                      "$or",
                      "[",
                      "{",
