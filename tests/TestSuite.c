@@ -216,9 +216,9 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 
    memset (suite, 0, sizeof *suite);
 
-   suite->name = strdup (name);
+   suite->name = bson_strdup (name);
    suite->flags = 0;
-   suite->prgname = strdup (argv[0]);
+   suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
 
    for (i = 0; i < argc; i++) {
@@ -264,7 +264,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
             test_error ("-l requires an argument.");
             exit (EXIT_FAILURE);
          }
-         suite->testname = strdup (argv[++i]);
+         suite->testname = bson_strdup (argv[++i]);
       }
    }
 
@@ -399,7 +399,7 @@ TestSuite_AddFull (TestSuite *suite,  /* IN */
    Test *iter;
 
    test = (Test *) calloc (1, sizeof *test);
-   test->name = strdup (name);
+   test->name = bson_strdup (name);
    test->func = func;
    test->check = check;
    test->next = NULL;
