@@ -693,8 +693,7 @@ _mongoc_write_command_delete_legacy (
       rpc.delete_.collection = ns;
 
       if (bson_iter_find (&q_iter, "limit") &&
-          (BSON_ITER_HOLDS_INT32 (&q_iter) ||
-           BSON_ITER_HOLDS_INT64 (&q_iter))) {
+          (BSON_ITER_HOLDS_INT (&q_iter))) {
          limit = bson_iter_as_int64 (&q_iter);
       }
 
