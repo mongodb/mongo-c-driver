@@ -278,8 +278,15 @@ test_bulk_error (void)
    bson_t reply = {0};
    bson_error_t error;
    mongoc_bulk_operation_t *bulk;
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
 
    bulk = mongoc_bulk_operation_new (true);
+   mongoc_bulk_operation_set_client (bulk, client);
    BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
@@ -287,6 +294,8 @@ test_bulk_error (void)
    /* reply was initialized */
    ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
 }
 
 
@@ -4183,7 +4192,7 @@ test_bulk_install (TestSuite *suite)
    }
 
    TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/error", test_bulk_error);
+   TestSuite_AddMockServerTest (suite, "/BulkOperation/error", test_bulk_error);
    TestSuite_AddMockServerTest (
       suite, "/BulkOperation/error/unordered", test_bulk_error_unordered);
    TestSuite_AddLive (

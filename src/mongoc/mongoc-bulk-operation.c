@@ -690,6 +690,14 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
 
    BSON_ASSERT (bulk);
 
+   if (!bulk->client) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "mongoc_bulk_operation_execute() requires a client "
+                      "and one has not been set.");
+      RETURN (false);
+   }
    cluster = &bulk->client->cluster;
 
    if (bulk->executed) {
@@ -702,14 +710,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
       bson_init (reply);
    }
 
-   if (!bulk->client) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "mongoc_bulk_operation_execute() requires a client "
-                      "and one has not been set.");
-      RETURN (false);
-   } else if (!bulk->database) {
+   if (!bulk->database) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,

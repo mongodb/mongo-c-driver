@@ -167,8 +167,10 @@ fi
    #export LD_PRELOAD="libSegFault.so"
 #fi
 
+# UndefinedBehaviorSanitizer configuration
+UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 # AddressSanitizer configuration
-ASAN_OPTIONS="detect_leaks=1"
+ASAN_OPTIONS="detect_leaks=1 abort_on_error=1"
 # LeakSanitizer configuration
 LSAN_OPTIONS="log_pointers=true"
 
@@ -248,7 +250,17 @@ openssl version
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
 $SCAN_BUILD make all
-$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
+$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>error.log
+
+# Check if the error.log exists, and is more than 0 byte
+if [ -s error.log ]; then
+   # Ignore ar(1) warnings, and check the log again
+   grep -v "^ar: " error.log > log.log
+   if [ -s log.log ]; then
+      cat log.log
+      exit 2
+   fi
+fi
 
 
 if [ "$COVERAGE" = "yes" ]; then

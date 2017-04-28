@@ -53,11 +53,15 @@ test_mongoc_client_max_staleness (void)
    mongoc_client_destroy (client);
 
    /* no " MONGOC_URI_MAXSTALENESSSECONDS " with primary mode */
+   capture_logs (true);
    ASSERT (!mongoc_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS
                                "=120"));
    ASSERT (!mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
                                "=primary&" MONGOC_URI_MAXSTALENESSSECONDS
                                "=120"));
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid readPreferences");
 
    capture_logs (true);
 

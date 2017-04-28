@@ -587,6 +587,25 @@ tasks:
         - func: "upload coverage"
         - func: "upload build"
 
+
+    - name: debug-compile-sanitizer-address
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CFLAGS='-fsanitize=address' sh .evergreen/compile.sh
+
+    - name: debug-compile-sanitizer-undefined
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CFLAGS='-fsanitize=undefined' sh .evergreen/compile.sh
+
     - name: debug-compile-scan-build
       tags: ["debug-compile", "special", "scan-build", "clang"]
       commands:
@@ -6604,6 +6623,8 @@ buildvariants:
     - ubuntu1604-test
   tasks:
     - "debug-compile-scan-build"
+    - "debug-compile-sanitizer-address"
+    - "debug-compile-sanitizer-undefined"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
