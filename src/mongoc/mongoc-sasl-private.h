@@ -34,7 +34,7 @@ typedef struct _mongoc_sasl_t mongoc_sasl_t;
 
 
 struct _mongoc_sasl_t {
-   sasl_callback_t callbacks[4];
+   sasl_callback_t callbacks[5];
    sasl_conn_t *conn;
    bool done;
    int step;
