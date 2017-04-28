@@ -709,7 +709,14 @@ set(prefix "${CMAKE_INSTALL_PREFIX}")
 set(libdir "\${prefix}/lib")
 
 foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
-   set(pkg_config_libs "${pkg_config_libs} ${FLAG}")
+   if ( IS_ABSOLUTE "${FLAG}" )
+      get_filename_component(FLAG_DIR "${FLAG}" DIRECTORY)
+      get_filename_component(FLAG_FILE "${FLAG}" NAME_WE)
+      STRING(REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
+      set(pkg_config_libs "${pkg_config_libs} -L${FLAG_DIR} -l${FLAG_FILE}")
+   else ()
+      set(pkg_config_libs "${pkg_config_libs} ${FLAG}")
+   endif ()
 endforeach()
 
 configure_file(
