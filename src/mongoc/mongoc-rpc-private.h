@@ -140,11 +140,13 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
 bool
 _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
                                  int32_t error_api_version,
-                                 bson_error_t *error);
+                                 bson_error_t *error,
+                                 bson_t *error_doc);
 bool
 _mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
                                int32_t error_api_version,
-                               bson_error_t *error);
+                               bson_error_t *error,
+                               bson_t *error_doc);
 bool
 _mongoc_populate_cmd_error (const bson_t *doc,
                             int32_t error_api_version,

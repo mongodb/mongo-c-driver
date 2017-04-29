@@ -49,6 +49,7 @@ Example
     mongoc_cursor_current
     mongoc_cursor_destroy
     mongoc_cursor_error
+    mongoc_cursor_error_document
     mongoc_cursor_get_batch_size
     mongoc_cursor_get_hint
     mongoc_cursor_get_host

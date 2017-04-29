@@ -27,7 +27,8 @@ Next Release
     * Special characters in username, password and other values must be url encoded
     * Unsupported connection string options now issue warnings
     * Boolean values can now be represented as true/yes/y/t/1 and false/no/n/f/0.
-
+  * New function mongoc_cursor_error_document provides access to server's error
+    reply if a query or command fails.
 
 mongo-c-driver 1.6.0
 ====================

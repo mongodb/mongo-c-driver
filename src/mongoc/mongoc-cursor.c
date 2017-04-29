@@ -231,6 +231,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    bson_init (&cursor->filter);
    bson_init (&cursor->opts);
+   bson_init (&cursor->error_doc);
 
    if (filter) {
       if (!bson_validate (filter, BSON_VALIDATE_EMPTY_KEYS, NULL)) {
@@ -543,6 +544,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    bson_destroy (&cursor->filter);
    bson_destroy (&cursor->opts);
+   bson_destroy (&cursor->error_doc);
    bson_free (cursor);
 
    mongoc_counter_cursors_active_dec ();
@@ -1215,13 +1217,17 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
    }
 
    if (cursor->is_command) {
-      if (_mongoc_rpc_parse_command_error (
-             &cursor->rpc, cursor->client->error_api_version, &cursor->error)) {
+      if (_mongoc_rpc_parse_command_error (&cursor->rpc,
+                                           cursor->client->error_api_version,
+                                           &cursor->error,
+                                           &cursor->error_doc)) {
          GOTO (done);
       }
    } else {
-      if (_mongoc_rpc_parse_query_error (
-             &cursor->rpc, cursor->client->error_api_version, &cursor->error)) {
+      if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                         cursor->client->error_api_version,
+                                         &cursor->error,
+                                         &cursor->error_doc)) {
          GOTO (done);
       }
    }
@@ -1663,8 +1669,10 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       GOTO (fail);
    }
 
-   if (_mongoc_rpc_parse_query_error (
-          &cursor->rpc, cursor->client->error_api_version, &cursor->error)) {
+   if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                      cursor->client->error_api_version,
+                                      &cursor->error,
+                                      &cursor->error_doc)) {
       GOTO (fail);
    }
 
@@ -1693,16 +1701,27 @@ fail:
 bool
 mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error)
 {
+   ENTRY;
+
+   RETURN (mongoc_cursor_error_document (cursor, error, NULL));
+}
+
+
+bool
+mongoc_cursor_error_document (mongoc_cursor_t *cursor,
+                              bson_error_t *error,
+                              const bson_t **doc)
+{
    bool ret;
 
    ENTRY;
 
    BSON_ASSERT (cursor);
 
-   if (cursor->iface.error) {
-      ret = cursor->iface.error (cursor, error);
+   if (cursor->iface.error_document) {
+      ret = cursor->iface.error_document (cursor, error, doc);
    } else {
-      ret = _mongoc_cursor_error (cursor, error);
+      ret = _mongoc_cursor_error_document (cursor, error, doc);
    }
 
    RETURN (ret);
@@ -1710,7 +1729,9 @@ mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error)
 
 
 bool
-_mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error)
+_mongoc_cursor_error_document (mongoc_cursor_t *cursor,
+                               bson_error_t *error,
+                               const bson_t **doc)
 {
    ENTRY;
 
@@ -1722,7 +1743,16 @@ _mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error)
                       cursor->error.code,
                       "%s",
                       cursor->error.message);
+
+      if (doc) {
+         *doc = &cursor->error_doc;
+      }
+
       RETURN (true);
+   }
+
+   if (doc) {
+      *doc = NULL;
    }
 
    RETURN (false);
@@ -1979,6 +2009,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    bson_copy_to (&cursor->filter, &_clone->filter);
    bson_copy_to (&cursor->opts, &_clone->opts);
+   bson_copy_to (&cursor->error_doc, &_clone->error_doc);
 
    bson_strncpy (_clone->ns, cursor->ns, sizeof _clone->ns);
 

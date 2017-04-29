@@ -46,6 +46,10 @@ MONGOC_EXPORT (bool)
 mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson);
 MONGOC_EXPORT (bool)
 mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error);
+MONGOC_EXPORT (bool)
+mongoc_cursor_error_document (mongoc_cursor_t *cursor,
+                              bson_error_t *error,
+                              const bson_t **doc);
 MONGOC_EXPORT (void)
 mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 MONGOC_EXPORT (bool)

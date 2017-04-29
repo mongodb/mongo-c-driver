@@ -754,6 +754,7 @@ test_cursor_new_invalid (void)
    bson_error_t error;
    mongoc_cursor_t *cursor;
    bson_t b = BSON_INITIALIZER;
+   const bson_t *error_doc;
 
    client = test_framework_client_new ();
    cursor = mongoc_cursor_new_from_command_reply (client, &b, 0);
@@ -763,6 +764,9 @@ test_cursor_new_invalid (void)
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Couldn't parse cursor document");
+
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -776,6 +780,7 @@ test_cursor_new_invalid_filter (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    bson_error_t error;
+   const bson_t *error_doc;
 
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -790,6 +795,9 @@ test_cursor_new_invalid_filter (void)
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Empty keys are not allowed in 'filter'.");
 
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
+
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -803,6 +811,7 @@ test_cursor_new_invalid_opts (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    bson_error_t error;
+   const bson_t *error_doc;
 
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -817,6 +826,8 @@ test_cursor_new_invalid_opts (void)
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Cannot use empty keys in 'opts'.");
 
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
    mongoc_cursor_destroy (cursor);
 
    cursor = mongoc_collection_find_with_opts (
@@ -828,6 +839,9 @@ test_cursor_new_invalid_opts (void)
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Cannot use $-modifiers in 'opts'.");
+
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
 
    mongoc_cursor_destroy (cursor);
 
@@ -1632,6 +1646,130 @@ test_n_return_find_cmd_with_opts (void)
 }
 
 
+static void
+test_error_document_query (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_error_document_query");
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'x': {'$badOperator': 1}}"), NULL, NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+   ASSERT_CONTAINS (error.message, "$badOperator");
+   ASSERT_CMPINT32 (
+      bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_error_document_command (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   cursor = mongoc_client_command (client,
+                                   "test",
+                                   MONGOC_QUERY_NONE,
+                                   0,
+                                   0,
+                                   0,
+                                   tmp_bson ("{'foo': 1}"), /* no such cmd */
+                                   NULL,
+                                   NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+   ASSERT_CONTAINS (error.message, "no such");
+
+   /* MongoDB 2.4 has no "code" in the reply for "no such command" */
+   if (test_framework_max_wire_version_at_least (2)) {
+      ASSERT_CMPINT32 (bson_lookup_int32 (error_doc, "code"), ==,
+                       (int32_t) error.code);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_error_document_getmore (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   int i;
+   bool r;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_error_document_getmore");
+   mongoc_collection_drop (collection, NULL);
+
+   for (i = 0; i < 10; i++) {
+      r = mongoc_collection_insert (collection,
+                                    MONGOC_INSERT_NONE,
+                                    tmp_bson ("{'i': %d}", i),
+                                    NULL,
+                                    &error);
+
+      ASSERT_OR_PRINT (r, error);
+   }
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 2}"), NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+
+   mongoc_collection_drop (collection, NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+
+   /* results vary by server version */
+   if (error.domain == MONGOC_ERROR_CURSOR) {
+      /* MongoDB 3.0 and older */
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                             "cursor is invalid");
+   } else {
+      /* MongoDB 3.2+ */
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+      ASSERT_CMPINT32 (
+         bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -1733,4 +1871,10 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/n_return/find_cmd/with_opts",
                                 test_n_return_find_cmd_with_opts);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/query", test_error_document_query);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/getmore", test_error_document_getmore);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/command", test_error_document_command);
 }

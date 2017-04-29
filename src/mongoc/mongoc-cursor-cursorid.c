@@ -121,17 +121,20 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
    if (_mongoc_cursor_run_command (cursor, command, &cid->array) &&
        _mongoc_cursor_cursorid_start_batch (cursor)) {
       RETURN (true);
-   } else {
-      if (!cursor->error.domain) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Invalid reply to %s command.",
-                         _mongoc_get_command_name (command));
-      }
-
-      RETURN (false);
    }
+
+   bson_destroy (&cursor->error_doc);
+   bson_copy_to (&cid->array, &cursor->error_doc);
+
+   if (!cursor->error.domain) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply to %s command.",
+                      _mongoc_get_command_name (command));
+   }
+
+   RETURN (false);
 }
 
 
@@ -157,8 +160,7 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
       *bson = &cid->current_doc;
 
       cursor->end_of_event = false;
-   }
-   else {
+   } else {
       cursor->end_of_event = true;
    }
 }

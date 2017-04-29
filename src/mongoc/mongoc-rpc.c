@@ -987,12 +987,15 @@ _mongoc_rpc_is_failure (mongoc_rpc_t *rpc,
 /* returns true if the reply is a server error
  *
  * note we deliberately do *not* check for writeConcernError
+ *
+ * if error_doc is not NULL, it is reinitialized with the server reply
  */
 static bool
 _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          bool is_command,
                          int32_t error_api_version,
-                         bson_error_t *error /* OUT */)
+                         bson_error_t *error /* OUT */,
+                         bson_t *error_doc /* OUT */)
 {
    bson_t b;
    bool r;
@@ -1021,6 +1024,11 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
 
       if (_mongoc_rpc_get_first_document (rpc, &b)) {
          r = _mongoc_populate_cmd_error (&b, error_api_version, error);
+         if (r && error_doc) {
+            bson_destroy (error_doc);
+            bson_copy_to (&b, error_doc);
+         }
+
          bson_destroy (&b);
          RETURN (r);
       } else {
@@ -1032,6 +1040,13 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
       }
    } else if (_mongoc_rpc_is_failure (
                  rpc, is_command, error_api_version, error)) {
+
+      if (_mongoc_rpc_get_first_document (rpc, &b)) {
+         bson_destroy (error_doc);
+         bson_copy_to (&b, error_doc);
+         bson_destroy (&b);
+      }
+
       RETURN (true);
    }
 
@@ -1047,6 +1062,7 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
  *
  *       Check if a server OP_REPLY is a command error message.
  *       Optionally fill out a bson_error_t from the server error.
+ *       @error_document must be an initialized bson_t or NULL.
  *
  * Returns:
  *       true if the reply is an error message, false otherwise.
@@ -1055,15 +1071,20 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
  *       If rpc is an error reply and @error is not NULL, set its
  *       domain, code, and message.
  *
+ *       If @error_document is not NULL, it is reinitialized with
+ *       the server reply.
+ *
  *--------------------------------------------------------------------------
  */
 
 bool
 _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
                                  int32_t error_api_version,
-                                 bson_error_t *error)
+                                 bson_error_t *error,
+                                 bson_t *error_doc)
 {
-   return _mongoc_rpc_parse_error (rpc, true, error_api_version, error);
+   return _mongoc_rpc_parse_error (
+      rpc, true, error_api_version, error, error_doc);
 }
 
 
@@ -1074,6 +1095,7 @@ _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
  *
  *       Check if a server OP_REPLY is a query error message.
  *       Optionally fill out a bson_error_t from the server error.
+ *       @error_document must be an initialized bson_t or NULL.
  *
  * Returns:
  *       true if the reply is an error message, false otherwise.
@@ -1082,13 +1104,18 @@ _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
  *       If rpc is an error reply and @error is not NULL, set its
  *       domain, code, and message.
  *
+ *       If @error_document is not NULL, it is reinitialized with
+ *       the server reply.
+ *
  *--------------------------------------------------------------------------
  */
 
 bool
 _mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
                                int32_t error_api_version,
-                               bson_error_t *error)
+                               bson_error_t *error,
+                               bson_t *error_doc)
 {
-   return _mongoc_rpc_parse_error (rpc, false, error_api_version, error);
+   return _mongoc_rpc_parse_error (
+      rpc, false, error_api_version, error, error_doc);
 }
