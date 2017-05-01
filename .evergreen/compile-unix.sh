@@ -254,11 +254,16 @@ $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>error.log
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then
-   # Ignore ar(1) warnings, and check the log again
-   grep -v "^ar: " error.log > log.log
-   if [ -s log.log ]; then
-      cat log.log
-      exit 2
+   cat error.log
+
+   if [ "$CHECK_LOG" = "yes" ]; then
+      # Ignore ar(1) warnings, and check the log again
+      grep -v "^ar: " error.log > log.log
+      if [ -s log.log ]; then
+         cat error.log
+         # Mark build as failed if there is unknown things in the log
+         exit 2
+      fi
    fi
 fi
 
