@@ -218,7 +218,7 @@ MONGOC_URI_MAXSTALENESSSECONDS             maxstalenessseconds               The
 
 .. note::
 
-  When connecting to more than one mongos, libmongoc's localThresholdMS applies only to the selection of mongos servers. The threshold for selecting among replica set members in shards is controlled by the `mongos's localThreshold command line option <https://docs.mongodb.org/manual/reference/program/mongos/#cmdoption--localThreshold>`_.
+  When connecting to more than one mongos, libmongoc's localThresholdMS applies only to the selection of mongos servers. The threshold for selecting among replica set members in shards is controlled by the `mongos's localThreshold command line option <https://docs.mongodb.com/manual/reference/program/mongos/#cmdoption-localthreshold>`_.
 
 Legacy Options
 --------------
