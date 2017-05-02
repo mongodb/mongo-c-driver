@@ -1,6 +1,6 @@
 import sys
 
-# Should be in EXACT same order as from mongoc-handshake-private.h.
+# Should be in EXACT same order as from src/mongoc/mongoc-handshake-private.h.
 # The values are implicit (so we assume 1st entry is 1 << 0,
 # second entry is 1 << 1 and so on).
 MD_FLAGS = [
@@ -25,6 +25,7 @@ MD_FLAGS = [
     "MONGOC_MD_FLAG_ENABLE_COMPRESSION",
     "MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY",
     "MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB",
+    "MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI",
 ]
 
 def main():

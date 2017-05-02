@@ -72,6 +72,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-cluster-private.h \
 	src/mongoc/mongoc-cluster-sasl-private.h \
+	src/mongoc/mongoc-cluster-cyrus-private.h \
 	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-collection-private.h \
 	src/mongoc/mongoc-counters-private.h \
@@ -102,6 +103,8 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-read-concern-private.h \
 	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-rpc-private.h \
+	src/mongoc/mongoc-cyrus-private.h \
+	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-sspi-private.h \
 	src/mongoc/mongoc-scram-private.h \
@@ -161,7 +164,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-client.c \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
-	src/mongoc/mongoc-cluster-sspi.c \
 	src/mongoc/mongoc-collection.c \
 	src/mongoc/mongoc-compression.c \
 	src/mongoc/mongoc-counters.c \
@@ -193,7 +195,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-server-stream.c \
 	src/mongoc/mongoc-set.c \
 	src/mongoc/mongoc-socket.c \
-	src/mongoc/mongoc-sspi.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-file.c \
@@ -262,6 +263,20 @@ endif
 if ENABLE_SASL
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sasl.c
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
+endif
+if ENABLE_SASL_CYRUS
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-cyrus.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cyrus.c
+endif
+
+if ENABLE_SASL_SSPI
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sspi.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sspi.c
+endif
+
+if ENABLE_SASL_GSSAPI
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-gssapi.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-gssapi.c
 endif
 
 EXTRA_DIST += $(MONGOC_DEF_FILES) $(NOINST_H_FILES)

@@ -149,6 +149,20 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
                                     bson_t *reply,
                                     bson_error_t *error);
 
+void
+_mongoc_cluster_build_sasl_start (bson_t *cmd,
+                                  const char *mechanism,
+                                  const char *buf,
+                                  uint32_t buflen);
+
+void
+_mongoc_cluster_build_sasl_continue (bson_t *cmd,
+                                     int conv_id,
+                                     const char *buf,
+                                     uint32_t buflen);
+
+int
+_mongoc_cluster_get_conversation_id (const bson_t *reply);
 
 BSON_END_DECLS
 

@@ -27,13 +27,7 @@
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #ifdef MONGOC_ENABLE_SASL
-#ifdef MONGOC_ENABLE_SASL_CYRUS
-#include "mongoc-sasl-private.h"
 #include "mongoc-cluster-sasl-private.h"
-#else
-#include "mongoc-cluster-sspi-private.h"
-#include "mongoc-sspi-private.h"
-#endif
 #endif
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
@@ -1345,11 +1339,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 #endif
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
 #ifdef MONGOC_ENABLE_SASL
-#ifdef MONGOC_ENABLE_SASL_CYRUS
       ret = _mongoc_cluster_auth_node_sasl (cluster, stream, hostname, error);
-#else
-      ret = _mongoc_cluster_auth_node_sspi (cluster, stream, hostname, error);
-#endif
 #else
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,

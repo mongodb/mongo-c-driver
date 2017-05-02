@@ -25,23 +25,6 @@
 #include "mongoc-util-private.h"
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_auth_node_sasl --
- *
- *       Perform authentication for a cluster node using SASL. This only
- *       supports GSSAPI at the moment.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       error may be set.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_sspi_client_state_t *
 _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
 {
@@ -132,6 +115,22 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
    return NULL;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_sspi --
+ *
+ *       Perform authentication for a cluster node using SSPI
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bool
 _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
@@ -170,9 +169,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       bson_destroy (&properties);
    }
 
-   if (canonicalize &&
-       _mongoc_cluster_get_canonicalized_name (
-          cluster, stream, real_name, sizeof real_name, error)) {
+   if (canonicalize && _mongoc_sasl_get_canonicalized_name (
+                          stream, real_name, sizeof real_name, error)) {
       state = _mongoc_cluster_sspi_new (cluster->uri, real_name);
    } else {
       state = _mongoc_cluster_sspi_new (cluster->uri, hostname);

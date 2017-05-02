@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,39 +21,25 @@
 #error "Only <mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-uri.h"
 #include <bson.h>
-#include <sasl/sasl.h>
-#include <sasl/saslutil.h>
-
+#include "mongoc-uri.h"
+#include "mongoc-stream-private.h"
+#include "mongoc-stream.h"
+#include "mongoc-stream-socket.h"
 
 BSON_BEGIN_DECLS
 
 
-typedef struct _mongoc_sasl_t mongoc_sasl_t;
-
-
-struct _mongoc_sasl_t {
-   sasl_callback_t callbacks[5];
-   sasl_conn_t *conn;
-   bool done;
-   int step;
-   char *mechanism;
+typedef struct {
    char *user;
    char *pass;
    char *service_name;
    char *service_host;
    bool canonicalize_host_name;
-   sasl_interact_t *interact;
-};
+   char *mechanism;
+} mongoc_sasl_t;
 
 
-#ifndef SASL_CALLBACK_FN
-#define SASL_CALLBACK_FN(_f) ((int (*) (void)) (_f))
-#endif
-
-void
-_mongoc_sasl_init (mongoc_sasl_t *sasl);
 void
 _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
 void
@@ -68,19 +54,11 @@ void
 _mongoc_sasl_set_service_host (mongoc_sasl_t *sasl, const char *service_host);
 void
 _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
-int
-_mongoc_sasl_log (mongoc_sasl_t *sasl, int level, const char *message);
-void
-_mongoc_sasl_destroy (mongoc_sasl_t *sasl);
 bool
-_mongoc_sasl_step (mongoc_sasl_t *sasl,
-                   const uint8_t *inbuf,
-                   uint32_t inbuflen,
-                   uint8_t *outbuf,
-                   uint32_t outbufmax,
-                   uint32_t *outbuflen,
-                   bson_error_t *error);
-
+_mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
+                                     char *name,                   /* OUT */
+                                     size_t namelen,               /* IN */
+                                     bson_error_t *error);         /* OUT */
 
 BSON_END_DECLS
 

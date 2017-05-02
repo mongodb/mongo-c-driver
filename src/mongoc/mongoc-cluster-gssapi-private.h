@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_CLUSTER_SASL_PRIVATE_H
-#define MONGOC_CLUSTER_SASL_PRIVATE_H
+#ifndef MONGOC_CLUSTER_GSSAPI_PRIVATE_H
+#define MONGOC_CLUSTER_GSSAPI_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
@@ -26,8 +26,8 @@
 #include <bson.h>
 
 bool
-_mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
-                                mongoc_stream_t *stream,
-                                const char *hostname,
-                                bson_error_t *error);
-#endif /* MONGOC_CLUSTER_SASL_PRIVATE_H */
+_mongoc_cluster_auth_node_gssapi (mongoc_cluster_t *cluster,
+                                  mongoc_stream_t *stream,
+                                  const char *hostname,
+                                  bson_error_t *error);
+#endif /* MONGOC_CLUSTER_GSSAPI_PRIVATE_H */

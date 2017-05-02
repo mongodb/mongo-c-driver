@@ -11,8 +11,8 @@ set (ENABLE_SSL AUTO CACHE STRING
 
 set (ENABLE_SASL AUTO CACHE STRING
      "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
-     SASL, \"SSPI\" to use Windows Native SSPI, \"AUTO\",\ or \"OFF\". These
-     options are case-sensitive.")
+     SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
+     \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
@@ -164,16 +164,18 @@ if (NOT MONGOC_HAVE_ASN1_STRING_GET0_DATA)
 endif ()
 
 if (NOT (ENABLE_SASL STREQUAL CYRUS
+         OR ENABLE_SASL STREQUAL GSSAPI
          OR ENABLE_SASL STREQUAL SSPI
          OR ENABLE_SASL STREQUAL AUTO
          OR ENABLE_SASL STREQUAL OFF))
    message (FATAL_ERROR
-      "ENABLE_SASL option must be CYRUS, SSPI, AUTO, or OFF")
+      "ENABLE_SASL option must be CYRUS, GSSAPI, SSPI, AUTO, or OFF")
 endif()
 
 # Defaults.
 set (MONGOC_ENABLE_SASL 0)
 set (MONGOC_ENABLE_SASL_CYRUS 0)
+set (MONGOC_ENABLE_SASL_GSSAPI 0)
 set (MONGOC_ENABLE_SASL_SSPI 0)
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
@@ -189,6 +191,9 @@ if (NOT ENABLE_SASL STREQUAL OFF)
    elseif ((ENABLE_SASL STREQUAL SSPI OR ENABLE_SASL STREQUAL AUTO) AND WIN32)
       set (MONGOC_ENABLE_SASL 1)
       set (MONGOC_ENABLE_SASL_SSPI 1)
+   elseif ((ENABLE_SASL STREQUAL GSSAPI OR ENABLE_SASL STREQUAL AUTO) AND DARWIN)
+      set (MONGOC_ENABLE_SASL 1)
+      set (MONGOC_ENABLE_SASL_GSSAPI 1)
    endif ()
 else ()
    set (MONGOC_ENABLE_SASL 0)
@@ -498,15 +503,26 @@ endif () # ENABLE_SSL
 
 if (MONGOC_ENABLE_SASL)
    set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sasl.c)
+   set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
    if (MONGOC_ENABLE_SASL_CYRUS)
       message (STATUS "Compiling against Cyrus SASL")
-      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-cyrus.c)
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cyrus.c)
       include_directories(${SASL_INCLUDE_DIRS})
    elseif (MONGOC_ENABLE_SASL_SSPI)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
       set (SASL_LIBS secur32.lib crypt32.lib Shlwapi.lib)
+   elseif (MONGOC_ENABLE_SASL_GSSAPI)
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-gssapi.c)
+      set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-gssapi.c)
+      if (APPLE)
+         message (STATUS "Compiling against macOS GSS")
+         set (LIBS ${LIBS} -framework GSS)
+      else ()
+         message (FATAL_ERROR "gssapi missing krb5-config support in cmake")
+      endif()
    endif()
 else()
    message (STATUS "SASL disabled")
@@ -649,7 +665,7 @@ endif()
 
 if (MONGOC_ENABLE_SASL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-sasl.c
+      ${SOURCE_DIR}/tests/test-cyrus.c
    )
 endif ()
 

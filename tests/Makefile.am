@@ -164,7 +164,7 @@ endif
 
 if ENABLE_SASL
 test_libmongoc_SOURCES += \
-	tests/test-sasl.c
+	tests/test-cyrus.c
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
 test_libmongoc_LDADD = $(TEST_LIBS)

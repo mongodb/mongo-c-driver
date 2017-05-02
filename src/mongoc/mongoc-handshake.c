@@ -133,6 +133,10 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB;
 #endif
 
+#ifdef MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI
+   bf |= MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI;
+#endif
+
    return bf;
 }
 

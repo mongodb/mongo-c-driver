@@ -45,10 +45,10 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
-#include "mongoc-sasl-private.h"
+#include "mongoc-cyrus-private.h"
 
 static void *
-mongoc_sasl_mutex_alloc (void)
+mongoc_cyrus_mutex_alloc (void)
 {
    mongoc_mutex_t *mutex;
 
@@ -60,7 +60,7 @@ mongoc_sasl_mutex_alloc (void)
 
 
 static int
-mongoc_sasl_mutex_lock (void *mutex)
+mongoc_cyrus_mutex_lock (void *mutex)
 {
    mongoc_mutex_lock ((mongoc_mutex_t *) mutex);
 
@@ -69,7 +69,7 @@ mongoc_sasl_mutex_lock (void *mutex)
 
 
 static int
-mongoc_sasl_mutex_unlock (void *mutex)
+mongoc_cyrus_mutex_unlock (void *mutex)
 {
    mongoc_mutex_unlock ((mongoc_mutex_t *) mutex);
 
@@ -78,7 +78,7 @@ mongoc_sasl_mutex_unlock (void *mutex)
 
 
 static void
-mongoc_sasl_mutex_free (void *mutex)
+mongoc_cyrus_mutex_free (void *mutex)
 {
    mongoc_mutex_destroy ((mongoc_mutex_t *) mutex);
    bson_free (mutex);
@@ -92,7 +92,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
    sasl_callback_t callbacks[] = {
-      {SASL_CB_LOG, SASL_CALLBACK_FN (_mongoc_sasl_log), NULL},
+      {SASL_CB_LOG, SASL_CALLBACK_FN (_mongoc_cyrus_log), NULL},
       {SASL_CB_LIST_END}};
 #endif
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
@@ -108,10 +108,10 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked
     * before mongoc_log_set_handler() can complete. */
-   sasl_set_mutex (mongoc_sasl_mutex_alloc,
-                   mongoc_sasl_mutex_lock,
-                   mongoc_sasl_mutex_unlock,
-                   mongoc_sasl_mutex_free);
+   sasl_set_mutex (mongoc_cyrus_mutex_alloc,
+                   mongoc_cyrus_mutex_lock,
+                   mongoc_cyrus_mutex_unlock,
+                   mongoc_cyrus_mutex_free);
 
    status = sasl_client_init (callbacks);
    BSON_ASSERT (status == SASL_OK);
