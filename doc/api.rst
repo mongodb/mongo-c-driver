@@ -8,6 +8,7 @@ API Reference
    init-cleanup
    logging
    errors
+   lifecycle
    mongoc_version
    mongoc_bulk_operation_t
    mongoc_client_pool_t

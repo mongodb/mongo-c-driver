@@ -3,7 +3,7 @@
 mongoc_cursor_t
 ===============
 
-Client-side cursor abtraction
+Client-side cursor abstraction
 
 Synopsis
 --------
