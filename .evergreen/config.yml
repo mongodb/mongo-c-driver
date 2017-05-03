@@ -6432,8 +6432,6 @@ buildvariants:
       distros: # Run on any of these variants, whichever will schedule us first
       - ubuntu1604-build
       - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
