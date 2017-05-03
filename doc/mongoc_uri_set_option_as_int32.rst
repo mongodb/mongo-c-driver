@@ -32,4 +32,4 @@ Updates the option in-place if already set, otherwise appends it to the URI's :s
 Returns
 -------
 
-True if successfully set.
+True if successfully set (the named option is a known option of type int32).

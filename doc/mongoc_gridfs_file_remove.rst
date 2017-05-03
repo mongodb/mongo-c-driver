@@ -25,7 +25,7 @@ Removes ``file`` and its data chunks from the MongoDB server.
 Returns
 -------
 
-Returns true if successful, otherwise false and error is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 Errors
 ------

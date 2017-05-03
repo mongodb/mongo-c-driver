@@ -30,5 +30,5 @@ Errors are propagated via the ``error`` parameter. This could include socket err
 Returns
 -------
 
-``true`` on success, otherwise ``false`` and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 

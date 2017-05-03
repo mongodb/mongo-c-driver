@@ -34,7 +34,7 @@ Errors are propagated through the ``error`` parameter.
 Returns
 -------
 
-``true`` on success, ``false`` on failure and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 This function does not check the server response for a write concern error or write concern timeout.
 

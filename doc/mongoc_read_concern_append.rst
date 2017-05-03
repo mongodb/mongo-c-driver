@@ -25,7 +25,7 @@ This function appends a read concern to command options. It is useful for append
 Returns
 -------
 
-Returns true on success, and false otherwise.
+Returns true on success. If any arguments are invalid, returns false and logs an error.
 
 Example
 -------

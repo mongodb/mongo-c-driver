@@ -23,6 +23,6 @@ Parameters
 Returns
 -------
 
-Returns true if the error API version was set, or logs an error message and returns false.
+Returns true if the error API version was set, or logs an error message and returns false if ``version`` is invalid.
 
 .. include:: includes/mongoc_client_pool_call_once.txt

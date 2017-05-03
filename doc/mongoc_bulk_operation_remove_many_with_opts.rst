@@ -39,5 +39,5 @@ Operation errors are propagated via :symbol:`mongoc_bulk_operation_execute()`, w
 Returns
 -------
 
-Returns true on success, and false otherwise.
+Returns true on success, and false if there is a server or network error or if passed invalid arguments.
 

@@ -53,6 +53,10 @@ mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
       opts->sort = bson_copy (sort);
       return true;
    }
+
+   MONGOC_ERROR (
+      "NULL sort parameter passed to mongoc_find_and_modify_opts_set_sort");
+
    return false;
 }
 
@@ -81,6 +85,10 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
       opts->update = bson_copy (update);
       return true;
    }
+
+   MONGOC_ERROR (
+      "NULL update parameter passed to mongoc_find_and_modify_opts_set_update");
+
    return false;
 }
 
@@ -109,6 +117,10 @@ mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
       opts->fields = bson_copy (fields);
       return true;
    }
+
+   MONGOC_ERROR (
+      "NULL fields parameter passed to mongoc_find_and_modify_opts_set_fields");
+
    return false;
 }
 

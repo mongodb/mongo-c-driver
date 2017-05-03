@@ -29,5 +29,4 @@ Calling this function after :symbol:`mongoc_cursor_next` has no effect.
 Returns
 -------
 
-True if the limit was set.
-
+Returns true on success. If any arguments are invalid, returns false and leaves the limit unchanged.

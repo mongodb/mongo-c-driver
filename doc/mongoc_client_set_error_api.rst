@@ -24,5 +24,4 @@ Parameters
 Returns
 -------
 
-Returns true if the error API version was set, or logs an error message and returns false.
-
+Returns true on success. If any arguments are invalid, returns false and logs an error.

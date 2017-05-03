@@ -24,6 +24,6 @@ Parameters
 Returns
 -------
 
-true if the appname is set successfully. Otherwise, false.
+Returns true if appname was set. If appname is too long, returns false and logs an error.
 
 .. include:: includes/mongoc_client_pool_call_once.txt

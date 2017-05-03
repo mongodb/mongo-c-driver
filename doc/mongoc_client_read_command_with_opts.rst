@@ -44,7 +44,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` if successful; otherwise ``false`` and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 .. _mongoc_client_read_command_with_opts_example:
 

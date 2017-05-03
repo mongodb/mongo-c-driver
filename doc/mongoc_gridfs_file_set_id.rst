@@ -30,5 +30,4 @@ If an error occurred, false is returned.
 Returns
 -------
 
-Returns true if successful, otherwise false.
-
+Returns true on success. If any arguments are invalid, returns false and logs an error.
