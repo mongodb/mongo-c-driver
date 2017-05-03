@@ -138,19 +138,15 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
                           const bson_t *command,
                           mongoc_query_flags_t flags);
 bool
-_mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
-                                 int32_t error_api_version,
-                                 bson_error_t *error,
-                                 bson_t *error_doc);
+_mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
+                      bool is_command,
+                      int32_t error_api_version,
+                      bson_error_t *error /* OUT */,
+                      bson_t *error_doc /* OUT */);
 bool
-_mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
-                               int32_t error_api_version,
-                               bson_error_t *error,
-                               bson_t *error_doc);
-bool
-_mongoc_populate_cmd_error (const bson_t *doc,
-                            int32_t error_api_version,
-                            bson_error_t *error);
+_mongoc_cmd_check_ok (const bson_t *doc,
+                      int32_t error_api_version,
+                      bson_error_t *error);
 
 bool
 _mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen);

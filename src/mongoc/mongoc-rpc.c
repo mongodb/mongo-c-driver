@@ -872,10 +872,28 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cmd_check_ok --
+ *
+ *       Check if a server reply document is an error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *       Does *not* check for writeConcernError.
+ *
+ * Returns:
+ *       false if @doc is an error message, true otherwise.
+ *
+ * Side effects:
+ *       If @doc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
 bool
-_mongoc_populate_cmd_error (const bson_t *doc,
-                            int32_t error_api_version,
-                            bson_error_t *error)
+_mongoc_cmd_check_ok (const bson_t *doc,
+                      int32_t error_api_version,
+                      bson_error_t *error)
 {
    mongoc_error_domain_t domain =
       error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
@@ -890,7 +908,7 @@ _mongoc_populate_cmd_error (const bson_t *doc,
 
    if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
       /* no error */
-      RETURN (false);
+      RETURN (true);
    }
 
    if (bson_iter_init_find (&iter, doc, "code") &&
@@ -912,10 +930,12 @@ _mongoc_populate_cmd_error (const bson_t *doc,
 
    bson_set_error (error, domain, code, "%s", msg);
 
-   RETURN (true);
+   /* there was a command error */
+   RETURN (false);
 }
 
 
+/* helper function to parse error reply document to an OP_QUERY */
 static void
 _mongoc_populate_query_error (const bson_t *doc,
                               int32_t error_api_version,
@@ -947,55 +967,36 @@ _mongoc_populate_query_error (const bson_t *doc,
    EXIT;
 }
 
-bool
-_mongoc_rpc_is_failure (mongoc_rpc_t *rpc,
-                        bool is_command,
-                        int32_t error_api_version,
-                        bson_error_t *error)
-{
-   if (rpc->header.opcode == MONGOC_OPCODE_REPLY) {
-      if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
-         bson_t b;
 
-         if (_mongoc_rpc_get_first_document (rpc, &b)) {
-            _mongoc_populate_query_error (&b, error_api_version, error);
-            bson_destroy (&b);
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_QUERY,
-                            MONGOC_ERROR_QUERY_FAILURE,
-                            "Unknown query failure.");
-         }
-
-         return true;
-      }
-
-      if (rpc->reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CURSOR,
-                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "The cursor is invalid or has expired.");
-
-         return true;
-      }
-   }
-
-   return false;
-}
-
-
-/* returns true if the reply is a server error
+/*
+ *--------------------------------------------------------------------------
  *
- * note we deliberately do *not* check for writeConcernError
+ * _mongoc_rpc_check_ok --
  *
- * if error_doc is not NULL, it is reinitialized with the server reply
+ *       Check if a server OP_REPLY is an error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *       @error_document must be an initialized bson_t or NULL.
+ *       Does *not* check for writeConcernError.
+ *
+ * Returns:
+ *       false if the reply is an error message, true otherwise.
+ *
+ * Side effects:
+ *       If rpc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *       If rpc is an error reply and @error_document is not NULL,
+ *       it is reinitialized with the server reply.
+ *
+ *--------------------------------------------------------------------------
  */
-static bool
-_mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
-                         bool is_command,
-                         int32_t error_api_version,
-                         bson_error_t *error /* OUT */,
-                         bson_t *error_doc /* OUT */)
+
+bool
+_mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
+                      bool is_command,
+                      int32_t error_api_version,
+                      bson_error_t *error /* OUT */,
+                      bson_t *error_doc /* OUT */)
 {
    bson_t b;
    bool r;
@@ -1009,7 +1010,7 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Received rpc other than OP_REPLY.");
-      RETURN (true);
+      RETURN (false);
    }
 
    if (is_command) {
@@ -1019,12 +1020,12 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Expected only one reply document, got %d",
                          rpc->reply.n_returned);
-         RETURN (true);
+         RETURN (false);
       }
 
       if (_mongoc_rpc_get_first_document (rpc, &b)) {
-         r = _mongoc_populate_cmd_error (&b, error_api_version, error);
-         if (r && error_doc) {
+         r = _mongoc_cmd_check_ok (&b, error_api_version, error);
+         if (!r && error_doc) {
             bson_destroy (error_doc);
             bson_copy_to (&b, error_doc);
          }
@@ -1036,86 +1037,35 @@ _mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
                          "Failed to decode document from the server.");
-         RETURN (true);
+         RETURN (false);
       }
-   } else if (_mongoc_rpc_is_failure (
-                 rpc, is_command, error_api_version, error)) {
-
+   } else if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
       if (_mongoc_rpc_get_first_document (rpc, &b)) {
-         bson_destroy (error_doc);
-         bson_copy_to (&b, error_doc);
+         _mongoc_populate_query_error (&b, error_api_version, error);
+
+         if (error_doc) {
+            bson_destroy (error_doc);
+            bson_copy_to (&b, error_doc);
+         }
+
          bson_destroy (&b);
+      } else {
+         bson_set_error (error,
+                         MONGOC_ERROR_QUERY,
+                         MONGOC_ERROR_QUERY_FAILURE,
+                         "Unknown query failure.");
       }
 
-      RETURN (true);
+      RETURN (false);
+   } else if (rpc->reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "The cursor is invalid or has expired.");
+
+      RETURN (false);
    }
 
 
-   RETURN (false);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_parse_command_error --
- *
- *       Check if a server OP_REPLY is a command error message.
- *       Optionally fill out a bson_error_t from the server error.
- *       @error_document must be an initialized bson_t or NULL.
- *
- * Returns:
- *       true if the reply is an error message, false otherwise.
- *
- * Side effects:
- *       If rpc is an error reply and @error is not NULL, set its
- *       domain, code, and message.
- *
- *       If @error_document is not NULL, it is reinitialized with
- *       the server reply.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-_mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
-                                 int32_t error_api_version,
-                                 bson_error_t *error,
-                                 bson_t *error_doc)
-{
-   return _mongoc_rpc_parse_error (
-      rpc, true, error_api_version, error, error_doc);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_parse_query_error --
- *
- *       Check if a server OP_REPLY is a query error message.
- *       Optionally fill out a bson_error_t from the server error.
- *       @error_document must be an initialized bson_t or NULL.
- *
- * Returns:
- *       true if the reply is an error message, false otherwise.
- *
- * Side effects:
- *       If rpc is an error reply and @error is not NULL, set its
- *       domain, code, and message.
- *
- *       If @error_document is not NULL, it is reinitialized with
- *       the server reply.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-_mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
-                               int32_t error_api_version,
-                               bson_error_t *error,
-                               bson_t *error_doc)
-{
-   return _mongoc_rpc_parse_error (
-      rpc, false, error_api_version, error, error_doc);
+   RETURN (true);
 }

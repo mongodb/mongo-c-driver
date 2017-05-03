@@ -1216,20 +1216,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   if (cursor->is_command) {
-      if (_mongoc_rpc_parse_command_error (&cursor->rpc,
-                                           cursor->client->error_api_version,
-                                           &cursor->error,
-                                           &cursor->error_doc)) {
-         GOTO (done);
-      }
-   } else {
-      if (_mongoc_rpc_parse_query_error (&cursor->rpc,
-                                         cursor->client->error_api_version,
-                                         &cursor->error,
-                                         &cursor->error_doc)) {
-         GOTO (done);
-      }
+   if (!_mongoc_rpc_check_ok (&cursor->rpc,
+                              (bool) cursor->is_command,
+                              cursor->client->error_api_version,
+                              &cursor->error,
+                              &cursor->error_doc)) {
+      GOTO (done);
    }
 
    if (cursor->reader) {
@@ -1669,10 +1661,11 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       GOTO (fail);
    }
 
-   if (_mongoc_rpc_parse_query_error (&cursor->rpc,
-                                      cursor->client->error_api_version,
-                                      &cursor->error,
-                                      &cursor->error_doc)) {
+   if (!_mongoc_rpc_check_ok (&cursor->rpc,
+                              false /* is_command */,
+                              cursor->client->error_api_version,
+                              &cursor->error,
+                              &cursor->error_doc)) {
       GOTO (fail);
    }
 

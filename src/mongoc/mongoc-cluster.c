@@ -514,7 +514,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    }
    _mongoc_cluster_inc_ingress_rpc (&rpc);
 
-   if (_mongoc_populate_cmd_error (
+   if (!_mongoc_cmd_check_ok (
           reply_ptr, cluster->client->error_api_version, error)) {
       GOTO (done);
    }
