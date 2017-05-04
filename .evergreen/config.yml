@@ -41,7 +41,7 @@ functions:
         script: |
           set -o xtrace
           rm -f *.tar.gz
-          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
+          curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
 
   "upload release":
     - command: shell.exec
