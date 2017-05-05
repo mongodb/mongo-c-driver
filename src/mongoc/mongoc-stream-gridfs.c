@@ -111,10 +111,9 @@ _mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
    BSON_ASSERT (stream);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
-   BSON_ASSERT (timeout_msec <= INT_MAX);
 
-   ret = mongoc_gridfs_file_readv (
-      file->file, iov, iovcnt, min_bytes, timeout_msec);
+   /* timeout_msec is unused by mongoc_gridfs_file_readv */
+   ret = mongoc_gridfs_file_readv (file->file, iov, iovcnt, min_bytes, 0);
 
    mongoc_counter_streams_ingress_add (ret);
 
@@ -137,7 +136,8 @@ _mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   ret = mongoc_gridfs_file_writev (file->file, iov, iovcnt, timeout_msec);
+   /* timeout_msec is unused by mongoc_gridfs_file_writev */
+   ret = mongoc_gridfs_file_writev (file->file, iov, iovcnt, 0);
 
    if (!ret) {
       RETURN (ret);
