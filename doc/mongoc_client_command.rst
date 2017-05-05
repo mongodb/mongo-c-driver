@@ -19,19 +19,23 @@ Synopsis
                          const bson_t *fields,
                          const mongoc_read_prefs_t *read_prefs);
 
+Superseded by :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, and :symbol:`mongoc_client_read_write_command_with_opts()`.
+
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next` is called on it. The client's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next` will not check the server response for a write concern error or write concern timeout.
+
+If :symbol:`mongoc_cursor_next()` returns ``false``, then retrieve error details with :symbol:`mongoc_cursor_error()` or :symbol:`mongoc_cursor_error_document()`.
 
 Parameters
 ----------
 
 * ``client``: A :symbol:`mongoc_client_t`.
 * ``db_name``: The name of the database to run the command on.
-* ``flags``: A :symbol:`mongoc_query_flags_t`.
-* ``skip``: The number of result documents to skip.
-* ``limit``: The maximum number of documents to return.
-* ``batch_size``: The batch size of documents to return from the MongoDB server.
+* ``flags``: Unused.
+* ``skip``: Unused.
+* ``limit``: Unused.
+* ``batch_size``: Unused.
 * ``query``: A :symbol:`bson:bson_t` containing the command specification.
-* ``fields``: An optional :symbol:`bson:bson_t` containing the fields to return in result documents.
+* ``fields``: Unused.
 * ``read_prefs``: An optional :symbol:`mongoc_read_prefs_t`. Otherwise, the command uses mode ``MONGOC_READ_PRIMARY``.
 
 Returns

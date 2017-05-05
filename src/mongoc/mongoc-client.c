@@ -1202,8 +1202,7 @@ mongoc_client_command (mongoc_client_t *client,
       db_name = ns;
    }
 
-   /* flags, skip, limit, batch_size, fields are unused: CDRIVER-1543 */
-   /* ignore client read prefs if passed-in prefs are NULL */
+   /* flags, skip, limit, batch_size, fields are unused */
    cursor = _mongoc_cursor_new_with_opts (
       client, db_name, true /* is_command */, query, NULL, read_prefs, NULL);
 
