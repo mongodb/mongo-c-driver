@@ -289,6 +289,16 @@ future_gridfs_file_writev (
 
 
 future_t *
+future_gridfs_find_one_with_opts (
+
+   mongoc_gridfs_ptr gridfs,
+   const_bson_ptr filter,
+   const_bson_ptr opts,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_topology_select (
 
    mongoc_topology_ptr topology,

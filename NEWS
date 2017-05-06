@@ -29,6 +29,7 @@ Next Release
     * Boolean values can now be represented as true/yes/y/t/1 and false/no/n/f/0.
   * New function mongoc_cursor_error_document provides access to server's error
     reply if a query or command fails.
+  * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
 
 mongo-c-driver 1.6.0
 ====================

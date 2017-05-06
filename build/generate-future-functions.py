@@ -298,6 +298,13 @@ future_functions = [
                      param("size_t", "iovcnt"),
                      param("uint32_t", "timeout_msec")]),
 
+    future_function("mongoc_gridfs_file_ptr",
+                    "mongoc_gridfs_find_one_with_opts",
+                    [param("mongoc_gridfs_ptr", "gridfs"),
+                     param("const_bson_ptr", "filter"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("mongoc_server_description_ptr",
                     "mongoc_topology_select",
                     [param("mongoc_topology_ptr", "topology"),

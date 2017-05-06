@@ -233,11 +233,19 @@ mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_gridfs_file_t *file;
+   bson_t new_opts;
 
    ENTRY;
 
-   list = _mongoc_gridfs_file_list_new_with_opts (gridfs, filter, opts);
+   bson_init (&new_opts);
 
+   if (opts) {
+      bson_copy_to_excluding_noinit (opts, &new_opts, "limit", (char *) NULL);
+   }
+
+   BSON_APPEND_INT32 (&new_opts, "limit", 1);
+
+   list = _mongoc_gridfs_file_list_new_with_opts (gridfs, filter, &new_opts);
    file = mongoc_gridfs_file_list_next (list);
 
    if (!mongoc_gridfs_file_list_error (list, error) && error) {
@@ -246,6 +254,7 @@ mongoc_gridfs_find_one_with_opts (mongoc_gridfs_t *gridfs,
    }
 
    mongoc_gridfs_file_list_destroy (list);
+   bson_destroy (&new_opts);
 
    RETURN (file);
 }
