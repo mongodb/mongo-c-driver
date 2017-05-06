@@ -483,8 +483,12 @@ test_properties (void)
 static void
 test_create_from_stream (void)
 {
+   int64_t start;
+   int64_t now;
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
+   bson_t *filter;
+   mongoc_gridfs_file_t *file2;
    mongoc_stream_t *stream;
    mongoc_client_t *client;
    bson_error_t error;
@@ -497,6 +501,7 @@ test_create_from_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
+   start = ((int64_t) time (NULL)) * 1000;
    stream =
       mongoc_stream_file_new_for_path (BINARY_DIR "/gridfs.dat", O_RDONLY, 0);
    ASSERT_OR_PRINT_ERRNO (stream, errno);
@@ -506,11 +511,20 @@ test_create_from_stream (void)
    ASSERT (file);
    ASSERT (mongoc_gridfs_file_save (file));
 
+   now = ((int64_t) time (NULL)) * 1000;
+
+   filter = tmp_bson (NULL);
+   BSON_APPEND_VALUE (filter, "_id", mongoc_gridfs_file_get_id (file));
+   file2 = mongoc_gridfs_find_one_with_opts (gridfs, filter, NULL, &error);
+   ASSERT_OR_PRINT (file2, error);
+   ASSERT_CMPINT64 (start, <=, mongoc_gridfs_file_get_upload_date (file2));
+   ASSERT_CMPINT64 (now, >=, mongoc_gridfs_file_get_upload_date (file2));
+
+   mongoc_gridfs_file_destroy (file2);
    mongoc_gridfs_file_destroy (file);
 
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
-
    mongoc_client_destroy (client);
 }
 
