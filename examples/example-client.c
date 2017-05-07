@@ -7,87 +7,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-void
-run_query (const char *uri_str, const bson_t *query)
+int
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
-   const bson_t *doc;
    bson_error_t error;
-   const bson_t *reply;
+   const bson_t *doc;
+   const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
+   const char *collection_name = "test";
+   bson_t query;
    char *str;
-
-   client = mongoc_client_new (uri_str);
-
-   mongoc_client_set_error_api (client, 2);
-
-   collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_find_with_opts (
-      collection,
-      query,
-      NULL,  /* additional options */
-      NULL); /* read prefs, NULL for default */
-
-   /* this loop is never run: mongoc_cursor_next immediately returns false */
-   while (mongoc_cursor_next (cursor, &doc)) {
-   }
-
-   if (mongoc_cursor_error_document (cursor, &error, &reply)) {
-      str = bson_as_json (reply, NULL);
-      fprintf (stderr, "Cursor Failure: %s\nReply: %s\n", error.message, str);
-      bson_free (str);
-   }
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
-int
-main (int argc, char *argv[])
-{
-   bson_t *good_query;
-   bson_t *bad_query;
 
    mongoc_init ();
 
-   /* find documents matching the query {"x": 1} */
-   good_query = BCON_NEW ("x", BCON_INT64 (1));
+   if (argc > 1) {
+      uristr = argv[1];
+   }
 
-   /* Cause a network error. This will print an error and empty reply document:
-    *
-    * Cursor Failure: No suitable servers found (`serverSelectionTryOnce` set):
-    *     [Failed to resolve 'fake-domain']
-    *
-    * Reply: { }
-    *
-    */
-   run_query ("mongodb://fake-domain/?appname=cursor-example", good_query);
+   if (argc > 2) {
+      collection_name = argv[2];
+   }
 
-   /* invalid: {"x": {"$badOperator": 1}} */
-   bad_query = BCON_NEW ("x", "{", "$badOperator", BCON_INT64 (1), "}");
+   client = mongoc_client_new (uristr);
 
-   /* Cause a server error. This will print an error and server reply document:
-    * 
-    * Cursor Failure: unknown operator: $badOperator
-    *
-    * Reply: 
-    * {"ok": 0.0,
-    *  "errmsg":"unknown operator: $badOperator",
-    *  "code": 2,
-    *  "codeName":"BadValue"
-    * }
-    *
-    */
-   run_query ("mongodb://localhost/?appname=cursor-example", bad_query);
+   if (!client) {
+      fprintf (stderr, "Failed to parse URI.\n");
+      return EXIT_FAILURE;
+   }
 
-   bson_destroy (good_query);
-   bson_destroy (bad_query);
+   mongoc_client_set_error_api (client, 2);
+
+   bson_init (&query);
+
+#if 0
+   bson_append_utf8 (&query, "hello", -1, "world", -1);
+#endif
+
+   collection = mongoc_client_get_collection (client, "test", collection_name);
+   cursor = mongoc_collection_find_with_opts (
+      collection,
+      &query,
+      NULL,  /* additional options */
+      NULL); /* read prefs, NULL for default */
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      str = bson_as_extended_json (doc, NULL);
+      fprintf (stdout, "%s\n", str);
+      bson_free (str);
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "Cursor Failure: %s\n", error.message);
+      return EXIT_FAILURE;
+   }
+
+   bson_destroy (&query);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 
    mongoc_cleanup ();
 
-   return 0;
+   return EXIT_SUCCESS;
 }
