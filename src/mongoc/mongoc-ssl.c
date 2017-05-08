@@ -22,6 +22,7 @@
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
 #include "mongoc-log.h"
+#include "mongoc-uri.h"
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include "mongoc-openssl-private.h"
@@ -90,6 +91,21 @@ retval = _mongoc_secure_channel_extract_subject (filename, passphrase);
    }
 
    return retval;
+}
+
+void
+_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, mongoc_uri_t *uri)
+{
+   ssl_opt->pem_file = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, NULL);
+   ssl_opt->pem_pwd = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, NULL);
+   ssl_opt->ca_file = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, NULL);
+   ssl_opt->weak_cert_validation = mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false);
+   ssl_opt->allow_invalid_hostname = mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false);
 }
 
 void

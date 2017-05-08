@@ -133,6 +133,15 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
       BSON_ASSERT (mongoc_client_pool_set_appname (pool, appname));
    }
 
+#ifdef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_ssl (pool->uri)) {
+      mongoc_ssl_opt_t ssl_opt = {0};
+
+      _mongoc_ssl_opts_from_uri (&ssl_opt, pool->uri);
+      /* sets use_ssl = true */
+      mongoc_client_pool_set_ssl_opts (pool, &ssl_opt);
+   }
+#endif
    mongoc_counter_client_pools_active_inc ();
 
    RETURN (pool);
