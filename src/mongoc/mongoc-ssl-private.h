@@ -22,6 +22,7 @@
 #endif
 
 #include <bson.h>
+#include "mongoc-uri-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -30,6 +31,8 @@ BSON_BEGIN_DECLS
 char *
 mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
 
+void
+_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, mongoc_uri_t *uri);
 void
 _mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst);
 void
