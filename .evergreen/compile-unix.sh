@@ -33,7 +33,7 @@ echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
 
 install_openssl_fips() {
-   curl -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
+   curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
    tar zxvf fips.tar.gz
    cd openssl-fips-2.0.14
    ./config --prefix=$INSTALL_DIR -fPIC
@@ -46,7 +46,7 @@ install_openssl_fips() {
    SSL=${SSL%-fips}
 }
 install_openssl () {
-   curl -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
+   curl --retry 5 -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
    tar zxvf ssl.tar.gz
    cd $SSL
    ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
@@ -63,7 +63,7 @@ install_openssl () {
 }
 
 install_libressl () {
-   curl -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
+   curl --retry 5 -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
    tar zxvf ssl.tar.gz
    cd $SSL
    ./configure --prefix=$INSTALL_DIR
