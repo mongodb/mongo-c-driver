@@ -1501,7 +1501,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_pool_new --
+ * test_framework_client_pool_new --
  *
  *       Get a client pool connected to the test MongoDB topology.
  *

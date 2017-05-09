@@ -417,6 +417,91 @@ test_mongoc_client_authenticate (void *context)
 
 
 static void
+test_mongoc_client_authenticate_cached (int pooled)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t insert = BSON_INITIALIZER;
+   const bson_t *doc;
+   bson_error_t error;
+   bool r;
+   int i = 0;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &insert, NULL, &error);
+   for (i = 0; i < 10; i++) {
+      mongoc_topology_scanner_node_t *scanner_node;
+
+      cursor =
+         mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
+      r = mongoc_cursor_next (cursor, &doc);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (r);
+      mongoc_cursor_destroy (cursor);
+
+      if (pooled) {
+         mongoc_cluster_disconnect_node (&client->cluster, 1);
+      } else {
+         scanner_node =
+            mongoc_topology_scanner_get_node (client->topology->scanner, 1);
+         mongoc_stream_destroy (scanner_node->stream);
+         scanner_node->stream = NULL;
+      }
+   }
+   // Screw up the cache
+   memcpy (client->cluster.scram_client_key, "foo", 3);
+   cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
+   capture_logs (true);
+   r = mongoc_cursor_next (cursor, &doc);
+
+   if (pooled) {
+      ASSERT_CAPTURED_LOG ("The cachekey broke",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Failed authentication");
+   }
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Authentication failed");
+   ASSERT (!r);
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_mongoc_client_authenticate_cached_pool (void *context)
+{
+   test_mongoc_client_authenticate_cached (1);
+}
+
+
+static void
+test_mongoc_client_authenticate_cached_client (void *context)
+{
+   test_mongoc_client_authenticate_cached (0);
+}
+
+
+static void
 test_mongoc_client_authenticate_failure (void *context)
 {
    mongoc_collection_t *collection;
@@ -2687,6 +2772,18 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Client/authenticate",
                       test_mongoc_client_authenticate,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/Client/authenticate_cached/pool",
+                      test_mongoc_client_authenticate_cached_pool,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/Client/authenticate_cached/client",
+                      test_mongoc_client_authenticate_cached_client,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
