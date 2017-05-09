@@ -1715,18 +1715,28 @@ test_get_database_names (void)
 
 
 static void
-test_mongoc_client_ipv6 (void)
+_test_mongoc_client_ipv6 (bool pooled)
 {
    char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
 
    uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
-   client = mongoc_client_new (uri_str);
-   BSON_ASSERT (client);
-   test_framework_set_ssl_opts (client);
+   uri = mongoc_uri_new (uri_str);
+   BSON_ASSERT (uri);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
+   }
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
@@ -1735,9 +1745,30 @@ test_mongoc_client_ipv6 (void)
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    bson_destroy (&reply);
-   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    bson_free (uri_str);
+}
+
+
+static void
+test_mongoc_client_ipv6_single (void)
+{
+   _test_mongoc_client_ipv6 (false);
+}
+
+
+static void
+test_mongoc_client_ipv6_pooled (void)
+{
+   _test_mongoc_client_ipv6 (true);
 }
 
 
@@ -2766,7 +2797,12 @@ test_client_install (TestSuite *suite)
 {
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6", test_mongoc_client_ipv6);
+      TestSuite_AddLive (
+         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
+
+      /* try to validate ipv6 too */
+      TestSuite_AddLive (
+         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
    }
 
    TestSuite_AddFull (suite,

@@ -277,6 +277,11 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str)
    char *hostname;
    bool r;
 
+   if (*str == '\0') {
+      MONGOC_WARNING ("Empty hostname in URI");
+      return false;
+   }
+
    if (*str == '[' && strchr (str, ']')) {
       return mongoc_uri_parse_host6 (uri, str);
    }

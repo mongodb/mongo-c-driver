@@ -51,6 +51,8 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://localhost,localhost::"));
    ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/d?k"));
    ASSERT (!mongoc_uri_new (""));
+   ASSERT (!mongoc_uri_new ("mongodb://,localhost:27017"));
+   ASSERT (!mongoc_uri_new ("mongodb://localhost:27017,,b"));
    ASSERT (!mongoc_uri_new ("mongo://localhost:27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost::27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost::27017/"));
@@ -60,6 +62,7 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://localhost:foo"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost:65536/"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost:0/"));
+   ASSERT (!mongoc_uri_new ("mongodb://[::1%lo0]"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:-1"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:foo"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536"));
@@ -74,6 +77,16 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (hosts->host, "::1");
    BSON_ASSERT (hosts->port == 27888);
    ASSERT_CMPSTR (hosts->host_and_port, "[::1]:27888");
+   mongoc_uri_destroy (uri);
+
+   /* should recognize IPv6 "scope" like "::1%lo0", with % escaped  */
+   uri = mongoc_uri_new ("mongodb://[::1%25lo0]");
+   BSON_ASSERT (uri);
+   hosts = mongoc_uri_get_hosts (uri);
+   BSON_ASSERT (hosts);
+   ASSERT_CMPSTR (hosts->host, "::1%lo0");
+   BSON_ASSERT (hosts->port == 27017);
+   ASSERT_CMPSTR (hosts->host_and_port, "[::1%lo0]:27017");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongodb-27017.sock/?");
@@ -780,11 +793,88 @@ test_mongoc_host_list_from_string (void)
 {
    mongoc_host_list_t host_list = {0};
 
-   ASSERT (_mongoc_host_list_from_string (&host_list, "localhost:27019"));
-   ASSERT (!strcmp (host_list.host_and_port, "localhost:27019"));
-   ASSERT (!strcmp (host_list.host, "localhost"));
+   /* shouldn't be parsable */
+   ASSERT (!_mongoc_host_list_from_string (&host_list, ":27017"));
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "example.com:"));
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "localhost:999999999"));
+
+   /* normal parsing, host and port are split, host is downcased */
+   ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
+   ASSERT_CMPSTR (host_list.host_and_port, "localhost:27019");
+   ASSERT_CMPSTR (host_list.host, "localhost");
    ASSERT (host_list.port == 27019);
    ASSERT (!host_list.next);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "localhost"));
+   ASSERT_CMPSTR (host_list.host_and_port, "localhost:27017");
+   ASSERT_CMPSTR (host_list.host, "localhost");
+   ASSERT (host_list.port == 27017);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[::1]"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[::1]:27017");
+   ASSERT_CMPSTR (host_list.host, "::1");  /* no "[" or "]" */
+   ASSERT (host_list.port == 27017);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[Fe80::1]:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[fe80::1]:1234");
+   ASSERT_CMPSTR (host_list.host, "fe80::1");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[fe80::1%lo0]:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[fe80::1%lo0]:1234");
+   ASSERT_CMPSTR (host_list.host, "fe80::1%lo0");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[fe80::1%lo0]:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[fe80::1%lo0]:1234");
+   ASSERT_CMPSTR (host_list.host, "fe80::1%lo0");
+   ASSERT (host_list.port == 1234);
+
+   /* preserves case */
+   ASSERT (_mongoc_host_list_from_string (&host_list, "/Path/to/file.sock"));
+   ASSERT_CMPSTR (host_list.host_and_port, "/Path/to/file.sock");
+   ASSERT_CMPSTR (host_list.host, "/Path/to/file.sock");
+
+   /* weird cases that should still parse, without crashing */
+   ASSERT (_mongoc_host_list_from_string (&host_list, "/Path/to/file.sock:1"));
+   ASSERT_CMPSTR (host_list.host, "/Path/to/file.sock");
+   ASSERT (host_list.family == AF_UNIX);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, " :1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, " :1234");
+   ASSERT_CMPSTR (host_list.host, " ");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "::1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "::1234");
+   ASSERT_CMPSTR (host_list.host, ":");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "]:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "]:1234");
+   ASSERT_CMPSTR (host_list.host, "]");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[:1234");
+   ASSERT_CMPSTR (host_list.host, "[");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[]:1234"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[]:1234");
+   ASSERT_CMPSTR (host_list.host, "");
+   ASSERT (host_list.port == 1234);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[:]"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[:]:27017");
+   ASSERT_CMPSTR (host_list.host, ":");
+   ASSERT (host_list.port == 27017);
+
+   ASSERT (_mongoc_host_list_from_string (&host_list, "[::1] foo"));
+   ASSERT_CMPSTR (host_list.host_and_port, "[::1] foo:27017");
+   ASSERT_CMPSTR (host_list.host, "[::1] foo");
+   ASSERT (host_list.port == 27017);
+   ASSERT (host_list.family == AF_INET);
 }
 
 
