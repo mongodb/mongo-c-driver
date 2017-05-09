@@ -37,6 +37,8 @@ typedef struct _mongoc_scram_t {
    int step;
    char *user;
    char *pass;
+   uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
    char encoded_nonce[48];
    int32_t encoded_nonce_len;
@@ -59,6 +61,22 @@ _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass);
 
 void
 _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user);
+
+void
+_mongoc_scram_set_client_key (mongoc_scram_t *scram,
+                              const uint8_t *client_key,
+                              size_t len);
+
+void
+_mongoc_scram_set_server_key (mongoc_scram_t *scram,
+                              const uint8_t *server_key,
+                              size_t len);
+
+void
+_mongoc_scram_set_salted_password (mongoc_scram_t *scram,
+                                   const uint8_t *salted_password,
+                                   size_t len);
+
 void
 _mongoc_scram_destroy (mongoc_scram_t *scram);
 

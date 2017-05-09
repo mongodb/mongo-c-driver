@@ -1154,6 +1154,20 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
 
    _mongoc_scram_set_pass (&scram, mongoc_uri_get_password (cluster->uri));
    _mongoc_scram_set_user (&scram, mongoc_uri_get_username (cluster->uri));
+   if (*cluster->scram_client_key) {
+      _mongoc_scram_set_client_key (
+         &scram, cluster->scram_client_key, sizeof (cluster->scram_client_key));
+   }
+   if (*cluster->scram_server_key) {
+      _mongoc_scram_set_server_key (
+         &scram, cluster->scram_server_key, sizeof (cluster->scram_server_key));
+   }
+   if (*cluster->scram_salted_password) {
+      _mongoc_scram_set_salted_password (
+         &scram,
+         cluster->scram_salted_password,
+         sizeof (cluster->scram_salted_password));
+   }
 
    for (;;) {
       if (!_mongoc_scram_step (
@@ -1246,6 +1260,15 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
    TRACE ("%s", "SCRAM: authenticated");
 
    ret = true;
+   memcpy (cluster->scram_client_key,
+           scram.client_key,
+           sizeof (cluster->scram_client_key));
+   memcpy (cluster->scram_server_key,
+           scram.server_key,
+           sizeof (cluster->scram_server_key));
+   memcpy (cluster->scram_salted_password,
+           scram.salted_password,
+           sizeof (cluster->scram_salted_password));
 
 failure:
    _mongoc_scram_destroy (&scram);
