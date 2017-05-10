@@ -417,9 +417,9 @@ test_mongoc_client_authenticate (void *context)
 
 
 static void
-test_mongoc_client_authenticate_cached (int pooled)
+test_mongoc_client_authenticate_cached (bool pooled)
 {
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
@@ -488,16 +488,16 @@ test_mongoc_client_authenticate_cached (int pooled)
 
 
 static void
-test_mongoc_client_authenticate_cached_pool (void *context)
+test_mongoc_client_authenticate_cached_pooled (void *context)
 {
-   test_mongoc_client_authenticate_cached (1);
+   test_mongoc_client_authenticate_cached (true);
 }
 
 
 static void
-test_mongoc_client_authenticate_cached_client (void *context)
+test_mongoc_client_authenticate_cached_single (void *context)
 {
-   test_mongoc_client_authenticate_cached (0);
+   test_mongoc_client_authenticate_cached (false);
 }
 
 
@@ -2777,13 +2777,13 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_cached/pool",
-                      test_mongoc_client_authenticate_cached_pool,
+                      test_mongoc_client_authenticate_cached_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_cached/client",
-                      test_mongoc_client_authenticate_cached_client,
+                      test_mongoc_client_authenticate_cached_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
