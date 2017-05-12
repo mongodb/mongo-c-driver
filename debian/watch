@@ -1,0 +1,3 @@
+version=3
+
+https://github.com/mongodb/mongo-c-driver/releases /mongodb/mongo-c-driver/releases/download/\d\S*/mongo-c-driver-(\d\S*)\.tar\.gz

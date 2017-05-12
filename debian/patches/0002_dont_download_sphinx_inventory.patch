@@ -1,0 +1,26 @@
+Author: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Description: Apply upstream patch for CDRIVER-2078, don't download Sphinx inventory
+Index: mongo-c-driver/doc/conf.py
+===================================================================
+--- mongo-c-driver.orig/doc/conf.py
++++ mongo-c-driver/doc/conf.py
+@@ -11,10 +11,16 @@ extensions = [
+     'sphinx.ext.intersphinx',
+ ]
+ 
++# If we're in the midst of an Autools build, or a Debian or Fedora package
++# build, avoid network access by using the included libbson inventory.
++inventory = os.path.join(os.path.dirname(__file__),
++                         '../debian/libbson-objects.inv')
++
++if not os.path.exists(inventory):
++    inventory = None
++    
+ intersphinx_mapping = {
+-    # TODO: update to http://mongoc.org/libbson/%(version)s once libbson 1.6.0
+-    # is released.
+-    'bson': ('http://mongoc.org/libbson/current', None),
++    'bson': ('http://mongoc.org/libbson/current', inventory),
+ }
+ 
+ # General information about the project.
