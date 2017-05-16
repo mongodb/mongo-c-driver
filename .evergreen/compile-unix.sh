@@ -52,7 +52,7 @@ install_openssl () {
    ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
    cpus=$(grep -c '^processor' /proc/cpuinfo)
    make -j${cpus} || true
-   make install_sw || true
+   make install_sw install_ssldirs || true
    cd ..
 
    # x505_vfy.h has issues in 1.1.0e

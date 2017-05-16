@@ -289,7 +289,7 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' sh .evergreen/run-auth-tests.sh
+           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' sh .evergreen/run-auth-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -755,90 +755,6 @@ tasks:
               set -o errexit
               set -o xtrace
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-0.9.8
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-1.0.0
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-1.0.1
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-1.0.2
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2k sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-1.1.0
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0e sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl-1.0.1-fips
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-libressl-2.5
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-darwinssl
@@ -6336,69 +6252,6 @@ tasks:
             BUILD_NAME: "debug-compile-nosasl-openssl"
         - func: "run auth tests"
 
-    - name: authentication-tests-openssl-0.9.8
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-0.9.8"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-0.9.8"
-        - func: "run auth tests"
-
-    - name: authentication-tests-openssl-1.0.0
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-1.0.0"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.0"
-        - func: "run auth tests"
-
-    - name: authentication-tests-openssl-1.0.1
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-1.0.1"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.1"
-        - func: "run auth tests"
-
-    - name: authentication-tests-openssl-1.0.2
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-1.0.2"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.2"
-        - func: "run auth tests"
-
-    - name: authentication-tests-openssl-1.1.0
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-1.1.0"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-1.1.0"
-        - func: "run auth tests"
-
-    - name: authentication-tests-openssl-1.0.1-fips
-      depends_on:
-        - name: "debug-compile-nosasl-openssl-1.0.1-fips"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-openssl-1.0.1-fips"
-        - func: "run auth tests"
-
-    - name: authentication-tests-libressl-2.5
-      depends_on:
-        - name: "debug-compile-nosasl-libressl-2.5"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-libressl-2.5"
-        - func: "run auth tests"
-
     - name: authentication-tests-darwinssl
       tags: ["authentication-tests", "nosasl", "ssl", "darwinssl"]
       depends_on:
@@ -6418,6 +6271,97 @@ tasks:
           vars:
             BUILD_NAME: "debug-compile-nosasl-winssl"
         - func: "run auth tests"
+
+    - name: build-and-run-authentication-tests-openssl-0.9.8
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2k sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0e sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1-fips
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-libressl-2.5
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
 
 # }}}
 
@@ -6510,20 +6454,13 @@ buildvariants:
     - archlinux-build
     - archlinux-test
   tasks:
-    - "debug-compile-nosasl-openssl-0.9.8"
-    - "debug-compile-nosasl-openssl-1.0.0"
-    - "debug-compile-nosasl-openssl-1.0.1"
-    - "debug-compile-nosasl-openssl-1.0.2"
-    - "debug-compile-nosasl-openssl-1.1.0"
-    - "debug-compile-nosasl-openssl-1.0.1-fips"
-    - "debug-compile-nosasl-libressl-2.5"
-    - "authentication-tests-openssl-0.9.8"
-    - "authentication-tests-openssl-1.0.0"
-    - "authentication-tests-openssl-1.0.1"
-    - "authentication-tests-openssl-1.0.2"
-    - "authentication-tests-openssl-1.1.0"
-    - "authentication-tests-openssl-1.0.1-fips"
-    - "authentication-tests-libressl-2.5"
+    - "build-and-run-authentication-tests-openssl-0.9.8"
+    - "build-and-run-authentication-tests-openssl-1.0.0"
+    - "build-and-run-authentication-tests-openssl-1.0.1"
+    - "build-and-run-authentication-tests-openssl-1.0.2"
+    - "build-and-run-authentication-tests-openssl-1.1.0"
+    - "build-and-run-authentication-tests-openssl-1.0.1-fips"
+    - "build-and-run-authentication-tests-libressl-2.5"
 
 
 - name: clang37
