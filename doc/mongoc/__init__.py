@@ -2,6 +2,7 @@ from docutils.nodes import literal, Text
 from docutils.parsers.rst import roles
 
 from sphinx.roles import XRefRole
+from sphinx import version_info as sphinx_version_info
 
 
 class SymbolRole(XRefRole):
@@ -30,6 +31,11 @@ class SymbolRole(XRefRole):
 
             attrs['reftype'] = 'doc'
             attrs['classes'].append('symbol')
+
+            if sphinx_version_info >= (1, 6):
+                # https://github.com/sphinx-doc/sphinx/issues/3698
+                attrs['refdomain'] = 'std'
+
         return nodes, messages
 
 
