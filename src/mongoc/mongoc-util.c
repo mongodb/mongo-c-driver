@@ -195,15 +195,19 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 bool
 _mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error)
 {
+   bson_error_t validate_err;
+
    /* insert into system.indexes on pre-2.6 MongoDB, allow "." in keys */
-   if (!bson_validate (doc,
-                       BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
-                          BSON_VALIDATE_DOLLAR_KEYS,
-                       NULL)) {
+   if (!bson_validate_with_error (doc,
+                                  BSON_VALIDATE_UTF8 |
+                                     BSON_VALIDATE_EMPTY_KEYS |
+                                     BSON_VALIDATE_DOLLAR_KEYS,
+                                  &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "legacy index document contains invalid keys");
+                      "legacy index document contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -218,11 +222,14 @@ const bson_validate_flags_t insert_vflags =
 bool
 _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
 {
-   if (!bson_validate (doc, insert_vflags, NULL)) {
+   bson_error_t validate_err;
+
+   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "document to insert contains invalid keys");
+                      "document to insert contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -233,11 +240,14 @@ _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
 bool
 _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
 {
-   if (!bson_validate (doc, insert_vflags, NULL)) {
+   bson_error_t validate_err;
+
+   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "replacement document contains invalid keys");
+                      "replacement document contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -248,15 +258,18 @@ _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
 bool
 _mongoc_validate_update (const bson_t *update, bson_error_t *error)
 {
+   bson_error_t validate_err;
    bson_iter_t iter;
    const char *key;
    int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS;
 
-   if (!bson_validate (update, (bson_validate_flags_t) vflags, NULL)) {
+   if (!bson_validate_with_error (
+          update, (bson_validate_flags_t) vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "update document contains invalid keys");
+                      "update document contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 

@@ -467,7 +467,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, tmp_bson ("{'a.b': 1}"), NULL, &error);
@@ -475,7 +475,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -1251,7 +1251,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    r = mongoc_collection_save (
       collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
@@ -1262,7 +1262,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);

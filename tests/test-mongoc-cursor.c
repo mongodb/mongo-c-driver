@@ -793,7 +793,7 @@ test_cursor_new_invalid_filter (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                          "Empty keys are not allowed in 'filter'.");
+                          "Invalid filter: empty key");
 
    ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
    ASSERT (bson_empty (error_doc));
@@ -824,7 +824,7 @@ test_cursor_new_invalid_opts (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                          "Cannot use empty keys in 'opts'.");
+                          "Invalid opts: empty key");
 
    ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
    ASSERT (bson_empty (error_doc));
@@ -838,7 +838,7 @@ test_cursor_new_invalid_opts (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                          "Cannot use $-modifiers in 'opts'.");
+                          "Cannot use $-modifiers in opts: \"$invalid\"");
 
    ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
    ASSERT (bson_empty (error_doc));

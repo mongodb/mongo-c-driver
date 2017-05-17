@@ -180,9 +180,9 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor, const char *ns, uint32_t nslen)
 }
 
 
-/* true if there are $-keys. precondition: bson must be valid. */
-static bool
-_has_dollar_fields (const bson_t *bson)
+/* return first key beginning with $, or NULL. precondition: bson is valid. */
+static const char *
+_first_dollar_field (const bson_t *bson)
 {
    bson_iter_t iter;
    const char *key;
@@ -192,11 +192,11 @@ _has_dollar_fields (const bson_t *bson)
       key = bson_iter_key (&iter);
 
       if (key[0] == '$') {
-         return true;
+         return key;
       }
    }
 
-   return false;
+   return NULL;
 }
 
 
@@ -220,6 +220,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    mongoc_topology_description_type_t td_type;
    uint32_t server_id;
+   bson_error_t validate_err;
+   const char *dollar_field;
 
    ENTRY;
 
@@ -234,12 +236,13 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    bson_init (&cursor->error_doc);
 
    if (filter) {
-      if (!bson_validate (filter, BSON_VALIDATE_EMPTY_KEYS, NULL)) {
+      if (!bson_validate_with_error (
+             filter, BSON_VALIDATE_EMPTY_KEYS, &validate_err)) {
          MARK_FAILED (cursor);
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Empty keys are not allowed in 'filter'.");
+                         "Invalid filter: %s", validate_err.message);
          GOTO (finish);
       }
 
@@ -248,21 +251,24 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    }
 
    if (opts) {
-      if (!bson_validate (opts, BSON_VALIDATE_EMPTY_KEYS, NULL)) {
+      if (!bson_validate_with_error (
+             opts, BSON_VALIDATE_EMPTY_KEYS, &validate_err)) {
          MARK_FAILED (cursor);
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Cannot use empty keys in 'opts'.");
+                         "Invalid opts: %s", validate_err.message);
          GOTO (finish);
       }
 
-      if (_has_dollar_fields (opts)) {
+      dollar_field = _first_dollar_field (opts);
+      if (dollar_field) {
          MARK_FAILED (cursor);
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Cannot use $-modifiers in 'opts'.");
+                         "Cannot use $-modifiers in opts: \"%s\"",
+                         dollar_field);
          GOTO (finish);
       }
 

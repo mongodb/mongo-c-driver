@@ -474,7 +474,8 @@ test_insert_check_keys (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$dollar\"");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -492,7 +493,8 @@ test_insert_check_keys (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$dollar\"");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -509,7 +511,8 @@ test_insert_check_keys (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot contain \".\": \"a.b\"");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -937,7 +940,8 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "replacement document contains invalid keys");
+                             "replacement document contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
 
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
       ASSERT (!r);
@@ -956,7 +960,8 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "replacement document contains invalid keys");
+                             "replacement document contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
    }
 
    ASSERT (bson_empty (&reply));
@@ -1159,10 +1164,11 @@ test_update (bool ordered)
    mongoc_bulk_operation_update (bulk, sel, bad_update_doc, false);
 
    BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "update only works with $ operators");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid key 'foo': update only works with $ operators");
 
    BSON_ASSERT (bson_empty (&reply));
    mongoc_bulk_operation_destroy (bulk);
@@ -1242,10 +1248,11 @@ _test_update_check_keys (bool many, bool with_opts)
             bulk, q, u, NULL, &error);
       }
       BSON_ASSERT (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "update only works with $ operators");
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Invalid key 'a': update only works with $ operators");
 
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
       BSON_ASSERT (!r);
@@ -1262,10 +1269,11 @@ _test_update_check_keys (bool many, bool with_opts)
       }
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
       BSON_ASSERT (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "update only works with $ operators");
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Invalid key 'a': update only works with $ operators");
    }
 
    BSON_ASSERT (bson_empty (&reply));
@@ -1435,7 +1443,7 @@ _test_update_one_invalid (bool first)
    test.update = mongoc_bulk_operation_update_one;
    test.update_with_opts = NULL;
    test.invalid_first = first;
-   test.error_message = "update only works with $ operators";
+   test.error_message = "Invalid key 'a': update only works with $ operators";
 
    _test_update_validate (&test);
 }
@@ -1450,7 +1458,7 @@ _test_update_invalid (bool first)
    test.update = mongoc_bulk_operation_update;
    test.update_with_opts = NULL;
    test.invalid_first = first;
-   test.error_message = "update only works with $ operators";
+   test.error_message = "Invalid key 'a': update only works with $ operators";
 
    _test_update_validate (&test);
 }
@@ -1465,7 +1473,7 @@ _test_update_one_with_opts_invalid (bool first)
    test.update = NULL;
    test.update_with_opts = mongoc_bulk_operation_update_one_with_opts;
    test.invalid_first = first;
-   test.error_message = "update only works with $ operators";
+   test.error_message = "Invalid key 'a': update only works with $ operators";
 
    _test_update_validate (&test);
 }
@@ -1480,7 +1488,7 @@ _test_update_many_with_opts_invalid (bool first)
    test.update = NULL;
    test.update_with_opts = mongoc_bulk_operation_update_many_with_opts;
    test.invalid_first = first;
-   test.error_message = "update only works with $ operators";
+   test.error_message = "Invalid key 'a': update only works with $ operators";
 
    _test_update_validate (&test);
 }
@@ -1495,7 +1503,8 @@ _test_replace_one_invalid (bool first)
    test.update = mongoc_bulk_operation_replace_one;
    test.update_with_opts = NULL;
    test.invalid_first = first;
-   test.error_message = "replacement document contains invalid keys";
+   test.error_message = "replacement document contains invalid key: keys "
+                        "cannot begin with \"$\": \"$set\"";
 
    _test_update_validate (&test);
 }
@@ -1510,7 +1519,8 @@ _test_replace_one_with_opts_invalid (bool first)
    test.update = NULL;
    test.update_with_opts = mongoc_bulk_operation_replace_one_with_opts;
    test.invalid_first = first;
-   test.error_message = "replacement document contains invalid keys";
+   test.error_message = "replacement document contains invalid key: keys "
+                        "cannot begin with \"$\": \"$set\"";
 
    _test_update_validate (&test);
 }
@@ -1611,7 +1621,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
    bson_t reply;
    bson_error_t error;
    bool r;
-   const char *err = "document to insert contains invalid keys";
+   const char *err = "document to insert contains invalid key: keys cannot "
+                     "contain \".\": \"a.b\"";
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_insert_validate");
@@ -1819,7 +1830,7 @@ _test_remove_validate (remove_validate_test_t *test)
    capture_logs (true);
 
    /* invalid */
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$': 1}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$a': 1}"));
 
    if (test->remove_with_opts) {
       r = test->remove_with_opts (bulk, tmp_bson (NULL), NULL, &error);
@@ -1828,7 +1839,8 @@ _test_remove_validate (remove_validate_test_t *test)
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Bulk operation is invalid from prior error: "
-                             "document to insert contains invalid keys");
+                             "document to insert contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
    } else {
       test->remove (bulk, tmp_bson (NULL));
    }
@@ -1843,7 +1855,8 @@ _test_remove_validate (remove_validate_test_t *test)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$a\"");
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
