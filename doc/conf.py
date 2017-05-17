@@ -2,6 +2,8 @@
 import os.path
 import sys
 
+from sphinx import version_info as sphinx_version_info
+
 # Ensure we can import "mongoc" and "taglist" extension modules.
 sys.path.append(os.path.dirname(__file__))
 
@@ -53,7 +55,12 @@ html_theme_path = ['.']
 html_theme = 'mongoc-theme'
 html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None
-html_use_smartypants = False
+
+if sphinx_version_info >= (1, 6):
+    smart_quotes = False
+else:
+    html_use_smartypants = False
+
 html_sidebars = {
     '**': ['globaltoc.html'],
     'errors': [],  # Make more room for the big table.
