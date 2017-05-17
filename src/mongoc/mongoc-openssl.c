@@ -175,11 +175,10 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
                                                CERT_SYSTEM_STORE_CURRENT_USER |
                                                   CERT_STORE_READONLY_FLAG,
                                                store);
-   if (retval) {
-      return retval;
-   }
-   return _mongoc_openssl_import_cert_store (
+   retval &= _mongoc_openssl_import_cert_store (
       L"CA", CERT_SYSTEM_STORE_CURRENT_USER | CERT_STORE_READONLY_FLAG, store);
+
+   return retval;
 }
 #endif
 
@@ -317,7 +316,7 @@ _mongoc_openssl_check_cert (SSL *ssl,
             if (name->type == target) {
                const char *check;
 
-               check = (const char *)ASN1_STRING_get0_data (name->d.ia5);
+               check = (const char *) ASN1_STRING_get0_data (name->d.ia5);
                length = ASN1_STRING_length (name->d.ia5);
 
                switch (target) {
