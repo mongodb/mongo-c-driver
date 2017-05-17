@@ -2795,7 +2795,7 @@ test_set_ssl_opts (void)
 void
 test_client_install (TestSuite *suite)
 {
-   if (getenv ("MONGOC_CHECK_IPV6")) {
+   if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_AddLive (
          suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
