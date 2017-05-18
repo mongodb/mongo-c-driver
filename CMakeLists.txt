@@ -751,8 +751,12 @@ foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${THREAD_LIB} ${ZLIB_LIBS} ${SN
       get_filename_component(FLAG_FILE "${FLAG}" NAME_WE)
       STRING(REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
       set(MONGOC_LIBS "${MONGOC_LIBS} -L${FLAG_DIR} -l${FLAG_FILE}")
+   elseif (FLAG MATCHES "^-.*")
+      # Flag starts with dash, add it as-is.
+      set(pkg_config_libs "${pkg_config_libs} ${FLAG}")
    else ()
-      set(MONGOC_LIBS "${MONGOC_LIBS} ${FLAG}")
+      # Flag doesn't start with dash, add it with a dash.
+      set(MONGOC_LIBS "${MONGOC_LIBS} -l${FLAG}")
    endif ()
 endforeach()
 

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* for size_t */
+#include <bson.h>
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL

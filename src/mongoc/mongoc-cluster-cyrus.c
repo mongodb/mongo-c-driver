@@ -17,11 +17,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-#include <sasl/sasl.h>
-#include <sasl/saslutil.h>
 #include "mongoc-cyrus-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-cluster-sasl-private.h"
 #include "mongoc-cluster-cyrus-private.h"
 #include "mongoc-error.h"
 #include "mongoc-trace-private.h"

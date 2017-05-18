@@ -44,11 +44,9 @@ if "%ENABLE_SSL%"=="1" (
 msbuild.exe /m ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj
 
-rem Notice that the dll goes in "bin".
-set DLL=%INSTALL_DIR%\bin\libmongoc-1.0.dll
-if not exist %DLL% (
-  echo %DLL% is missing!
-  exit /B 1
+call ..\.evergreen\check-installed-files.bat
+if errorlevel 1 (
+   exit /B %errorlevel%
 )
 
 rem Shim library around the DLL.
@@ -60,48 +58,11 @@ if not exist %SHIM% (
   echo %SHIM% check ok
 )
 
-if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
-  echo libmongoc-1.0.pc missing!
-  exit /B 1
-) else (
-  echo libmongoc-1.0.pc check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config.cmake (
-  echo libmongoc-1.0-config.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-1.0-config.cmake check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config-version.cmake (
-  echo libmongoc-1.0-config-version.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-1.0-config-version.cmake check ok
-)
-
 if not exist %INSTALL_DIR%\lib\mongoc-static-1.0.lib (
   echo mongoc-static-1.0.lib missing!
   exit /B 1
 ) else (
   echo mongoc-static-1.0.lib check ok
-)
-if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-static-1.0.pc (
-  echo libmongoc-static-1.0.pc missing!
-  exit /B 1
-) else (
-  echo libmongoc-static-1.0.pc check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-static-1.0\libmongoc-static-1.0-config.cmake (
-  echo libmongoc-static-1.0-config.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-static-1.0-config.cmake check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-static-1.0\libmongoc-static-1.0-config-version.cmake (
-  echo libmongoc-static-1.0-config-version.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-static-1.0-config-version.cmake check ok
 )
 
 cd %SRCROOT%

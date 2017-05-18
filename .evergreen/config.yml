@@ -756,8 +756,8 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
 
     - name: link-with-cmake-windows-ssl
       depends_on:
@@ -778,8 +778,26 @@ tasks:
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
               export ENABLE_SSL=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+
+    - name: link-with-cmake-mingw
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with CMake (not Autotools) and compile a program
+              # that links dynamically or statically to it, using variables from
+              # pkg-config.exe.
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.bat
 
     - name: link-with-pkg-config
       depends_on:
@@ -6494,6 +6512,9 @@ buildvariants:
       distros:
       - windows-64-vs2015-compile
       - windows-64-vs2015-test
+    - name: "link-with-cmake-mingw"
+      distros:
+      - windows-64-vs2013-compile
     - name: "link-with-pkg-config"
       distros:
       - ubuntu1604-build
