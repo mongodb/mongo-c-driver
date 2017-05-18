@@ -22,9 +22,11 @@ class SymbolRole(XRefRole):
                 attrs['domain'], name = target.split(':', 1)
                 attrs['reftarget'] = name
 
-                assert isinstance(node.children[0].children[0], Text)
-                node.children[0].children[0] = Text(name + parens,
-                                                    name + parens)
+                old = node.children[0].children[0]
+                assert isinstance(old, Text)
+                new = Text(name + parens, name + parens)
+                # Ensure setup_child is called.
+                node.children[0].replace(old, new)
 
             else:
                 attrs['reftarget'] = target
