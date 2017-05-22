@@ -450,6 +450,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
    )
 
    if (OPENSSL_FOUND)
+      message (STATUS "Compiling against OpenSSL")
       set (SOURCES ${SOURCES}
            ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
            ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
@@ -463,6 +464,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          set(SSL_LIBS ${SSL_LIBS} crypt32.lib)
       endif()
    elseif (SECURE_TRANSPORT)
+      message (STATUS "Compiling against Secure Transport")
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
               ${SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
@@ -471,6 +473,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       )
       set (SSL_LIBS "-framework CoreFoundation -framework Security")
    elseif (SECURE_CHANNEL)
+      message (STATUS "Compiling against Secure Channel")
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
               ${SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
@@ -479,6 +482,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       )
       set(SSL_LIBS secur32.lib crypt32.lib Bcrypt.lib)
    elseif (LIBRESSL)
+      message (STATUS "Compiling against LibreSSL")
       set (SOURCES ${SOURCES}
               ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
               ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
@@ -487,6 +491,8 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       )
       set(SSL_LIBS -ltls -lcrypto)
    endif ()
+else ()
+   message (STATUS "SSL disabled")
 endif () # ENABLE_SSL
 
 
@@ -500,8 +506,10 @@ if (MONGOC_ENABLE_SASL)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-      set (SASL_LIBS ${SASL_LIBS} secur32.lib crypt32.lib Shlwapi.lib)
+      set (SASL_LIBS secur32.lib crypt32.lib Shlwapi.lib)
    endif()
+else()
+   message (STATUS "SASL disabled")
 endif()
 
 add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
