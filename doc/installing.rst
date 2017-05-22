@@ -10,17 +10,20 @@ Supported Platforms
 
 The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on variety of platforms including:
 
-=======================  =================  ======================================
-Operating Systems        CPU Architectures  Compiler Toolchain
-=======================  =================  ======================================
-GNU/Linux                x86 and x86_64     GCC 4.1 and newer
-Solaris 11               ARM                Clang 3.3 and newer
-Mac OS X 10.6 and newer  PPC                Microsoft Visual Studio 2010 and newer
-Windows Vista, 7, and 8  SPARC              `Oracle Solaris Studio 12`_
-FreeBSD                                     MinGW
-=======================  =================  ======================================
+- Archlinux
+- Debian 8.1
+- macOS 10.10
+- Microsoft Windows Server 2008
+- RHEL 7.0, 7.1, 7.2
+- SUSE 12
+- smartOS (sunos / Solaris)
+- Ubuntu 12.04, 14.04, 16.04
+- Clang 3.4, 3.5, 3.7, 3.8
+- GCC 4.6, 4.8, 4.9, 5.3
+- MinGW-W64
+- Visual Studio 2010, 2013, 2015
+- x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
 
-.. _Oracle Solaris Studio 12: http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html
 
 Install with a Package Manager
 ------------------------------
