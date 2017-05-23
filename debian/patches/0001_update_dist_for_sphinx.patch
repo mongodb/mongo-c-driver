@@ -4,124 +4,44 @@ Index: mongo-c-driver/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/Makefile.am
 +++ mongo-c-driver/Makefile.am
-@@ -65,6 +65,9 @@ dist-hook:
- 	  echo A git checkout is required to generate a ChangeLog >&2;                  \
- 	fi
- 
-+clean-local:
-+	-rm -rf $(CLEANFILES)
-+
+@@ -55,9 +55,6 @@ EXTRA_DIST += \
+ EXTRA_DIST += $(wildcard orchestration_configs/*/*)
+
+ dist-hook:
+-	-rm -rf $(distdir)/doc/html/.buildinfo $(distdir)/doc/html/.doctrees
+-	-rm -rf $(distdir)/doc/man/.buildinfo $(distdir)/doc/man/.doctrees
+-
+ 	@if test -d "$(srcdir)/.git"; then                                              \
+ 		(cd "$(srcdir)" &&                                                           \
+       $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
+@@ -70,8 +67,6 @@ dist-hook:
+
+ clean-local:
+ 	-rm -rf $(CLEANFILES)
+-	-rm -rf doc/html/.buildinfo doc/html/.doctrees
+-	-rm -rf doc/man/.buildinfo doc/man/.doctrees
+
  uninstall-local:
  	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
- 	-rm -r $(mongocdocdir)
 Index: mongo-c-driver/doc/html/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/doc/html/Makefile.am
 +++ mongo-c-driver/doc/html/Makefile.am
-@@ -1,42 +1,25 @@
--CLEANFILES += $(wildcard doc/html/*.html)
--CLEANFILES += $(wildcard doc/html/*.css)
--CLEANFILES += $(wildcard doc/html/*.js)
--CLEANFILES += $(wildcard doc/html/*.png)
--CLEANFILES += doc/html/.nojekyll doc/html/objects.inv doc/html/searchindex.js
-+SPHINX_HTML_FILES = \
-+   $(wildcard doc/html/*.html) \
-+   $(wildcard doc/html/*.css) \
-+   $(wildcard doc/html/*.js) \
-+   $(wildcard doc/html/*.png) \
-+   $(wildcard doc/html/_static/*.css) \
-+   $(wildcard doc/html/_static/*.js) \
-+   $(wildcard doc/html/_static/*.png) \
-+   doc/html/.nojekyll \
-+   doc/html/objects.inv
-+
-+CLEANFILES += $(SPHINX_HTML_FILES)
- 
- .PHONY: doc/html
- 
--# "E" is "ignore cache".
--doc/html:
-+doc/html: $(SPHINX_HTML_FILES)
-+
-+# sphinx-build "-E" is "ignore cache".
-+$(SPHINX_HTML_FILES):
+@@ -19,5 +19,6 @@ doc/html: $(SPHINX_HTML_FILES)
+ $(SPHINX_HTML_FILES):
  	-mkdir -p doc/html
  	$(SPHINX_BUILD) -qEW $(top_srcdir)/doc doc/html
 +	rm -rf doc/html/.buildinfo doc/html/.doctrees
- 
--SPHINX_HTML_FILES = \
--   doc/html/.nojekyll \
--   doc/html/_static \
--   doc/html/_static/ajax-loader.gif \
--   doc/html/_static/basic.css \
--   doc/html/_static/comment-bright.png \
--   doc/html/_static/comment-close.png \
--   doc/html/_static/comment.png \
--   doc/html/_static/doctools.js \
--   doc/html/_static/down-pressed.png \
--   doc/html/_static/down.png \
--   doc/html/_static/file.png \
--   doc/html/_static/jquery-3.1.0.js \
--   doc/html/_static/jquery.js \
--   doc/html/_static/minus.png \
--   doc/html/_static/mongoc.css \
--   doc/html/_static/plus.png \
--   doc/html/_static/pygments.css \
--   doc/html/_static/searchtools.js \
--   doc/html/_static/underscore-1.3.1.js \
--   doc/html/_static/underscore.js \
--   doc/html/_static/up-pressed.png \
--   doc/html/_static/up.png \
--   doc/html/_static/websupport.js \
--   doc/html/objects.inv \
--   doc/html/searchindex.js
- 
+
  EXTRA_DIST += doc/html
--EXTRA_DIST += $(SPHINX_HTML_FILES)
 Index: mongo-c-driver/doc/man/Makefile.am
 ===================================================================
 --- mongo-c-driver.orig/doc/man/Makefile.am
 +++ mongo-c-driver/doc/man/Makefile.am
-@@ -1,21 +1,16 @@
--BUILT_MAN_FILES = $(wildcard doc/man/*.3)
- CLEANFILES += $(wildcard doc/man/*.3)
- 
--dist_man_MANS = $(BUILT_MAN_FILES)
--# Automake (at least up to 1.10) mishandles dist_man_MANS inside conditionals.
--# Unlike with other dist primaries, the files are not distributed if the
--# conditional is false.
--# Work the bug around until it is fixed:
--dist_noinst_DATA = $(dist_man_MANS)
-+.PHONY: doc/man
- 
--man3_MANS = $(BUILT_MAN_FILES)
-+dist_man_MANS = $(wildcard doc/man/*.3)
- 
--.PHONY: man
-+man3_MANS = $(wildcard doc/man/*.3)
- 
--# "E" is "ignore cache", "b" is build type.
--man:
-+
-+# sphinx-build "-E" is "ignore cache", "b" is build type.
-+doc/man:
+@@ -11,5 +11,6 @@ man3_MANS = $(wildcard doc/man/*.3)
+ doc/man:
  	-mkdir -p doc/man
  	$(SPHINX_BUILD) -qEW -b man $(top_srcdir)/doc doc/man
 +	rm -rf doc/man/.buildinfo doc/man/.doctrees
- 
--man: $(MAN_FILES_TO_BUILD)
--EXTRA_DIST += $(MAN_FILES_TO_BUILD)
-+EXTRA_DIST += doc/man
-Index: mongo-c-driver/doc/Makefile.am
-===================================================================
---- mongo-c-driver.orig/doc/Makefile.am
-+++ mongo-c-driver/doc/Makefile.am
-@@ -11,8 +11,3 @@ EXTRA_DIST += \
-   doc/taglist.py \
-   $(wildcard doc/includes/*.txt)
- 
--dist-hook: man html
--
--clean-local:
--	-rm -rf doc/man/.buildinfo doc/man/.doctrees
--	-rm -rf doc/html/.buildinfo doc/html/.doctrees doc/html/_static
+
+ EXTRA_DIST += doc/man
