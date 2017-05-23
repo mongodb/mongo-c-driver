@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mongoc_client_read_write_command_with_opts() &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mongoc_client_select_server()" href="mongoc_client_select_server.html" />
+    <link rel="prev" title="mongoc_client_read_command_with_opts()" href="mongoc_client_read_command_with_opts.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="mongoc_client_read_write_command_with_opts">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-2"><a href="mongoc_client_t.html">mongoc_client_t</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="mongoc-client-read-write-command-with-opts">
+<h1>mongoc_client_read_write_command_with_opts()<a class="headerlink" href="#mongoc-client-read-write-command-with-opts" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span class="kt">bool</span>
+<span class="nf">mongoc_client_read_write_command_with_opts</span> <span class="p">(</span>
+   <span class="n">mongoc_client_t</span> <span class="o">*</span><span class="n">client</span><span class="p">,</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">db_name</span><span class="p">,</span>
+   <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">command</span><span class="p">,</span>
+   <span class="k">const</span> <span class="n">mongoc_read_prefs_t</span> <span class="o">*</span><span class="n">read_prefs</span><span class="p">,</span>
+   <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">opts</span><span class="p">,</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">reply</span><span class="p">,</span>
+   <span class="n">bson_error_t</span> <span class="o">*</span><span class="n">error</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Execute a command on the server, applying logic for commands that both read and write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use <a class="symbol reference internal" href="mongoc_client_command_simple.html"><span class="doc">mongoc_client_command_simple()</span></a>.</p>
+<p>Use this function for commands that both read and write, such as &quot;mapReduce&quot; with an output collection.</p>
+<p>Read concern is applied from <code class="docutils literal"><span class="pre">opts</span></code> or else from <code class="docutils literal"><span class="pre">client</span></code>. Collation is applied from <code class="docutils literal"><span class="pre">opts</span></code> (<a class="reference internal" href="mongoc_client_read_command_with_opts.html#mongoc-client-read-command-with-opts-example"><span class="std std-ref">see example for</span></a>). Read concern and collation both require MongoDB 3.2 or later, otherwise an error is returned. Read preferences are applied from <code class="docutils literal"><span class="pre">read_prefs</span></code> or else from <code class="docutils literal"><span class="pre">client</span></code>. Write concern is applied from <code class="docutils literal"><span class="pre">opts</span></code>, or else from <code class="docutils literal"><span class="pre">client</span></code>. The write concern is omitted for MongoDB before 3.2.</p>
+<p>To target a specific server, include an integer &quot;serverId&quot; field in <code class="docutils literal"><span class="pre">opts</span></code> with an id obtained first by calling <a class="symbol reference internal" href="mongoc_client_select_server.html"><span class="doc">mongoc_client_select_server()</span></a>, then <a class="symbol reference internal" href="mongoc_server_description_id.html"><span class="doc">mongoc_server_description_id()</span></a> on its return value.</p>
+<p><code class="docutils literal"><span class="pre">reply</span></code> is always initialized, and must be freed with <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_destroy.html" title="(in Libbson v1.6.2)"><code class="docutils literal"><span class="pre">bson_destroy()</span></code></a>.</p>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">client</span></code>: A <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>.</li>
+<li><code class="docutils literal"><span class="pre">db_name</span></code>: The name of the database to run the command on.</li>
+<li><code class="docutils literal"><span class="pre">command</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.2)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing the command specification.</li>
+<li><code class="docutils literal"><span class="pre">read_prefs</span></code>: An optional <a class="symbol reference internal" href="mongoc_read_prefs_t.html"><span class="doc">mongoc_read_prefs_t</span></a>.</li>
+<li><code class="docutils literal"><span class="pre">opts</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.2)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing additional options.</li>
+<li><code class="docutils literal"><span class="pre">reply</span></code>: A location for the resulting document.</li>
+<li><code class="docutils literal"><span class="pre">error</span></code>: An optional location for a <a class="symbol reference internal" href="errors.html"><span class="doc">bson_error_t</span></a> or <code class="docutils literal"><span class="pre">NULL</span></code>.</li>
+</ul>
+</div>
+<div class="section" id="errors">
+<h2>Errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h2>
+<p>Errors are propagated via the <code class="docutils literal"><span class="pre">error</span></code> parameter.</p>
+</div>
+<div class="section" id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">true</span></code> if successful; otherwise <code class="docutils literal"><span class="pre">false</span></code> and <code class="docutils literal"><span class="pre">error</span></code> is set.</p>
+<p>A write concern timeout or write concern error is considered a failure.</p>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>See the example code for <a class="symbol reference internal" href="mongoc_client_read_command_with_opts.html"><span class="doc">mongoc_client_read_command_with_opts()</span></a>.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="mongoc_client_read_command_with_opts()" href="mongoc_client_read_command_with_opts.html">&laquo; Previous: mongoc_client_read_command_with_opts()</a>
+          <a class="footer-nav-button footer-nav-button-next" title="mongoc_client_select_server()" href="mongoc_client_select_server.html">Next: mongoc_client_select_server() &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_ssl_opt_t.html">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_uri_t.html">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

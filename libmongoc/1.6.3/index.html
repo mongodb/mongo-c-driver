@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>MongoDB C Driver &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installing the MongoDB C Driver" href="installing.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="index">
+      <div class="body" role="main">
+        
+        
+  <div class="section" id="mongodb-c-driver">
+<h1>MongoDB C Driver<a class="headerlink" href="#mongodb-c-driver" title="Permalink to this headline">¶</a></h1>
+<p>A Cross Platform MongoDB Client Library for C</p>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver, also known as &quot;libmongoc&quot;, is a library for using MongoDB from C applications, and for writing MongoDB drivers in higher-level languages.</p>
+<p>It depends on <a class="reference external" href="http://mongoc.org/libbson/current/index.html" title="(in Libbson v1.6.2)"><span class="xref doc">libbson</span></a> to generate and parse BSON documents, the native data format of MongoDB.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#supported-platforms">Supported Platforms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#install-with-a-package-manager">Install with a Package Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#building-on-unix">Building on Unix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#building-on-mac-os-x">Building on Mac OS X</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#building-on-windows">Building on Windows</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#installing">Installing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#starting-mongodb">Starting MongoDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#making-a-connection">Making a Connection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#creating-bson-documents">Creating BSON Documents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#basic-crud-operations">Basic CRUD Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#executing-commands">Executing Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#threading">Threading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authentication.html#basic-authentication">Basic Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authentication.html#gssapi-kerberos-authentication">GSSAPI (Kerberos) Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authentication.html#sasl-plain-authentication">SASL Plain Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authentication.html#x-509-certificate-authentication">X.509 Certificate Authentication</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="basic-troubleshooting.html#troubleshooting-checklist">Troubleshooting Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-troubleshooting.html#performance-counters">Performance Counters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="basic-troubleshooting.html#submitting-a-bug-report">Submitting a Bug Report</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mongoc-common-task-examples.html">Common Tasks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="advanced-connections.html">Advanced Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cursors.html">Cursors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bulk.html">Bulk Write Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregate.html">Aggregation Framework Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distinct-mapreduce.html">&quot;distinct&quot; and &quot;mapReduce&quot;</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_ssl_opt_t.html">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_uri_t.html">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_callbacks_t.html">mongoc_apm_callbacks_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_command_failed_t.html">mongoc_apm_command_failed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_command_started_t.html">mongoc_apm_command_started_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_command_succeeded_t.html">mongoc_apm_command_succeeded_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_changed_t.html">mongoc_apm_server_changed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_closed_t.html">mongoc_apm_server_closed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_heartbeat_failed_t.html">mongoc_apm_server_heartbeat_failed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_heartbeat_started_t.html">mongoc_apm_server_heartbeat_started_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_heartbeat_succeeded_t.html">mongoc_apm_server_heartbeat_succeeded_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_server_opening_t.html">mongoc_apm_server_opening_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_topology_changed_t.html">mongoc_apm_topology_changed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_topology_closed_t.html">mongoc_apm_topology_closed_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_apm_topology_opening_t.html">mongoc_apm_topology_opening_t</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-next" title="Installing the MongoDB C Driver" href="installing.html">Next: Installing the MongoDB C Driver &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="#">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

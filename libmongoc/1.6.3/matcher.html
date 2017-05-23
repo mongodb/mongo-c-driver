@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Client Side Document Matching &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="matcher">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="client-side-document-matching">
+<h1>Client Side Document Matching<a class="headerlink" href="#client-side-document-matching" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basic-document-matching-deprecated">
+<h2>Basic Document Matching (Deprecated)<a class="headerlink" href="#basic-document-matching-deprecated" title="Permalink to this headline">¶</a></h2>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This feature will be removed in version 2.0.</p>
+</div>
+<p>The MongoDB C driver supports matching a subset of the MongoDB query specification on the client.</p>
+<p>Currently, basic numeric, string, subdocument, and array equality, <code class="docutils literal"><span class="pre">$gt</span></code>, <code class="docutils literal"><span class="pre">$gte</span></code>, <code class="docutils literal"><span class="pre">$lt</span></code>, <code class="docutils literal"><span class="pre">$lte</span></code>, <code class="docutils literal"><span class="pre">$in</span></code>, <code class="docutils literal"><span class="pre">$nin</span></code>, <code class="docutils literal"><span class="pre">$ne</span></code>, <code class="docutils literal"><span class="pre">$exists</span></code>, <code class="docutils literal"><span class="pre">$type</span></code>, <code class="docutils literal"><span class="pre">$and</span></code>, and <code class="docutils literal"><span class="pre">$or</span></code> are supported. As this is not the same implementation as the MongoDB server, some inconsistencies may occur. Please file a bug if you find such a case.</p>
+<p>The following example performs a basic query against a BSON document.</p>
+<div class="literal-block-wrapper container" id="id1">
+<div class="code-block-caption"><span class="caption-text">example-matcher.c</span><a class="headerlink" href="#id1" title="Permalink to this code">¶</a></div>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include</span> <span class="cpf">&lt;bcon.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">log_query</span> <span class="p">(</span><span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">,</span> <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">query</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">str1</span><span class="p">;</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">str2</span><span class="p">;</span>
+
+   <span class="n">str1</span> <span class="o">=</span> <span class="n">bson_as_json</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+   <span class="n">str2</span> <span class="o">=</span> <span class="n">bson_as_json</span> <span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+   <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;Matching %s against %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">str2</span><span class="p">,</span> <span class="n">str1</span><span class="p">);</span>
+
+   <span class="n">bson_free</span> <span class="p">(</span><span class="n">str1</span><span class="p">);</span>
+   <span class="n">bson_free</span> <span class="p">(</span><span class="n">str2</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">check_match</span> <span class="p">(</span><span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">,</span> <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">query</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_error_t</span> <span class="n">error</span><span class="p">;</span>
+   <span class="n">mongoc_matcher_t</span> <span class="o">*</span><span class="n">matcher</span> <span class="o">=</span> <span class="n">mongoc_matcher_new</span> <span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">error</span><span class="p">);</span>
+   <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">matcher</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;Error: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">.</span><span class="n">message</span><span class="p">);</span>
+      <span class="k">return</span><span class="p">;</span>
+   <span class="p">}</span>
+
+   <span class="k">if</span> <span class="p">(</span><span class="n">mongoc_matcher_match</span> <span class="p">(</span><span class="n">matcher</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;  Document matched!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+   <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;  No match.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+   <span class="p">}</span>
+
+   <span class="n">mongoc_matcher_destroy</span> <span class="p">(</span><span class="n">matcher</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">example</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">query</span><span class="p">;</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">;</span>
+
+   <span class="n">doc</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">,</span> <span class="s">&quot;[&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span> <span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">BCON_UTF8</span> <span class="p">(</span><span class="s">&quot;bar&quot;</span><span class="p">),</span> <span class="s">&quot;}&quot;</span><span class="p">,</span> <span class="s">&quot;]&quot;</span><span class="p">);</span>
+   <span class="n">query</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;hello.0.foo&quot;</span><span class="p">,</span> <span class="n">BCON_UTF8</span> <span class="p">(</span><span class="s">&quot;bar&quot;</span><span class="p">));</span>
+
+   <span class="n">log_query</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+   <span class="n">check_match</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">doc</span><span class="p">);</span>
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">query</span><span class="p">);</span>
+
+   <span class="cm">/* i is &gt; 1 or i &lt; -1. */</span>
+   <span class="n">query</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;$or&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;[&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;i&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;$gt&quot;</span><span class="p">,</span>
+                     <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                     <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;i&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;$lt&quot;</span><span class="p">,</span>
+                     <span class="n">BCON_INT32</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                     <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;]&quot;</span><span class="p">);</span>
+
+   <span class="n">doc</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;i&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">2</span><span class="p">));</span>
+   <span class="n">log_query</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+   <span class="n">check_match</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">doc</span><span class="p">);</span>
+
+   <span class="n">doc</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;i&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+   <span class="n">log_query</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+   <span class="n">check_match</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">query</span><span class="p">);</span>
+
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">doc</span><span class="p">);</span>
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">query</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span>
+<span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+   <span class="n">mongoc_init</span> <span class="p">();</span>
+   <span class="n">example</span> <span class="p">();</span>
+   <span class="n">mongoc_cleanup</span> <span class="p">();</span>
+
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>The following example shows how to process a BSON stream from <code class="docutils literal"><span class="pre">stdin</span></code> and match it against a query. This can be useful if you need to perform simple matching against <code class="docutils literal"><span class="pre">mongodump</span></code> backups.</p>
+<div class="literal-block-wrapper container" id="id2">
+<div class="code-block-caption"><span class="caption-text">filter-bsondump.c</span><a class="headerlink" href="#id2" title="Permalink to this code">¶</a></div>
+<div class="highlight-c"><div class="highlight"><pre><span class="cm">/*</span>
+<span class="cm"> * Copyright 2014 MongoDB, Inc.</span>
+<span class="cm"> *</span>
+<span class="cm"> * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="cm"> * you may not use this file except in compliance with the License.</span>
+<span class="cm"> * You may obtain a copy of the License at</span>
+<span class="cm"> *</span>
+<span class="cm"> *   http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="cm"> *</span>
+<span class="cm"> * Unless required by applicable law or agreed to in writing, software</span>
+<span class="cm"> * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="cm"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="cm"> * See the License for the specific language governing permissions and</span>
+<span class="cm"> * limitations under the License.</span>
+<span class="cm"> */</span>
+
+
+<span class="cp">#include</span> <span class="cpf">&lt;bcon.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+
+
+<span class="cm">/*</span>
+<span class="cm"> * This is an example that reads BSON documents from STDIN and prints them</span>
+<span class="cm"> * to standard output as JSON if they match {&#39;hello&#39;: &#39;world&#39;}.</span>
+<span class="cm"> */</span>
+
+
+<span class="kt">int</span>
+<span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+   <span class="n">mongoc_matcher_t</span> <span class="o">*</span><span class="n">matcher</span><span class="p">;</span>
+   <span class="n">bson_reader_t</span> <span class="o">*</span><span class="n">reader</span><span class="p">;</span>
+   <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">bson</span><span class="p">;</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">spec</span><span class="p">;</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">;</span>
+   <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+
+   <span class="n">mongoc_init</span> <span class="p">();</span>
+
+<span class="cp">#ifdef _WIN32</span>
+   <span class="n">fd</span> <span class="o">=</span> <span class="n">fileno</span> <span class="p">(</span><span class="n">stdin</span><span class="p">);</span>
+<span class="cp">#else</span>
+   <span class="n">fd</span> <span class="o">=</span> <span class="n">STDIN_FILENO</span><span class="p">;</span>
+<span class="cp">#endif</span>
+
+   <span class="n">reader</span> <span class="o">=</span> <span class="n">bson_reader_new_from_fd</span> <span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+   <span class="n">spec</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">,</span> <span class="s">&quot;world&quot;</span><span class="p">);</span>
+   <span class="n">matcher</span> <span class="o">=</span> <span class="n">mongoc_matcher_new</span> <span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+   <span class="k">while</span> <span class="p">((</span><span class="n">bson</span> <span class="o">=</span> <span class="n">bson_reader_read</span> <span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)))</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">mongoc_matcher_match</span> <span class="p">(</span><span class="n">matcher</span><span class="p">,</span> <span class="n">bson</span><span class="p">))</span> <span class="p">{</span>
+         <span class="n">str</span> <span class="o">=</span> <span class="n">bson_as_json</span> <span class="p">(</span><span class="n">bson</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+         <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">);</span>
+         <span class="n">bson_free</span> <span class="p">(</span><span class="n">str</span><span class="p">);</span>
+      <span class="p">}</span>
+   <span class="p">}</span>
+
+   <span class="n">bson_reader_destroy</span> <span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">spec</span><span class="p">);</span>
+
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>To test this, perform a <code class="docutils literal"><span class="pre">mongodump</span></code> of a single collection and pipe it to the program.</p>
+<div class="highlight-none"><div class="highlight"><pre>$ echo &quot;db.test.insert({hello:&#39;world&#39;})&quot; | mongoMongoDB shell version: 2.6.1
+connecting to: test
+WriteResult({ &quot;nInserted&quot; : 1 })
+bye$ mongodump -d test -c test -o - | filter-bsondump{ &quot;_id&quot; : { &quot;$oid&quot; : &quot;537afac9a70e5b4d556153bc&quot; }, &quot;hello&quot; : &quot;world&quot; }
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

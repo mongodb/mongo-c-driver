@@ -1,0 +1,358 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mongoc_collection_find_with_opts() &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mongoc_collection_get_last_error()" href="mongoc_collection_get_last_error.html" />
+    <link rel="prev" title="mongoc_collection_find_indexes()" href="mongoc_collection_find_indexes.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="mongoc_collection_find_with_opts">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-2"><a href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="mongoc-collection-find-with-opts">
+<h1>mongoc_collection_find_with_opts()<a class="headerlink" href="#mongoc-collection-find-with-opts" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">mongoc_cursor_t</span> <span class="o">*</span>
+<span class="nf">mongoc_collection_find_with_opts</span> <span class="p">(</span><span class="n">mongoc_collection_t</span> <span class="o">*</span><span class="n">collection</span><span class="p">,</span>
+                                  <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">filter</span><span class="p">,</span>
+                                  <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">opts</span><span class="p">,</span>
+                                  <span class="k">const</span> <span class="n">mongoc_read_prefs_t</span> <span class="o">*</span><span class="n">read_prefs</span><span class="p">)</span>
+   <span class="n">BSON_GNUC_WARN_UNUSED_RESULT</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">collection</span></code>: A <a class="symbol reference internal" href="mongoc_collection_t.html"><span class="doc">mongoc_collection_t</span></a>.</li>
+<li><code class="docutils literal"><span class="pre">filter</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.2)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> containing the query to execute.</li>
+<li><code class="docutils literal"><span class="pre">opts</span></code>: A <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_t.html" title="(in Libbson v1.6.2)"><code class="xref symbol docutils literal"><span class="pre">bson_t</span></code></a> query options, including sort order and which fields to return. Can be <code class="docutils literal"><span class="pre">NULL</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">read_prefs</span></code>: A <a class="symbol reference internal" href="mongoc_read_prefs_t.html"><span class="doc">mongoc_read_prefs_t</span></a> or <code class="docutils literal"><span class="pre">NULL</span></code>.</li>
+</ul>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Query on <code class="docutils literal"><span class="pre">collection</span></code>, passing arbitrary query options to the server in <code class="docutils literal"><span class="pre">opts</span></code>.</p>
+<p>To target a specific server, include an integer &quot;serverId&quot; field in <code class="docutils literal"><span class="pre">opts</span></code> with an id obtained first by calling <a class="symbol reference internal" href="mongoc_client_select_server.html"><span class="doc">mongoc_client_select_server()</span></a>, then <a class="symbol reference internal" href="mongoc_server_description_id.html"><span class="doc">mongoc_server_description_id()</span></a> on its return value.</p>
+</div>
+<div class="section" id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this headline">¶</a></h2>
+<p>A newly allocated <a class="symbol reference internal" href="mongoc_cursor_t.html"><span class="doc">mongoc_cursor_t</span></a> that must be freed with <a class="symbol reference internal" href="mongoc_cursor_destroy.html"><span class="doc">mongoc_cursor_destroy()</span></a>.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="literal-block-wrapper container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Print First Ten Documents in a Collection</span><a class="headerlink" href="#id3" title="Permalink to this code">¶</a></div>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">print_ten_documents</span> <span class="p">(</span><span class="n">mongoc_collection_t</span> <span class="o">*</span><span class="n">collection</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">filter</span><span class="p">;</span>
+   <span class="n">bson_t</span> <span class="o">*</span><span class="n">opts</span><span class="p">;</span>
+   <span class="n">mongoc_cursor_t</span> <span class="o">*</span><span class="n">cursor</span><span class="p">;</span>
+   <span class="n">bson_error_t</span> <span class="n">error</span><span class="p">;</span>
+   <span class="k">const</span> <span class="n">bson_t</span> <span class="o">*</span><span class="n">doc</span><span class="p">;</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">;</span>
+
+   <span class="cm">/* filter by &quot;foo&quot;: 1, order by &quot;bar&quot; descending */</span>
+   <span class="n">filter</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">1</span><span class="p">));</span>
+   <span class="n">opts</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span>
+      <span class="s">&quot;limit&quot;</span><span class="p">,</span> <span class="n">BCON_INT64</span> <span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="s">&quot;sort&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span> <span class="s">&quot;bar&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="s">&quot;}&quot;</span><span class="p">);</span>
+
+   <span class="n">cursor</span> <span class="o">=</span> <span class="n">mongoc_collection_find_with_opts</span> <span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+   <span class="k">while</span> <span class="p">(</span><span class="n">mongoc_cursor_next</span> <span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">doc</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">str</span> <span class="o">=</span> <span class="n">bson_as_json</span> <span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+      <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">str</span><span class="p">);</span>
+      <span class="n">bson_free</span> <span class="p">(</span><span class="n">str</span><span class="p">);</span>
+   <span class="p">}</span>
+
+   <span class="k">if</span> <span class="p">(</span><span class="n">mongoc_cursor_error</span> <span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">error</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;An error occurred: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">.</span><span class="n">message</span><span class="p">);</span>
+   <span class="p">}</span>
+
+   <span class="n">mongoc_cursor_destroy</span> <span class="p">(</span><span class="n">cursor</span><span class="p">);</span>
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">filter</span><span class="p">);</span>
+   <span class="n">bson_destroy</span> <span class="p">(</span><span class="n">opts</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="literal-block-wrapper container" id="id4">
+<div class="code-block-caption"><span class="caption-text">More examples of modifying the query with <code class="docutils literal"><span class="pre">opts</span></code>:</span><a class="headerlink" href="#id4" title="Permalink to this code">¶</a></div>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">bson_t</span> <span class="o">*</span><span class="n">filter</span><span class="p">;</span>
+<span class="n">bson_t</span> <span class="o">*</span><span class="n">opts</span><span class="p">;</span>
+<span class="n">mongoc_read_prefs_t</span> <span class="o">*</span><span class="n">read_prefs</span><span class="p">;</span>
+
+<span class="n">filter</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">1</span><span class="p">));</span>
+
+<span class="cm">/* Include &quot;field_name_one&quot; and &quot;field_name_two&quot; in &quot;projection&quot;, omit</span>
+<span class="cm"> * others. &quot;_id&quot; must be specifically removed or it is included by default.</span>
+<span class="cm"> */</span>
+<span class="n">opts</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;projection&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;field_name_one&quot;</span><span class="p">,</span> <span class="n">BCON_BOOL</span> <span class="p">(</span><span class="nb">true</span><span class="p">),</span>
+                    <span class="s">&quot;field_name_two&quot;</span><span class="p">,</span> <span class="n">BCON_BOOL</span> <span class="p">(</span><span class="nb">true</span><span class="p">),</span>
+                    <span class="s">&quot;_id&quot;</span><span class="p">,</span> <span class="n">BCON_BOOL</span> <span class="p">(</span><span class="nb">false</span><span class="p">),</span>
+                 <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                 <span class="s">&quot;tailable&quot;</span><span class="p">,</span> <span class="n">BCON_BOOL</span> <span class="p">(</span><span class="nb">true</span><span class="p">),</span>
+                 <span class="s">&quot;awaitData&quot;</span><span class="p">,</span> <span class="n">BCON_BOOL</span> <span class="p">(</span><span class="nb">true</span><span class="p">),</span>
+                 <span class="s">&quot;sort&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span> <span class="s">&quot;bar&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                 <span class="s">&quot;collation&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;locale&quot;</span><span class="p">,</span> <span class="n">BCON_UTF8</span><span class="p">(</span><span class="s">&quot;en_US&quot;</span><span class="p">),</span>
+                    <span class="s">&quot;caseFirst&quot;</span><span class="p">,</span> <span class="n">BCON_UTF8</span> <span class="p">(</span><span class="s">&quot;lower&quot;</span><span class="p">),</span>
+                 <span class="s">&quot;}&quot;</span><span class="p">);</span>
+
+<span class="n">read_prefs</span> <span class="o">=</span> <span class="n">mongoc_read_prefs_new</span> <span class="p">(</span><span class="n">MONGOC_READ_SECONDARY</span><span class="p">);</span>
+
+<span class="n">cursor</span> <span class="o">=</span>
+   <span class="n">mongoc_collection_find_with_opts</span> <span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">read_prefs</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<p>The following options are supported.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="23%" />
+<col width="24%" />
+<col width="23%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">BSON type</th>
+<th class="head">Option</th>
+<th class="head">BSON type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">projection</span></code></td>
+<td>document</td>
+<td><code class="docutils literal"><span class="pre">maxScan</span></code></td>
+<td>non-negative int64</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">sort</span></code></td>
+<td>document</td>
+<td><code class="docutils literal"><span class="pre">maxTimeMS</span></code></td>
+<td>non-negative int64</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">skip</span></code></td>
+<td>non-negative int64</td>
+<td><code class="docutils literal"><span class="pre">maxAwaitTimeMS</span></code></td>
+<td>non-negative int64</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">limit</span></code></td>
+<td>non-negative int64</td>
+<td><code class="docutils literal"><span class="pre">min</span></code></td>
+<td>document</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">batchSize</span></code></td>
+<td>non-negative int64</td>
+<td><code class="docutils literal"><span class="pre">noCursorTimeout</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">exhaust</span></code></td>
+<td>bool</td>
+<td><code class="docutils literal"><span class="pre">oplogReplay</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">hint</span></code></td>
+<td>string or document</td>
+<td><code class="docutils literal"><span class="pre">returnKey</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">allowPartialResults</span></code></td>
+<td>bool</td>
+<td><code class="docutils literal"><span class="pre">showRecordId</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">awaitData</span></code></td>
+<td>bool</td>
+<td><code class="docutils literal"><span class="pre">singleBatch</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">collation</span></code></td>
+<td>document</td>
+<td><code class="docutils literal"><span class="pre">snapshot</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">comment</span></code></td>
+<td>string</td>
+<td><code class="docutils literal"><span class="pre">tailable</span></code></td>
+<td>bool</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">max</span></code></td>
+<td>document</td>
+<td>&#160;</td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<p>All options are documented in the reference page for <a class="reference external" href="https://docs.mongodb.org/master/reference/command/find/">the &quot;find&quot; command</a> in the MongoDB server manual, except for &quot;maxAwaitTimeMS&quot;.</p>
+<p>&quot;maxAwaitTimeMS&quot; is the maximum amount of time for the server to wait on new documents to satisfy a query, if &quot;tailable&quot; and &quot;awaitData&quot; are both true.
+If no new documents are found, the tailable cursor receives an empty batch. The &quot;maxAwaitTimeMS&quot; option is ignored for MongoDB older than 3.4.</p>
+<p>For some options like &quot;collation&quot;, the driver returns an error if the server version is too old to support the feature.
+Any fields in <code class="docutils literal"><span class="pre">opts</span></code> that are not listed here are passed to the server unmodified.</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://docs.mongodb.org/master/reference/command/find/">The &quot;find&quot; command</a> in the MongoDB Manual. All options listed there are supported by the C Driver.
+For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.</p>
+</div>
+<div class="section" id="the-explain-command">
+<h2>The &quot;explain&quot; command<a class="headerlink" href="#the-explain-command" title="Permalink to this headline">¶</a></h2>
+<p>With MongoDB before 3.2, a query with option <code class="docutils literal"><span class="pre">$explain:</span> <span class="pre">true</span></code> returns information about the query plan, instead of the query results. Beginning in MongoDB 3.2, there is a separate &quot;explain&quot; command. The driver will not convert &quot;$explain&quot; queries to &quot;explain&quot; commands, you must call the &quot;explain&quot; command explicitly:</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="cm">/* MongoDB 3.2+, &quot;explain&quot; command syntax */</span>
+<span class="n">command</span> <span class="o">=</span> <span class="n">BCON_NEW</span> <span class="p">(</span><span class="s">&quot;explain&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;find&quot;</span><span class="p">,</span> <span class="n">BCON_UTF8</span> <span class="p">(</span><span class="s">&quot;collection_name&quot;</span><span class="p">),</span>
+                    <span class="s">&quot;filter&quot;</span><span class="p">,</span> <span class="s">&quot;{&quot;</span><span class="p">,</span> <span class="s">&quot;foo&quot;</span><span class="p">,</span> <span class="n">BCON_INT32</span> <span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="s">&quot;}&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;}&quot;</span><span class="p">);</span>
+
+<span class="n">mongoc_collection_command_simple</span> <span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">reply</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">error</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id1">
+<h2>See Also<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://docs.mongodb.org/master/reference/command/explain/">The &quot;explain&quot; command</a> in the MongoDB Manual.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="mongoc_collection_find_indexes()" href="mongoc_collection_find_indexes.html">&laquo; Previous: mongoc_collection_find_indexes()</a>
+          <a class="footer-nav-button footer-nav-button-next" title="mongoc_collection_get_last_error()" href="mongoc_collection_get_last_error.html">Next: mongoc_collection_get_last_error() &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_ssl_opt_t.html">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_uri_t.html">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

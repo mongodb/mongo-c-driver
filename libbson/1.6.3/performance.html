@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Performance Notes &#8212; libbson 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cross Platform Notes" href="cross-platform-notes.html" />
+    <link rel="prev" title="JSON" href="json.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="performance">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">libbson 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="guides.html">Guides</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="performance-notes">
+<h1>Performance Notes<a class="headerlink" href="#performance-notes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="array-element-key-building">
+<span id="performance-array-element-key-building"></span><h2>Array Element Key Building<a class="headerlink" href="#array-element-key-building" title="Permalink to this headline">¶</a></h2>
+<p>When writing marshaling layers between higher level languages and Libbson, you will eventually need to build keys for array elements. Each element in a BSON array has a monotonic string key like <code class="docutils literal"><span class="pre">&quot;0&quot;</span></code>, <code class="docutils literal"><span class="pre">&quot;1&quot;</span></code>, etc. Using <code class="docutils literal"><span class="pre">snprintf()</span></code> and others tend to be rather slow on most <code class="docutils literal"><span class="pre">libc</span></code> implementations. Therefore, Libbson provides <a class="symbol reference internal" href="bson_uint32_to_string.html"><span class="doc">bson_uint32_to_string()</span></a> to improve this. Using this function allows an internal fast path to be used for numbers less than 1000 which is the vast majority of arrays. If the key is larger than that, a fallback of <code class="docutils literal"><span class="pre">snprintf()</span></code> will be used.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="kt">char</span> <span class="n">str</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+<span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+<span class="kt">uint32_t</span> <span class="n">i</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+   <span class="n">bson_uint32_to_string</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="n">str</span><span class="p">,</span> <span class="k">sizeof</span> <span class="n">str</span><span class="p">);</span>
+   <span class="n">printf</span> <span class="p">(</span><span class="s">&quot;Key: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For more information, see <a class="symbol reference internal" href="bson_uint32_to_string.html"><span class="doc">bson_uint32_to_string()</span></a>.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="JSON" href="json.html">&laquo; Previous: JSON</a>
+          <a class="footer-nav-button footer-nav-button-next" title="Cross Platform Notes" href="cross-platform-notes.html">Next: Cross Platform Notes &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">libbson 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing libbson</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="guides.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="streaming-bson.html">Streaming BSON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="json.html">JSON</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Performance Notes</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cross-platform-notes.html">Cross Platform Notes</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

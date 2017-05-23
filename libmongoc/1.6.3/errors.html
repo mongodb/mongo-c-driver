@@ -1,0 +1,265 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Error Reporting &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Version Checks" href="mongoc_version.html" />
+    <link rel="prev" title="Logging" href="logging.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="errors">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <p>« <a class="reference internal" href="index.html"><span class="doc">MongoDB C Driver</span></a></p>
+<div class="section" id="error-reporting">
+<h1>Error Reporting<a class="headerlink" href="#error-reporting" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Many C Driver functions report errors by returning <code class="docutils literal"><span class="pre">false</span></code> or -1 and filling out a <a class="symbol reference external" href="http://mongoc.org/libbson/current/bson_error_t.html" title="(in Libbson v1.6.2)"><code class="xref symbol docutils literal"><span class="pre">bson_error_t</span></code></a> structure with an error domain, error code, and message. Use <code class="docutils literal"><span class="pre">domain</span></code> to determine which subsystem generated the error, and <code class="docutils literal"><span class="pre">code</span></code> for the specific error. <code class="docutils literal"><span class="pre">message</span></code> is a human-readable error description.</p>
+<p>See also: <a class="reference external" href="http://mongoc.org/libbson/current/errors.html" title="(in Libbson v1.6.2)"><span class="xref doc">Handling Errors in libbson</span></a>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="26%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Domain</th>
+<th class="head">Code</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_TOO_BIG</span></code></td>
+<td>You tried to send a message larger than the server's max message size.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_AUTHENTICATE</span></code></td>
+<td>Wrong credentials, or failure sending or receiving authentication messages.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER</span></code></td>
+<td>You tried an SSL connection but the driver was not built with SSL.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CLIENT_IN_EXHAUST</span></code></td>
+<td>You began iterating an exhaust cursor, then tried to begin another operation with the same <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_NAME_RESOLUTION</span></code></td>
+<td>DNS failure.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_SOCKET</span></code></td>
+<td>Timeout communicating with server, or connection closed.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_STREAM_CONNECT</span></code></td>
+<td>Failed to connect to server.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_INVALID_REPLY</span></code></td>
+<td>Corrupt response from server.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</span></code></td>
+<td>The server version is too old or too new to communicate with the driver.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CURSOR</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_CURSOR_INVALID_CURSOR</span></code></td>
+<td>You passed bad arguments to <a class="symbol reference internal" href="mongoc_collection_find_with_opts.html"><span class="doc">mongoc_collection_find_with_opts()</span></a>, or you called <a class="symbol reference internal" href="mongoc_cursor_next.html"><span class="doc">mongoc_cursor_next()</span></a> on a completed or failed cursor, or the cursor timed out on the server.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY_FAILURE</span></code></td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 1</span></a>: Server error from command or query. The server error message is in <code class="docutils literal"><span class="pre">message</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY_FAILURE</span></code></td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 2</span></a>: Server error from command or query. The server error message is in <code class="docutils literal"><span class="pre">message</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SASL</span></code></td>
+<td>A SASL error code.</td>
+<td><code class="docutils literal"><span class="pre">man</span> <span class="pre">sasl_errors</span></code> for a list of codes.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_BSON</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_BSON_INVALID</span></code></td>
+<td>You passed an invalid or oversized BSON document as a parameter, or called <a class="symbol reference internal" href="mongoc_collection_create_index.html"><span class="doc">mongoc_collection_create_index()</span></a> with invalid keys, or the server reply was corrupt.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_NAMESPACE</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_NAMESPACE_INVALID</span></code></td>
+<td>You tried to create a collection with an invalid name.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND_INVALID_ARG</span></code></td>
+<td>Many functions set this error code when passed bad parameters. Print the error message for details.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION</span></code></td>
+<td>You tried to use a command option the server does not support.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_DUPLICATE_KEY</span></code></td>
+<td>An insert or update failed because because of a duplicate <code class="docutils literal"><span class="pre">_id</span></code> or other unique-index violation.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND</span></code></td>
+<td><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</a>.</td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 1</span></a>: Server error from a command. The server error message is in <code class="docutils literal"><span class="pre">message</span></code>.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+<td><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</a>.</td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 2</span></a>: Server error from a command. The server error message is in <code class="docutils literal"><span class="pre">message</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION_INSERT_FAILED</span></code>, <code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION_UPDATE_FAILED</span></code>, <code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION_DELETE_FAILED</span></code>.</td>
+<td>Invalid or empty input to <a class="symbol reference internal" href="mongoc_collection_insert.html"><span class="doc">mongoc_collection_insert()</span></a>, <a class="symbol reference internal" href="mongoc_collection_insert_bulk.html"><span class="doc">mongoc_collection_insert_bulk()</span></a>, <a class="symbol reference internal" href="mongoc_collection_update.html"><span class="doc">mongoc_collection_update()</span></a>, or <a class="symbol reference internal" href="mongoc_collection_remove.html"><span class="doc">mongoc_collection_remove()</span></a>.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION</span></code></td>
+<td><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</a>.</td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 1</span></a>: Server error from <a class="symbol reference internal" href="mongoc_collection_insert.html"><span class="doc">mongoc_collection_insert()</span></a>, <a class="symbol reference internal" href="mongoc_collection_insert_bulk.html"><span class="doc">mongoc_collection_insert_bulk()</span></a>, <a class="symbol reference internal" href="mongoc_collection_update.html"><span class="doc">mongoc_collection_update()</span></a>, or <a class="symbol reference internal" href="mongoc_collection_remove.html"><span class="doc">mongoc_collection_remove()</span></a>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+<td><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</a>.</td>
+<td><a class="reference internal" href="#error-api-version"><span class="std std-ref">Error API Version 2</span></a>: Server error from <a class="symbol reference internal" href="mongoc_collection_insert.html"><span class="doc">mongoc_collection_insert()</span></a>, <a class="symbol reference internal" href="mongoc_collection_insert_bulk.html"><span class="doc">mongoc_collection_insert_bulk()</span></a>, <a class="symbol reference internal" href="mongoc_collection_update.html"><span class="doc">mongoc_collection_update()</span></a>, or <a class="symbol reference internal" href="mongoc_collection_remove.html"><span class="doc">mongoc_collection_remove()</span></a>.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_CHUNK_MISSING</span></code></td>
+<td>The GridFS file is missing a document in its <code class="docutils literal"><span class="pre">chunks</span></code> collection.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_INVALID_FILENAME</span></code></td>
+<td>You passed a NULL filename to <a class="symbol reference internal" href="mongoc_gridfs_remove_by_filename.html"><span class="doc">mongoc_gridfs_remove_by_filename()</span></a>.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR</span></code></td>
+<td>You called <a class="symbol reference internal" href="mongoc_gridfs_file_set_id.html"><span class="doc">mongoc_gridfs_file_set_id()</span></a> after <a class="symbol reference internal" href="mongoc_gridfs_file_save.html"><span class="doc">mongoc_gridfs_file_save()</span></a>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SCRAM</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SCRAM_PROTOCOL_ERROR</span></code></td>
+<td>Failure in SCRAM-SHA-1 authentication.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER_SELECTION</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER_SELECTION_FAILURE</span></code></td>
+<td>No replica set member or mongos is available, or none matches your <a class="reference internal" href="mongoc_read_prefs_t.html"><span class="doc">read preference</span></a>, or you supplied an invalid <a class="symbol reference internal" href="mongoc_read_prefs_t.html"><span class="doc">mongoc_read_prefs_t</span></a>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal"><span class="pre">MONGOC_ERROR_WRITE_CONCERN</span></code></td>
+<td><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">Error code from server</a>.</td>
+<td>There was a <a class="reference internal" href="mongoc_write_concern_t.html"><span class="doc">write concern</span></a> error or <a class="reference internal" href="mongoc_write_concern_set_wtimeout.html"><span class="doc">timeout</span></a> from the server.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="setting-the-error-api-version">
+<span id="error-api-version"></span><span id="errors-error-api-version"></span><h2>Setting the Error API Version<a class="headerlink" href="#setting-the-error-api-version" title="Permalink to this headline">¶</a></h2>
+<p>The driver's error reporting began with a design flaw: when the error <em>domain</em> is <code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION</span></code>, <code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY</span></code>, or <code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND</span></code>, the error <em>code</em> might originate from the server or the driver. An application cannot always know where an error originated, and therefore cannot tell what the code means.</p>
+<p>For example, if <a class="symbol reference internal" href="mongoc_collection_update.html"><span class="doc">mongoc_collection_update()</span></a> sets the error's domain to <code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION</span></code> and its code to 24, the application cannot know whether 24 is the generic driver error code <code class="docutils literal"><span class="pre">MONGOC_ERROR_COLLECTION_UPDATE_FAILED</span></code> or the specific server error code &quot;LockTimeout&quot;.</p>
+<p>To fix this flaw while preserving backward compatibility, the C Driver 1.4 introduces &quot;Error API Versions&quot;. Version 1, the default Error API Version, maintains the flawed behavior. Version 2 adds a new error domain, <code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code>. In Version 2, error codes originating on the server always have error domain <code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code> or <code class="docutils literal"><span class="pre">MONGOC_ERROR_WRITE_CONCERN</span></code>. When the driver uses Version 2 the application can always determine the origin and meaning of error codes. New applications should use Version 2, and existing applications should be updated to use Version 2 as well.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="36%" />
+<col width="32%" />
+<col width="32%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>Error Source</td>
+<td>API Version 1</td>
+<td>API Version 2</td>
+</tr>
+<tr class="row-even"><td><a class="symbol reference internal" href="mongoc_cursor_error.html"><span class="doc">mongoc_cursor_error()</span></a></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+</tr>
+<tr class="row-odd"><td><a class="symbol reference internal" href="mongoc_client_command.html"><span class="doc">mongoc_client_command()</span></a>,
+<a class="symbol reference internal" href="mongoc_database_command.html"><span class="doc">mongoc_database_command()</span></a>, and
+other command functions</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+</tr>
+<tr class="row-even"><td><a class="symbol reference internal" href="mongoc_collection_count_with_opts.html"><span class="doc">mongoc_collection_count_with_opts()</span></a>,
+<a class="symbol reference internal" href="mongoc_client_get_database_names.html"><span class="doc">mongoc_client_get_database_names()</span></a>,
+and other command helper functions</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_QUERY</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+</tr>
+<tr class="row-odd"><td><a class="symbol reference internal" href="mongoc_collection_insert.html"><span class="doc">mongoc_collection_insert()</span></a>
+<a class="symbol reference internal" href="mongoc_collection_insert_bulk.html"><span class="doc">mongoc_collection_insert_bulk()</span></a>
+<a class="symbol reference internal" href="mongoc_collection_update.html"><span class="doc">mongoc_collection_update()</span></a>
+<a class="symbol reference internal" href="mongoc_collection_remove.html"><span class="doc">mongoc_collection_remove()</span></a></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+</tr>
+<tr class="row-even"><td><a class="symbol reference internal" href="mongoc_bulk_operation_execute.html"><span class="doc">mongoc_bulk_operation_execute()</span></a></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_COMMAND</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER</span></code></td>
+</tr>
+<tr class="row-odd"><td>Write-concern timeout</td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_WRITE_CONCERN</span></code></td>
+<td><code class="docutils literal"><span class="pre">MONGOC_ERROR_WRITE_CONCERN</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>The Error API Versions are defined with <code class="docutils literal"><span class="pre">MONGOC_ERROR_API_VERSION_LEGACY</span></code> and <code class="docutils literal"><span class="pre">MONGOC_ERROR_API_VERSION_2</span></code>. Set the version with <a class="symbol reference internal" href="mongoc_client_set_error_api.html"><span class="doc">mongoc_client_set_error_api()</span></a> or <a class="symbol reference internal" href="mongoc_client_pool_set_error_api.html"><span class="doc">mongoc_client_pool_set_error_api()</span></a>.</p>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err">MongoDB Server Error Codes</a></p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="Logging" href="logging.html">&laquo; Previous: Logging</a>
+          <a class="footer-nav-button footer-nav-button-next" title="Version Checks" href="mongoc_version.html">Next: Version Checks &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

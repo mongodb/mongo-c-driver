@@ -1,0 +1,418 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mongoc_uri_t &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mongoc_uri_copy()" href="mongoc_uri_copy.html" />
+    <link rel="prev" title="mongoc_update_flags_t" href="mongoc_update_flags_t.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="mongoc_uri_t">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="mongoc-uri-t">
+<h1>mongoc_uri_t<a class="headerlink" href="#mongoc-uri-t" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span class="k">typedef</span> <span class="k">struct</span> <span class="n">_mongoc_uri_t</span> <span class="n">mongoc_uri_t</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">mongoc_uri_t</span></code> provides an abstraction on top of the MongoDB connection URI format. It provides standardized parsing as well as convenience methods for extracting useful information such as replica hosts or authorization information.</p>
+<p>See <a class="reference external" href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI Reference</a> on the MongoDB website for more information.</p>
+</div>
+<div class="section" id="format">
+<h2>Format<a class="headerlink" href="#format" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre>mongodb://                                   &lt;1&gt;
+   [username:password@]                      &lt;2&gt;
+   host1                                     &lt;3&gt;
+   [:port1]                                  &lt;4&gt;
+   [,host2[:port2],...[,hostN[:portN]]]      &lt;5&gt;
+   [/[database]                              &lt;6&gt;
+   [?options]]                               &lt;7&gt;
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li>mongodb is the specifier of the MongoDB protocol.</li>
+<li>An optional username and password.</li>
+<li>The only required part of the uri.  This specifies either a hostname, IP address or UNIX domain socket.</li>
+<li>An optional port number.  Defaults to :27017.</li>
+<li>Extra optional hosts and ports.  You would specify multiple hosts, for example, for connections to replica sets.</li>
+<li>The name of the database to authenticate if the connection string includes authentication credentials.  If /database is not specified and the connection string includes credentials, defaults to the 'admin' database.</li>
+<li>Connection specific options.</li>
+</ol>
+</div>
+<div class="section" id="replica-set-example">
+<h2>Replica Set Example<a class="headerlink" href="#replica-set-example" title="Permalink to this headline">¶</a></h2>
+<p>To describe a connection to a replica set named 'test' with the following mongod hosts:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">db1.example.com</span></code> on port <code class="docutils literal"><span class="pre">27017</span></code></li>
+<li><code class="docutils literal"><span class="pre">db2.example.com</span></code> on port <code class="docutils literal"><span class="pre">2500</span></code></li>
+</ul>
+<p>You would use the connection string that resembles the following.</p>
+<div class="highlight-none"><div class="highlight"><pre>mongodb://db1.example.com,db2.example.com:2500/?replicaSet=test
+</pre></div>
+</div>
+</div>
+<div class="section" id="connection-options">
+<h2>Connection Options<a class="headerlink" href="#connection-options" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="93%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>ssl</td>
+<td>{true|false}, indicating if SSL must be used. (See also <a class="symbol reference internal" href="mongoc_client_set_ssl_opts.html"><span class="doc">mongoc_client_set_ssl_opts()</span></a> and <a class="symbol reference internal" href="mongoc_client_pool_set_ssl_opts.html"><span class="doc">mongoc_client_pool_set_ssl_opts()</span></a>.)</td>
+</tr>
+<tr class="row-even"><td>connectTimeoutMS</td>
+<td>A timeout in milliseconds to attempt a connection before timing out. This setting applies to server discovery and monitoring connections as well as to connections for application operations. The default is 10 seconds.</td>
+</tr>
+<tr class="row-odd"><td>socketTimeoutMS</td>
+<td>The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.</td>
+</tr>
+</tbody>
+</table>
+<p>Setting any of the *TimeoutMS options above to <code class="docutils literal"><span class="pre">0</span></code> will be interpreted as &quot;use the default value&quot;.</p>
+</div>
+<div class="section" id="server-discovery-monitoring-and-selection-options">
+<h2>Server Discovery, Monitoring, and Selection Options<a class="headerlink" href="#server-discovery-monitoring-and-selection-options" title="Permalink to this headline">¶</a></h2>
+<p>Clients in a <a class="symbol reference internal" href="mongoc_client_pool_t.html"><span class="doc">mongoc_client_pool_t</span></a> share a topology scanner that runs on a background thread. The thread wakes every <code class="docutils literal"><span class="pre">heartbeatFrequencyMS</span></code> (default 10 seconds) to scan all MongoDB servers in parallel. Whenever an application operation requires a server that is not known--for example, if there is no known primary and your application attempts an insert--the thread rescans all servers every half-second. In this situation the pooled client waits up to <code class="docutils literal"><span class="pre">serverSelectionTimeoutMS</span></code> (default 30 seconds) for the thread to find a server suitable for the operation, then returns an error with domain <code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER_SELECTION</span></code>.</p>
+<p>Technically, the total time an operation may wait while a pooled client scans the topology is controlled both by <code class="docutils literal"><span class="pre">serverSelectionTimeoutMS</span></code> and <code class="docutils literal"><span class="pre">connectTimeoutMS</span></code>. The longest wait occurs if the last scan begins just at the end of the selection timeout, and a slow or down server requires the full connection timeout before the client gives up.</p>
+<p>A non-pooled client is single-threaded. Every <code class="docutils literal"><span class="pre">heartbeatFrequencyMS</span></code>, it blocks the next application operation while it does a parallel scan. This scan takes as long as needed to check the slowest server: roughly <code class="docutils literal"><span class="pre">connectTimeoutMS</span></code>. Therefore the default <code class="docutils literal"><span class="pre">heartbeatFrequencyMS</span></code> for single-threaded clients is greater than for pooled clients: 60 seconds.</p>
+<p>By default, single-threaded (non-pooled) clients scan only once when an operation requires a server that is not known. If you attempt an insert and there is no known primary, the client checks all servers once trying to find it, then succeeds or returns an error with domain <code class="docutils literal"><span class="pre">MONGOC_ERROR_SERVER_SELECTION</span></code>. But if you set <code class="docutils literal"><span class="pre">serverSelectionTryOnce</span></code> to &quot;false&quot;, the single-threaded client loops, checking all servers every half-second, until <code class="docutils literal"><span class="pre">serverSelectionTimeoutMS</span></code>.</p>
+<p>The total time an operation may wait for a single-threaded client to scan the topology is determined by <code class="docutils literal"><span class="pre">connectTimeoutMS</span></code> in the try-once case, or <code class="docutils literal"><span class="pre">serverSelectionTimeoutMS</span></code> and <code class="docutils literal"><span class="pre">connectTimeoutMS</span></code> if <code class="docutils literal"><span class="pre">serverSelectionTryOnce</span></code> is set &quot;false&quot;.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="94%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>heartbeatFrequencyMS</td>
+<td>The interval between server monitoring checks. Defaults to 10 seconds in pooled (multi-threaded) mode, 60 seconds in non-pooled mode (single-threaded).</td>
+</tr>
+<tr class="row-even"><td>serverSelectionTimeoutMS</td>
+<td>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30 seconds.</td>
+</tr>
+<tr class="row-odd"><td>serverSelectionTryOnce</td>
+<td><p class="first">If &quot;true&quot;, the driver scans the topology exactly once after server selection fails, then either selects a server or returns an error. If it is false, then the driver repeatedly searches for a suitable server for up to <code class="docutils literal"><span class="pre">serverSelectionTimeoutMS</span></code> milliseconds (pausing a half second between attempts). The default for <code class="docutils literal"><span class="pre">serverSelectionTryOnce</span></code> is &quot;false&quot; for pooled clients, otherwise &quot;true&quot;.</p>
+<p class="last">Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.</p>
+</td>
+</tr>
+<tr class="row-even"><td>socketCheckIntervalMS</td>
+<td>Only applies to single threaded clients. If a socket has not been used within this time, its connection is checked with a quick &quot;isMaster&quot; call before it is used again. Defaults to 5 seconds.</td>
+</tr>
+</tbody>
+</table>
+<p>Setting any of the *TimeoutMS options above to <code class="docutils literal"><span class="pre">0</span></code> will be interpreted as &quot;use the default value&quot;.</p>
+</div>
+<div class="section" id="connection-pool-options">
+<h2>Connection Pool Options<a class="headerlink" href="#connection-pool-options" title="Permalink to this headline">¶</a></h2>
+<p>These options govern the behavior of a <a class="symbol reference internal" href="mongoc_client_pool_t.html"><span class="doc">mongoc_client_pool_t</span></a>. They are ignored by a non-pooled <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="6%" />
+<col width="94%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>maxPoolSize</td>
+<td>The maximum number of clients created by a <a class="symbol reference internal" href="mongoc_client_pool_t.html"><span class="doc">mongoc_client_pool_t</span></a> total (both in the pool and checked out). The default value is 100. Once it is reached, <a class="symbol reference internal" href="mongoc_client_pool_pop.html"><span class="doc">mongoc_client_pool_pop()</span></a> blocks until another thread pushes a client.</td>
+</tr>
+<tr class="row-even"><td>minPoolSize</td>
+<td>The number of clients to keep in the pool; once it is reached, <a class="symbol reference internal" href="mongoc_client_pool_push.html"><span class="doc">mongoc_client_pool_push()</span></a> destroys clients instead of pushing them. The default value, 0, means &quot;no minimum&quot;: a client pushed into the pool is always stored, not destroyed.</td>
+</tr>
+<tr class="row-odd"><td>maxIdleTimeMS</td>
+<td>Not implemented.</td>
+</tr>
+<tr class="row-even"><td>waitQueueMultiple</td>
+<td>Not implemented.</td>
+</tr>
+<tr class="row-odd"><td>waitQueueTimeoutMS</td>
+<td>Not implemented.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="write-concern-options">
+<span id="mongoc-uri-t-write-concern-options"></span><h2>Write Concern Options<a class="headerlink" href="#write-concern-options" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="3%" />
+<col width="3%" />
+<col width="94%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>w</td>
+<td>0</td>
+<td>The driver will not acknowledge write operations but will pass or handle any network and socket errors that it receives to the client. If you disable write concern but enable the getLastError command’s w option, w overrides the w option.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td>1</td>
+<td>Provides basic acknowledgment of write operations. By specifying 1, you require that a standalone mongod instance, or the primary for replica sets, acknowledge all write operations. For drivers released after the default write concern change, this is the default write concern setting.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td>majority</td>
+<td>For replica sets, if you specify the special majority value to w option, write operations will only return successfully after a majority of the configured replica set members have acknowledged the write operation.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td>n</td>
+<td>For replica sets, if you specify a number n greater than 1, operations with this write concern return only after n members of the set have acknowledged the write. If you set n to a number that is greater than the number of available set members or members that hold data, MongoDB will wait, potentially indefinitely, for these members to become available.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td>tags</td>
+<td>For replica sets, you can specify a tag set to require that all members of the set that have these tags configured return confirmation of the write operation.</td>
+</tr>
+<tr class="row-even"><td>wtimeoutMS</td>
+<td>&#160;</td>
+<td>The time in milliseconds to wait for replication to succeed, as specified in the w option, before timing out. When wtimeoutMS is 0, write operations will never time out.</td>
+</tr>
+<tr class="row-odd"><td>journal</td>
+<td>&#160;</td>
+<td>Controls whether write operations will wait until the mongod acknowledges the write operations and commits the data to the on disk journal.</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td>true</td>
+<td>Enables journal commit acknowledgment write concern. Equivalent to specifying the getLastError command with the j option enabled.</td>
+</tr>
+<tr class="row-odd"><td>&#160;</td>
+<td>false</td>
+<td>Does not require that mongod commit write operations to the journal before acknowledging the write operation. This is the default option for the journal parameter.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="read-concern-options">
+<span id="mongoc-uri-t-read-concern-options"></span><h2>Read Concern Options<a class="headerlink" href="#read-concern-options" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="7%" />
+<col width="93%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>readConcernLevel</td>
+<td>The level of isolation for read operations. If the level is left unspecified, the server default will be used. See <a class="reference external" href="https://docs.mongodb.org/master/reference/readConcern/">readConcern in the MongoDB Manual</a> for details.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="read-preference-options">
+<span id="mongoc-uri-t-read-prefs-options"></span><h2>Read Preference Options<a class="headerlink" href="#read-preference-options" title="Permalink to this headline">¶</a></h2>
+<p>When connected to a replica set, the driver chooses which member to query using the read preference:</p>
+<ol class="arabic simple">
+<li>Choose members whose type matches &quot;readPreference&quot;.</li>
+<li>From these, if there are any tags sets configured, choose members matching the first tag set. If there are none, fall back to the next tag set and so on, until some members are chosen or the tag sets are exhausted.</li>
+<li>From the chosen servers, distribute queries randomly among the server with the fastest round-trip times. These include the server with the fastest time and any whose round-trip time is no more than &quot;localThresholdMS&quot; slower.</li>
+</ol>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>readPreference</td>
+<td><p class="first">Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:</p>
+<ul class="last simple">
+<li>primary (default)</li>
+<li>primaryPreferred</li>
+<li>secondary</li>
+<li>secondaryPreferred</li>
+<li>nearest</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td>readPreferenceTags</td>
+<td><p class="first">Specifies a tag set as a comma-separated list of colon-separated key-value pairs.</p>
+<p class="last">Cannot be combined with preference &quot;primary&quot;.</p>
+</td>
+</tr>
+<tr class="row-odd"><td>localThresholdMS</td>
+<td>How far to distribute queries, beyond the server with the fastest round-trip time. By default, only servers within 15ms of the fastest round-trip time receive queries.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">&quot;localThresholdMS&quot; is ignored when talking to replica sets through a mongos. The equivalent is <a class="reference external" href="https://docs.mongodb.org/manual/reference/program/mongos/#cmdoption--localThreshold">mongos's localThreshold command line option</a>.</p>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_copy.html">mongoc_uri_copy()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_destroy.html">mongoc_uri_destroy()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_auth_mechanism.html">mongoc_uri_get_auth_mechanism()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_auth_source.html">mongoc_uri_get_auth_source()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_database.html">mongoc_uri_get_database()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_hosts.html">mongoc_uri_get_hosts()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_mechanism_properties.html">mongoc_uri_get_mechanism_properties()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_option_as_bool.html">mongoc_uri_get_option_as_bool()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_option_as_int32.html">mongoc_uri_get_option_as_int32()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_option_as_utf8.html">mongoc_uri_get_option_as_utf8()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_options.html">mongoc_uri_get_options()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_password.html">mongoc_uri_get_password()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_read_concern.html">mongoc_uri_get_read_concern()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_read_prefs.html">mongoc_uri_get_read_prefs()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_read_prefs_t.html">mongoc_uri_get_read_prefs_t()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_replica_set.html">mongoc_uri_get_replica_set()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_ssl.html">mongoc_uri_get_ssl()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_string.html">mongoc_uri_get_string()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_username.html">mongoc_uri_get_username()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_get_write_concern.html">mongoc_uri_get_write_concern()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_new.html">mongoc_uri_new()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_new_for_host_port.html">mongoc_uri_new_for_host_port()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_option_is_bool.html">mongoc_uri_option_is_bool()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_option_is_int32.html">mongoc_uri_option_is_int32()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_option_is_utf8.html">mongoc_uri_option_is_utf8()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_auth_source.html">mongoc_uri_set_auth_source()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_database.html">mongoc_uri_set_database()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_mechanism_properties.html">mongoc_uri_set_mechanism_properties()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_option_as_bool.html">mongoc_uri_set_option_as_bool()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_option_as_int32.html">mongoc_uri_set_option_as_int32()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_option_as_utf8.html">mongoc_uri_set_option_as_utf8()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_password.html">mongoc_uri_set_password()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_read_concern.html">mongoc_uri_set_read_concern()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_read_prefs_t.html">mongoc_uri_set_read_prefs_t()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_username.html">mongoc_uri_set_username()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_set_write_concern.html">mongoc_uri_set_write_concern()</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_uri_unescape.html">mongoc_uri_unescape()</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="mongoc_update_flags_t" href="mongoc_update_flags_t.html">&laquo; Previous: mongoc_update_flags_t</a>
+          <a class="footer-nav-button footer-nav-button-next" title="mongoc_uri_copy()" href="mongoc_uri_copy.html">Next: mongoc_uri_copy() &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_ssl_opt_t.html">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

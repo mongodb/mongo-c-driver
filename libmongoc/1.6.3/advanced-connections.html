@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Advanced Connections &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cursors" href="cursors.html" />
+    <link rel="prev" title="Common Tasks" href="mongoc-common-task-examples.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="advanced-connections">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="guides.html">Guides</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="advanced-connections">
+<h1>Advanced Connections<a class="headerlink" href="#advanced-connections" title="Permalink to this headline">¶</a></h1>
+<p>The following guide contains information specific to certain types of MongoDB configurations.</p>
+<p>For an example of connecting to a simple standalone server, see the <a class="reference internal" href="tutorial.html#tutorial-connecting"><span class="std std-ref">Tutorial</span></a>. To establish a connection with authentication options enabled, see the <a class="reference internal" href="authentication.html"><span class="doc">Authentication</span></a> page.</p>
+<div class="section" id="connecting-to-a-replica-set">
+<h2>Connecting to a Replica Set<a class="headerlink" href="#connecting-to-a-replica-set" title="Permalink to this headline">¶</a></h2>
+<p>Connecting to a <a class="reference external" href="http://docs.mongodb.org/manual/replication/">replica set</a> is much like connecting to a standalone MongoDB server. Simply specify the replica set name using the <code class="docutils literal"><span class="pre">?replicaSet=myreplset</span></code> URI option.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+
+<span class="kt">int</span>
+<span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+   <span class="n">mongoc_client_t</span> <span class="o">*</span><span class="n">client</span><span class="p">;</span>
+
+   <span class="n">mongoc_init</span> <span class="p">();</span>
+
+   <span class="cm">/* Create our MongoDB Client */</span>
+   <span class="n">client</span> <span class="o">=</span> <span class="n">mongoc_client_new</span> <span class="p">(</span>
+      <span class="s">&quot;mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset&quot;</span><span class="p">);</span>
+
+   <span class="cm">/* Do some work */</span>
+   <span class="cm">/* TODO */</span>
+
+   <span class="cm">/* Clean up */</span>
+   <span class="n">mongoc_client_destroy</span> <span class="p">(</span><span class="n">client</span><span class="p">);</span>
+   <span class="n">mongoc_cleanup</span> <span class="p">();</span>
+
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p>Multiple hostnames can be specified in the MongoDB connection string URI, with a comma separating hosts in the seed list.</p>
+<p class="last">It is recommended to use a seed list of members of the replica set to allow the driver to connect to any node.</p>
+</div>
+</div>
+<div class="section" id="connecting-to-a-sharded-cluster">
+<h2>Connecting to a Sharded Cluster<a class="headerlink" href="#connecting-to-a-sharded-cluster" title="Permalink to this headline">¶</a></h2>
+<p>To connect to a <a class="reference external" href="http://docs.mongodb.org/manual/sharding/">sharded cluster</a>, specify the <code class="docutils literal"><span class="pre">mongos</span></code> nodes the client should connect to. The C Driver will automatically detect that it has connected to a <code class="docutils literal"><span class="pre">mongos</span></code> sharding server.</p>
+<p>If more than one hostname is specified, a seed list will be created to attempt failover between the <code class="docutils literal"><span class="pre">mongos</span></code> instances.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Specifying the <code class="docutils literal"><span class="pre">replicaSet</span></code> parameter when connecting to a <code class="docutils literal"><span class="pre">mongos</span></code> sharding server is invalid.</p>
+</div>
+<div class="highlight-c"><div class="highlight"><pre><span class="cp">#include</span> <span class="cpf">&lt;bson.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;mongoc.h&gt;</span><span class="cp"></span>
+
+<span class="kt">int</span>
+<span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+   <span class="n">mongoc_client_t</span> <span class="o">*</span><span class="n">client</span><span class="p">;</span>
+
+   <span class="n">mongoc_init</span> <span class="p">();</span>
+
+   <span class="cm">/* Create our MongoDB Client */</span>
+   <span class="n">client</span> <span class="o">=</span> <span class="n">mongoc_client_new</span> <span class="p">(</span><span class="s">&quot;mongodb://myshard01:27017/&quot;</span><span class="p">);</span>
+
+   <span class="cm">/* Do something with client ... */</span>
+
+   <span class="cm">/* Free the client */</span>
+   <span class="n">mongoc_client_destroy</span> <span class="p">(</span><span class="n">client</span><span class="p">);</span>
+
+   <span class="n">mongoc_cleanup</span> <span class="p">();</span>
+
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="connecting-to-an-ipv6-address">
+<h2>Connecting to an IPv6 Address<a class="headerlink" href="#connecting-to-an-ipv6-address" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver will automatically resolve IPv6 addresses from host names. However, to specify an IPv6 address directly, wrap the address in <code class="docutils literal"><span class="pre">[]</span></code>.</p>
+<div class="highlight-none"><div class="highlight"><pre>mongoc_uri_t *uri = mongoc_uri_new (&quot;mongodb://[::1]:27017&quot;);
+</pre></div>
+</div>
+</div>
+<div class="section" id="connecting-to-a-unix-domain-socket">
+<h2>Connecting to a UNIX Domain Socket<a class="headerlink" href="#connecting-to-a-unix-domain-socket" title="Permalink to this headline">¶</a></h2>
+<p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Pass the URL-encoded path to the socket, which <em>must</em> be suffixed with <code class="docutils literal"><span class="pre">.sock</span></code>. For example, to connect to a domain socket at <code class="docutils literal"><span class="pre">/tmp/mongodb-27017.sock</span></code>:</p>
+<div class="highlight-none"><div class="highlight"><pre>mongoc_uri_t *uri = mongoc_uri_new (&quot;mongodb://%2Ftmp%2Fmongodb-27017.sock&quot;);
+</pre></div>
+</div>
+<p>Include username and password like so:</p>
+<div class="highlight-none"><div class="highlight"><pre>mongoc_uri_t *uri = mongoc_uri_new (&quot;mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock&quot;);
+</pre></div>
+</div>
+</div>
+<div class="section" id="connecting-to-a-server-over-ssl">
+<h2>Connecting to a server over SSL<a class="headerlink" href="#connecting-to-a-server-over-ssl" title="Permalink to this headline">¶</a></h2>
+<p>These are instructions for configuring TLS/SSL connections.</p>
+<p>To run a server locally (on port 27017, for example):</p>
+<div class="highlight-none"><div class="highlight"><pre>$ mongod --port 27017 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem
+</pre></div>
+</div>
+<p>Add <code class="docutils literal"><span class="pre">/?ssl=true</span></code> to the end of a client URI.</p>
+<div class="highlight-none"><div class="highlight"><pre>mongoc_client_t *client = NULL;
+client = mongoc_client_new (&quot;mongodb://localhost:27017/?ssl=true&quot;);
+</pre></div>
+</div>
+<p>MongoDB requires client certificates by default, unless the <code class="docutils literal"><span class="pre">--sslAllowConnectionsWithoutCertificates</span></code> is provided. The C Driver can be configured to present a client certificate using a <code class="docutils literal"><span class="pre">mongoc_ssl_opt_t</span></code>:</p>
+<div class="highlight-none"><div class="highlight"><pre>const mongoc_ssl_opt_t *ssl_default = mongoc_ssl_opt_get_default ();
+mongoc_ssl_opt_t ssl_opts = { 0 };
+
+/* optionally copy in a custom trust directory or file; otherwise the default is used. */
+memcpy (&amp;ssl_opts, ssl_default, sizeof ssl_opts);
+ssl_opts.pem_file = &quot;client.pem&quot;
+
+mongoc_client_set_ssl_opts (client, &amp;ssl_opts);
+</pre></div>
+</div>
+<p>The client certificate provided by <code class="docutils literal"><span class="pre">pem_file</span></code> must be issued by one of the server trusted Certificate Authorities listed in <code class="docutils literal"><span class="pre">--sslCAFile</span></code>, or issued by a CA in the native certificate store on the server when omitted.</p>
+<p>To verify the server certificate against a specific CA, provide a PEM armored file with a CA certificate, or contatinated list of CA certificates using the <code class="docutils literal"><span class="pre">ca_file</span></code> option, or <code class="docutils literal"><span class="pre">c_rehash</span></code> directory structure of CAs, pointed to using the <code class="docutils literal"><span class="pre">ca_dir</span></code> option. When no <code class="docutils literal"><span class="pre">ca_file</span></code> or <code class="docutils literal"><span class="pre">ca_dir</span></code> is provided, the driver will use CAs provided by the native platform certificate store.</p>
+<p>See <a class="reference internal" href="mongoc_ssl_opt_t.html"><span class="doc">mongoc_ssl_opt_t</span></a> for more information on the various SSL related options.</p>
+</div>
+<div class="section" id="additional-connection-options">
+<h2>Additional Connection Options<a class="headerlink" href="#additional-connection-options" title="Permalink to this headline">¶</a></h2>
+<p>A variety of connection options for the MongoDB URI can be found <a class="reference external" href="http://docs.mongodb.org/manual/reference/connection-string/">here</a>.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="Common Tasks" href="mongoc-common-task-examples.html">&laquo; Previous: Common Tasks</a>
+          <a class="footer-nav-button footer-nav-button-next" title="Cursors" href="cursors.html">Next: Cursors &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="guides.html">Guides</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mongoc-common-task-examples.html">Common Tasks</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Advanced Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cursors.html">Cursors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bulk.html">Bulk Write Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aggregate.html">Aggregation Framework Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distinct-mapreduce.html">&quot;distinct&quot; and &quot;mapReduce&quot;</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>

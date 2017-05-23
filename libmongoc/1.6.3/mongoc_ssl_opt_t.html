@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mongoc_ssl_opt_t &#8212; MongoDB C Driver 1.6.3</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.6.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mongoc_ssl_opt_get_default()" href="mongoc_ssl_opt_get_default.html" />
+    <link rel="prev" title="mongoc_socket_setsockopt()" href="mongoc_socket_setsockopt.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="mongoc_ssl_opt_t">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.6.3</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="mongoc-ssl-opt-t">
+<h1>mongoc_ssl_opt_t<a class="headerlink" href="#mongoc-ssl-opt-t" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c"><div class="highlight"><pre><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pem_file</span><span class="p">;</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pem_pwd</span><span class="p">;</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ca_file</span><span class="p">;</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ca_dir</span><span class="p">;</span>
+   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">crl_file</span><span class="p">;</span>
+   <span class="kt">bool</span> <span class="n">weak_cert_validation</span><span class="p">;</span>
+   <span class="kt">bool</span> <span class="n">allow_invalid_hostname</span><span class="p">;</span>
+   <span class="kt">void</span> <span class="o">*</span><span class="n">padding</span><span class="p">[</span><span class="mi">7</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">mongoc_ssl_opt_t</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>This structure is used to set the SSL options for a <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a> or <a class="symbol reference internal" href="mongoc_client_pool_t.html"><span class="doc">mongoc_client_pool_t</span></a>.</p>
+<p>Beginning in version 1.2.0, once a pool or client has any SSL options set, all connections use SSL, even if <code class="docutils literal"><span class="pre">ssl=true</span></code> is omitted from the MongoDB URI. Before, SSL options were ignored unless <code class="docutils literal"><span class="pre">ssl=true</span></code> was included in the URI.</p>
+<p>As of 1.4.0, the <a class="symbol reference internal" href="mongoc_client_pool_set_ssl_opts.html"><span class="doc">mongoc_client_pool_set_ssl_opts()</span></a> and <a class="symbol reference internal" href="mongoc_client_set_ssl_opts.html"><span class="doc">mongoc_client_set_ssl_opts()</span></a> will not only shallow copy the struct, but will also copy the <code class="docutils literal"><span class="pre">const</span> <span class="pre">char*</span></code>. It is therefore no longer needed to make sure the values remain valid after setting them.</p>
+</div>
+<div class="section" id="client-authentication">
+<h2>Client Authentication<a class="headerlink" href="#client-authentication" title="Permalink to this headline">¶</a></h2>
+<p>When MongoDB is started with SSL enabled, it will by default require the client o provide a client certificate issued by a certificate authority specified by <code class="docutils literal"><span class="pre">--sslCAFile</span></code>, or an authority trusted by the native certificate store in use on the server.</p>
+<p>To provide the client certificate, the user must configure the <code class="docutils literal"><span class="pre">pem_file</span></code> to point at a PEM armored certificate.</p>
+<div class="highlight-c"><div class="highlight"><pre><span class="n">mongoc_ssl_opt_t</span> <span class="n">ssl_opts</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+
+<span class="n">ssl_opts</span><span class="p">.</span><span class="n">pem_file</span> <span class="o">=</span> <span class="s">&quot;/path/to/client-certificate.pem&quot;</span>
+
+   <span class="cm">/* Then set the client ssl_opts, when using a single client mongoc_client_t</span>
+<span class="cm">      */</span>
+   <span class="n">mongoc_client_pool_set_ssl_opts</span> <span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ssl_opts</span><span class="p">);</span>
+<span class="cm">/* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t</span>
+<span class="cm"> */</span>
+<span class="n">mongoc_client_set_ssl_opts</span> <span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ssl_opts</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="server-certificate-verification">
+<h2>Server Certificate Verification<a class="headerlink" href="#server-certificate-verification" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver will automatically verify the validity of the server certificate, such as issued by configured Certificate Authority, hostname validation, and expiration.</p>
+<p>To overwrite this behaviour, it is possible to disable hostname validation, and/or allow otherwise invalid certificates. This behaviour is controlled using the <code class="docutils literal"><span class="pre">allow_invalid_hostname</span></code> and <code class="docutils literal"><span class="pre">weak_cert_validation</span></code> fields. By default, both are set to <code class="docutils literal"><span class="pre">false</span></code>. It is not recommended to change these defaults as it exposes the client to <em>Man In The Middle</em> attacks (when <code class="docutils literal"><span class="pre">allow_invalid_hostname</span></code> is set) and otherwise invalid certificates when <code class="docutils literal"><span class="pre">weak_cert_validation</span></code> is set to <code class="docutils literal"><span class="pre">true</span></code>.</p>
+</div>
+<div class="section" id="native-tls-support-on-linux-openssl">
+<h2>Native TLS Support on Linux (OpenSSL)<a class="headerlink" href="#native-tls-support-on-linux-openssl" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver supports the dominating TLS library (OpenSSL) and crypto libraries (OpenSSL's libcrypto) on Linux and Unix platforms.</p>
+<p>Support for OpenSSL 1.1 and later was added in 1.4.0.</p>
+<p>When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution, if the <code class="docutils literal"><span class="pre">ca_file</span></code> and <code class="docutils literal"><span class="pre">ca_dir</span></code> are not set.</p>
+</div>
+<div class="section" id="native-tls-support-on-windows-secure-channel">
+<h2>Native TLS Support on Windows (Secure Channel)<a class="headerlink" href="#native-tls-support-on-windows-secure-channel" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver supports the Windows native TLS library (Secure Channel, or SChannel), and its native crypto library (Cryptography API: Next Generation, or CNG).</p>
+<p>When compiled against the Windows native libraries, the <code class="docutils literal"><span class="pre">ca_dir</span></code> option is not supported, and will issue an error if used.</p>
+<p>Encrypted PEM files (e.g., requiring <code class="docutils literal"><span class="pre">pem_pwd</span></code>) are also not supported, and will result in error when attempting to load them.</p>
+<p>When <code class="docutils literal"><span class="pre">ca_file</span></code> is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no <code class="docutils literal"><span class="pre">ca_file</span></code> is provided, the driver will look up the Certificate Authority using the <code class="docutils literal"><span class="pre">System</span> <span class="pre">Local</span> <span class="pre">Machine</span> <span class="pre">Root</span></code> certificate store to confirm the provided certificate.</p>
+<p>When <code class="docutils literal"><span class="pre">crl_file</span></code> is provided, the driver will import the revocation list to the <code class="docutils literal"><span class="pre">System</span> <span class="pre">Local</span> <span class="pre">Machine</span> <span class="pre">Root</span></code> certificate store.</p>
+</div>
+<div class="section" id="native-tls-support-on-mac-os-x-darwin-secure-transport">
+<h2>Native TLS Support on Mac OS X / Darwin (Secure Transport)<a class="headerlink" href="#native-tls-support-on-mac-os-x-darwin-secure-transport" title="Permalink to this headline">¶</a></h2>
+<p>The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native TLS library (Secure Transport), and its native crypto library (Common Crypto, or CC).</p>
+<p>When compiled against Secure Transport, the <code class="docutils literal"><span class="pre">ca_dir</span></code> option is not supported, and will issue an error if used.</p>
+<p>When <code class="docutils literal"><span class="pre">ca_file</span></code> is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no <code class="docutils literal"><span class="pre">ca_file</span></code> is provided, the driver will use the Certificate Authorities in the currently unlocked keychains.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mongoc_ssl_opt_get_default.html">mongoc_ssl_opt_get_default()</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="mongoc_client_set_ssl_opts.html"><span class="doc">mongoc_client_set_ssl_opts()</span></a></li>
+<li><a class="reference internal" href="mongoc_client_pool_set_ssl_opts.html"><span class="doc">mongoc_client_pool_set_ssl_opts()</span></a></li>
+</ul>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="mongoc_socket_setsockopt()" href="mongoc_socket_setsockopt.html">&laquo; Previous: mongoc_socket_setsockopt()</a>
+          <a class="footer-nav-button footer-nav-button-next" title="mongoc_ssl_opt_get_default()" href="mongoc_ssl_opt_get_default.html">Next: mongoc_ssl_opt_get_default() &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.6.3</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_uri_t.html">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.3, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>
