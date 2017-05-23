@@ -1,3 +1,21 @@
+mongo-c-driver 1.6.3
+====================
+
+It is my pleasure to announce mongo-c-driver 1.6.3. This release fixes two bugs
+in the TLS layer that interfered with connections to MongoDB Atlas:
+
+  * mongoc_client_pool_t did not apply all TLS options to pooled connections
+  * SNI wasn't provided when allow_invalid_hostname is set
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Hannes Magnusson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.6.2
 ====================
 
