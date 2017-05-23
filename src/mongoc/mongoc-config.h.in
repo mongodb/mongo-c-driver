@@ -213,6 +213,15 @@
 #if MONGOC_HAVE_SOCKLEN != 1
 #  undef MONGOC_HAVE_SOCKLEN
 #endif
+
+
+/*
+ * Set from configure, see
+ * https://curl.haxx.se/mail/lib-2009-04/0287.html
+ */
+#define MONGOC_SOCKET_ARG2 @MONGOC_SOCKET_ARG2@
+#define MONGOC_SOCKET_ARG3 @MONGOC_SOCKET_ARG3@
+
 /*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to

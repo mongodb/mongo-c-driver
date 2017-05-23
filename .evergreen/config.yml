@@ -41,8 +41,7 @@ functions:
         script: |
           set -o xtrace
           rm -f *.tar.gz
-          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
-          pip install --upgrade git+git://github.com/mongodb/mongo-orchestration@master
+          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
 
   "upload release":
     - command: shell.exec
@@ -54,7 +53,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: mongoc.tar.gz
-        remote_file: mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz
+        remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
@@ -92,7 +91,19 @@ functions:
       params:
         continue_on_err: true
         # EVG-1105: Use s3.get extract_to: mongoc/
-        script: "set -o xtrace && mkdir mongoc && tar xf build.tar.gz -C mongoc/"
+        script: |
+           set -o xtrace   # Write all commands first to stderr
+           set -o errexit  # Exit the script with error if any of the commands fail
+
+           mkdir mongoc
+
+           if command -v gtar 2>/dev/null; then
+              TAR=gtar
+           else
+              TAR=tar
+           fi
+
+           $TAR xf build.tar.gz -C mongoc/
 
   "upload docs" :
     - command: shell.exec
@@ -378,6 +389,41 @@ tasks:
               sphinx-build --version
 
               ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
+
+              # Check that docs were included, but sphinx temp files weren't.
+              tarfile=mongo-c-driver-*.tar.gz
+              docs='mongo-c-driver-*/doc/html/index.html mongo-c-driver-*/doc/man/mongoc_client_t.3'
+              tmpfiles='mongo-c-driver-*/doc/html/.doctrees \
+                        mongo-c-driver-*/doc/html/.buildinfo \
+                        mongo-c-driver-*/doc/man/.doctrees \
+                        mongo-c-driver-*/doc/man/.buildinfo'
+
+              echo "Checking for built docs"
+              for doc in $docs; do
+                # Check this doc is in the archive.
+                tar --wildcards -tzf $tarfile $doc
+              done
+
+              echo "Checking that temp files are not included in tarball"
+              for tmpfile in $tmpfiles; do
+                # Check this temp file doesn't exist.
+                if tar --wildcards -tzf $tarfile $tmpfile > /dev/null 2>&1; then
+                  echo "Found temp file in archive: $tmpfile"
+                  exit 1
+                fi
+              done
+
+              set +o xtrace
+              echo "Checking that all C files are included in tarball"
+              # Check that all C files were included.
+              TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/mongoc/*.c' | cut -d / -f 4 | sort`
+              SRC_CFILES=`echo src/mongoc/*.c | xargs -n 1 | cut -d / -f 3 | sort`
+              if [ "$TAR_CFILES" != "$SRC_CFILES" ]; then
+                echo "Not all C files are in the release archive"
+                echo $TAR_CFILES > tar_cfiles.txt
+                echo $SRC_CFILES | diff -y - tar_cfiles.txt
+              fi
+
         - func: "upload docs"
         - func: "upload release"
         - func: "upload build"
