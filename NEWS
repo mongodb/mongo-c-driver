@@ -20,6 +20,8 @@ Next Release
     mechanism of a mongoc_uri_t after it is created from a string.
   * New function mongoc_bulk_operation_insert_with_opts provides immediate
     error checking.
+  * New function mongoc_uri_new_with_error provides a way to parse a connection
+    string, and retrieve the failure reason, if any.
   * Support for MongoDB Connection String specification
     * All connection string options are now represented by MONGOC_URI_xxx macros
     * Paths to Unix Domain Sockets must be url encoded
