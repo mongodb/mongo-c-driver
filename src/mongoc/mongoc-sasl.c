@@ -16,7 +16,7 @@
 
 #include "mongoc-config.h"
 
-#ifdef MONGOC_ENABLE_SASL_CYRUS
+#ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #include "mongoc-util-private.h"
 
