@@ -6320,7 +6320,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2k sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2l sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6333,7 +6333,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0e sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0f sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 

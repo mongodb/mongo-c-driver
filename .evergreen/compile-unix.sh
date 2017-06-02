@@ -46,13 +46,16 @@ install_openssl_fips() {
    SSL=${SSL%-fips}
 }
 install_openssl () {
-   curl --retry 5 -o ssl.tar.gz https://www.openssl.org/source/$SSL.tar.gz
+   SSL_VERSION=${SSL##openssl-}
+   tmp=$(echo $SSL_VERSION | tr . _)
+   curl -L --retry 5 -o ssl.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_${tmp}.tar.gz
    tar zxvf ssl.tar.gz
-   cd $SSL
+   cd openssl-OpenSSL_$tmp
    ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
    cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j32 || true
    make -j${cpus} || true
-   make install_sw install_ssldirs || true
+   make install || true
    cd ..
 
    # x505_vfy.h has issues in 1.1.0e
@@ -63,6 +66,7 @@ install_openssl () {
 }
 
 install_libressl () {
+   SSL_VERSION=${SSL##libressl-}
    curl --retry 5 -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
    tar zxvf ssl.tar.gz
    cd $SSL
@@ -247,6 +251,9 @@ $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
 export LD_LIBRARY_PATH=$EXTRA_LIB_PATH:$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=$EXTRA_LIB_PATH:$DYLD_LIBRARY_PATH
 openssl version
+if [ -n "$SSL_VERSION" ]; then
+   openssl version | grep -q $SSL_VERSION
+fi
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
 $SCAN_BUILD make all

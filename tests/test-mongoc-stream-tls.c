@@ -364,7 +364,7 @@ test_mongoc_tls_ip (void)
 
 
 #if !defined(__APPLE__) && !defined(_WIN32) && \
-   defined(MONGOC_ENABLE_SSL_OPENSSL)
+   defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
 static void
 test_mongoc_tls_trust_dir (void)
 {
@@ -374,7 +374,7 @@ test_mongoc_tls_trust_dir (void)
    ssl_test_result_t cr;
 
    sopt.pem_file = CERT_SERVER;
-   sopt.ca_dir = CERT_CA;
+   sopt.ca_file = CERT_CA;
 
    copt.ca_dir = CERT_TEST_DIR;
 
@@ -415,7 +415,7 @@ test_stream_tls_install (TestSuite *suite)
 #endif
 
 #if !defined(__APPLE__) && !defined(_WIN32) && \
-   defined(MONGOC_ENABLE_SSL_OPENSSL)
+   defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
 #endif
 #endif
