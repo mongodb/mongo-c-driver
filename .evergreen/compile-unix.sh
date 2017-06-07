@@ -257,7 +257,12 @@ fi
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
 $SCAN_BUILD make all
-$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>error.log
+
+# Write stderr to error.log and to console.
+mkfifo pipe
+tee error.log < pipe &
+$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
+rm pipe
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then
