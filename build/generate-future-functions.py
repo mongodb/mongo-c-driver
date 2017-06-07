@@ -253,6 +253,13 @@ future_functions = [
                     [param("mongoc_client_ptr", "client"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("mongoc_server_description_ptr",
+                    "mongoc_client_select_server",
+                    [param("mongoc_client_ptr", "client"),
+                     param("bool", "for_writes"),
+                     param("const_mongoc_read_prefs_ptr", "prefs"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("bool",
                     "mongoc_database_command_simple",
                     [param("mongoc_database_ptr", "database"),

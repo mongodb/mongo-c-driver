@@ -2167,6 +2167,10 @@ mongoc_client_select_server (mongoc_client_t *client,
                              const mongoc_read_prefs_t *prefs,
                              bson_error_t *error)
 {
+   mongoc_ss_optype_t optype = for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ;
+   mongoc_server_description_t *sd;
+   bson_error_t tmp_err;
+
    if (for_writes && prefs) {
       bson_set_error (error,
                       MONGOC_ERROR_SERVER_SELECTION,
@@ -2179,10 +2183,25 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   return mongoc_topology_select (client->topology,
-                                  for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ,
-                                  prefs,
-                                  error);
+   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   if (!sd) {
+      return NULL;
+   }
+
+   if (mongoc_cluster_check_interval (&client->cluster, sd->id, &tmp_err)) {
+      /* check not required, or it succeeded */
+      return sd;
+   }
+
+   /* check failed, retry once */
+   mongoc_server_description_destroy (sd);
+   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   if (sd) {
+      return sd;
+   }
+
+   memcpy (error, &tmp_err, sizeof tmp_err);
+   return NULL;
 }
 
 bool

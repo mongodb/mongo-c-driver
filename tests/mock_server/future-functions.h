@@ -224,6 +224,16 @@ future_client_get_database_names (
 
 
 future_t *
+future_client_select_server (
+
+   mongoc_client_ptr client,
+   bool for_writes,
+   const_mongoc_read_prefs_ptr prefs,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_database_command_simple (
 
    mongoc_database_ptr database,

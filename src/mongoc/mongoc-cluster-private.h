@@ -101,6 +101,11 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               char *buffer);
 
 bool
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
+                               uint32_t server_id,
+                               bson_error_t *error);
+
+bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                 mongoc_rpc_t *rpcs,
                                 mongoc_server_stream_t *server_stream,

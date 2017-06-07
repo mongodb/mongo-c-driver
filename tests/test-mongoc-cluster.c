@@ -349,11 +349,6 @@ _test_write_disconnect (bool legacy)
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    /*
-    * wait for CHECK_CLOSED_DURATION_MSEC to elapse
-    */
-   _mongoc_usleep (1100 * 1000);
-
-   /*
     * close the socket
     */
    mock_server_hangs_up (request);
@@ -397,95 +392,6 @@ test_legacy_write_disconnect (void *ctx)
 }
 
 
-static void
-_test_socket_check (bool legacy)
-{
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   char *ismaster_response;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-   mongoc_topology_scanner_node_t *scanner_node;
-
-   server = mock_server_new ();
-   mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 1);
-   client = mongoc_client_new_from_uri (uri);
-
-   /*
-    * establish connection with an "ismaster" and "ping"
-    */
-   future = future_client_command_simple (
-      client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_ismaster (server);
-   ismaster_response = bson_strdup_printf ("{'ok': 1.0,"
-                                           " 'ismaster': true,"
-                                           " 'minWireVersion': 0,"
-                                           " 'maxWireVersion': %d}",
-                                           legacy ? 0 : 3);
-
-   mock_server_replies_simple (request, ismaster_response);
-   request_destroy (request);
-
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
-   mock_server_replies_simple (request, "{'ok': 1}");
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-
-   /*
-    * wait for socketCheckIntervalMS to elapse
-    */
-   _mongoc_usleep (2000);
-
-   /*
-    * close the socket
-    */
-   mock_server_hangs_up (request);
-
-   /*
-    * next operation detects the hangup
-    */
-   collection = mongoc_client_get_collection (client, "db", "collection");
-   future_destroy (future);
-   future = future_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), NULL, &error);
-
-   ASSERT (!future_get_bool (future));
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
-   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
-
-   scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner,
-                                                    1 /* server_id */);
-   ASSERT (scanner_node && !scanner_node->stream);
-
-   mongoc_collection_destroy (collection);
-   request_destroy (request);
-   future_destroy (future);
-   bson_free (ismaster_response);
-   mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-   mock_server_destroy (server);
-}
-
-
-static void
-test_write_command_socket_check (void)
-{
-   _test_socket_check (false);
-}
-
-
-static void
-test_legacy_write_socket_check (void)
-{
-   _test_socket_check (true);
-}
-
-
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -523,10 +429,4 @@ test_cluster_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/write_command/socket_check",
-                                test_write_command_socket_check);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/legacy_write/socket_check",
-                                test_legacy_write_socket_check);
 }

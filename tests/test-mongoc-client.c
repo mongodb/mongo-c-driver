@@ -2228,6 +2228,89 @@ test_mongoc_client_select_server_error_pooled (void)
 }
 
 
+/* CDRIVER-2172: in single mode, if the selected server has a socket that's been
+ * idle for socketCheckIntervalMS, check it with an ismaster call. If that
+ * fails, retry once.
+ */
+static void
+_test_mongoc_client_select_server_retry (bool retry_succeeds)
+{
+   char *ismaster;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true,"
+                                  " 'secondary': false,"
+                                  " 'setName': 'rs', 'hosts': ['%s']}",
+                                  mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* first selection succeeds */
+   future = future_client_select_server (client, true, NULL, &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+   sd = future_get_mongoc_server_description_ptr (future);
+   ASSERT_OR_PRINT (sd, error);
+
+   future_destroy (future);
+   mongoc_server_description_destroy (sd);
+
+   /* let socketCheckIntervalMS pass */
+   _mongoc_usleep (100 * 1000);
+
+   /* second selection requires ismaster check, which fails */
+   future = future_client_select_server (client, true, NULL, &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* mongoc_client_select_server retries once */
+   request = mock_server_receives_ismaster (server);
+   if (retry_succeeds) {
+      mock_server_replies_simple (request, ismaster);
+      sd = future_get_mongoc_server_description_ptr (future);
+      ASSERT_OR_PRINT (sd, error);
+      mongoc_server_description_destroy (sd);
+   } else {
+      mock_server_hangs_up (request);
+      sd = future_get_mongoc_server_description_ptr (future);
+      BSON_ASSERT (sd == NULL);
+   }
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (ismaster);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_mongoc_client_select_server_retry_succeed (void)
+{
+   _test_mongoc_client_select_server_retry (true);
+}
+
+static void
+test_mongoc_client_select_server_retry_fail (void)
+{
+   _test_mongoc_client_select_server_retry (false);
+}
+
+
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static bool
@@ -3011,6 +3094,12 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/select_server/err/pooled",
                       test_mongoc_client_select_server_error_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/select_server/retry/succeed",
+                                test_mongoc_client_select_server_retry_succeed);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/select_server/retry/fail",
+                                test_mongoc_client_select_server_retry_fail);
    TestSuite_AddFull (suite,
                       "/Client/null_error_pointer/single",
                       test_null_error_pointer_single,

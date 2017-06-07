@@ -2162,10 +2162,34 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
 }
 
 
-static bool
-_mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
-                                uint32_t server_id,
-                                bson_error_t *error)
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_check_interval --
+ *
+ *      Server Discovery And Monitoring Spec:
+ *
+ *      "Only for single-threaded clients. If a server is selected that has an
+ *      existing connection that has been idle for socketCheckIntervalMS, the
+ *      driver MUST check it, by using it for an ismaster call. Whether
+ *      ismaster succeeds or fails, the driver MUST update its topology
+ *      description with the outcome. Then, if the check failed, the driver
+ *      MUST retry server selection once."
+ *
+ * Returns:
+ *      True if the check succeeded or no check was required, false if the
+ *      check failed.
+ *
+ * Side effects:
+ *      If a check is needed, updates the topology with its outcome.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
+                               uint32_t server_id,
+                               bson_error_t *error)
 {
    mongoc_topology_t *topology;
    mongoc_topology_scanner_node_t *scanner_node;
@@ -2223,7 +2247,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
                                               "admin",
                                               &command,
                                               &reply,
-                                              error);
+                                              error /* OUT */);
 
       now = bson_get_monotonic_time ();
 
@@ -2234,7 +2258,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
                                                    &reply,
                                                    (now - before_ismaster) /
                                                       1000, /* RTT_MS */
-                                                   error);
+                                                   error /* IN */);
 
       bson_destroy (&reply);
    }
@@ -2302,22 +2326,10 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
       write_concern = cluster->client->write_concern;
    }
 
-   if (!_mongoc_cluster_check_interval (
-          cluster, server_stream->sd->id, error)) {
-      GOTO (done);
-   }
-
    _mongoc_array_clear (&cluster->iov);
 #ifdef MONGOC_ENABLE_COMPRESSION
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 #endif
-
-   /*
-    * TODO: We can probably remove the need for sendv and just do send since
-    * we support write concerns now. Also, we clobber our getlasterror on
-    * each subsequent mutation. It's okay, since it comes out correct anyway,
-    * just useless work (and technically the request_id changes).
-    */
 
    need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
    _mongoc_cluster_inc_egress_rpc (rpc);
