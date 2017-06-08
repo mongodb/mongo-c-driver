@@ -1,6 +1,10 @@
 EXAMPLE_LDADD = libmongoc-1.0.la
+EXAMPLE_POOL_LDADD =
+EXAMPLE_POOL_CFLAGS =
 if EXPLICIT_LIBS
 EXAMPLE_LDADD += $(BSON_LIBS)
+EXAMPLE_POOL_LDADD += $(PTHREAD_LIBS)
+EXAMPLE_POOL_CFLAGS += $(PTHREAD_CFLAGS)
 endif
 EXAMPLE_CFLAGS = \
 	-I$(top_srcdir)/src/mongoc \
@@ -39,8 +43,8 @@ example_client_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += example-pool
 example_pool_SOURCES = examples/example-pool.c
-example_pool_CFLAGS = $(EXAMPLE_CFLAGS)
-example_pool_LDADD = $(EXAMPLE_LDADD)
+example_pool_CFLAGS = $(EXAMPLE_CFLAGS) $(EXAMPLE_POOL_CFLAGS)
+example_pool_LDADD = $(EXAMPLE_LDADD) $(EXAMPLE_POOL_LDADD)
 
 noinst_PROGRAMS += example-command-with-opts
 example_command_with_opts_SOURCES = examples/example-command-with-opts.c

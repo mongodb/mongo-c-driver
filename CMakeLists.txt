@@ -533,7 +533,12 @@ add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+set(THREADS_PREFER_PTHREAD_FLAG 1)
+find_package (Threads REQUIRED)
+if(CMAKE_USE_PTHREADS_INIT)
+   set(THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
+endif()
+set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} Threads::Threads)
 
 target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
@@ -732,7 +737,7 @@ set(VERSION "${MONGOC_VERSION}")
 set(prefix "${CMAKE_INSTALL_PREFIX}")
 set(libdir "\${prefix}/lib")
 
-foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB})
+foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${THREAD_LIB})
    if ( IS_ABSOLUTE "${FLAG}" )
       get_filename_component(FLAG_DIR "${FLAG}" DIRECTORY)
       get_filename_component(FLAG_FILE "${FLAG}" NAME_WE)
