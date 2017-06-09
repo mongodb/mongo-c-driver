@@ -1,6 +1,8 @@
 Next Release
 ============
 
+  * Minimum required CMake version has been increased to 3.1.
+  * CMake remains experimental on non-Windows platforms and issues a warning now
   * Experimental support for wire compression.
     * Support for snappy and zlib. MongoDB 3.4 only supports snappy, while zlib
       support is expected in MongoDB 3.6. Wire compression is still experimental
