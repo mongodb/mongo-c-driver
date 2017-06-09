@@ -1000,7 +1000,8 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 
    server_stream =
       mongoc_cluster_stream_for_reads (&client->cluster, NULL, &error);
-   if (!mongoc_cluster_run_command_private (&client->cluster,
+   if (!server_stream ||
+       !mongoc_cluster_run_command_private (&client->cluster,
                                             server_stream->stream,
                                             0,
                                             MONGOC_QUERY_SLAVE_OK,
