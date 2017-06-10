@@ -86,7 +86,7 @@ mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port)
    }
 
    link_ = (mongoc_host_list_t *) bson_malloc0 (sizeof *link_);
-   mongoc_lowercase (host, link_->host);
+   bson_strncpy (link_->host, host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port,
                      sizeof link_->host_and_port,
@@ -262,6 +262,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t *uri, const char *str)
       return false;
    }
 
+   mongoc_lowercase (hostname, hostname);
    r = mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
@@ -270,7 +271,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t *uri, const char *str)
 
 
 bool
-mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str)
+mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
 {
    uint16_t port;
    const char *end_host;
@@ -310,6 +311,10 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str)
       return false;
    }
 
+   if (downcase) {
+      mongoc_lowercase (hostname, hostname);
+   }
+
    r = mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
@@ -341,11 +346,11 @@ mongoc_uri_parse_hosts (mongoc_uri_t *uri, const char *str, const char **end)
  */
 
 again:
-   if (((*str == '/') && (sock = strstr (str, ".sock"))) &&
+   if (((!strncmp (str, "%2F", 3)) && (sock = strstr (str, ".sock"))) &&
        (!(tmp = strstr (str, ",")) || (tmp > sock)) &&
        (!(tmp = strstr (str, "?")) || (tmp > sock))) {
       s = bson_strndup (str, sock + 5 - str);
-      if (!mongoc_uri_parse_host (uri, s)) {
+      if (!mongoc_uri_parse_host (uri, s, false /* downcase */)) {
          bson_free (s);
          return false;
       }
@@ -358,7 +363,7 @@ again:
       }
       *end = str;
    } else if ((s = scan_to_unichar (str, ',', "/", &end_hostport))) {
-      if (!mongoc_uri_parse_host (uri, s)) {
+      if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
          bson_free (s);
          return false;
       }
@@ -368,7 +373,7 @@ again:
       goto again;
    } else if ((s = scan_to_unichar (str, '/', "", &end_hostport)) ||
               (s = scan_to_unichar (str, '?', "", &end_hostport))) {
-      if (!mongoc_uri_parse_host (uri, s)) {
+      if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
          bson_free (s);
          return false;
       }
@@ -376,7 +381,7 @@ again:
       *end = end_hostport;
       return true;
    } else if (*str) {
-      if (!mongoc_uri_parse_host (uri, str)) {
+      if (!mongoc_uri_parse_host (uri, str, true /* downcase */)) {
          return false;
       }
       *end = str + strlen (str);

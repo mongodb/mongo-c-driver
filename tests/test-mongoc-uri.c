@@ -679,6 +679,13 @@ test_mongoc_uri_functions (void)
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://%2Ftmp%2FMongoDB-27017.sock/");
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host, "/tmp/MongoDB-27017.sock");
+   ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port,
+                  "/tmp/MongoDB-27017.sock");
+
+   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -812,7 +819,7 @@ test_mongoc_host_list_from_string (void)
 
    ASSERT (_mongoc_host_list_from_string (&host_list, "[::1]"));
    ASSERT_CMPSTR (host_list.host_and_port, "[::1]:27017");
-   ASSERT_CMPSTR (host_list.host, "::1");  /* no "[" or "]" */
+   ASSERT_CMPSTR (host_list.host, "::1"); /* no "[" or "]" */
    ASSERT (host_list.port == 27017);
 
    ASSERT (_mongoc_host_list_from_string (&host_list, "[Fe80::1]:1234"));
