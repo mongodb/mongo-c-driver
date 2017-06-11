@@ -55,14 +55,14 @@ and the existing codes or domains are inappropriate.
                                                                                    
  - Add the domain to `mongoc_error_domain_t` in `src/mongoc/mongoc-error.h`        
  - Add the code to `mongoc_error_code_t` in `src/mongoc/mongoc-error.h`            
- - Add documentation for the domain or code to the table in `doc/mongoc_errors.page`
+ - Add documentation for the domain or code to the table in `doc/mongoc_errors.rst`
                               
 ### Adding a new symbol
 
 This should be done rarely but there are several things that you need to do
 when adding a new symbol.
 
- - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.page`
+ - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.rst`
 
 ### Documentation
 

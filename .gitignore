@@ -105,7 +105,6 @@ x64
 *.sln
 install_manifest.txt
 .vs
-doc/installing.page
 doc/html/_images
 CPackConfig.cmake
 CPackSourceConfig.cmake
