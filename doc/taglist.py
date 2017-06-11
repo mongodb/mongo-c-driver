@@ -42,6 +42,14 @@ def tag_role(name, rawtext, text, lineno, inliner, options=None, content=[]):
     return [], []
 
 
+def find_node(doctree, klass):
+    matches = doctree.traverse(lambda node: isinstance(node, klass))
+    if not matches:
+        raise IndexError("No %s in %s" % (klass, doctree))
+
+    return matches[0]
+
+
 class taglist(nodes.General, nodes.Element):
     def __init__(self, *a, **b):
         super(taglist, self).__init__(*a, **b)
@@ -78,6 +86,15 @@ def process_tags(app, doctree):
     env = app.builder.env
     if not hasattr(env, 'tags_all_tags'):
         env.tags_all_tags = []
+
+    metadata = env.metadata[env.docname]
+
+    # A page like mongoc_session_opts_get_retry_writes.rst sets its tags with
+    # ":tags: session"
+    tags = metadata.get('tags')
+    if tags:
+        env.tags_all_tags.append({'docname': env.docname,
+                                  'tags': get_tags(tags)})
 
     for node in doctree.traverse(taglist):
         env.tags_all_tags.append({'docname': env.docname, 'tags': node.tags})
@@ -136,8 +153,6 @@ def depart_tag_node(self, node):
 
 
 def setup(app):
-    app.add_config_value('taglist_css', {}, 'env')
-    app.add_config_value('taglist_tags', {}, 'env')
     app.add_role('tag', tag_role)
     app.add_node(taglist)
     app.add_directive('taglist', TaglistDirective)
