@@ -754,18 +754,18 @@ endforeach()
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
+  ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
 @ONLY)
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
   DESTINATION lib/pkgconfig
 )
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-static-1.0.pc
+  ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
 @ONLY)
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-static-1.0.pc
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
   DESTINATION lib/pkgconfig
 )
 
@@ -773,10 +773,10 @@ install(
 if (MONGOC_ENABLE_SSL)
   configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-ssl-1.0.pc
+    ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
   @ONLY)
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-ssl-1.0.pc
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
     DESTINATION lib/pkgconfig
   )
 endif()
