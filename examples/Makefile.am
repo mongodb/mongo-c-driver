@@ -41,6 +41,13 @@ example_client_SOURCES = examples/example-client.c
 example_client_CFLAGS = $(EXAMPLE_CFLAGS)
 example_client_LDADD = $(EXAMPLE_LDADD)
 
+EXAMPLE_POOL_LDADD =
+EXAMPLE_POOL_CFLAGS =
+if EXPLICIT_LIBS
+EXAMPLE_POOL_LDADD += $(PTHREAD_LIBS)
+EXAMPLE_POOL_CFLAGS += $(PTHREAD_CFLAGS)
+endif
+
 noinst_PROGRAMS += example-pool
 example_pool_SOURCES = examples/example-pool.c
 example_pool_CFLAGS = $(EXAMPLE_CFLAGS) $(EXAMPLE_POOL_CFLAGS)
