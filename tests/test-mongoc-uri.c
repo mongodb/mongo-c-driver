@@ -216,7 +216,7 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    /* should assign port numbers to correct hosts */
-   uri = mongoc_uri_new ("mongodb://host1,host2:30000/foo/");
+   uri = mongoc_uri_new ("mongodb://host1,host2:30000/foo");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, "host1:27017");
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->next->host_and_port,
@@ -250,7 +250,7 @@ test_mongoc_uri_new (void)
    /* should use the " MONGOC_URI_AUTHSOURCE " over db when both are specified
     */
    uri = mongoc_uri_new (
-      "mongodb://christian:secret@localhost:27017/foo/?" MONGOC_URI_AUTHSOURCE
+      "mongodb://christian:secret@localhost:27017/foo?" MONGOC_URI_AUTHSOURCE
       "=abcd");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_username (uri), "christian");
@@ -308,18 +308,6 @@ test_mongoc_uri_new (void)
    ASSERT_CAPTURED_LOG (
       "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
 
-   /* while you shouldn't do this, lets test for it */
-   uri =
-      mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/db%2ename");
-   ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_database (uri), "db.name");
-   mongoc_uri_destroy (uri);
-   uri =
-      mongoc_uri_new ("mongodb://christian%40realm@localhost:27017/db%2Ename");
-   ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_database (uri), "db.name");
-   mongoc_uri_destroy (uri);
-
    uri = mongoc_uri_new (
       "mongodb://christian%40realm@localhost:27017/?replicaset=%20");
    ASSERT (uri);
@@ -351,7 +339,7 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    /* use $external as source when db is specified */
-   uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/foo/"
+   uri = mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/foo"
                          "?" MONGOC_URI_AUTHMECHANISM "=GSSAPI");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
@@ -359,7 +347,7 @@ test_mongoc_uri_new (void)
 
    /* should not accept " MONGOC_URI_AUTHSOURCE " other than $external */
    ASSERT (!mongoc_uri_new ("mongodb://user%40DOMAIN.COM:password@localhost/"
-                            "foo/?" MONGOC_URI_AUTHMECHANISM
+                            "foo?" MONGOC_URI_AUTHMECHANISM
                             "=GSSAPI&" MONGOC_URI_AUTHSOURCE "=bar"));
 
    /* should accept MONGOC_URI_AUTHMECHANISMPROPERTIES */
@@ -426,7 +414,7 @@ test_mongoc_uri_new (void)
    /* use $external as source when db is specified */
    uri = mongoc_uri_new (
       "mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
-      "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/"
+      "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo"
       "?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
@@ -435,7 +423,7 @@ test_mongoc_uri_new (void)
    /* should not accept " MONGOC_URI_AUTHSOURCE " other than $external */
    ASSERT (!mongoc_uri_new (
       "mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
-      "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/"
+      "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo"
       "?" MONGOC_URI_AUTHMECHANISM "=MONGODB-X509&" MONGOC_URI_AUTHSOURCE
       "=bar"));
 

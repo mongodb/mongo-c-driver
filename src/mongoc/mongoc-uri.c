@@ -51,12 +51,17 @@ struct _mongoc_uri_t {
    mongoc_write_concern_t *write_concern;
 };
 
-#define MONGOC_URI_ERROR(error, format, msg)         \
+#define MONGOC_URI_ERROR(error, format, ...)         \
    bson_set_error (error,                            \
                    MONGOC_ERROR_COMMAND,             \
                    MONGOC_ERROR_COMMAND_INVALID_ARG, \
                    format,                           \
-                   msg);
+                   __VA_ARGS__);
+
+
+static const char *escape_instructions = "Percent-encode username and password"
+                                         " according to RFC 3986.";
+
 bool
 _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                  const char *option,
@@ -175,6 +180,70 @@ scan_to_unichar (const char *str,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * last_slash --
+ *
+ *       Scans 'str' and returns a pointer to the final '/' character, or
+ *       NULL if there is no '/'.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static const char *
+last_unichar (const char *haystack, bson_unichar_t needle)
+{
+   bson_unichar_t c;
+   const char *iter;
+   const char *last = NULL;
+
+   for (iter = haystack; iter && *iter && (c = bson_utf8_get_char (iter));
+        iter = bson_utf8_next_char (iter)) {
+      if (c == needle) {
+         last = iter;
+      }
+   }
+
+   return last;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * ends_with --
+ *
+ *       Return true if str ends with suffix.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+ends_with (const char *str, const char *suffix)
+{
+   size_t str_len = strlen (str);
+   size_t suffix_len = strlen (suffix);
+   const char *s1, *s2;
+
+   if (str_len < suffix_len) {
+      return false;
+   }
+
+   /* start at the ends of both strings */
+   s1 = str + str_len;
+   s2 = suffix + suffix_len;
+
+   /* until either pointer reaches start of its string, compare the pointers */
+   for (; s1 >= str && s2 >= suffix; s1--, s2--) {
+      if (*s1 != *s2) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
 static bool
 mongoc_uri_parse_scheme (const char *str, const char **end)
 {
@@ -189,55 +258,75 @@ mongoc_uri_parse_scheme (const char *str, const char **end)
 
 
 static bool
-mongoc_uri_parse_userpass (mongoc_uri_t *uri, const char *str, const char **end)
+mongoc_uri_has_unescaped_chars (const char *str, const char *chars)
 {
-   bool ret = false;
-   const char *end_userpass;
-   const char *end_user;
+   const char *c;
+   const char *tmp;
    char *s;
-   char *tmp;
 
-   if ((s = scan_to_unichar (str, '@', "", &end_userpass))) {
-      if ((uri->username = scan_to_unichar (s, ':', "", &end_user))) {
-         uri->password = bson_strdup (end_user + 1);
-      } else {
-         uri->username = bson_strndup (str, end_userpass - str);
-         uri->password = NULL;
+   for (c = chars; *c; c++) {
+      s = scan_to_unichar (str, (bson_unichar_t) *c, "", &tmp);
+      if (s) {
+         bson_free (s);
+         return true;
       }
-
-      ret = true;
-
-      mongoc_uri_do_unescape (&uri->username);
-      if (!uri->username) {
-         ret = false;
-         /* Providing password at all is optional */
-      } else if (uri->password) {
-         /* Make sure we don't have unescaped : */
-         if (strchr (uri->password, ':')) {
-            ret = false;
-         } else {
-            mongoc_uri_do_unescape (&uri->password);
-            if (!uri->password) {
-               ret = false;
-            }
-         }
-      }
-
-      if (ret) {
-         *end = end_userpass + 1;
-
-         /* Make sure we don't have unescaped @ */
-         if ((tmp = scan_to_unichar (*end, '@', ",/[", end))) {
-            ret = false;
-            bson_free (tmp);
-         }
-      }
-      bson_free (s);
-   } else {
-      ret = true;
    }
 
-   return ret;
+   return false;
+}
+
+
+/* "str" is non-NULL, the part of URI between "mongodb://" and first "@" */
+static bool
+mongoc_uri_parse_userpass (mongoc_uri_t *uri,
+                           const char *str,
+                           bson_error_t *error)
+{
+   const char *prohibited = "@:/";
+   const char *end_user;
+
+   BSON_ASSERT (str);
+
+   if ((uri->username = scan_to_unichar (str, ':', "", &end_user))) {
+      uri->password = bson_strdup (end_user + 1);
+   } else {
+      uri->username = bson_strdup (str);
+      uri->password = NULL;
+   }
+
+   if (mongoc_uri_has_unescaped_chars (uri->username, prohibited)) {
+      MONGOC_URI_ERROR (error,
+                        "Username \"%s\" must not have unescaped chars. %s",
+                        uri->username,
+                        escape_instructions);
+      return false;
+   }
+
+   mongoc_uri_do_unescape (&uri->username);
+   if (!uri->username) {
+      MONGOC_URI_ERROR (
+         error, "Incorrect URI escapes in username. %s", escape_instructions);
+      return false;
+   }
+
+   /* Providing password at all is optional */
+   if (uri->password) {
+      if (mongoc_uri_has_unescaped_chars (uri->password, prohibited)) {
+         MONGOC_URI_ERROR (error,
+                           "Password \"%s\" must not have unescaped chars. %s",
+                           uri->password,
+                           escape_instructions);
+         return false;
+      }
+
+      mongoc_uri_do_unescape (&uri->password);
+      if (!uri->password) {
+         MONGOC_URI_ERROR (error, "%s", "Incorrect URI escapes in password.");
+         return false;
+      }
+   }
+
+   return true;
 }
 
 static bool
@@ -298,7 +387,7 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
       port = MONGOC_DEFAULT_PORT;
    }
 
-   if (strchr (hostname, '/')) {
+   if (mongoc_uri_has_unescaped_chars (hostname, "/")) {
       MONGOC_WARNING ("Unix Domain Sockets must be escaped (e.g. / = %%2F)");
       bson_free (hostname);
       return false;
@@ -307,7 +396,6 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
    mongoc_uri_do_unescape (&hostname);
    if (!hostname) {
       /* invalid */
-      bson_free (hostname);
       return false;
    }
 
@@ -322,73 +410,53 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
 }
 
 
+/* "hosts" is non-NULL, the part between "mongodb://" or "@" and last "/" */
 static bool
-mongoc_uri_parse_hosts (mongoc_uri_t *uri, const char *str, const char **end)
+mongoc_uri_parse_hosts (mongoc_uri_t *uri, const char *hosts)
 {
-   bool ret = false;
+   const char *next;
    const char *end_hostport;
-   const char *sock;
-   const char *tmp;
    char *s;
-
-/*
- * Parsing the series of hosts is a lot more complicated than you might
- * imagine. This is due to some characters being both separators as well as
- * valid characters within the "hostname". In particularly, we can have file
- * paths to specify paths to UNIX domain sockets. We impose the restriction
- * that they must be suffixed with ".sock" to simplify the parsing.
- *
- * You can separate hosts and file system paths to UNIX domain sockets with
- * ",".
- *
- * When you reach a "/" or "?" that is not part of a file-system path, we
- * have completed our parsing of hosts.
- */
-
-again:
-   if (((!strncmp (str, "%2F", 3)) && (sock = strstr (str, ".sock"))) &&
-       (!(tmp = strstr (str, ",")) || (tmp > sock)) &&
-       (!(tmp = strstr (str, "?")) || (tmp > sock))) {
-      s = bson_strndup (str, sock + 5 - str);
-      if (!mongoc_uri_parse_host (uri, s, false /* downcase */)) {
-         bson_free (s);
-         return false;
-      }
-      bson_free (s);
-      str = sock + 5;
-      ret = true;
-      if (*str == ',') {
-         str++;
-         goto again;
-      }
-      *end = str;
-   } else if ((s = scan_to_unichar (str, ',', "/", &end_hostport))) {
-      if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
-         bson_free (s);
-         return false;
-      }
-      bson_free (s);
-      str = end_hostport + 1;
-      ret = true;
-      goto again;
-   } else if ((s = scan_to_unichar (str, '/', "", &end_hostport)) ||
-              (s = scan_to_unichar (str, '?', "", &end_hostport))) {
-      if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
-         bson_free (s);
-         return false;
-      }
-      bson_free (s);
-      *end = end_hostport;
-      return true;
-   } else if (*str) {
-      if (!mongoc_uri_parse_host (uri, str, true /* downcase */)) {
-         return false;
-      }
-      *end = str + strlen (str);
-      return true;
+   BSON_ASSERT (hosts);
+   /*
+    * Parsing the series of hosts is a lot more complicated than you might
+    * imagine. This is due to some characters being both separators as well as
+    * valid characters within the "hostname". In particularly, we can have file
+    * paths to specify paths to UNIX domain sockets. We impose the restriction
+    * that they must be suffixed with ".sock" to simplify the parsing.
+    *
+    * You can separate hosts and file system paths to UNIX domain sockets with
+    * ",".
+    */
+   s = scan_to_unichar (hosts, '?', "", &end_hostport);
+   if (s) {
+      MONGOC_WARNING (
+         "%s", "A '/' is required between the host list and any options.");
+      goto error;
    }
-
-   return ret;
+   next = hosts;
+   do {
+      /* makes a copy of the section of the string */
+      s = scan_to_unichar (next, ',', "", &end_hostport);
+      if (s) {
+         next = (char *) end_hostport + 1;
+      } else {
+         s = bson_strdup (next);
+         next = NULL;
+      }
+      if (ends_with (s, ".sock")) {
+         if (!mongoc_uri_parse_host (uri, s, false /* downcase */)) {
+            goto error;
+         }
+      } else if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
+         goto error;
+      }
+      bson_free (s);
+   } while (next);
+   return true;
+error:
+   bson_free (s);
+   return false;
 }
 
 
@@ -396,6 +464,9 @@ static bool
 mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
 {
    const char *end_database;
+   const char *c;
+   char *invalid_c;
+   const char *tmp;
 
    if ((uri->database = scan_to_unichar (str, '?', "", &end_database))) {
       *end = end_database;
@@ -408,6 +479,16 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
    if (!uri->database) {
       /* invalid */
       return false;
+   }
+
+   /* invalid characters in database name */
+   for (c = "/\\. \"$"; *c; c++) {
+      invalid_c =
+         scan_to_unichar (uri->database, (bson_unichar_t) *c, "", &tmp);
+      if (invalid_c) {
+         bson_free (invalid_c);
+         return false;
+      }
    }
 
    return true;
@@ -806,22 +887,66 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 }
 
 static bool
+mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
+                               const char *before_slash,
+                               bson_error_t *error)
+{
+   char *userpass;
+   const char *hosts;
+
+   userpass = scan_to_unichar (before_slash, '@', "", &hosts);
+   if (userpass) {
+      if (!mongoc_uri_parse_userpass (uri, userpass, error)) {
+         goto error;
+      }
+
+      hosts++; /* advance past "@" */
+      if (*hosts == '@') {
+         /* special case: "mongodb://alice@@localhost" */
+         MONGOC_URI_ERROR (
+            error, "Invalid username or password. %s", escape_instructions);
+         goto error;
+      }
+   } else {
+      hosts = before_slash;
+   }
+
+   if (!mongoc_uri_parse_hosts (uri, hosts)) {
+      MONGOC_URI_ERROR (error, "%s", "Invalid host string in URI");
+      goto error;
+   }
+
+   bson_free (userpass);
+   return true;
+
+error:
+   bson_free (userpass);
+   return false;
+}
+
+
+static bool
 mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
+   char *before_slash = NULL;
+   const char *tmp;
+
    if (!mongoc_uri_parse_scheme (str, &str)) {
       MONGOC_URI_ERROR (
          error, "%s", "Invalid URI Schema, expecting 'mongodb://'");
-      return false;
+      goto error;
    }
 
-   if (!*str || !mongoc_uri_parse_userpass (uri, str, &str)) {
-      MONGOC_URI_ERROR (error, "%s", "Invalid username or password in URI");
-      return false;
+   before_slash = scan_to_unichar (str, '/', "", &tmp);
+   if (!before_slash) {
+      before_slash = bson_strdup (str);
+      str += strlen (before_slash);
+   } else {
+      str = tmp;
    }
 
-   if (!*str || !mongoc_uri_parse_hosts (uri, str, &str)) {
-      MONGOC_URI_ERROR (error, "%s", "Invalid host string in URI");
-      return false;
+   if (!mongoc_uri_parse_before_slash (uri, before_slash, error)) {
+      goto error;
    }
 
    if (*str) {
@@ -830,7 +955,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
          if (*str) {
             if (!mongoc_uri_parse_database (uri, str, &str)) {
                MONGOC_URI_ERROR (error, "%s", "Invalid database name in URI");
-               return false;
+               goto error;
             }
          }
 
@@ -838,17 +963,26 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
             str++;
             if (*str) {
                if (!mongoc_uri_parse_options (uri, str, error)) {
-                  return false;
+                  goto error;
                }
             }
          }
       } else {
          MONGOC_URI_ERROR (error, "%s", "Expected end of hostname delimiter");
-         return false;
+         goto error;
       }
    }
 
-   return mongoc_uri_finalize_auth (uri, error);
+   if (!mongoc_uri_finalize_auth (uri, error)) {
+      goto error;
+   }
+
+   bson_free (before_slash);
+   return true;
+
+error:
+   bson_free (before_slash);
+   return false;
 }
 
 
