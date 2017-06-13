@@ -513,8 +513,9 @@ div.viewcode-block:target {
     border-bottom: 1px solid #fbe091;
 }
 
-a.symbol span {
+a.symbol > span {
     font-family: monospace;
+    font-size: 0.85em;
 }
 
 div.code-block-caption {
