@@ -57,6 +57,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    /* set other fields to default or empty states. election_id is zeroed. */
    memset (
       &sd->set_name, 0, sizeof (*sd) - ((char *) &sd->set_name - (char *) sd));
+   memset (&sd->error, 0, sizeof sd->error);
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
 

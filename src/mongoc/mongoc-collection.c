@@ -353,30 +353,27 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    if (server_id) {
       /* will set slaveok bit if server is not mongos */
       mongoc_cursor_set_hint (cursor, server_id);
-   } else {
-      server_id =
-         mongoc_topology_select_server_id (collection->client->topology,
-                                           MONGOC_SS_READ,
-                                           read_prefs,
+
+      /* server id isn't enough. ensure we're connected & know its wire version */
+      server_stream =
+         mongoc_cluster_stream_for_server (&collection->client->cluster,
+                                           cursor->server_id,
+                                           true /* reconnect ok */,
                                            &cursor->error);
 
-      if (!server_id) {
+      if (!server_stream) {
+         GOTO (done);
+      }
+   } else {
+      server_stream = mongoc_cluster_stream_for_reads (
+         &collection->client->cluster, read_prefs, &cursor->error);
+
+      if (!server_stream) {
          GOTO (done);
       }
 
       /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
-      cursor->server_id = server_id;
-   }
-
-   /* server id isn't enough. ensure we're connected & know its wire version */
-   server_stream =
-      mongoc_cluster_stream_for_server (&collection->client->cluster,
-                                        cursor->server_id,
-                                        true /* reconnect ok */,
-                                        &cursor->error);
-
-   if (!server_stream) {
-      GOTO (done);
+      cursor->server_id = server_stream->sd->id;
    }
 
    use_cursor = server_stream->sd->max_wire_version >= WIRE_VERSION_AGG_CURSOR;

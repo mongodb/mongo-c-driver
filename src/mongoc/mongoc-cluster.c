@@ -1979,6 +1979,16 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
+   if (!mongoc_cluster_check_interval (cluster, server_id)) {
+      /* Server Selection Spec: try once more */
+      server_id = mongoc_topology_select_server_id (
+         topology, optype, read_prefs, error);
+
+      if (!server_id) {
+         RETURN (NULL);
+      }
+   }
+
    /* connect or reconnect to server if necessary */
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, true /* reconnect_ok */, error);
@@ -2167,37 +2177,36 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
  *
  * mongoc_cluster_check_interval --
  *
- *      Server Discovery And Monitoring Spec:
+ *      Server Selection Spec:
  *
- *      "Only for single-threaded clients. If a server is selected that has an
- *      existing connection that has been idle for socketCheckIntervalMS, the
- *      driver MUST check it, by using it for an ismaster call. Whether
- *      ismaster succeeds or fails, the driver MUST update its topology
- *      description with the outcome. Then, if the check failed, the driver
- *      MUST retry server selection once."
+ *      Only for single-threaded drivers.
+ *
+ *      If a server is selected that has an existing connection that has been
+ *      idle for socketCheckIntervalMS, the driver MUST check the connection
+ *      with the "ping" command. If the ping succeeds, use the selected
+ *      connection. If not, set the server's type to Unknown and update the
+ *      Topology Description according to the Server Discovery and Monitoring
+ *      Spec, and attempt once more to select a server.
  *
  * Returns:
  *      True if the check succeeded or no check was required, false if the
  *      check failed.
  *
  * Side effects:
- *      If a check is needed, updates the topology with its outcome.
+ *      If a check fails, closes stream and may set server type Unknown.
  *
  *--------------------------------------------------------------------------
  */
 
 bool
-mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
-                               uint32_t server_id,
-                               bson_error_t *error)
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 {
    mongoc_topology_t *topology;
    mongoc_topology_scanner_node_t *scanner_node;
    mongoc_stream_t *stream;
    int64_t now;
-   int64_t before_ismaster;
    bson_t command;
-   bson_t reply;
+   bson_error_t error;
    bool r = true;
 
    topology = cluster->client->topology;
@@ -2226,10 +2235,6 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
    if (scanner_node->last_used + (1000 * CHECK_CLOSED_DURATION_MSEC) < now) {
       if (mongoc_stream_check_closed (stream)) {
          mongoc_cluster_disconnect_node (cluster, server_id);
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_SOCKET,
-                         "Stream is closed");
          return false;
       }
    }
@@ -2237,30 +2242,23 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
    if (scanner_node->last_used + (1000 * cluster->socketcheckintervalms) <
        now) {
       bson_init (&command);
-      BSON_APPEND_INT32 (&command, "ismaster", 1);
-
-      before_ismaster = now;
+      BSON_APPEND_INT32 (&command, "ping", 1);
       r = mongoc_cluster_run_command_private (cluster,
                                               stream,
                                               server_id,
                                               MONGOC_QUERY_SLAVE_OK,
                                               "admin",
                                               &command,
-                                              &reply,
-                                              error /* OUT */);
-
-      now = bson_get_monotonic_time ();
+                                              NULL,
+                                              &error /* OUT */);
 
       bson_destroy (&command);
 
-      mongoc_topology_description_handle_ismaster (&topology->description,
-                                                   server_id,
-                                                   &reply,
-                                                   (now - before_ismaster) /
-                                                      1000, /* RTT_MS */
-                                                   error /* IN */);
-
-      bson_destroy (&reply);
+      if (!r) {
+         mongoc_cluster_disconnect_node (cluster, server_id);
+         mongoc_topology_invalidate_server (
+            topology, server_id, &error /* IN */);
+      }
    }
 
    return r;
