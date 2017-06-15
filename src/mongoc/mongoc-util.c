@@ -36,6 +36,13 @@ _mongoc_rand_simple (unsigned int *seed)
    }
 
    return (int) ret;
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
+   defined(__OpenBSD__)
+   /* ignore the seed */
+   int ret = 0;
+   arc4random_buf (&ret, sizeof (ret));
+
+   return ret;
 #else
    return rand_r (seed);
 #endif
