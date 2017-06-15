@@ -700,6 +700,7 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       mongoc_compressor_id_to_name (compressor_id));
    }
    bson_free (data);
+   bson_free (output);
    return NULL;
 }
 bool
