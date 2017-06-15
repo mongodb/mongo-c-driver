@@ -542,7 +542,11 @@ find_package (Threads REQUIRED)
 if(CMAKE_USE_PTHREADS_INIT)
    set(THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
 endif()
+
 set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} Threads::Threads)
+if(WIN32)
+   set (LIBS ${LIBS} ws2_32)
+endif()
 
 target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
