@@ -100,7 +100,7 @@ clean-local:
 	-rm -rf $(CLEANFILES)
 
 uninstall-local:
-	-rmdir $(mongocdocdir)/doc $(mongocdocdir)/html
 	-rm -r $(mongocdocdir)
+	-rm -rf $(DESTDIR)$(libdir)/libmongoc-static-1.0.a
 	-rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-1.0
-	-rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-1.0-static
+	-rm -rf $(DESTDIR)$(libdir)/cmake/libmongoc-static-1.0
