@@ -28,8 +28,7 @@ if test x"${enable_automatic_init_and_cleanup}" != x"no"; then
 fi
 if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
   experimental_features="
-  Snappy Compression                               : ${enable_snappy}
-  Zlib Compression                                 : ${enable_zlib}"
+  Feature #1                                       : ${enable_feature_1}"
 fi
 
 echo "
@@ -46,7 +45,9 @@ Build configuration:
   Fast counters                                    : ${enable_rdtscp}
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
-  SSL                                              : ${enable_ssl}${experimental_features}
+  SSL                                              : ${enable_ssl}
+  Snappy Compression                               : ${enable_snappy}
+  Zlib Compression                                 : ${enable_zlib}${experimental_features}
   Libbson                                          : ${with_libbson}
 
 Documentation:

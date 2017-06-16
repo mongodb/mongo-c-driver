@@ -429,7 +429,8 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
-    - name: debug-compile-experimental
+    - name: debug-compile-zlib
+      tags: ["zlib", "compression"]
       commands:
         - command: shell.exec
           type: test
@@ -438,19 +439,110 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes MONGOC_36_EXPERIMENT=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=no --enable-zlib=yes" sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: test-latest-server-experimental
+    - name: debug-compile-snappy
+      tags: ["snappy", "compression"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=no" sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-compression
+      tags: ["zlib", "snappy", "compression"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes" sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: test-latest-server-zlib
+      tags: ["zlib", "compression"]
       depends_on:
-        - name: "debug-compile-experimental"
+        - name: "debug-compile-zlib"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-experimental"
+            BUILD_NAME: "debug-compile-zlib"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib
+
+
+    - name: test-latest-server-snappy
+      tags: ["snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-snappy"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-snappy"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: snappy
+
+    - name: test-latest-server-compression
+      tags: ["zlib", "snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-compression"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib,snappy
+
+
+    - name: test-3.4-server-compression
+      tags: ["zlib", "snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-compression"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
             TOPOLOGY: "server"
             AUTH: "noauth"
             SSL: "nossl"
@@ -6512,6 +6604,7 @@ buildvariants:
     - ubuntu1604-build
     - ubuntu1604-test
   tasks:
+    - ".compression"
     - "debug-compile-scan-build"
     - "debug-compile-sanitizer-address"
     - "debug-compile-sanitizer-undefined"
@@ -6646,6 +6739,7 @@ buildvariants:
   - ubuntu1604-build
   - ubuntu1604-test
   tasks:
+    - ".compression"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6965,6 +7059,7 @@ buildvariants:
   - ubuntu1604-arm64-large
   - ubuntu1604-arm64-small
   tasks:
+    - ".compression"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
@@ -7049,6 +7144,4 @@ buildvariants:
   run_on:
     - archlinux-build
   tasks:
-    - "debug-compile-experimental"
-    - "test-latest-server-experimental"
-
+    - ".compression"

@@ -37,21 +37,19 @@ LT_INIT
 
 m4_include([build/autotools/ReadCommandLineArguments.m4])
 m4_include([build/autotools/CheckSasl.m4])
-if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
-   m4_include([build/autotools/CheckSnappy.m4])
-   m4_include([build/autotools/CheckZlib.m4])
+#if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
+# m4_include([build/autotools/feature.m4])
+#else
+# AC_SUBST(MONGOC_FEATURE, 0)
+# enable_feature_1=no
+#fi
+m4_include([build/autotools/CheckSnappy.m4])
+m4_include([build/autotools/CheckZlib.m4])
 
-   if test "x$have_zlib" = "xyes" -o "x$have_snappy" = "xyes"; then
-      AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
-   else
-      AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
-   fi
+if test "x$have_zlib" = "xyes" -o "x$have_snappy" = "xyes"; then
+   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
-   AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 0)
-   AC_SUBST(MONGOC_ENABLE_COMPRESSION_ZLIB, 0)
-   enable_snappy=no
-   enable_zlib=no
 fi
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
