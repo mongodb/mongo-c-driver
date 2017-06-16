@@ -145,8 +145,10 @@ mongoc_uncompress (int32_t compressor_id,
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
       int ok;
 
-      ok = uncompress (
-         uncompressed, uncompressed_size, compressed, compressed_len);
+      ok = uncompress (uncompressed,
+                       (unsigned long *) uncompressed_size,
+                       compressed,
+                       compressed_len);
 
       return ok == Z_OK;
 #else
@@ -189,7 +191,7 @@ mongoc_compress (int32_t compressor_id,
    case MONGOC_COMPRESSOR_ZLIB_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
       return compress2 ((unsigned char *) compressed,
-                        compressed_len,
+                        (unsigned long *) compressed_len,
                         (unsigned char *) uncompressed,
                         uncompressed_len,
                         compression_level) == Z_OK;
