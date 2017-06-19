@@ -704,6 +704,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from CMake's find_package command.
@@ -727,6 +728,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from CMake's find_package command.
@@ -750,6 +752,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
@@ -770,6 +773,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
@@ -790,6 +794,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from "pkg-config".
@@ -813,6 +818,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              set -o errexit
               # Build libmongoc with the Autotools or CMake and compile a program
               # that links dynamically or statically to libmongoc, using
               # variables from "pkg-config".
