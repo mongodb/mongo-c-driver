@@ -202,7 +202,7 @@ case "$OS" in
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
       # llvm-cov is installed from brew
-      export PATH=$PATH:/usr/local/opt/llvm/bin
+      export PATH=/usr/local/opt/llvm/bin:$PATH
    ;;
 
    linux)
