@@ -6799,11 +6799,11 @@ buildvariants:
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
 
 - name: darwin
-  display_name: "*Darwin, OS X (Apple LLVM)"
+  display_name: "*Darwin, macOS (Apple LLVM)"
   expansions:
     CC: "clang"
   run_on:
-    - osx-1010
+    - macos-1012
   tasks:
     - "debug-compile-coverage"
     - "release-compile"
