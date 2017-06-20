@@ -183,35 +183,6 @@ scan_to_unichar (const char *str,
 /*
  *--------------------------------------------------------------------------
  *
- * last_slash --
- *
- *       Scans 'str' and returns a pointer to the final '/' character, or
- *       NULL if there is no '/'.
- *
- *--------------------------------------------------------------------------
- */
-
-static const char *
-last_unichar (const char *haystack, bson_unichar_t needle)
-{
-   bson_unichar_t c;
-   const char *iter;
-   const char *last = NULL;
-
-   for (iter = haystack; iter && *iter && (c = bson_utf8_get_char (iter));
-        iter = bson_utf8_next_char (iter)) {
-      if (c == needle) {
-         last = iter;
-      }
-   }
-
-   return last;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
  * ends_with --
  *
  *       Return true if str ends with suffix.
