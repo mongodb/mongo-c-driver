@@ -429,6 +429,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-session.c
    ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
@@ -479,6 +480,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-session.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -745,6 +747,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
+   ${SOURCE_DIR}/tests/test-mongoc-session.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-srv.c
@@ -795,6 +798,7 @@ mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
 mongoc_add_example(example-command-with-opts TRUE ${SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example(example-create-indexes TRUE ${SOURCE_DIR}/examples/example-create-indexes.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
+mongoc_add_example(example-session TRUE ${SOURCE_DIR}/examples/example-session.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)

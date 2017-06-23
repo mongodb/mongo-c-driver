@@ -64,6 +64,11 @@ example_scram_SOURCES = examples/example-scram.c
 example_scram_CFLAGS = $(EXAMPLE_CFLAGS)
 example_scram_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-session
+example_session_SOURCES = examples/example-session.c
+example_session_CFLAGS = $(EXAMPLE_CFLAGS)
+example_session_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += mongoc-ping
 mongoc_ping_SOURCES = examples/mongoc-ping.c
 mongoc_ping_CFLAGS = $(EXAMPLE_CFLAGS)

@@ -47,6 +47,12 @@ struct _mongoc_topology_description_t {
    bool stale;
    unsigned int rand_seed;
 
+   /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
+    * see Driver Sessions Spec. */
+   uint32_t cluster_time_t;
+   uint32_t cluster_time_i;
+   bson_t cluster_time;
+
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 };
@@ -117,5 +123,9 @@ bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                         const char *server,
                                         uint32_t *id /* OUT */);
+
+void
+mongoc_topology_description_update_cluster_time (
+   mongoc_topology_description_t *td, const bson_t *reply);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */

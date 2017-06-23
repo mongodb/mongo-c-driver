@@ -1,0 +1,12 @@
+Create a :symbol:`mongoc_session_opt_t` with :symbol:`mongoc_session_opts_new()` and configure its options with these functions:
+
+- :symbol:`mongoc_session_opts_set_retry_writes()`
+- :symbol:`mongoc_session_opts_set_causally_consistent_reads()`
+
+Then start a session with :symbol:`mongoc_client_start_session`.
+
+Use the session for a sequence of operations, then free it with :symbol:`mongoc_session_destroy()`. Any :symbol:`mongoc_database_t`, :symbol:`mongoc_collection_t`, or :symbol:`mongoc_gridfs_t` derived from a session must be destroyed before destroying the session.
+
+.. Drivers Sessions Spec: "Drivers MUST document the thread-safety limitations of sessions."
+
+A :symbol:`mongoc_session_t` is not thread safe.

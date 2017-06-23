@@ -75,7 +75,8 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                               NULL,  /* query */
                               NULL,  /* fields */
                               prefs, /* read prefs */
-                              NULL); /* read concern */
+                              NULL,  /* read concern */
+                              collection->session);
 }
 
 static void
@@ -104,6 +105,7 @@ _mongoc_collection_write_command_execute (
                                   collection->collection,
                                   write_concern,
                                   0 /* offset */,
+                                  collection->session,
                                   result);
 
    mongoc_server_stream_cleanup (server_stream);
@@ -126,6 +128,7 @@ _mongoc_collection_write_command_execute (
  *       @read_prefs is the default read preferences to apply or NULL.
  *       @read_concern is the default read concern to apply or NULL.
  *       @write_concern is the default write concern to apply or NULL.
+ *       @session, if not NULL, must be valid for the lifetime of this struct.
  *
  * Returns:
  *       A newly allocated mongoc_collection_t that should be freed with
@@ -143,7 +146,8 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const char *collection,
                         const mongoc_read_prefs_t *read_prefs,
                         const mongoc_read_concern_t *read_concern,
-                        const mongoc_write_concern_t *write_concern)
+                        const mongoc_write_concern_t *write_concern,
+                        mongoc_session_t *session)
 {
    mongoc_collection_t *col;
 
@@ -162,6 +166,7 @@ _mongoc_collection_new (mongoc_client_t *client,
                                     : mongoc_read_concern_new ();
    col->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs)
                                 : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   col->session = session;
 
    bson_snprintf (col->ns, sizeof col->ns, "%s.%s", db, collection);
    bson_snprintf (col->db, sizeof col->db, "%s", db);
@@ -252,7 +257,8 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
                                    collection->collection,
                                    collection->read_prefs,
                                    collection->read_concern,
-                                   collection->write_concern));
+                                   collection->write_concern,
+                                   collection->session));
 }
 
 
@@ -337,6 +343,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
    mongoc_cmd_parts_init (&parts, collection->db, flags, &command);
    parts.read_prefs = read_prefs;
+   parts.session = collection->session;
 
    if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
@@ -560,7 +567,8 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
                               query,
                               fields,
                               COALESCE (read_prefs, collection->read_prefs),
-                              collection->read_concern);
+                              collection->read_concern,
+                              collection->session);
 }
 
 
@@ -606,14 +614,12 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new_with_opts (
-      collection->client,
-      collection->ns,
-      false /* is_command */,
-      filter,
-      opts,
-      COALESCE (read_prefs, collection->read_prefs),
-      collection->read_concern);
+   return _mongoc_cursor_new_with_opts (collection->client, collection->ns,
+                                        false /* is_command */, filter, opts,
+                                        COALESCE (read_prefs,
+                                                  collection->read_prefs),
+                                        collection->read_concern,
+                                        collection->session);
 }
 
 
@@ -1226,6 +1232,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
 
    mongoc_cmd_parts_init (&parts, collection->db, MONGOC_QUERY_NONE, &cmd);
    parts.is_write_command = true;
+   parts.session = collection->session;
 
    /*
     * Generate the key name if it was not provided.
@@ -2426,6 +2433,7 @@ mongoc_collection_create_bulk_operation (
    return _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
+                                      collection->session,
                                       write_flags,
                                       write_concern);
 }
@@ -2545,6 +2553,7 @@ mongoc_collection_find_and_modify_with_opts (
 
    mongoc_cmd_parts_init (&parts, collection->db, MONGOC_QUERY_NONE, &command);
    parts.is_write_command = true;
+   parts.session = collection->session;
 
    if (bson_iter_init (&iter, &opts->extra)) {
       bool ok = mongoc_cmd_parts_append_opts (
@@ -2669,4 +2678,22 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    mongoc_find_and_modify_opts_destroy (opts);
 
    return ret;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_get_session --
+ *
+ *       Get the collection's session struct, or NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+const mongoc_session_t *
+mongoc_collection_get_session (mongoc_collection_t *collection)
+{
+   BSON_ASSERT (collection);
+
+   return collection->session;
 }

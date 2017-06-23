@@ -65,6 +65,7 @@ _mongoc_bulk_operation_new (
    mongoc_client_t *client,                     /* IN */
    const char *database,                        /* IN */
    const char *collection,                      /* IN */
+   mongoc_session_t *session,                   /* IN */
    mongoc_bulk_write_flags_t flags,             /* IN */
    const mongoc_write_concern_t *write_concern) /* IN */
 {
@@ -77,6 +78,7 @@ _mongoc_bulk_operation_new (
    bulk->client = client;
    bulk->database = bson_strdup (database);
    bulk->collection = bson_strdup (collection);
+   bulk->session = session;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
    bulk->executed = false;
    bulk->flags = flags;
@@ -760,6 +762,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
                                      bulk->collection,
                                      bulk->write_concern,
                                      offset,
+                                     bulk->session,
                                      &bulk->result);
 
       bulk->server_id = server_stream->sd->id;

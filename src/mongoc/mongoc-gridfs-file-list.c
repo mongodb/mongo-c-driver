@@ -51,7 +51,8 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
                                 query,
                                 NULL,
                                 gridfs->files->read_prefs,
-                                gridfs->files->read_concern);
+                                gridfs->files->read_concern,
+                                gridfs->session);
 
    BSON_ASSERT (cursor);
 

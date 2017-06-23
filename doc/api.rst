@@ -37,6 +37,8 @@ API Reference
    mongoc_remove_flags_t
    mongoc_reply_flags_t
    mongoc_server_description_t
+   mongoc_session_t
+   mongoc_session_opt_t
    mongoc_socket_t
    mongoc_ssl_opt_t
    mongoc_stream_buffered_t

@@ -23,6 +23,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-thread-private.h"
 
 
 static void
@@ -66,6 +67,9 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->max_set_version = MONGOC_NO_SET_VERSION;
    description->stale = true;
    description->rand_seed = (unsigned int) bson_get_monotonic_time ();
+   description->cluster_time_t = 0;
+   description->cluster_time_i = 0;
+   bson_init (&description->cluster_time);
 
    EXIT;
 }
@@ -129,6 +133,10 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 
    dst->apm_context = src->apm_context;
 
+   dst->cluster_time_t = src->cluster_time_t;
+   dst->cluster_time_i = src->cluster_time_i;
+   bson_copy_to (&src->cluster_time, &dst->cluster_time);
+
    EXIT;
 }
 
@@ -161,6 +169,8 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
    if (description->set_name) {
       bson_free (description->set_name);
    }
+
+   bson_destroy (&description->cluster_time);
 
    EXIT;
 }
@@ -1130,6 +1140,76 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_update_cluster_time --
+ *
+ *  Drivers Session Spec: Drivers MUST examine responses to server commands to
+ *  see if they contain a top level field named $clusterTime formatted as
+ *  follows:
+ *
+ *  {
+ *      ...
+ *      $clusterTime : {
+ *          clusterTime : <BsonTimestamp>,
+ *          signature : {
+ *              hash : <BsonBinaryData>,
+ *              keyId : <BsonInt64>
+ *          }
+ *      },
+ *      ...
+ *  }
+ *
+ *  Whenever a driver receives a clusterTime from a server it MUST compare it
+ *  to the current highest seen clusterTime for the cluster. If the new
+ *  clusterTime is higher than the highest seen clusterTime it MUST become
+ *  the new highest seen clusterTime. Two clusterTimes are compared using
+ *  only the BsonTimestamp value of the clusterTime embedded field (be sure to
+ *  include both the timestamp and the increment of the BsonTimestamp in the
+ *  comparison). The signature field does not participate in the comparison.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_description_update_cluster_time (
+   mongoc_topology_description_t *td, const bson_t *reply)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+   uint32_t timestamp;
+   uint32_t increment;
+   const uint8_t *data;
+   uint32_t size;
+   bson_t cluster_time;
+
+   if (!reply || !bson_iter_init_find (&iter, reply, "$clusterTime")) {
+      return;
+   }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
+       !bson_iter_recurse (&iter, &child) ||
+       !bson_iter_find (&child, "clusterTime") ||
+       !BSON_ITER_HOLDS_TIMESTAMP (&child)) {
+      MONGOC_ERROR ("Can't parse $clusterTime");
+      return;
+   }
+
+   bson_iter_timestamp (&child, &timestamp, &increment);
+
+   if (timestamp > td->cluster_time_t ||
+       (timestamp == td->cluster_time_t && increment > td->cluster_time_i)) {
+      td->cluster_time_t = timestamp;
+      td->cluster_time_i = increment;
+      bson_destroy (&td->cluster_time);
+      bson_iter_document (&iter, &size, &data);
+      bson_init_static (&cluster_time, data, (size_t) size);
+      bson_copy_to (&cluster_time, &td->cluster_time);
+   }
+}
+
+
 static void
 _mongoc_topology_description_add_new_servers (
    mongoc_topology_description_t *topology, mongoc_server_description_t *server)
@@ -1784,6 +1864,7 @@ mongoc_topology_description_handle_ismaster (
    mongoc_server_description_handle_ismaster (
       sd, ismaster_response, rtt_msec, error);
 
+   mongoc_topology_description_update_cluster_time (topology, ismaster_response);
    _mongoc_topology_description_monitor_server_changed (topology, prev_sd, sd);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {

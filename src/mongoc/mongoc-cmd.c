@@ -34,6 +34,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
    parts->is_write_command = false;
+   parts->session = NULL;
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
 
@@ -316,13 +317,28 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
    } /* if (!parts->is_write_command) */
 
+   /* Driver Sessions Spec: "The $clusterTime field should only be sent when
+    * connected to a mongos. Drivers MUST check the mongos version they are
+    * connected to before adding $clusterTime to any command they send to a
+    * mongos node."
+    */
+   if (!bson_empty (&server_stream->cluster_time) &&
+       server_stream->sd->type == MONGOC_SERVER_MONGOS &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
+      bson_append_document (&parts->extra,
+                            "$clusterTime",
+                            12,
+                            &server_stream->cluster_time);
+   }
+
    if (!bson_empty (&parts->extra)) {
       /* Did we already copy the command body? */
       if (parts->assembled.command == parts->body) {
          bson_concat (&parts->assembled_body, parts->body);
-         bson_concat (&parts->assembled_body, &parts->extra);
          parts->assembled.command = &parts->assembled_body;
       }
+
+      bson_concat (&parts->assembled_body, &parts->extra);
    }
 
    EXIT;

@@ -1179,3 +1179,25 @@ _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname)
    mongoc_mutex_unlock (&topology->mutex);
    return ret;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_update_cluster_time --
+ *
+ *       Internal function. If the server reply has a later $clusterTime than
+ *       any seen before, update the topology's clusterTime. See the Driver
+ *       Sessions Spec.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
+                                      const bson_t *reply)
+{
+   mongoc_mutex_lock (&topology->mutex);
+   mongoc_topology_description_update_cluster_time (&topology->description,
+                                                    reply);
+   mongoc_mutex_unlock (&topology->mutex);
+}

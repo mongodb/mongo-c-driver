@@ -53,6 +53,7 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_get_name
     mongoc_collection_get_read_concern
     mongoc_collection_get_read_prefs
+    mongoc_collection_get_session
     mongoc_collection_get_write_concern
     mongoc_collection_insert
     mongoc_collection_insert_bulk

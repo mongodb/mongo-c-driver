@@ -34,6 +34,7 @@ example-pool
 example-scram
 example-gridfs
 example-matcher
+example-session
 example-sdam-monitoring
 filter-bsondump
 find-and-modify

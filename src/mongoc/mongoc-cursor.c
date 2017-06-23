@@ -216,7 +216,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const bson_t *filter,
                               const bson_t *opts,
                               const mongoc_read_prefs_t *read_prefs,
-                              const mongoc_read_concern_t *read_concern)
+                              const mongoc_read_concern_t *read_concern,
+                              mongoc_session_t *session)
 {
    mongoc_cursor_t *cursor;
    mongoc_topology_description_type_t td_type;
@@ -230,6 +231,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    cursor = (mongoc_cursor_t *) bson_malloc0 (sizeof *cursor);
    cursor->client = client;
+   cursor->session = session;
    cursor->is_command = is_command ? 1 : 0;
 
    bson_init (&cursor->filter);
@@ -347,7 +349,8 @@ _mongoc_cursor_new (mongoc_client_t *client,
                     const bson_t *query,
                     const bson_t *fields,
                     const mongoc_read_prefs_t *read_prefs,
-                    const mongoc_read_concern_t *read_concern)
+                    const mongoc_read_concern_t *read_concern,
+                    mongoc_session_t *session)
 {
    bson_t filter;
    bool has_filter = false;
@@ -470,8 +473,14 @@ _mongoc_cursor_new (mongoc_client_t *client,
 done:
 
    if (error.domain != 0) {
-      cursor = _mongoc_cursor_new_with_opts (
-         client, db_and_collection, is_command, NULL, NULL, NULL, NULL);
+      cursor = _mongoc_cursor_new_with_opts (client,
+                                             db_and_collection,
+                                             is_command,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             session);
 
       MARK_FAILED (cursor);
       memcpy (&cursor->error, &error, sizeof (bson_error_t));
@@ -482,7 +491,8 @@ done:
                                              has_filter ? &filter : query,
                                              &opts,
                                              read_prefs,
-                                             read_concern);
+                                             read_concern,
+                                             session);
 
       if (slave_ok) {
          cursor->slave_ok = true;
@@ -1273,6 +1283,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    cluster = &cursor->client->cluster;
    mongoc_cmd_parts_init (&parts, db, MONGOC_QUERY_NONE, command);
    parts.read_prefs = cursor->read_prefs;
+   parts.session = cursor->session;
    parts.assembled.operation_id = cursor->operation_id;
    server_stream = _mongoc_cursor_fetch_stream (cursor);
 
@@ -2171,7 +2182,7 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (reply);
 
    cursor = _mongoc_cursor_new_with_opts (
-      client, NULL, false /* is_command */, NULL, NULL, NULL, NULL);
+      client, NULL, false /* is_command */, NULL, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
    _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);

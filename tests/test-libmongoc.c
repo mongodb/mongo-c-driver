@@ -100,6 +100,8 @@ extern void
 test_server_selection_install (TestSuite *suite);
 extern void
 test_srv_install (TestSuite *suite);
+extern void
+test_session_install (TestSuite *suite);
 #if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
 #endif
@@ -2012,6 +2014,7 @@ main (int argc, char *argv[])
 #if 0
    test_server_selection_errors_install (&suite);
 #endif
+   test_session_install (&suite);
    test_set_install (&suite);
    test_stream_install (&suite);
    test_thread_install (&suite);

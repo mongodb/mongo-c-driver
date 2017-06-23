@@ -60,6 +60,7 @@ test_split_insert (void)
                                   collection->collection,
                                   NULL,
                                   0,
+                                  NULL,
                                   &result);
 
    r = _mongoc_write_result_complete (&result,
@@ -128,6 +129,7 @@ test_invalid_write_concern (void)
                                   collection->collection,
                                   write_concern,
                                   0,
+                                  NULL,
                                   &result);
 
    r = _mongoc_write_result_complete (&result,

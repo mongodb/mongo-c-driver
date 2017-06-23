@@ -32,5 +32,4 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A :symbol:`mongoc_gridfs_t` on success, ``NULL`` upon failure and ``error`` is set.
-
+On success, returns a :symbol:`mongoc_gridfs_t` you must free with :symbol:`mongoc_gridfs_destroy()`. Returns ``NULL`` upon failure and sets ``error``.

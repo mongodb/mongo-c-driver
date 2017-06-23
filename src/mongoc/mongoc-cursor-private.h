@@ -145,6 +145,7 @@ struct _mongoc_cursor_t {
    void *iface_data;
 
    int64_t operation_id;
+   mongoc_session_t *session;
 };
 
 
@@ -161,7 +162,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const bson_t *filter,
                               const bson_t *opts,
                               const mongoc_read_prefs_t *read_prefs,
-                              const mongoc_read_concern_t *read_concern);
+                              const mongoc_read_concern_t *read_concern,
+                              mongoc_session_t *session);
 mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t *client,
                     const char *db_and_collection,
@@ -173,7 +175,8 @@ _mongoc_cursor_new (mongoc_client_t *client,
                     const bson_t *query,
                     const bson_t *fields,
                     const mongoc_read_prefs_t *read_prefs,
-                    const mongoc_read_concern_t *read_concern);
+                    const mongoc_read_concern_t *read_concern,
+                    mongoc_session_t *session);
 mongoc_cursor_t *
 _mongoc_cursor_clone (const mongoc_cursor_t *cursor);
 void

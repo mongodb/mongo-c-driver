@@ -34,6 +34,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_server_stream_t {
    mongoc_topology_description_type_t topology_type;
    mongoc_server_description_t *sd; /* owned */
+   bson_t cluster_time;             /* owned */
    mongoc_stream_t *stream;         /* borrowed */
 } mongoc_server_stream_t;
 
@@ -41,6 +42,7 @@ typedef struct _mongoc_server_stream_t {
 mongoc_server_stream_t *
 mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
                           mongoc_server_description_t *sd,
+                          const bson_t *cluster_time,
                           mongoc_stream_t *stream);
 
 int32_t

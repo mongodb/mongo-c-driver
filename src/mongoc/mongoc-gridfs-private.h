@@ -35,6 +35,7 @@ struct _mongoc_gridfs_t {
    mongoc_client_t *client;
    mongoc_collection_t *files;
    mongoc_collection_t *chunks;
+   mongoc_session_t *session;
 };
 
 
@@ -42,6 +43,7 @@ mongoc_gridfs_t *
 _mongoc_gridfs_new (mongoc_client_t *client,
                     const char *db,
                     const char *prefix,
+                    mongoc_session_t *session,
                     bson_error_t *error);
 
 

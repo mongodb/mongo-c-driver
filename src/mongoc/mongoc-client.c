@@ -53,6 +53,7 @@
 #include "mongoc-read-concern-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs-private.h"
+#include "mongoc-session-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -1076,6 +1077,36 @@ mongoc_client_get_uri (const mongoc_client_t *client)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_client_start_session --
+ *
+ *       Creates a structure to communicate in a session over @client.
+ *
+ *       This structure should be freed when the caller is done with it
+ *       using mongoc_session_destroy().
+ *
+ * Returns:
+ *       A newly allocated mongoc_session_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_session_t *
+mongoc_client_start_session (mongoc_client_t *client,
+                             mongoc_session_opt_t *opts,
+                             bson_error_t *error)
+{
+   ENTRY;
+
+   RETURN (_mongoc_session_new (client, opts, error));
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_client_get_database --
  *
  *       Fetches a newly allocated database structure to communicate with
@@ -1105,7 +1136,8 @@ mongoc_client_get_database (mongoc_client_t *client, const char *name)
                                 name,
                                 client->read_prefs,
                                 client->read_concern,
-                                client->write_concern);
+                                client->write_concern,
+                                NULL /* session */);
 }
 
 
@@ -1184,7 +1216,8 @@ mongoc_client_get_collection (mongoc_client_t *client,
                                   collection,
                                   client->read_prefs,
                                   client->read_concern,
-                                  client->write_concern);
+                                  client->write_concern,
+                                  NULL /* session */);
 }
 
 
@@ -1224,7 +1257,7 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
       prefix = "fs";
    }
 
-   return _mongoc_gridfs_new (client, db, prefix, error);
+   return _mongoc_gridfs_new (client, db, prefix, NULL /* session */, error);
 }
 
 
@@ -1428,8 +1461,14 @@ mongoc_client_command (mongoc_client_t *client,
    }
 
    /* flags, skip, limit, batch_size, fields are unused */
-   cursor = _mongoc_cursor_new_with_opts (
-      client, db_name, true /* is_command */, query, NULL, read_prefs, NULL);
+   cursor = _mongoc_cursor_new_with_opts (client,
+                                          db_name,
+                                          true /* is_command */,
+                                          query,
+                                          NULL,
+                                          read_prefs,
+                                          NULL,
+                                          NULL);
 
    return cursor;
 }
@@ -2203,7 +2242,7 @@ mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL);
+      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 

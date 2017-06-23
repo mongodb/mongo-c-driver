@@ -40,7 +40,7 @@
 #include "mongoc-write-concern.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-server-description.h"
-
+#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -171,6 +171,10 @@ mongoc_client_command_simple_with_server_id (
    bson_error_t *error);
 MONGOC_EXPORT (void)
 mongoc_client_destroy (mongoc_client_t *client);
+MONGOC_EXPORT (mongoc_session_t *)
+mongoc_client_start_session (mongoc_client_t *client,
+                             mongoc_session_opt_t *opts,
+                             bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_database_t *)
 mongoc_client_get_database (mongoc_client_t *client, const char *name);
 MONGOC_EXPORT (mongoc_database_t *)

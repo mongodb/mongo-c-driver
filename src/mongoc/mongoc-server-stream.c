@@ -25,6 +25,7 @@
 mongoc_server_stream_t *
 mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
                           mongoc_server_description_t *sd,
+                          const bson_t *cluster_time,
                           mongoc_stream_t *stream)
 {
    mongoc_server_stream_t *server_stream;
@@ -35,6 +36,12 @@ mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
    server_stream = bson_malloc (sizeof (mongoc_server_stream_t));
    server_stream->topology_type = topology_type;
    server_stream->sd = sd;         /* becomes owned */
+   if (cluster_time) {
+      bson_copy_to (cluster_time, &server_stream->cluster_time);
+   } else {
+      bson_init (&server_stream->cluster_time);
+   }
+
    server_stream->stream = stream; /* merely borrowed */
 
    return server_stream;
@@ -45,6 +52,7 @@ mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream)
 {
    if (server_stream) {
       mongoc_server_description_destroy (server_stream->sd);
+      bson_destroy (&server_stream->cluster_time);
       bson_free (server_stream);
    }
 }

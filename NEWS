@@ -3,7 +3,10 @@ Next Release
 
 New features and bug fixes:
 
-  * Support for mongodb+srv URIs.
+  * Support for MongoDB 3.6:
+    * Support for mongodb+srv URIs.
+    * New struct mongoc_session_t represents a MongoDB 3.6 session, optionally
+      with causally consistent reads enabled.
 
 
 mongo-c-driver 1.8.0

@@ -27,7 +27,7 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
-
+#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -38,6 +38,7 @@ struct _mongoc_database_t {
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
+   mongoc_session_t *session;
 };
 
 
@@ -46,7 +47,9 @@ _mongoc_database_new (mongoc_client_t *client,
                       const char *name,
                       const mongoc_read_prefs_t *read_prefs,
                       const mongoc_read_concern_t *read_concern,
-                      const mongoc_write_concern_t *write_concern);
+                      const mongoc_write_concern_t *write_concern,
+                      mongoc_session_t *session);
+
 mongoc_cursor_t *
 _mongoc_database_find_collections_legacy (mongoc_database_t *database,
                                           const bson_t *filter,

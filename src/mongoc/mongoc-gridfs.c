@@ -98,12 +98,10 @@ mongoc_gridfs_t *
 _mongoc_gridfs_new (mongoc_client_t *client,
                     const char *db,
                     const char *prefix,
+                    mongoc_session_t *session,
                     bson_error_t *error)
 {
    mongoc_gridfs_t *gridfs;
-   const mongoc_read_prefs_t *read_prefs;
-   const mongoc_read_concern_t *read_concern;
-   const mongoc_write_concern_t *write_concern;
    char buf[128];
    bool r;
    uint32_t prefix_len;
@@ -126,18 +124,13 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    gridfs = (mongoc_gridfs_t *) bson_malloc0 (sizeof *gridfs);
 
    gridfs->client = client;
-
-   read_prefs = mongoc_client_get_read_prefs (client);
-   read_concern = mongoc_client_get_read_concern (client);
-   write_concern = mongoc_client_get_write_concern (client);
+   gridfs->session = session;
 
    bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
-   gridfs->chunks = _mongoc_collection_new (
-      client, db, buf, read_prefs, read_concern, write_concern);
+   gridfs->chunks = mongoc_client_get_collection (client, db, buf);
 
    bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
-   gridfs->files = _mongoc_collection_new (
-      client, db, buf, read_prefs, read_concern, write_concern);
+   gridfs->files = mongoc_client_get_collection (client, db, buf);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 
@@ -423,7 +416,8 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
                                 &q,
                                 &fields,
                                 NULL,
-                                NULL);
+                                NULL,
+                                gridfs->session);
 
    BSON_ASSERT (cursor);
 

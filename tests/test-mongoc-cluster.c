@@ -404,6 +404,154 @@ test_legacy_write_disconnect (void *ctx)
 }
 
 
+static void
+test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
+{
+   bson_iter_t iter;
+   int *calls;
+
+   /* Only a MongoDB 3.6+ mongos reports $clusterTime. If we've received a
+    * $clusterTime, we send it to any MongoDB 3.6+ mongos. In this case, we
+    * got a $clusterTime during the initial handshake. */
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME) &&
+       test_framework_is_mongos ()) {
+      BSON_ASSERT (bson_iter_init_find (&iter, event->command, "$clusterTime"));
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   } else {
+      BSON_ASSERT (!bson_has_field (event->command, "$clusterTime"));
+   }
+
+   calls = (int *) event->context;
+   (*calls)++;
+}
+
+
+typedef bool (*command_fn_t) (mongoc_client_t *, bson_error_t *);
+
+
+static void
+_test_cluster_time (bool pooled, command_fn_t command)
+{
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+   int calls = 0;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks,
+                                      test_cluster_time_cmd_started_cb);
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      mongoc_client_pool_set_apm_callbacks (pool, callbacks, &calls);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+      mongoc_client_set_apm_callbacks (client, callbacks, &calls);
+   }
+
+   r = command (client, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (calls, ==, 1);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static bool
+command_simple (mongoc_client_t *client, bson_error_t *error)
+{
+   return mongoc_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, error);
+}
+
+
+static void
+test_cluster_time_command_simple_single (void)
+{
+   _test_cluster_time (false, command_simple);
+}
+
+
+static void
+test_cluster_time_command_simple_pooled (void)
+{
+   _test_cluster_time (true, command_simple);
+}
+
+
+/* test the deprecated mongoc_client_command function with $clusterTime */
+static bool
+client_command (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bool r;
+
+   cursor = mongoc_client_command (client,
+                                   "test",
+                                   MONGOC_QUERY_NONE,
+                                   0,
+                                   0,
+                                   0,
+                                   tmp_bson ("{'ping': 1}"),
+                                   NULL,
+                                   NULL);
+
+   mongoc_cursor_next (cursor, &doc);
+   r = !mongoc_cursor_error (cursor, error);
+   mongoc_cursor_destroy (cursor);
+   return r;
+}
+
+
+static void
+test_cluster_time_command_single (void)
+{
+   _test_cluster_time (false, client_command);
+}
+
+
+static void
+test_cluster_time_command_pooled (void)
+{
+   _test_cluster_time (true, client_command);
+}
+
+
+/* test modern mongoc_client_read_command_with_opts with $clusterTime */
+static bool
+client_command_with_opts (mongoc_client_t *client, bson_error_t *error)
+{
+   /* any of the with_opts command functions should work */
+   return mongoc_client_read_command_with_opts (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, error);
+}
+
+
+static void
+test_cluster_time_command_with_opts_single (void)
+{
+   _test_cluster_time (false, client_command_with_opts);
+}
+
+
+static void
+test_cluster_time_command_with_opts_pooled (void)
+{
+   _test_cluster_time (true, client_command_with_opts);
+}
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -441,4 +589,22 @@ test_cluster_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command_simple/single",
+                      test_cluster_time_command_simple_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command_simple/pooled",
+                      test_cluster_time_command_simple_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command/single",
+                      test_cluster_time_command_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command/pooled",
+                      test_cluster_time_command_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command_with_opts/single",
+                      test_cluster_time_command_with_opts_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/command_with_opts/pooled",
+                      test_cluster_time_command_with_opts_pooled);
 }
