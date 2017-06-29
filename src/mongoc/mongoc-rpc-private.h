@@ -25,6 +25,7 @@
 #include <stddef.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-cmd-private.h"
 #include "mongoc-iovec.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-flags.h"
@@ -135,8 +136,7 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson);
 void
 _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
                           const char *cmd_ns,
-                          const bson_t *command,
-                          mongoc_query_flags_t flags);
+                          mongoc_cmd_t *cmd);
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
                       bool is_command,

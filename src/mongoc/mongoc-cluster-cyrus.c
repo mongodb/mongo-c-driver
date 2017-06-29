@@ -28,6 +28,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
                                  const char *hostname,
                                  bson_error_t *error)
 {
+   mongoc_cmd_parts_t parts;
    uint32_t buflen = 0;
    mongoc_cyrus_t sasl;
    bson_iter_t iter;
@@ -44,6 +45,8 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    if (!_mongoc_cyrus_new_from_cluster (&sasl, cluster, stream, hostname, error)) {
       return false;
    }
+
+   mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
 
    for (;;) {
       if (!_mongoc_cyrus_step (
@@ -65,11 +68,9 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("Sending: %s", bson_as_extended_json (&cmd, NULL));
       if (!mongoc_cluster_run_command_private (cluster,
+                                               &parts,
                                                stream,
                                                0,
-                                               MONGOC_QUERY_SLAVE_OK,
-                                               "$external",
-                                               &cmd,
                                                &reply,
                                                error)) {
          TRACE ("Replied with: %s", bson_as_extended_json (&reply, NULL));
@@ -124,6 +125,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
 failure:
    _mongoc_cyrus_destroy (&sasl);
+   mongoc_cmd_parts_cleanup (&parts);
 
    return ret;
 }

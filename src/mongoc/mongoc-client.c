@@ -46,6 +46,8 @@
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
 #include "mongoc-ssl-private.h"
+#include "mongoc-cmd-private.h"
+
 #endif
 
 
@@ -1202,35 +1204,16 @@ mongoc_client_command (mongoc_client_t *client,
 
 static bool
 _mongoc_client_command_with_stream (mongoc_client_t *client,
-                                    const char *db_name,
-                                    const bson_t *command,
+                                    mongoc_cmd_parts_t *parts,
                                     mongoc_server_stream_t *server_stream,
-                                    const mongoc_query_flags_t flags,
-                                    const mongoc_read_prefs_t *read_prefs,
                                     bson_t *reply,
                                     bson_error_t *error)
 {
-   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
-   bool ret;
-
    ENTRY;
 
-   apply_read_preferences (read_prefs, server_stream, command, flags, &result);
-
-   ++client->cluster.operation_id;
-
-   ret = mongoc_cluster_run_command_monitored (&client->cluster,
-                                               server_stream,
-                                               result.flags,
-                                               db_name,
-                                               result.query_with_read_prefs,
-                                               client->cluster.operation_id,
-                                               reply,
-                                               error);
-
-   apply_read_prefs_result_cleanup (&result);
-
-   RETURN (ret);
+   parts->assembled.operation_id = ++client->cluster.operation_id;
+   RETURN (mongoc_cluster_run_command_monitored (
+      &client->cluster, parts, server_stream, reply, error));
 }
 
 
@@ -1244,6 +1227,7 @@ mongoc_client_command_simple (mongoc_client_t *client,
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream = NULL;
+   mongoc_cmd_parts_t parts;
    bool ret;
 
    ENTRY;
@@ -1257,6 +1241,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
    }
 
    cluster = &client->cluster;
+   mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
+   parts.read_prefs = read_prefs;
 
    /* Server Selection Spec: "The generic command method has a default read
     * preference of mode 'primary'. The generic command method MUST ignore any
@@ -1267,14 +1253,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
    server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
 
    if (server_stream) {
-      ret = _mongoc_client_command_with_stream (client,
-                                                db_name,
-                                                command,
-                                                server_stream,
-                                                MONGOC_QUERY_NONE,
-                                                read_prefs,
-                                                reply,
-                                                error);
+      ret = _mongoc_client_command_with_stream (
+         client, &parts, server_stream, reply, error);
    } else {
       if (reply) {
          bson_init (reply);
@@ -1283,67 +1263,10 @@ mongoc_client_command_simple (mongoc_client_t *client,
       ret = false;
    }
 
+   mongoc_cmd_parts_cleanup (&parts);
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret);
-}
-
-
-bool
-_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
-                                                        int max_wire_version,
-                                                        bson_t *command,
-                                                        bson_error_t *error)
-{
-   ENTRY;
-
-   while (bson_iter_next (iter)) {
-      if (BSON_ITER_IS_KEY (iter, "collation")) {
-         if (max_wire_version < WIRE_VERSION_COLLATION) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support collation");
-            RETURN (false);
-         }
-
-      } else if (BSON_ITER_IS_KEY (iter, "writeConcern")) {
-         if (!_mongoc_write_concern_iter_is_valid (iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid writeConcern");
-            RETURN (false);
-         }
-
-         if (max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-            continue;
-         }
-
-      } else if (BSON_ITER_IS_KEY (iter, "readConcern")) {
-         if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support readConcern");
-            RETURN (false);
-         }
-      } else if (BSON_ITER_IS_KEY (iter, "serverId")) {
-         continue;
-      }
-
-      bson_append_iter (command, bson_iter_key (iter), -1, iter);
-   }
-
-   RETURN (true);
-}
-
-static void
-_ensure_copied (bson_t **dst, const bson_t *src)
-{
-   if (!*dst) {
-      *dst = bson_copy (src);
-   }
 }
 
 
@@ -1384,8 +1307,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream = NULL;
-   bson_t *command_with_opts = NULL;
    mongoc_cluster_t *cluster;
    bson_t reply_local;
    bson_t *reply_ptr;
@@ -1398,6 +1321,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
 
+   mongoc_cmd_parts_init (&parts, db_name, flags, command);
+   parts.is_write_command = (mode == MONGOC_CMD_WRITE);
+
    reply_ptr = reply ? reply : &reply_local;
 
    if (mode & MONGOC_CMD_READ) {
@@ -1405,6 +1331,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if (!_mongoc_read_prefs_validate (default_prefs, error)) {
          GOTO (err);
       }
+
+      parts.read_prefs = default_prefs;
    } else {
       /* this is a command that writes */
       default_prefs = NULL;
@@ -1425,7 +1353,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          cluster, server_id, true /* reconnect ok */, error);
 
       if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
-         flags |= MONGOC_QUERY_SLAVE_OK;
+         parts.user_query_flags |= MONGOC_QUERY_SLAVE_OK;
       }
    } else {
       server_stream =
@@ -1436,14 +1364,9 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       bson_iter_t iter;
 
       if (opts && bson_iter_init (&iter, opts)) {
-         bool ok = false;
-         _ensure_copied (&command_with_opts, command);
-         ok = _mongoc_client_command_append_iterator_opts_to_command (
-            &iter,
-            server_stream->sd->max_wire_version,
-            command_with_opts,
-            error);
-         if (!ok) {
+         if (!mongoc_cmd_parts_append_opts (&parts, &iter,
+                                            server_stream->sd->max_wire_version,
+                                            error)) {
             GOTO (err);
          }
       }
@@ -1453,10 +1376,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
           server_stream->sd->max_wire_version >=
              WIRE_VERSION_CMD_WRITE_CONCERN &&
           !mongoc_write_concern_is_default (default_wc) &&
-          (!command_with_opts ||
-           !bson_has_field (command_with_opts, "writeConcern"))) {
-         _ensure_copied (&command_with_opts, command);
-         bson_append_document (command_with_opts,
+          (!opts || !bson_has_field (opts, "writeConcern"))) {
+         bson_append_document (&parts.extra,
                                "writeConcern",
                                12,
                                _mongoc_write_concern_get_bson (default_wc));
@@ -1466,24 +1387,15 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if ((mode & MONGOC_CMD_READ) &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
           !mongoc_read_concern_is_default (default_rc) &&
-          (!command_with_opts ||
-           !bson_has_field (command_with_opts, "readConcern"))) {
-         _ensure_copied (&command_with_opts, command);
-         bson_append_document (command_with_opts,
+          (!opts || !bson_has_field (opts, "readConcern"))) {
+         bson_append_document (&parts.extra,
                                "readConcern",
                                11,
                                _mongoc_read_concern_get_bson (default_rc));
       }
 
       ret = _mongoc_client_command_with_stream (
-         client,
-         db_name,
-         command_with_opts ? command_with_opts : command,
-         server_stream,
-         flags,
-         default_prefs,
-         reply_ptr,
-         error);
+         client, &parts, server_stream, reply_ptr, error);
 
       if (ret && (mode & MONGOC_CMD_WRITE)) {
          ret = !_mongoc_parse_wc_err (reply_ptr, error);
@@ -1501,13 +1413,11 @@ err:
 
 done:
 
-   if (command_with_opts) {
-      bson_destroy (command_with_opts);
-   }
-
    if (server_stream) {
       mongoc_server_stream_cleanup (server_stream);
    }
+
+   mongoc_cmd_parts_cleanup (&parts);
 
    RETURN (ret);
 }
@@ -1594,8 +1504,8 @@ mongoc_client_command_simple_with_server_id (
    bson_t *reply,
    bson_error_t *error)
 {
-   mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
+   mongoc_cmd_parts_t parts;
    bool ret;
 
    ENTRY;
@@ -1608,19 +1518,15 @@ mongoc_client_command_simple_with_server_id (
       RETURN (false);
    }
 
-   cluster = &client->cluster;
+   mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
+   parts.read_prefs = read_prefs;
+
    server_stream = mongoc_cluster_stream_for_server (
-      cluster, server_id, true /* reconnect ok */, error);
+      &client->cluster, server_id, true /* reconnect ok */, error);
 
    if (server_stream) {
-      ret = _mongoc_client_command_with_stream (client,
-                                                db_name,
-                                                command,
-                                                server_stream,
-                                                MONGOC_QUERY_NONE,
-                                                read_prefs,
-                                                reply,
-                                                error);
+      ret = _mongoc_client_command_with_stream (
+         client, &parts, server_stream, reply, error);
 
       mongoc_server_stream_cleanup (server_stream);
       RETURN (ret);
@@ -1874,24 +1780,21 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     const char *collection)
 {
    bson_t command = BSON_INITIALIZER;
+   mongoc_cmd_parts_t parts;
 
    ENTRY;
 
-   ++cluster->operation_id;
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &command);
+   mongoc_cmd_parts_init (&parts, db, MONGOC_QUERY_SLAVE_OK, &command);
+   parts.assembled.operation_id = ++cluster->operation_id;
 
    /* Find, getMore And killCursors Commands Spec: "The result from the
     * killCursors command MAY be safely ignored."
     */
-   mongoc_cluster_run_command_monitored (cluster,
-                                         server_stream,
-                                         MONGOC_QUERY_SLAVE_OK,
-                                         db,
-                                         &command,
-                                         cluster->operation_id,
-                                         NULL,
-                                         NULL);
+   mongoc_cluster_run_command_monitored (
+      cluster, &parts, server_stream, NULL, NULL);
 
+   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
 
    EXIT;

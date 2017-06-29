@@ -38,7 +38,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-scram-private.h"
-
+#include "mongoc-cmd-private.h"
 
 BSON_BEGIN_DECLS
 
@@ -135,21 +135,16 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
 bool
 mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
+                                      mongoc_cmd_parts_t *parts,
                                       mongoc_server_stream_t *server_stream,
-                                      mongoc_query_flags_t flags,
-                                      const char *db_name,
-                                      const bson_t *command,
-                                      int64_t operation_id,
                                       bson_t *reply,
                                       bson_error_t *error);
 
 bool
 mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
+                                    mongoc_cmd_parts_t *parts,
                                     mongoc_stream_t *stream,
                                     uint32_t server_id,
-                                    mongoc_query_flags_t flags,
-                                    const char *db_name,
-                                    const bson_t *command,
                                     bson_t *reply,
                                     bson_error_t *error);
 

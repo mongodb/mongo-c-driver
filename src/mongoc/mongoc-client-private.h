@@ -160,11 +160,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   mongoc_write_concern_t *default_wc,
                                   bson_t *reply,
                                   bson_error_t *error);
-bool
-_mongoc_client_command_append_iterator_opts_to_command (bson_iter_t *iter,
-                                                        int max_wire_version,
-                                                        bson_t *command,
-                                                        bson_error_t *error);
 
 BSON_END_DECLS
 

@@ -840,7 +840,7 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
  * _mongoc_rpc_prep_command --
  *
  *       Prepare an RPC for mongoc_cluster_run_command_rpc. @cmd_ns and
- *       @command must not be freed or modified while the RPC is in use.
+ *       @cmd must not be freed or modified while the RPC is in use.
  *
  * Side effects:
  *       Fills out the RPC, including pointers into @cmd_ns and @command.
@@ -851,8 +851,8 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
 void
 _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
                           const char *cmd_ns,
-                          const bson_t *command,
-                          mongoc_query_flags_t flags)
+                          mongoc_cmd_t *cmd)
+
 {
    rpc->header.msg_len = 0;
    rpc->header.request_id = 0;
@@ -862,14 +862,14 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
    rpc->query.skip = 0;
    rpc->query.n_return = -1;
    rpc->query.fields = NULL;
-   rpc->query.query = bson_get_data (command);
+   rpc->query.query = bson_get_data (cmd->command);
 
    /* Find, getMore And killCursors Commands Spec: "When sending a find command
     * rather than a legacy OP_QUERY find, only the slaveOk flag is honored."
     * For other cursor-typed commands like aggregate, only slaveOk can be set.
     * Clear bits except slaveOk; leave slaveOk set only if it is already.
     */
-   rpc->query.flags = flags & MONGOC_QUERY_SLAVE_OK;
+   rpc->query.flags = cmd->query_flags & MONGOC_QUERY_SLAVE_OK;
 }
 
 
