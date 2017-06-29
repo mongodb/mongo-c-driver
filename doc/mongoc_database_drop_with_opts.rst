@@ -25,7 +25,7 @@ Description
 
 This function attempts to drop a database on the MongoDB server.
 
-If no write concern is provided in ``command_opts``, the database's write concern is used.
+If no write concern is provided in ``opts``, the database's write concern is used.
 
 Errors
 ------
