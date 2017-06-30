@@ -154,7 +154,7 @@ fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-sasl=${SASL}"
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-ssl=${SSL}"
-[ "$COVERAGE" = "yes" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-coverage"
+[ "$COVERAGE" = "yes" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-coverage --disable-examples"
 
 [ "$VALGRIND" = "yes" ] && TARGET="valgrind" || TARGET="test"
 
@@ -181,17 +181,20 @@ LSAN_OPTIONS="log_pointers=true"
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
-      # We don't have the 32bit versions of these libs
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --without-snappy --without-zlib"
+      CXXFLAGS="$CXXFLAGS -m32 -march=i386"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=bundled --with-zlib=bundled"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
+      CXXFLAGS="$CXXFLAGS -march=z196 -mtune=zEC12"
    ;;
    x86_64)
       CFLAGS="$CFLAGS -m64 -march=x86-64"
+      CXXFLAGS="$CXXFLAGS -m64 -march=x86-64"
    ;;
    ppc64le)
       CFLAGS="$CFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
+      CXXFLAGS="$CXXFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
    ;;
 esac
 CFLAGS="$CFLAGS -Werror"
@@ -200,7 +203,7 @@ CFLAGS="$CFLAGS -Werror"
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
+      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
       # llvm-cov is installed from brew
       export PATH=/usr/local/opt/llvm/bin:$PATH
    ;;
@@ -209,7 +212,7 @@ case "$OS" in
       # Make linux builds a tad faster by parallelise the build
       cpus=$(grep -c '^processor' /proc/cpuinfo)
       MAKEFLAGS="-j${cpus}"
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
+      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
    ;;
 
    sunos)
@@ -218,7 +221,16 @@ case "$OS" in
          export SASL_CFLAGS="-I/opt/csw/include/"
          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
       fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
+      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
+   ;;
+esac
+
+case "$CC" in
+   clang)
+      CXX=clang++
+   ;;
+   gcc)
+      CXX=g++
    ;;
 esac
 
@@ -228,7 +240,9 @@ export MONGOC_TEST_SKIP_LIVE=on
 export MONGOC_TEST_SKIP_SLOW=on
 
 export CFLAGS="$CFLAGS"
+export CXXFLAGS="$CXXFLAGS"
 export CC="$CC"
+export CXX="$CXX"
 
 if [ "$LIBBSON" = "external" ]; then
    # This usually happens in mongoc ./autogen.sh, but since we are compiling against

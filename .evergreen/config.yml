@@ -429,7 +429,7 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
-    - name: debug-compile-zlib
+    - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
       commands:
         - command: shell.exec
@@ -439,10 +439,10 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib=bundled" sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: debug-compile-snappy
+    - name: debug-compile-compression-snappy
       tags: ["snappy", "compression"]
       commands:
         - command: shell.exec
@@ -452,7 +452,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib=no" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=bundled --with-zlib=no" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -465,17 +465,17 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=bundled --with-zlib=bundled" sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: test-latest-server-zlib
+    - name: test-latest-server-compression-zlib
       tags: ["zlib", "compression"]
       depends_on:
-        - name: "debug-compile-zlib"
+        - name: "debug-compile-compression-zlib"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-zlib"
+            BUILD_NAME: "debug-compile-compression-zlib"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -490,14 +490,14 @@ tasks:
             COMPRESSORS: zlib
 
 
-    - name: test-latest-server-snappy
+    - name: test-latest-server-compression-snappy
       tags: ["snappy", "compression"]
       depends_on:
-        - name: "debug-compile-snappy"
+        - name: "debug-compile-compression-snappy"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-snappy"
+            BUILD_NAME: "debug-compile-compression-snappy"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -6703,6 +6703,7 @@ buildvariants:
   run_on:
     - rhel70
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6826,6 +6827,7 @@ buildvariants:
   run_on:
     - osx-1010
   tasks:
+    - ".compression"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -7040,6 +7042,7 @@ buildvariants:
   - rhel71-power8-build
   - rhel71-power8-test
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -7153,6 +7156,7 @@ buildvariants:
   - suse12-zseries-build
   - suse12-zseries-test
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
