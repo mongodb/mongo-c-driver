@@ -809,7 +809,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  *       A mongoc_server_description_t *, or NULL.
  *
  * Side effects:
- *      Fills out optional @error if server not found.
+ *       Fills out optional @error if server not found.
  *
  *--------------------------------------------------------------------------
  */

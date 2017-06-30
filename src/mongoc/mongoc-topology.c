@@ -254,7 +254,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       MONGOC_URI_SERVERSELECTIONTIMEOUTMS,
       MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
-   topology->local_threshold_msec = mongoc_uri_get_local_threshold_option (topology->uri);
+   topology->local_threshold_msec =
+      mongoc_uri_get_local_threshold_option (topology->uri);
 
    /* Total time allowed to check a server is connectTimeoutMS.
     * Server Discovery And Monitoring Spec:
