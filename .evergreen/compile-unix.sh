@@ -203,7 +203,7 @@ CFLAGS="$CFLAGS -Werror"
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
+      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
       # llvm-cov is installed from brew
       export PATH=/usr/local/opt/llvm/bin:$PATH
    ;;
@@ -212,7 +212,7 @@ case "$OS" in
       # Make linux builds a tad faster by parallelise the build
       cpus=$(grep -c '^processor' /proc/cpuinfo)
       MAKEFLAGS="-j${cpus}"
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
+      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 
    sunos)
@@ -221,7 +221,7 @@ case "$OS" in
          export SASL_CFLAGS="-I/opt/csw/include/"
          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
       fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:src/snappy-1.1.5/.libs:$LD_LIBRARY_PATH"
+      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 esac
 

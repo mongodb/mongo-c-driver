@@ -7,7 +7,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 which sphinx-build
 sphinx-build --version
 
-./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
+./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=bundled --with-zlib=bundled --with-libbson=bundled
+make distcheck
 sphinx-build -b linkcheck ./doc doc/html
 
 # Check that docs were included, but sphinx temp files weren't.

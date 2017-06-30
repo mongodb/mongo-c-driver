@@ -3,8 +3,9 @@ AS_IF([test "x${with_zlib}" = xauto], [
       PKG_CHECK_MODULES(ZLIB, [zlib],
          [with_zlib=system],
          [
-            # If we didn't find zlib with pkgconfig
-            with_zlib=no
+            # If we didn't find zlib with pkgconfig, use bundled
+            # unless we find it manually
+            with_zlib=bundled
             AC_CHECK_LIB([zlib],[compress2],
                [AC_CHECK_HEADER([zlib-c.h],
                   [
@@ -26,7 +27,7 @@ AS_IF([test "x${ZLIB_LIBS}" = "x" -a "x$with_zlib" = "xsystem"],
 # If we are using the bundled zlib, recurse into its configure.
 AS_IF([test "x${with_zlib}" = xbundled],[
    AC_MSG_CHECKING(whether to enable bundled zlib)
-   AC_ERROR(bundled zlib is not currently supported)
+   AC_MSG_RESULT(yes)
 ])
 
 if test "x$with_zlib" != "xno"; then

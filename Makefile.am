@@ -14,6 +14,14 @@ if WITH_LIBBSON
 SUBDIRS += src/libbson
 endif
 
+if WITH_SNAPPY
+SUBDIRS += src/snappy-1.1.5
+endif
+
+if WITH_ZLIB
+SUBDIRS += src/zlib-1.2.11
+endif
+
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
 include doc/Makefile.am
@@ -37,7 +45,7 @@ endif
 include build/cmake/Makefile.am
 
 ACLOCAL_AMFLAGS = -I build/autotools/m4 ${ACLOCAL_FLAGS}
-DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled --with-snappy=bundled --with-zlib=bundled
 
 mongocdocdir = ${docdir}
 mongocdoc_DATA = \

@@ -4,8 +4,9 @@ AS_IF([test "x${with_snappy}" = xauto], [
       PKG_CHECK_MODULES(SNAPPY, [snappy],
          [with_snappy=system],
          [
-            # If we didn't find snappy with pkgconfig
-            with_snappy=no
+            # If we didn't find snappy with pkgconfig, use bundled
+            # unless we find it manually
+            with_snappy=bundled
             AC_CHECK_LIB([snappy],[snappy_uncompress],
                [AC_CHECK_HEADER([snappy-c.h],
                   [
@@ -27,7 +28,7 @@ AS_IF([test "x${SNAPPY_LIBS}" = "x" -a "x$with_snappy" = "xsystem"],
 # If we are using the bundled snappy, recurse into its configure.
 AS_IF([test "x${with_snappy}" = xbundled],[
    AC_MSG_CHECKING(whether to enable bundled snappy)
-   AC_ERROR(bundled snappy is not currently supported)
+   AC_MSG_RESULT(yes)
 ])
 
 if test "x$with_snappy" != "xno"; then
