@@ -6781,43 +6781,43 @@ buildvariants:
       # Ubuntu16.04 only supports MongoDB 3.4+
 
 # Interesting platforms
-- name: solaris
-  display_name: "*Solaris (x86-64) (GCC 4.9.2)"
-  expansions:
-    CC: "gcc"
-    MARCH: "x86_64"
-  batchtime: 1440 # 1 day
-  run_on:
-    - solaris
-  tasks:
-    - "release-compile"
-    - "debug-compile"
-    - "debug-compile-nosasl-openssl"
-    - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .nosasl !.ssl !.sspi" # Revert me: CDRIVER-2000
-    - ".authentication-tests .openssl"
-    - ".latest .nossl" # No MongoDB SSL builds available for any version
-    - ".3.4 .nossl" # No MongoDB SSL builds available for any version
-    - ".3.2 .nossl !.nosasl"
-    - ".3.0 .nossl !.nosasl"
-    - ".2.6 .nossl !.nosasl"
-
-- name: solaris-32
-  display_name: "Solaris (i386) (GCC 4.9.2)"
-  expansions:
-    CC: "gcc"
-    MARCH: "i386"
-  batchtime: 1440 # 1 day
-  run_on:
-    - solaris
-  tasks:
-    - "release-compile"
-    - "debug-compile"
-    - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests .nosasl !.ssl"
-    - ".latest .nossl .nosasl"
-    - ".3.4 .nossl .nosasl"
-      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
+#- name: solaris
+#  display_name: "*Solaris (x86-64) (GCC 4.9.2)"
+#  expansions:
+#    CC: "gcc"
+#    MARCH: "x86_64"
+#  batchtime: 1440 # 1 day
+#  run_on:
+#    - solaris
+#  tasks:
+#    - "release-compile"
+#    - "debug-compile"
+#    - "debug-compile-nosasl-openssl"
+#    - ".debug-compile !.sspi .nossl"
+#    - ".authentication-tests .nosasl !.ssl !.sspi" # Revert me: CDRIVER-2000
+#    - ".authentication-tests .openssl"
+#    - ".latest .nossl" # No MongoDB SSL builds available for any version
+#    - ".3.4 .nossl" # No MongoDB SSL builds available for any version
+#    - ".3.2 .nossl !.nosasl"
+#    - ".3.0 .nossl !.nosasl"
+#    - ".2.6 .nossl !.nosasl"
+#
+#- name: solaris-32
+#  display_name: "Solaris (i386) (GCC 4.9.2)"
+#  expansions:
+#    CC: "gcc"
+#    MARCH: "i386"
+#  batchtime: 1440 # 1 day
+#  run_on:
+#    - solaris
+#  tasks:
+#    - "release-compile"
+#    - "debug-compile"
+#    - ".debug-compile !.sspi .nossl .nosasl"
+#    - ".authentication-tests .nosasl !.ssl"
+#    - ".latest .nossl .nosasl"
+#    - ".3.4 .nossl .nosasl"
+#      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
 
 - name: darwin
   display_name: "*Darwin, OS X (Apple LLVM)"
