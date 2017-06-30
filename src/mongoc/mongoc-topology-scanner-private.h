@@ -104,16 +104,15 @@ mongoc_topology_scanner_new (
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
 
-mongoc_topology_scanner_node_t *
+void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t *host,
                              uint32_t id);
 
 void
-mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
-                                      const mongoc_host_list_t *host,
-                                      uint32_t id,
-                                      int64_t timeout_msec);
+mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts,
+                              uint32_t id,
+                              int64_t timeout_msec);
 
 void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node);

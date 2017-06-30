@@ -46,8 +46,9 @@ _mongoc_topology_reconcile_add_nodes (void *item, void *ctx)
     * this scan. */
    if (!mongoc_topology_scanner_get_node (scanner, sd->id) &&
        !mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
-      mongoc_topology_scanner_add_and_scan (
-         scanner, &sd->host, sd->id, topology->connect_timeout_msec);
+      mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
+      mongoc_topology_scanner_scan (
+         scanner, sd->id, topology->connect_timeout_msec);
    }
 
    return true;
@@ -151,16 +152,34 @@ _mongoc_topology_scanner_cb (uint32_t id,
                              const bson_error_t *error /* IN */)
 {
    mongoc_topology_t *topology;
+   mongoc_server_description_t *sd;
 
    BSON_ASSERT (data);
 
    topology = (mongoc_topology_t *) data;
 
    mongoc_mutex_lock (&topology->mutex);
-   _mongoc_topology_update_no_lock (
-      id, ismaster_response, rtt_msec, topology, error);
+   sd = mongoc_topology_description_server_by_id (
+      &topology->description, id, NULL);
 
-   mongoc_cond_broadcast (&topology->cond_client);
+   /* Server Discovery and Monitoring Spec: "Once a server is connected, the
+    * client MUST change its type to Unknown only after it has retried the
+    * server once." */
+   if (!ismaster_response && sd && sd->type != MONGOC_SERVER_UNKNOWN) {
+      _mongoc_topology_update_no_lock (
+         id, ismaster_response, rtt_msec, topology, error);
+
+      /* add another ismaster call to the current scan - the scan continues
+       * until all commands are done */
+      mongoc_topology_scanner_scan (
+         topology->scanner, sd->id, topology->connect_timeout_msec);
+   } else {
+      _mongoc_topology_update_no_lock (
+         id, ismaster_response, rtt_msec, topology, error);
+
+      mongoc_cond_broadcast (&topology->cond_client);
+   }
+
    mongoc_mutex_unlock (&topology->mutex);
 }
 

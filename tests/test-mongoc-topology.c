@@ -952,9 +952,10 @@ test_rtt (void *ctx)
 }
 
 
-/* mongoc_topology_scanner_add_and_scan is called within the topology mutex, it
- * adds a discovered node and calls getaddrinfo on its host immediately - test
- * that this doesn't cause a recursive acquire on the topology mutex */
+/* mongoc_topology_scanner_add and mongoc_topology_scan are called within the
+ * topology mutex to add a discovered node and call getaddrinfo on its host
+ * immediately - test that this doesn't cause a recursive acquire on the
+ * topology mutex */
 static void
 test_add_and_scan_failure (void)
 {
@@ -1005,6 +1006,325 @@ test_add_and_scan_failure (void)
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
+
+
+typedef struct {
+   int n_started;
+   int n_succeeded;
+   int n_failed;
+} checks_t;
+
+
+static void
+check_started (const mongoc_apm_server_heartbeat_started_t *event)
+{
+   checks_t *c;
+
+   c = (checks_t *) mongoc_apm_server_heartbeat_started_get_context (event);
+   c->n_started++;
+}
+
+
+static void
+check_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   checks_t *c;
+
+   c = (checks_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
+   c->n_succeeded++;
+}
+
+
+static void
+check_failed (const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   checks_t *c;
+
+   c = (checks_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
+   c->n_failed++;
+}
+
+
+static mongoc_apm_callbacks_t *
+heartbeat_callbacks (void)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_heartbeat_started_cb (callbacks, check_started);
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks, check_succeeded);
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, check_failed);
+
+   return callbacks;
+}
+
+
+static future_t *
+future_command (mongoc_client_t *client, bson_error_t *error)
+{
+   return future_client_command_simple (
+      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, error);
+}
+
+
+static void
+receives_command (mock_server_t *server, future_t *future)
+{
+   request_t *request;
+   bson_error_t error;
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_NONE, "{'foo': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+}
+
+
+static bool
+has_known_server (mongoc_client_t *client)
+{
+   mongoc_server_description_t *sd;
+   bool r;
+
+   /* in this test we know the server id is always 1 */
+   sd = mongoc_client_get_server_description (client, 1);
+   r = (sd->type != MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_destroy (sd);
+   return r;
+}
+
+
+static void
+_test_ismaster_retry_single (bool hangup, int n_failures)
+{
+   checks_t checks = {0};
+   mongoc_apm_callbacks_t *callbacks;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   char *ismaster;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   int64_t t;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_REPLICASET, "rs");
+   if (!hangup) {
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   callbacks = heartbeat_callbacks ();
+   mongoc_client_set_apm_callbacks (client, callbacks, &checks);
+
+   ismaster = bson_strdup_printf ("{'ok': 1,"
+                                  " 'ismaster': true,"
+                                  " 'setName': 'rs',"
+                                  " 'hosts': ['%s']}",
+                                  mock_server_get_host_and_port (server));
+
+   /* start a {foo: 1} command, handshake normally */
+   future = future_command (client, &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+   receives_command (server, future);
+
+   /* wait for the next server check */
+   _mongoc_usleep (600 * 1000);
+
+   /* start a {foo: 1} command, server check fails and retries immediately */
+   future = future_command (client, &error);
+   request = mock_server_receives_ismaster (server);
+   t = bson_get_monotonic_time ();
+   if (hangup) {
+      mock_server_hangs_up (request);
+   }
+
+   request_destroy (request);
+
+   /* retry immediately (for testing, "immediately" means less than 250ms */
+   request = mock_server_receives_ismaster (server);
+   ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
+
+   if (n_failures == 2) {
+      if (hangup) {
+         mock_server_hangs_up (request);
+      }
+
+      BSON_ASSERT (!future_get_bool (future));
+      future_destroy (future);
+   } else {
+      mock_server_replies_simple (request, ismaster);
+      /* the {foo: 1} command finishes */
+      receives_command (server, future);
+   }
+
+   request_destroy (request);
+
+   ASSERT_CMPINT (checks.n_started, ==, 3);
+   WAIT_UNTIL (checks.n_succeeded == 3 - n_failures);
+   WAIT_UNTIL (checks.n_failed == n_failures);
+
+   if (n_failures == 2) {
+      BSON_ASSERT (!has_known_server (client));
+   } else {
+      BSON_ASSERT (has_known_server (client));
+   }
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+   bson_free (ismaster);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static void
+_test_ismaster_retry_pooled (bool hangup, int n_failures)
+{
+   checks_t checks = {0};
+   mongoc_apm_callbacks_t *callbacks;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   char *ismaster;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   int i;
+   int64_t t;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_REPLICASET, "rs");
+   if (!hangup) {
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
+   }
+
+   pool = mongoc_client_pool_new (uri);
+   callbacks = heartbeat_callbacks ();
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
+   client = mongoc_client_pool_pop (pool);
+
+   ismaster = bson_strdup_printf ("{'ok': 1,"
+                                  " 'ismaster': true,"
+                                  " 'setName': 'rs',"
+                                  " 'hosts': ['%s']}",
+                                  mock_server_get_host_and_port (server));
+
+   /* start a {foo: 1} command, handshake normally */
+   future = future_command (client, &error);
+
+   /* one ismaster from the scanner, another to handshake the connection */
+   for (i = 0; i < 2; i++) {
+      request = mock_server_receives_ismaster (server);
+      mock_server_replies_simple (request, ismaster);
+      request_destroy (request);
+   }
+
+   /* the {foo: 1} command finishes */
+   receives_command (server, future);
+
+   /* wait for the next server check */
+   request = mock_server_receives_ismaster (server);
+   t = bson_get_monotonic_time ();
+   if (hangup) {
+      mock_server_hangs_up (request);
+   }
+
+   request_destroy (request);
+
+   /* retry immediately (for testing, "immediately" means less than 250ms */
+   request = mock_server_receives_ismaster (server);
+   ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
+   if (n_failures == 2) {
+      if (hangup) {
+         mock_server_hangs_up (request);
+      }
+      BSON_ASSERT (!has_known_server (client));
+   } else {
+      mock_server_replies_simple (request, ismaster);
+      WAIT_UNTIL (has_known_server (client));
+   }
+
+   request_destroy (request);
+
+   WAIT_UNTIL (checks.n_succeeded == 3 - n_failures);
+   WAIT_UNTIL (checks.n_failed == n_failures);
+   ASSERT_CMPINT (checks.n_started, ==, 3);
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+   bson_free (ismaster);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static void
+test_ismaster_retry_single_hangup (void)
+{
+   _test_ismaster_retry_single (true, 1);
+}
+
+
+static void
+test_ismaster_retry_single_timeout (void)
+{
+   _test_ismaster_retry_single (false, 1);
+}
+
+static void
+test_ismaster_retry_single_hangup_fail (void)
+{
+   _test_ismaster_retry_single (true, 2);
+}
+
+
+static void
+test_ismaster_retry_single_timeout_fail (void)
+{
+   _test_ismaster_retry_single (false, 2);
+}
+
+
+static void
+test_ismaster_retry_pooled_hangup (void)
+{
+   _test_ismaster_retry_pooled (true, 1);
+}
+
+
+static void
+test_ismaster_retry_pooled_timeout (void)
+{
+   _test_ismaster_retry_pooled (false, 1);
+}
+
+
+static void
+test_ismaster_retry_pooled_hangup_fail (void)
+{
+   _test_ismaster_retry_pooled (true, 2);
+}
+
+
+static void
+test_ismaster_retry_pooled_timeout_fail (void)
+{
+   _test_ismaster_retry_pooled (false, 2);
+}
+
 
 void
 test_topology_install (TestSuite *suite)
@@ -1088,4 +1408,20 @@ test_topology_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/single/hangup", test_ismaster_retry_single_hangup);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/single/timeout", test_ismaster_retry_single_timeout);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/single/hangup/fail", test_ismaster_retry_single_hangup_fail);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/single/timeout/fail", test_ismaster_retry_single_timeout_fail);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/pooled/hangup", test_ismaster_retry_pooled_hangup);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/pooled/timeout", test_ismaster_retry_pooled_timeout);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/pooled/hangup/fail", test_ismaster_retry_pooled_hangup_fail);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/ismaster_retry/pooled/timeout/fail", test_ismaster_retry_pooled_timeout_fail);
 }

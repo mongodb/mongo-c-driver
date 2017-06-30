@@ -2689,6 +2689,7 @@ _test_client_sends_handshake (bool pooled)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
@@ -2730,7 +2731,12 @@ _test_client_sends_handshake (bool pooled)
     * time the server hangs up */
    request = mock_server_receives_ismaster (server);
    _assert_ismaster_valid (request, false);
+   mock_server_hangs_up (request);
+   request_destroy (request);
 
+   /* Client retries once (CDRIVER-2075) */
+   request = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
 
