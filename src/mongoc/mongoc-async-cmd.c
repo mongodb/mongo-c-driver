@@ -280,7 +280,7 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
-      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0, &acmd->error);
+      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
    uint32_t msg_len;
 
    if (bytes < 0) {
@@ -326,7 +326,7 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
-      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0, &acmd->error);
+      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
 
    if (bytes < 0) {
       bson_set_error (&acmd->error,
