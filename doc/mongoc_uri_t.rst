@@ -142,6 +142,8 @@ MONGOC_URI_SOCKETCHECKINTERVALMS           socketcheckintervalms             Onl
 
 Setting any of the \*TimeoutMS options above to ``0`` will be interpreted as "use the default value".
 
+.. _connection_pool_options:
+
 Connection Pool Options
 -----------------------
 

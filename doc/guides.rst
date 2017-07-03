@@ -9,6 +9,7 @@ Guides
 
    mongoc-common-task-examples
    advanced-connections
+   connection-pooling
    cursors
    bulk
    aggregate
