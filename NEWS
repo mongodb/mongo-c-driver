@@ -1,6 +1,11 @@
-Next Release
-============
+mongo-c-driver 1.7.0
+====================
 
+  * CMake build now installs .pc files for programs that link to libmongoc using
+    pkg-config. Both the CMake and Autotools build systems now install .cmake
+    files for programs that link to libmongoc using CMake. Linking to libmongoc
+    statically or dynamically is now much more convenient. See the new tutorial
+    section "Include and link libmongoc in your C program".
   * Minimum required CMake version has been increased to 3.1.
   * CMake remains experimental on non-Windows platforms and issues a warning now
   * Support for wire compression.
