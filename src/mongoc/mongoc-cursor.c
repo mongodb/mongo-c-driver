@@ -1186,24 +1186,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   if (cursor->rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
-      uint8_t *buf = NULL;
-      size_t len = cursor->rpc.compressed.uncompressed_size +
-                   sizeof (mongoc_rpc_header_t);
-
-      buf = bson_malloc0 (len);
-      if (!_mongoc_rpc_decompress (&cursor->rpc, buf, len)) {
-         bson_free (buf);
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Could not decompress server reply");
-         GOTO (done);
-      }
-
-      _mongoc_buffer_destroy (&cursor->buffer);
-      _mongoc_buffer_init (&cursor->buffer, buf, len, NULL, NULL);
-   }
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
@@ -1622,24 +1604,6 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       GOTO (fail);
    }
 
-   if (cursor->rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
-      uint8_t *buf = NULL;
-      size_t len = cursor->rpc.compressed.uncompressed_size +
-                   sizeof (mongoc_rpc_header_t);
-
-      buf = bson_malloc0 (len);
-      if (!_mongoc_rpc_decompress (&cursor->rpc, buf, len)) {
-         bson_free (buf);
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Could not decompress server reply");
-         GOTO (fail);
-      }
-
-      _mongoc_buffer_destroy (&cursor->buffer);
-      _mongoc_buffer_init (&cursor->buffer, buf, len, NULL, NULL);
-   }
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,

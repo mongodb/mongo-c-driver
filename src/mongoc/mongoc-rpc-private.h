@@ -149,12 +149,12 @@ _mongoc_cmd_check_ok (const bson_t *doc,
                       bson_error_t *error);
 
 bool
-_mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen);
+_mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen);
 
 char *
 _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       int32_t compressor_id,
-                      mongoc_rpc_t *rpc,
+                      mongoc_rpc_t *rpc_le,
                       bson_error_t *error);
 
 BSON_END_DECLS
