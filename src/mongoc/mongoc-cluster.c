@@ -451,12 +451,11 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    }
    doc_len = (size_t) msg_len - reply_header_size;
 
-   _mongoc_rpc_swab_from_le (&rpc);
-   if (rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
+   if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
       bson_t tmp = BSON_INITIALIZER;
       uint8_t *buf = NULL;
-      size_t len =
-         rpc.compressed.uncompressed_size + sizeof (mongoc_rpc_header_t);
+      size_t len = BSON_UINT32_FROM_LE (rpc.compressed.uncompressed_size) +
+                   sizeof (mongoc_rpc_header_t);
 
       reply_buf = bson_malloc0 (msg_len);
       memcpy (reply_buf, reply_header_buf, reply_header_size);
@@ -474,7 +473,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
       if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
          GOTO (done);
       }
-      _mongoc_cluster_inc_ingress_rpc (&rpc);
 
       buf = bson_malloc0 (len);
       if (!_mongoc_rpc_decompress (&rpc, buf, len)) {
@@ -486,12 +484,15 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          GOTO (done);
       }
 
+      _mongoc_rpc_swab_from_le (&rpc);
+      _mongoc_cluster_inc_ingress_rpc (&rpc);
+
       _mongoc_rpc_get_first_document (&rpc, &tmp);
       bson_copy_to (&tmp, reply_ptr);
       bson_free (reply_buf);
       bson_free (buf);
-   } else if (rpc.header.opcode == MONGOC_OPCODE_REPLY &&
-              rpc.reply_header.n_returned == 1) {
+   } else if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_REPLY &&
+              BSON_UINT32_FROM_LE (rpc.reply_header.n_returned) == 1) {
       reply_buf = bson_reserve_buffer (reply_ptr, (uint32_t) doc_len);
       BSON_ASSERT (reply_buf);
 
@@ -505,6 +506,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                       "socket error or timeout");
          GOTO (done);
       }
+      _mongoc_rpc_swab_from_le (&rpc);
    } else {
       GOTO (done);
    }
@@ -1981,8 +1983,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
-      server_id = mongoc_topology_select_server_id (
-         topology, optype, read_prefs, error);
+      server_id =
+         mongoc_topology_select_server_id (topology, optype, read_prefs, error);
 
       if (!server_id) {
          RETURN (NULL);
@@ -2332,6 +2334,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
    _mongoc_cluster_inc_egress_rpc (rpc);
    _mongoc_rpc_gather (rpc, &cluster->iov);
+   _mongoc_rpc_swab_to_le (rpc);
 
 #ifdef MONGOC_ENABLE_COMPRESSION
    if (compressor_id) {
@@ -2344,13 +2347,13 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
 
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
-   if (rpc->header.msg_len > max_msg_size) {
+   if (BSON_UINT32_FROM_LE (rpc->header.msg_len) > max_msg_size) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_TOO_BIG,
                       "Attempted to send an RPC larger than the "
                       "max allowed message size. Was %u, allowed %u.",
-                      rpc->header.msg_len,
+                      BSON_UINT32_FROM_LE (rpc->header.msg_len),
                       max_msg_size);
       GOTO (done);
    }
@@ -2362,7 +2365,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
       gle.header.opcode = MONGOC_OPCODE_QUERY;
       gle.query.flags = MONGOC_QUERY_NONE;
 
-      switch (rpc->header.opcode) {
+      switch (BSON_UINT32_FROM_LE (rpc->header.opcode)) {
       case MONGOC_OPCODE_INSERT:
          DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->insert.collection);
          break;
@@ -2388,8 +2391,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
       _mongoc_rpc_gather (&gle, &cluster->iov);
       _mongoc_rpc_swab_to_le (&gle);
    }
-
-   _mongoc_rpc_swab_to_le (rpc);
 
    if (!_mongoc_stream_writev_full (server_stream->stream,
                                     cluster->iov.data,
@@ -2523,6 +2524,24 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       RETURN (false);
    }
 
+   if (BSON_UINT32_FROM_LE (rpc->header.opcode) == MONGOC_OPCODE_COMPRESSED) {
+      uint8_t *buf = NULL;
+      size_t len = BSON_UINT32_FROM_LE (rpc->compressed.uncompressed_size) +
+                   sizeof (mongoc_rpc_header_t);
+
+      buf = bson_malloc0 (len);
+      if (!_mongoc_rpc_decompress (rpc, buf, len)) {
+         bson_free (buf);
+         bson_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Could not decompress server reply");
+         RETURN (false);
+      }
+
+      _mongoc_buffer_destroy (buffer);
+      _mongoc_buffer_init (buffer, buf, len, NULL, NULL);
+   }
    _mongoc_rpc_swab_from_le (rpc);
 
    _mongoc_cluster_inc_ingress_rpc (rpc);
