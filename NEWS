@@ -1,3 +1,15 @@
+mongo-c-driver 1.8.0
+====================
+
+  * Added this
+  * Removed that
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A name
+  * Another name
+
+
 mongo-c-driver 1.7.0
 ====================
 
@@ -39,6 +51,7 @@ mongo-c-driver 1.7.0
   * New function mongoc_cursor_error_document provides access to server's error
     reply if a query or command fails.
   * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
+
 
 mongo-c-driver 1.6.0
 ====================
