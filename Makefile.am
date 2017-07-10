@@ -8,8 +8,10 @@ lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =
 
+SUBDIRS =
+
 if WITH_LIBBSON
-SUBDIRS = src/libbson
+SUBDIRS += src/libbson
 endif
 
 AM_CTAGSFLAGS = --fields=+l --languages=c

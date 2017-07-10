@@ -439,7 +439,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=no --enable-zlib=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-snappy
@@ -452,7 +452,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=no" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib=no" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -465,7 +465,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-zlib
