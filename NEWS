@@ -12,7 +12,7 @@ mongo-c-driver 1.7.0
     * Support for snappy and zlib. MongoDB 3.4 only supports snappy, while zlib
       support is expected in MongoDB 3.6.
       The enable, configure mongoc like so:
-      ./configure --enable-snappy --enable-zlib
+      ./configure --with-snappy --with-zlib
     * New functions: mongoc_uri_get_compressors & mongoc_uri_set_compressors, to
       get and set compressor configuration on mongoc_uri_t
     * Added support for comma seperated "compressors" connection string option (e.g.

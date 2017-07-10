@@ -1,38 +1,40 @@
-have_snappy=no
-AC_MSG_CHECKING([whether to enable snappy])
-AC_ARG_ENABLE([snappy],
-              [AS_HELP_STRING([--enable-snappy=@<:@auto/yes/no@:>@],
-                              [Enable wire protocol compression through snappy])],
-              [],
-              [enable_snappy=auto])
-AC_MSG_RESULT([$enable_snappy])
+# If --with-snappy=auto, determine if there is a system installed snappy
+# greater than our required version.
+AS_IF([test "x${with_snappy}" = xauto], [
+      PKG_CHECK_MODULES(SNAPPY, [snappy],
+         [with_snappy=system],
+         [
+            # If we didn't find snappy with pkgconfig
+            with_snappy=no
+            AC_CHECK_LIB([snappy],[snappy_uncompress],
+               [AC_CHECK_HEADER([snappy-c.h],
+                  [
+                     with_snappy=system
+                     SNAPPY_LIBS=-lsnappy
+                  ],
+                  []
+               )],
+               []
+            )
+         ]
+      )
+   ]
+)
 
-AS_IF([test "x$enable_snappy" != "xno"],[
-   PKG_CHECK_MODULES(SNAPPY, [snappy], [have_snappy=yes], [
-      AC_CHECK_LIB([snappy],[snappy_uncompress],[
-         AC_CHECK_HEADER([snappy-c.h], [
-            have_snappy=yes
-            SNAPPY_LIBS=-lsnappy
-         ], [have_snappy=no])
-      ],[have_snappy=no])
-   ])
+AS_IF([test "x${SNAPPY_LIBS}" = "x" -a "x$with_snappy" = "xsystem"],
+      [AC_MSG_ERROR([Cannot find system installed snappy. try --with-snappy=bundled])])
 
-   AC_MSG_CHECKING([snappy is available])
-   if test "$enable_snappy" = "yes" -a "$have_snappy" = "no" ; then
-      AC_MSG_ERROR([You must install the snappy development headers to enable snappy support.])
-   else
-      AC_MSG_RESULT([$have_snappy])
-   fi
+# If we are using the bundled snappy, recurse into its configure.
+AS_IF([test "x${with_snappy}" = xbundled],[
+   AC_MSG_CHECKING(whether to enable bundled snappy)
+   AC_ERROR(bundled snappy is not currently supported)
 ])
 
-if test "x$have_snappy" = "xyes"; then
+if test "x$with_snappy" != "xno"; then
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 1)
-   enable_snappy=yes
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 0)
-   enable_snappy=no
 fi
 AC_SUBST(SNAPPY_LIBS)
 AC_SUBST(SNAPPY_CFLAGS)
-
 
