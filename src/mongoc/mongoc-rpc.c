@@ -450,6 +450,20 @@
 #undef RAW_BUFFER_FIELD
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_gather --
+ *
+ *       Takes a (native endian) rpc struct and gathers the buffer.
+ *       Caller should swab to little endian after calling gather.
+ *
+ *       Gather, swab, compress write.
+ *       Read, scatter, uncompress, swab
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
 _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 {
@@ -529,6 +543,9 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
       break;
    }
 #endif
+#if 0
+   _mongoc_rpc_printf (&rpc);
+#endif
 }
 
 
@@ -573,6 +590,9 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
       break;
    }
 #endif
+#if 0
+   _mongoc_rpc_printf (&rpc);
+#endif
 }
 
 
@@ -613,39 +633,73 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
    }
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_decompress --
+ *
+ *       Takes a (little endian) rpc struct assumed to be OP_COMPRESSED
+ *       and decompresses the opcode into its original opcode.
+ *       The in-place updated rpc struct remains little endian.
+ *
+ * Side effects:
+ *       Overwrites the RPC, along with the provided buf with the
+ *       compressed results.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bool
-_mongoc_rpc_decompress (mongoc_rpc_t *rpc, uint8_t *buf, size_t buflen)
+_mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
 {
-   size_t uncompressed_size = rpc->compressed.uncompressed_size;
+   size_t uncompressed_size =
+      BSON_UINT32_FROM_LE (rpc_le->compressed.uncompressed_size);
    bool ok;
+   size_t msg_len = BSON_UINT32_TO_LE (buflen);
 
    BSON_ASSERT (uncompressed_size <= buflen);
-   memcpy (buf, (void *) (&buflen), 4);
-   memcpy (buf + 4, (void *) (&rpc->header.request_id), 4);
-   memcpy (buf + 8, (void *) (&rpc->header.response_to), 4);
-   memcpy (buf + 12, (void *) (&rpc->compressed.original_opcode), 4);
+   memcpy (buf, (void *) (&msg_len), 4);
+   memcpy (buf + 4, (void *) (&rpc_le->header.request_id), 4);
+   memcpy (buf + 8, (void *) (&rpc_le->header.response_to), 4);
+   memcpy (buf + 12, (void *) (&rpc_le->compressed.original_opcode), 4);
 
-   ok = mongoc_uncompress (rpc->compressed.compressor_id,
-                           rpc->compressed.compressed_message,
-                           rpc->compressed.compressed_message_len,
+   ok = mongoc_uncompress (rpc_le->compressed.compressor_id,
+                           rpc_le->compressed.compressed_message,
+                           rpc_le->compressed.compressed_message_len,
                            buf + 16,
                            &uncompressed_size);
    if (ok) {
-      return _mongoc_rpc_scatter (rpc, buf, buflen);
+      return _mongoc_rpc_scatter (rpc_le, buf, buflen);
    }
 
    return false;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_compress --
+ *
+ *       Takes a (little endian) rpc struct and creates a OP_COMPRESSED
+ *       compressed opcode based on the provided compressor_id.
+ *       The in-place updated rpc struct remains little endian.
+ *
+ * Side effects:
+ *       Overwrites the RPC, and clears and overwrites the cluster buffer
+ *       with the compressed results.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 char *
 _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       int32_t compressor_id,
-                      mongoc_rpc_t *rpc,
+                      mongoc_rpc_t *rpc_le,
                       bson_error_t *error)
 {
    char *output;
    size_t output_length = 0;
-   size_t allocate = rpc->header.msg_len - 16;
+   size_t allocate = BSON_UINT32_FROM_LE (rpc_le->header.msg_len) - 16;
    char *data;
    int size;
    int32_t compression_level = -1;
@@ -680,20 +734,26 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                         size,
                         output,
                         &output_length)) {
-      rpc->header.msg_len = 0;
-      rpc->compressed.original_opcode = rpc->header.opcode;
-      rpc->header.opcode = MONGOC_OPCODE_COMPRESSED;
+      rpc_le->header.msg_len = 0;
+      rpc_le->compressed.original_opcode =
+         BSON_UINT32_FROM_LE (rpc_le->header.opcode);
+      rpc_le->header.opcode = MONGOC_OPCODE_COMPRESSED;
+      rpc_le->header.request_id =
+         BSON_UINT32_FROM_LE (rpc_le->header.request_id);
+      rpc_le->header.response_to =
+         BSON_UINT32_FROM_LE (rpc_le->header.response_to);
 
-      rpc->compressed.uncompressed_size = size;
-      rpc->compressed.compressor_id = compressor_id;
-      rpc->compressed.compressed_message = (const uint8_t *) output;
-      rpc->compressed.compressed_message_len = output_length;
+      rpc_le->compressed.uncompressed_size = size;
+      rpc_le->compressed.compressor_id = compressor_id;
+      rpc_le->compressed.compressed_message = (const uint8_t *) output;
+      rpc_le->compressed.compressed_message_len = output_length;
       bson_free (data);
 
 
       _mongoc_array_destroy (&cluster->iov);
       _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-      _mongoc_rpc_gather (rpc, &cluster->iov);
+      _mongoc_rpc_gather (rpc_le, &cluster->iov);
+      _mongoc_rpc_swab_to_le (rpc_le);
       return output;
    } else {
       MONGOC_WARNING ("Could not compress data with %s",
@@ -703,6 +763,19 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
    bson_free (output);
    return NULL;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_scatter --
+ *
+ *       Takes a (little endian) rpc struct and scatters the buffer.
+ *       Caller should check if resulting opcode is OP_COMPRESSED
+ *       BEFORE swabbing to native endianness.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bool
 _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
 {
