@@ -50,6 +50,9 @@ mongo-c-driver 1.7.0
     * Case is now preserved in Unix domain paths.
   * New function mongoc_cursor_error_document provides access to server's error
     reply if a query or command fails.
+  * New function mongoc_write_concern_is_default determines whether any write
+    concern options have been set, and mongoc_read_concern_is_default checks if
+    read concern options are set.
   * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
 
 

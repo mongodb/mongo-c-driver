@@ -152,15 +152,13 @@ mongoc_read_concern_append (mongoc_read_concern_t *read_concern,
 
 
 /**
- * _mongoc_read_concern_is_default:
+ * mongoc_read_concern_is_default:
  * @read_concern: A const mongoc_read_concern_t.
- *
- * This is an internal function.
  *
  * Returns true when read_concern has not been modified.
  */
 bool
-_mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern)
+mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern)
 {
    return !read_concern || !read_concern->level;
 }

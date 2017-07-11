@@ -48,7 +48,8 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
                                const char *level);
 MONGOC_EXPORT (bool)
 mongoc_read_concern_append (mongoc_read_concern_t *read_concern, bson_t *doc);
-
+MONGOC_EXPORT (bool)
+mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
 
 BSON_END_DECLS
 
