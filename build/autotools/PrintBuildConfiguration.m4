@@ -50,7 +50,6 @@ Build configuration:
   Zlib Compression                                 : ${with_zlib}
   Libbson                                          : ${with_libbson}
 ${experimental_features}
-
 Documentation:
   man                                              : ${enable_man_pages}
   HTML                                             : ${enable_html_docs}
