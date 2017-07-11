@@ -90,7 +90,7 @@ run_uri_test (const char *uri_string,
       bson_concat (&all, mongoc_uri_get_options (uri));
       bson_concat (&all, mongoc_uri_get_credentials (uri));
       rc = mongoc_uri_get_read_concern (uri);
-      if (!_mongoc_read_concern_is_default (rc)) {
+      if (!mongoc_read_concern_is_default (rc)) {
          BSON_APPEND_UTF8 (
             &all, "readconcernlevel", mongoc_read_concern_get_level (rc));
       }

@@ -1304,7 +1304,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       cursor->read_prefs, server_stream, command, flags, &read_prefs_result);
 
    if (cursor->write_concern &&
-       !_mongoc_write_concern_is_default (cursor->write_concern) &&
+       !mongoc_write_concern_is_default (cursor->write_concern) &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
       mongoc_write_concern_append (cursor->write_concern,
                                    read_prefs_result.query_with_read_prefs);
