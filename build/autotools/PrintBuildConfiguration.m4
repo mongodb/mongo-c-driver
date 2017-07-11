@@ -46,9 +46,10 @@ Build configuration:
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
-  Snappy Compression                               : ${enable_snappy}
-  Zlib Compression                                 : ${enable_zlib}${experimental_features}
+  Snappy Compression                               : ${with_snappy}
+  Zlib Compression                                 : ${with_zlib}
   Libbson                                          : ${with_libbson}
+${experimental_features}
 
 Documentation:
   man                                              : ${enable_man_pages}
