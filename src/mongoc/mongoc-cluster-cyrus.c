@@ -46,9 +46,9 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       return false;
    }
 
-   mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
-
    for (;;) {
+      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+
       if (!_mongoc_cyrus_step (
              &sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
          goto failure;
@@ -85,6 +85,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       if (bson_iter_init_find (&iter, &reply, "done") &&
           bson_iter_as_bool (&iter)) {
          bson_destroy (&reply);
+         mongoc_cmd_parts_cleanup (&parts);
          break;
       }
 
@@ -117,6 +118,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       memcpy (buf, tmpstr, buflen);
 
       bson_destroy (&reply);
+      mongoc_cmd_parts_cleanup (&parts);
    }
 
    TRACE ("%s", "SASL: authenticated");

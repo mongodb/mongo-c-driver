@@ -138,6 +138,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 const char *hostname,
                                 bson_error_t *error)
 {
+   mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
    uint8_t buf[4096] = {0};
    bson_iter_t iter;
@@ -187,6 +188,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    }
 
    for (step = 0;; step++) {
+      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
       bson_init (&cmd);
 
       if (res == MONGOC_SSPI_AUTH_GSS_CONTINUE) {
@@ -208,6 +210,9 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
                          "Received invalid SSPI data.");
+
+         mongoc_cmd_parts_cleanup (&parts);
+         bson_destroy (&cmd);
          break;
       }
 
@@ -224,18 +229,18 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       if (!mongoc_cluster_run_command_private (cluster,
+                                               &parts,
                                                stream,
                                                0,
-                                               MONGOC_QUERY_SLAVE_OK,
-                                               "$external",
-                                               &cmd,
                                                &reply,
                                                error)) {
+         mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
          bson_destroy (&reply);
          break;
       }
 
+      mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&cmd);
 
       if (bson_iter_init_find (&iter, &reply, "done") &&
