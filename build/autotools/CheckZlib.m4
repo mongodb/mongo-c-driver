@@ -28,6 +28,8 @@ AS_IF([test "x${ZLIB_LIBS}" = "x" -a "x$with_zlib" = "xsystem"],
 AS_IF([test "x${with_zlib}" = xbundled],[
    AC_MSG_CHECKING(whether to enable bundled zlib)
    AC_MSG_RESULT(yes)
+   ZLIB_LIBS=libzlib.la
+   ZLIB_CFLAGS="-Isrc/zlib-1.2.11"
 ])
 
 if test "x$with_zlib" != "xno"; then

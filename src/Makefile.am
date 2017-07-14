@@ -49,6 +49,12 @@ libmongoc_1_0_la_LDFLAGS = \
 	-no-undefined \
 	-rpath $(libdir)
 
+if WITH_SNAPPY
+# Use c++ linker
+nodist_EXTRA_libmongoc_1_0_la_SOURCES = dummy.cxx
+nodist_EXTRA_libmongoc_priv_la_SOURCES = dummy.cxx
+endif
+
 MONGOC_LIBADD_SHARED = \
 	$(BSON_LIBS) \
 	$(PTHREAD_LIBS) \
@@ -69,7 +75,6 @@ libmongoc_1_0_la_LIBADD = $(MONGOC_LIBADD_SHARED)
 MONGOC_SOURCES_SHARED = 
 libmongoc_1_0_la_SOURCES = $(MONGOC_SOURCES_SHARED)
 libmongoc_priv_la_SOURCES = $(MONGOC_SOURCES_SHARED)
-
 
 include src/mongoc/Makefile.am
 include src/tools/Makefile.am

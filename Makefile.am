@@ -7,19 +7,21 @@ bin_PROGRAMS =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =
+noinst_HEADERS =
 
 SUBDIRS =
+libmongoc_1_0_la_DEPENDENCIES =
 
 if WITH_LIBBSON
 SUBDIRS += src/libbson
 endif
-
 if WITH_SNAPPY
-SUBDIRS += src/snappy-1.1.5
+include src/snappy-1.1.3/Makefile.am
+libmongoc_1_0_la_DEPENDENCIES += libsnappy.la
 endif
-
 if WITH_ZLIB
-SUBDIRS += src/zlib-1.2.11
+include src/zlib-1.2.11/Makefile.am
+libmongoc_1_0_la_DEPENDENCIES += libzlib.la
 endif
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
