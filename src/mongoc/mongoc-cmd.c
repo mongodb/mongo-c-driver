@@ -69,7 +69,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 {
    ENTRY;
 
-   /* not yet cmd */
+   /* not yet assembled */
    BSON_ASSERT (!parts->assembled.command);
 
    while (bson_iter_next (iter)) {
@@ -199,7 +199,7 @@ _cmd_parts_apply_read_preferences_mongos (mongoc_cmd_parts_t *parts)
  *
  * Side effects:
  *       Sets @parts->command_ptr and @parts->query_flags. Concatenates
- *       @parts->body and @parts->command_extra into @parts->cmd if
+ *       @parts->body and @parts->command_extra into @parts->assembled if
  *       needed.
  *
  *--------------------------------------------------------------------------
@@ -218,11 +218,11 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    server_type = server_stream->sd->type;
 
-   /* must not be cmd already */
+   /* must not be assembled already */
    BSON_ASSERT (!parts->assembled.command);
    BSON_ASSERT (bson_empty (&parts->assembled_body));
 
-   /* begin with raw flags/cmd as cmd flags/cmd, might update them below */
+   /* begin with raw flags/cmd as assembled flags/cmd, might change below */
    parts->assembled.command = parts->body;
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_id = server_stream->sd->id;
@@ -287,8 +287,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
  *
  * mongoc_cmd_parts_assemble_simple --
  *
- *       Sets @parts->cmd.command and @parts->query_flags, without applying
- *       any server-specific logic.
+ *       Sets @parts->assembled.command and @parts->query_flags, without
+ *       applying any server-specific logic.
  *
  *--------------------------------------------------------------------------
  */
@@ -296,7 +296,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 void
 mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *parts, uint32_t server_id)
 {
-   /* must not be cmd already, must have no options set */
+   /* must not be assembled already, must have no options set */
    BSON_ASSERT (!parts->assembled.command);
    BSON_ASSERT (bson_empty (&parts->assembled_body));
    BSON_ASSERT (bson_empty (&parts->extra));
