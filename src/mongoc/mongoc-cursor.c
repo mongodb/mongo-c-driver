@@ -669,11 +669,11 @@ done:
 
 
 static bool
-_mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
-                                     mongoc_server_stream_t *server_stream,
-                                     const char *cmd_name)
+_mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
+                                mongoc_server_stream_t *server_stream,
+                                const bson_t *cmd,
+                                const char *cmd_name)
 {
-   bson_t doc;
    mongoc_client_t *client;
    mongoc_apm_command_started_t event;
    char db[MONGOC_NAMESPACE_MAX];
@@ -686,20 +686,10 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
       RETURN (true);
    }
 
-   bson_init (&doc);
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
-   if (!cursor->is_command) {
-      /* simulate a MongoDB 3.2+ "find" command */
-      if (!_mongoc_cursor_prepare_find_command (cursor, &doc, server_stream)) {
-         /* cursor->error is set */
-         bson_destroy (&doc);
-         RETURN (false);
-      }
-   }
-
    mongoc_apm_command_started_init (&event,
-                                    cursor->is_command ? &cursor->filter : &doc,
+                                    cmd,
                                     db,
                                     cmd_name,
                                     client->cluster.request_id,
@@ -710,9 +700,43 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
 
    client->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
-   bson_destroy (&doc);
 
    RETURN (true);
+}
+
+
+static bool
+_mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
+                                     mongoc_server_stream_t *server_stream)
+{
+   bson_t doc;
+   mongoc_client_t *client;
+   char db[MONGOC_NAMESPACE_MAX];
+   bool r;
+
+   ENTRY;
+
+   client = cursor->client;
+   if (!client->apm_callbacks.started) {
+      /* successful */
+      RETURN (true);
+   }
+
+   bson_init (&doc);
+   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+
+   /* simulate a MongoDB 3.2+ "find" command */
+   if (!_mongoc_cursor_prepare_find_command (cursor, &doc, server_stream)) {
+      /* cursor->error is set */
+      bson_destroy (&doc);
+      RETURN (false);
+   }
+
+   r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
+
+   bson_destroy (&doc);
+
+   RETURN (r);
 }
 
 
@@ -1121,12 +1145,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
    int64_t started;
    uint32_t request_id;
    mongoc_rpc_t rpc;
-   const char *cmd_name; /* for command monitoring */
+   const char *cmd_name = NULL; /* for command monitoring */
    const bson_t *query_ptr;
    bson_t query = BSON_INITIALIZER;
    bson_t fields = BSON_INITIALIZER;
    mongoc_query_flags_t flags;
-   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
+   mongoc_assemble_query_result_t result = ASSEMBLE_QUERY_RESULT_INIT;
    const bson_t *ret = NULL;
    bool succeeded = false;
 
@@ -1153,8 +1177,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       /* "filter" isn't a query, it's like {commandName: ... }*/
       cmd_name = _mongoc_get_command_name (&cursor->filter);
       BSON_ASSERT (cmd_name);
-   } else {
-      cmd_name = "find";
    }
 
    query_ptr = _mongoc_cursor_parse_opts_for_op_query (
@@ -1165,18 +1187,33 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   apply_read_preferences (
-      cursor->read_prefs, server_stream, query_ptr, flags, &result);
+   assemble_query (cursor->read_prefs,
+                   server_stream,
+                   query_ptr,
+                   flags,
+                   !!cursor->is_command,
+                   &result);
 
-   rpc.query.query = bson_get_data (result.query_with_read_prefs);
+   rpc.query.query = bson_get_data (result.assembled_query);
    rpc.query.flags = result.flags;
    rpc.query.n_return = _mongoc_n_return (cursor);
    if (!bson_empty (&fields)) {
       rpc.query.fields = bson_get_data (&fields);
    }
 
-   if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream, cmd_name)) {
-      GOTO (done);
+   if (cursor->is_command) {
+      /* cursor from deprecated mongoc_client_command() is about to send its
+       * command from mongoc_cursor_next() */
+      if (!_mongoc_cursor_monitor_command (
+             cursor, server_stream, result.assembled_query, cmd_name)) {
+         GOTO (done);
+      }
+   } else {
+      /* cursor from mongoc_collection_find[_with_opts] is about to send its
+       * initial OP_QUERY to pre-3.2 MongoDB */
+      if (!_mongoc_cursor_monitor_legacy_query (cursor, server_stream)) {
+         GOTO (done);
+      }
    }
 
    if (!mongoc_cluster_legacy_rpc_sendv_to_server (&cursor->client->cluster,
@@ -1255,7 +1292,7 @@ done:
          cursor, bson_get_monotonic_time () - started, server_stream, cmd_name);
    }
 
-   apply_read_prefs_result_cleanup (&result);
+   assemble_query_result_cleanup (&result);
    bson_destroy (&query);
    bson_destroy (&fields);
 
