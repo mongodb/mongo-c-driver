@@ -201,6 +201,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *command,
+                            const bson_t *opts,
                             bson_t *reply);
 bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor);

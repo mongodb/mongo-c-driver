@@ -315,7 +315,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const bson_t *opts,                    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream = NULL;
    bool has_batch_size = false;
    bool has_out_key = false;
@@ -341,9 +340,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    }
 
    cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
-   mongoc_cmd_parts_init (&parts, collection->db, flags, &command);
-   parts.read_prefs = read_prefs;
-   parts.session = collection->session;
 
    if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
@@ -429,35 +425,21 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    }
 
    if (opts) {
-      bool ok = false;
-      bson_t opts_dupe = BSON_INITIALIZER;
-
       if (has_batch_size || server_stream->sd->max_wire_version == 0) {
-         bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
-         bson_iter_init (&iter, &opts_dupe);
+         bson_copy_to_excluding_noinit (opts, &cursor->opts, "batchSize", NULL);
       } else {
-         bson_iter_init (&iter, opts);
-      }
-
-      /* omits "serverId" */
-      ok = mongoc_cmd_parts_append_opts (
-         &parts, &iter, server_stream->sd->max_wire_version, &cursor->error);
-
-      bson_destroy (&opts_dupe);
-
-      if (!ok) {
-         GOTO (done);
+         bson_concat (&cursor->opts, opts);
       }
    }
 
    /* Only inherit WriteConcern when for aggregate with $out */
-   if (!bson_has_field (&parts.extra, "writeConcern") && has_out_key) {
+   if (!bson_has_field (&cursor->opts, "writeConcern") && has_out_key) {
       mongoc_write_concern_destroy (cursor->write_concern);
       cursor->write_concern = mongoc_write_concern_copy (
          mongoc_collection_get_write_concern (collection));
    }
 
-   if (!bson_has_field (&parts.extra, "readConcern")) {
+   if (!bson_has_field (&cursor->opts, "readConcern")) {
       mongoc_read_concern_destroy (cursor->read_concern);
       cursor->read_concern = mongoc_read_concern_copy (
          mongoc_collection_get_read_concern (collection));
@@ -468,25 +450,20 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          read_concern_bson =
             _mongoc_read_concern_get_bson (cursor->read_concern);
 
-         BSON_APPEND_DOCUMENT (&parts.extra, "readConcern", read_concern_bson);
+         BSON_APPEND_DOCUMENT (&cursor->opts, "readConcern", read_concern_bson);
       }
    }
 
-   if (!mongoc_cmd_parts_assemble (&parts, server_stream, &cursor->error)) {
-      GOTO (done);
-   }
-
    if (use_cursor) {
-      _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
+      _mongoc_cursor_cursorid_init (cursor, &command);
    } else {
       /* for older versions we get an array that we can create a synthetic
        * cursor on top of */
-      _mongoc_cursor_array_init (cursor, parts.assembled.command, "result");
+      _mongoc_cursor_array_init (cursor, &command, "result");
    }
 
 done:
    mongoc_server_stream_cleanup (server_stream); /* null ok */
-   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
 
    /* we always return the cursor, even if it fails; users can detect the

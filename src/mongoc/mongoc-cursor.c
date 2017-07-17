@@ -732,6 +732,9 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
       RETURN (false);
    }
 
+   bson_copy_to_excluding_noinit (
+      &cursor->opts, &doc, "serverId", "maxAwaitTimeMS", NULL);
+
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
    bson_destroy (&doc);
@@ -1097,9 +1100,9 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
          BSON_APPEND_BOOL (query, "$snapshot", bson_iter_as_bool (&iter));
       } else if (!strcmp (key, MONGOC_CURSOR_COLLATION)) {
          bson_set_error (&cursor->error,
-                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Collation is not supported by this server");
+                         "The selected server does not support collation");
          return NULL;
       }
       /* singleBatch limit and batchSize are handled in _mongoc_n_return,
@@ -1177,6 +1180,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       /* "filter" isn't a query, it's like {commandName: ... }*/
       cmd_name = _mongoc_get_command_name (&cursor->filter);
       BSON_ASSERT (cmd_name);
+   } else {
+      cmd_name = "find";
    }
 
    query_ptr = _mongoc_cursor_parse_opts_for_op_query (
@@ -1307,10 +1312,12 @@ done:
 bool
 _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *command,
+                            const bson_t *opts,
                             bson_t *reply)
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
+   bson_iter_t iter;
    mongoc_cmd_parts_t parts;
    char db[MONGOC_NAMESPACE_MAX];
    bool ret = false;
@@ -1326,6 +1333,15 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (!server_stream) {
       GOTO (done);
+   }
+
+   if (opts) {
+      bson_iter_init (&iter, opts);
+      if (!mongoc_cmd_parts_append_opts (&parts, &iter,
+                                         server_stream->sd->max_wire_version,
+                                         &cursor->error)) {
+         GOTO (done);
+      }
    }
 
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
@@ -1442,7 +1458,6 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 {
    const char *collection;
    int collection_len;
-   bson_iter_t iter;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command,
@@ -1452,30 +1467,6 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
                      collection_len);
    bson_append_document (
       command, MONGOC_CURSOR_FILTER, MONGOC_CURSOR_FILTER_LEN, &cursor->filter);
-   bson_iter_init (&iter, &cursor->opts);
-
-   while (bson_iter_next (&iter)) {
-      /* don't append "maxAwaitTimeMS" */
-      if (!strcmp (bson_iter_key (&iter), MONGOC_CURSOR_COLLATION) &&
-          server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_CURSOR,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Collation is not supported by this server");
-         MARK_FAILED (cursor);
-         return false;
-      } else if (strcmp (bson_iter_key (&iter),
-                         MONGOC_CURSOR_MAX_AWAIT_TIME_MS)) {
-         if (!bson_append_iter (command, bson_iter_key (&iter), -1, &iter)) {
-            bson_set_error (&cursor->error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Cursor opts too large");
-            MARK_FAILED (cursor);
-            return false;
-         }
-      }
-   }
 
    if (cursor->read_concern->level != NULL) {
       const bson_t *read_concern_bson;

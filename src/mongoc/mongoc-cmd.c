@@ -114,7 +114,8 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                             "The selected server does not support readConcern");
             RETURN (false);
          }
-      } else if (BSON_ITER_IS_KEY (iter, "serverId")) {
+      } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
+                 BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
          continue;
       }
 
@@ -125,17 +126,76 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 }
 
 
-/* Update result with the read prefs, following Server Selection Spec.
- * The driver must have discovered the server is a mongos.
+/* The server type must be mongos. */
+static void
+_mongoc_cmd_parts_add_cluster_time (bson_t *query,
+                                    const mongoc_server_stream_t *server_stream)
+{
+   if (!bson_empty (&server_stream->cluster_time) &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
+      bson_append_document (
+         query, "$clusterTime", 12, &server_stream->cluster_time);
+   }
+}
+
+
+/* The server type must be mongos. */
+static void
+_mongoc_cmd_parts_add_read_prefs (bson_t *query,
+                                  const mongoc_read_prefs_t *prefs,
+                                  const mongoc_server_stream_t *server_stream)
+{
+   bson_t child;
+   const char *mode_str;
+   const bson_t *tags;
+   int64_t stale;
+
+   mode_str = _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (prefs));
+   tags = mongoc_read_prefs_get_tags (prefs);
+   stale = mongoc_read_prefs_get_max_staleness_seconds (prefs);
+
+   bson_append_document_begin (query, "$readPreference", 15, &child);
+   bson_append_utf8 (&child, "mode", 4, mode_str, -1);
+   if (!bson_empty0 (tags)) {
+      bson_append_array (&child, "tags", 4, tags);
+   }
+
+   if (stale != MONGOC_NO_MAX_STALENESS) {
+      bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
+   }
+
+   bson_append_document_end (query, &child);
+}
+
+
+static void
+_iter_concat(bson_t *dst,
+             bson_iter_t *iter)
+{
+   uint32_t len;
+   const uint8_t *data;
+   bson_t src;
+
+   bson_iter_document (iter, &len, &data);
+   bson_init_static (&src, data, len);
+   bson_concat (dst, &src);
+}
+
+
+/* Update result with the read prefs and $clusterTime. Server must be mongos.
  */
 static void
-_cmd_parts_apply_read_preferences_mongos (mongoc_cmd_parts_t *parts)
+_mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
+                                   const mongoc_server_stream_t *server_stream)
 {
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
-   bson_t child;
-   const char *mode_str;
-   int64_t stale;
+   bool add_read_prefs = false;
+   bson_t query;
+   bson_iter_t dollar_query;
+   bool has_dollar_query = false;
+
+   ENTRY;
 
    mode = mongoc_read_prefs_get_mode (parts->read_prefs);
    if (parts->read_prefs) {
@@ -161,42 +221,116 @@ _cmd_parts_apply_read_preferences_mongos (mongoc_cmd_parts_t *parts)
     * For mode 'nearest', drivers MUST set the slaveOK wire protocol flag and
     *   MUST also use $readPreference
     */
-   if (mode == MONGOC_READ_SECONDARY_PREFERRED && bson_empty0 (tags)) {
-      parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
-   } else if (mode != MONGOC_READ_PRIMARY) {
-      parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
-
-      /* Server Selection Spec: "When any $ modifier is used, including the
-       * $readPreference modifier, the query MUST be provided using the $query
-       * modifier".
-       *
-       * This applies to commands, too.
-       */
-
-      if (bson_has_field (parts->body, "$query")) {
-         bson_concat (&parts->assembled_body, parts->body);
-      } else {
-         bson_append_document (
-            &parts->assembled_body, "$query", 6, parts->body);
-      }
-
-      bson_append_document_begin (
-         &parts->assembled_body, "$readPreference", 15, &child);
-
-      mode_str = _mongoc_read_mode_as_str (mode);
-      bson_append_utf8 (&child, "mode", 4, mode_str, -1);
+   switch (mode) {
+   case MONGOC_READ_PRIMARY:
+      break;
+   case MONGOC_READ_SECONDARY_PREFERRED:
       if (!bson_empty0 (tags)) {
-         bson_append_array (&child, "tags", 4, tags);
+         add_read_prefs = true;
+      }
+      parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
+      break;
+   case MONGOC_READ_PRIMARY_PREFERRED:
+   case MONGOC_READ_SECONDARY:
+   case MONGOC_READ_NEAREST:
+   default:
+      parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
+      add_read_prefs = true;
+   }
+
+   if (add_read_prefs) {
+      /* produce {$query: {user query, $clusterTime}, $readPreference: ... } */
+      bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
+
+      if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
+         /* user provided something like {$query: {key: "x"}} */
+         has_dollar_query = true;
+         _iter_concat (&query, &dollar_query);
+      } else {
+         bson_concat (&query, parts->body);
       }
 
-      stale = mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
-      if (stale != MONGOC_NO_MAX_STALENESS) {
-         bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
-      }
+      bson_concat (&query, &parts->extra);
+      _mongoc_cmd_parts_add_cluster_time (&query, server_stream);
+      bson_append_document_end (&parts->assembled_body, &query);
+      _mongoc_cmd_parts_add_read_prefs (&parts->assembled_body,
+                                        parts->read_prefs, server_stream);
 
-      bson_append_document_end (&parts->assembled_body, &child);
+      if (has_dollar_query) {
+         /* copy anything that isn't in user's $query */
+         bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body,
+                                        "$query", NULL);
+      }
+   } else if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
+      /* user provided $query, we have no read prefs, just add $clusterTime */
+      bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
+      _iter_concat (&query, &dollar_query);
+      _mongoc_cmd_parts_add_cluster_time (&query, server_stream);
+      bson_concat (&query, &parts->extra);
+      bson_append_document_end (&parts->assembled_body, &query);
+      /* copy anything that isn't in user's $query */
+      bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body,
+                                     "$query", NULL);
+   } else {
+      bson_concat (&parts->assembled_body, parts->body);
+      _mongoc_cmd_parts_add_cluster_time (&parts->assembled_body,
+                                          server_stream);
+      bson_concat (&parts->assembled_body, &parts->extra);
+   }
+
+   parts->assembled.command = &parts->assembled_body;
+
+   EXIT;
+}
+
+
+static void
+_mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
+                                   const mongoc_server_stream_t *server_stream)
+{
+   ENTRY;
+
+   if (!parts->is_write_command) {
+      switch (server_stream->topology_type) {
+      case MONGOC_TOPOLOGY_SINGLE:
+         /* Server Selection Spec: for topology type single and server types
+          * besides mongos, "clients MUST always set the slaveOK wire
+          * protocol flag on reads to ensure that any server type can handle
+          * the request."
+          */
+         parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
+         break;
+
+      case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+      case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+         /* Server Selection Spec: for RS topology types, "For all read
+          * preferences modes except primary, clients MUST set the slaveOK wire
+          * protocol flag to ensure that any suitable server can handle the
+          * request. Clients MUST  NOT set the slaveOK wire protocol flag if the
+          * read preference mode is primary.
+          */
+         if (parts->read_prefs &&
+             parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
+            parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
+         }
+
+         break;
+      case MONGOC_TOPOLOGY_SHARDED:
+      case MONGOC_TOPOLOGY_UNKNOWN:
+      case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
+      default:
+         /* must not call this function w/ sharded or unknown topology type */
+         BSON_ASSERT (false);
+      }
+   } /* if (!parts->is_write_command) */
+
+   if (!bson_empty (&parts->extra)) {
+      bson_concat (&parts->assembled_body, parts->body);
+      bson_concat (&parts->assembled_body, &parts->extra);
       parts->assembled.command = &parts->assembled_body;
    }
+
+   EXIT;
 }
 
 
@@ -253,6 +387,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    }
 
    TRACE ("Preparing '%s'", parts->assembled.command_name);
+
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
@@ -285,74 +420,23 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
          bson_append_document_end (&parts->extra, &child);
       }
-   } else if (!parts->is_write_command) {
-      switch (server_stream->topology_type) {
-      case MONGOC_TOPOLOGY_SINGLE:
-         if (server_type == MONGOC_SERVER_MONGOS) {
-            _cmd_parts_apply_read_preferences_mongos (parts);
-         } else {
-            /* Server Selection Spec: for topology type single and server types
-             * besides mongos, "clients MUST always set the slaveOK wire
-             * protocol flag on reads to ensure that any server type can handle
-             * the request."
-             */
-            parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
-         }
 
-         break;
-
-      case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
-      case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
-         /* Server Selection Spec: for RS topology types, "For all read
-          * preferences modes except primary, clients MUST set the slaveOK wire
-          * protocol flag to ensure that any suitable server can handle the
-          * request. Clients MUST  NOT set the slaveOK wire protocol flag if the
-          * read preference mode is primary.
-          */
-         if (parts->read_prefs &&
-             parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
-            parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;
-         }
-
-         break;
-
-      case MONGOC_TOPOLOGY_SHARDED:
-         _cmd_parts_apply_read_preferences_mongos (parts);
-         break;
-
-      case MONGOC_TOPOLOGY_UNKNOWN:
-      case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
-      default:
-         /* must not call mongoc_cmd_parts_assemble w/ unknown topology type */
-         BSON_ASSERT (false);
-      }
-   } /* if (!parts->is_write_command) */
-
-   /* Driver Sessions Spec: "The $clusterTime field should only be sent when
-    * connected to a mongos. Drivers MUST check the mongos version they are
-    * connected to before adding $clusterTime to any command they send to a
-    * mongos node."
-    */
-   if (!bson_empty (&server_stream->cluster_time) &&
-       server_stream->sd->type == MONGOC_SERVER_MONGOS &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
-      bson_append_document (&parts->extra,
-                            "$clusterTime",
-                            12,
-                            &server_stream->cluster_time);
-   }
-
-   if (!bson_empty (&parts->extra)) {
-      /* Did we already copy the command body? */
-      if (parts->assembled.command == parts->body) {
+      if (!bson_empty (&parts->extra)) {
          bson_concat (&parts->assembled_body, parts->body);
+         bson_concat (&parts->assembled_body, &parts->extra);
          parts->assembled.command = &parts->assembled_body;
       }
 
-      bson_concat (&parts->assembled_body, &parts->extra);
+      RETURN (true);
    }
 
-   EXIT;
+   if (server_type == MONGOC_SERVER_MONGOS) {
+      _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
+      RETURN (true);
+   }
+
+   _mongoc_cmd_parts_assemble_mongod (parts,server_stream);
+   RETURN (true);
 }
 
 /*

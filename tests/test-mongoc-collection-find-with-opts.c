@@ -970,9 +970,9 @@ test_find_with_opts_collation_error (void *ctx)
 
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "Collation is not supported by this server");
+                          "The selected server does not support collation");
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);

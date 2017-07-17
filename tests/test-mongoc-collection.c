@@ -67,6 +67,7 @@ test_aggregate_w_write_concern (void *context)
    cursor = mongoc_collection_aggregate (
       collection, MONGOC_QUERY_NONE, pipeline, opts, NULL);
    ASSERT (cursor);
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT_ERROR_CONTAINS (cursor->error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,

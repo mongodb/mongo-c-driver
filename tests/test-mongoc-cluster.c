@@ -407,6 +407,7 @@ test_legacy_write_disconnect (void *ctx)
 typedef struct {
    int calls;
    bson_t *cluster_time;
+   bson_t *command;
 } cluster_time_test_t;
 
 
@@ -418,11 +419,19 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
    bson_iter_t iter;
    bson_t client_cluster_time;
 
+
    cmd = mongoc_apm_command_started_get_command (event);
+   if (!strcmp (_mongoc_get_command_name (cmd), "killCursors")) {
+      /* ignore killCursors */
+      return;
+   }
+
    test =
       (cluster_time_test_t *) mongoc_apm_command_started_get_context (event);
 
    test->calls++;
+   _mongoc_bson_destroy_if_set (test->command);
+   test->command = bson_copy (cmd);
 
    /* Only a MongoDB 3.6+ mongos reports $clusterTime. If we've received a
     * $clusterTime, we send it to any MongoDB 3.6+ mongos. In this case, we
@@ -494,6 +503,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
    cluster_time_test_t cluster_time_test;
 
    cluster_time_test.calls = 0;
+   cluster_time_test.command = NULL;
    cluster_time_test.cluster_time = NULL;
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -529,6 +539,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
    }
 
    mongoc_apm_callbacks_destroy (callbacks);
+   _mongoc_bson_destroy_if_set (cluster_time_test.command);
    _mongoc_bson_destroy_if_set (cluster_time_test.cluster_time);
 }
 
@@ -893,9 +904,214 @@ test_cluster_time_comparison_pooled (void)
 }
 
 
+typedef struct {
+   const char *name;
+   const char *q;
+   const char *e;
+   bool secondary;
+   bool cluster_time;
+} dollar_query_test_t;
+
+
+static void
+_test_dollar_query (void *ctx)
+{
+   dollar_query_test_t *test;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_query_flags_t flags;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   bson_error_t error;
+
+   test = (dollar_query_test_t *) ctx;
+
+   server = mock_mongos_new (test->cluster_time ? WIRE_VERSION_CLUSTER_TIME
+                                                : WIRE_VERSION_COLLATION);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   if (test->secondary) {
+      read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+      flags = MONGOC_QUERY_SLAVE_OK;
+   } else {
+      read_prefs = NULL;
+      flags = MONGOC_QUERY_NONE;
+   }
+
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    tmp_bson (test->q),
+                                    NULL,
+                                    read_prefs);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (server, "db", flags, test->e);
+   mock_server_replies_to_find (
+      request, flags, 0, 0, "db.collection", "", true);
+
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+dollar_query_test_t tests[] = {
+   {"/Cluster/cluster_time/query/",
+    "{'a': 1}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': false}"
+    "}",
+    false,
+    false},
+   {"/Cluster/cluster_time/query/cluster_time",
+    "{'a': 1}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': true}"
+    "}",
+    false,
+    true},
+   {"/Cluster/cluster_time/query/secondary",
+    "{'a': 1}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1}, "
+    "      '$clusterTime': {'$exists': false}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    false},
+   {"/Cluster/cluster_time/query/cluster_time_secondary",
+    "{'a': 1}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1}, "
+    "      '$clusterTime': {'$exists': true}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    true},
+   {"/Cluster/cluster_time/dollar_query/from_user",
+    "{'$query': {'a': 1}}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': false}"
+    "}",
+    false,
+    false},
+   {"/Cluster/cluster_time/dollar_query/from_user/cluster_time",
+    "{'$query': {'a': 1}}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': true}"
+    "}",
+    false,
+    true},
+   {"/Cluster/cluster_time/dollar_query/from_user/secondary",
+    "{'$query': {'a': 1}}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1},"
+    "      '$clusterTime': {'$exists': false}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    false},
+   {"/Cluster/cluster_time/dollar_query/from_user/cluster_time_secondary",
+    "{'$query': {'a': 1}}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1},"
+    "      '$clusterTime': {'$exists': true}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    true},
+   {"/Cluster/cluster_time/dollar_orderby",
+    "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   'sort': {'a': 1}"
+    "}",
+    false,
+    false},
+   {"/Cluster/cluster_time/dollar_orderby/secondary",
+    "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1},"
+    "      'sort': {'a': 1},"
+    "      '$clusterTime': {'$exists': false}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    false},
+   {"/Cluster/cluster_time/dollar_orderby/cluster_time",
+    "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
+    "{"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   'sort': {'a': 1},"
+    "   '$clusterTime': {'$exists': true}"
+    "}",
+    false,
+    true},
+   {"/Cluster/cluster_time/dollar_orderby/cluster_time_secondary",
+    "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
+    "{"
+    "   '$query': {"
+    "      'find': 'collection', 'filter': {'a': 1},"
+    "      'sort': {'a': 1},"
+    "      '$clusterTime': {'$exists': true}"
+    "    },"
+    "   '$readPreference': {'mode': 'secondary'}"
+    "}",
+    true,
+    true},
+   {NULL}};
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
+   dollar_query_test_t *p = tests;
+
+   while (p->name) {
+      /* mock server must support OP_MSG first */
+      if (!p->cluster_time) {
+         TestSuite_AddFull (suite,
+                            p->name,
+                            _test_dollar_query,
+                            NULL,
+                            p,
+                            TestSuite_CheckMockServerAllowed);
+      }
+
+      p++;
+   }
+
    TestSuite_AddLive (
       suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_AddLive (

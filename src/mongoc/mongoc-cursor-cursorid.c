@@ -105,7 +105,8 @@ _mongoc_cursor_cursorid_start_batch (mongoc_cursor_t *cursor)
 
 static bool
 _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
-                                              const bson_t *command)
+                                              const bson_t *command,
+                                              const bson_t *opts)
 {
    mongoc_cursor_cursorid_t *cid;
 
@@ -118,7 +119,7 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
 
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
-   if (_mongoc_cursor_run_command (cursor, command, &cid->array) &&
+   if (_mongoc_cursor_run_command (cursor, command, opts, &cid->array) &&
        _mongoc_cursor_cursorid_start_batch (cursor)) {
       RETURN (true);
    }
@@ -171,8 +172,8 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 {
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
-   return _mongoc_cursor_cursorid_refresh_from_command (cursor,
-                                                        &cursor->filter);
+   return _mongoc_cursor_cursorid_refresh_from_command (
+      cursor, &cursor->filter, &cursor->opts);
 }
 
 
@@ -255,7 +256,10 @@ _mongoc_cursor_cursorid_get_more (mongoc_cursor_t *cursor)
          RETURN (false);
       }
 
-      ret = _mongoc_cursor_cursorid_refresh_from_command (cursor, &command);
+      /* don't pass cursor->opts to getMore */
+      ret = _mongoc_cursor_cursorid_refresh_from_command (
+         cursor, &command, NULL /* opts */);
+
       bson_destroy (&command);
    } else {
       ret = _mongoc_cursor_op_getmore (cursor, server_stream);
