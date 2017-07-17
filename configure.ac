@@ -69,7 +69,14 @@ AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
 # Substitute our dependencies into the pkg-config files.
-AC_SUBST(MONGOC_LIBS, "${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${ZLIB_LIBS} ${SNAPPY_LIBS}")
+MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB}"
+if test "x$with_zlib" != "xbundled"; then
+   MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
+fi
+if test "x$with_snappy" != "xbundled"; then
+   MONGOC_LIBS="${MONGOC_LIBS} ${SNAPPY_LIBS}"
+fi
+AC_SUBST(MONGOC_LIBS)
 
 AC_CONFIG_FILES([
     Makefile
