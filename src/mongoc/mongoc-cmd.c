@@ -208,17 +208,22 @@ _cmd_parts_apply_read_preferences_mongos (mongoc_cmd_parts_t *parts)
  *       Assemble the command body, options, and read preference into one
  *       command.
  *
+ * Return:
+ *       True if the options were successfully applied. If any options are
+ *       invalid, returns false and fills out @error. In that case @parts is
+ *       invalid and must not be used.
+ *
  * Side effects:
- *       Sets @parts->command_ptr and @parts->query_flags. Concatenates
- *       @parts->body and @parts->command_extra into @parts->assembled if
- *       needed.
+ *       May partly assemble before returning an error.
+ *       mongoc_cmd_parts_cleanup should be called in all cases.
  *
  *--------------------------------------------------------------------------
  */
 
-void
+bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           const mongoc_server_stream_t *server_stream)
+                           const mongoc_server_stream_t *server_stream,
+                           bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
 
@@ -237,10 +242,16 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    parts->assembled.command = parts->body;
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_stream = server_stream;
-
-
    parts->assembled.command_name =
       _mongoc_get_command_name (parts->assembled.command);
+
+   if (!parts->assembled.command_name) {
+      bson_set_error (error, MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Empty command document");
+      RETURN (false);
+   }
+
    TRACE ("Preparing '%s'", parts->assembled.command_name);
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {

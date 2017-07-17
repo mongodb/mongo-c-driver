@@ -75,9 +75,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               int max_wire_version,
                               bson_error_t *error);
 
-void
+bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           const mongoc_server_stream_t *server_stream);
+                           const mongoc_server_stream_t *server_stream,
+                           bson_error_t *error);
 
 bool
 mongoc_cmd_is_compressable (mongoc_cmd_t *cmd);

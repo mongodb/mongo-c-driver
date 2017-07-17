@@ -1304,7 +1304,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       mongoc_write_concern_append (cursor->write_concern, &parts.extra);
    }
 
-   mongoc_cmd_parts_assemble (&parts, server_stream);
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, &cursor->error)) {
+      _mongoc_bson_init_if_set (reply);
+      GOTO (done);
+   }
+
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply, &cursor->error);
 

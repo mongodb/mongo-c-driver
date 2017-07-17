@@ -69,7 +69,7 @@
       }                                                       \
    } while (0)
 
-#define IS_NOT_COMMAND(name) (!!strcasecmp (command_name, name))
+#define IS_NOT_COMMAND(name_) (!!strcasecmp (cmd->command_name, name_))
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
@@ -147,7 +147,7 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
       _bson_error_message_printf (                                 \
          error,                                                    \
          "Failed to send \"%s\" command with database \"%s\": %s", \
-         command_name,                                             \
+         cmd->command_name,                                        \
          cmd->db_name,                                             \
          error->message);                                          \
    } while (0)
@@ -181,7 +181,6 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                                     bson_t *reply,
                                     bson_error_t *error)
 {
-   const char *command_name;
    const size_t reply_header_size = sizeof (mongoc_rpc_reply_header_t);
    uint8_t reply_header_buf[sizeof (mongoc_rpc_reply_header_t)];
    uint8_t *reply_buf; /* reply body */
@@ -213,16 +212,6 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    /*
     * prepare the request
     */
-
-   command_name = _mongoc_get_command_name (cmd->command);
-   if (!command_name) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Empty command document");
-
-      GOTO (done);
-   }
 
    _mongoc_array_clear (&cluster->iov);
 
@@ -269,7 +258,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       _bson_error_message_printf (
          error,
          "Failed to send \"%s\" command with database \"%s\": %s",
-         command_name,
+         cmd->command_name,
          cmd->db_name,
          error->message);
 
@@ -546,6 +535,40 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_run_command_parts --
+ *
+ *       Internal function to assemble command parts and run a command
+ *       on a given stream. @error and @reply are optional out-pointers.
+ *       The client's APM callbacks are not executed.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
+                                  mongoc_server_stream_t *server_stream,
+                                  mongoc_cmd_parts_t *parts,
+                                  bson_t *reply,
+                                  bson_error_t *error)
+{
+   if (!mongoc_cmd_parts_assemble (parts, server_stream, error)) {
+      _mongoc_bson_init_if_set (reply);
+      return false;
+   }
+
+   return mongoc_cluster_run_command_private (
+      cluster, &parts->assembled, reply, error);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_stream_run_ismaster --
  *
  *       Run an ismaster command on the given stream.
@@ -580,15 +603,14 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    command = _mongoc_topology_scanner_get_ismaster (
       cluster->client->topology->scanner);
 
-
    start = bson_get_monotonic_time ();
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, &error);
    mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, command);
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-
-   mongoc_cluster_run_command_private (
-      cluster, &parts.assembled, &reply, &error);
+   if (!mongoc_cluster_run_command_parts (
+          cluster, server_stream, &parts, &reply, &error)) {
+      RETURN (NULL);
+   }
 
    rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
@@ -786,9 +808,9 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   if (!mongoc_cluster_run_command_private (
-          cluster, &parts.assembled, &reply, error)) {
+
+   if (!mongoc_cluster_run_command_parts (
+          cluster, server_stream, &parts, &reply, error)) {
       mongoc_server_stream_cleanup (server_stream);
       bson_destroy (&command);
       bson_destroy (&reply);
@@ -825,9 +847,9 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     */
    mongoc_cmd_parts_cleanup (&parts);
    mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   ret = mongoc_cluster_run_command_private (
-      cluster, &parts.assembled, &reply, error);
+   ret = mongoc_cluster_run_command_parts (
+      cluster, server_stream, &parts, &reply, error);
+
    if (!ret) {
       /* error->message is already set */
       error->domain = MONGOC_ERROR_CLIENT;
@@ -912,10 +934,8 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &b);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   ret = mongoc_cluster_run_command_private (
-      cluster, &parts.assembled, &reply, error);
-
+   ret = mongoc_cluster_run_command_parts (
+      cluster, server_stream, &parts, &reply, error);
    mongoc_server_stream_cleanup (server_stream);
    if (!ret) {
       /* error->message is already set */
@@ -986,10 +1006,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   ret = mongoc_cluster_run_command_private (
-      cluster, &parts.assembled, &reply, error);
-
+   ret = mongoc_cluster_run_command_parts (
+      cluster, server_stream, &parts, &reply, error);
    mongoc_server_stream_cleanup (server_stream);
    if (!ret) {
       /* error->message is already set */
@@ -1084,9 +1102,8 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
       mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &cmd);
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, sd->id, stream, error);
-      mongoc_cmd_parts_assemble (&parts, server_stream);
-      if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assembled, &reply, error)) {
+      if (!mongoc_cluster_run_command_parts (
+             cluster, server_stream, &parts, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);
          bson_destroy (&cmd);
          bson_destroy (&reply);
@@ -2171,9 +2188,8 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, &command);
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, server_id, stream, &error);
-      mongoc_cmd_parts_assemble (&parts, server_stream);
-      r = mongoc_cluster_run_command_private (
-         cluster, &parts.assembled, NULL, &error /* OUT */);
+      r = mongoc_cluster_run_command_parts (
+         cluster, server_stream, &parts, NULL, &error);
 
       mongoc_server_stream_cleanup (server_stream);
       mongoc_cmd_parts_cleanup (&parts);

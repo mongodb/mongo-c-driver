@@ -632,17 +632,23 @@ again:
       parts.is_write_command = true;
       parts.session = session;
       parts.assembled.operation_id = command->operation_id;
-      mongoc_cmd_parts_assemble (&parts, server_stream);
-      ret = mongoc_cluster_run_command_monitored (
-         &client->cluster, &parts.assembled, &reply, error);
-
+      ret = mongoc_cmd_parts_assemble (&parts, server_stream, error);
       if (!ret) {
          result->failed = true;
-         if (bson_empty (&reply)) {
-            /* The command not only failed,
-             * the roundtrip to the server failed and the node was disconnected
-             */
-            result->must_stop = true;
+         result->must_stop = true;
+         bson_init (&reply);
+      } else {
+         ret = mongoc_cluster_run_command_monitored (
+            &client->cluster, &parts.assembled, &reply, error);
+         if (!ret) {
+            result->failed = true;
+            if (bson_empty (&reply)) {
+               /* The command not only failed,
+                * the roundtrip to the server failed and the node was
+                * disconnected
+                */
+               result->must_stop = true;
+            }
          }
       }
 

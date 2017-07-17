@@ -472,7 +472,9 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       }
    }
 
-   mongoc_cmd_parts_assemble (&parts, server_stream);
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, &cursor->error)) {
+      GOTO (done);
+   }
 
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
@@ -614,12 +616,15 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new_with_opts (collection->client, collection->ns,
-                                        false /* is_command */, filter, opts,
-                                        COALESCE (read_prefs,
-                                                  collection->read_prefs),
-                                        collection->read_concern,
-                                        collection->session);
+   return _mongoc_cursor_new_with_opts (
+      collection->client,
+      collection->ns,
+      false /* is_command */,
+      filter,
+      opts,
+      COALESCE (read_prefs, collection->read_prefs),
+      collection->read_concern,
+      collection->session);
 }
 
 
@@ -1358,9 +1363,12 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
 
    cluster = &collection->client->cluster;
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts.assembled, reply, &local_error);
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, &local_error)) {
+      _mongoc_bson_init_if_set (reply);
+   } else {
+      ret = mongoc_cluster_run_command_monitored (
+         cluster, &parts.assembled, reply, &local_error);
+   }
 
    reply_initialized = true;
 
@@ -2566,7 +2574,13 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    parts.assembled.operation_id = ++cluster->operation_id;
-   mongoc_cmd_parts_assemble (&parts, server_stream);
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      bson_init (reply_ptr);
+      bson_destroy (&command);
+      mongoc_server_stream_cleanup (server_stream);
+      RETURN (false);
+   }
+
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply_ptr, error);
 

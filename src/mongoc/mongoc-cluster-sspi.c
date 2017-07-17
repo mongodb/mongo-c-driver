@@ -231,7 +231,14 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, sd->id, stream, error);
-      mongoc_cmd_parts_assemble (&parts, server_stream);
+
+      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+         mongoc_server_stream_cleanup (server_stream);
+         mongoc_cmd_parts_cleanup (&parts);
+         bson_destroy (&cmd);
+         break;
+      }
+
       if (!mongoc_cluster_run_command_private (
              cluster, &parts.assembled, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);

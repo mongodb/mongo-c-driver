@@ -139,6 +139,14 @@ _mongoc_get_db_name (const char *ns, char *db /* OUT */)
 }
 
 void
+_mongoc_bson_init_if_set (bson_t *bson)
+{
+   if (bson) {
+      bson_init (bson);
+   }
+}
+
+void
 _mongoc_bson_destroy_if_set (bson_t *bson)
 {
    if (bson) {
