@@ -1042,7 +1042,7 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
  * If error is not set, set code from first document in array like
  * [{"code": 64, "errmsg": "duplicate"}, ...]. Format the error message
  * from all errors in array.
-*/
+ */
 static void
 _set_error_from_response (bson_t *bson_array,
                           mongoc_error_domain_t domain,
