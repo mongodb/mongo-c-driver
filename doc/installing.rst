@@ -99,14 +99,15 @@ If ``configure`` completed successfully, you'll see something like the following
     Compile with debug symbols (slow)                : no
     Enable GCC build optimization                    : yes
     Enable automatic init and cleanup                : no
+    Enable maintainer flags                          : no
     Code coverage support                            : no
     Cross Compiling                                  : no
     Fast counters                                    : no
     Shared memory performance counters               : yes
     SASL                                             : sasl2
     SSL                                              : openssl
-    Snappy Compression                               : yes
-    Zlib Compression                                 : yes
+    Snappy Compression                               : bundled
+    Zlib Compression                                 : bundled
     Libbson                                          : bundled
 
   Documentation:
