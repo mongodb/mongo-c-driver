@@ -70,15 +70,17 @@ You would use the connection string that resembles the following.
 Connection Options
 ------------------
 
-========================================== ================================= =========================================================================================================================================================================================================================
+========================================== ================================= ============================================================================================================================================================================================================================================
 Constant                                   Key                               Description
-========================================== ================================= =========================================================================================================================================================================================================================
+========================================== ================================= ============================================================================================================================================================================================================================================
 MONGOC_URI_APPNAME                         appname                           The client application name. This value is used by MongoDB when it logs connection information and profile information, such as slow queries.
 MONGOC_URI_SSL                             ssl                               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
+MONGOC_URI_COMPRESSORS                     compressors                       Comma seperated list of compressors, if any, to use to compress the wire protocol messages. Snappy are Zlib are optional build time dependencies, and enable the "snappy" and "zlib" values respectively. Defaults to empty (no compressors).
 MONGOC_URI_CONNECTTIMEOUTMS                connecttimeoutms                  This setting applies to new server connections. It is also used as the socket timeout for server discovery and monitoring operations. The default is 10,000 ms (10 seconds).
 MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 300,000 (5 minutes).
 MONGOC_URI_REPLICASET                      replicaset                        The name of the Replica Set that the driver should connect to.
-========================================== ================================= =========================================================================================================================================================================================================================
+MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
+========================================== ================================= ============================================================================================================================================================================================================================================
 
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
 
