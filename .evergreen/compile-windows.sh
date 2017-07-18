@@ -70,6 +70,12 @@ case "$SSL" in
       ;;
    esac
 esac
+if [ ! -z "$ZLIB" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=${ZLIB}"
+fi
+if [ ! -z "$SNAPPY" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
+fi
 
 export CONFIGURE_FLAGS
 export INSTALL_DIR

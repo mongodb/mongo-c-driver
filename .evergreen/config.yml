@@ -439,7 +439,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib=bundled" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=bundled sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression-snappy
@@ -452,7 +452,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=bundled --with-zlib=no" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=no sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -465,7 +465,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=bundled --with-zlib=bundled" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=bundled sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-compression-zlib
@@ -6857,6 +6857,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6887,6 +6888,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
       # No 32bit OpenSSL builds
@@ -6914,6 +6916,7 @@ buildvariants:
   run_on:
     - windows-64-vs2013-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6970,6 +6973,7 @@ buildvariants:
   run_on:
     - windows-64-vs2010-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"

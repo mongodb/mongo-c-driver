@@ -21,6 +21,8 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
+SNAPPY=${SNAPPY:-bundled}
+ZLIB=${ZLIB:-bundled}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
@@ -130,6 +132,14 @@ if [ "$LIBBSON" = "external" ]; then
 else
    RELEASE_FLAGS="$RELEASE_FLAGS --with-libbson=bundled"
    DEBUG_FLAGS="$DEBUG_FLAGS --with-libbson=bundled"
+fi
+if [ ! -z "$ZLIB" ]; then
+   RELEASE_FLAGS="$RELEASE_FLAGS --with-zlib=${ZLIB}"
+   DEBUG_FLAGS="$DEBUG_FLAGS --with-zlib=${ZLIB}"
+fi
+if [ ! -z "$SNAPPY" ]; then
+   RELEASE_FLAGS="$RELEASE_FLAGS --with-snappy=${SNAPPY}"
+   DEBUG_FLAGS="$DEBUG_FLAGS --with-snappy=${SNAPPY}"
 fi
 
 # By default we build from git clone, which requires autotools

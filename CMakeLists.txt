@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-project (libmongoc C)
-
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
      \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
@@ -18,9 +16,17 @@ option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
+set(ENABLE_SNAPPY bundled CACHE STRING "Enable snappy support")
+set(ENABLE_ZLIB bundled CACHE STRING "Enable zlib support")
 
 if (NOT WIN32)
     message(WARNING "CMake support is experimental and may not produce production quality artifacts")
+endif ()
+
+if (ENABLE_SNAPPY STREQUAL "bundled")
+project (libmongoc C CXX)
+else ()
+project (libmongoc C)
 endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
@@ -50,7 +56,7 @@ find_package (libbson-static-1.0
    "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
    HINTS
    ${BSON_ROOT_DIR}
-   REQUIRED)
+)
 
 message ("--   libbson found version \"${BSON_VERSION}\"")
 message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
@@ -533,6 +539,41 @@ else()
    message (STATUS "SASL disabled")
 endif()
 
+if (ENABLE_SNAPPY STREQUAL "bundled")
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
+   include(FindSnappy)
+endif ()
+if (ENABLE_ZLIB STREQUAL "bundled")
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
+   set (SOURCES ${SOURCES}
+      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
+   )
+   configure_file (
+      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   )
+endif ()
+
+
+
 add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
 add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
@@ -566,6 +607,10 @@ set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
 set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 
+if (ENABLE_SNAPPY STREQUAL "bundled")
+   set_target_properties(mongoc_shared PROPERTIES LINKER_LANGUAGE CXX)
+   set_target_properties(mongoc_static PROPERTIES LINKER_LANGUAGE CXX)
+endif ()
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
@@ -597,6 +642,10 @@ function(mongoc_add_example example use_shared)
          target_link_libraries(${example} shlwapi)
       endif()
       set (EXAMPLES ${EXAMPLES} ${example})
+      if (ENABLE_SNAPPY STREQUAL "bundled")
+         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
+         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
+      endif ()
    endif ()
 endfunction()
 
@@ -791,3 +840,4 @@ if (MONGOC_ENABLE_SSL)
 endif()
 
 include (build/cmake/MongoCPackage.cmake)
+
