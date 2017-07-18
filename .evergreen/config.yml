@@ -642,7 +642,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-undefined
       commands:
@@ -651,7 +651,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" sh .evergreen/compile.sh
 
     - name: debug-compile-scan-build
       tags: ["debug-compile", "special", "scan-build", "clang"]
