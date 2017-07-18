@@ -258,6 +258,8 @@ Now let's do the same for the MongoDB C driver.
 
   cd mongo-c-driver-|release|
   cmake -G "Visual Studio 14 2015 Win64" \\
+    "-DENABLE_SSL=WINDOWS" \\
+    "-DENABLE_SASL=SSPI" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
     "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
@@ -311,4 +313,12 @@ To compile against the Windows native SSPI, configure the driver like so:
     "-DENABLE_SASL=SSPI" \
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+
+OpenSSL support on Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For backwards compatibility CMake will default to OpenSSL support.
+If not found, it will fallback to native TLS support provided by the platform.
+
+OpenSSL 1.1.0 support requires CMake 3.7 or later on Windows.
 
