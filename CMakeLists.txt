@@ -138,6 +138,11 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 
 if (OPENSSL_FOUND)
+   if (WIN32 AND OPENSSL_VERSION GREATER 1.1 AND NOT
+         ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.7)
+      message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
+         "You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
+   endif ()
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
