@@ -429,6 +429,41 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
+    - name: hardened-compile
+      tags: ["hardened"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
+              export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=no sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: test-latest-server-hardened
+      tags: ["hardened"]
+      depends_on:
+        - name: "hardened-compile"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "hardened-compile"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+
+
     - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
       commands:
@@ -6703,6 +6738,7 @@ buildvariants:
   run_on:
     - rhel70
   tasks:
+    - ".hardened"
     - ".compression"
     - "release-compile"
     - "debug-compile"
