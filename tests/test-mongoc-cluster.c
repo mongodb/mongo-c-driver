@@ -404,31 +404,86 @@ test_legacy_write_disconnect (void *ctx)
 }
 
 
+typedef struct {
+   int calls;
+   bson_t *cluster_time;
+} cluster_time_test_t;
+
+
 static void
 test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
 {
+   const bson_t *cmd;
+   cluster_time_test_t *test;
    bson_iter_t iter;
-   int *calls;
+   bson_t client_cluster_time;
+
+   cmd = mongoc_apm_command_started_get_command (event);
+   test =
+      (cluster_time_test_t *) mongoc_apm_command_started_get_context (event);
+
+   test->calls++;
 
    /* Only a MongoDB 3.6+ mongos reports $clusterTime. If we've received a
     * $clusterTime, we send it to any MongoDB 3.6+ mongos. In this case, we
     * got a $clusterTime during the initial handshake. */
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME) &&
        test_framework_is_mongos ()) {
-      BSON_ASSERT (bson_iter_init_find (&iter, event->command, "$clusterTime"));
+      BSON_ASSERT (bson_iter_init_find (&iter, cmd, "$clusterTime"));
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+
+      if (test->calls == 2) {
+         /* previous call to cmd_succeeded_cb saved server's clusterTime */
+         BSON_ASSERT (!bson_empty0 (test->cluster_time));
+         bson_iter_bson (&iter, &client_cluster_time);
+         if (!bson_equal (test->cluster_time, &client_cluster_time)) {
+            fprintf (
+               stderr,
+               "Unequal clusterTimes.\nServer sent %s\nClient sent %s\n",
+               bson_as_json (test->cluster_time, NULL),
+               bson_as_json (&client_cluster_time, NULL));
+
+            abort ();
+         }
+
+         bson_destroy (&client_cluster_time);
+      }
    } else {
       BSON_ASSERT (!bson_has_field (event->command, "$clusterTime"));
    }
+}
 
-   calls = (int *) event->context;
-   (*calls)++;
+
+static void
+test_cluster_time_cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
+{
+   const bson_t *reply;
+   cluster_time_test_t *test;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+
+   reply = mongoc_apm_command_succeeded_get_reply (event);
+   test =
+      (cluster_time_test_t *) mongoc_apm_command_succeeded_get_context (event);
+
+   /* Only a MongoDB 3.6+ mongos reports $clusterTime. Save it in "test". */
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME) &&
+       test_framework_is_mongos ()) {
+      BSON_ASSERT (bson_iter_init_find (&iter, reply, "$clusterTime"));
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      bson_iter_document (&iter, &len, &data);
+      _mongoc_bson_destroy_if_set (test->cluster_time);
+      test->cluster_time = bson_new_from_data (data, len);
+   }
 }
 
 
 typedef bool (*command_fn_t) (mongoc_client_t *, bson_error_t *);
 
 
+/* test $clusterTime handling according to the test instructions in the
+ * Driver Sessions Spec */
 static void
 _test_cluster_time (bool pooled, command_fn_t command)
 {
@@ -437,24 +492,35 @@ _test_cluster_time (bool pooled, command_fn_t command)
    mongoc_client_t *client;
    bool r;
    bson_error_t error;
-   int calls = 0;
+   cluster_time_test_t cluster_time_test;
+
+   cluster_time_test.calls = 0;
+   cluster_time_test.cluster_time = NULL;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks,
                                       test_cluster_time_cmd_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        test_cluster_time_cmd_succeeded_cb);
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
-      mongoc_client_pool_set_apm_callbacks (pool, callbacks, &calls);
+      mongoc_client_pool_set_apm_callbacks (
+         pool, callbacks, &cluster_time_test);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new ();
-      mongoc_client_set_apm_callbacks (client, callbacks, &calls);
+      mongoc_client_set_apm_callbacks (client, callbacks, &cluster_time_test);
    }
 
    r = command (client, &error);
    ASSERT_OR_PRINT (r, error);
-   ASSERT_CMPINT (calls, ==, 1);
+   ASSERT_CMPINT (cluster_time_test.calls, ==, 1);
+
+   /* repeat */
+   r = command (client, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT (cluster_time_test.calls, ==, 2);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -464,6 +530,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
    }
 
    mongoc_apm_callbacks_destroy (callbacks);
+   _mongoc_bson_destroy_if_set (cluster_time_test.cluster_time);
 }
 
 
@@ -552,6 +619,111 @@ test_cluster_time_command_with_opts_pooled (void)
 }
 
 
+/* test aggregate with $clusterTime */
+static bool
+aggregate (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bool r;
+
+   collection = mongoc_client_get_collection (client, "test", "collection");
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL, NULL);
+
+   mongoc_cursor_next (cursor, &doc);
+   r = !mongoc_cursor_error (cursor, error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   return r;
+}
+
+
+static void
+test_cluster_time_aggregate_single (void)
+{
+   _test_cluster_time (false, aggregate);
+}
+
+
+static void
+test_cluster_time_aggregate_pooled (void)
+{
+   _test_cluster_time (true, aggregate);
+}
+
+
+/* test queries with $clusterTime */
+static bool
+cursor_next (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bool r;
+
+   collection = get_test_collection (client, "test_cluster_time_cursor");
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'ping': 1}"), NULL, NULL);
+
+   mongoc_cursor_next (cursor, &doc);
+   r = !mongoc_cursor_error (cursor, error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   return r;
+}
+
+
+static void
+test_cluster_time_cursor_single (void)
+{
+   _test_cluster_time (false, cursor_next);
+}
+
+
+static void
+test_cluster_time_cursor_pooled (void)
+{
+   _test_cluster_time (true, cursor_next);
+}
+
+
+/* test inserts with $clusterTime */
+static bool
+insert (mongoc_client_t *client, bson_error_t *error)
+{
+   mongoc_collection_t *collection;
+   bool r;
+
+   collection = get_test_collection (client, "test_cluster_time_cursor");
+   r = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, error);
+
+   mongoc_collection_destroy (collection);
+
+   return r;
+}
+
+
+static void
+test_cluster_time_insert_single (void)
+{
+   _test_cluster_time (false, insert);
+}
+
+
+static void
+test_cluster_time_insert_pooled (void)
+{
+   _test_cluster_time (true, insert);
+}
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -607,4 +779,22 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cluster/cluster_time/command_with_opts/pooled",
                       test_cluster_time_command_with_opts_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/aggregate/single",
+                      test_cluster_time_aggregate_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/aggregate/pooled",
+                      test_cluster_time_aggregate_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/cursor/single",
+                      test_cluster_time_cursor_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/cursor/pooled",
+                      test_cluster_time_cursor_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/insert/single",
+                      test_cluster_time_insert_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cluster_time/insert/pooled",
+                      test_cluster_time_insert_pooled);
 }
