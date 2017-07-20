@@ -31,6 +31,7 @@ case "$OS" in
       ;;
 
    darwin)
+      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
       export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       ;;

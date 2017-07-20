@@ -55,6 +55,7 @@ case "$OS" in
       ;;
 
    darwin)
+      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-libmongoc
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
       ;;
 

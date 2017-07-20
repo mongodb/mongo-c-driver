@@ -6821,31 +6821,26 @@ buildvariants:
 #      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
 
 - name: darwin
-  display_name: "*Darwin, OS X (Apple LLVM)"
+  display_name: "*Darwin, macOS (Apple LLVM)"
   expansions:
     CC: "clang"
   run_on:
-    - osx-1010
+    - macos-1012
   tasks:
     - ".compression"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .darwinssl"
-    - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
     - ".authentication-tests !.ssl !.sspi"
-    - ".authentication-tests .openssl"
     - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
-    - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .darwinssl !.nosasl .server"
-    - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .darwinssl !.nosasl .server"
-    - ".3.2 .openssl !.nosasl .server"
     - ".3.2 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
     - ".2.4 .nossl !.nosasl"
