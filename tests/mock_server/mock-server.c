@@ -701,15 +701,67 @@ mock_server_get_queue (mock_server_t *server)
 }
 
 
+static bool
+find_key (void *current, void *key)
+{
+   return !strcmp ((const char *) current, (const char *) key);
+}
+
+
+static void
+key_dtor (void *item, void *ctx)
+{
+   /* mongoc_set_t requires a dtor, there's nothing to destroy */
+}
+
+
+static void
+assert_no_duplicate_keys (request_t *request)
+{
+   mongoc_set_t *keys;
+   size_t n_documents;
+   int i;
+   bson_iter_t iter;
+
+   n_documents = request->docs.len;
+
+   for (i = 0; i < n_documents; i++) {
+      keys = mongoc_set_new (8, key_dtor, NULL);
+      BSON_ASSERT (bson_iter_init (&iter, request_get_doc (request, i)));
+
+      while (bson_iter_next (&iter)) {
+         if (mongoc_set_find_item (
+                keys, find_key, (void *) bson_iter_key (&iter))) {
+            fprintf (stderr,
+                     "Duplicate key \"%s\" in document:\n%s",
+                     bson_iter_key (&iter),
+                     bson_as_json (request_get_doc (request, i), NULL));
+            abort ();
+         }
+
+         mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));
+      }
+
+      mongoc_set_destroy (keys);
+   }
+}
+
+
 request_t *
 mock_server_receives_request (mock_server_t *server)
 {
    sync_queue_t *q;
    int64_t request_timeout_msec;
+   request_t *r;
 
    q = mock_server_get_queue (server);
    request_timeout_msec = mock_server_get_request_timeout_msec (server);
-   return (request_t *) q_get (q, request_timeout_msec);
+   r = (request_t *) q_get (q, request_timeout_msec);
+   if (r) {
+      assert_no_duplicate_keys (r);
+   }
+
+   return r;
 }
 
 
