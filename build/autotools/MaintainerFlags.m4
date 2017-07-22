@@ -1,3 +1,5 @@
+old_CFLAGS="$CFLAGS"
+CFLAGS="-Werror"
 AS_IF(
    [test "x$enable_maintainer_flags" = "xyes" && test "x$GCC" = "xyes"],
    [
@@ -24,3 +26,4 @@ AS_IF(
    ]
 )
 AC_SUBST(MAINTAINER_CFLAGS)
+CFLAGS="$old_CFLAGS"
