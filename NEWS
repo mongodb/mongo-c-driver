@@ -18,6 +18,7 @@ mongo-c-driver 1.7.0
     files for programs that link to libmongoc using CMake. Linking to libmongoc
     statically or dynamically is now much more convenient. See the new tutorial
     section "Include and link libmongoc in your C program".
+  * New CMake option ENABLE_STATIC can be ON, OFF, or AUTO (the default)
   * Minimum required CMake version has been increased to 3.1.
   * CMake remains experimental on non-Windows platforms and issues a warning now
   * Support for wire compression.

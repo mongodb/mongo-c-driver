@@ -50,49 +50,30 @@ else
   SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
 fi
 
+
+if [ "$LINK_STATIC" ]; then
+  STATIC_CONFIGURE_OPTION="--enable-static"
+  STATIC_CMAKE_OPTION="-DENABLE_STATIC=OFF -DENABLE_TESTS=OFF"
+fi
+
+
 if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   # Our CMake script doesn't build bundled libbson (CDRIVER-1948) so fake it.
   cd src/libbson
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $STATIC_CMAKE_OPTION .
   make
   make install
   cd ../..
 
-  # Our CMake build system always installs both dynamic and static libmongoc.
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $STATIC_CMAKE_OPTION .
   make
   make install
-  EXPECT_STATIC=1
-elif [ "$LINK_STATIC" ]; then
-  ./configure --prefix=$INSTALL_DIR --disable-examples $SSL_CONFIGURE_OPTION --enable-static --with-libbson=bundled
-  make
-  make install
-  EXPECT_STATIC=1
 else
-  ./configure --prefix=$INSTALL_DIR --disable-examples $SSL_CONFIGURE_OPTION --with-libbson=bundled
+  ./configure --prefix=$INSTALL_DIR --disable-examples $SSL_CONFIGURE_OPTION $STATIC_CONFIGURE_OPTION --with-libbson=bundled
   make
   make install
-  if test -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
-    echo "libmongoc-static-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/libmongoc-1.0.a; then
-    echo "libmongoc-1.0.a shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/pkgconfig/libmongoc-static-1.0.pc; then
-    echo "libmongoc-static-1.0.pc shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config.cmake; then
-    echo "libmongoc-static-1.0-config.cmake shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config-version.cmake; then
-    echo "libmongoc-static-1.0-config-version.cmake shouldn't have been installed"
-    exit 1
-  fi
 fi
+
 
 LIB=$INSTALL_DIR/lib/libmongoc-1.0.$SO
 if test ! -L $LIB; then
@@ -135,7 +116,8 @@ else
   echo "libmongoc-1.0-config-version.cmake check ok"
 fi
 
-if [ "$EXPECT_STATIC" ]; then
+
+if [ "$LINK_STATIC" ]; then
   if test ! -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
     echo "libmongoc-static-1.0.a missing!"
     exit 1
@@ -159,6 +141,27 @@ if [ "$EXPECT_STATIC" ]; then
     exit 1
   else
     echo "libmongoc-static-1.0-config-version.cmake check ok"
+  fi
+else
+  if test -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
+    echo "libmongoc-static-1.0.a shouldn't have been installed"
+    exit 1
+  fi
+  if test -f $INSTALL_DIR/lib/libmongoc-1.0.a; then
+    echo "libmongoc-1.0.a shouldn't have been installed"
+    exit 1
+  fi
+  if test -f $INSTALL_DIR/lib/pkgconfig/libmongoc-static-1.0.pc; then
+    echo "libmongoc-static-1.0.pc shouldn't have been installed"
+    exit 1
+  fi
+  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config.cmake; then
+    echo "libmongoc-static-1.0-config.cmake shouldn't have been installed"
+    exit 1
+  fi
+  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config-version.cmake; then
+    echo "libmongoc-static-1.0-config-version.cmake shouldn't have been installed"
+    exit 1
   fi
 fi
 
