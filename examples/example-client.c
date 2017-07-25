@@ -53,7 +53,7 @@ main (int argc, char *argv[])
       NULL); /* read prefs, NULL for default */
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      str = bson_as_extended_json (doc, NULL);
+      str = bson_as_canonical_json (doc, NULL);
       fprintf (stdout, "%s\n", str);
       bson_free (str);
    }

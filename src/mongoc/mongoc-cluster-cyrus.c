@@ -63,7 +63,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
-      TRACE ("Sending: %s", bson_as_extended_json (&cmd, NULL));
+      TRACE ("Sending: %s", bson_as_canonical_json (&cmd, NULL));
       if (!mongoc_cluster_run_command_private (cluster,
                                                stream,
                                                0,
@@ -72,12 +72,12 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
                                                &cmd,
                                                &reply,
                                                error)) {
-         TRACE ("Replied with: %s", bson_as_extended_json (&reply, NULL));
+         TRACE ("Replied with: %s", bson_as_canonical_json (&reply, NULL));
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
       }
-      TRACE ("Replied with: %s", bson_as_extended_json (&reply, NULL));
+      TRACE ("Replied with: %s", bson_as_canonical_json (&reply, NULL));
 
       bson_destroy (&cmd);
 

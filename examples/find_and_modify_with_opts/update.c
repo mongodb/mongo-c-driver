@@ -31,7 +31,7 @@ fam_update (mongoc_collection_t *collection)
    if (success) {
       char *str;
 
-      str = bson_as_extended_json (&reply, NULL);
+      str = bson_as_canonical_json (&reply, NULL);
       printf ("%s\n", str);
       bson_free (str);
    } else {

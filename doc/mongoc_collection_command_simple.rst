@@ -67,7 +67,7 @@ The following is an example of executing the collection stats command.
 
      if (mongoc_collection_command_simple (
             collection, cmd, NULL, &reply, &error)) {
-        str = bson_as_extended_json (&reply, NULL);
+        str = bson_as_canonical_json (&reply, NULL);
         printf ("%s\n", str);
         bson_free (str);
      } else {
