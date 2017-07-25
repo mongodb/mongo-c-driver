@@ -437,11 +437,10 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
          BSON_ASSERT (!bson_empty0 (test->cluster_time));
          bson_iter_bson (&iter, &client_cluster_time);
          if (!bson_equal (test->cluster_time, &client_cluster_time)) {
-            fprintf (
-               stderr,
-               "Unequal clusterTimes.\nServer sent %s\nClient sent %s\n",
-               bson_as_json (test->cluster_time, NULL),
-               bson_as_json (&client_cluster_time, NULL));
+            fprintf (stderr,
+                     "Unequal clusterTimes.\nServer sent %s\nClient sent %s\n",
+                     bson_as_json (test->cluster_time, NULL),
+                     bson_as_json (&client_cluster_time, NULL));
 
             abort ();
          }
@@ -724,6 +723,176 @@ test_cluster_time_insert_pooled (void)
 }
 
 
+static void
+replies_with_cluster_time (request_t *request,
+                           int t,
+                           int i,
+                           const char *docs_json)
+{
+   char *quotes_replaced;
+   bson_t doc;
+   bson_error_t error;
+   bool r;
+
+   BSON_ASSERT (request);
+
+   if (docs_json) {
+      quotes_replaced = single_quotes_to_double (docs_json);
+      r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
+      bson_free (quotes_replaced);
+   } else {
+      r = bson_init_from_json (&doc, "{}", -1, &error);
+   }
+
+   if (!r) {
+      MONGOC_WARNING ("%s", error.message);
+      return;
+   }
+
+   BSON_APPEND_DOCUMENT (
+      &doc,
+      "$clusterTime",
+      tmp_bson ("{'clusterTime': {'$timestamp': {'t': %d, 'i': %d}}, 'x': 'y'}",
+                t,
+                i));
+
+   mock_server_reply_multi (
+      request, MONGOC_REPLY_NONE, &doc, 1, 0 /* cursor id */);
+
+   bson_destroy (&doc);
+   request_destroy (request);
+}
+
+
+static request_t *
+receives_with_cluster_time (mock_server_t *server,
+                            uint32_t timestamp,
+                            uint32_t increment,
+                            const char *docs_json)
+{
+   request_t *request;
+   const bson_t *doc;
+   bson_iter_t cluster_time;
+   uint32_t t;
+   uint32_t i;
+
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_NONE, docs_json);
+   BSON_ASSERT (request);
+   doc = request_get_doc (request, 0);
+
+   BSON_ASSERT (bson_iter_init_find (&cluster_time, doc, "$clusterTime"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&cluster_time));
+   BSON_ASSERT (bson_iter_recurse (&cluster_time, &cluster_time));
+   BSON_ASSERT (bson_iter_find (&cluster_time, "clusterTime"));
+   BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&cluster_time));
+   bson_iter_timestamp (&cluster_time, &t, &i);
+   if (t != timestamp || i != increment) {
+      fprintf (stderr,
+               "Expected Timestamp(%d, %d), got Timestamp(%d, %d)\n",
+               timestamp,
+               increment,
+               t,
+               i);
+      abort ();
+   }
+
+   return request;
+}
+
+
+static void
+assert_ok (future_t *future, const bson_error_t *error)
+{
+   bool r = future_get_bool (future);
+   ASSERT_OR_PRINT (r, (*error));
+   future_destroy (future);
+}
+
+
+static void
+_test_cluster_time_comparison (bool pooled)
+{
+   const char *ismaster =
+      "{'ok': 1.0, 'ismaster': true, 'msg': 'isdbgrid', 'maxWireVersion': 6}";
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   /* timestamp is 1 */
+   request = mock_server_receives_ismaster (server);
+   replies_with_cluster_time (request, 1, 1, ismaster);
+
+   if (pooled) {
+      /* a pooled client handshakes its own connection */
+      request = mock_server_receives_ismaster (server);
+      replies_with_cluster_time (request, 1, 1, ismaster);
+   }
+
+   request = receives_with_cluster_time (server, 1, 1, "{'ping': 1}");
+
+   /* timestamp is 2, increment is 2 */
+   replies_with_cluster_time (request, 2, 2, "{'ok': 1.0}");
+   assert_ok (future, &error);
+
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   request = receives_with_cluster_time (server, 2, 2, "{'ping': 1}");
+
+   /* timestamp is 2, increment is only 1 */
+   replies_with_cluster_time (request, 2, 1, "{'ok': 1.0}");
+   assert_ok (future, &error);
+
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   /* client doesn't update cluster time, since new value is less than old */
+   request = receives_with_cluster_time (server, 2, 2, "{'ping': 1}");
+
+   /* timestamp is 2, increment is only 1 */
+   mock_server_replies_ok_and_destroys (request);
+   assert_ok (future, &error);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_cluster_time_comparison_single (void)
+{
+   _test_cluster_time_comparison (false);
+}
+
+
+static void
+test_cluster_time_comparison_pooled (void)
+{
+   _test_cluster_time_comparison (true);
+}
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -797,4 +966,10 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cluster/cluster_time/insert/pooled",
                       test_cluster_time_insert_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/cluster_time/comparison/single",
+                                test_cluster_time_comparison_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/cluster_time/comparison/pooled",
+                                test_cluster_time_comparison_pooled);
 }
