@@ -19,7 +19,7 @@ command_started (const mongoc_apm_command_started_t *event)
 {
    char *s;
 
-   s = bson_as_extended_json (mongoc_apm_command_started_get_command (event),
+   s = bson_as_canonical_json (mongoc_apm_command_started_get_command (event),
                               NULL);
    printf ("Command %s started on %s:\n%s\n\n",
            mongoc_apm_command_started_get_command_name (event),
@@ -37,7 +37,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
    char *s;
 
-   s = bson_as_extended_json (mongoc_apm_command_succeeded_get_reply (event),
+   s = bson_as_canonical_json (mongoc_apm_command_succeeded_get_reply (event),
                               NULL);
    printf ("Command %s succeeded:\n%s\n\n",
            mongoc_apm_command_succeeded_get_command_name (event),

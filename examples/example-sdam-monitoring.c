@@ -161,7 +161,7 @@ server_heartbeat_succeeded (
       (stats_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    context->heartbeat_succeeded_events++;
 
-   reply = bson_as_extended_json (
+   reply = bson_as_canonical_json (
       mongoc_apm_server_heartbeat_succeeded_get_reply (event), NULL);
 
    printf (

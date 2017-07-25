@@ -7,7 +7,7 @@ print_doc (const bson_t *b)
 {
    char *str;
 
-   str = bson_as_extended_json (b, NULL);
+   str = bson_as_canonical_json (b, NULL);
    MONGOC_DEBUG ("%s", str);
    bson_free (str);
 }
