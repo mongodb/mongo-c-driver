@@ -49,5 +49,10 @@ configure_file (
    "${SOURCE_DIR}/src/snappy-1.1.3/snappy-stubs-public.h.in"
    "${PROJECT_BINARY_DIR}/src/snappy-1.1.3/snappy-stubs-public.h"
 )
-message (STATUS "Enabling snappy compression")
+message (STATUS "Enabling snappy compression (bundled)")
 
+list (
+   APPEND
+   MONGOC_INTERNAL_INCLUDE_DIRS
+   "${PROJECT_BINARY_DIR}/src/snappy-1.1.3"
+)

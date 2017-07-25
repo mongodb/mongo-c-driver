@@ -559,12 +559,17 @@ else()
    message (STATUS "SASL disabled")
 endif()
 
+
+set (MONGOC_INTERNAL_INCLUDE_DIRS "")
+
 if (ENABLE_SNAPPY STREQUAL "bundled")
    set (MONGOC_ENABLE_COMPRESSION 1)
    set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
    include(FindSnappy)
 endif ()
+
 if (ENABLE_ZLIB STREQUAL "bundled")
+   message (STATUS "Enabling zlib compression (bundled)")
    check_include_files ("unistd.h" HAVE_UNISTD_H)
    check_include_files ("stdarg.h" HAVE_STDARG_H)
    set (MONGOC_ENABLE_COMPRESSION 1)
@@ -590,6 +595,12 @@ if (ENABLE_ZLIB STREQUAL "bundled")
       "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
       "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
    )
+
+   list (
+      APPEND
+      MONGOC_INTERNAL_INCLUDE_DIRS
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
+   )
 endif ()
 
 set(THREADS_PREFER_PTHREAD_FLAG 1)
@@ -606,7 +617,7 @@ endif()
 add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
 set_target_properties(mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
-target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
+target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
 
 # CMake wants to make different symlinks than the Autotools, see
@@ -618,7 +629,7 @@ set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_
 if (MONGOC_ENABLE_STATIC)
    add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
    target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
-   target_include_directories (mongoc_static PUBLIC ${BSON_STATIC_INCLUDE_DIRS})
+   target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
    set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
    set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
