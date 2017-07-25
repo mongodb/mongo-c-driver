@@ -791,8 +791,8 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
     - name: link-with-cmake-windows-ssl
       depends_on:
@@ -813,8 +813,8 @@ tasks:
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
               export ENABLE_SSL=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
     - name: link-with-cmake-mingw
       depends_on:
@@ -832,7 +832,7 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.bat
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
 
     - name: link-with-pkg-config
       depends_on:
