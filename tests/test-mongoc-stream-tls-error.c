@@ -284,6 +284,8 @@ handshake_stall_client (void *ptr)
 }
 
 
+/* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
 static void
 test_mongoc_tls_handshake_stall (void)
 {
@@ -327,6 +329,8 @@ test_mongoc_tls_handshake_stall (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
+
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL */
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
@@ -339,7 +343,10 @@ test_stream_tls_error_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
+   /* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    TestSuite_Add (
       suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 }
