@@ -109,7 +109,8 @@ def process_taglist_nodes(app, doctree, fromdocname):
         env.tags_all_tags = []
 
     for node in doctree.traverse(taglist):
-        content = []
+        links = set()
+
         for tag_info in env.tags_all_tags:
             tags = tag_info['tags']
             if not set(tags).intersection(node.tags):
@@ -118,20 +119,23 @@ def process_taglist_nodes(app, doctree, fromdocname):
             if fromdocname == tag_info['docname']:
                 continue
 
+            links.add(tag_info['docname'])
+
+        content = []
+        for docname in sorted(links):
             # (Recursively) resolve references in the tag content
             para = nodes.paragraph(classes=['tag-source'])
             refnode = nodes.reference('', '', internal=True)
             try:
                 refnode['refuri'] = app.builder.get_relative_uri(
-                    fromdocname, tag_info['docname'])
+                    fromdocname, docname)
             except NoUri:
                 # ignore if no URI can be determined, e.g. for LaTeX output
                 pass
 
             # Create a reference
-            refnode.append(nodes.Text(tag_info['docname']))
+            refnode.append(nodes.Text(docname))
             para += refnode
-
             content.append(para)
 
         node.replace_self(content)
