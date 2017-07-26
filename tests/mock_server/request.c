@@ -159,43 +159,75 @@ request_matches_query (const request_t *request,
 {
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
+   const bson_t *doc2;
+   char *doc_as_json;
    bool n_return_equal;
+   bool ret = false;
 
    BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    BSON_ASSERT (request->docs.len <= 2);
 
+   if (request->docs.len) {
+      doc = request_get_doc (request, 0);
+      doc_as_json = bson_as_json (doc, NULL);
+   } else {
+      doc = NULL;
+      doc_as_json = NULL;
+   }
+
+   if (!match_json (
+          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
+      /* match_json has logged the err */
+      goto done;
+   }
+
+   if (request->docs.len > 1) {
+      doc2 = request_get_doc (request, 1);
+   } else {
+      doc2 = NULL;
+   }
+
+   if (!match_json (doc2, false, __FILE__, __LINE__, BSON_FUNC, fields_json)) {
+      /* match_json has logged the err */
+      goto done;
+   }
+
    if (request->is_command && !is_command) {
-      test_error ("expected query, got command");
-      return false;
+      test_error ("expected query, got command: %s", doc_as_json);
+      goto done;
    }
 
    if (!request->is_command && is_command) {
-      test_error ("expected command, got query");
-      return false;
+      test_error ("expected command, got query: %s", doc_as_json);
+      goto done;
    }
 
    if (request->opcode != MONGOC_OPCODE_QUERY) {
-      test_error ("request's opcode does not match QUERY, got: %d",
-                  request->opcode);
-      return false;
+      test_error ("request's opcode does not match QUERY: %s", doc_as_json);
+      goto done;
    }
 
-   if (strcmp (rpc->query.collection, ns)) {
-      test_error ("request's namespace is '%s', expected '%s'",
+   if (0 != strcmp (rpc->query.collection, ns)) {
+      test_error ("request's namespace is '%s', expected '%s': %s",
                   request->request_rpc.query.collection,
-                  ns);
-      return false;
+                  ns,
+                  doc_as_json);
+      goto done;
    }
 
    if (!request_matches_flags (request, flags)) {
-      return false;
+      test_error ("%s", doc_as_json);
+      goto done;
    }
 
    if (rpc->query.skip != skip) {
-      test_error ("requests's skip = %d, expected %d", rpc->query.skip, skip);
-      return false;
+      test_error ("requests's skip = %d, expected %d: %s",
+                  rpc->query.skip,
+                  skip,
+                  doc_as_json);
+      goto done;
    }
 
    n_return_equal = (rpc->query.n_return == n_return);
@@ -208,36 +240,18 @@ request_matches_query (const request_t *request,
    }
 
    if (!n_return_equal) {
-      test_error ("requests's n_return = %d, expected %d",
+      test_error ("requests's n_return = %d, expected %d: %s",
                   rpc->query.n_return,
-                  n_return);
-      return false;
+                  n_return,
+                  doc_as_json);
+      goto done;
    }
 
-   if (request->docs.len) {
-      doc = request_get_doc (request, 0);
-   } else {
-      doc = NULL;
-   }
+   ret = true;
 
-   if (!match_json (
-          doc, is_command, __FILE__, __LINE__, BSON_FUNC, query_json)) {
-      /* match_json has logged the err */
-      return false;
-   }
-
-   if (request->docs.len > 1) {
-      doc = request_get_doc (request, 1);
-   } else {
-      doc = NULL;
-   }
-
-   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, fields_json)) {
-      /* match_json has logged the err */
-      return false;
-   }
-
-   return true;
+done:
+   bson_free (doc_as_json);
+   return ret;
 }
 
 
