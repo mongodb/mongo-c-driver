@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-client-private.h"
 #include "mongoc.h"
 
 #include "mongoc-buffer-private.h"
@@ -193,13 +194,30 @@ mock_server_t *
 mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
+   char *cluster_time = "";
+   char *ismaster;
 
-   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
-                                        " 'msg': 'isdbgrid',"
-                                        " 'minWireVersion': 0,"
-                                        " 'maxWireVersion': %d}",
-                                        max_wire_version);
+   if (max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
+      cluster_time = ","
+                     "'$clusterTime': {"
+                     "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+                     "  'signature': {"
+                     "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+                     "    'keyId': {'$numberLong': '6446735049323708417'}"
+                     "  },"
+                     "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+                     "}";
+   }
+
+   ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                     " 'ismaster': true,"
+                                     " 'msg': 'isdbgrid',"
+                                     " 'minWireVersion': 0,"
+                                     " 'maxWireVersion': %d"
+                                     " %s"
+                                     "}",
+                                  max_wire_version,
+                                  cluster_time);
 
    mock_server_auto_ismaster (server, ismaster);
 
