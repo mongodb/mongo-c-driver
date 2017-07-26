@@ -185,7 +185,6 @@ _test_command_simple (const mongoc_uri_t *uri,
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   bson_t b = BSON_INITIALIZER;
    future_t *future;
    request_t *request;
 
@@ -213,7 +212,6 @@ _test_command_simple (const mongoc_uri_t *uri,
    future_destroy (future);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (&b);
 }
 
 
