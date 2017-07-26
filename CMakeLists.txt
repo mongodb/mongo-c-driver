@@ -599,6 +599,7 @@ if (ENABLE_ZLIB STREQUAL "bundled")
    list (
       APPEND
       MONGOC_INTERNAL_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/zlib-1.2.11"
       "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
    )
 endif ()
@@ -650,11 +651,11 @@ function(mongoc_add_test test use_shared)
       endif()
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
-         target_include_directories(${test} PRIVATE ${BSON_INCLUDE_DIRS})
+         target_include_directories(${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       else()
          target_compile_definitions(${test} PUBLIC "MONGOC_COMPILATION")
          target_link_libraries(${test} mongoc_static)
-         target_include_directories(${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS})
+         target_include_directories(${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       endif()
       if(WIN32)
          target_link_libraries(${test} shlwapi)

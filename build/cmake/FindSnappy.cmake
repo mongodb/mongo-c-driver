@@ -54,5 +54,6 @@ message (STATUS "Enabling snappy compression (bundled)")
 list (
    APPEND
    MONGOC_INTERNAL_INCLUDE_DIRS
+   "${SOURCE_DIR}/src/snappy-1.1.3"
    "${PROJECT_BINARY_DIR}/src/snappy-1.1.3"
 )
