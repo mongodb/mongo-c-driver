@@ -21,7 +21,7 @@ Execute a command on the server, applying logic for commands that both read and 
 
 Use this function for commands that both read and write, such as "mapReduce" with an output collection.
 
-Read concern is applied from ``opts`` or else from ``collection``. Collation is applied from ``opts`` (:ref:`see example for  <mongoc_client_read_command_with_opts_example>`). Read concern and collation both require MongoDB 3.2 or later, otherwise an error is returned. Read preferences are *not* applied. Write concern is applied from ``opts``, or else from ``collection``. The write concern is omitted for MongoDB before 3.2.
+Read concern is applied from ``opts`` or else from ``collection``. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Read concern and collation both require MongoDB 3.2 or later, otherwise an error is returned. Read preferences are *not* applied. Write concern is applied from ``opts``, or else from ``collection``. The write concern is omitted for MongoDB before 3.2.
 
 To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 
