@@ -656,21 +656,27 @@ mongoc_collection_command (mongoc_collection_t *collection,
    bson_clear (&collection->gle);
 
    if (NULL == strstr (collection->collection, "$cmd")) {
-      bson_snprintf (ns, sizeof ns, "%s", collection->db);
+      bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
    } else {
-      bson_snprintf (
-         ns, sizeof ns, "%s.%s", collection->db, collection->collection);
+      bson_snprintf (ns, sizeof ns, "%s", collection->db);
    }
 
-   return mongoc_client_command (collection->client,
-                                 ns,
-                                 flags,
-                                 skip,
-                                 limit,
-                                 batch_size,
-                                 query,
-                                 fields,
-                                 read_prefs);
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+
+   /* flags, skip, limit, batch_size, fields are unused */
+   return _mongoc_cursor_new_with_opts (collection->client,
+                                        ns,
+                                        true /* is_command */,
+                                        query,
+                                        NULL,
+                                        read_prefs,
+                                        NULL,
+                                        collection->session);
 }
 
 
@@ -694,6 +700,7 @@ mongoc_collection_read_command_with_opts (mongoc_collection_t *collection,
       COALESCE (read_prefs, collection->read_prefs),
       collection->read_concern,
       collection->write_concern,
+      collection->session,
       reply,
       error);
 }
@@ -717,6 +724,7 @@ mongoc_collection_write_command_with_opts (mongoc_collection_t *collection,
                                             collection->read_prefs,
                                             collection->read_concern,
                                             collection->write_concern,
+                                            collection->session,
                                             reply,
                                             error);
 }
@@ -743,6 +751,7 @@ mongoc_collection_read_write_command_with_opts (
       COALESCE (read_prefs, collection->read_prefs),
       collection->read_concern,
       collection->write_concern,
+      collection->session,
       reply,
       error);
 }
@@ -760,8 +769,25 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
 
    bson_clear (&collection->gle);
 
-   return mongoc_client_command_simple (
-      collection->client, collection->db, command, read_prefs, reply, error);
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+
+   return _mongoc_client_command_with_opts (collection->client,
+                                            collection->db,
+                                            command,
+                                            MONGOC_CMD_READ,
+                                            NULL /* opts */,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            NULL /* read concern */,
+                                            NULL /* write concern */,
+                                            collection->session,
+                                            reply,
+                                            error);
 }
 
 /*
@@ -869,6 +895,7 @@ mongoc_collection_count_with_opts (
       COALESCE (read_prefs, collection->read_prefs),
       collection->read_concern,
       collection->write_concern,
+      collection->session,
       &reply,
       error);
 
@@ -932,6 +959,7 @@ mongoc_collection_drop_with_opts (mongoc_collection_t *collection,
                                            collection->read_prefs,
                                            collection->read_concern,
                                            collection->write_concern,
+                                           collection->session,
                                            NULL, /* reply */
                                            error);
    bson_destroy (&cmd);
@@ -995,6 +1023,7 @@ mongoc_collection_drop_index_with_opts (mongoc_collection_t *collection,
                                            collection->read_prefs,
                                            collection->read_concern,
                                            collection->write_concern,
+                                           collection->session,
                                            NULL, /* reply */
                                            error);
    bson_destroy (&cmd);
@@ -2313,6 +2342,7 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
                                            collection->read_prefs,
                                            collection->read_concern,
                                            collection->write_concern,
+                                           collection->session,
                                            NULL, /* reply */
                                            error);
 

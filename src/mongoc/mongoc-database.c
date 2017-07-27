@@ -172,8 +172,12 @@ mongoc_database_command (mongoc_database_t *database,
                          const bson_t *fields,
                          const mongoc_read_prefs_t *read_prefs)
 {
+   char ns[MONGOC_NAMESPACE_MAX];
+
    BSON_ASSERT (database);
    BSON_ASSERT (command);
+
+   bson_snprintf (ns, sizeof ns, "%s.$cmd", database->name);
 
    /* Server Selection Spec: "The generic command method has a default read
     * preference of mode 'primary'. The generic command method MUST ignore any
@@ -181,15 +185,16 @@ mongoc_database_command (mongoc_database_t *database,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   return mongoc_client_command (database->client,
-                                 database->name,
-                                 flags,
-                                 skip,
-                                 limit,
-                                 batch_size,
-                                 command,
-                                 fields,
-                                 read_prefs);
+
+   /* flags, skip, limit, batch_size, fields are unused */
+   return _mongoc_cursor_new_with_opts (database->client,
+                                        ns,
+                                        true /* is_command */,
+                                        command,
+                                        NULL /* opts */,
+                                        read_prefs,
+                                        NULL /* read concern */,
+                                        database->session);
 }
 
 
@@ -209,8 +214,20 @@ mongoc_database_command_simple (mongoc_database_t *database,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   return mongoc_client_command_simple (
-      database->client, database->name, command, read_prefs, reply, error);
+
+   return _mongoc_client_command_with_opts (
+      database->client,
+      database->name,
+      command,
+      MONGOC_CMD_READ,
+      NULL /* opts */,
+      MONGOC_QUERY_NONE,
+      read_prefs,
+      NULL /* read concern */,
+      NULL /* write concern */,
+      database->session,
+      reply,
+      error);
 }
 
 
@@ -232,6 +249,7 @@ mongoc_database_read_command_with_opts (mongoc_database_t *database,
       COALESCE (read_prefs, database->read_prefs),
       database->read_concern,
       database->write_concern,
+      database->session,
       reply,
       error);
 }
@@ -253,6 +271,7 @@ mongoc_database_write_command_with_opts (mongoc_database_t *database,
                                             database->read_prefs,
                                             database->read_concern,
                                             database->write_concern,
+                                            database->session,
                                             reply,
                                             error);
 }
@@ -277,6 +296,7 @@ mongoc_database_read_write_command_with_opts (
       COALESCE (read_prefs, database->read_prefs),
       database->read_concern,
       database->write_concern,
+      database->session,
       reply,
       error);
 }
@@ -330,6 +350,7 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
                                            database->read_prefs,
                                            database->read_concern,
                                            database->write_concern,
+                                           database->session,
                                            NULL, /* reply */
                                            error);
    bson_destroy (&cmd);
@@ -1189,6 +1210,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                          database->read_prefs,
                                          database->read_concern,
                                          database->write_concern,
+                                         database->session,
                                          NULL, /* reply */
                                          error)) {
       collection = _mongoc_collection_new (database->client,

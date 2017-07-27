@@ -23,6 +23,9 @@
 
 #include <bson.h>
 #include "mongoc-macros.h"
+#include "mongoc-read-prefs.h"
+#include "mongoc-read-concern.h"
+#include "mongoc-write-concern.h"
 
 BSON_BEGIN_DECLS
 
@@ -81,6 +84,41 @@ mongoc_session_get_gridfs (mongoc_session_t *session,
                            const char *db,
                            const char *prefix,
                            bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT (bool)
+mongoc_session_read_command_with_opts (mongoc_session_t *session,
+                                       const char *db_name,
+                                       const bson_t *command,
+                                       const mongoc_read_prefs_t *read_prefs,
+                                       const bson_t *opts,
+                                       bson_t *reply,
+                                       bson_error_t *error);
+MONGOC_EXPORT (bool)
+mongoc_session_write_command_with_opts (mongoc_session_t *session,
+                                        const char *db_name,
+                                        const bson_t *command,
+                                        const bson_t *opts,
+                                        bson_t *reply,
+                                        bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_session_read_write_command_with_opts (
+   mongoc_session_t *session,
+   const char *db_name,
+   const bson_t *command,
+   const mongoc_read_prefs_t *read_prefs,
+   const bson_t *opts,
+   bson_t *reply,
+   bson_error_t *error);
+
+MONGOC_EXPORT (const mongoc_write_concern_t *)
+mongoc_session_get_write_concern (const mongoc_session_t *session);
+
+MONGOC_EXPORT (const mongoc_read_concern_t *)
+mongoc_session_get_read_concern (const mongoc_session_t *session);
+
+MONGOC_EXPORT (const mongoc_read_prefs_t *)
+mongoc_session_get_read_prefs (const mongoc_session_t *session);
 
 /* There is no mongoc_session_end, only mongoc_session_destroy. Driver Sessions
  * Spec: "In languages that have idiomatic ways of disposing of resources,

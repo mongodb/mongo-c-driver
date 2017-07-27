@@ -165,6 +165,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   const mongoc_read_prefs_t *default_prefs,
                                   mongoc_read_concern_t *default_rc,
                                   mongoc_write_concern_t *default_wc,
+                                  mongoc_session_t *session,
                                   bson_t *reply,
                                   bson_error_t *error);
 
