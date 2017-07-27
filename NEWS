@@ -1,8 +1,10 @@
 mongo-c-driver 1.8.0
 ====================
 
-  * Added this
-  * Removed that
+  * The command functions mongoc_client_read_write_command_with_opts,
+    mongoc_database_read_write_command_with_opts, and
+    mongoc_collection_read_write_command_with_opts now ignore the "read_prefs"
+    parameter.
 
 Thanks to everyone who contributed to the development of this release.
 

@@ -148,7 +148,7 @@ mongoc_client_read_write_command_with_opts (
    mongoc_client_t *client,
    const char *db_name,
    const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs,
+   const mongoc_read_prefs_t *read_prefs /* IGNORED */,
    const bson_t *opts,
    bson_t *reply,
    bson_error_t *error);

@@ -231,6 +231,15 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
+                    "mongoc_collection_read_write_command_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
                     "mongoc_collection_insert_bulk",
                     [param("mongoc_collection_ptr", "collection"),
                      param("mongoc_insert_flags_t", "flags"),

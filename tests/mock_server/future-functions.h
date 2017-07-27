@@ -189,6 +189,18 @@ future_collection_insert (
 
 
 future_t *
+future_collection_read_write_command_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_insert_bulk (
 
    mongoc_collection_ptr collection,

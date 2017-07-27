@@ -962,11 +962,12 @@ test_command_with_opts_read_prefs (void)
    mongoc_client_t *client;
    mongoc_read_prefs_t *read_prefs;
    bson_t *cmd;
+   bson_t *opts;
    bson_error_t error;
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1003,9 +1004,67 @@ test_command_with_opts_read_prefs (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   /* read prefs not included for read/write command, but read concern is */
+   cmd = tmp_bson ("{'whatever': 1}");
+   opts = tmp_bson ("{'readConcern': {'level': 'majority'}}");
+   future = future_client_read_write_command_with_opts (
+      client, "admin", cmd, NULL, opts, NULL, &error);
+
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_NONE,
+                                    "{'whatever': 1,"
+                                    " 'readConcern': {'level': 'majority'},"
+                                    " '$readPreference': {'$exists': false}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+
+static void
+test_read_write_cmd_with_opts (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *secondary;
+   bson_error_t error;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   rs = mock_rs_with_autoismaster (
+      0, true /* has primary */, 1 /* secondary */, 0 /* arbiters */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   secondary = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* mongoc_client_read_write_command_with_opts must ignore read prefs
+    * CDRIVER-2224
+    */
+   future = future_client_read_write_command_with_opts (
+      client, "db", tmp_bson ("{'ping': 1}"), secondary, NULL, &reply, &error);
+
+   request =
+      mock_rs_receives_command (rs, "db", MONGOC_QUERY_NONE, "{'ping': 1}");
+
+   ASSERT (mock_rs_request_is_to_primary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_read_prefs_destroy (secondary);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
 }
 
 
@@ -3056,6 +3115,9 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command_with_opts/read_prefs",
                                 test_command_with_opts_read_prefs);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_with_opts/read_write",
+                                test_read_write_cmd_with_opts);
    TestSuite_AddMockServerTest (
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddMockServerTest (

@@ -1322,11 +1322,11 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    BSON_ASSERT (command);
 
    mongoc_cmd_parts_init (&parts, db_name, flags, command);
-   parts.is_write_command = (mode == MONGOC_CMD_WRITE);
+   parts.is_write_command = (mode & MONGOC_CMD_WRITE);
 
    reply_ptr = reply ? reply : &reply_local;
 
-   if (mode & MONGOC_CMD_READ) {
+   if (mode == MONGOC_CMD_READ) {
       /* NULL read pref is ok */
       if (!_mongoc_read_prefs_validate (default_prefs, error)) {
          GOTO (err);
@@ -1355,6 +1355,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
          parts.user_query_flags |= MONGOC_QUERY_SLAVE_OK;
       }
+   } else if (parts.is_write_command) {
+      server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    } else {
       server_stream =
          mongoc_cluster_stream_for_reads (cluster, default_prefs, error);
@@ -1474,7 +1476,7 @@ mongoc_client_read_write_command_with_opts (
    mongoc_client_t *client,
    const char *db_name,
    const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs,
+   const mongoc_read_prefs_t *read_prefs /* IGNORED */,
    const bson_t *opts,
    bson_t *reply,
    bson_error_t *error)
