@@ -16,15 +16,24 @@
 
 
 #include <bson.h>
-#ifndef _WIN32
+#include "mongoc-config.h"
+#ifdef MONGOC_HAVE_DNSAPI
+/* for DnsQuery_UTF8 */
+#include <Windows.h>
+#include <WinDNS.h>
+#include <ws2tcpip.h>
+#else
 #include <netdb.h>
 #include <netinet/tcp.h>
+#if defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY)
+#include <arpa/nameser.h>
+#include <resolv.h>
+#endif
 #endif
 
 #include "mongoc-cursor-array-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-collection-private.h"
-#include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-gridfs-private.h"
@@ -42,6 +51,7 @@
 #include "mongoc-log.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-concern-private.h"
+#include "mongoc-host-list-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -70,6 +80,219 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     const char *db,
                                     const char *collection);
 
+
+#define RR_ERR(_msg, ...)                                  \
+   do {                                                    \
+      bson_set_error (error,                               \
+                      MONGOC_ERROR_STREAM,                 \
+                      MONGOC_ERROR_STREAM_NAME_RESOLUTION, \
+                      _msg,                                \
+                      __VA_ARGS__);                        \
+      _mongoc_host_list_destroy_all (h);                   \
+      h = NULL;                                            \
+      GOTO (done);                                         \
+   } while (0)
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_get_srv_dnsapi --
+ *
+ *       Fetch an SRV resource record with the Windows DNS API.
+ *
+ * Returns:
+ *       A newly allocated host list that must be freed with
+ *       _mongoc_host_list_destroy_all.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+#ifdef MONGOC_HAVE_DNSAPI
+static mongoc_host_list_t *
+_mongoc_get_srv_dnsapi (const char *service, bson_error_t *error)
+{
+   mongoc_host_list_t *h = NULL;
+   PDNS_RECORD pdns;
+   DNS_STATUS res;
+   LPVOID lpMsgBuf = NULL;
+
+   res = DnsQuery_UTF8 (service,
+                        DNS_TYPE_SRV,
+                        DNS_QUERY_BYPASS_CACHE,
+                        NULL /* IP Address */,
+                        &pdns,
+                        0 /* reserved */);
+
+   if (res) {
+      DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                    FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+
+      if (FormatMessage (flags,
+                         0,
+                         res,
+                         MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                         (LPTSTR) &lpMsgBuf,
+                         0,
+                         0)) {
+         RR_ERR (
+            "Failed to look up service \"%s\": %s", service, (char *) lpMsgBuf);
+      }
+
+      RR_ERR ("Failed to look up service \"%s\": Unknown error", service);
+   }
+
+   do {
+      h = _mongoc_host_list_push (
+         pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, AF_UNSPEC, h);
+
+      pdns = pdns->pNext;
+   } while (pdns);
+
+   DnsRecordListFree (pdns, DnsFreeRecordList);
+
+done:
+   if (lpMsgBuf) {
+      LocalFree (lpMsgBuf);
+   }
+
+   return h;
+}
+
+#elif (defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY))
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_get_srv_query --
+ *
+ *       Fetch an SRV resource record using libresolv.
+ *
+ * Returns:
+ *       A newly allocated host list that must be freed with
+ *       _mongoc_host_list_destroy_all.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static mongoc_host_list_t *
+_mongoc_get_srv_query (const char *service, bson_error_t *error)
+{
+#ifdef MONGOC_HAVE_RES_NQUERY
+   struct __res_state state = {0};
+#endif
+   mongoc_host_list_t *h = NULL;
+   int size;
+   unsigned char query_buffer[1024];
+   ns_msg ns_answer;
+   int i;
+   char name[1024];
+   uint16_t port;
+   ns_rr resource_record;
+   const uint8_t *data;
+
+   ENTRY;
+
+#ifdef MONGOC_HAVE_RES_NQUERY
+   /* thread-safe */
+   res_ninit (&state);
+   size = res_nquery (
+      &state, service, ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer));
+#elif defined(MONGOC_HAVE_RES_QUERY)
+   size = res_query (
+      service, ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer));
+#endif
+
+   if (size < 0) {
+      RR_ERR (
+         "Failed to look up service \"%s\": %s", service, strerror (h_errno));
+   }
+
+   if (ns_initparse (query_buffer, size, &ns_answer)) {
+      RR_ERR (
+         "Invalid SRV answer for \"%s\": \"%s\"", service, strerror (h_errno));
+   }
+
+   for (i = 0; i < ns_msg_count (ns_answer, ns_s_an); i++) {
+      if (ns_parserr (&ns_answer, ns_s_an, i, &resource_record)) {
+         RR_ERR ("Invalid record %d of SRV answer for \"%s\": \"%s\"",
+                 i,
+                 service,
+                 strerror (h_errno));
+      }
+
+      data = ns_rr_rdata (resource_record);
+      port = ntohs (*(short *) (data + 4));
+      size = dn_expand (ns_msg_base (ns_answer),
+                        ns_msg_end (ns_answer),
+                        data + 6,
+                        name,
+                        sizeof (name));
+
+      if (size < 1) {
+         RR_ERR ("Invalid record %d of SRV answer for \"%s\": \"%s\"",
+                 i,
+                 service,
+                 strerror (h_errno));
+      }
+
+      h = _mongoc_host_list_push (name, port, AF_UNSPEC, h);
+   }
+
+done:
+
+#ifdef MONGOC_HAVE_RES_NDESTROY
+   /* defined on BSD/Darwin, and only if MONGOC_HAVE_RES_NQUERY is defined */
+   res_ndestroy (&state);
+#elif defined(MONGOC_HAVE_RES_NCLOSE)
+   /* defined on Linux, and only if MONGOC_HAVE_RES_NQUERY is defined */
+   res_nclose (&state);
+#endif
+   return h;
+}
+#endif
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_get_srv --
+ *
+ *       Fetch an SRV resource record. See RFC 2782.
+ *
+ * Returns:
+ *       A newly allocated host list that must be freed with
+ *       _mongoc_host_list_destroy_all.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_host_list_t *
+_mongoc_client_get_srv (const char *service, bson_error_t *error)
+{
+#ifdef MONGOC_HAVE_DNSAPI
+   return _mongoc_get_srv_dnsapi (service, error);
+#elif (defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY))
+   return _mongoc_get_srv_query (service, error);
+#else
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                   "libresolv unavailable, cannot use mongodb+srv URI");
+
+   RETURN (NULL);
+#endif
+}
+
+#undef RR_ERR
 
 /*
  *--------------------------------------------------------------------------

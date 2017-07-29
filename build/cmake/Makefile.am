@@ -1,4 +1,5 @@
 EXTRA_DIST += \
+	build/cmake/FindResQuery.cmake \
 	build/cmake/FindSASL2.cmake \
 	build/cmake/FindSnappy.cmake \
 	build/cmake/MongoCPackage.cmake \

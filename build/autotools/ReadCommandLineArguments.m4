@@ -69,6 +69,15 @@ AC_ARG_ENABLE([rdtscp],
               [],
               [enable_rdtscp=no])
 
+AC_ARG_ENABLE(srv,
+    AC_HELP_STRING([--enable-srv=@<:@auto/yes/no@:>@],
+                   [support mongodb+srv URIs. default=auto]),
+    [],
+    [enable_srv=auto])
+
+AS_IF([test "x$enable_srv" != "xyes" -a test "x$enable_srv" != "xno"],
+      [enable_srv=auto])
+
 # use strict compiler flags only on development releases
 AS_IF([test "x$MONGOC_PRERELEASE_VERSION" != "x"],
       [maintainer_flags_default=yes],

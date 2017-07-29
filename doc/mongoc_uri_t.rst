@@ -3,6 +3,8 @@
 mongoc_uri_t
 ============
 
+.. TODO: a section about SRV, and note that without res_nquery, lookups on Unix are not thread-safe
+
 Synopsis
 --------
 

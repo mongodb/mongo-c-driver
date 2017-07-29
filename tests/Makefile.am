@@ -32,6 +32,7 @@ TEST_LIBS = \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
+	$(RESOLV_LIBS) \
 	$(SNAPPY_LIBS) \
 	$(ZLIB_LIBS) \
 	$(SSL_LIBS)

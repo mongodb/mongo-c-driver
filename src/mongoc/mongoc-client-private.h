@@ -109,6 +109,9 @@ typedef enum {
 
 BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
+mongoc_host_list_t *
+_mongoc_client_get_srv (const char *service,
+                        bson_error_t *error);
 
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,

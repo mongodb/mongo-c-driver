@@ -307,7 +307,8 @@ libmongoc_la_LIBADD = \
 	$(SSL_LIBS) \
 	$(SNAPPY_LIBS) \
 	$(ZLIB_LIBS) \
-	$(SASL_LIBS)
+	$(SASL_LIBS) \
+	$(RESOLV_LIBS)
 
 if OS_WIN32
 libmongoc_la_LIBADD += -lws2_32

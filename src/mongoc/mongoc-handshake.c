@@ -137,6 +137,26 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI;
 #endif
 
+#ifdef MONGOC_HAVE_RES_NQUERY
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_NQUERY;
+#endif
+
+#ifdef MONGOC_HAVE_RES_NDESTROY
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_NDESTROY;
+#endif
+
+#ifdef MONGOC_HAVE_RES_NCLOSE
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_NCLOSE;
+#endif
+
+#ifdef MONGOC_HAVE_RES_QUERY
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_QUERY;
+#endif
+
+#ifdef MONGOC_HAVE_DNSAPI
+   bf |= MONGOC_MD_FLAG_ENABLE_DNSAPI;
+#endif
+
    return bf;
 }
 

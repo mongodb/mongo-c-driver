@@ -53,6 +53,7 @@ else
 fi
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
+m4_include([build/autotools/FindResQuery.m4])
 m4_include([build/autotools/MaintainerFlags.m4])
 m4_include([build/autotools/PlatformFlags.m4])
 m4_include([build/autotools/Optimizations.m4])
@@ -69,7 +70,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
 # Substitute our dependencies into the pkg-config files.
-MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB}"
+MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS}"
 if test "x$with_zlib" != "xbundled"; then
    MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
 fi
