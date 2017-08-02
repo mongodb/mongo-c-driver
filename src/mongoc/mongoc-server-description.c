@@ -955,7 +955,7 @@ _match_tag_set (const mongoc_server_description_t *sd,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_server_description_id --
+ * mongoc_server_description_compressor_id --
  *
  *      Get the compressor id if compression was negotiated.
  *
