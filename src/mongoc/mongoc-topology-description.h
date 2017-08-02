@@ -23,6 +23,8 @@
 #include "mongoc-read-prefs.h"
 
 
+BSON_BEGIN_DECLS
+
 typedef struct _mongoc_topology_description_t mongoc_topology_description_t;
 
 MONGOC_EXPORT (bool)
@@ -36,5 +38,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td);
 MONGOC_EXPORT (mongoc_server_description_t **)
 mongoc_topology_description_get_servers (
    const mongoc_topology_description_t *td, size_t *n);
+
+BSON_END_DECLS
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_H */

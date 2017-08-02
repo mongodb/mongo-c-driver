@@ -27,6 +27,8 @@
 
 #include "mongoc-macros.h"
 
+BSON_BEGIN_DECLS
+
 MONGOC_EXPORT (int)
 mongoc_get_major_version (void);
 MONGOC_EXPORT (int)
@@ -39,5 +41,7 @@ MONGOC_EXPORT (bool)
 mongoc_check_version (int required_major,
                       int required_minor,
                       int required_micro);
+
+BSON_END_DECLS
 
 #endif /* MONGOC_VERSION_FUNCTIONS_H */
