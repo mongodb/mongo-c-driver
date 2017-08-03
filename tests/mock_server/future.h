@@ -129,6 +129,9 @@ future_get_mongoc_write_concern_ptr (future_t *future);
 const_mongoc_find_and_modify_opts_ptr
 future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future);
 
+const_mongoc_iovec_ptr
+future_get_const_mongoc_iovec_ptr (future_t *future);
+
 const_mongoc_read_prefs_ptr
 future_get_const_mongoc_read_prefs_ptr (future_t *future);
 

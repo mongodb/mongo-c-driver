@@ -87,6 +87,7 @@ typedef_list = [
 
     # Const libmongoc.
     typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
+    typedef("const_mongoc_iovec_ptr", "const mongoc_iovec_t *"),
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
     typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
 ]
@@ -310,7 +311,7 @@ future_functions = [
     future_function("ssize_t",
                     "mongoc_gridfs_file_writev",
                     [param("mongoc_gridfs_file_ptr", "file"),
-                     param("mongoc_iovec_ptr", "iov"),
+                     param("const_mongoc_iovec_ptr", "iov"),
                      param("size_t", "iovcnt"),
                      param("uint32_t", "timeout_msec")]),
 

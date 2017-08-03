@@ -79,7 +79,7 @@ mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
 
 MONGOC_EXPORT (ssize_t)
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
-                           mongoc_iovec_t *iov,
+                           const mongoc_iovec_t *iov,
                            size_t iovcnt,
                            uint32_t timeout_msec);
 MONGOC_EXPORT (ssize_t)

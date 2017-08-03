@@ -305,7 +305,7 @@ future_t *
 future_gridfs_file_writev (
 
    mongoc_gridfs_file_ptr file,
-   mongoc_iovec_ptr iov,
+   const_mongoc_iovec_ptr iov,
    size_t iovcnt,
    uint32_t timeout_msec
 );
