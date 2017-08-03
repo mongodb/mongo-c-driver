@@ -20,6 +20,7 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-rand-private.h"
 
 
 mongoc_session_opt_t *
@@ -113,23 +114,77 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 }
 
 
+static bool
+_mongoc_session_uuid(uint8_t *data /* OUT */,
+                     bson_error_t *error)
+{
+#ifdef MONGOC_ENABLE_CRYPTO
+   /* https://tools.ietf.org/html/rfc4122#page-14
+    *   o  Set the two most significant bits (bits 6 and 7) of the
+    *      clock_seq_hi_and_reserved to zero and one, respectively.
+    *
+    *   o  Set the four most significant bits (bits 12 through 15) of the
+    *      time_hi_and_version field to the 4-bit version number from
+    *      Section 4.1.3.
+    *
+    *   o  Set all the other bits to randomly (or pseudo-randomly) chosen
+    *      values.
+   */
+
+   if (!_mongoc_rand_bytes (data, 16)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "mongoc_client_start_session could not generate UUID");
+
+      return false;
+   }
+
+   data[6] = (uint8_t) (0x40 | (data[6] & 0xf));
+   data[8] = (uint8_t) (0x80 | (data[8] & 0x3f));
+
+   return true;
+#else
+   /* no _mongoc_rand_bytes without a crypto library */
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                   "mongoc_client_start_session requires a cryptography library"
+                   " like OpenSSL, Secure Channel, Common Crypto, etc.");
+
+   return false;
+#endif
+}
+
+
 mongoc_session_t *
 _mongoc_session_new (mongoc_client_t *client,
                      mongoc_session_opt_t *opts,
                      bson_error_t *error)
 {
    mongoc_session_t *session;
+   uint8_t uuid_data[16];
 
    ENTRY;
 
    BSON_ASSERT (client);
-   BSON_ASSERT (opts);
+
+   if (!_mongoc_session_uuid (uuid_data, error)) {
+      RETURN (NULL);
+   }
 
    session = bson_malloc0 (sizeof (mongoc_session_t));
    session->client = client;
-   session->server_session_id.value_type = BSON_TYPE_EOD;
 
-   memcpy (&session->opts, opts, sizeof *opts);
+   bson_init (&session->lsid);
+   bson_append_binary (
+      &session->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
+
+   if (opts) {
+      memcpy (&session->opts, opts, sizeof *opts);
+   } else {
+      session->opts.flags = MONGOC_SESSION_NO_OPTS;
+   }
 
    RETURN (session);
 }
@@ -153,16 +208,12 @@ mongoc_session_get_opts (const mongoc_session_t *session)
 }
 
 
-const bson_value_t *
+const bson_t *
 mongoc_session_get_session_id (const mongoc_session_t *session)
 {
    BSON_ASSERT (session);
 
-   if (session->server_session_id.value_type == BSON_TYPE_EOD) {
-      return NULL;
-   }
-
-   return &session->server_session_id;
+   return &session->lsid;
 }
 
 
@@ -354,6 +405,7 @@ mongoc_session_destroy (mongoc_session_t *session)
 
    BSON_ASSERT (session);
 
+   bson_destroy (&session->lsid);
    bson_free (session);
 
    EXIT;

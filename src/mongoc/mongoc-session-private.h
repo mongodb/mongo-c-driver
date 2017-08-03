@@ -38,7 +38,7 @@ struct _mongoc_session_opt_t {
 struct _mongoc_session_t {
    mongoc_client_t *client;
    mongoc_session_opt_t opts;
-   bson_value_t server_session_id;
+   bson_t lsid; /* logical session id */
 };
 
 

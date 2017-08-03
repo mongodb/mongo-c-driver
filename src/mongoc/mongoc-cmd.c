@@ -22,6 +22,7 @@
 #include "mongoc-write-concern-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
+#include "mongoc-session-private.h"
 
 
 void
@@ -278,6 +279,11 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       bson_concat (&parts->assembled_body, &parts->extra);
    }
 
+   if (parts->session) {
+      bson_append_document (
+         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
+   }
+
    parts->assembled.command = &parts->assembled_body;
 
    EXIT;
@@ -328,6 +334,17 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       bson_concat (&parts->assembled_body, parts->body);
       bson_concat (&parts->assembled_body, &parts->extra);
       parts->assembled.command = &parts->assembled_body;
+   }
+
+   if (parts->session) {
+      if (parts->assembled.command == parts->body) {
+         /* haven't copied yet, we need to now */
+         bson_concat (&parts->assembled_body, parts->body);
+         parts->assembled.command = &parts->assembled_body;
+      }
+
+      bson_append_document (
+         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
    EXIT;
@@ -425,6 +442,17 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          bson_concat (&parts->assembled_body, parts->body);
          bson_concat (&parts->assembled_body, &parts->extra);
          parts->assembled.command = &parts->assembled_body;
+      }
+
+      if (parts->session) {
+         if (parts->assembled.command == parts->body) {
+            /* haven't copied yet, we need to now */
+            bson_concat (&parts->assembled_body, parts->body);
+            parts->assembled.command = &parts->assembled_body;
+         }
+
+         bson_append_document (
+            &parts->assembled_body, "lsid", 4, &parts->session->lsid);
       }
 
       RETURN (true);

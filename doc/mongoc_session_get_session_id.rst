@@ -8,10 +8,10 @@ Synopsis
 
 .. code-block:: c
 
-  const bson_value_t *
+  const bson_t *
   mongoc_session_get_session_id (mongoc_session_t *session);
 
-Get the ID of the server-side session associated with this :symbol:`mongoc_session_t`, or NULL if there is no associated server session.
+Get the ID of the server-side session associated with this :symbol:`mongoc_session_t` as a BSON document.
 
 Parameters
 ----------
@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`bson:bson_value_t` you must not modify or free, or NULL.
+A :symbol:`bson:bson_t` you must not modify or free.
 
 .. only:: html
 

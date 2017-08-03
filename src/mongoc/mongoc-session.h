@@ -66,7 +66,7 @@ mongoc_session_get_client (mongoc_session_t *session);
 MONGOC_EXPORT (const mongoc_session_opt_t *)
 mongoc_session_get_opts (const mongoc_session_t *session);
 
-MONGOC_EXPORT (const bson_value_t *)
+MONGOC_EXPORT (const bson_t *)
 mongoc_session_get_session_id (const mongoc_session_t *session);
 
 MONGOC_EXPORT (mongoc_database_t *)

@@ -21,7 +21,7 @@ Parameters
 ----------
 
 * ``client``: A :symbol:`mongoc_client_t`.
-* ``opts``: A :symbol:`mongoc_session_opt_t`.
+* ``opts``: An optional :symbol:`mongoc_session_opt_t`.
 * ``error``: A :symbol:`bson:bson_error_t`.
 
 Returns
@@ -32,7 +32,7 @@ If successful, this function returns a newly allocated :symbol:`mongoc_session_t
 Errors
 ------
 
-This function can fail if ``opts`` is misconfigured, if the MongoDB server is unavailable, if the session is configured with options that the server does not support, or if there was server error when the driver attempted to start the server session.
+This function can fail if ``opts`` is misconfigured, if the session is configured with options that the server does not support, or if there was server error when the driver attempted to start the server session.
 
 .. only:: html
 
