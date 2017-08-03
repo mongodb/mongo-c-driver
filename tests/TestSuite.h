@@ -193,10 +193,10 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       /* evaluate once */                                \
       int64_t _a = (a);                                  \
       int64_t _b = (b);                                  \
-      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
+      if (!(_a > (_b * 2) / 3 && (_a < (_b * 3) / 2))) { \
          fprintf (stderr,                                \
                   "FAIL\n\nAssert Failure: %" PRId64     \
-                  " not within 20%% of %" PRId64 "\n"    \
+                  " not within 50%% of %" PRId64 "\n"    \
                   "%s:%d  %s()\n",                       \
                   _a,                                    \
                   _b,                                    \
