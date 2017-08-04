@@ -42,8 +42,7 @@ struct _mongoc_topology_description_t {
    char *set_name;
    int64_t max_set_version;
    bson_oid_t max_election_id;
-   bool compatible;
-   char *compatibility_error;
+   bson_error_t compatibility_error;
    uint32_t max_server_id;
    bool stale;
    unsigned int rand_seed;

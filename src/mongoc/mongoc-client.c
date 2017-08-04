@@ -1833,12 +1833,18 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    mongoc_topology_t *topology;
    mongoc_server_description_t *selected_server;
    mongoc_read_prefs_t *read_prefs;
+   bson_error_t error;
    uint32_t server_id = 0;
 
    topology = client->topology;
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    mongoc_mutex_lock (&topology->mutex);
+   if (!mongoc_topology_compatible (&topology->description, NULL, &error)) {
+      MONGOC_ERROR ("Could not kill cursor: %s", error.message);
+      mongoc_mutex_unlock (&topology->mutex);
+      return;
+   }
 
    /* see if there's a known writable server - do no I/O or retries */
    selected_server =

@@ -22,6 +22,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-set-private.h"
+#include "mongoc-client-private.h"
 
 
 static void
@@ -67,8 +68,6 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
       mongoc_set_new (8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
    description->max_set_version = MONGOC_NO_SET_VERSION;
-   description->compatible = true;
-   description->compatibility_error = NULL;
    description->stale = true;
    description->rand_seed = (unsigned int) bson_get_monotonic_time ();
 
@@ -123,8 +122,9 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 
    dst->set_name = bson_strdup (src->set_name);
    dst->max_set_version = src->max_set_version;
-   dst->compatible = src->compatible;
-   dst->compatibility_error = bson_strdup (src->compatibility_error);
+   memcpy (&dst->compatibility_error,
+           &src->compatibility_error,
+           sizeof (bson_error_t));
    dst->max_server_id = src->max_server_id;
    dst->stale = src->stale;
    memcpy (&dst->apm_callbacks,
@@ -162,10 +162,6 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 
    if (description->set_name) {
       bson_free (description->set_name);
-   }
-
-   if (description->compatibility_error) {
-      bson_free (description->compatibility_error);
    }
 
    EXIT;
@@ -748,12 +744,6 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    int rand_n;
 
    ENTRY;
-
-   if (!topology->compatible) {
-      /* TODO: check this in mongoc_topology_compatible (), CDRIVER-689 */
-      TRACE ("%s", "Incompatible topology");
-      RETURN (NULL);
-   }
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (
@@ -1687,6 +1677,63 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
 }
 #endif
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_check_compatible --
+ *
+ *      Fill out td.compatibility_error if any server's wire versions do
+ *      not overlap with ours. Otherwise clear td.compatibility_error.
+ *
+ *      If any server is incompatible, the topology as a whole is considered
+ *      incompatible.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_topology_description_check_compatible (
+   mongoc_topology_description_t *td)
+{
+   size_t i;
+   mongoc_server_description_t *sd;
+   bool server_too_new;
+   bool server_too_old;
+
+   memset (&td->compatibility_error, 0, sizeof (bson_error_t));
+
+   for (i = 0; i < td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
+                                                                (int) i);
+
+      /* A server is considered to be incompatible with a driver if its min and
+       * max wire version does not overlap the driver’s. Specifically, a driver
+       * with a min and max range of [a, b] must be considered incompatible
+       * with any server with min and max range of [c, d] where c > b or d < a.
+       * All other servers are considered to be compatible. */
+      server_too_new = sd->min_wire_version > WIRE_VERSION_MAX;
+      server_too_old = sd->max_wire_version < WIRE_VERSION_MIN;
+
+      if (server_too_new || server_too_old) {
+         bson_set_error (&td->compatibility_error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Server at \"%s\" uses wire protocol versions %d"
+                         " through %d, but libmongoc %s only supports %d"
+                         " through %d",
+                         sd->host.host_and_port,
+                         sd->min_wire_version,
+                         sd->max_wire_version,
+                         MONGOC_VERSION_S,
+                         WIRE_VERSION_MIN,
+                         WIRE_VERSION_MAX);
+
+         break;
+      }
+   }
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1748,6 +1795,7 @@ mongoc_topology_description_handle_ismaster (
              mongoc_server_description_type (sd));
    }
 
+   _mongoc_topology_description_check_compatible (topology);
    _mongoc_topology_description_monitor_changed (prev_td, topology);
 
    if (prev_td) {
@@ -1778,6 +1826,12 @@ bool
 mongoc_topology_description_has_readable_server (
    mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs)
 {
+   bson_error_t error;
+
+   if (!mongoc_topology_compatible (td, NULL, &error)) {
+      return false;
+   }
+
    /* local threshold argument doesn't matter */
    return mongoc_topology_description_select (td, MONGOC_SS_READ, prefs, 0) !=
           NULL;
@@ -1801,6 +1855,12 @@ bool
 mongoc_topology_description_has_writable_server (
    mongoc_topology_description_t *td)
 {
+   bson_error_t error;
+
+   if (!mongoc_topology_compatible (td, NULL, &error)) {
+      return false;
+   }
+
    return mongoc_topology_description_select (td, MONGOC_SS_WRITE, NULL, 0) !=
           NULL;
 }

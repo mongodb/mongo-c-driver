@@ -614,10 +614,10 @@ test_mongoc_client_authenticate_timeout (void *context)
 }
 
 
-#ifdef TODO_CDRIVER_689
 static void
 test_wire_version (void)
 {
+   mongoc_uri_t *uri;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
@@ -626,8 +626,16 @@ test_wire_version (void)
    bson_error_t error;
    bool r;
    bson_t q = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+
+   if (!test_framework_skip_if_slow ()) {
+      return;
+   }
 
    server = mock_server_new ();
+
+   /* too new */
    mock_server_auto_ismaster (server,
                               "{'ok': 1.0,"
                               " 'ismaster': true,"
@@ -635,27 +643,60 @@ test_wire_version (void)
                               " 'maxWireVersion': 11}");
 
    mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   client = mongoc_client_new_from_uri (uri);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (!r);
-
-   r = mongoc_cursor_error (cursor, &error);
-   BSON_ASSERT (r);
-
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
    BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   mongoc_cursor_destroy (cursor);
+
+   /* too old */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': -1,"
+                              " 'maxWireVersion': -1}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
+   BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   mongoc_cursor_destroy (cursor);
+
+   /* compatible again */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 6}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_request (server);
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK, 0, 0, "test.test", "{}", true);
+
+   /* no error */
+   BSON_ASSERT (future_get_bool (future));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
-#endif
 
 
 static void
@@ -3251,12 +3292,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/appname_pooled_no_uri",
                                 test_client_appname_pooled_no_uri);
-
-#ifdef TODO_CDRIVER_689
    TestSuite_AddMockServerTest (
       suite, "/Client/wire_version", test_wire_version);
-#endif
-
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
