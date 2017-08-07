@@ -10,7 +10,6 @@ noinst_PROGRAMS =
 noinst_HEADERS =
 
 SUBDIRS =
-libmongoc_1_0_la_DEPENDENCIES =
 
 if WITH_LIBBSON
 SUBDIRS += src/libbson

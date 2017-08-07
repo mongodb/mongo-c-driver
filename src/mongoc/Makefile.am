@@ -1,3 +1,5 @@
+noinst_LTLIBRARIES += libmongoc.la
+
 headerdir = $(prefix)/include/libmongoc-@MONGOC_API_VERSION@
 header_DATA = \
 	$(INST_H_FILES) \
@@ -153,7 +155,7 @@ NOINST_H_FILES += \
 	src/mongoc/mongoc-stream-tls-secure-transport-private.h
 endif
 
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES = \
 	$(INST_H_FILES) \
 	src/mongoc/mongoc-apm.c \
 	src/mongoc/mongoc-array.c \
@@ -213,72 +215,107 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-write-concern.c
 
 if ENABLE_CRYPTO
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-crypto.c \
 	src/mongoc/mongoc-scram.c
 
 if ENABLE_CRYPTO_LIBCRYPTO
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-crypto-openssl.c \
 	src/mongoc/mongoc-rand-openssl.c
 endif
 if ENABLE_CRYPTO_COMMON_CRYPTO
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-crypto-common-crypto.c \
 	src/mongoc/mongoc-rand-common-crypto.c
 endif
 if ENABLE_CRYPTO_CNG
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-crypto-cng.c \
 	src/mongoc/mongoc-rand-cng.c
 endif
 endif
 
 if ENABLE_SSL
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
 
 if ENABLE_SSL_LIBRESSL
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-libressl.c \
 	src/mongoc/mongoc-stream-tls-libressl.c
 endif
 if ENABLE_SSL_OPENSSL
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-openssl.c \
 	src/mongoc/mongoc-stream-tls-openssl.c \
 	src/mongoc/mongoc-stream-tls-openssl-bio.c
 endif
 if ENABLE_SSL_SECURE_TRANSPORT
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-secure-transport.c \
 	src/mongoc/mongoc-stream-tls-secure-transport.c
 endif
 if ENABLE_SSL_SECURE_CHANNEL
-MONGOC_SOURCES_SHARED += \
+libmongoc_la_SOURCES += \
 	src/mongoc/mongoc-secure-channel.c \
 	src/mongoc/mongoc-stream-tls-secure-channel.c
 endif
 endif
 
 if ENABLE_SASL
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sasl.c
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-cluster-sasl.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-sasl.c
 endif
 if ENABLE_SASL_CYRUS
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-cyrus.c
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cyrus.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-cluster-cyrus.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-cyrus.c
 endif
 
 if ENABLE_SASL_SSPI
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sspi.c
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sspi.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-cluster-sspi.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-sspi.c
 endif
 
 if ENABLE_SASL_GSSAPI
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-gssapi.c
-MONGOC_SOURCES_SHARED += src/mongoc/mongoc-gssapi.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-cluster-gssapi.c
+libmongoc_la_SOURCES += src/mongoc/mongoc-gssapi.c
+endif
+
+libmongoc_la_CPPFLAGS = \
+	-DMONGOC_COMPILATION \
+	$(LIBC_FEATURES) \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mongoc \
+	-I$(top_builddir)/src/mongoc \
+	$(BSON_CFLAGS)
+
+libmongoc_la_CFLAGS = \
+	$(MAINTAINER_CFLAGS) \
+	$(OPTIMIZE_CFLAGS) \
+	$(COVERAGE_CFLAGS) \
+	$(PTHREAD_CFLAGS) \
+	$(SSL_CFLAGS) \
+	$(SNAPPY_CFLAGS) \
+	$(ZLIB_CFLAGS) \
+	$(SASL_CFLAGS)
+
+if OS_SOLARIS
+libmongoc_la_CFLAGS += -D_REENTRANT
+endif
+
+libmongoc_la_LIBADD = \
+	$(BSON_LIBS) \
+	$(PTHREAD_LIBS) \
+	$(SHM_LIB) \
+	$(SSL_LIBS) \
+	$(SNAPPY_LIBS) \
+	$(ZLIB_LIBS) \
+	$(SASL_LIBS)
+
+if OS_WIN32
+libmongoc_la_LIBADD += -lws2_32
 endif
 
 EXTRA_DIST += $(MONGOC_DEF_FILES) $(NOINST_H_FILES)

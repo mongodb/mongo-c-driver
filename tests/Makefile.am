@@ -33,9 +33,9 @@ TEST_CFLAGS += \
 	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
 	-DOS_RELEASE_FILE_DIR="\"$(top_srcdir)/tests/release_files\""
 
+
 TEST_LIBS = \
 	$(COVERAGE_LDFLAGS) \
-	libmongoc-priv.la \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
@@ -58,7 +58,7 @@ test_load_SOURCES = \
 	tests/test-load.c \
 	tests/mongoc-tests.c
 test_load_CFLAGS = $(TEST_CFLAGS)
-test_load_LDADD = $(TEST_LIBS)
+test_load_LDADD = libmongoc-1.0.la $(TEST_LIBS)
 
 
 if WITH_SNAPPY
@@ -69,7 +69,7 @@ test_secondary_SOURCES = \
 	tests/test-secondary.c \
 	tests/mongoc-tests.c
 test_secondary_CFLAGS = $(TEST_CFLAGS)
-test_secondary_LDADD = $(TEST_LIBS)
+test_secondary_LDADD = libmongoc-1.0.la $(TEST_LIBS)
 
 if WITH_SNAPPY
 # Use c++ linker
@@ -81,7 +81,7 @@ test_replica_set_SOURCES = \
 	tests/ha-test.h \
 	tests/mongoc-tests.c
 test_replica_set_CFLAGS = $(TEST_CFLAGS)
-test_replica_set_LDADD = $(TEST_LIBS)
+test_replica_set_LDADD = libmongoc.la $(TEST_LIBS)
 
 
 if WITH_SNAPPY
@@ -94,7 +94,16 @@ test_replica_set_ssl_SOURCES = \
 	tests/ha-test.h \
 	tests/mongoc-tests.c
 test_replica_set_ssl_CFLAGS = $(TEST_CFLAGS)
-test_replica_set_ssl_LDADD = $(TEST_LIBS)
+test_replica_set_ssl_LDADD = libmongoc-1.0.la $(TEST_LIBS)
+
+test_sharded_cluster_SOURCES = \
+	tests/test-sharded-cluster.c \
+	tests/ha-test.c \
+	tests/ha-test.h \
+	tests/mongoc-tests.c
+test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
+test_sharded_cluster_LDADD = libmongoc-1.0.la $(TEST_LIBS)
+
 
 
 test_libmongoc_SOURCES = \
@@ -187,20 +196,15 @@ if WITH_SNAPPY
 nodist_EXTRA_test_libmongoc_SOURCES = dummy.cxx
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
-test_libmongoc_LDADD = $(TEST_LIBS)
+test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
+test_libmongoc_LDFLAGS = -no-undefined \
+                         -rpath $(libdir)
 
 
 if WITH_SNAPPY
 # Use c++ linker
 nodist_EXTRA_test_sharded_cluster_SOURCES = dummy.cxx
 endif
-test_sharded_cluster_SOURCES = \
-	tests/test-sharded-cluster.c \
-	tests/ha-test.c \
-	tests/ha-test.h \
-	tests/mongoc-tests.c
-test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
-test_sharded_cluster_LDADD = $(TEST_LIBS)
 
 check: test
 

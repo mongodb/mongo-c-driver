@@ -31,11 +31,11 @@ insert_test_docs (mongoc_collection_t *collection)
    mongoc_write_concern_set_w (write_concern, 3);
 
    {
-      const bson_t *wc;
+      bson_t wc = BSON_INITIALIZER;
       char *str;
 
-      wc = _mongoc_write_concern_get_gle (write_concern);
-      str = bson_as_canonical_json (wc, NULL);
+      mongoc_write_concern_append (write_concern, &wc);
+      str = bson_as_canonical_json (&wc, NULL);
       fprintf (stderr, "Write Concern: %s\n", str);
       bson_free (str);
    }
