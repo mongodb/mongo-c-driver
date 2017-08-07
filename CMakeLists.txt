@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.1)
 
+set (MESSAGES_ENABLED 1)
+
+function(message)
+   list (GET ARGV 0 MessageType)
+   if (MESSAGES_ENABLED)
+      list (REMOVE_AT ARGV 0)
+      _message (${MessageType} "${ARGV}")
+   endif()
+endfunction()
+
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
      \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
@@ -15,6 +25,7 @@ set (ENABLE_SASL AUTO CACHE STRING
 set(ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
+option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
@@ -44,6 +55,8 @@ message("Current version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
    message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
 endif()
+
+include(MaintainerFlags)
 
 # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
 # but you should use the standard CMAKE_PREFIX_PATH instead.
@@ -366,6 +379,8 @@ if (APPLE)
    # Until CDRIVER-520.
    add_definitions(-Wno-deprecated-declarations)
 endif()
+
+include (MaintainerFlags)
 
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.c
