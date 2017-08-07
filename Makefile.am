@@ -14,14 +14,6 @@ SUBDIRS =
 if WITH_LIBBSON
 SUBDIRS += src/libbson
 endif
-if WITH_SNAPPY
-include src/snappy-1.1.3/Makefile.am
-libmongoc_1_0_la_DEPENDENCIES += libsnappy.la
-endif
-if WITH_ZLIB
-include src/zlib-1.2.11/Makefile.am
-libmongoc_1_0_la_DEPENDENCIES += libzlib.la
-endif
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
 

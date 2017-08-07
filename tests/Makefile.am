@@ -50,10 +50,6 @@ if OS_WIN32
 TEST_LIBS += -lshlwapi
 endif
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_load_SOURCES = dummy.cxx
-endif
 test_load_SOURCES = \
 	tests/test-load.c \
 	tests/mongoc-tests.c
@@ -61,20 +57,12 @@ test_load_CFLAGS = $(TEST_CFLAGS)
 test_load_LDADD = libmongoc-1.0.la $(TEST_LIBS)
 
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_secondary_SOURCES = dummy.cxx
-endif
 test_secondary_SOURCES = \
 	tests/test-secondary.c \
 	tests/mongoc-tests.c
 test_secondary_CFLAGS = $(TEST_CFLAGS)
 test_secondary_LDADD = libmongoc-1.0.la $(TEST_LIBS)
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_replica_set_SOURCES = dummy.cxx
-endif
 test_replica_set_SOURCES = \
 	tests/test-replica-set.c \
 	tests/ha-test.c \
@@ -84,10 +72,6 @@ test_replica_set_CFLAGS = $(TEST_CFLAGS)
 test_replica_set_LDADD = libmongoc.la $(TEST_LIBS)
 
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_replica_set_ssl_SOURCES = dummy.cxx
-endif
 test_replica_set_ssl_SOURCES = \
 	tests/test-replica-set-ssl.c \
 	tests/ha-test.c \
@@ -191,20 +175,12 @@ if ENABLE_SASL
 test_libmongoc_SOURCES += \
 	tests/test-cyrus.c
 endif
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_libmongoc_SOURCES = dummy.cxx
-endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
 test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
 test_libmongoc_LDFLAGS = -no-undefined \
                          -rpath $(libdir)
 
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_test_sharded_cluster_SOURCES = dummy.cxx
-endif
 
 check: test
 

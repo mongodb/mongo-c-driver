@@ -26,11 +26,6 @@ if ENABLE_STATIC
 endif
 
 
-if WITH_SNAPPY
-# Use c++ linker
-nodist_EXTRA_libmongoc_1_0_la_SOURCES = dummy.cxx
-nodist_EXTRA_libmongoc_priv_la_SOURCES = dummy.cxx
-endif
 EXTRA_DIST += \
 	src/libmongoc-1.0.pc.in \
 	src/libmongoc-ssl-1.0.pc.in \
