@@ -61,7 +61,7 @@ install_openssl () {
    cd ..
 
    # x505_vfy.h has issues in 1.1.0e
-   export CPPFLAGS=-Wno-redundant-decls
+   export CFLAGS=-Wno-redundant-decls
    export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
    export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
    SSL="openssl";
