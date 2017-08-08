@@ -106,15 +106,9 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
    return res;
 }
 
-static bson_t *
-_get_ismaster_doc (mongoc_topology_scanner_t *ts,
-                   mongoc_topology_scanner_node_t *node)
+bson_t *
+_mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
 {
-   if (node->last_used != -1 && node->last_failed == -1) {
-      /* The node's been used before and not failed recently */
-      return &ts->ismaster_cmd;
-   }
-
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
    if (bson_empty (&ts->ismaster_cmd_with_handshake)) {
@@ -137,14 +131,22 @@ _begin_ismaster_cmd (mongoc_topology_scanner_t *ts,
                      mongoc_topology_scanner_node_t *node,
                      int64_t timeout_msec)
 {
-   const bson_t *ismaster_cmd_to_send = _get_ismaster_doc (ts, node);
+   const bson_t *command;
+
+   if (node->last_used != -1 && node->last_failed == -1) {
+      /* The node's been used before and not failed recently */
+      command = &ts->ismaster_cmd;
+   } else {
+      command = _mongoc_topology_scanner_get_ismaster (ts);
+   }
+
 
    node->cmd = mongoc_async_cmd_new (ts->async,
                                      node->stream,
                                      ts->setup,
                                      node->host.host,
                                      "admin",
-                                     ismaster_cmd_to_send,
+                                     command,
                                      &mongoc_topology_scanner_ismaster_handler,
                                      node,
                                      timeout_msec);

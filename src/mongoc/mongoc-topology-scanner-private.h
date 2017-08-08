@@ -150,6 +150,9 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id);
 
+bson_t *
+_mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts);
+
 bool
 mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
                                            mongoc_host_list_t *host);

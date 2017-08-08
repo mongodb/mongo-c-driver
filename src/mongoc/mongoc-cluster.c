@@ -668,7 +668,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                              const char *address,
                              uint32_t server_id)
 {
-   bson_t command = BSON_INITIALIZER;
+   const bson_t *command;
    mongoc_cmd_parts_t parts;
    bson_t reply;
    bson_error_t error = {0};
@@ -682,8 +682,10 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   bson_append_int32 (&command, "ismaster", 8, 1);
-   mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, &command);
+   command = _mongoc_topology_scanner_get_ismaster (
+      cluster->client->topology->scanner);
+
+   mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, command);
 
    start = bson_get_monotonic_time ();
    mongoc_cluster_run_command_private (
@@ -698,7 +700,6 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    /* send the error from run_command IN to handle_ismaster */
    mongoc_server_description_handle_ismaster (sd, &reply, rtt_msec, &error);
 
-   bson_destroy (&command);
    bson_destroy (&reply);
 
    r = _mongoc_topology_update_from_handshake (cluster->client->topology, sd);
