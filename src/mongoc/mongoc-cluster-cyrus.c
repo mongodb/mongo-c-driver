@@ -42,7 +42,8 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   if (!_mongoc_cyrus_new_from_cluster (&sasl, cluster, stream, hostname, error)) {
+   if (!_mongoc_cyrus_new_from_cluster (
+          &sasl, cluster, stream, hostname, error)) {
       return false;
    }
 
@@ -66,19 +67,12 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
-      TRACE ("Sending: %s", bson_as_canonical_json (&cmd, NULL));
-      if (!mongoc_cluster_run_command_private (cluster,
-                                               &parts,
-                                               stream,
-                                               0,
-                                               &reply,
-                                               error)) {
-         TRACE ("Replied with: %s", bson_as_canonical_json (&reply, NULL));
+      if (!mongoc_cluster_run_command_private (
+             cluster, &parts, stream, 0, &reply, error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
       }
-      TRACE ("Replied with: %s", bson_as_canonical_json (&reply, NULL));
 
       bson_destroy (&cmd);
 
@@ -103,7 +97,6 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       }
 
       tmpstr = bson_iter_utf8 (&iter, &buflen);
-      TRACE ("Got string: %s, (len=%" PRIu32 ")\n", tmpstr, buflen);
 
       if (buflen > sizeof buf) {
          bson_set_error (error,

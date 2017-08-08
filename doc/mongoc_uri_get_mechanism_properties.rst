@@ -41,7 +41,7 @@ Example
      "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
 
   if (mongoc_uri_get_mechanism_properties (uri, &props)) {
-     char *json = bson_as_canonical_json (&props, NULL);
+     char *json = bson_as_canonical_extended_json (&props, NULL);
      printf ("%s\n", json);
      bson_free (json);
   } else {

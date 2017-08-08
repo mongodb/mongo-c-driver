@@ -35,7 +35,7 @@ insert_test_docs (mongoc_collection_t *collection)
       char *str;
 
       mongoc_write_concern_append (write_concern, &wc);
-      str = bson_as_canonical_json (&wc, NULL);
+      str = bson_as_canonical_extended_json (&wc, NULL);
       fprintf (stderr, "Write Concern: %s\n", str);
       bson_free (str);
    }

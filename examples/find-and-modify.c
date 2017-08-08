@@ -51,7 +51,7 @@ main (int argc, char *argv[])
    /*
     * Print the result as JSON.
     */
-   str = bson_as_canonical_json (&reply, NULL);
+   str = bson_as_canonical_extended_json (&reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
 
