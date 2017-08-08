@@ -380,8 +380,6 @@ if (APPLE)
    add_definitions(-Wno-deprecated-declarations)
 endif()
 
-include (MaintainerFlags)
-
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
