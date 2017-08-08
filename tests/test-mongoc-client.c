@@ -2371,7 +2371,6 @@ test_mongoc_client_select_server_retry_fail (void)
 }
 
 
-
 /* CDRIVER-2172: in single mode, if the selected server has a socket that's been
  * idle for socketCheckIntervalMS, check it with ping. If it fails, retry once.
  */
@@ -2729,6 +2728,56 @@ _respond_to_ping (future_t *future, mock_server_t *server)
 }
 
 static void
+test_mongoc_handshake_pool (void)
+{
+   mock_server_t *server;
+   request_t *request1;
+   request_t *request2;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client1;
+   mongoc_client_t *client2;
+   mongoc_client_pool_t *pool;
+   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   future_t *future;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_appname (uri, BSON_FUNC);
+
+   pool = mongoc_client_pool_new (uri);
+
+   client1 = mongoc_client_pool_pop (pool);
+   request1 = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request1, true);
+   mock_server_replies_simple (request1, server_reply);
+   request_destroy (request1);
+
+   client2 = mongoc_client_pool_pop (pool);
+   future = future_client_command_simple (
+      client2, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+
+   request2 = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request2, true);
+   mock_server_replies_simple (request2, server_reply);
+   request_destroy (request2);
+
+   request2 = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+   mock_server_replies_ok_and_destroys (request2);
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   mongoc_client_pool_push (pool, client1);
+   mongoc_client_pool_push (pool, client2);
+
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+static void
 _test_client_sends_handshake (bool pooled)
 {
    mock_server_t *server;
@@ -2762,9 +2811,8 @@ _test_client_sends_handshake (bool pooled)
 
    request = mock_server_receives_ismaster (server);
 
-   /* Make sure the isMaster request has a "meta" field: */
+   /* Make sure the isMaster request has a "client" field: */
    _assert_ismaster_valid (request, true);
-
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
@@ -3179,6 +3227,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
+   TestSuite_AddMockServerTest (
+      suite, "/Client/handshake/pool", test_mongoc_handshake_pool);
    TestSuite_Add (suite,
                   "/Client/application_handshake",
                   test_mongoc_client_application_handshake);
