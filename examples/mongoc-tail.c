@@ -13,7 +13,7 @@ print_bson (const bson_t *b)
 {
    char *str;
 
-   str = bson_as_canonical_json (b, NULL);
+   str = bson_as_canonical_extended_json (b, NULL);
    fprintf (stdout, "%s\n", str);
    bson_free (str);
 }
