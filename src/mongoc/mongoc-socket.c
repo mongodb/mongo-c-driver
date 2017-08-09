@@ -24,6 +24,9 @@
 #include "mongoc-host-list.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-trace-private.h"
+#ifdef _WIN32
+#include <Mstcpip.h>
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
@@ -254,6 +257,158 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
    bson_free (pfds);
 
    return ret;
+}
+
+
+/* https://jira.mongodb.org/browse/CDRIVER-2176 */
+#define MONGODB_KEEPALIVEINTVL 10
+#define MONGODB_KEEPALIVETIME 300
+#define MONGODB_KEEPALIVECNT 9
+
+static void
+#ifdef _WIN32
+_mongoc_socket_setkeepalive (SOCKET sd) /* IN */
+#else
+_mongoc_socket_setkeepalive (int sd) /* IN */
+#endif
+{
+#ifdef _WIN32
+   BOOL optval = 1;
+   struct tcp_keepalive keepalive;
+   DWORD lpcbBytesReturned = 0;
+   HKEY hKey;
+   DWORD type;
+   DWORD data;
+   DWORD data_size = sizeof data;
+   const char *reg_key =
+      "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
+#else
+   int optval = 1;
+   mongoc_socklen_t optlen;
+#endif
+#ifdef SOL_TCP
+   int level = SOL_TCP;
+#else
+   int level = SOL_SOCKET;
+#endif
+
+   ENTRY;
+
+#ifdef SO_KEEPALIVE
+   if (setsockopt (sd, level, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
+      TRACE ("Setting SO_KEEPALIVE failed");
+   }
+#else
+   TRACE ("SO_KEEPALIVE not available");
+#endif
+
+#ifdef _WIN32
+   keepalive.onoff = true;
+   keepalive.keepalivetime = MONGODB_KEEPALIVETIME * 1000;
+   keepalive.keepaliveinterval = MONGODB_KEEPALIVEINTVL * 1000;
+   /*
+    * Windows hardcodes probes to 10:
+    * https://msdn.microsoft.com/en-us/library/windows/desktop/dd877220(v=vs.85).aspx
+    * "On Windows Vista and later, the number of keep-alive probes (data
+    * retransmissions) is set to 10 and cannot be changed."
+    *
+    * Note that win2k (and seeminly all versions thereafter) do not set the
+    * registry value by default so there is no way to derive the default value
+    * programmatically. It is however listed in the docs. A user can however
+    * change the default value by setting the registry values.
+    */
+
+   if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_QUERY_VALUE, &hKey) ==
+       ERROR_SUCCESS) {
+      /* https://technet.microsoft.com/en-us/library/cc957549.aspx */
+      DWORD default_keepalivetime = 7200000; /* 2 hours */
+      /* https://technet.microsoft.com/en-us/library/cc957548.aspx */
+      DWORD default_keepaliveinterval = 1000; /* 1 second */
+
+      if (RegQueryValueEx (
+             hKey, "KeepAliveTime", NULL, &type, (LPBYTE) &data, &data_size) ==
+          ERROR_SUCCESS) {
+         if (type == REG_DWORD && data < keepalive.keepalivetime) {
+            keepalive.keepalivetime = data;
+         }
+      } else if (default_keepalivetime < keepalive.keepalivetime) {
+         keepalive.keepalivetime = default_keepalivetime;
+      }
+
+      if (RegQueryValueEx (hKey,
+                           "KeepAliveInterval",
+                           NULL,
+                           &type,
+                           (LPBYTE) &data,
+                           &data_size) == ERROR_SUCCESS) {
+         if (type == REG_DWORD && data < keepalive.keepaliveinterval) {
+            keepalive.keepaliveinterval = data;
+         }
+      } else if (default_keepaliveinterval < keepalive.keepaliveinterval) {
+         keepalive.keepaliveinterval = default_keepaliveinterval;
+      }
+      RegCloseKey (hKey);
+   }
+   if (WSAIoctl (sd,
+                 SIO_KEEPALIVE_VALS,
+                 &keepalive,
+                 sizeof keepalive,
+                 NULL,
+                 0,
+                 &lpcbBytesReturned,
+                 NULL,
+                 NULL) == SOCKET_ERROR) {
+      TRACE ("Could not set keepalive values");
+   }
+#else
+#ifdef TCP_KEEPIDLE
+   optlen = sizeof optval;
+   if (!getsockopt (sd, level, TCP_KEEPIDLE, (char *) &optval, &optlen)) {
+      TRACE ("TCP_KEEPIDLE value currently %d", (int) optval);
+      if (optval > MONGODB_KEEPALIVETIME) {
+         optval = MONGODB_KEEPALIVETIME;
+         if (setsockopt (
+                sd, level, TCP_KEEPIDLE, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting TCP_KEEPIDLE failed");
+         } else {
+            TRACE ("TCP_KEEPIDLE value changed to %d", (int) optval);
+         }
+      }
+   }
+#endif
+
+#ifdef TCP_KEEPINTVL
+   optlen = sizeof optval;
+   if (!getsockopt (sd, level, TCP_KEEPINTVL, (char *) &optval, &optlen)) {
+      TRACE ("TCP_KEEPINTL value currently %d", (int) optval);
+      if (optval > MONGODB_KEEPALIVEINTVL) {
+         optval = MONGODB_KEEPALIVEINTVL;
+         if (setsockopt (
+                sd, level, TCP_KEEPINTVL, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting TCP_KEEPINTVL failed");
+         } else {
+            TRACE ("TCP_KEEPINTVL value changed to %d", (int) optval);
+         }
+      }
+   }
+#endif
+
+#ifdef TCP_KEEPCNT
+   optlen = sizeof optval;
+   if (!getsockopt (sd, level, TCP_KEEPCNT, (char *) &optval, &optlen)) {
+      TRACE ("TCP_KEEPCNT value currently %d", (int) optval);
+      if (optval > MONGODB_KEEPALIVECNT) {
+         optval = MONGODB_KEEPALIVECNT;
+         if (setsockopt (
+                sd, level, TCP_KEEPCNT, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting TCP_KEEPCNT failed");
+         } else {
+            TRACE ("TCP_KEEPCNT value changed to %d", (int) optval);
+         }
+      }
+   }
+#endif
+#endif /* _WIN32 */
 }
 
 
@@ -536,7 +691,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 #else
    if (sock->sd != -1) {
       if (owned) {
-        shutdown (sock->sd, SHUT_RDWR);
+         shutdown (sock->sd, SHUT_RDWR);
       }
 
       if (0 == close (sock->sd)) {
@@ -734,8 +889,11 @@ mongoc_socket_new (int domain,   /* IN */
       GOTO (fail);
    }
 
-   if (domain != AF_UNIX && !_mongoc_socket_setnodelay (sd)) {
-      MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
+   if (domain != AF_UNIX) {
+      if (!_mongoc_socket_setnodelay (sd)) {
+         MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
+      }
+      _mongoc_socket_setkeepalive (sd);
    }
 
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
