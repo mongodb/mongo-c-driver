@@ -963,6 +963,19 @@ test_mongoc_uri_compressors (void)
    ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
    ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
    mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_compressors (uri, "snappy,zlib"));
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_compressors (uri, "zlib"));
+   ASSERT (mongoc_uri_set_compressors (uri, "snappy"));
+   ASSERT (bson_has_field (mongoc_uri_get_compressors (uri), "snappy"));
+   ASSERT (!bson_has_field (mongoc_uri_get_compressors (uri), "zlib"));
+   mongoc_uri_destroy (uri);
 #endif
 
    uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib");

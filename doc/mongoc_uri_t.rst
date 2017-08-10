@@ -249,6 +249,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_destroy
     mongoc_uri_get_auth_mechanism
     mongoc_uri_get_auth_source
+    mongoc_uri_get_compressors
     mongoc_uri_get_database
     mongoc_uri_get_hosts
     mongoc_uri_get_mechanism_properties
@@ -267,11 +268,13 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_write_concern
     mongoc_uri_new
     mongoc_uri_new_for_host_port
+    mongoc_uri_new_with_error
     mongoc_uri_option_is_bool
     mongoc_uri_option_is_int32
     mongoc_uri_option_is_utf8
     mongoc_uri_set_auth_mechanism
     mongoc_uri_set_auth_source
+    mongoc_uri_set_compressors
     mongoc_uri_set_database
     mongoc_uri_set_mechanism_properties
     mongoc_uri_set_option_as_bool
