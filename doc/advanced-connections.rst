@@ -172,3 +172,23 @@ Additional Connection Options
 
 The full list of connection options can be found in the :symbol:`mongoc_uri_t` docs.
 
+Certain socket/connection related options are not configurable:
+
+
+============== ===================================================== ======================
+Option         Description                                           Value
+============== ===================================================== ======================
+SO_KEEPALIVE   TCP Keep Alive                                        Enabled
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPIDLE   How long a connection needs to remain idle before TCP 300 seconds
+               starts sending keepalive probes
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPINTVL  The time in seconds between TCP probes                10 seconds
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPCNT    How many probes to send, without acknowledgement,     9 probes
+               before dropping the connection
+-------------- ----------------------------------------------------- ----------------------
+TCP_NODELAY    Send packets as soon as possible or buffer small      Enabled (no buffering)
+               packets (Nagle algorithm) 
+============== ===================================================== ======================
+

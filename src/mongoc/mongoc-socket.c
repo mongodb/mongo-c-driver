@@ -262,7 +262,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
 
 /* https://jira.mongodb.org/browse/CDRIVER-2176 */
 #define MONGODB_KEEPALIVEINTVL 10
-#define MONGODB_KEEPALIVETIME 300
+#define MONGODB_KEEPIDLE 300
 #define MONGODB_KEEPALIVECNT 9
 
 static void
@@ -304,7 +304,7 @@ _mongoc_socket_setkeepalive (int sd) /* IN */
 
 #ifdef _WIN32
    keepalive.onoff = true;
-   keepalive.keepalivetime = MONGODB_KEEPALIVETIME * 1000;
+   keepalive.keepalivetime = MONGODB_KEEPIDLE * 1000;
    keepalive.keepaliveinterval = MONGODB_KEEPALIVEINTVL * 1000;
    /*
     * Windows hardcodes probes to 10:
@@ -365,8 +365,8 @@ _mongoc_socket_setkeepalive (int sd) /* IN */
    optlen = sizeof optval;
    if (!getsockopt (sd, level, TCP_KEEPIDLE, (char *) &optval, &optlen)) {
       TRACE ("TCP_KEEPIDLE value currently %d", (int) optval);
-      if (optval > MONGODB_KEEPALIVETIME) {
-         optval = MONGODB_KEEPALIVETIME;
+      if (optval > MONGODB_KEEPIDLE) {
+         optval = MONGODB_KEEPIDLE;
          if (setsockopt (
                 sd, level, TCP_KEEPIDLE, (char *) &optval, sizeof optval)) {
             TRACE ("Setting TCP_KEEPIDLE failed");
