@@ -3,6 +3,7 @@
 #include <mongoc-client-private.h>
 #include <mongoc-cursor-private.h>
 #include <mongoc-collection-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 
@@ -202,9 +203,11 @@ create_unique_index (mongoc_collection_t *collection)
    mongoc_index_opt_init (&opt);
    opt.unique = true;
 
+   BEGIN_IGNORE_DEPRECATIONS
    ASSERT_OR_PRINT (mongoc_collection_create_index (
                        collection, tmp_bson ("{'a': 1}"), &opt, &error),
                     error);
+   END_IGNORE_DEPRECATIONS
 }
 
 

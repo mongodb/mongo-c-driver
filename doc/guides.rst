@@ -15,3 +15,4 @@ Guides
    aggregate
    distinct-mapreduce
    visual-studio-guide
+   create-indexes

@@ -5,6 +5,7 @@
 #include <mongoc-collection-private.h>
 #include <mongoc-write-concern-private.h>
 #include <mongoc-read-concern-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 
@@ -13,6 +14,9 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
+
+
+BEGIN_IGNORE_DEPRECATIONS
 
 
 static void

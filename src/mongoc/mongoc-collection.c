@@ -1083,10 +1083,6 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t *collection,
 
    BSON_ASSERT (collection);
 
-   /*
-    * TODO: this is supposed to be cached and cheap... make it that way
-    */
-
    def_opt = mongoc_index_opt_get_default ();
    opt = opt ? opt : def_opt;
 
@@ -1183,8 +1179,12 @@ mongoc_collection_create_index (mongoc_collection_t *collection,
    bson_t reply;
    bool ret;
 
+   BEGIN_IGNORE_DEPRECATIONS
+
    ret = mongoc_collection_create_index_with_opts (
       collection, keys, opt, NULL, &reply, error);
+
+   END_IGNORE_DEPRECATIONS
 
    bson_destroy (&reply);
    return ret;
@@ -1406,7 +1406,9 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
                                 const mongoc_index_opt_t *opt,
                                 bson_error_t *error)
 {
+   BEGIN_IGNORE_DEPRECATIONS
    return mongoc_collection_create_index (collection, keys, opt, error);
+   END_IGNORE_DEPRECATIONS
 }
 
 mongoc_cursor_t *

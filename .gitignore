@@ -28,6 +28,7 @@ depcomp
 echo-server
 example-command-monitoring
 example-command-with-opts
+example-create-indexes
 example-client
 example-pool
 example-scram

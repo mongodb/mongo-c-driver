@@ -2,6 +2,7 @@
 #include <bcon.h>
 #include <mongoc.h>
 #include <mongoc-matcher-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 

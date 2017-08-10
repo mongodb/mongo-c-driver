@@ -37,6 +37,11 @@ example_client_SOURCES = examples/example-client.c
 example_client_CFLAGS = $(EXAMPLE_CFLAGS)
 example_client_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-create-indexes
+example_create_indexes_SOURCES = examples/example-create-indexes.c
+example_create_indexes_CFLAGS = $(EXAMPLE_CFLAGS)
+example_create_indexes_LDADD = $(EXAMPLE_LDADD)
+
 EXAMPLE_POOL_LDADD =
 EXAMPLE_POOL_CFLAGS =
 if EXPLICIT_LIBS

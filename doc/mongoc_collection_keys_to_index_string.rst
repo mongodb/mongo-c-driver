@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-This function shall returns the canonical stringification, as used in :symbol:`mongoc_collection_create_index()` without an explicit name, of a given key specification.
+This function returns the canonical stringification of a given key specification. See :doc:`create-indexes`.
 
 It is a programming error to call this function on a non-standard index, such one other than a straight index with ascending and descending.
 

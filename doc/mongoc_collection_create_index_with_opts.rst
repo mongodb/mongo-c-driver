@@ -16,6 +16,11 @@ Synopsis
                                             bson_t *reply,
                                             bson_error_t *error);
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Parameters
 ----------
 
