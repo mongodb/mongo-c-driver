@@ -6344,7 +6344,7 @@ tasks:
             URI: ""
 
     - name: test-latest-server-auth-sspi-winssl
-      #tags: ["winssl", "sspi", "auth", "server", "latest"]
+      tags: ["winssl", "sspi", "auth", "server", "latest"]
       depends_on:
         - name: "debug-compile-sspi-winssl"
       commands:
