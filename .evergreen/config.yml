@@ -6051,7 +6051,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-nosasl-nossl
-      #tags: ["nossl", "nosasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["nossl", "nosasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -6072,7 +6072,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-nosasl-openssl
-      #tags: ["openssl", "nosasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["openssl", "nosasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -6093,7 +6093,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-nosasl-darwinssl
-      #tags: ["darwinssl", "nosasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["darwinssl", "nosasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-darwinssl"
       commands:
@@ -6114,7 +6114,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-nosasl-winssl
-      #tags: ["winssl", "nosasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["winssl", "nosasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-winssl"
       commands:
@@ -6135,7 +6135,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-sasl-nossl
-      #tags: ["nossl", "sasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["nossl", "sasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-nossl"
       commands:
@@ -6156,7 +6156,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-sasl-openssl
-      #tags: ["openssl", "sasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["openssl", "sasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-openssl"
       commands:
@@ -6177,7 +6177,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-sasl-darwinssl
-      #tags: ["darwinssl", "sasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["darwinssl", "sasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-darwinssl"
       commands:
@@ -6198,7 +6198,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-noauth-sasl-winssl
-      #tags: ["winssl", "sasl", "noauth", "sharded-cluster", "latest"]
+      tags: ["winssl", "sasl", "noauth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-winssl"
       commands:
@@ -6219,7 +6219,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-nosasl-openssl
-      #tags: ["openssl", "nosasl", "auth", "sharded-cluster", "latest"]
+      tags: ["openssl", "nosasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -6240,7 +6240,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-nosasl-darwinssl
-      #tags: ["darwinssl", "nosasl", "auth", "sharded-cluster", "latest"]
+      tags: ["darwinssl", "nosasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-darwinssl"
       commands:
@@ -6261,7 +6261,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-nosasl-winssl
-      #tags: ["winssl", "nosasl", "auth", "sharded-cluster", "latest"]
+      tags: ["winssl", "nosasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-nosasl-winssl"
       commands:
@@ -6282,7 +6282,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-sasl-openssl
-      #tags: ["openssl", "sasl", "auth", "sharded-cluster", "latest"]
+      tags: ["openssl", "sasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-openssl"
       commands:
@@ -6303,7 +6303,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-sasl-darwinssl
-      #tags: ["darwinssl", "sasl", "auth", "sharded-cluster", "latest"]
+      tags: ["darwinssl", "sasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-darwinssl"
       commands:
@@ -6324,7 +6324,7 @@ tasks:
 
 
     - name: test-latest-sharded-cluster-auth-sasl-winssl
-      #tags: ["winssl", "sasl", "auth", "sharded-cluster", "latest"]
+      tags: ["winssl", "sasl", "auth", "sharded-cluster", "latest"]
       depends_on:
         - name: "debug-compile-sasl-winssl"
       commands:
