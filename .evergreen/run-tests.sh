@@ -59,11 +59,6 @@ case "$OS" in
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
       ;;
 
-   sunos)
-      PATH="/opt/mongodbtoolchain/bin:$PATH"
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
-      ;;
-
    *)
       #if test -f /tmp/drivers.keytab; then
          # See CDRIVER-2000
@@ -87,10 +82,6 @@ esac
 case "$OS" in
    cygwin*)
       test-libmongoc.exe -d -F test-results.json
-      ;;
-
-   sunos)
-      gmake -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
       ;;
 
    *)
