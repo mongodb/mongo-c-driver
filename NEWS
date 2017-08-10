@@ -18,6 +18,10 @@ Thanks to everyone who contributed to the development of this release.
 mongo-c-driver 1.7.0
 ====================
 
+It is my please to announce mongo-c-driver 1.7.0.
+
+New features and bug fixes:
+
   * CMake build now installs .pc files for programs that link to libmongoc using
     pkg-config. Both the CMake and Autotools build systems now install .cmake
     files for programs that link to libmongoc using CMake. Linking to libmongoc
@@ -60,6 +64,22 @@ mongo-c-driver 1.7.0
     concern options have been set, and mongoc_read_concern_is_default checks if
     read concern options are set.
   * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * David Golden
+  * Jeremy Mikola
+  * Bernard Spil
+  * Aleksander Melnikov
+  * Adam Seering
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.6.0
@@ -1520,7 +1540,6 @@ libmongoc.
   * Paul Melnikow
   * Samantha Ritter
   * Shraya Ramani
-  * Spencer Jackson
   * Spencer Jackson
   * Tyler Brock
 
