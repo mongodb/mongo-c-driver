@@ -790,7 +790,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
           !(secure_channel->req_flags & ISC_REQ_USE_SUPPLIED_CREDS)) {
          secure_channel->req_flags |= ISC_REQ_USE_SUPPLIED_CREDS;
          secure_channel->connecting_state = ssl_connect_2_writing;
-         MONGOC_WARNING ("a client certificate has been requested");
+         TRACE ("a client certificate has been requested");
          return true;
       }
 
