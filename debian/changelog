@@ -1,3 +1,9 @@
+libmongoc (1.7.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Fri, 11 Aug 2017 03:09:17 +0000
+
 libmongoc (1.6.3-1) unstable; urgency=low
 
   * New upstream release
