@@ -37,6 +37,7 @@
 #include "mongoc-topology-description-private.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-scram-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -59,6 +60,9 @@ typedef struct _mongoc_cluster_t {
    int64_t operation_id;
    uint32_t request_id;
    uint32_t sockettimeoutms;
+   uint8_t scram_client_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t scram_server_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t scram_salted_password[MONGOC_SCRAM_HASH_SIZE];
    uint32_t socketcheckintervalms;
    mongoc_uri_t *uri;
    unsigned requires_auth : 1;
@@ -90,10 +94,19 @@ int32_t
 mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
                                       uint32_t server_id);
 
+size_t
+_mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
+                              size_t iovcnt,
+                              int skip,
+                              char *buffer);
+
+bool
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
+                               uint32_t server_id);
+
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
                                 mongoc_rpc_t *rpcs,
-                                size_t rpcs_len,
                                 mongoc_server_stream_t *server_stream,
                                 const mongoc_write_concern_t *write_concern,
                                 bson_error_t *error);
@@ -131,15 +144,29 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       bson_error_t *error);
 
 bool
-mongoc_cluster_run_command (mongoc_cluster_t *cluster,
-                            mongoc_stream_t *stream,
-                            uint32_t server_id,
-                            mongoc_query_flags_t flags,
-                            const char *db_name,
-                            const bson_t *command,
-                            bson_t *reply,
-                            bson_error_t *error);
+mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
+                                    mongoc_stream_t *stream,
+                                    uint32_t server_id,
+                                    mongoc_query_flags_t flags,
+                                    const char *db_name,
+                                    const bson_t *command,
+                                    bson_t *reply,
+                                    bson_error_t *error);
 
+void
+_mongoc_cluster_build_sasl_start (bson_t *cmd,
+                                  const char *mechanism,
+                                  const char *buf,
+                                  uint32_t buflen);
+
+void
+_mongoc_cluster_build_sasl_continue (bson_t *cmd,
+                                     int conv_id,
+                                     const char *buf,
+                                     uint32_t buflen);
+
+int
+_mongoc_cluster_get_conversation_id (const bson_t *reply);
 
 BSON_END_DECLS
 

@@ -28,8 +28,28 @@ test_command_name (void)
 }
 
 
+static void
+test_rand_simple (void)
+{
+   int i;
+   unsigned int seed = 0;
+   int value, first_value;
+
+   first_value = _mongoc_rand_simple (&seed);
+
+   for (i = 0; i < 1000; i++) {
+      value = _mongoc_rand_simple (&seed);
+      if (value != first_value) {
+         /* success */
+         break;
+      }
+   }
+}
+
+
 void
 test_util_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Util/command_name", test_command_name);
+   TestSuite_Add (suite, "/Util/rand_simple", test_rand_simple);
 }

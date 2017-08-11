@@ -28,7 +28,7 @@ Removes all files matching ``filename`` and their data chunks from the MongoDB s
 Returns
 -------
 
-Returns true if successful (including when no files match), otherwise false and ``error`` is set.
+Returns true if successful, including when no files match. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 Errors
 ------

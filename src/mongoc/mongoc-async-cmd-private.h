@@ -52,7 +52,8 @@ typedef struct _mongoc_async_cmd {
    mongoc_async_cmd_cb_t cb;
    void *data;
    bson_error_t error;
-   int64_t start_time;
+   int64_t connect_started;
+   int64_t cmd_started;
    int64_t timeout_msec;
    bson_t cmd;
    mongoc_buffer_t buffer;

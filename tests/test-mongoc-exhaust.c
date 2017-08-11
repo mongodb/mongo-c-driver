@@ -80,10 +80,10 @@ test_exhaust_cursor (bool pooled)
    } else {
       client = test_framework_client_new ();
    }
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_exhaust_cursor");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    mongoc_collection_drop (collection, &error);
 
@@ -131,15 +131,15 @@ test_exhaust_cursor (bool pooled)
          mongoc_cursor_error (cursor, &error);
          fprintf (stderr, "cursor error: %s\n", error.message);
       }
-      assert (r);
-      assert (doc);
-      assert (cursor->in_exhaust);
-      assert (client->in_exhaust);
+      BSON_ASSERT (r);
+      BSON_ASSERT (doc);
+      BSON_ASSERT (cursor->in_exhaust);
+      BSON_ASSERT (client->in_exhaust);
 
       /* destroy the cursor, make sure a disconnect happened */
       timestamp1 = get_timestamp (client, cursor);
       mongoc_cursor_destroy (cursor);
-      assert (!client->in_exhaust);
+      BSON_ASSERT (!client->in_exhaust);
    }
 
    /* ensure even a 1 ms-resolution clock advances significantly */
@@ -157,8 +157,8 @@ test_exhaust_cursor (bool pooled)
          mongoc_cursor_error (cursor2, &error);
          fprintf (stderr, "cursor error: %s\n", error.message);
       }
-      assert (r);
-      assert (doc);
+      BSON_ASSERT (r);
+      BSON_ASSERT (doc);
       ASSERT_CMPINT64 (timestamp1, <, get_timestamp (client, cursor2));
 
       for (i = 0; i < 5; i++) {
@@ -167,18 +167,18 @@ test_exhaust_cursor (bool pooled)
             mongoc_cursor_error (cursor2, &error);
             fprintf (stderr, "cursor error: %s\n", error.message);
          }
-         assert (r);
-         assert (doc);
+         BSON_ASSERT (r);
+         BSON_ASSERT (doc);
       }
 
       r = mongoc_cursor_next (cursor, &doc);
-      assert (r);
-      assert (doc);
+      BSON_ASSERT (r);
+      BSON_ASSERT (doc);
 
       doc = NULL;
       r = mongoc_cursor_next (cursor2, &doc);
-      assert (!r);
-      assert (!doc);
+      BSON_ASSERT (!r);
+      BSON_ASSERT (!doc);
 
       mongoc_cursor_error (cursor2, &error);
       ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
@@ -198,7 +198,7 @@ test_exhaust_cursor (bool pooled)
                                          &error);
       END_IGNORE_DEPRECATIONS;
 
-      assert (!r);
+      BSON_ASSERT (!r);
       ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_CLIENT);
       ASSERT_CMPUINT32 (error.code, ==, MONGOC_ERROR_CLIENT_IN_EXHAUST);
    }
@@ -220,22 +220,22 @@ test_exhaust_cursor (bool pooled)
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
-         assert (r);
-         assert (doc);
+         BSON_ASSERT (r);
+         BSON_ASSERT (doc);
       }
 
       r = mongoc_cursor_next (cursor, &doc);
-      assert (!r);
-      assert (!doc);
+      BSON_ASSERT (!r);
+      BSON_ASSERT (!doc);
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == (mongoc_stream_t *) mongoc_set_get (
-                           client->cluster.nodes, server_id));
+      BSON_ASSERT (stream == (mongoc_stream_t *) mongoc_set_get (
+                                client->cluster.nodes, server_id));
 
       r = mongoc_cursor_next (cursor2, &doc);
-      assert (r);
-      assert (doc);
+      BSON_ASSERT (r);
+      BSON_ASSERT (doc);
    }
 
    bson_destroy (&q);
@@ -557,28 +557,36 @@ test_exhaust_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
                       test_cursor_set_max_await_time_ms);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/network/1st_batch/single",
-                  test_exhaust_network_err_1st_batch_single);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/network/1st_batch/pooled",
-                  test_exhaust_network_err_1st_batch_pooled);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/server/1st_batch/single",
-                  test_exhaust_server_err_1st_batch_single);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/server/1st_batch/pooled",
-                  test_exhaust_server_err_1st_batch_pooled);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/network/2nd_batch/single",
-                  test_exhaust_network_err_2nd_batch_single);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/network/2nd_batch/pooled",
-                  test_exhaust_network_err_2nd_batch_pooled);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/server/2nd_batch/single",
-                  test_exhaust_server_err_2nd_batch_single);
-   TestSuite_Add (suite,
-                  "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
-                  test_exhaust_server_err_2nd_batch_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/network/1st_batch/single",
+      test_exhaust_network_err_1st_batch_single);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/network/1st_batch/pooled",
+      test_exhaust_network_err_1st_batch_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/server/1st_batch/single",
+      test_exhaust_server_err_1st_batch_single);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/server/1st_batch/pooled",
+      test_exhaust_server_err_1st_batch_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/network/2nd_batch/single",
+      test_exhaust_network_err_2nd_batch_single);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/network/2nd_batch/pooled",
+      test_exhaust_network_err_2nd_batch_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/server/2nd_batch/single",
+      test_exhaust_server_err_2nd_batch_single);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
+      test_exhaust_server_err_2nd_batch_pooled);
 }

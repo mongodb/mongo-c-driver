@@ -414,7 +414,8 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
       bson_append_utf8 (&user, "pwd", 3, pwd, -1);
    }
 
-   if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &user, NULL, error)) {
+   if (!mongoc_collection_insert (
+          collection, MONGOC_INSERT_NONE, &user, NULL, error)) {
       GOTO (failure_with_user);
    }
 
@@ -1094,7 +1095,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
       }
 
       if (bson_iter_init_find (&iter, opts, "size")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+         if (!BSON_ITER_HOLDS_INT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1112,7 +1113,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
       }
 
       if (bson_iter_init_find (&iter, opts, "max")) {
-         if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+         if (!BSON_ITER_HOLDS_INT (&iter)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,

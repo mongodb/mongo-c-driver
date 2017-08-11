@@ -41,8 +41,7 @@ functions:
         script: |
           set -o xtrace
           rm -f *.tar.gz
-          curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
-          pip install --upgrade git+git://github.com/mongodb/mongo-orchestration@master
+          curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz --silent --max-time 120
 
   "upload release":
     - command: shell.exec
@@ -54,7 +53,7 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: mongoc.tar.gz
-        remote_file: mongo-c-driver/mongo-c-driver-${CURRENT_VERSION}.tar.gz
+        remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
         bucket: mciuploads
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
@@ -92,7 +91,19 @@ functions:
       params:
         continue_on_err: true
         # EVG-1105: Use s3.get extract_to: mongoc/
-        script: "set -o xtrace && mkdir mongoc && tar xf build.tar.gz -C mongoc/"
+        script: |
+           set -o xtrace   # Write all commands first to stderr
+           set -o errexit  # Exit the script with error if any of the commands fail
+
+           mkdir mongoc
+
+           if command -v gtar 2>/dev/null; then
+              TAR=gtar
+           else
+              TAR=tar
+           fi
+
+           $TAR xf build.tar.gz -C mongoc/
 
   "upload docs" :
     - command: shell.exec
@@ -113,6 +124,43 @@ functions:
         permissions: public-read
         content_type: text/html
         display_name: "Rendered docs"
+
+  "upload man pages" :
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongoc"
+        script: |
+           . venv/bin/activate
+
+           # "man" with redirection writes plain ASCII, use lower-level groff to
+           # force formatted output. -t lays out tables, -T utf8 sets the output
+           # type, -man loads the manpage TROFF macros.
+           for doc in doc/man/*.3; do
+             echo $doc
+             fullpath=`pwd`/$doc
+             groff -man -t -T utf8 $fullpath | term2image -o $fullpath.png
+           done
+
+           mkdir -p man-page-images
+           mv doc/man/*.png man-page-images
+
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           sudo apt-get install -y awscli
+           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+
+           sh .evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  ${workdir}/mongoc/man-page-images/index.html
+        remote_file: ${project}/man-page-images/${CURRENT_VERSION}/index.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "Rendered man pages"
 
   "upload coverage" :
     - command: shell.exec
@@ -223,7 +271,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} SSL=${SSL} sh .evergreen/integration-tests.sh
+          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
@@ -232,16 +280,16 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} sh .evergreen/run-tests.sh
+          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} sh .evergreen/run-tests.sh
 
   "run auth tests":
     - command: shell.exec
       type: test
       params:
+        silent: true
         working_dir: "mongoc"
         script: |
-          set -o errexit
-          sh .evergreen/run-auth-tests.sh
+           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' sh .evergreen/run-auth-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -285,6 +333,7 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
+           # TODO BUILD-2557
            if test -w /etc/hosts; then
               SUDO=""
            else
@@ -354,11 +403,12 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              # Need modern Sphinx for :caption: in literal includes
+              # Need modern Sphinx for :caption: in literal includes.
+              # Install term2image for man page rendering.
               python -m virtualenv venv
               cd venv
               . bin/activate
-              ./bin/pip install sphinx
+              ./bin/pip install sphinx git+https://github.com/ajdavis/term2image.git
               cd ..
 
         - command: shell.exec
@@ -371,22 +421,16 @@ tasks:
               export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
               export MONGOC_TEST_SKIP_LIVE=on
               export MONGOC_TEST_SKIP_SLOW=on
+              sh .evergreen/check-release-archive.sh
 
-              # Use modern sphinx-build from venv.
-              . venv/bin/activate
-              which sphinx-build
-              sphinx-build --version
 
-              ./autogen.sh --enable-html-docs --enable-man-pages && make distcheck
         - func: "upload docs"
+        - func: "upload man pages"
         - func: "upload release"
         - func: "upload build"
 
-    - name: cmake-compile
-      tags: ["release-eng", "cmake-compile"]
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
+    - name: debug-compile-zlib
+      tags: ["zlib", "compression"]
       commands:
         - command: shell.exec
           type: test
@@ -395,8 +439,121 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              BUILDTOOL="cmake" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib" sh .evergreen/compile.sh
         - func: "upload build"
+
+    - name: debug-compile-snappy
+      tags: ["snappy", "compression"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib=no" sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-compression
+      tags: ["zlib", "snappy", "compression"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib" sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: test-latest-server-zlib
+      tags: ["zlib", "compression"]
+      depends_on:
+        - name: "debug-compile-zlib"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-zlib"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib
+
+
+    - name: test-latest-server-snappy
+      tags: ["snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-snappy"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-snappy"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: snappy
+
+    - name: test-latest-server-compression
+      tags: ["zlib", "snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-compression"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib,snappy
+
+
+    - name: test-3.4-server-compression
+      tags: ["zlib", "snappy", "compression"]
+      depends_on:
+        - name: "debug-compile-compression"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "experimental"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib,snappy
+
+
 
     - name: debug-compile
       tags: ["debug-compile"]
@@ -477,6 +634,25 @@ tasks:
         - func: "upload coverage"
         - func: "upload build"
 
+
+    - name: debug-compile-sanitizer-address
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' sh .evergreen/compile.sh
+
+    - name: debug-compile-sanitizer-undefined
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' sh .evergreen/compile.sh
+
     - name: debug-compile-scan-build
       tags: ["debug-compile", "special", "scan-build", "clang"]
       commands:
@@ -514,6 +690,162 @@ tasks:
               set -o xtrace
               RELEASE=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
+
+    - name: link-with-cmake
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from CMake's find_package command.
+              export BUILD_SAMPLE_WITH_CMAKE=1
+              export ENABLE_SSL=
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-cmake-ssl
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from CMake's find_package command.
+              export BUILD_SAMPLE_WITH_CMAKE=1
+              export ENABLE_SSL=1
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-cmake-windows
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with CMake (not Autotools) and compile a program
+              # that links dynamically or statically to it, using variables from
+              # CMake's find_package command.
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+
+    - name: link-with-cmake-windows-ssl
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            SSL: "winssl"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with CMake (not Autotools) and compile a program
+              # that links dynamically or statically to it, using variables from
+              # CMake's find_package command.
+              export ENABLE_SSL=1
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+
+    - name: link-with-cmake-mingw
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with CMake (not Autotools) and compile a program
+              # that links dynamically or statically to it, using variables from
+              # pkg-config.exe.
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+
+    - name: link-with-pkg-config
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from "pkg-config".
+              export BUILD_SAMPLE_WITH_CMAKE=
+              export ENABLE_SSL=
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+    - name: link-with-pkg-config-ssl
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with the Autotools or CMake and compile a program
+              # that links dynamically or statically to libmongoc, using
+              # variables from "pkg-config".
+              export BUILD_SAMPLE_WITH_CMAKE=
+              export ENABLE_SSL=1
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
@@ -5984,16 +6316,36 @@ tasks:
         - func: "fetch build"
           vars:
             BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "run auth tests"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
 
-    - name: authentication-tests-sasl
-      tags: ["authentication-tests", "sasl"]
+    - name: authentication-tests-sasl-cyrus
+      tags: ["authentication-tests", "sasl", "cyrus"]
       depends_on:
         - name: "debug-compile-sasl-nossl"
       commands:
         - func: "fetch build"
           vars:
             BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-sasl-sspi
+      tags: ["authentication-tests", "sasl", "sspi"]
+      depends_on:
+        - name: "debug-compile-sspi-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-nossl"
         - func: "run auth tests"
 
     - name: authentication-tests-nosasl
@@ -6006,6 +6358,127 @@ tasks:
             BUILD_NAME: "debug-compile-nosasl-nossl"
         - func: "run auth tests"
 
+    - name: authentication-tests-openssl
+      tags: ["authentication-tests", "nosasl", "ssl", "openssl"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-darwinssl
+      tags: ["authentication-tests", "nosasl", "ssl", "darwinssl"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-winssl
+      tags: ["authentication-tests", "nosasl", "ssl", "winssl"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "run auth tests"
+
+    - name: build-and-run-authentication-tests-openssl-0.9.8
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2l sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0f sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1-fips
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-libressl-2.5
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
 # }}}
 
 buildvariants:
@@ -6015,14 +6488,39 @@ buildvariants:
   run_on:
     - ubuntu1404-build
   tasks:
-    - "make-release-archive"
-    - ".release-eng"
+    - name: "make-release-archive"
+      distros: # Run on any of these variants, whichever will schedule us first
+      - ubuntu1604-build
+      - ubuntu1604-test
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
+    - name: "link-with-cmake"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "link-with-cmake-windows"
+      distros:
+      - windows-64-vs2015-compile
+      - windows-64-vs2015-test
+    - name: "link-with-cmake-windows-ssl"
+      distros:
+      - windows-64-vs2015-compile
+      - windows-64-vs2015-test
+    - name: "link-with-cmake-mingw"
+      distros:
+      - windows-64-vs2013-compile
+    - name: "link-with-pkg-config"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
 
 
 - name: clang34ubuntu
@@ -6037,7 +6535,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6060,12 +6559,28 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # Debian 8.1 only supports MongoDB 3.4+
+
+- name: openssl
+  display_name: "OpenSSL / LibreSSL"
+  run_on:
+    - archlinux-build
+    - archlinux-test
+  tasks:
+    - "build-and-run-authentication-tests-openssl-0.9.8"
+    - "build-and-run-authentication-tests-openssl-1.0.0"
+    - "build-and-run-authentication-tests-openssl-1.0.1"
+    - "build-and-run-authentication-tests-openssl-1.0.2"
+    - "build-and-run-authentication-tests-openssl-1.1.0"
+    - "build-and-run-authentication-tests-openssl-1.0.1-fips"
+    - "build-and-run-authentication-tests-libressl-2.5"
+
 
 - name: clang37
   display_name: "clang 3.7 (Archlinux)"
@@ -6079,7 +6594,8 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .nossl !.nosasl"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .nossl !.nosasl" # No enterprise build for Archlinux, SSL not available
@@ -6101,7 +6617,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests !.sasl"
+    - ".authentication-tests .nosasl !.ssl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -6115,13 +6631,17 @@ buildvariants:
     - ubuntu1604-build
     - ubuntu1604-test
   tasks:
+    - ".compression"
     - "debug-compile-scan-build"
+    - "debug-compile-sanitizer-address"
+    - "debug-compile-sanitizer-undefined"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6140,7 +6660,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6162,7 +6683,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .nossl !.nosasl !.ipv4-only"
@@ -6185,7 +6707,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6208,7 +6731,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6227,7 +6751,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".authentication-tests !.sasl"
+    - ".authentication-tests .nosasl !.ssl !.sspi"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.4 .nossl .nosasl"
@@ -6242,12 +6766,14 @@ buildvariants:
   - ubuntu1604-build
   - ubuntu1604-test
   tasks:
+    - ".compression"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6255,42 +6781,43 @@ buildvariants:
       # Ubuntu16.04 only supports MongoDB 3.4+
 
 # Interesting platforms
-- name: solaris
-  display_name: "*Solaris (x86-64) (GCC 4.9.2)"
-  expansions:
-    CC: "gcc"
-    MARCH: "x86_64"
-  batchtime: 1440 # 1 day
-  run_on:
-    - solaris
-  tasks:
-    - "release-compile"
-    - "debug-compile"
-    - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.sasl"
-    #- ".authentication-tests" FIXME: Kerberos authentication doesn't seem to work
-    - ".latest .nossl" # No MongoDB SSL builds available for any version
-    - ".3.4 .nossl" # No MongoDB SSL builds available for any version
-    - ".3.2 .nossl !.nosasl"
-    - ".3.0 .nossl !.nosasl"
-    - ".2.6 .nossl !.nosasl"
-
-- name: solaris-32
-  display_name: "Solaris (i386) (GCC 4.9.2)"
-  expansions:
-    CC: "gcc"
-    MARCH: "i386"
-  batchtime: 1440 # 1 day
-  run_on:
-    - solaris
-  tasks:
-    - "release-compile"
-    - "debug-compile"
-    - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests !.sasl"
-    - ".latest .nossl .nosasl"
-    - ".3.4 .nossl .nosasl"
-      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
+#- name: solaris
+#  display_name: "*Solaris (x86-64) (GCC 4.9.2)"
+#  expansions:
+#    CC: "gcc"
+#    MARCH: "x86_64"
+#  batchtime: 1440 # 1 day
+#  run_on:
+#    - solaris
+#  tasks:
+#    - "release-compile"
+#    - "debug-compile"
+#    - "debug-compile-nosasl-openssl"
+#    - ".debug-compile !.sspi .nossl"
+#    - ".authentication-tests .nosasl !.ssl !.sspi" # Revert me: CDRIVER-2000
+#    - ".authentication-tests .openssl"
+#    - ".latest .nossl" # No MongoDB SSL builds available for any version
+#    - ".3.4 .nossl" # No MongoDB SSL builds available for any version
+#    - ".3.2 .nossl !.nosasl"
+#    - ".3.0 .nossl !.nosasl"
+#    - ".2.6 .nossl !.nosasl"
+#
+#- name: solaris-32
+#  display_name: "Solaris (i386) (GCC 4.9.2)"
+#  expansions:
+#    CC: "gcc"
+#    MARCH: "i386"
+#  batchtime: 1440 # 1 day
+#  run_on:
+#    - solaris
+#  tasks:
+#    - "release-compile"
+#    - "debug-compile"
+#    - ".debug-compile !.sspi .nossl .nosasl"
+#    - ".authentication-tests .nosasl !.ssl"
+#    - ".latest .nossl .nosasl"
+#    - ".3.4 .nossl .nosasl"
+#      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
 
 - name: darwin
   display_name: "*Darwin, OS X (Apple LLVM)"
@@ -6306,7 +6833,9 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
+    - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6332,7 +6861,10 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests !.sasl" # GSSAPI isn't installed
+    - ".authentication-tests .nosasl !.ssl" # Revert Me: CDRIVER-2040
+    - ".authentication-tests .openssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6359,7 +6891,9 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests !.sasl"
+    - ".authentication-tests .nosasl !.ssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6384,7 +6918,10 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests !.sasl" # GSSAPI isn't installed
+    - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
+    - ".authentication-tests .openssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6410,7 +6947,9 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests !.sasl"
+    - ".authentication-tests .nosasl !.ssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6435,7 +6974,10 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests !.sasl" # GSSAPI isn't installed
+    - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
+    - ".authentication-tests .openssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -6463,7 +7005,9 @@ buildvariants:
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".debug-compile .nossl .sspi"
-    - ".authentication-tests !.sasl"
+    - ".authentication-tests .nosasl !.ssl"
+    - ".authentication-tests .winssl"
+    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -6483,7 +7027,9 @@ buildvariants:
   - windows-64-vs2013-compile
   tasks:
     - ".debug-compile .nossl .nosasl"
+    - ".debug-compile .winssl .sspi"
     - ".latest .nossl .nosasl .server"
+    - ".latest .winssl .sspi .server"
 
 - name: power8-rhel71
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"
@@ -6498,8 +7044,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.sasl"
-    #- ".authentication-tests" FIXME: Kerberos Authentication doesn't seem to work
+    - ".authentication-tests .nosasl !.ssl" # Revert me: CDRIVER-2000
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6523,7 +7069,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6539,13 +7086,15 @@ buildvariants:
   - ubuntu1604-arm64-large
   - ubuntu1604-arm64-small
   tasks:
+    - ".compression"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6565,7 +7114,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6586,7 +7136,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6606,7 +7157,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests"
+    - ".authentication-tests !.ssl !.sspi"
+    - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
@@ -6614,4 +7166,9 @@ buildvariants:
       # SUSE12 s390x is only supported by MongoDB 3.4+
 
 
-
+- name: experimental
+  display_name: "Experimental 3.6 Implementations"
+  run_on:
+    - archlinux-build
+  tasks:
+    - ".compression"

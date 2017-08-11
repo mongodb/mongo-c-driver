@@ -274,10 +274,10 @@ test_client_cmd_write_concern (void)
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
       mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
-   assert (request);
+   BSON_ASSERT (request);
 
    mock_server_replies_ok_and_destroys (request);
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
 
@@ -286,14 +286,14 @@ test_client_cmd_write_concern (void)
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
       mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
-   assert (request);
+   BSON_ASSERT (request);
 
    mock_server_replies_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'cannot use w > 1 when a "
       "host is not replicated', 'code' : 2 }");
 
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
 
@@ -306,7 +306,7 @@ test_client_cmd_write_concern (void)
       request,
       "{ 'ok' : 1, 'n': 1, "
       "'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    mock_server_destroy (server);
@@ -393,7 +393,7 @@ test_mongoc_client_authenticate (void *context)
       if (r) {
          fprintf (stderr, "Authentication failure: \"%s\"", error.message);
       }
-      assert (!r);
+      BSON_ASSERT (!r);
    }
 
    /*
@@ -401,7 +401,7 @@ test_mongoc_client_authenticate (void *context)
     */
    database = mongoc_client_get_database (admin_client, "test");
    r = mongoc_database_remove_all_users (database, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -413,6 +413,91 @@ test_mongoc_client_authenticate (void *context)
    bson_free (username);
    mongoc_database_destroy (database);
    mongoc_client_destroy (admin_client);
+}
+
+
+static void
+test_mongoc_client_authenticate_cached (bool pooled)
+{
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t insert = BSON_INITIALIZER;
+   const bson_t *doc;
+   bson_error_t error;
+   bool r;
+   int i = 0;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &insert, NULL, &error);
+   for (i = 0; i < 10; i++) {
+      mongoc_topology_scanner_node_t *scanner_node;
+
+      cursor =
+         mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
+      r = mongoc_cursor_next (cursor, &doc);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (r);
+      mongoc_cursor_destroy (cursor);
+
+      if (pooled) {
+         mongoc_cluster_disconnect_node (&client->cluster, 1);
+      } else {
+         scanner_node =
+            mongoc_topology_scanner_get_node (client->topology->scanner, 1);
+         mongoc_stream_destroy (scanner_node->stream);
+         scanner_node->stream = NULL;
+      }
+   }
+   // Screw up the cache
+   memcpy (client->cluster.scram_client_key, "foo", 3);
+   cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
+   capture_logs (true);
+   r = mongoc_cursor_next (cursor, &doc);
+
+   if (pooled) {
+      ASSERT_CAPTURED_LOG ("The cachekey broke",
+                           MONGOC_LOG_LEVEL_WARNING,
+                           "Failed authentication");
+   }
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Authentication failed");
+   ASSERT (!r);
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_mongoc_client_authenticate_cached_pooled (void *context)
+{
+   test_mongoc_client_authenticate_cached (true);
+}
+
+
+static void
+test_mongoc_client_authenticate_cached_single (void *context)
+{
+   test_mongoc_client_authenticate_cached (false);
 }
 
 
@@ -444,9 +529,9 @@ test_mongoc_client_authenticate_failure (void *context)
    collection = mongoc_client_get_collection (client, "test", "test");
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
    r = mongoc_cursor_error (cursor, &error);
-   assert (r);
+   BSON_ASSERT (r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
    mongoc_cursor_destroy (cursor);
@@ -457,7 +542,7 @@ test_mongoc_client_authenticate_failure (void *context)
     */
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, &empty, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
@@ -467,7 +552,7 @@ test_mongoc_client_authenticate_failure (void *context)
     */
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &q, &empty, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
@@ -490,6 +575,10 @@ test_mongoc_client_authenticate_timeout (void *context)
    future_t *future;
    request_t *request;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_with_autoismaster (3);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -508,7 +597,7 @@ test_mongoc_client_authenticate_timeout (void *context)
    ASSERT_CMPSTR (request->command_name, "saslStart");
 
    /* don't reply */
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
       error,
       MONGOC_ERROR_CLIENT,
@@ -553,13 +642,13 @@ test_wire_version (void)
 
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    r = mongoc_cursor_error (cursor, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
-   assert (error.domain == MONGOC_ERROR_PROTOCOL);
-   assert (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
+   BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -579,7 +668,7 @@ test_mongoc_client_command (void)
    bson_t cmd = BSON_INITIALIZER;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    bson_append_int32 (&cmd, "ping", 4, 1);
 
@@ -587,12 +676,12 @@ test_mongoc_client_command (void)
       client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
-   assert (doc);
+   BSON_ASSERT (r);
+   BSON_ASSERT (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   assert (!doc);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (!doc);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -658,7 +747,7 @@ test_mongoc_client_command_secondary (void)
    capture_logs (true);
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
 
@@ -669,7 +758,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
-      assert (test_framework_server_is_secondary (
+      BSON_ASSERT (test_framework_server_is_secondary (
          client, mongoc_cursor_get_hint (cursor)));
    }
 
@@ -1214,13 +1303,13 @@ test_unavailable_seeds (void)
 
    for (i = 0; i < (sizeof (uri_strs) / sizeof (const char *)); i++) {
       client = mongoc_client_new (uri_strs[i]);
-      assert (client);
+      BSON_ASSERT (client);
 
       collection = mongoc_client_get_collection (client, "test", "test");
       cursor =
          mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
-      assert (!mongoc_cursor_next (cursor, &doc));
-      assert (mongoc_cursor_error (cursor, &error));
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
       ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
       ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
@@ -1302,7 +1391,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
                           mock_server_get_host_and_port (down_servers[2]));
 
    uri = mongoc_uri_new (uri_str);
-   assert (uri);
+   BSON_ASSERT (uri);
 
    if (pooled) {
       /* must be >= minHeartbeatFrequencyMS=500 or the "reconnect"
@@ -1516,6 +1605,10 @@ test_recovering (void *ctx)
    mongoc_read_prefs_t *prefs;
    bson_error_t error;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -1537,7 +1630,7 @@ test_recovering (void *ctx)
    for (read_mode = MONGOC_READ_PRIMARY; read_mode <= MONGOC_READ_NEAREST;
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      assert (!mongoc_topology_select (
+      BSON_ASSERT (!mongoc_topology_select (
          client->topology, MONGOC_SS_READ, prefs, &error));
    }
 
@@ -1557,14 +1650,14 @@ test_server_status (void)
    bson_t reply;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
 
@@ -1595,9 +1688,9 @@ test_get_database_names (void)
       1,
       "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'local'}]}");
    names = future_get_char_ptr_ptr (future);
-   assert (!strcmp (names[0], "a"));
-   assert (!strcmp (names[1], "local"));
-   assert (NULL == names[2]);
+   BSON_ASSERT (!strcmp (names[0], "a"));
+   BSON_ASSERT (!strcmp (names[1], "local"));
+   BSON_ASSERT (NULL == names[2]);
 
    bson_strfreev (names);
    request_destroy (request);
@@ -1610,7 +1703,7 @@ test_get_database_names (void)
       request, 0, 0, 0, 1, "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
 
    names = future_get_char_ptr_ptr (future);
-   assert (!names);
+   BSON_ASSERT (!names);
    ASSERT_CMPINT (MONGOC_ERROR_QUERY, ==, error.domain);
    ASSERT_CMPSTR ("err", error.message);
 
@@ -1622,29 +1715,60 @@ test_get_database_names (void)
 
 
 static void
-test_mongoc_client_ipv6 (void)
+_test_mongoc_client_ipv6 (bool pooled)
 {
    char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
 
    uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
-   client = mongoc_client_new (uri_str);
-   assert (client);
-   test_framework_set_ssl_opts (client);
+   uri = mongoc_uri_new (uri_str);
+   BSON_ASSERT (uri);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
+   }
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
 
    bson_destroy (&reply);
-   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    bson_free (uri_str);
+}
+
+
+static void
+test_mongoc_client_ipv6_single (void)
+{
+   _test_mongoc_client_ipv6 (false);
+}
+
+
+static void
+test_mongoc_client_ipv6_pooled (void)
+{
+   _test_mongoc_client_ipv6 (true);
 }
 
 
@@ -1661,14 +1785,14 @@ test_mongoc_client_unix_domain_socket (void *context)
    client = mongoc_client_new (uri_str);
    test_framework_set_ssl_opts (client);
 
-   assert (client);
+   BSON_ASSERT (client);
 
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "host"));
-   assert (bson_iter_init_find (&iter, &reply, "version"));
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
@@ -1710,7 +1834,7 @@ test_mongoc_client_mismatched_me (void)
 
    mock_server_replies_simple (request, reply);
 
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
@@ -2104,6 +2228,178 @@ test_mongoc_client_select_server_error_pooled (void)
 }
 
 
+/* CDRIVER-2172: in single mode, if the selected server has a socket that's been
+ * idle for socketCheckIntervalMS, check it with ping. If it fails, retry once.
+ */
+static void
+_test_mongoc_client_select_server_retry (bool retry_succeeds)
+{
+   char *ismaster;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true,"
+                                  " 'secondary': false,"
+                                  " 'setName': 'rs', 'hosts': ['%s']}",
+                                  mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* first selection succeeds */
+   future = future_client_select_server (client, true, NULL, &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+   sd = future_get_mongoc_server_description_ptr (future);
+   ASSERT_OR_PRINT (sd, error);
+
+   future_destroy (future);
+   mongoc_server_description_destroy (sd);
+
+   /* let socketCheckIntervalMS pass */
+   _mongoc_usleep (100 * 1000);
+
+   /* second selection requires ping, which fails */
+   future = future_client_select_server (client, true, NULL, &error);
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* mongoc_client_select_server retries once */
+   request = mock_server_receives_ismaster (server);
+   if (retry_succeeds) {
+      mock_server_replies_simple (request, ismaster);
+      sd = future_get_mongoc_server_description_ptr (future);
+      ASSERT_OR_PRINT (sd, error);
+      mongoc_server_description_destroy (sd);
+   } else {
+      mock_server_hangs_up (request);
+      sd = future_get_mongoc_server_description_ptr (future);
+      BSON_ASSERT (sd == NULL);
+   }
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (ismaster);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_mongoc_client_select_server_retry_succeed (void)
+{
+   _test_mongoc_client_select_server_retry (true);
+}
+
+static void
+test_mongoc_client_select_server_retry_fail (void)
+{
+   _test_mongoc_client_select_server_retry (false);
+}
+
+
+
+/* CDRIVER-2172: in single mode, if the selected server has a socket that's been
+ * idle for socketCheckIntervalMS, check it with ping. If it fails, retry once.
+ */
+static void
+_test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
+{
+   char *ismaster;
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   request_t *request;
+   future_t *future;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true}");
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* first time succeeds */
+   future = future_client_command_simple (
+      client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+   mock_server_replies_simple (request, "{'ok': 1}");
+   request_destroy (request);
+
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* let socketCheckIntervalMS pass */
+   _mongoc_usleep (100 * 1000);
+
+   /* second selection requires ping, which fails */
+   future = future_client_command_simple (
+      client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* mongoc_client_select_server retries once */
+   request = mock_server_receives_ismaster (server);
+   if (retry_succeeds) {
+      mock_server_replies_simple (request, ismaster);
+      request_destroy (request);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+   } else {
+      mock_server_hangs_up (request);
+      BSON_ASSERT (!future_get_bool (future));
+   }
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (ismaster);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_mongoc_client_fetch_stream_retry_succeed (void)
+{
+   _test_mongoc_client_fetch_stream_retry (true);
+}
+
+static void
+test_mongoc_client_fetch_stream_retry_fail (void)
+{
+   _test_mongoc_client_fetch_stream_retry (false);
+}
+
+
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static bool
@@ -2385,10 +2681,15 @@ _test_client_sends_handshake (bool pooled)
    const char *const server_reply = "{'ok': 1, 'ismaster': true}";
    const int heartbeat_ms = 500;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", heartbeat_ms);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
@@ -2430,7 +2731,12 @@ _test_client_sends_handshake (bool pooled)
     * time the server hangs up */
    request = mock_server_receives_ismaster (server);
    _assert_ismaster_valid (request, false);
+   mock_server_hangs_up (request);
+   request_destroy (request);
 
+   /* Client retries once (CDRIVER-2075) */
+   request = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
 
@@ -2579,6 +2885,10 @@ _test_null_error_pointer (bool pooled)
    future_t *future;
    request_t *request;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    capture_logs (true);
 
    server = mock_server_with_autoismaster (0);
@@ -2644,17 +2954,50 @@ test_null_error_pointer_pooled (void *ctx)
    _test_null_error_pointer (true);
 }
 
+#ifdef MONGOC_ENABLE_SSL
+static void
+test_set_ssl_opts (void)
+{
+   const mongoc_ssl_opt_t *opts = mongoc_ssl_opt_get_default ();
+
+   ASSERT (opts->pem_file == NULL);
+   ASSERT (opts->pem_pwd == NULL);
+   ASSERT (opts->ca_file == NULL);
+   ASSERT (opts->ca_dir == NULL);
+   ASSERT (opts->crl_file == NULL);
+   ASSERT (!opts->weak_cert_validation);
+   ASSERT (!opts->allow_invalid_hostname);
+}
+#endif
+
 void
 test_client_install (TestSuite *suite)
 {
-   if (getenv ("MONGOC_CHECK_IPV6")) {
+   if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
-      TestSuite_AddLive (suite, "/Client/ipv6", test_mongoc_client_ipv6);
+      TestSuite_AddLive (
+         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
+
+      /* try to validate ipv6 too */
+      TestSuite_AddLive (
+         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
    }
 
    TestSuite_AddFull (suite,
                       "/Client/authenticate",
                       test_mongoc_client_authenticate,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/Client/authenticate_cached/pool",
+                      test_mongoc_client_authenticate_cached_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/Client/authenticate_cached/client",
+                      test_mongoc_client_authenticate_cached_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
@@ -2675,11 +3018,11 @@ test_client_install (TestSuite *suite)
       suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
    TestSuite_AddLive (
       suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
-   TestSuite_Add (suite,
-                  "/Client/command_w_server_id/sharded",
-                  test_client_cmd_w_server_id_sharded);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_w_server_id/sharded",
+                                test_client_cmd_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Client/command_w_server_id/option",
                       test_server_id_option,
@@ -2692,70 +3035,70 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_2);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
-   TestSuite_Add (suite,
-                  "/Client/command/read_prefs/simple/single",
-                  test_command_simple_read_prefs_single);
-   TestSuite_Add (suite,
-                  "/Client/command/read_prefs/simple/pooled",
-                  test_command_simple_read_prefs_pooled);
-   TestSuite_Add (suite,
-                  "/Client/command/read_prefs/single",
-                  test_command_read_prefs_single);
-   TestSuite_Add (suite,
-                  "/Client/command/read_prefs/pooled",
-                  test_command_read_prefs_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/read_prefs/simple/single",
+                                test_command_simple_read_prefs_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/read_prefs/simple/pooled",
+                                test_command_simple_read_prefs_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/read_prefs/single",
+                                test_command_read_prefs_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/read_prefs/pooled",
+                                test_command_read_prefs_pooled);
    TestSuite_AddLive (
       suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_AddLive (
       suite, "/Client/command_not_found/simple", test_command_not_found_simple);
-   TestSuite_AddLive (suite,
-                      "/Client/command_with_opts/read_prefs",
-                      test_command_with_opts_read_prefs);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_with_opts/read_prefs",
+                                test_command_with_opts_read_prefs);
+   TestSuite_AddMockServerTest (
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (
       suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
-   TestSuite_AddLive (
-      suite, "/Client/command/empty", test_command_empty);
-   TestSuite_AddLive (
+   TestSuite_AddLive (suite, "/Client/command/empty", test_command_empty);
+   TestSuite_AddMockServerTest (
       suite, "/Client/command/no_errmsg", test_command_no_errmsg);
-   TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
-   TestSuite_Add (suite,
-                  "/Client/rs_seeds_no_connect/single",
-                  test_rs_seeds_no_connect_single);
-   TestSuite_Add (suite,
-                  "/Client/rs_seeds_no_connect/pooled",
-                  test_rs_seeds_no_connect_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Client/unavailable_seeds", test_unavailable_seeds);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_no_connect/single",
+                                test_rs_seeds_no_connect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_no_connect/pooled",
+                                test_rs_seeds_no_connect_pooled);
+   TestSuite_AddMockServerTest (
       suite, "/Client/rs_seeds_connect/single", test_rs_seeds_connect_single);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/rs_seeds_connect/pooled", test_rs_seeds_connect_pooled);
-   TestSuite_Add (suite,
-                  "/Client/rs_seeds_reconnect/single",
-                  test_rs_seeds_reconnect_single);
-   TestSuite_Add (suite,
-                  "/Client/rs_seeds_reconnect/pooled",
-                  test_rs_seeds_reconnect_pooled);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_no_connect/single",
-                  test_mongos_seeds_no_connect_single);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_no_connect/pooled",
-                  test_mongos_seeds_no_connect_pooled);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_connect/single",
-                  test_mongos_seeds_connect_single);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_connect/pooled",
-                  test_mongos_seeds_connect_pooled);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_reconnect/single",
-                  test_mongos_seeds_reconnect_single);
-   TestSuite_Add (suite,
-                  "/Client/mongos_seeds_reconnect/pooled",
-                  test_mongos_seeds_reconnect_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_reconnect/single",
+                                test_rs_seeds_reconnect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_reconnect/pooled",
+                                test_rs_seeds_reconnect_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_no_connect/single",
+                                test_mongos_seeds_no_connect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_no_connect/pooled",
+                                test_mongos_seeds_no_connect_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_connect/single",
+                                test_mongos_seeds_connect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_connect/pooled",
+                                test_mongos_seeds_connect_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_reconnect/single",
+                                test_mongos_seeds_reconnect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/mongos_seeds_reconnect/pooled",
+                                test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull (suite,
                       "/Client/recovering",
                       test_recovering,
@@ -2763,14 +3106,15 @@ test_client_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow);
    TestSuite_AddLive (suite, "/Client/server_status", test_server_status);
-   TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
+   TestSuite_AddMockServerTest (
+      suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite,
                       "/Client/connect/uds",
                       test_mongoc_client_unix_domain_socket,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_uds);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
    TestSuite_Add (suite,
@@ -2785,36 +3129,38 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Client/sends_handshake_pooled",
                   test_client_sends_handshake_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/appname_single_uri", test_client_appname_single_uri);
-   TestSuite_Add (suite,
-                  "/Client/appname_single_no_uri",
-                  test_client_appname_single_no_uri);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/appname_single_no_uri",
+                                test_client_appname_single_no_uri);
+   TestSuite_AddMockServerTest (
       suite, "/Client/appname_pooled_uri", test_client_appname_pooled_uri);
-   TestSuite_Add (suite,
-                  "/Client/appname_pooled_no_uri",
-                  test_client_appname_pooled_no_uri);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/appname_pooled_no_uri",
+                                test_client_appname_pooled_no_uri);
 
 #ifdef TODO_CDRIVER_689
-   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+   TestSuite_AddMockServerTest (
+      suite, "/Client/wire_version", test_wire_version);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+   TestSuite_Add (suite, "/Client/set_ssl_opts", test_set_ssl_opts);
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
-   TestSuite_Add (suite,
-                  "/Client/ssl_opts/copies_single",
-                  test_ssl_client_single_copies_args);
-   TestSuite_Add (suite,
-                  "/Client/ssl_opts/copies_pooled",
-                  test_ssl_client_pooled_copies_args);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/ssl_opts/copies_single",
+                                test_ssl_client_single_copies_args);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/ssl_opts/copies_pooled",
+                                test_ssl_client_pooled_copies_args);
+   TestSuite_AddMockServerTest (
       suite, "/Client/ssl/reconnect/single", test_ssl_reconnect_single);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Client/ssl/reconnect/pooled", test_ssl_reconnect_pooled);
 #endif
 #else
@@ -2843,6 +3189,18 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/select_server/err/pooled",
                       test_mongoc_client_select_server_error_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/select_server/retry/succeed",
+                                test_mongoc_client_select_server_retry_succeed);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/select_server/retry/fail",
+                                test_mongoc_client_select_server_retry_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/fetch_stream/retry/succeed",
+                                test_mongoc_client_fetch_stream_retry_succeed);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/fetch_stream/retry/fail",
+                                test_mongoc_client_fetch_stream_retry_fail);
    TestSuite_AddFull (suite,
                       "/Client/null_error_pointer/single",
                       test_null_error_pointer_single,

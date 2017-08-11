@@ -61,7 +61,8 @@
 
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
-                               mongoc_query_flags_t flags)
+                               mongoc_query_flags_t flags,
+                               const mongoc_read_prefs_t *prefs)
 {
    return _mongoc_cursor_new (collection->client,
                               collection->ns,
@@ -72,7 +73,7 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                               false, /* is_command */
                               NULL,  /* query */
                               NULL,  /* fields */
-                              NULL,  /* read prefs */
+                              prefs, /* read prefs */
                               NULL); /* read concern */
 }
 
@@ -335,9 +336,9 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   cursor = _mongoc_collection_cursor_new (collection, flags);
+   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
 
-   if (!_mongoc_read_prefs_validate (read_prefs, &cursor->error)) {
+   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
    }
 
@@ -352,30 +353,27 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    if (server_id) {
       /* will set slaveok bit if server is not mongos */
       mongoc_cursor_set_hint (cursor, server_id);
-   } else {
-      server_id =
-         mongoc_topology_select_server_id (collection->client->topology,
-                                           MONGOC_SS_READ,
-                                           read_prefs,
+
+      /* server id isn't enough. ensure we're connected & know its wire version */
+      server_stream =
+         mongoc_cluster_stream_for_server (&collection->client->cluster,
+                                           cursor->server_id,
+                                           true /* reconnect ok */,
                                            &cursor->error);
 
-      if (!server_id) {
+      if (!server_stream) {
+         GOTO (done);
+      }
+   } else {
+      server_stream = mongoc_cluster_stream_for_reads (
+         &collection->client->cluster, read_prefs, &cursor->error);
+
+      if (!server_stream) {
          GOTO (done);
       }
 
       /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
-      cursor->server_id = server_id;
-   }
-
-   /* server id isn't enough. ensure we're connected & know its wire version */
-   server_stream =
-      mongoc_cluster_stream_for_server (&collection->client->cluster,
-                                        cursor->server_id,
-                                        true /* reconnect ok */,
-                                        &cursor->error);
-
-   if (!server_stream) {
-      GOTO (done);
+      cursor->server_id = server_stream->sd->id;
    }
 
    use_cursor = server_stream->sd->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
@@ -414,8 +412,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       bson_append_document_begin (&command, "cursor", 6, &child);
 
       if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-          (BSON_ITER_HOLDS_INT32 (&iter) || BSON_ITER_HOLDS_INT64 (&iter) ||
-           BSON_ITER_HOLDS_DOUBLE (&iter))) {
+          BSON_ITER_HOLDS_NUMBER (&iter)) {
          batch_size = (int32_t) bson_iter_as_int64 (&iter);
          BSON_APPEND_INT32 (&child, "batchSize", batch_size);
          has_batch_size = true;
@@ -466,7 +463,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
       }
    }
-
 
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, &command);
@@ -1475,7 +1471,8 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
    /* Set slaveOk but no read preference: Index Enumeration Spec says
     * "listIndexes can be run on a secondary" when directly connected but
     * "run listIndexes on the primary node in replicaSet mode". */
-   cursor = _mongoc_collection_cursor_new (collection, MONGOC_QUERY_SLAVE_OK);
+   cursor = _mongoc_collection_cursor_new (
+      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
@@ -1490,8 +1487,8 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
              * an empty array. Also we need to clear out the error. */
             error->code = 0;
             error->domain = 0;
-            cursor = _mongoc_collection_cursor_new (collection,
-                                                    MONGOC_QUERY_SLAVE_OK);
+            cursor = _mongoc_collection_cursor_new (
+               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
@@ -1745,7 +1742,6 @@ mongoc_collection_update (mongoc_collection_t *collection,
 
    if (!((uint32_t) flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) && bson_iter_next (&iter)) {
-
       if (bson_iter_key (&iter)[0] == '$') {
          /* update document, all keys must be $-operators */
          if (!_mongoc_validate_update (update, error)) {
@@ -1843,13 +1839,13 @@ mongoc_collection_save (mongoc_collection_t *collection,
       return false;
    }
 
-   ret = mongoc_collection_update (
-      collection,
-      MONGOC_UPDATE_UPSERT | MONGOC_UPDATE_NO_VALIDATE,
-      &selector,
-      document,
-      write_concern,
-      error);
+   ret = mongoc_collection_update (collection,
+                                   MONGOC_UPDATE_UPSERT |
+                                      MONGOC_UPDATE_NO_VALIDATE,
+                                   &selector,
+                                   document,
+                                   write_concern,
+                                   error);
 
    bson_destroy (&selector);
 
@@ -1916,12 +1912,11 @@ mongoc_collection_remove (mongoc_collection_t *collection,
       &opts, "limit", flags & MONGOC_REMOVE_SINGLE_REMOVE ? 1 : 0);
    _mongoc_write_result_init (&result);
    ++collection->client->cluster.operation_id;
-   _mongoc_write_command_init_delete (
-      &command,
-      selector,
-      &opts,
-      write_flags,
-      collection->client->cluster.operation_id);
+   _mongoc_write_command_init_delete (&command,
+                                      selector,
+                                      &opts,
+                                      write_flags,
+                                      collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (

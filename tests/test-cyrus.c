@@ -17,7 +17,7 @@
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-#include <mongoc-sasl-private.h>
+#include <mongoc-cyrus-private.h>
 #endif
 
 #include "TestSuite.h"
@@ -103,7 +103,7 @@ test_gssapi_kerberos (void *context)
    int i;
    mongoc_thread_t threads[NTHREADS];
 
-   assert (host && user);
+   BSON_ASSERT (host && user);
 
    mongoc_mutex_init (&closure.mutex);
 
@@ -142,17 +142,17 @@ static void
 test_sasl_properties (void)
 {
    mongoc_uri_t *uri;
-   mongoc_sasl_t sasl;
+   mongoc_cyrus_t sasl;
 
    uri = mongoc_uri_new (
       "mongodb://host/?authMechanism=GSSAPI&"
       "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
 
    memset (&sasl, 0, sizeof sasl);
-   _mongoc_sasl_set_properties (&sasl, uri);
+   _mongoc_sasl_set_properties ((mongoc_sasl_t *)&sasl, uri);
 
-   ASSERT (sasl.canonicalize_host_name);
-   ASSERT_CMPSTR (sasl.service_name, "sn");
+   ASSERT (sasl.credentials.canonicalize_host_name);
+   ASSERT_CMPSTR (sasl.credentials.service_name, "sn");
 
    mongoc_uri_destroy (uri);
 
@@ -162,14 +162,14 @@ test_sasl_properties (void)
       "canonicalizeHostname=true&gssapiServiceName=blah&"
       "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:False");
 
-   _mongoc_sasl_destroy (&sasl);
+   _mongoc_cyrus_destroy (&sasl);
    memset (&sasl, 0, sizeof sasl);
-   _mongoc_sasl_set_properties (&sasl, uri);
+   _mongoc_sasl_set_properties ((mongoc_sasl_t *)&sasl, uri);
 
-   ASSERT (!sasl.canonicalize_host_name);
-   ASSERT_CMPSTR (sasl.service_name, "sn");
+   ASSERT (!sasl.credentials.canonicalize_host_name);
+   ASSERT_CMPSTR (sasl.credentials.service_name, "sn");
 
-   _mongoc_sasl_destroy (&sasl);
+   _mongoc_cyrus_destroy (&sasl);
    mongoc_uri_destroy (uri);
 }
 #endif

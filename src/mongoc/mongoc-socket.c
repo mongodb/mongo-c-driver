@@ -33,6 +33,9 @@
    ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time ())))
 
 
+/* either struct sockaddr or void, depending on platform */
+typedef MONGOC_SOCKET_ARG2 mongoc_sockaddr_t;
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -427,7 +430,7 @@ mongoc_socket_accept_ex (mongoc_socket_t *sock, /* IN */
 
 again:
    errno = 0;
-   sd = accept (sock->sd, (struct sockaddr *) &addr, &addrlen);
+   sd = accept (sock->sd, (mongoc_sockaddr_t *) &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
 #ifdef _WIN32
@@ -505,36 +508,23 @@ mongoc_socket_bind (mongoc_socket_t *sock,       /* IN */
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_socket_close --
- *
- *       Closes the underlying socket.
- *
- *       In general, you probably don't want to handle the result from
- *       this. That could cause race conditions in the case of preemtion
- *       during system call (EINTR).
- *
- * Returns:
- *       0 on success, -1 on failure.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
+   bool owned;
+
    ENTRY;
 
    BSON_ASSERT (sock);
 
+   owned = (sock->pid == (int) getpid ());
+
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
-      shutdown (sock->sd, SD_BOTH);
+      if (owned) {
+         shutdown (sock->sd, SD_BOTH);
+      }
+
       if (0 == closesocket (sock->sd)) {
          sock->sd = INVALID_SOCKET;
       } else {
@@ -545,7 +535,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    RETURN (0);
 #else
    if (sock->sd != -1) {
-      shutdown (sock->sd, SHUT_RDWR);
+      if (owned) {
+        shutdown (sock->sd, SHUT_RDWR);
+      }
+
       if (0 == close (sock->sd)) {
          sock->sd = -1;
       } else {
@@ -585,7 +578,8 @@ mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
    bool failed = false;
    int ret;
    int optval;
-   mongoc_socklen_t optlen = sizeof optval;
+   /* getsockopt parameter types vary, we check in CheckCompiler.m4 */
+   mongoc_socklen_t optlen = (mongoc_socklen_t) sizeof optval;
 
    ENTRY;
 
@@ -698,9 +692,9 @@ mongoc_socket_listen (mongoc_socket_t *sock, /* IN */
  *
  * mongoc_socket_new --
  *
- *       Create a new socket.
+ *       Create a new socket and store the current process id on it.
  *
- *       Free the result mongoc_socket_destroy().
+ *       Free the result with mongoc_socket_destroy().
  *
  * Returns:
  *       A newly allocated socket.
@@ -747,6 +741,7 @@ mongoc_socket_new (int domain,   /* IN */
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
+   sock->pid = (int) getpid ();
 
    RETURN (sock);
 
@@ -1185,7 +1180,7 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
 
    BSON_ASSERT (sock);
 
-   ret = getsockname (sock->sd, addr, addrlen);
+   ret = getsockname (sock->sd, (mongoc_sockaddr_t *) addr, addrlen);
 
    _mongoc_socket_capture_errno (sock);
 
@@ -1196,8 +1191,9 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
 char *
 mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 {
-   struct sockaddr addr;
-   mongoc_socklen_t len = sizeof addr;
+   /* getpeername parameter types vary, we check in CheckCompiler.m4 */
+   mongoc_sockaddr_t addr;
+   mongoc_socklen_t len = (mongoc_socklen_t) sizeof addr;
    char *ret;
    char host[BSON_HOST_NAME_MAX + 1];
 

@@ -37,10 +37,17 @@ example_client_SOURCES = examples/example-client.c
 example_client_CFLAGS = $(EXAMPLE_CFLAGS)
 example_client_LDADD = $(EXAMPLE_LDADD)
 
+EXAMPLE_POOL_LDADD =
+EXAMPLE_POOL_CFLAGS =
+if EXPLICIT_LIBS
+EXAMPLE_POOL_LDADD += $(PTHREAD_LIBS)
+EXAMPLE_POOL_CFLAGS += $(PTHREAD_CFLAGS)
+endif
+
 noinst_PROGRAMS += example-pool
 example_pool_SOURCES = examples/example-pool.c
-example_pool_CFLAGS = $(EXAMPLE_CFLAGS)
-example_pool_LDADD = $(EXAMPLE_LDADD)
+example_pool_CFLAGS = $(EXAMPLE_CFLAGS) $(EXAMPLE_POOL_CFLAGS)
+example_pool_LDADD = $(EXAMPLE_LDADD) $(EXAMPLE_POOL_LDADD)
 
 noinst_PROGRAMS += example-command-with-opts
 example_command_with_opts_SOURCES = examples/example-command-with-opts.c
@@ -134,3 +141,11 @@ EXTRA_DIST += \
 	examples/find_and_modify_with_opts/opts.c \
 	examples/find_and_modify_with_opts/sort.c \
 	examples/find_and_modify_with_opts/update.c
+
+# These files are included when we generate docs from tutorial.rst
+EXTRA_DIST += \
+	examples/hello_mongoc.c \
+	examples/compile-with-pkg-config.sh \
+	examples/compile-with-pkg-config-static.sh \
+	examples/cmake/find_package/CMakeLists.txt \
+	examples/cmake/find_package_static/CMakeLists.txt

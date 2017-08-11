@@ -51,8 +51,10 @@ main (int argc, char *argv[])
 
    if (!client) {
       fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
+      bson_free (host_and_port);
       return 2;
    }
+   bson_free (host_and_port);
 
    mongoc_client_set_error_api (client, 2);
 
@@ -62,18 +64,21 @@ main (int argc, char *argv[])
    cursor = mongoc_database_command (
       database, (mongoc_query_flags_t) 0, 0, 1, 0, &ping, NULL, NULL);
    if (mongoc_cursor_next (cursor, &reply)) {
-      str = bson_as_json (reply, NULL);
+      str = bson_as_canonical_extended_json (reply, NULL);
       fprintf (stdout, "%s\n", str);
       bson_free (str);
    } else if (mongoc_cursor_error (cursor, &error)) {
       fprintf (stderr, "Ping failure: %s\n", error.message);
+      mongoc_cursor_destroy (cursor);
+      mongoc_database_destroy (database);
+      mongoc_client_destroy (client);
       return 3;
    }
 
-   mongoc_cursor_destroy (cursor);
    bson_destroy (&ping);
+   mongoc_cursor_destroy (cursor);
+   mongoc_database_destroy (database);
    mongoc_client_destroy (client);
-   bson_free (host_and_port);
 
    return 0;
 }

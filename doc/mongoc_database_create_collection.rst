@@ -27,7 +27,7 @@ Description
 
 This function creates a :symbol:`mongoc_collection_t` from the given :symbol:`mongoc_database_t`.
 
-The :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_database_t` will be used, if any.
+If no write concern is provided in ``opts``, the database's write concern is used.
 
 Errors
 ------

@@ -16,18 +16,22 @@ You can specify a read concern on connection objects, database objects, or colle
 
 See `readConcern <https://docs.mongodb.org/master/reference/readConcern/>`_ on the MongoDB website for more information.
 
-Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level` to anything other then empty string.
+Read Concern is only sent to MongoDB when it has explicitly been set by :symbol:`mongoc_read_concern_set_level` to anything other than NULL.
 
 .. _mongoc_read_concern_levels:
 
 Read Concern Levels
 -------------------
 
-======================================  =========================================
-MONGOC_READ_CONCERN_LEVEL_LOCAL         Default. Uses read concern level "local".
-MONGOC_READ_CONCERN_LEVEL_MAJORITY      Uses read concern level "majority".      
-MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE  Uses read concern level "linearizable".  
-======================================  =========================================
+======================================  =========================== =====================
+Macro                                   Description                 First MongoDB version
+======================================  =========================== =====================
+MONGOC_READ_CONCERN_LEVEL_LOCAL         Level "local", the default. 3.2
+MONGOC_READ_CONCERN_LEVEL_MAJORITY      Level "majority".           3.2
+MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE  Level "linearizable".       3.4
+======================================  =========================== =====================
+
+For the sake of compatibility with future versions of MongoDB, :symbol:`mongoc_read_concern_set_level` allows any string, not just this list of known read concern levels.
 
 See `Read Concern Levels <https://docs.mongodb.com/master/reference/read-concern/#read-concern-levels>`_ in the MongoDB manual for more information about the individual read concern levels.
 
@@ -44,6 +48,7 @@ See `Read Concern Levels <https://docs.mongodb.com/master/reference/read-concern
     mongoc_read_concern_copy
     mongoc_read_concern_destroy
     mongoc_read_concern_get_level
+    mongoc_read_concern_is_default
     mongoc_read_concern_new
     mongoc_read_concern_set_level
 

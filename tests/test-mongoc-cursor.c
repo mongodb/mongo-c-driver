@@ -1,5 +1,4 @@
 #include <mongoc.h>
-#include <assert.h>
 #include <mongoc-client-private.h>
 
 #include "TestSuite.h"
@@ -47,7 +46,7 @@ test_get_host (void)
       abort ();
    }
 
-   assert (doc == mongoc_cursor_current (cursor));
+   BSON_ASSERT (doc == mongoc_cursor_current (cursor));
 
    mongoc_cursor_get_host (cursor, &host);
 
@@ -179,6 +178,8 @@ test_limit (void)
       }
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT (!mongoc_cursor_is_alive (cursor));
+      ASSERT (!mongoc_cursor_more (cursor));
       ASSERT_CMPINT (n_docs, ==, 5);
       ASSERT (!mongoc_cursor_set_limit (cursor, 123)); /* no effect */
       ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
@@ -375,7 +376,7 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
                   ==,
                   request_get_server_port (request));
 
-   assert (future_wait (future));
+   BSON_ASSERT (future_wait (future));
 
    request_destroy (kill_cursors);
    request_destroy (request);
@@ -567,15 +568,15 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
    request = mock_rs_receives_kill_cursors (rs, 123);
 
    if (has_primary) {
-      assert (request);
+      BSON_ASSERT (request);
 
       /* weird but true. see mongoc_client_kill_cursor's documentation */
-      assert (mock_rs_request_is_to_primary (rs, request));
+      BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
 
       request_destroy (request); /* server has no reply to OP_KILLCURSORS */
    } else {
       /* TODO: catch and check warning */
-      assert (!request);
+      BSON_ASSERT (!request);
    }
 
    future_wait (future); /* no return value */
@@ -674,6 +675,40 @@ _test_cursor_new_from_command (const char *cmd_json,
    mongoc_client_destroy (client);
 }
 
+static void
+test_cursor_empty_collection (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (
+      client, "test", "test_cursor_empty_collection");
+   mongoc_collection_remove (
+      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL, NULL);
+
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
+
+   mongoc_cursor_next (cursor, &doc);
+
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+   ASSERT (!mongoc_cursor_is_alive (cursor));
+   ASSERT (!mongoc_cursor_more (cursor));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 
 static void
 test_cursor_new_from_aggregate (void *ctx)
@@ -719,6 +754,7 @@ test_cursor_new_invalid (void)
    bson_error_t error;
    mongoc_cursor_t *cursor;
    bson_t b = BSON_INITIALIZER;
+   const bson_t *error_doc;
 
    client = test_framework_client_new ();
    cursor = mongoc_cursor_new_from_command_reply (client, &b, 0);
@@ -729,9 +765,90 @@ test_cursor_new_invalid (void)
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                           "Couldn't parse cursor document");
 
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
+
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
 }
+
+
+static void
+test_cursor_new_invalid_filter (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'': 1}"), NULL, NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Invalid filter: empty key");
+
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cursor_new_invalid_opts (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'projection': {'': 1}}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Invalid opts: empty key");
+
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
+   mongoc_cursor_destroy (cursor);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'$invalid': 1}"), NULL);
+
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot use $-modifiers in opts: \"$invalid\"");
+
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT (bson_empty (error_doc));
+
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 
 static void
 test_cursor_new_static (void)
@@ -882,7 +999,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
    }
 
    mock_rs_replies (request, 0, 0, 0, 1, "{'b': 1}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'b': 1}");
 
    request_destroy (request);
@@ -976,7 +1093,7 @@ test_cursor_hint_mongos (void)
          server, "test.test", expected_flag[i], 0, 0, "{}", NULL);
 
       mock_server_replies_simple (request, "{}");
-      assert (future_get_bool (future));
+      BSON_ASSERT (future_get_bool (future));
 
       request_destroy (request);
       future_destroy (future);
@@ -1028,7 +1145,7 @@ test_cursor_hint_mongos_cmd (void)
                                   "    'ns': 'test.test',"
                                   "    'firstBatch': [{}]}}");
 
-      assert (future_get_bool (future));
+      BSON_ASSERT (future_get_bool (future));
 
       request_destroy (request);
       future_destroy (future);
@@ -1529,6 +1646,130 @@ test_n_return_find_cmd_with_opts (void)
 }
 
 
+static void
+test_error_document_query (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_error_document_query");
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'x': {'$badOperator': 1}}"), NULL, NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+   ASSERT_CONTAINS (error.message, "$badOperator");
+   ASSERT_CMPINT32 (
+      bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_error_document_command (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   cursor = mongoc_client_command (client,
+                                   "test",
+                                   MONGOC_QUERY_NONE,
+                                   0,
+                                   0,
+                                   0,
+                                   tmp_bson ("{'foo': 1}"), /* no such cmd */
+                                   NULL,
+                                   NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+   ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+   ASSERT_CONTAINS (error.message, "no such");
+
+   /* MongoDB 2.4 has no "code" in the reply for "no such command" */
+   if (test_framework_max_wire_version_at_least (2)) {
+      ASSERT_CMPINT32 (bson_lookup_int32 (error_doc, "code"), ==,
+                       (int32_t) error.code);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_error_document_getmore (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   int i;
+   bool r;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   const bson_t *error_doc;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_error_document_getmore");
+   mongoc_collection_drop (collection, NULL);
+
+   for (i = 0; i < 10; i++) {
+      r = mongoc_collection_insert (collection,
+                                    MONGOC_INSERT_NONE,
+                                    tmp_bson ("{'i': %d}", i),
+                                    NULL,
+                                    &error);
+
+      ASSERT_OR_PRINT (r, error);
+   }
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), tmp_bson ("{'batchSize': 2}"), NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+
+   mongoc_collection_drop (collection, NULL);
+
+   ASSERT (mongoc_cursor_next (cursor, &doc));
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error_document (cursor, &error, &error_doc));
+
+   /* results vary by server version */
+   if (error.domain == MONGOC_ERROR_CURSOR) {
+      /* MongoDB 3.0 and older */
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                             "cursor is invalid");
+   } else {
+      /* MongoDB 3.2+ */
+      ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+      ASSERT_CMPINT32 (
+         bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -1536,37 +1777,42 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
-   TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
-   TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/kill/single", test_kill_cursors_single);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/with_primary/pooled",
-                  test_getmore_fail_with_primary_pooled);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/with_primary/single",
-                  test_getmore_fail_with_primary_single);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/no_primary/pooled",
-                  test_getmore_fail_no_primary_pooled);
-   TestSuite_Add (suite,
-                  "/Cursor/getmore_fail/no_primary/single",
-                  test_getmore_fail_no_primary_single);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/with_primary",
-                  test_client_kill_cursor_with_primary);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/without_primary",
-                  test_client_kill_cursor_without_primary);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/with_primary/wv4",
-                  test_client_kill_cursor_with_primary_wire_version_4);
-   TestSuite_Add (suite,
-                  "/Cursor/client_kill_cursor/without_primary/wv4",
-                  test_client_kill_cursor_without_primary_wire_version_4);
-
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/with_primary/pooled",
+                                test_getmore_fail_with_primary_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/with_primary/single",
+                                test_getmore_fail_with_primary_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/no_primary/pooled",
+                                test_getmore_fail_no_primary_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/getmore_fail/no_primary/single",
+                                test_getmore_fail_no_primary_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/client_kill_cursor/with_primary",
+                                test_client_kill_cursor_with_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/client_kill_cursor/without_primary",
+                                test_client_kill_cursor_without_primary);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/client_kill_cursor/with_primary/wv4",
+      test_client_kill_cursor_with_primary_wire_version_4);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/client_kill_cursor/without_primary/wv4",
+      test_client_kill_cursor_without_primary_wire_version_4);
+   TestSuite_AddLive (
+      suite, "/Cursor/empty_collection", test_cursor_empty_collection);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_agg",
                       test_cursor_new_from_aggregate,
@@ -1592,30 +1838,43 @@ test_cursor_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
+   TestSuite_AddLive (
+      suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
    TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
    TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/single/primary", test_hint_single_primary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
-   TestSuite_Add (suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
+   TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
-   TestSuite_Add (suite, "/Cursor/n_return/op_query", test_n_return_op_query);
-   TestSuite_Add (suite,
-                  "/Cursor/n_return/op_query/with_opts",
-                  test_n_return_op_query_with_opts);
-   TestSuite_Add (suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
-   TestSuite_Add (suite,
-                  "/Cursor/n_return/find_cmd/with_opts",
-                  test_n_return_find_cmd_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/op_query", test_n_return_op_query);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/n_return/op_query/with_opts",
+                                test_n_return_op_query_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/n_return/find_cmd/with_opts",
+                                test_n_return_find_cmd_with_opts);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/query", test_error_document_query);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/getmore", test_error_document_getmore);
+   TestSuite_AddLive (
+      suite, "/Cursor/error_document/command", test_error_document_command);
 }

@@ -2,6 +2,8 @@
 import os.path
 import sys
 
+from sphinx import version_info as sphinx_version_info
+
 # Ensure we can import "mongoc" and "taglist" extension modules.
 sys.path.append(os.path.dirname(__file__))
 
@@ -9,24 +11,21 @@ extensions = [
     'mongoc',
     'taglist',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks',
 ]
-
-intersphinx_mapping = {
-    # TODO: update to http://mongoc.org/libbson/%(version)s once libbson 1.6.0
-    # is released.
-    'bson': ('http://mongoc.org/libbson/current', None),
-}
 
 # General information about the project.
 project = 'MongoDB C Driver'
 copyright = '2017, MongoDB, Inc'
 author = 'MongoDB, Inc'
+googleanalytics_id = 'UA-92642455-1'
 
 version_path = os.path.join(os.path.dirname(__file__), '..', 'VERSION_CURRENT')
 version = open(version_path).read().strip()
 release_path = os.path.join(os.path.dirname(__file__), '..', 'VERSION_RELEASED')
 release = open(release_path).read().strip()
 release_major, release_minor, release_patch = release.split('.')
+release_download = 'https://github.com/mongodb/mongo-c-driver/releases/download/{0}/mongo-c-driver-{0}.tar.gz'.format(release)
 rst_prolog = """
 .. |release_major| replace:: %(release_major)s
 
@@ -37,9 +36,18 @@ rst_prolog = """
 .. |release_download| replace:: https://github.com/mongodb/mongo-c-driver/releases/download/%(release)s/mongo-c-driver-%(release)s.tar.gz
 """ % locals()
 
+# The extension requires the "base" to contain '%s' exactly once, but we never intend to use it though
+extlinks = {'release': (release_download+'%s', '')}
+
 language = 'en'
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 master_doc = 'index'
+
+# don't fetch libbson's inventory from mongoc.org during build - Debian and
+# Fedora package builds must work offline - maintain a recent copy here
+intersphinx_mapping = {
+    'bson': ('http://mongoc.org/libbson/current', 'libbson-objects.inv'),
+}
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -47,10 +55,16 @@ html_theme_path = ['.']
 html_theme = 'mongoc-theme'
 html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None
-html_use_smartypants = False
+
+if sphinx_version_info >= (1, 6):
+    smart_quotes = False
+else:
+    html_use_smartypants = False
+
 html_sidebars = {
     '**': ['globaltoc.html'],
     'errors': [],  # Make more room for the big table.
+    'mongoc_uri_t': [],  # Make more room for the big table.
 }
 html_show_sourcelink = False
 
@@ -75,12 +89,35 @@ from docutils.nodes import title
 def create_nojekyll(app, env):
     if app.builder.format == 'html':
         path = os.path.join(app.builder.outdir, '.nojekyll')
-        open(path, 'wt').close()
+        with open(path, 'wt') as f:
+            f.write('foo')
+
+
+def add_ga_javascript(app, pagename, templatename, context, doctree):
+    context['metatags'] = context.get('metatags', '') + """<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', '%s', 'auto');
+  ga('send', 'pageview');
+
+</script>""" % googleanalytics_id
+
+
+def add_canonical_link(app, pagename, templatename, context, doctree):
+    link = ('<link rel="canonical"'
+            ' href="http://mongoc.org/libbson/current/%s.html"/>' % pagename)
+
+    context['metatags'] = context.get('metatags', '') + link
 
 
 def setup(app):
     app.connect('doctree-read', process_nodes)
     app.connect('env-updated', create_nojekyll)
+    app.connect('html-page-context', add_ga_javascript)
+    app.connect('html-page-context', add_canonical_link)
 
 
 def process_nodes(app, doctree):
@@ -91,9 +128,12 @@ def process_nodes(app, doctree):
     metadata = env.metadata[env.docname]
 
     # A page like installing.rst sets its name with ":man_page: mongoc_installing"
-    page_name = metadata.get('man_page', env.docname)
-    page_title = find_node(doctree, title)
+    page_name = metadata.get('man_page')
+    if not page_name:
+        print('Not creating man page for %s' % env.docname)
+        return
 
+    page_title = find_node(doctree, title)
     man_pages.append((env.docname, page_name, page_title.astext(), [author], 3))
 
 

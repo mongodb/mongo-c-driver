@@ -28,7 +28,7 @@ Adds arbitrary options to a `findAndModify <https://docs.mongodb.org/manual/refe
 Returns
 -------
 
-Returns true on success.
+Returns true on success. If any arguments are invalid, returns false and logs an error.
 
 Appending options to findAndModify
 ----------------------------------

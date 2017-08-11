@@ -30,5 +30,6 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` is returned if the collection exists. ``false`` is returned if the collection does not exist or an error occurred.
+If the function succeeds, it returns ``true`` if the collection exists and ``false`` if not, and in either case the fields of ``error`` are cleared, if ``error`` is not NULL.
 
+Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.

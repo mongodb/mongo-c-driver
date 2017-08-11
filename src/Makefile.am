@@ -1,7 +1,11 @@
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = $(top_builddir)/src/libmongoc-1.0.pc
 if ENABLE_SSL
-pkgconfig_DATA += $(top_builddir)/src/libmongoc-ssl-1.0.pc
+  # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086
+  pkgconfig_DATA += $(top_builddir)/src/libmongoc-ssl-1.0.pc
+endif
+if ENABLE_STATIC
+  pkgconfig_DATA += $(top_builddir)/src/libmongoc-static-1.0.pc
 endif
 
 
@@ -23,6 +27,8 @@ MONGOC_CPPFLAGS_SHARED = \
 	$(BSON_CFLAGS) \
 	$(PTHREAD_CFLAGS) \
 	$(SSL_CFLAGS) \
+	$(SNAPPY_CFLAGS) \
+	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-fvisibility=hidden
 
@@ -48,6 +54,8 @@ MONGOC_LIBADD_SHARED = \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SSL_LIBS) \
+	$(SNAPPY_LIBS) \
+	$(ZLIB_LIBS) \
 	$(SASL_LIBS)
 
 if OS_WIN32
@@ -68,4 +76,5 @@ include src/tools/Makefile.am
 
 EXTRA_DIST += \
 	src/libmongoc-1.0.pc.in \
-	src/libmongoc-ssl-1.0.pc.in
+	src/libmongoc-ssl-1.0.pc.in \
+	src/libmongoc-static-1.0.pc.in

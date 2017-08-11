@@ -41,7 +41,7 @@ Example
      "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
 
   if (mongoc_uri_get_mechanism_properties (uri, &props)) {
-     char *json = bson_as_json (&props, NULL);
+     char *json = bson_as_canonical_extended_json (&props, NULL);
      printf ("%s\n", json);
      bson_free (json);
   } else {
@@ -57,5 +57,7 @@ This code produces the output:
 See Also
 --------
 
-:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_set_mechanism_properties`
+.. only:: html
 
+  .. taglist:: See Also:
+    :tags: authmechanism

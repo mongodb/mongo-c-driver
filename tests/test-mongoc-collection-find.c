@@ -1,6 +1,5 @@
 #include <mongoc.h>
 #include <mongoc-cursor-private.h>
-#include <assert.h>
 #include "mongoc-uri-private.h"
 #include "mongoc-client-private.h"
 
@@ -193,6 +192,10 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
    const char *key;
    uint32_t i = 0;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_with_autoismaster (max_wire_version);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -215,7 +218,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
    cursor_next_result = future_get_bool (future);
    /* did we expect at least one result? */
    ASSERT (cursor_next_result == (test_data->n_results > 0));
-   assert (!mongoc_cursor_error (cursor, NULL));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, NULL));
 
    if (cursor_next_result) {
       bson_append_document (&actual_result, "0", -1, doc);
@@ -228,7 +231,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
          i++;
       }
 
-      assert (!mongoc_cursor_error (cursor, NULL));
+      BSON_ASSERT (!mongoc_cursor_error (cursor, NULL));
    }
 
    if (i != test_data->n_results) {
@@ -916,6 +919,10 @@ test_getmore_invalid_reply (void *ctx)
    const bson_t *doc;
    bson_error_t error;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server = mock_server_with_autoismaster (4);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -1057,7 +1064,7 @@ test_getmore_await (void)
                                        " 'maxTimeMS': %s}",
                                        max_time_json);
 
-      assert (request);
+      BSON_ASSERT (request);
       /* reply with cursor id 0 */
       mock_server_replies_simple (request,
                                   "{'ok': 1,"
@@ -1217,8 +1224,9 @@ test_collection_find_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/Collection/find/unrecognized", test_unrecognized_dollar_option);
    TestSuite_AddLive (suite, "/Collection/find/flags", test_query_flags);
-   TestSuite_AddLive (suite, "/Collection/find/exhaust", test_exhaust);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/find/exhaust", test_exhaust);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/getmore/batch_size", test_getmore_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/getmore/invalid_reply",
@@ -1226,7 +1234,8 @@ test_collection_find_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Collection/getmore/await", test_getmore_await);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/getmore/await", test_getmore_await);
    TestSuite_AddLive (suite,
                       "/Collection/tailable/timeout/single",
                       test_tailable_timeout_single);

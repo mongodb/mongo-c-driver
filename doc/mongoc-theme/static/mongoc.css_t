@@ -30,7 +30,7 @@
  * THE SOFTWARE.
  */
 
-{% set page_width = '940px' %}
+{% set page_width = '90%' %}
 
 @import url('basic.css');
  
@@ -312,6 +312,11 @@ div.body dd,
 div.body li {
     line-height: 1.4em;
 }
+div.body p, div.body dd, div.body li,
+div.body blockquote {
+	hyphens: none;
+	text-align: justify;
+}
  
 div.admonition p.admonition-title + p {
     display: inline;
@@ -339,7 +344,16 @@ div.danger, div.error, div.warning {
     background-color: #ffe4e4;
     border: 1px solid #f66;
 }
- 
+
+div.literal-block-wrapper {
+  padding: 0;
+}
+
+span.caption-text {
+  font-family: monospace;
+  font-size: 0.75em;
+}
+
 p.admonition-title {
     display: inline;
 }
@@ -499,8 +513,9 @@ div.viewcode-block:target {
     border-bottom: 1px solid #fbe091;
 }
 
-a.symbol span {
+a.symbol > span {
     font-family: monospace;
+    font-size: 0.85em;
 }
 
 div.code-block-caption {

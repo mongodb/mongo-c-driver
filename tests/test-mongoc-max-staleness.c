@@ -34,56 +34,69 @@ test_mongoc_client_max_staleness (void)
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new ("mongodb://a/?readPreference=secondary");
+   client = mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                               "=secondary");
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
    /* -1 is the default, means "no max staleness" */
-   client = mongoc_client_new ("mongodb://a/?maxStalenessSeconds=-1");
+   client =
+      mongoc_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=-1");
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new (
-      "mongodb://a/?readPreference=primary&maxStalenessSeconds=-1");
+   client =
+      mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                         "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=-1");
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   /* no maxStalenessSeconds with primary mode */
-   ASSERT (!mongoc_client_new ("mongodb://a/?maxStalenessSeconds=120"));
-   ASSERT (!mongoc_client_new (
-      "mongodb://a/?readPreference=primary&maxStalenessSeconds=120"));
+   /* no " MONGOC_URI_MAXSTALENESSSECONDS " with primary mode */
+   capture_logs (true);
+   ASSERT (!mongoc_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS
+                               "=120"));
+   ASSERT (!mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                               "=primary&" MONGOC_URI_MAXSTALENESSSECONDS
+                               "=120"));
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid readPreferences");
 
    capture_logs (true);
 
    /* zero is prohibited */
-   client = mongoc_client_new (
-      "mongodb://a/?readPreference=nearest&maxStalenessSeconds=0");
+   client = mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                               "=nearest&" MONGOC_URI_MAXSTALENESSSECONDS "=0");
 
    ASSERT_CAPTURED_LOG (
-      "maxStalenessSeconds=0", MONGOC_LOG_LEVEL_WARNING, "cannot be zero");
+      MONGOC_URI_MAXSTALENESSSECONDS "=0",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Unsupported value for \"" MONGOC_URI_MAXSTALENESSSECONDS "\": \"0\"");
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) -1);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new (
-      "mongodb://a/?maxStalenessSeconds=120&readPreference=secondary");
+   client = mongoc_client_new ("mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS
+                               "=120&" MONGOC_URI_READPREFERENCE "=secondary");
 
    ASSERT_CMPINT64 (get_max_staleness (client), ==, (int64_t) 120);
    mongoc_client_destroy (client);
 
    /* float is ignored */
    capture_logs (true);
-   ASSERT (!mongoc_client_new (
-      "mongodb://a/?readPreference=secondary&maxStalenessSeconds=10.5"));
+   ASSERT (!mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                               "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS
+                               "=10.5"));
 
-   ASSERT_CAPTURED_LOG ("maxStalenessSeconds=10.5",
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
                         MONGOC_LOG_LEVEL_WARNING,
-                        "Invalid maxStalenessSeconds");
+                        "Invalid " MONGOC_URI_MAXSTALENESSSECONDS);
 
    /* 1 is allowed, it'll be rejected once we begin server selection */
-   client = mongoc_client_new (
-      "mongodb://a/?readPreference=secondary&maxStalenessSeconds=1");
+   client =
+      mongoc_client_new ("mongodb://a/?" MONGOC_URI_READPREFERENCE
+                         "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=1");
 
    ASSERT_EQUAL_DOUBLE (get_max_staleness (client), 1);
    mongoc_client_destroy (client);
@@ -106,7 +119,8 @@ test_mongos_max_staleness_read_pref (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   /* count command with mode "secondary", no maxStalenessSeconds */
+   /* count command with mode "secondary", no " MONGOC_URI_MAXSTALENESSSECONDS "
+    */
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
    future = future_collection_count (
@@ -115,7 +129,7 @@ test_mongos_max_staleness_read_pref (void)
       server,
       "db",
       MONGOC_QUERY_SLAVE_OK,
-      "{'$readPreference': {'mode': 'secondary', "
+      "{'$" MONGOC_URI_READPREFERENCE "': {'mode': 'secondary', "
       "                     'maxStalenessSeconds': {'$exists': false}}}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
@@ -124,7 +138,8 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* count command with mode "secondary". maxStalenessSeconds=1 is allowed by
+   /* count command with mode "secondary". " MONGOC_URI_MAXSTALENESSSECONDS "=1
+    * is allowed by
     * client, although in real life mongos will reject it */
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
    mongoc_collection_set_read_prefs (collection, prefs);
@@ -136,7 +151,8 @@ test_mongos_max_staleness_read_pref (void)
       server,
       "db",
       MONGOC_QUERY_SLAVE_OK,
-      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}");
+      "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}",
+      NULL);
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -288,9 +304,9 @@ test_client_max_staleness_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_Add (
       suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
-   TestSuite_Add (suite,
-                  "/Client/max_staleness/mongos",
-                  test_mongos_max_staleness_read_pref);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/max_staleness/mongos",
+                                test_mongos_max_staleness_read_pref);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date",
                       test_last_write_date,

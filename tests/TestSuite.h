@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 
 #ifdef __cplusplus
@@ -48,9 +49,10 @@ extern "C" {
 #define CERT_CRL CERT_TEST_DIR "/crl.pem"
 #define CERT_SERVER CERT_TEST_DIR "/server.pem" /* 127.0.0.1 & localhost */
 #define CERT_CLIENT CERT_TEST_DIR "/client.pem"
-#define CERT_ALTNAME CERT_TEST_DIR "/altname.pem" /* alternative.mongodb.org \
-                                                     */
-#define CERT_WILD CERT_TEST_DIR "/wild.pem"       /* *.mongodb.org */
+#define CERT_ALTNAME                                                   \
+   CERT_TEST_DIR "/altname.pem"             /* alternative.mongodb.org \
+                                               */
+#define CERT_WILD CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
 #define CERT_COMMONNAME \
    CERT_TEST_DIR "/commonName.pem"                /* 127.0.0.1 & localhost */
 #define CERT_EXPIRED CERT_TEST_DIR "/expired.pem" /* 127.0.0.1 & localhost */
@@ -64,7 +66,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #ifdef ASSERT
 #undef ASSERT
 #endif
-#define ASSERT assert
+#define ASSERT BSON_ASSERT
 
 
 #ifdef ASSERT_OR_PRINT
@@ -252,25 +254,32 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b)                                                 \
-   do {                                                                       \
-      if (NULL == strstr ((a), (b))) {                                        \
-         fprintf (stderr,                                                     \
-            "%s:%d %s(): : [%s] does not contain with [%s]\n",                \
-            __FILE__, __LINE__, BSON_FUNC, a, b);                             \
-         abort ();                                                            \
-      }                                                                       \
+#define ASSERT_CONTAINS(a, b)                                        \
+   do {                                                              \
+      if (NULL == strstr ((a), (b))) {                               \
+         fprintf (stderr,                                            \
+                  "%s:%d %s(): : [%s] does not contain with [%s]\n", \
+                  __FILE__,                                          \
+                  __LINE__,                                          \
+                  BSON_FUNC,                                         \
+                  a,                                                 \
+                  b);                                                \
+         abort ();                                                   \
+      }                                                              \
    } while (0)
 
-#define ASSERT_STARTSWITH(a, b)                                            \
-   do {                                                                    \
-      if ((a) != strstr ((a), (b))) {                                      \
-         fprintf (                                                         \
-            stderr,                                                        \
-            "%s:%d %s(): : [%s] does not start with [%s]\n",               \
-            __FILE__, __LINE__, BSON_FUNC, a, b);                          \
-         abort ();                                                         \
-      }                                                                    \
+#define ASSERT_STARTSWITH(a, b)                                    \
+   do {                                                            \
+      if ((a) != strstr ((a), (b))) {                              \
+         fprintf (stderr,                                          \
+                  "%s:%d %s(): : [%s] does not start with [%s]\n", \
+                  __FILE__,                                        \
+                  __LINE__,                                        \
+                  BSON_FUNC,                                       \
+                  a,                                               \
+                  b);                                              \
+         abort ();                                                 \
+      }                                                            \
    } while (0)
 
 #define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)               \
@@ -278,15 +287,21 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       if (error.domain != _domain) {                                         \
          fprintf (stderr,                                                    \
                   "%s:%d %s(): error domain %d doesn't match expected %d\n", \
-                  __FILE__, __LINE__, BSON_FUNC,                             \
-                  error.domain, _domain);                                    \
+                  __FILE__,                                                  \
+                  __LINE__,                                                  \
+                  BSON_FUNC,                                                 \
+                  error.domain,                                              \
+                  _domain);                                                  \
          abort ();                                                           \
       };                                                                     \
       if (error.code != _code) {                                             \
          fprintf (stderr,                                                    \
                   "%s:%d %s(): error code %d doesn't match expected %d\n",   \
-                  __FILE__, __LINE__, BSON_FUNC,                             \
-                  error.code, _code);                                        \
+                  __FILE__,                                                  \
+                  __LINE__,                                                  \
+                  BSON_FUNC,                                                 \
+                  error.code,                                                \
+                  _code);                                                    \
          abort ();                                                           \
       };                                                                     \
       ASSERT_CONTAINS (error.message, _message);                             \
@@ -327,9 +342,21 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          fprintf (stderr,                                                \
                   "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
                   (_field),                                              \
-                  bson_as_json (_bson, NULL));                           \
+                  bson_as_canonical_extended_json (_bson, NULL));        \
          abort ();                                                       \
       }                                                                  \
+   } while (0)
+
+#define ASSERT_HAS_NOT_FIELD(_bson, _field)                                \
+   do {                                                                    \
+      if (bson_has_field ((_bson), (_field))) {                            \
+         fprintf (                                                         \
+            stderr,                                                        \
+            "FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
+            (_field),                                                      \
+            bson_as_canonical_extended_json (_bson, NULL));                \
+         abort ();                                                         \
+      }                                                                    \
    } while (0)
 
 /* don't check durations when testing with valgrind */
@@ -379,6 +406,61 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                      \
    } while (0)
 
+#define ASSERT_COUNT(n, collection)                                     \
+   do {                                                                 \
+      int count = (int) mongoc_collection_count (                       \
+         collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, NULL);        \
+      if ((n) != count) {                                               \
+         fprintf (stderr,                                               \
+                  "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
+                  "%s:%d  %s()\n",                                      \
+                  mongoc_collection_get_name (collection),              \
+                  count,                                                \
+                  n,                                                    \
+                  __FILE__,                                             \
+                  __LINE__,                                             \
+                  BSON_FUNC);                                           \
+         abort ();                                                      \
+      }                                                                 \
+   } while (0)
+
+#define ASSERT_CURSOR_COUNT(_n, _cursor)                                 \
+   do {                                                                  \
+      int _count = 0;                                                    \
+      const bson_t *_doc;                                                \
+      while (mongoc_cursor_next (_cursor, &_doc)) {                      \
+         _count++;                                                       \
+      }                                                                  \
+      if ((_n) != _count) {                                              \
+         fprintf (stderr,                                                \
+                  "FAIL\n\nAssert Failure: cursor count is %d, not %d\n" \
+                  "%s:%d  %s()\n",                                       \
+                  _count,                                                \
+                  _n,                                                    \
+                  __FILE__,                                              \
+                  __LINE__,                                              \
+                  BSON_FUNC);                                            \
+         abort ();                                                       \
+      }                                                                  \
+   } while (0)
+
+#define WAIT_UNTIL(_pred)                                              \
+   do {                                                                \
+      int64_t _start = bson_get_monotonic_time ();                     \
+      while (!(_pred)) {                                               \
+         if (bson_get_monotonic_time () - _start > 10 * 1000 * 1000) { \
+            fprintf (stderr,                                           \
+                     "Predicate \"%s\" timed out\n"                    \
+                     "   %s:%d  %s()\n",                               \
+                     #_pred,                                           \
+                     __FILE__,                                         \
+                     __LINE__,                                         \
+                     BSON_FUNC);                                       \
+            abort ();                                                  \
+         }                                                             \
+      }                                                                \
+   } while (0)
+
 #define MAX_TEST_NAME_LENGTH 500
 
 
@@ -422,6 +504,10 @@ int
 TestSuite_CheckLive (void);
 void
 TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
+int
+TestSuite_CheckMockServerAllowed (void);
+void
+TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func);
 void
 TestSuite_AddWC (TestSuite *suite,
                  const char *name,

@@ -76,7 +76,7 @@ Example
 
      while ((bson = bson_reader_read (reader, NULL))) {
         if (mongoc_matcher_match (matcher, bson)) {
-           str = bson_as_json (bson, NULL);
+           str = bson_as_canonical_extended_json (bson, NULL);
            printf ("%s\n", str);
            bson_free (str);
         }

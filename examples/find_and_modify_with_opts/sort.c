@@ -30,7 +30,7 @@ fam_sort (mongoc_collection_t *collection)
    if (success) {
       char *str;
 
-      str = bson_as_json (&reply, NULL);
+      str = bson_as_canonical_extended_json (&reply, NULL);
       printf ("%s\n", str);
       bson_free (str);
    } else {

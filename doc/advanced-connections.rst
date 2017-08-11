@@ -137,12 +137,12 @@ MongoDB requires client certificates by default, unless the ``--sslAllowConnecti
 
 The client certificate provided by ``pem_file`` must be issued by one of the server trusted Certificate Authorities listed in ``--sslCAFile``, or issued by a CA in the native certificate store on the server when omitted.
 
-To verify the server certificate against a specific CA, provide a PEM armored file with a CA certificate, or contatinated list of CA certificates using the ``ca_file`` option, or ``c_rehash`` directory structure of CAs, pointed to using the ``ca_dir`` option. When no ``ca_file`` or ``ca_dir`` is provided, the driver will use CAs provided by the native platform certificate store.
+To verify the server certificate against a specific CA, provide a PEM armored file with a CA certificate, or concatenated list of CA certificates using the ``ca_file`` option, or ``c_rehash`` directory structure of CAs, pointed to using the ``ca_dir`` option. When no ``ca_file`` or ``ca_dir`` is provided, the driver will use CAs provided by the native platform certificate store.
 
 See :doc:`mongoc_ssl_opt_t` for more information on the various SSL related options.
 
 Additional Connection Options
 -----------------------------
 
-A variety of connection options for the MongoDB URI can be found `here <http://docs.mongodb.org/manual/reference/connection-string/>`_.
+The full list of connection options can be found in the :symbol:`mongoc_uri_t` docs.
 

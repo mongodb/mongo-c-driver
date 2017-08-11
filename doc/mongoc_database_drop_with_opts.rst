@@ -25,7 +25,7 @@ Description
 
 This function attempts to drop a database on the MongoDB server.
 
-If no write concern is provided in ``command_opts``, the database's write concern is used.
+If no write concern is provided in ``opts``, the database's write concern is used.
 
 Errors
 ------
@@ -35,5 +35,5 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` if successful, otherwise ``false`` and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 

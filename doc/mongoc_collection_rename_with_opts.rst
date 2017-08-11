@@ -31,7 +31,7 @@ Description
 
 This function is a helper to rename an existing collection on a MongoDB server. The name of the collection will also be updated internally so it is safe to continue using this collection after the rename. Additional operations will occur on renamed collection.
 
-If no write concern is provided in ``command_opts``, the collection's write concern is used.
+If no write concern is provided in ``opts``, the collection's write concern is used.
 
 Errors
 ------
@@ -41,5 +41,5 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` if the command executed successfully, otherwise ``false`` and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 

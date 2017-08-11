@@ -24,7 +24,7 @@ While iterating cursors, you should check to see if an error has occurred. See t
      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_json (doc, NULL);
+        str = bson_as_canonical_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }
@@ -54,7 +54,7 @@ Here's a complete test case that demonstrates the use of tailable cursors.
 
   Tailable cursors are for capped collections only.
 
-An example to tail the oplog from a replicaSet.
+An example to tail the oplog from a replica set.
 
 .. literalinclude:: ../examples/mongoc-tail.c
    :language: c
@@ -64,9 +64,27 @@ Let's compile and run this example against a replica set to see updates as they 
 
 .. code-block:: none
 
-  $ gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)$ ./mongoc-tail mongodb://example.com/?replicaSet=myReplSet{ "ts" : { "$timestamp" : { "t" : 1400023818, "i" : 1 } }, "h" : -8458503739429355503, "v" : 2, "op" : "i", "ns" : "test.test", "o" : { "_id" : { "$oid" : "5372ab0a25164be923d10d50" } } }
+  $ gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)
+  $ ./mongoc-tail mongodb://example.com/?replicaSet=myReplSet
+  {
+      "h" : -8458503739429355503,
+      "ns" : "test.test",
+      "o" : {
+          "_id" : {
+              "$oid" : "5372ab0a25164be923d10d50"
+          }
+      },
+      "op" : "i",
+      "ts" : {
+          "$timestamp" : {
+              "i" : 1,
+              "t" : 1400023818
+          }
+      },
+      "v" : 2
+  }
 
-The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the given replicaSet.
+The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the replica set.
 
 See also :symbol:`mongoc_cursor_set_max_await_time_ms`.
 

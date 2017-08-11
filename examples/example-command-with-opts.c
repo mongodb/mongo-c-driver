@@ -72,7 +72,7 @@ main (int argc, char *argv[])
 
    if (mongoc_client_write_command_with_opts (
           client, "test", cmd, opts, &reply, &error)) {
-      json = bson_as_json (&reply, NULL);
+      json = bson_as_canonical_extended_json (&reply, NULL);
       printf ("cloneCollectionAsCapped: %s\n", json);
       bson_free (json);
    } else {
@@ -116,7 +116,7 @@ main (int argc, char *argv[])
 
    if (mongoc_client_read_command_with_opts (
           client, "test", cmd, read_prefs, opts, &reply, &error)) {
-      json = bson_as_json (&reply, NULL);
+      json = bson_as_canonical_extended_json (&reply, NULL);
       printf ("distinct: %s\n", json);
       bson_free (json);
    } else {

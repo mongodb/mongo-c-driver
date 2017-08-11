@@ -22,9 +22,12 @@ TEST_CFLAGS += \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
+	$(SNAPPY_CFLAGS) \
+	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
+	$(CPPFLAGS) \
 	-DBINARY_DIR="\"$(top_srcdir)/tests/binary\"" \
 	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
 	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
@@ -36,7 +39,10 @@ TEST_LIBS = \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
+	$(SNAPPY_LIBS) \
+	$(ZLIB_LIBS) \
 	$(SSL_LIBS)
+
 if EXPLICIT_LIBS
 TEST_LIBS += $(BSON_LIBS)
 endif
@@ -106,6 +112,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-collection-find.c \
 	tests/test-mongoc-collection-find-with-opts.c \
+	tests/test-mongoc-connection-uri.c \
 	tests/test-mongoc-command-monitoring.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
@@ -124,6 +131,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
+	tests/test-mongoc-sample-commands.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
@@ -156,7 +164,7 @@ endif
 
 if ENABLE_SASL
 test_libmongoc_SOURCES += \
-	tests/test-sasl.c
+	tests/test-cyrus.c
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
 test_libmongoc_LDADD = $(TEST_LIBS)
@@ -224,6 +232,7 @@ EXTRA_DIST += \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
 	$(wildcard tests/release_files/*.txt) \
+	$(wildcard tests/json/connection_uri/*.json) \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \

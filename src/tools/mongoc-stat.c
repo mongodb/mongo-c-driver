@@ -71,6 +71,14 @@ typedef struct {
 } mongoc_counter_t;
 
 
+static void
+mongoc_counters_destroy (mongoc_counters_t *counters)
+{
+   BSON_ASSERT (counters);
+   munmap ((void *) counters, counters->size);
+}
+
+
 static mongoc_counters_t *
 mongoc_counters_new_from_pid (unsigned pid)
 {
@@ -109,23 +117,16 @@ mongoc_counters_new_from_pid (unsigned pid)
       return NULL;
    }
 
+   close (fd);
+
    counters = (mongoc_counters_t *) mem;
    if (counters->size != len) {
       perror ("Corrupted shared memory segment.");
+      mongoc_counters_destroy (counters);
       return NULL;
    }
 
-   close (fd);
-
    return counters;
-}
-
-
-static void
-mongoc_counters_destroy (mongoc_counters_t *counters)
-{
-   BSON_ASSERT (counters);
-   munmap ((void *) counters, counters->size);
 }
 
 

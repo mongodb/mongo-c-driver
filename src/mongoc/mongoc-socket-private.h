@@ -33,6 +33,7 @@ struct _mongoc_socket_t {
 #endif
    int errno_;
    int domain;
+   int pid;
 };
 
 mongoc_socket_t *

@@ -1,6 +1,14 @@
 #!/bin/sh
-set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
+# AUTH_HOST=${auth_host} # Evergreen variable
+# AUTH_PLAIN=${auth_plain} # Evergreen variable
+# AUTH_MONGODBCR=${auth_mongodbcr} # Evergreen variable
+# AUTH_GSSAPI=${auth_gssapi} # Evergreen variable
+# AUTH_CROSSREALM=${auth_crossrealm} # Evergreen variable
+# AUTH_GSSAPI_UTF8=${auth_gssapi_utf8} # Evergreen variable
+# ATLAS_FREE=${atlas_free} # Evergreen variable
+# ATLAS_REPLSET=${atlas_replset} # Evergreen variable
+# ATLAS_SHARD=${atlas_shard} # Evergreen variable
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -19,25 +27,17 @@ case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
       chmod +x ./Debug/* src/libbson/Debug/*
-      # Evergreen fails apply a patchbuild with this file as binary
-      # We therefore have the registry file encoded as base64, then decode it
-      # before we load the registry changes
-      # Removing \r is important as base64 decoding will otherwise fail!
-      # When BUILD-2708 is fixed, we can remove these lines, and the file
-      cat .evergreen/regedit.base64 | tr -d '\r' > tmp.base64
-      base64 --decode tmp.base64 > .evergreen/kerberos.reg
-      regedit.exe /S .evergreen/kerberos.reg
       PING="./Debug/mongoc-ping.exe"
       ;;
 
    darwin)
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       ;;
 
    sunos)
       PATH="/opt/mongodbtoolchain/bin:$PATH"
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="install-dir/lib:/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       ;;
 
@@ -46,7 +46,7 @@ case "$OS" in
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.
       sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
 esac
 
@@ -54,14 +54,48 @@ if test -f /tmp/drivers.keytab; then
    kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC || true
 fi
 
-$PING 'mongodb://drivers-team:mongor0x$xgen@ldaptest.10gen.cc/?authMechanism=PLAIN'
-$PING 'mongodb://drivers:mongor0x$xgen@ldaptest.10gen.cc/mongodb-cr?authMechanism=MONGODB-CR'
+# Archlinux (which we use for testing various self-installed OpenSSL versions)
+# Stores their trust list here. We need to copy it to our custom installed
+# OpenSSL trust store.
+# LibreSSL bundle their own trust store (in install-dir/etc/ssl/cert.pem)
+cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/ssl/cert.pem || true
+# OpenSSL fips enabled path
+cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/cert.pem || true
+# Solaris CSW OpenSSL install need to copy the OS trust store
+sudo mkdir -p /etc/opt/csw/ssl/ || true
+sudo cp /etc/ssl/cert.pem /etc/opt/csw/ssl/ || true
+
+export PATH=install-dir/bin:$PATH
+openssl version || true
+
+if [ $SSL -eq 1 ]; then
+   # FIXME: CDRIVER-2008
+   if [ "${OS%_*}" != "cygwin" ]; then
+      echo "Authenticating using X.509"
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true"
+   fi
+   echo "Connecting to Atlas Free Tier"
+   $PING "$ATLAS_FREE"
+   echo "Connecting to Atlas Replica Set"
+   $PING "$ATLAS_REPLSET"
+   echo "Connecting to Atlas Sharded Cluster"
+   $PING "$ATLAS_SHARD"
+fi
+
+echo "Authenticating using PLAIN"
+$PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN"
+
+echo "Authenticating using MONGODB-CR"
+$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR"
 
 if [ $SASL -eq 1 ]; then
-   $PING "mongodb://drivers%40LDAPTEST.10GEN.CC:powerbook17@ldaptest.10gen.cc/?authMechanism=GSSAPI"
+echo "Authenticating using GSSAPI"
+   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI"
    if [ "${OS%_*}" = "cygwin" ]; then
-      $PING "mongodb://drivers%40LDAPTEST2.10GEN.CC:weakbook17@ldaptest.10gen.cc/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC"
-      $PING "mongodb://schrÃ¶dinger%40LDAPTEST.10GEN.CC:regnidÃ¶rhcs@ldaptest.10gen.cc/?authMechanism=GSSAPI"
+      echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
+      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC"
+      echo "Authenticating using GSSAPI (UTF-8 credentials)"
+      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI"
    fi
 fi
 

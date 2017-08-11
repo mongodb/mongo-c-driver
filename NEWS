@@ -1,3 +1,69 @@
+mongo-c-driver 1.7.0
+====================
+
+It is my please to announce mongo-c-driver 1.7.0.
+
+New features and bug fixes:
+
+  * CMake build now installs .pc files for programs that link to libmongoc using
+    pkg-config. Both the CMake and Autotools build systems now install .cmake
+    files for programs that link to libmongoc using CMake. Linking to libmongoc
+    statically or dynamically is now much more convenient. See the new tutorial
+    section "Include and link libmongoc in your C program".
+  * New CMake option ENABLE_STATIC can be ON, OFF, or AUTO (the default)
+  * Minimum required CMake version has been increased to 3.1.
+  * CMake remains experimental on non-Windows platforms and issues a warning now
+  * Support for wire compression.
+    * Support for snappy and zlib. MongoDB 3.4 only supports snappy, while zlib
+      support is expected in MongoDB 3.6.
+      The enable, configure mongoc like so:
+      ./configure --with-snappy --with-zlib
+    * New functions: mongoc_uri_get_compressors & mongoc_uri_set_compressors, to
+      get and set compressor configuration on mongoc_uri_t
+    * Added support for comma seperated "compressors" connection string option (e.g.
+      mongodb://localhost/?compressors=snappy,zlib)
+    * Added support for configuring zlib compression level in the connection string
+      (e.g. mongodb://localhost/?compressors=zlib&zlibcompressionlevel=8)
+  * Now requires the use of CMake config files for libbson to build libmongoc
+    with CMake
+  * Added pkg-config support for libressl.
+  * New function mongoc_uri_set_auth_mechanism to update the authentication
+    mechanism of a mongoc_uri_t after it is created from a string.
+  * New function mongoc_bulk_operation_insert_with_opts provides immediate
+    error checking.
+  * New function mongoc_uri_new_with_error provides a way to parse a connection
+    string, and retrieve the failure reason, if any.
+  * Support for MongoDB Connection String specification
+    * All connection string options are now represented by MONGOC_URI_xxx macros
+    * Paths to Unix Domain Sockets must be url encoded
+    * Repeated options now issue warnings
+    * Special characters in username, password and other values must be url encoded
+    * Unsupported connection string options now issue warnings
+    * Boolean values can now be represented as true/yes/y/t/1 and false/no/n/f/0.
+    * Case is now preserved in Unix domain paths.
+  * New function mongoc_cursor_error_document provides access to server's error
+    reply if a query or command fails.
+  * New function mongoc_write_concern_is_default determines whether any write
+    concern options have been set, and mongoc_read_concern_is_default checks if
+    read concern options are set.
+  * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Hannes Magnusson
+  * A. Jesse Jiryu Davis
+  * David Golden
+  * Jeremy Mikola
+  * Bernard Spil
+  * Aleksander Melnikov
+  * Adam Seering
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.6.0
 ====================
 
@@ -43,6 +109,19 @@ Thanks to everyone who contributed to the development of this release.
   * Christopher Wang
   * David Golden
   * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.5.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.5.5. This release fixes bugs
+parsing the localThresholdMS option from the MongoDB URI, and a crash in
+mongoc_cursor_destroy if "query" or "filter" are invalid. Thanks to Jeremy
+Mikola.
 
 Peace,
 
@@ -1110,28 +1189,6 @@ Peace,
 
   A. Jesse Jiryu Davis
 
-It is my pleasure to announce to you the MongoDB C driver 1.1.11.
-
-This is a patch release with bug fixes:
-
-  * Undetected network errors when sending messages to the server
-  * Off-by-one error in mongoc_gridfs_file_seek with mode SEEK_END
-  * Memory leak parsing a URI that contains an invalid option
-  * The libbson submodule's URL now uses the recommended https://, not git://
-
-Thanks to everyone who contributed to the development of this point release for
-libmongoc.
-
-  * A. Jesse Jiryu Davis
-  * Hannes Magnusson
-  * Jason Carey
-  * Jose Sebastian Battig
-  * rubicks
-
-Peace,
-
-  A. Jesse Jiryu Davis
-
 
 mongo-c-driver 1.1.11
 =====================
@@ -1352,7 +1409,7 @@ Changes include:
   * Addition of missing trace macros
   * Improvement of internal error messages
   * Fix a segfault in OpenSSL cleanup routines
-  * Fix for IPv66 support for replica sets
+  * Fix for IPv6 support for replica sets
   * Coalesce small vectorized TLS writes
   * MinGW fixups
   * Fix for a memory leak in get_database_names()

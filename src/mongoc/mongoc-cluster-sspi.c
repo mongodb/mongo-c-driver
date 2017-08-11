@@ -20,28 +20,11 @@
 
 #include "mongoc-cluster-sspi-private.h"
 #include "mongoc-cluster-sasl-private.h"
+#include "mongoc-sasl-private.h"
 #include "mongoc-sspi-private.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
 
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_auth_node_sasl --
- *
- *       Perform authentication for a cluster node using SASL. This only
- *       supports GSSAPI at the moment.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       error may be set.
- *
- *--------------------------------------------------------------------------
- */
 
 mongoc_sspi_client_state_t *
 _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
@@ -71,7 +54,8 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
       bson_init (&properties);
    }
 
-   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
+   if (bson_iter_init_find_case (
+          &iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       service_name = bson_iter_utf8 (&iter, NULL);
    }
@@ -132,6 +116,22 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
    return NULL;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_sspi --
+ *
+ *       Perform authentication for a cluster node using SSPI
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bool
 _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
@@ -155,7 +155,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
    options = mongoc_uri_get_options (cluster->uri);
 
-   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
+   if (bson_iter_init_find_case (
+          &iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       canonicalize = bson_iter_bool (&iter);
    }
@@ -169,9 +170,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       bson_destroy (&properties);
    }
 
-   if (canonicalize &&
-       _mongoc_cluster_get_canonicalized_name (
-          cluster, stream, real_name, sizeof real_name, error)) {
+   if (canonicalize && _mongoc_sasl_get_canonicalized_name (
+                          stream, real_name, sizeof real_name, error)) {
       state = _mongoc_cluster_sspi_new (cluster->uri, real_name);
    } else {
       state = _mongoc_cluster_sspi_new (cluster->uri, hostname);
@@ -198,7 +198,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
          res = _mongoc_sspi_auth_sspi_client_unwrap (state, buf);
          response = bson_strdup (state->response);
-         _mongoc_sspi_auth_sspi_client_wrap (state, response, tmp_creds, tmp_creds_len, 0);
+         _mongoc_sspi_auth_sspi_client_wrap (
+            state, response, tmp_creds, tmp_creds_len, 0);
          bson_free (response);
       }
 
@@ -222,14 +223,14 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
-      if (!mongoc_cluster_run_command (cluster,
-                                       stream,
-                                       0,
-                                       MONGOC_QUERY_SLAVE_OK,
-                                       "$external",
-                                       &cmd,
-                                       &reply,
-                                       error)) {
+      if (!mongoc_cluster_run_command_private (cluster,
+                                               stream,
+                                               0,
+                                               MONGOC_QUERY_SLAVE_OK,
+                                               "$external",
+                                               &cmd,
+                                               &reply,
+                                               error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
          break;

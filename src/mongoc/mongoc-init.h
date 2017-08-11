@@ -23,13 +23,14 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_init (void);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_cleanup (void);
 
 

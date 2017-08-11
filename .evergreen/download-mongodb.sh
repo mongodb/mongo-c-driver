@@ -231,7 +231,7 @@ download_and_extract ()
    MONGODB_DOWNLOAD_URL=$1
    EXTRACT=$2
 
-   curl $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
+   curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
 
    $EXTRACT mongodb-binaries.tgz
 

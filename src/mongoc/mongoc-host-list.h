@@ -27,14 +27,10 @@
 BSON_BEGIN_DECLS
 
 
-#ifndef HOST_NAME_MAX
 #ifdef _POSIX_HOST_NAME_MAX
 #define BSON_HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #else
 #define BSON_HOST_NAME_MAX 255
-#endif
-#else
-#define BSON_HOST_NAME_MAX HOST_NAME_MAX
 #endif
 
 

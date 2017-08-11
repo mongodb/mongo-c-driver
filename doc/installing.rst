@@ -10,17 +10,20 @@ Supported Platforms
 
 The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on variety of platforms including:
 
-=======================  =================  ======================================
-Operating Systems        CPU Architectures  Compiler Toolchain
-=======================  =================  ======================================
-GNU/Linux                x86 and x86_64     GCC 4.1 and newer
-Solaris 11               ARM                Clang 3.3 and newer
-Mac OS X 10.6 and newer  PPC                Microsoft Visual Studio 2010 and newer
-Windows Vista, 7, and 8  SPARC              `Oracle Solaris Studio 12`_
-FreeBSD                                     MinGW
-=======================  =================  ======================================
+- Archlinux
+- Debian 8.1
+- macOS 10.10
+- Microsoft Windows Server 2008
+- RHEL 7.0, 7.1, 7.2
+- SUSE 12
+- smartOS (sunos / Solaris)
+- Ubuntu 12.04, 14.04, 16.04
+- Clang 3.4, 3.5, 3.7, 3.8
+- GCC 4.6, 4.8, 4.9, 5.3
+- MinGW-W64
+- Visual Studio 2010, 2013, 2015
+- x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
 
-.. _Oracle Solaris Studio 12: http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html
 
 Install with a Package Manager
 ------------------------------
@@ -74,7 +77,7 @@ Building from a release tarball
 
 Unless you intend on contributing to the mongo-c-driver, you will want to build from a release tarball.
 
-The most recent release of libmongoc is |release| and can be `downloaded here <https://github.com/mongodb/mongo-c-driver/releases/download/|release|/mongo-c-driver-|release|.tar.gz>`_. The following snippet will download and extract the driver, and configure it:
+The most recent release of libmongoc is |release| and can be :release:`downloaded here <>`. The following snippet will download and extract the driver, and configure it:
 
 .. parsed-literal::
 
@@ -102,6 +105,8 @@ If ``configure`` completed successfully, you'll see something like the following
     Shared memory performance counters               : yes
     SASL                                             : sasl2
     SSL                                              : openssl
+    Snappy Compression                               : yes
+    Zlib Compression                                 : yes
     Libbson                                          : bundled
 
   Documentation:
@@ -168,11 +173,11 @@ Install the XCode Command Line Tools::
 
   $ xcode-select --install
 
-Some Homebrew packages are also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
+The ``pkg-config`` utility is also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
 
-  $ brew install automake autoconf libtool pkgconfig
+  $ brew install pkgconfig
 
-Download the latest release tarball
+Download the latest release tarball:
 
 .. parsed-literal::
 
@@ -215,6 +220,8 @@ Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers.
   $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
   $ export CPPFLAGS="-I/usr/local/opt/openssl/include"
 
+.. _build-on-windows:
+
 Building on Windows
 -------------------
 
@@ -225,7 +232,9 @@ Let's start by generating Visual Studio project files for libbson, a dependency 
 .. parsed-literal::
 
   cd mongo-c-driver-|release|\\src\\libbson
-  cmake -G "Visual Studio 14 2015 Win64" "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver"
+  cmake -G "Visual Studio 14 2015 Win64" \\
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+    "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
 
 (Run ``cmake -LH .`` for a list of other options.)
 
@@ -233,13 +242,13 @@ Now that we have project files generated, we can either open the project in Visu
 
 .. code-block:: none
 
-  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
 
 Now that libbson is compiled, let's install it using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
 
 .. code-block:: none
 
-  msbuild.exe INSTALL.vcxproj
+  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
 
 You should now see libbson installed in ``C:\mongo-c-driver``
 
@@ -250,12 +259,19 @@ Now let's do the same for the MongoDB C driver.
   cd mongo-c-driver-|release|
   cmake -G "Visual Studio 14 2015 Win64" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
-    "-DBSON_ROOT_DIR=C:\\mongo-c-driver"
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
+    "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
 
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
+  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
+  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
 
-All of the MongoDB C Driver's components will now be found in ``C:\mongo-c-driver``.
+All of the MongoDB C Driver's components will now have been build in release
+mode and can be found in ``C:\mongo-c-driver``.
+To build and install debug binaries, remove the
+``"-DCMAKE_BUILD_TYPE=Release"`` argument to ``cmake`` and
+``/p:Configuration=Release`` to ``msbuild.exe``.
+
+To use the driver libraries in your program, see :doc:`visual-studio-guide`.
 
 Native TLS Support on Windows (Secure Channel)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -274,6 +290,25 @@ OpenSSL is available, configure the driver like so:
 
   cmake -G "Visual Studio 14 2015 Win64" \
     "-DENABLE_SSL=WINDOWS" \
-    "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" \
-    "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+
+
+Native SASL Support on Windows (SSPI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MongoDB C Driver supports the Windows native Kerberos and Active Directory
+interface, SSPI. Using the native libraries there is no need to install any
+dependencies, such as cyrus-sasl.  By default however, the driver will compile
+against cyrus-sasl.
+
+
+To compile against the Windows native SSPI, configure the driver like so:
+
+.. code-block:: none
+
+  cmake -G "Visual Studio 14 2015 Win64" \
+    "-DENABLE_SASL=SSPI" \
+    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
+    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
 

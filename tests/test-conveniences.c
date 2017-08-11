@@ -125,7 +125,8 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
    uint32_t len;
    const uint8_t *data;
 
-   assert (BSON_ITER_HOLDS_DOCUMENT (iter) || BSON_ITER_HOLDS_ARRAY (iter));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (iter) ||
+                BSON_ITER_HOLDS_ARRAY (iter));
 
    if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_iter_document (iter, &len, &data);
@@ -133,7 +134,7 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
       bson_iter_array (iter, &len, &data);
    }
 
-   assert (bson_init_static (bson, data, len));
+   BSON_ASSERT (bson_init_static (bson, data, len));
 }
 
 
@@ -141,7 +142,7 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
  *
  * bson_lookup_utf8 --
  *
- *       Return a string by key, or assert and abort.
+ *       Return a string by key, or BSON_ASSERT and abort.
  *
  *--------------------------------------------------------------------------
  */
@@ -184,6 +185,21 @@ bson_lookup_bool (const bson_t *b, const char *key, bool default_value)
    return default_value;
 }
 
+bool
+bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+
+   if (bson_iter_find_descendant (&iter, key, &descendent)) {
+      return bson_iter_as_bool (&descendent);
+   }
+
+   return default_value;
+}
+
 /*--------------------------------------------------------------------------
  *
  * bson_lookup_doc --
@@ -205,12 +221,25 @@ bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc)
    bson_iter_bson (&descendent, doc);
 }
 
+void
+bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   if (!BSON_ITER_HOLDS_NULL (&descendent)) {
+      bson_iter_bson (&descendent, doc);
+   }
+}
+
 
 /*--------------------------------------------------------------------------
  *
  * bson_lookup_int32 --
  *
- *       Return an int32_t by key, or assert and abort.
+ *       Return an int32_t by key, or BSON_ASSERT and abort.
  *
  *--------------------------------------------------------------------------
  */
@@ -232,7 +261,7 @@ bson_lookup_int32 (const bson_t *b, const char *key)
  *
  * bson_lookup_int64 --
  *
- *       Return an int64_t by key, or assert and abort.
+ *       Return an int64_t by key, or BSON_ASSERT and abort.
  *
  *--------------------------------------------------------------------------
  */
@@ -255,7 +284,7 @@ bson_lookup_int64 (const bson_t *b, const char *key)
  * bson_lookup_write_concern --
  *
  *       Find a subdocument like {w: <int32>} and interpret it as a
- *       mongoc_write_concern_t, or assert and abort.
+ *       mongoc_write_concern_t, or BSON_ASSERT and abort.
  *
  *--------------------------------------------------------------------------
  */
@@ -278,7 +307,7 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
  * bson_lookup_read_prefs --
  *
  *       Find a subdocument like {mode: "mode"} and interpret it as a
- *       mongoc_read_prefs_t, or assert and abort.
+ *       mongoc_read_prefs_t, or BSON_ASSERT and abort.
  *
  *--------------------------------------------------------------------------
  */
@@ -423,7 +452,7 @@ match_json (const bson_t *doc,
                "pattern:\n%s\n"
                "%s\n"
                "%s:%d %s()\n",
-               doc ? bson_as_json (doc, NULL) : "{}",
+               doc ? bson_as_canonical_extended_json (doc, NULL) : "{}",
                double_quoted,
                ctx.errmsg,
                filename,
@@ -568,7 +597,7 @@ match_bson_with_ctx (const bson_t *doc,
       return false;
    }
 
-   assert (bson_iter_init (&pattern_iter, pattern));
+   BSON_ASSERT (bson_iter_init (&pattern_iter, pattern));
 
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
@@ -660,8 +689,8 @@ find (bson_value_t *value,
 static bool
 bson_init_from_value (bson_t *b, const bson_value_t *v)
 {
-   assert (v->value_type == BSON_TYPE_ARRAY ||
-           v->value_type == BSON_TYPE_DOCUMENT);
+   BSON_ASSERT (v->value_type == BSON_TYPE_ARRAY ||
+                v->value_type == BSON_TYPE_DOCUMENT);
 
    return bson_init_static (b, v->value.v_doc.data, v->value.v_doc.data_len);
 }
@@ -748,7 +777,7 @@ is_empty_doc_or_array (const bson_value_t *value)
          value->value_type == BSON_TYPE_DOCUMENT)) {
       return false;
    }
-   assert (bson_init_static (
+   BSON_ASSERT (bson_init_static (
       &doc, value->value.v_doc.data, value->value.v_doc.data_len));
 
    return bson_count_keys (&doc) == 0;
@@ -777,8 +806,8 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
       return false;
    }
 
-   assert (bson_iter_init (&array_iter, array));
-   assert (bson_iter_init (&pattern_iter, pattern));
+   BSON_ASSERT (bson_iter_init (&array_iter, array));
+   BSON_ASSERT (bson_iter_init (&pattern_iter, pattern));
 
    while (bson_iter_next (&array_iter)) {
       BSON_ASSERT (bson_iter_next (&pattern_iter));
@@ -1121,14 +1150,14 @@ init_huge_string (mongoc_client_t *client)
 {
    int32_t max_bson_size;
 
-   assert (client);
+   BSON_ASSERT (client);
 
    if (!gHugeString) {
       max_bson_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster);
-      assert (max_bson_size > 0);
+      BSON_ASSERT (max_bson_size > 0);
       gHugeStringLength = (size_t) max_bson_size - 36;
       gHugeString = (char *) bson_malloc (gHugeStringLength + 1);
-      assert (gHugeString);
+      BSON_ASSERT (gHugeString);
       memset (gHugeString, 'a', gHugeStringLength);
       gHugeString[gHugeStringLength] = '\0';
    }
@@ -1156,7 +1185,7 @@ init_four_mb_string ()
 {
    if (!gFourMBString) {
       gFourMBString = (char *) bson_malloc (FOUR_MB + 1);
-      assert (gFourMBString);
+      BSON_ASSERT (gFourMBString);
       memset (gFourMBString, 'a', FOUR_MB);
       gFourMBString[FOUR_MB] = '\0';
    }

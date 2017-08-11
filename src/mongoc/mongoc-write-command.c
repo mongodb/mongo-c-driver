@@ -656,11 +656,7 @@ _mongoc_write_command_delete_legacy (
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
    r = bson_iter_init (&iter, command->documents);
-   if (!r) {
-      BSON_ASSERT (false);
-      EXIT;
-   }
-
+   BSON_ASSERT (r);
    if (!command->n_documents || !bson_iter_next (&iter)) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
@@ -677,11 +673,7 @@ _mongoc_write_command_delete_legacy (
       r = (bson_iter_recurse (&iter, &q_iter) &&
            bson_iter_find (&q_iter, "q") && BSON_ITER_HOLDS_DOCUMENT (&q_iter));
 
-      if (!r) {
-         BSON_ASSERT (false);
-         EXIT;
-      }
-
+      BSON_ASSERT (r);
       bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
@@ -693,16 +685,15 @@ _mongoc_write_command_delete_legacy (
 
       request_id = ++client->cluster.request_id;
 
-      rpc.delete_.msg_len = 0;
-      rpc.delete_.request_id = request_id;
-      rpc.delete_.response_to = 0;
-      rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
       rpc.delete_.collection = ns;
 
       if (bson_iter_find (&q_iter, "limit") &&
-          (BSON_ITER_HOLDS_INT32 (&q_iter) ||
-           BSON_ITER_HOLDS_INT64 (&q_iter))) {
+          (BSON_ITER_HOLDS_INT (&q_iter))) {
          limit = bson_iter_as_int64 (&q_iter);
       }
 
@@ -719,7 +710,7 @@ _mongoc_write_command_delete_legacy (
                                     request_id);
 
       if (!mongoc_cluster_sendv_to_server (
-             &client->cluster, &rpc, 1, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          EXIT;
       }
@@ -810,11 +801,7 @@ _mongoc_write_command_insert_legacy (
    singly = !command->u.insert.allow_bulk_op_insert;
 
    r = bson_iter_init (&iter, command->documents);
-
-   if (!r) {
-      BSON_ASSERT (false);
-      EXIT;
-   }
+   BSON_ASSERT (r);
 
    if (!command->n_documents || !bson_iter_next (&iter)) {
       bson_set_error (error,
@@ -884,10 +871,10 @@ again:
    if (n_docs_in_batch) {
       request_id = ++client->cluster.request_id;
 
-      rpc.insert.msg_len = 0;
-      rpc.insert.request_id = request_id;
-      rpc.insert.response_to = 0;
-      rpc.insert.opcode = MONGOC_OPCODE_INSERT;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_INSERT;
       rpc.insert.flags =
          ((command->flags.ordered) ? MONGOC_INSERT_NONE
                                    : MONGOC_INSERT_CONTINUE_ON_ERROR);
@@ -904,7 +891,7 @@ again:
                                     request_id);
 
       if (!mongoc_cluster_sendv_to_server (
-             &client->cluster, &rpc, 1, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          GOTO (cleanup);
       }
@@ -1086,10 +1073,10 @@ _mongoc_write_command_update_legacy (
    while (bson_iter_next (&iter)) {
       request_id = ++client->cluster.request_id;
 
-      rpc.update.msg_len = 0;
-      rpc.update.request_id = request_id;
-      rpc.update.response_to = 0;
-      rpc.update.opcode = MONGOC_OPCODE_UPDATE;
+      rpc.header.msg_len = 0;
+      rpc.header.request_id = request_id;
+      rpc.header.response_to = 0;
+      rpc.header.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
       rpc.update.collection = ns;
       rpc.update.flags = MONGOC_UPDATE_NONE;
@@ -1147,7 +1134,7 @@ _mongoc_write_command_update_legacy (
                                     request_id);
 
       if (!mongoc_cluster_sendv_to_server (
-             &client->cluster, &rpc, 1, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          EXIT;
       }
@@ -1338,10 +1325,7 @@ again:
                                &ar);
 
       do {
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            BSON_ASSERT (false);
-         }
-
+         BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
          bson_iter_document (&iter, &len, &data);
 
          /* append array element like "0": { ... doc ... } */
@@ -1357,10 +1341,7 @@ again:
             break;
          }
 
-         if (!bson_init_static (&tmp, data, len)) {
-            BSON_ASSERT (false);
-         }
-
+         BSON_ASSERT (bson_init_static (&tmp, data, len));
          BSON_APPEND_DOCUMENT (&ar, key, &tmp);
 
          bson_destroy (&tmp);
@@ -1375,6 +1356,11 @@ again:
       too_large_error (error, i, len, max_bson_obj_size, NULL);
       result->failed = true;
       ret = false;
+
+      /* the current document is too large, continue to the next */
+      if (!bson_iter_next (&iter)) {
+         GOTO (cleanup);
+      }
    } else {
       ret = mongoc_cluster_run_command_monitored (&client->cluster,
                                                   server_stream,
@@ -1405,6 +1391,7 @@ again:
       GOTO (again);
    }
 
+cleanup:
    bson_destroy (&cmd);
    EXIT;
 }

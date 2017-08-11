@@ -103,7 +103,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-   rtt_msec = (bson_get_monotonic_time () - acmd->start_time) / 1000;
+   rtt_msec = (bson_get_monotonic_time () - acmd->cmd_started) / 1000;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
       acmd->cb (result, &acmd->reply, rtt_msec, acmd->data, &acmd->error);
@@ -121,10 +121,10 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
 {
    bson_snprintf (acmd->ns, sizeof acmd->ns, "%s.$cmd", dbname);
 
-   acmd->rpc.query.msg_len = 0;
-   acmd->rpc.query.request_id = ++acmd->async->request_id;
-   acmd->rpc.query.response_to = 0;
-   acmd->rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   acmd->rpc.header.msg_len = 0;
+   acmd->rpc.header.request_id = ++acmd->async->request_id;
+   acmd->rpc.header.response_to = 0;
+   acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
    acmd->rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
    acmd->rpc.query.collection = acmd->ns;
    acmd->rpc.query.skip = 0;
@@ -132,6 +132,7 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
    acmd->rpc.query.query = bson_get_data (&acmd->cmd);
    acmd->rpc.query.fields = NULL;
 
+   /* This will always be isMaster, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
    acmd->iovec = (mongoc_iovec_t *) acmd->array.data;
    acmd->niovec = acmd->array.len;
@@ -175,6 +176,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    acmd->setup_ctx = setup_ctx;
    acmd->cb = cb;
    acmd->data = cb_data;
+   acmd->connect_started = bson_get_monotonic_time ();
    bson_copy_to (cmd, &acmd->cmd);
 
    _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
@@ -225,7 +227,6 @@ _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
    switch (retval) {
    case -1:
       return MONGOC_ASYNC_CMD_ERROR;
-      break;
    case 0:
       break;
    case 1:
@@ -270,7 +271,7 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
    acmd->bytes_to_read = 4;
    acmd->events = POLLIN;
 
-   acmd->start_time = bson_get_monotonic_time ();
+   acmd->cmd_started = bson_get_monotonic_time ();
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }
@@ -279,7 +280,7 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
-      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0, &acmd->error);
+      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
    uint32_t msg_len;
 
    if (bytes < 0) {
@@ -325,7 +326,7 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
-      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0, &acmd->error);
+      &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
 
    if (bytes < 0) {
       bson_set_error (&acmd->error,
@@ -354,22 +355,34 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
                          "Invalid reply from server.");
          return MONGOC_ASYNC_CMD_ERROR;
       }
+      if (BSON_UINT32_FROM_LE (acmd->rpc.header.opcode) ==
+          MONGOC_OPCODE_COMPRESSED) {
+         uint8_t *buf = NULL;
+         size_t len =
+            BSON_UINT32_FROM_LE (acmd->rpc.compressed.uncompressed_size) +
+            sizeof (mongoc_rpc_header_t);
+
+         buf = bson_malloc0 (len);
+         if (!_mongoc_rpc_decompress (&acmd->rpc, buf, len)) {
+            bson_free (buf);
+            bson_set_error (&acmd->error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                            "Could not decompress server reply");
+            return MONGOC_ASYNC_CMD_ERROR;
+         }
+
+         _mongoc_buffer_destroy (&acmd->buffer);
+         _mongoc_buffer_init (&acmd->buffer, buf, len, NULL, NULL);
+      }
 
       _mongoc_rpc_swab_from_le (&acmd->rpc);
 
-      if (acmd->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      if (!_mongoc_rpc_get_first_document (&acmd->rpc, &acmd->reply)) {
          bson_set_error (&acmd->error,
                          MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Invalid reply from server.");
-         return MONGOC_ASYNC_CMD_ERROR;
-      }
-
-      if (!_mongoc_rpc_reply_get_first (&acmd->rpc.reply, &acmd->reply)) {
-         bson_set_error (&acmd->error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Failed to decode reply BSON document.");
+                         "Invalid reply from server");
          return MONGOC_ASYNC_CMD_ERROR;
       }
 

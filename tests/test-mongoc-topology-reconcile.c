@@ -2,6 +2,7 @@
 #include <mongoc-util-private.h>
 
 #include "mongoc-client-private.h"
+#include "mongoc-client-pool-private.h"
 #include "utlist.h"
 
 #include "mock_server/future.h"
@@ -131,6 +132,10 @@ _test_topology_reconcile_rs (bool pooled)
    mongoc_read_prefs_t *primary_read_prefs;
    mongoc_read_prefs_t *tag_read_prefs;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    server0 = mock_server_new ();
    server1 = mock_server_new ();
    mock_server_run (server0);
@@ -166,22 +171,22 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * server0 is selected, server1 is discovered and added to scanner.
     */
-   assert (selects_server (client, secondary_read_prefs, server0));
-   assert (
+   BSON_ASSERT (selects_server (client, secondary_read_prefs, server0));
+   BSON_ASSERT (
       get_node (client->topology, mock_server_get_host_and_port (server1)));
 
    /*
     * select again with mode "primary": server1 is selected.
     */
-   assert (selects_server (client, primary_read_prefs, server1));
+   BSON_ASSERT (selects_server (client, primary_read_prefs, server1));
 
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
    RS_RESPONSE_TO_ISMASTER (server0, true, true, server0); /* server1 absent */
 
-   assert (selects_server (client, tag_read_prefs, server0));
-   assert (!client->topology->stale);
+   BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
+   BSON_ASSERT (!client->topology->stale);
 
    if (!pooled) {
       ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
@@ -193,7 +198,7 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server0, true, true, server0, server1);
    RS_RESPONSE_TO_ISMASTER (server1, false, false, server0, server1);
 
-   assert (selects_server (client, secondary_read_prefs, server1));
+   BSON_ASSERT (selects_server (client, secondary_read_prefs, server1));
 
    if (!pooled) {
       /* no additional failed streams */
@@ -247,6 +252,10 @@ _test_topology_reconcile_sharded (bool pooled)
    request_t *request;
    char *secondary_response;
    mongoc_server_description_t *sd;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    mongos = mock_server_new ();
    secondary = mock_server_new ();
@@ -313,8 +322,8 @@ _test_topology_reconcile_sharded (bool pooled)
                          (int) 1000000);
       }
    } else {
-      assert (!get_node (client->topology,
-                         mock_server_get_host_and_port (secondary)));
+      BSON_ASSERT (!get_node (client->topology,
+                              mock_server_get_host_and_port (secondary)));
    }
 
    mongoc_server_description_destroy (sd);
@@ -350,6 +359,103 @@ test_topology_reconcile_sharded_pooled (void)
 }
 
 
+typedef struct {
+   mongoc_mutex_t mutex;
+   size_t servers;
+} reconcile_test_data_t;
+
+
+static void
+server_opening (const mongoc_apm_server_opening_t *event)
+{
+   reconcile_test_data_t *data = (reconcile_test_data_t *) event->context;
+
+   mongoc_mutex_lock (&data->mutex);
+   data->servers++;
+   mongoc_mutex_unlock (&data->mutex);
+}
+
+
+static void
+test_topology_reconcile_from_handshake (void *ctx)
+{
+   reconcile_test_data_t data;
+   mongoc_apm_callbacks_t *callbacks;
+   char *host;
+   uint16_t port;
+   char *replset_name;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_topology_t *topology;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+
+   mongoc_mutex_init (&data.mutex);
+   data.servers = 0;
+
+   callbacks = mongoc_apm_callbacks_new ();
+
+   /* single seed - not the full test_framework_get_uri */
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+   replset_name = test_framework_replset_name ();
+   uri_str = bson_strdup_printf (
+      "mongodb://%s:%hu/?replicaSet=%s", host, port, replset_name);
+
+   uri = mongoc_uri_new (uri_str);
+   pool = mongoc_client_pool_new (uri);
+   mongoc_apm_set_server_opening_cb (callbacks, server_opening);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &data);
+   test_framework_set_pool_ssl_opts (pool);
+
+   /* make the bg thread lose the data race: prevent it starting by pretending
+    * it already has */
+   topology = _mongoc_client_pool_get_topology (pool);
+   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
+
+   /* ordinarily would start bg thread */
+   client = mongoc_client_pool_pop (pool);
+
+   /* command in the foreground (ismaster, just because it doesn't need auth) */
+   r = mongoc_client_read_command_with_opts (client,
+                                             "admin",
+                                             tmp_bson ("{'ismaster': 1}"),
+                                             NULL,
+                                             tmp_bson ("{'serverId': 1}"),
+                                             NULL,
+                                             &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   /* If CDRIVER-2073 isn't fixed, then when we discovered the other replicas
+    * during the handshake in the foreground, we also set the new scanner nodes'
+    * "cmd" fields. The thread will die at assert (!node->cmd) once it starts.
+    */
+   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
+   mongoc_client_pool_push (pool, client);
+   client = mongoc_client_pool_pop (pool);
+
+   /* no serverId, waits for topology scan */
+   r = mongoc_client_read_command_with_opts (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   mongoc_mutex_lock (&data.mutex);
+   ASSERT_CMPSIZE_T (data.servers, ==, test_framework_replset_member_count ());
+   mongoc_mutex_unlock (&data.mutex);
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+   bson_free (replset_name);
+   bson_free (host);
+}
+
+
 void
 test_topology_reconcile_install (TestSuite *suite)
 {
@@ -371,4 +477,10 @@ test_topology_reconcile_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/TOPOLOGY/reconcile/sharded/single",
                   test_topology_reconcile_sharded_single);
+   TestSuite_AddFull (suite,
+                      "/TOPOLOGY/reconcile/from_handshake",
+                      test_topology_reconcile_from_handshake,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_replset);
 }

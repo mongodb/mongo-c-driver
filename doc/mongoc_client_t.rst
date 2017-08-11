@@ -3,7 +3,7 @@
 mongoc_client_t
 ===============
 
-MongoDB Connection Abstraction
+A single-threaded MongoDB connection. See :doc:`connection-pooling`.
 
 Synopsis
 --------
@@ -18,8 +18,8 @@ Synopsis
      void *user_data,
      bson_error_t *error);
 
-``mongoc_client_t`` is an opaque type that provides access to a MongoDB node,
-replica-set, or sharded-cluster. It maintains management of underlying sockets
+``mongoc_client_t`` is an opaque type that provides access to a MongoDB server,
+replica set, or sharded cluster. It maintains management of underlying sockets
 and routing to individual nodes based on :symbol:`mongoc_read_prefs_t` or :symbol:`mongoc_write_concern_t`.
 
 Streams
@@ -31,11 +31,6 @@ Thread Safety
 -------------
 
 ``mongoc_client_t`` is *NOT* thread-safe and should only be used from one thread at a time. When used in multi-threaded scenarios, it is recommended that you use the thread-safe :symbol:`mongoc_client_pool_t` to retrieve a ``mongoc_client_t`` for your thread.
-
-Lifecycle
----------
-
-It is an error to call :symbol:`mongoc_client_destroy` on a client that has operations pending. It is required that you release :symbol:`mongoc_collection_t` and :symbol:`mongoc_database_t` structures before calling :symbol:`mongoc_client_destroy`.
 
 Example
 -------

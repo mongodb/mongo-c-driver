@@ -23,21 +23,15 @@
 static bool
 mongoc_dump_mkdir_p (const char *path, int mode)
 {
+   int r;
+
 #ifdef _WIN32
-   if (0 != _access (path, 0)) {
-      if (0 != _mkdir (path)) {
-         return false;
-      }
-   }
+   r = _mkdir (path);
 #else
-   if (0 != access (path, F_OK)) {
-      if (0 != mkdir (path, mode)) {
-         return false;
-      }
-   }
+   r = mkdir (path, mode);
 #endif
 
-   return true;
+   return (r == 0 || errno == EEXIST);
 }
 
 
@@ -57,13 +51,9 @@ mongoc_dump_collection (mongoc_client_t *client,
 
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
 #ifdef _WIN32
-   if (0 == _access (path, 0)) {
-      _unlink (path);
-   }
+   _unlink (path);
 #else
-   if (0 == access (path, F_OK)) {
-      unlink (path);
-   }
+   unlink (path);
 #endif
 
    stream = fopen (path, "w");

@@ -42,10 +42,16 @@ const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
 
 bool
+bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value);
+
+bool
 bson_lookup_bool (const bson_t *b, const char *key, bool default_value);
 
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
+
+void
+bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc);
 
 int32_t
 bson_lookup_int32 (const bson_t *b, const char *key);
@@ -104,7 +110,7 @@ four_mb_string ();
 
 #define ASSERT_MATCH(doc, ...)                                                 \
    do {                                                                        \
-      assert (                                                                 \
+      BSON_ASSERT (                                                            \
          match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
    } while (0)
 

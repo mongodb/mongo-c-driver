@@ -39,7 +39,9 @@ struct _mongoc_cursor_interface_t {
    void (*destroy) (mongoc_cursor_t *cursor);
    bool (*more) (mongoc_cursor_t *cursor);
    bool (*next) (mongoc_cursor_t *cursor, const bson_t **bson);
-   bool (*error) (mongoc_cursor_t *cursor, bson_error_t *error);
+   bool (*error_document) (mongoc_cursor_t *cursor,
+                           bson_error_t *error,
+                           const bson_t **doc);
    void (*get_host) (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 };
 
@@ -131,6 +133,7 @@ struct _mongoc_cursor_t {
    uint32_t dblen;
 
    bson_error_t error;
+   bson_t error_doc;
 
    /* for OP_QUERY and OP_GETMORE replies*/
    mongoc_rpc_t rpc;
@@ -201,7 +204,9 @@ _mongoc_cursor_more (mongoc_cursor_t *cursor);
 bool
 _mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson);
 bool
-_mongoc_cursor_error (mongoc_cursor_t *cursor, bson_error_t *error);
+_mongoc_cursor_error_document (mongoc_cursor_t *cursor,
+                               bson_error_t *error,
+                               const bson_t **doc);
 void
 _mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 

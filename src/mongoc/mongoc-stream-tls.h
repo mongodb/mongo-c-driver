@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
 
@@ -31,29 +32,29 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_stream_tls_t mongoc_stream_tls_t;
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_stream_tls_handshake (mongoc_stream_t *stream,
                              const char *host,
                              int32_t timeout_msec,
                              int *events,
                              bson_error_t *error);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_stream_tls_handshake_block (mongoc_stream_t *stream,
                                    const char *host,
                                    int32_t timeout_msec,
                                    bson_error_t *error);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream, int32_t timeout_msec)
    BSON_GNUC_DEPRECATED_FOR (mongoc_stream_tls_handshake);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream, const char *host)
    BSON_GNUC_DEPRECATED_FOR (mongoc_stream_tls_handshake);
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new_with_hostname (mongoc_stream_t *base_stream,
                                      const char *host,
                                      mongoc_ssl_opt_t *opt,
                                      int client);
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_tls_new (mongoc_stream_t *base_stream,
                        mongoc_ssl_opt_t *opt,
                        int client)

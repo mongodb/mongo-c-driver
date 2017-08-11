@@ -33,6 +33,8 @@ COUNTER(op_egress_msg,          "Operations",   "Egress Msg",          "The numb
 COUNTER(op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
 COUNTER(op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
 COUNTER(op_ingress_reply,       "Operations",   "Ingress Reply",       "The number of received Reply operations.")
+COUNTER(op_egress_compressed,   "Operations",   "Egress Compressed",   "The number of sent compressed operations.")
+COUNTER(op_ingress_compressed,  "Operations",   "Ingress Compressed",  "The number of received compressed operations.")
 
 
 COUNTER(cursors_active,         "Cursors",      "Active",              "The number of active cursors.")

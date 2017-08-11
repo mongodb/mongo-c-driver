@@ -26,7 +26,7 @@ This function appends a write concern to command options. It is useful for appen
 Returns
 -------
 
-Returns true on success, and false otherwise.
+Returns true on success. If any arguments are invalid, returns false and logs an error.
 
 Example
 -------

@@ -21,6 +21,7 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
+INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
 echo "MARCH: $MARCH"
@@ -31,7 +32,54 @@ echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
 
+install_openssl_fips() {
+   curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
+   tar zxvf fips.tar.gz
+   cd openssl-fips-2.0.14
+   ./config --prefix=$INSTALL_DIR -fPIC
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j${cpus} || true
+   make install || true
+   cd ..
+   SSL_EXTRA_FLAGS="--openssldir=$INSTALL_DIR --with-fipsdir=$INSTALL_DIR fips"
+   export OPENSSL_FIPS=1
+   SSL=${SSL%-fips}
+}
+install_openssl () {
+   SSL_VERSION=${SSL##openssl-}
+   tmp=$(echo $SSL_VERSION | tr . _)
+   curl -L --retry 5 -o ssl.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_${tmp}.tar.gz
+   tar zxvf ssl.tar.gz
+   cd openssl-OpenSSL_$tmp
+   ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j32 || true
+   make -j${cpus} || true
+   make install || true
+   cd ..
 
+   # x505_vfy.h has issues in 1.1.0e
+   export CPPFLAGS=-Wno-redundant-decls
+   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
+   SSL="openssl";
+}
+
+install_libressl () {
+   SSL_VERSION=${SSL##libressl-}
+   curl --retry 5 -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
+   tar zxvf ssl.tar.gz
+   cd $SSL
+   ./configure --prefix=$INSTALL_DIR
+   cpus=$(grep -c '^processor' /proc/cpuinfo)
+   make -j${cpus}
+   make install
+   cd ..
+
+   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
+   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
+   SSL="libressl";
+}
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
@@ -40,7 +88,20 @@ echo "OS: $OS"
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
-INSTALL_DIR=$(pwd)/install-dir
+case "$SSL" in
+   openssl-*-fips)
+      install_openssl_fips;
+      install_openssl;
+   ;;
+
+   openssl-*)
+      install_openssl;
+  ;;
+
+  libressl-*)
+     install_libressl;
+     ;;
+esac
 
 # Default configure flags for debug builds and release builds
 DEBUG_FLAGS="\
@@ -98,8 +159,10 @@ CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-ssl=${SSL}"
 [ "$VALGRIND" = "yes" ] && TARGET="valgrind" || TARGET="test"
 
 if [ "$RELEASE" = "yes" ]; then
-   # Overwrite the git checkout with the packaged archive
-   $TAR xf ../mongoc.tar.gz -C . --strip-components=1
+   # Build from the release tarball.
+   mkdir build-dir
+   $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
+   cd build-dir
    CONFIGURE_SCRIPT="./configure"
 fi
 
@@ -108,14 +171,18 @@ fi
    #export LD_PRELOAD="libSegFault.so"
 #fi
 
+# UndefinedBehaviorSanitizer configuration
+UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 # AddressSanitizer configuration
-ASAN_OPTIONS="detect_leaks=1"
+ASAN_OPTIONS="detect_leaks=1 abort_on_error=1"
 # LeakSanitizer configuration
 LSAN_OPTIONS="log_pointers=true"
 
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
+      # We don't have the 32bit versions of these libs
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --without-snappy --without-zlib"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
@@ -133,15 +200,16 @@ CFLAGS="$CFLAGS -Werror"
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
-      export PATH=/usr/local/Cellar/llvm/3.8.1/bin/:$PATH
+      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
+      # llvm-cov is installed from brew
+      export PATH=/usr/local/opt/llvm/bin:$PATH
    ;;
 
    linux)
       # Make linux builds a tad faster by parallelise the build
       cpus=$(grep -c '^processor' /proc/cpuinfo)
       MAKEFLAGS="-j${cpus}"
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 
    sunos)
@@ -150,7 +218,7 @@ case "$OS" in
          export SASL_CFLAGS="-I/opt/csw/include/"
          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
       fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 esac
 
@@ -174,9 +242,44 @@ if [ "$LIBBSON" = "external" ]; then
    export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
 
+export PATH=$INSTALL_DIR/bin:$PATH
+echo "OpenSSL Version:"
+pkg-config --modversion libssl || true
+
 $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
+# This needs to be exported _after_ running autogen as the $CONFIGURE_SCRIPT might
+# use git to fetch the submodules, which uses libcurl which is linked against
+# the system openssl which isn't abi compatible with our custom openssl/libressl
+export LD_LIBRARY_PATH=$EXTRA_LIB_PATH:$LD_LIBRARY_PATH
+export DYLD_LIBRARY_PATH=$EXTRA_LIB_PATH:$DYLD_LIBRARY_PATH
+openssl version
+if [ -n "$SSL_VERSION" ]; then
+   openssl version | grep -q $SSL_VERSION
+fi
+# This should fail when using fips capable OpenSSL when fips mode is enabled
+openssl md5 README.rst || true
 $SCAN_BUILD make all
-$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
+
+# Write stderr to error.log and to console.
+mkfifo pipe
+tee error.log < pipe &
+$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
+rm pipe
+
+# Check if the error.log exists, and is more than 0 byte
+if [ -s error.log ]; then
+   cat error.log
+
+   if [ "$CHECK_LOG" = "yes" ]; then
+      # Ignore ar(1) warnings, and check the log again
+      grep -v "^ar: " error.log > log.log
+      if [ -s log.log ]; then
+         cat error.log
+         # Mark build as failed if there is unknown things in the log
+         exit 2
+      fi
+   fi
+fi
 
 
 if [ "$COVERAGE" = "yes" ]; then

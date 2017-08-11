@@ -11,27 +11,27 @@ future_value_new ()
 void
 future_value_set_void (future_value_t *future_value)
 {
-    future_value->type = future_value_void_type;
+   future_value->type = future_value_void_type;
 }
 
 void
 future_value_get_void (future_value_t *future_value)
 {
-    assert (future_value->type == future_value_void_type);
+   BSON_ASSERT (future_value->type == future_value_void_type);
 }
 
 {% for T in type_list %}
 void
-future_value_set_{{ T }}(future_value_t *future_value, {{ T }} value)
+future_value_set_{{ T }} (future_value_t *future_value, {{ T }} value)
 {
-  future_value->type = future_value_{{ T }}_type;
-  future_value->{{ T }}_value = value;
+   future_value->type = future_value_{{ T }}_type;
+   future_value->{{ T }}_value = value;
 }
 
 {{ T }}
 future_value_get_{{ T }} (future_value_t *future_value)
 {
-  assert (future_value->type == future_value_{{ T }}_type);
-  return future_value->{{ T }}_value;
+   BSON_ASSERT (future_value->type == future_value_{{ T }}_type);
+   return future_value->{{ T }}_value;
 }
 {% endfor %}

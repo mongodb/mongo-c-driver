@@ -35,5 +35,6 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns true if the collection was successfully dropped. Otherwise false and error is set.
+Returns true if the collection was successfully dropped. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
+
 

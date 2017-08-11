@@ -30,7 +30,7 @@ When authentication is enabled, the authenticated user must have either the "dba
 Returns
 -------
 
-Returns true if it successfully added the option to the builder.
+Returns ``true`` if it successfully added the option to the builder, otherwise ``false`` and logs an error.
 
 Setting bypassDocumentValidation
 --------------------------------

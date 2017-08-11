@@ -22,6 +22,26 @@
 #include "mongoc-trace-private.h"
 
 
+int
+_mongoc_rand_simple (unsigned int *seed)
+{
+#ifdef _WIN32
+   /* ignore the seed */
+   unsigned int ret = 0;
+   errno_t err;
+
+   err = rand_s (&ret);
+   if (0 != err) {
+      MONGOC_ERROR ("rand_s failed: %");
+   }
+
+   return (int) ret;
+#else
+   return rand_r (seed);
+#endif
+}
+
+
 char *
 _mongoc_hex_md5 (const char *input)
 {
@@ -155,7 +175,7 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
       RETURN (true);
    }
 
-   if (!BSON_ITER_HOLDS_INT32 (&iter) && !BSON_ITER_HOLDS_INT64 (&iter)) {
+   if (!BSON_ITER_HOLDS_INT (&iter)) {
       bson_set_error (
          error, domain, code, "The serverId option must be an integer");
       RETURN (false);
@@ -172,18 +192,44 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 }
 
 
-const bson_validate_flags_t insert_vflags = (bson_validate_flags_t)
-   BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
+bool
+_mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error)
+{
+   bson_error_t validate_err;
+
+   /* insert into system.indexes on pre-2.6 MongoDB, allow "." in keys */
+   if (!bson_validate_with_error (doc,
+                                  BSON_VALIDATE_UTF8 |
+                                     BSON_VALIDATE_EMPTY_KEYS |
+                                     BSON_VALIDATE_DOLLAR_KEYS,
+                                  &validate_err)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "legacy index document contains invalid key: %s",
+                      validate_err.message);
+      return false;
+   }
+
+   return true;
+}
+
+
+const bson_validate_flags_t insert_vflags =
+   (bson_validate_flags_t) BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
    BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS;
 
 bool
 _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
 {
-   if (!bson_validate (doc, insert_vflags, NULL)) {
+   bson_error_t validate_err;
+
+   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "document to insert contains invalid keys");
+                      "document to insert contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -194,11 +240,14 @@ _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
 bool
 _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
 {
-   if (!bson_validate (doc, insert_vflags, NULL)) {
+   bson_error_t validate_err;
+
+   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "replacement document contains invalid keys");
+                      "replacement document contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -209,15 +258,18 @@ _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
 bool
 _mongoc_validate_update (const bson_t *update, bson_error_t *error)
 {
+   bson_error_t validate_err;
    bson_iter_t iter;
    const char *key;
    int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS;
 
-   if (!bson_validate (update, (bson_validate_flags_t) vflags, NULL)) {
+   if (!bson_validate_with_error (
+          update, (bson_validate_flags_t) vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "update document contains invalid keys");
+                      "update document contains invalid key: %s",
+                      validate_err.message);
       return false;
    }
 
@@ -232,7 +284,8 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
       if (key[0] != '$') {
-         bson_set_error (error, MONGOC_ERROR_COMMAND,
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "Invalid key '%s': update only works with $ operators",
                          key);
@@ -241,5 +294,29 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
       }
    }
 
+   return true;
+}
+
+void
+mongoc_lowercase (const char *src, char *buf /* OUT */)
+{
+   for (; *src; ++src, ++buf) {
+      *buf = tolower (*src);
+   }
+}
+
+bool
+mongoc_parse_port (uint16_t *port, const char *str)
+{
+   unsigned long ul_port;
+
+   ul_port = strtoul (str, NULL, 10);
+
+   if (ul_port == 0 || ul_port > UINT16_MAX) {
+      /* Parse error or port number out of range. mongod prohibits port 0. */
+      return false;
+   }
+
+   *port = (uint16_t) ul_port;
    return true;
 }

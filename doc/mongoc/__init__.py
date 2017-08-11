@@ -2,6 +2,7 @@ from docutils.nodes import literal, Text
 from docutils.parsers.rst import roles
 
 from sphinx.roles import XRefRole
+from sphinx import version_info as sphinx_version_info
 
 
 class SymbolRole(XRefRole):
@@ -21,15 +22,22 @@ class SymbolRole(XRefRole):
                 attrs['domain'], name = target.split(':', 1)
                 attrs['reftarget'] = name
 
-                assert isinstance(node.children[0].children[0], Text)
-                node.children[0].children[0] = Text(name + parens,
-                                                    name + parens)
+                old = node.children[0].children[0]
+                assert isinstance(old, Text)
+                new = Text(name + parens, name + parens)
+                # Ensure setup_child is called.
+                node.children[0].replace(old, new)
 
             else:
                 attrs['reftarget'] = target
 
             attrs['reftype'] = 'doc'
             attrs['classes'].append('symbol')
+
+            if sphinx_version_info >= (1, 6):
+                # https://github.com/sphinx-doc/sphinx/issues/3698
+                attrs['refdomain'] = 'std'
+
         return nodes, messages
 
 

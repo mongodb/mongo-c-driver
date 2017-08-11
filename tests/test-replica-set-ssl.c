@@ -45,10 +45,10 @@ test_replica_set_ssl_client (void)
       client = ha_replica_set_create_client (replica_set);
    }
 
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = mongoc_client_get_collection (client, "test", "test");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bson_init (&b);
    bson_append_utf8 (&b, "hello", -1, "world", -1);
@@ -97,7 +97,7 @@ main (int argc,     /* IN */
    mongoc_init ();
 
    cwd = getcwd (buf, sizeof (buf));
-   assert (cwd);
+   BSON_ASSERT (cwd);
 
    gTestCAFile = bson_strdup_printf ("%s/" CERT_CA, cwd);
    gTestPEMFileLocalhost = bson_strdup_printf ("%s/" CERT_SERVER, cwd);

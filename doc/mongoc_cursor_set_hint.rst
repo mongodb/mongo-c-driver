@@ -29,5 +29,5 @@ Use ``mongoc_cursor_set_hint`` only for building a language driver that wraps th
 Returns
 -------
 
-``true`` if successful, otherwise ``false`` and logs an error.
+Returns true on success. If any arguments are invalid, returns false and logs an error.
 

@@ -53,6 +53,7 @@ mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
       opts->sort = bson_copy (sort);
       return true;
    }
+
    return false;
 }
 
@@ -81,6 +82,7 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
       opts->update = bson_copy (update);
       return true;
    }
+
    return false;
 }
 
@@ -109,6 +111,7 @@ mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
       opts->fields = bson_copy (fields);
       return true;
    }
+
    return false;
 }
 

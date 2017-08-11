@@ -27,120 +27,96 @@ To run the examples in this tutorial, MongoDB must be installed and running on `
   connecting to: localhost:27017/test
   > 
 
-.. _tutorial_connecting:
+Include and link libmongoc in your C program
+--------------------------------------------
 
-Making a Connection
--------------------
+Include mongoc.h
+^^^^^^^^^^^^^^^^
 
-The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a :symbol:`mongoc_client_t`. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs :symbol:`mongoc_database_t` and :symbol:`mongoc_collection_t`, respectively. MongoDB operations can then be performed through these handles.
-
-At the start of an application, call :doc:`mongoc_init() <mongoc_init>` before any other libmongoc functions and call :doc:`mongoc_cleanup() <mongoc_cleanup>` before exiting. When creating handles to clients, databases and servers, call the appropriate destroy functions when finished.
-
-The example below establishes a connection to a standalone server on ``localhost``, registers the client application as "connect-example," and performs a simple command. More information about database operations can be found in the :ref:`CRUD Operations <tutorial_crud_operations>` and :ref:`Executing Commands <tutorial_executing_commands>` sections. Examples of connecting to replica sets and sharded clusters can be found on the :doc:`Advanced Connections <advanced-connections>` page.
+All libmongoc's functions and types are available in one header file. Simply include ``mongoc.h``:
 
 .. code-block:: c
 
-  #include <bson.h>
-  #include <bcon.h>
   #include <mongoc.h>
 
-  int
-  main (int   argc,
-        char *argv[])
-  {
-     mongoc_client_t      *client;
-     mongoc_database_t    *database;
-     mongoc_collection_t  *collection;
-     bson_t               *command,
-                           reply,
-                          *insert;
-     bson_error_t          error;
-     char                 *str;
-     bool                  retval;
+CMake
+'''''
 
-     /*
-      * Required to initialize libmongoc's internals
-      */
-     mongoc_init ();
+The libmongoc installation includes a `CMake config-file package`_, so you can use CMake's `find_package`_ command to find libmongoc's header and library paths and link to libmongoc:
 
-     /*
-      * Create a new client instance
-      */
-     client = mongoc_client_new ("mongodb://localhost:27017");
+.. literalinclude:: ../examples/cmake/find_package/CMakeLists.txt
+  :caption: CMakeLists.txt
+  :start-after: -- sphinx-include-start --
 
-     /*
-      * Register the application name so we can track it in the profile logs
-      * on the server. This can also be done from the URI (see other examples).
-      */
-     mongoc_client_set_appname (client, "connect-example");
+By default, libmongoc is dynamically linked. You can use libmongoc as a static library instead: Use the included ``libmongoc-static-1.0`` config-file package:
 
-     /*
-      * Get a handle on the database "db_name" and collection "coll_name"
-      */
-     database = mongoc_client_get_database (client, "db_name");
-     collection = mongoc_client_get_collection (client, "db_name", "coll_name");
+.. literalinclude:: ../examples/cmake/find_package_static/CMakeLists.txt
+  :start-after: -- sphinx-include-start --
+  :emphasize-lines: 2
 
-     /*
-      * Do work. This example pings the database, prints the result as JSON and
-      * performs an insert
-      */
-     command = BCON_NEW ("ping", BCON_INT32 (1));
+.. _CMake config-file package: https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#config-file-packages
+.. _find_package: https://cmake.org/cmake/help/latest/command/find_package.html
 
-     retval = mongoc_client_command_simple (client, "admin", command, NULL, &reply, &error);
+pkg-config
+''''''''''
 
-     if (!retval) {
-        fprintf (stderr, "%s\n", error.message);
-        return EXIT_FAILURE;
-     }
+If you're not using CMake, use `pkg-config`_ on the command line to set header and library paths:
 
-     str = bson_as_json (&reply, NULL);
-     printf ("%s\n", str);
+.. literalinclude:: ../examples/compile-with-pkg-config.sh
+  :start-after: -- sphinx-include-start --
 
-     insert = BCON_NEW ("hello", BCON_UTF8 ("world"));
+Or to statically link to libmongoc:
 
-     if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, insert, NULL, &error)) {
-        fprintf (stderr, "%s\n", error.message);
-     }
+.. literalinclude:: ../examples/compile-with-pkg-config-static.sh
+  :start-after: -- sphinx-include-start --
 
-     bson_destroy (insert);
-     bson_destroy (&reply);
-     bson_destroy (command);
-     bson_free (str);
+.. _pkg-config: https://www.freedesktop.org/wiki/Software/pkg-config/
 
-     /*
-      * Release our handles and clean up libmongoc
-      */
-     mongoc_collection_destroy (collection);
-     mongoc_database_destroy (database);
-     mongoc_client_destroy (client);
-     mongoc_cleanup ();
+Specifying header and include paths manually
+''''''''''''''''''''''''''''''''''''''''''''
 
-     return 0;
-  }
-
-On a UNIX-like system, the code can be compiled and run like so:
+If you aren't using CMake or pkg-config, paths and libraries can be managed manually.
 
 .. code-block:: none
 
-  $ gcc -o connect connect.c $(pkg-config --cflags --libs libmongoc-1.0)
-  $ ./connect
-  { "ok" : 1.000000 }
-
-Alternatively, if `pkg-config <http://www.freedesktop.org/wiki/Software/pkg-config/>`_ is not available, paths and libraries can be managed manually.
-
-.. code-block:: none
-
-  $ gcc -o connect connect.c -I/usr/local/include -lmongoc-1.0 -lbson-1.0
-  $ ./connect
+  $ gcc -o hello_mongoc hello_mongoc.c \
+      -I/usr/local/include/libbson-1.0 -I/usr/local/include/libmongoc-1.0 \
+      -lmongoc-1.0 -lbson-1.0
+  $ ./hello_mongoc
   { "ok" : 1.000000 }
 
 For Windows users, the code can be compiled and run with the following commands. (This assumes that the MongoDB C Driver has been installed to ``C:\mongo-c-driver``; change the include directory as needed.)
 
 .. code-block:: none
 
-  C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 connect.c
-  C:\> connect
+  C:\> cl.exe /IC:\mongo-c-driver\include\libbson-1.0 /IC:\mongo-c-driver\include\libmongoc-1.0 hello_mongoc.c
+  C:\> hello_mongoc
   { "ok" : 1.000000 }
+
+.. _tutorial_connecting:
+
+Use libmongoc in a Microsoft Visual Studio Project
+--------------------------------------------------
+
+See the :doc:`libmongoc and Visual Studio guide <visual-studio-guide>`.
+
+.. _making-a-connection:
+
+Making a Connection
+-------------------
+
+Access MongoDB with a :symbol:`mongoc_client_t`. It transparently connects to standalone servers, replica sets and sharded clusters on demand. To perform operations on a database or collection, create a :symbol:`mongoc_database_t` or :symbol:`mongoc_collection_t` struct from the :symbol:`mongoc_client_t`.
+
+At the start of an application, call :symbol:`mongoc_init` before any other libmongoc functions. At the end, call the appropriate destroy function for each collection, database, or client handle, in reverse order from how they were constructed. Call :symbol:`mongoc_cleanup` before exiting.
+
+The example below establishes a connection to a standalone server on ``localhost``, registers the client application as "connect-example," and performs a simple command.
+
+More information about database operations can be found in the :ref:`CRUD Operations <tutorial_crud_operations>` and :ref:`Executing Commands <tutorial_executing_commands>` sections. Examples of connecting to replica sets and sharded clusters can be found on the :doc:`Advanced Connections <advanced-connections>` page.
+
+.. literalinclude:: ../examples/hello_mongoc.c
+  :caption: hello_mongoc.c
+  :language: c
+  :start-after: -- sphinx-include-start --
 
 Creating BSON Documents
 -----------------------
@@ -249,7 +225,7 @@ Use the following code:
      /*
       * Print the document as a JSON string.
       */
-     str = bson_as_json (document, NULL);
+     str = bson_as_canonical_extended_json (document, NULL);
      printf ("%s\n", str);
      bson_free (str);
 
@@ -308,7 +284,7 @@ Using BCON
      /*
       * Print the document as a JSON string.
       */
-     str = bson_as_json (document, NULL);
+     str = bson_as_canonical_extended_json (document, NULL);
      printf ("%s\n", str);
      bson_free (str);
 
@@ -346,7 +322,7 @@ For *single* documents, BSON can be created from JSON strings via :doc:`bson_new
         return EXIT_FAILURE;
      }
 
-     string = bson_as_json (bson, NULL);
+     string = bson_as_canonical_extended_json (bson, NULL);
      printf ("%s\n", string);
      bson_free (string);
 
@@ -476,7 +452,7 @@ This first example uses an empty query specifier to find all documents in the da
      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_json (doc, NULL);
+        str = bson_as_canonical_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }
@@ -535,7 +511,7 @@ To look for a specific document, add a specifier to ``query``. This example adds
      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_json (doc, NULL);
+        str = bson_as_canonical_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }
@@ -838,7 +814,7 @@ This example executes the `collStats <http://docs.mongodb.org/manual/reference/c
      command = BCON_NEW ("collStats", BCON_UTF8 ("mycoll"));
      if (mongoc_collection_command_simple (
             collection, command, NULL, &reply, &error)) {
-        str = bson_as_json (&reply, NULL);
+        str = bson_as_canonical_extended_json (&reply, NULL);
         printf ("%s\n", str);
         bson_free (str);
      } else {

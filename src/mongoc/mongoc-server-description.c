@@ -23,6 +23,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-uri.h"
 #include "mongoc-util-private.h"
+#include "mongoc-compression-private.h"
 
 #include <stdio.h>
 
@@ -56,6 +57,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    /* set other fields to default or empty states. election_id is zeroed. */
    memset (
       &sd->set_name, 0, sizeof (*sd) - ((char *) &sd->set_name - (char *) sd));
+   memset (&sd->error, 0, sizeof sd->error);
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
 
@@ -129,6 +131,10 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    bson_init_static (
       &sd->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&sd->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+#ifdef MONGOC_ENABLE_COMPRESSION
+   bson_init_static (
+      &sd->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+#endif
 
    bson_init (&sd->last_is_master);
 
@@ -616,6 +622,13 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          sd->last_write_date_ms = bson_iter_date_time (&child);
       } else if (strcmp ("idleWritePeriodMillis", bson_iter_key (&iter)) == 0) {
          sd->last_write_date_ms = bson_iter_as_int64 (&iter);
+#ifdef MONGOC_ENABLE_COMPRESSION
+      } else if (strcmp ("compression", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_ARRAY (&iter))
+            goto failure;
+         bson_iter_array (&iter, &len, &bytes);
+         bson_init_static (&sd->compressors, bytes, len);
+#endif
       }
    }
 
@@ -679,6 +692,7 @@ mongoc_server_description_new_copy (
    copy = (mongoc_server_description_t *) bson_malloc0 (sizeof (*copy));
 
    copy->id = description->id;
+   copy->opened = description->opened;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
    copy->round_trip_time_msec = -1;
 
@@ -693,6 +707,10 @@ mongoc_server_description_new_copy (
    bson_init_static (
       &copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+#ifdef MONGOC_ENABLE_COMPRESSION
+   bson_init_static (
+      &copy->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+#endif
 
    bson_init (&copy->last_is_master);
 
@@ -862,11 +880,10 @@ mongoc_server_description_filter_tags (
 
       if (found) {
          for (i = 0; i < description_len; i++) {
-            if (!sd_matched[i]) {
+            if (!sd_matched[i] && descriptions[i]) {
                TRACE ("Rejected [%s] [%s], doesn't match tags",
                       mongoc_server_description_type (descriptions[i]),
                       descriptions[i]->host.host_and_port);
-
                descriptions[i] = NULL;
             }
          }
@@ -933,3 +950,36 @@ _match_tag_set (const mongoc_server_description_t *sd,
 
    return true;
 }
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_id --
+ *
+ *      Get the compressor id if compression was negotiated.
+ *
+ * Returns:
+ *      The compressor ID, or 0 if none was negotiated.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_server_description_compressor_id (
+   const mongoc_server_description_t *description)
+{
+   int id;
+   bson_iter_t iter;
+   bson_iter_init (&iter, &description->compressors);
+
+   while (bson_iter_next (&iter)) {
+      id = mongoc_compressor_name_to_id (bson_iter_utf8 (&iter, NULL));
+      if (id != -1) {
+         return id;
+      }
+   }
+
+   return 0;
+}
+#endif

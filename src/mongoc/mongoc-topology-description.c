@@ -773,7 +773,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    mongoc_topology_description_suitable_servers (
       &suitable_servers, optype, topology, read_pref, local_threshold_ms);
    if (suitable_servers.len != 0) {
-      rand_n = MONGOC_RAND_R (&topology->rand_seed);
+      rand_n = _mongoc_rand_simple (&topology->rand_seed);
       sd = _mongoc_array_index (&suitable_servers,
                                 mongoc_server_description_t *,
                                 rand_n % suitable_servers.len);
@@ -809,7 +809,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  *       A mongoc_server_description_t *, or NULL.
  *
  * Side effects:
- *      Fills out optional @error if server not found.
+ *       Fills out optional @error if server not found.
  *
  *--------------------------------------------------------------------------
  */
@@ -1839,7 +1839,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);
-      assert (0);
+      BSON_ASSERT (0);
    }
 
    return NULL;

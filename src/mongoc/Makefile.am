@@ -15,6 +15,7 @@ MONGOC_DEF_FILES = \
 	src/mongoc/op-reply.def \
 	src/mongoc/op-reply-header.def \
 	src/mongoc/op-update.def \
+	src/mongoc/op-compressed.def \
 	src/mongoc/mongoc-counters.defs
 
 INST_H_FILES = \
@@ -40,6 +41,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-iovec.h \
 	src/mongoc/mongoc-log.h \
 	src/mongoc/mongoc-matcher.h \
+	src/mongoc/mongoc-macros.h \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-read-concern.h \
 	src/mongoc/mongoc-read-prefs.h \
@@ -70,9 +72,11 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-cluster-private.h \
 	src/mongoc/mongoc-cluster-sasl-private.h \
+	src/mongoc/mongoc-cluster-cyrus-private.h \
 	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-collection-private.h \
 	src/mongoc/mongoc-counters-private.h \
+	src/mongoc/mongoc-compression-private.h \
 	src/mongoc/mongoc-cursor-array-private.h \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
 	src/mongoc/mongoc-cursor-transform-private.h \
@@ -95,11 +99,12 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-matcher-op-private.h \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-memcmp-private.h \
-	src/mongoc/mongoc-opcode-private.h \
 	src/mongoc/mongoc-queue-private.h \
 	src/mongoc/mongoc-read-concern-private.h \
 	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-rpc-private.h \
+	src/mongoc/mongoc-cyrus-private.h \
+	src/mongoc/mongoc-cluster-sspi-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-sspi-private.h \
 	src/mongoc/mongoc-scram-private.h \
@@ -160,6 +165,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
 	src/mongoc/mongoc-collection.c \
+	src/mongoc/mongoc-compression.c \
 	src/mongoc/mongoc-counters.c \
 	src/mongoc/mongoc-cursor.c \
 	src/mongoc/mongoc-cursor-array.c \
@@ -181,7 +187,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-matcher-op.c \
 	src/mongoc/mongoc-matcher.c \
 	src/mongoc/mongoc-memcmp.c \
-	src/mongoc/mongoc-opcode.c \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-concern.c \
 	src/mongoc/mongoc-read-prefs.c \
@@ -258,6 +263,20 @@ endif
 if ENABLE_SASL
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sasl.c
 MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
+endif
+if ENABLE_SASL_CYRUS
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-cyrus.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cyrus.c
+endif
+
+if ENABLE_SASL_SSPI
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-sspi.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sspi.c
+endif
+
+if ENABLE_SASL_GSSAPI
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-cluster-gssapi.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-gssapi.c
 endif
 
 EXTRA_DIST += $(MONGOC_DEF_FILES) $(NOINST_H_FILES)

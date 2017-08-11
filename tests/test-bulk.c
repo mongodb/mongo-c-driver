@@ -2,6 +2,7 @@
 #include <mongoc-bulk-operation-private.h>
 #include <mongoc-client-private.h>
 #include <mongoc-cursor-private.h>
+#include <mongoc-collection-private.h>
 
 #include "TestSuite.h"
 
@@ -28,22 +29,9 @@
  */
 
 static bool
-server_has_write_commands (mongoc_client_t *client)
+server_has_write_commands ()
 {
-   bson_t *ismaster_cmd = tmp_bson ("{'ismaster': 1}");
-   bson_t ismaster;
-   bson_iter_t iter;
-   bool expect;
-
-   assert (mongoc_client_command_simple (
-      client, "admin", ismaster_cmd, NULL, &ismaster, NULL));
-
-   expect = (bson_iter_init_find_case (&iter, &ismaster, "maxWireVersion") &&
-             BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) > 1);
-
-   bson_destroy (&ismaster);
-
-   return expect;
+   return test_framework_max_wire_version_at_least (1);
 }
 
 
@@ -73,11 +61,11 @@ check_n_modified (bool has_write_commands,
    bson_iter_t iter;
 
    if (bson_iter_init_find (&iter, reply, "nModified")) {
-      assert (has_write_commands);
-      assert (BSON_ITER_HOLDS_INT32 (&iter));
-      assert (bson_iter_int32 (&iter) == n_modified);
+      BSON_ASSERT (has_write_commands);
+      BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
+      BSON_ASSERT (bson_iter_int32 (&iter) == n_modified);
    } else {
-      assert (!has_write_commands);
+      BSON_ASSERT (!has_write_commands);
    }
 }
 
@@ -104,8 +92,8 @@ assert_error_count (int len, const bson_t *reply)
    bson_iter_t error_iter;
    int n = 0;
 
-   assert (bson_iter_init_find (&iter, reply, "writeErrors"));
-   assert (bson_iter_recurse (&iter, &error_iter));
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, "writeErrors"));
+   BSON_ASSERT (bson_iter_recurse (&iter, &error_iter));
    while (bson_iter_next (&error_iter)) {
       n++;
    }
@@ -133,8 +121,8 @@ assert_n_inserted (int n, const bson_t *reply)
 {
    bson_iter_t iter;
 
-   assert (bson_iter_init_find (&iter, reply, "nInserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, "nInserted"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    ASSERT_CMPINT (n, ==, bson_iter_int32 (&iter));
 }
 
@@ -159,29 +147,10 @@ assert_n_removed (int n, const bson_t *reply)
 {
    bson_iter_t iter;
 
-   assert (bson_iter_init_find (&iter, reply, "nRemoved"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, "nRemoved"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    ASSERT_CMPINT (n, ==, bson_iter_int32 (&iter));
 }
-
-
-#define ASSERT_COUNT(n, collection)                                     \
-   do {                                                                 \
-      int count = (int) mongoc_collection_count (                       \
-         collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, NULL);        \
-      if ((n) != count) {                                               \
-         fprintf (stderr,                                               \
-                  "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
-                  "%s:%d  %s()\n",                                      \
-                  mongoc_collection_get_name (collection),              \
-                  count,                                                \
-                  n,                                                    \
-                  __FILE__,                                             \
-                  __LINE__,                                             \
-                  BSON_FUNC);                                           \
-         abort ();                                                      \
-      }                                                                 \
-   } while (0)
 
 
 /*--------------------------------------------------------------------------
@@ -254,14 +223,14 @@ test_bulk (void)
    bson_t doc = BSON_INITIALIZER;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, &doc);
    mongoc_bulk_operation_insert (bulk, &doc);
@@ -309,15 +278,24 @@ test_bulk_error (void)
    bson_t reply = {0};
    bson_error_t error;
    mongoc_bulk_operation_t *bulk;
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
 
    bulk = mongoc_bulk_operation_new (true);
-   assert (!mongoc_bulk_operation_execute (bulk, &reply, &error));
+   mongoc_bulk_operation_set_client (bulk, client);
+   BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    /* reply was initialized */
    ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
 }
 
 
@@ -410,15 +388,15 @@ test_insert (bool ordered)
    const bson_t *inserted_doc;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_insert");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
-   assert (bulk->flags.ordered == ordered);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (bulk->flags.ordered == ordered);
 
    mongoc_bulk_operation_insert (bulk, &doc);
    mongoc_bulk_operation_insert (bulk, &doc);
@@ -438,10 +416,10 @@ test_insert (bool ordered)
    ASSERT_COUNT (2, collection);
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
-   assert (cursor);
+   BSON_ASSERT (cursor);
 
    while (mongoc_cursor_next (cursor, &inserted_doc)) {
-      assert (oid_created_on_client (inserted_doc));
+      BSON_ASSERT (oid_created_on_client (inserted_doc));
    }
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -479,41 +457,64 @@ test_insert_check_keys (void)
    bson_error_t error;
    bool r;
 
+   capture_logs (true);
+
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    collection = get_test_collection (client, "test_insert_check_keys");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    /* keys can't start with "$" */
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$dollar\"");
 
-   assert (bson_empty (&reply));
+   BSON_ASSERT (bson_empty (&reply));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+
+   /* valid, then invalid */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   BSON_ASSERT (bulk);
+
+   mongoc_bulk_operation_insert (bulk, tmp_bson (NULL));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$dollar\"");
+
+   BSON_ASSERT (bson_empty (&reply));
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
 
    /* keys can't contain "." */
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a.b': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid keys");
+                          "document to insert contains invalid key: keys "
+                          "cannot contain \".\": \"a.b\"");
 
-   assert (bson_empty (&reply));
+   BSON_ASSERT (bson_empty (&reply));
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -536,14 +537,14 @@ test_upsert (bool ordered)
    bson_t *doc;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upsert");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{'_id': 1234}");
    doc = tmp_bson ("{'$set': {'hello': 'there'}}");
@@ -568,7 +569,7 @@ test_upsert (bool ordered)
    mongoc_bulk_operation_destroy (bulk);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    /* non-upsert, no matches */
    sel = tmp_bson ("{'_id': 2}");
@@ -613,6 +614,52 @@ test_upsert_unordered (void)
 
 
 static void
+test_upsert_unordered_oversized (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *u;
+   bool r;
+   bson_error_t error;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "upsert_oversized");
+   bulk = mongoc_collection_create_bulk_operation (
+      collection, false /* ordered */, NULL);
+
+   /* much too large */
+   u = tmp_bson ("{'$set': {'x': '%s', 'y': '%s'}}",
+                 huge_string (client),
+                 huge_string (client));
+
+   r = mongoc_bulk_operation_update_one_with_opts (
+      bulk, tmp_bson (NULL), u, tmp_bson ("{'upsert': true}"), &error);
+
+   ASSERT_OR_PRINT (r, error);
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_BSON,
+                          MONGOC_ERROR_BSON_INVALID,
+                          "Document 0 is too large");
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 0,"
+                 " 'nMatched':  0,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_upserted_index (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
@@ -627,14 +674,14 @@ test_upserted_index (bool ordered)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upserted_index");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, emp);
    mongoc_bulk_operation_insert (bulk, emp);
@@ -752,23 +799,23 @@ test_update_one (bool ordered)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update_one");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    doc = bson_new ();
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, doc, NULL, NULL);
-   assert (r);
+   BSON_ASSERT (r);
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, doc, NULL, NULL);
-   assert (r);
+   BSON_ASSERT (r);
    bson_destroy (doc);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{}");
    doc = tmp_bson ("{'$set': {'hello': 'there'}}");
@@ -825,23 +872,23 @@ test_replace_one (bool ordered)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_replace_one");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    doc = bson_new ();
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, doc, NULL, NULL);
-   assert (r);
+   BSON_ASSERT (r);
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, doc, NULL, NULL);
-   assert (r);
+   BSON_ASSERT (r);
    bson_destroy (doc);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{}");
    doc = tmp_bson ("{'hello': 'there'}");
@@ -893,7 +940,8 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "replacement document contains invalid keys");
+                             "replacement document contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
 
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
       ASSERT (!r);
@@ -912,7 +960,8 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "replacement document contains invalid keys");
+                             "replacement document contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
    }
 
    ASSERT (bson_empty (&reply));
@@ -960,7 +1009,7 @@ test_upsert_large (void *ctx)
    memset (large_str, 'a', sz);
    large_str[sz - 1] = '\0';
    client = test_framework_client_new ();
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
    collection = get_test_collection (client, "test_upsert_large");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
@@ -1014,22 +1063,22 @@ test_upsert_huge (void *ctx)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
-   has_write_cmds = server_has_write_commands (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_upsert_huge");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    bson_append_document_begin (&doc, "$set", -1, &child);
-   assert (bson_append_utf8 (&child,
-                             "x",
-                             -1,
-                             huge_string (client),
-                             (int) huge_string_length (client)));
+   BSON_ASSERT (bson_append_utf8 (&child,
+                                  "x",
+                                  -1,
+                                  huge_string (client),
+                                  (int) huge_string_length (client)));
    bson_append_document_end (&doc, &child);
 
    mongoc_bulk_operation_update (bulk, sel, &doc, true);
@@ -1095,32 +1144,33 @@ test_update (bool ordered)
    bson_t *update_doc;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    for (i = 0; i < sizeof docs_inserted / sizeof (bson_t *); i++) {
-      assert (mongoc_collection_insert (
+      BSON_ASSERT (mongoc_collection_insert (
          collection, MONGOC_INSERT_NONE, docs_inserted[i], NULL, NULL));
    }
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    /* an update doc without $-operators is rejected */
    sel = tmp_bson ("{'a': {'$gte': 2}}");
    capture_logs (true);
    mongoc_bulk_operation_update (bulk, sel, bad_update_doc, false);
 
-   assert (!mongoc_bulk_operation_execute (bulk, &reply, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "update only works with $ operators");
+   BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid key 'foo': update only works with $ operators");
 
-   assert (bson_empty (&reply));
+   BSON_ASSERT (bson_empty (&reply));
    mongoc_bulk_operation_destroy (bulk);
    bson_destroy (&reply);
 
@@ -1179,12 +1229,12 @@ _test_update_check_keys (bool many, bool with_opts)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    collection = get_test_collection (client, "test_update_check_keys");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    capture_logs (true);
 
@@ -1197,14 +1247,15 @@ _test_update_check_keys (bool many, bool with_opts)
          r = mongoc_bulk_operation_update_one_with_opts (
             bulk, q, u, NULL, &error);
       }
-      assert (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "update only works with $ operators");
+      BSON_ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Invalid key 'a': update only works with $ operators");
 
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-      assert (!r);
+      BSON_ASSERT (!r);
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -1217,14 +1268,15 @@ _test_update_check_keys (bool many, bool with_opts)
          mongoc_bulk_operation_update_one (bulk, q, u, false);
       }
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-      assert (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "update only works with $ operators");
+      BSON_ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Invalid key 'a': update only works with $ operators");
    }
 
-   assert (bson_empty (&reply));
+   BSON_ASSERT (bson_empty (&reply));
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1261,6 +1313,591 @@ test_update_many_with_opts_check_keys (void)
 }
 
 
+typedef void (*update_fn) (mongoc_bulk_operation_t *bulk,
+                           const bson_t *selector,
+                           const bson_t *document,
+                           bool upsert);
+
+typedef bool (*update_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *document,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
+typedef struct {
+   const char *bad_update_json;
+   const char *good_update_json;
+   update_fn update;
+   update_with_opts_fn update_with_opts;
+   bool invalid_first;
+   const char *error_message;
+} update_validate_test_t;
+
+
+static void
+_test_update_validate (update_validate_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t *q = tmp_bson ("{}");
+   bson_t *bad_update = tmp_bson (test->bad_update_json);
+   bson_t *good_update = tmp_bson (test->good_update_json);
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+   collection = get_test_collection (client, "test_update_invalid_first");
+   BSON_ASSERT (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   BSON_ASSERT (bulk);
+
+   capture_logs (true);
+
+   if (test->update_with_opts) {
+      if (test->invalid_first) {
+         /* document is rejected immediately */
+         r = test->update_with_opts (bulk, q, bad_update, NULL, &error);
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+
+         /* now a valid document */
+         r = test->update_with_opts (bulk, q, good_update, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      } else {
+         /* first a valid document */
+         r = test->update_with_opts (bulk, q, good_update, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+
+         /* invalid document is rejected without invalidating batch */
+         r = test->update_with_opts (bulk, q, bad_update, NULL, &error);
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      }
+   } else {
+      if (test->invalid_first) {
+         /* invalid, then valid */
+         test->update (bulk, q, bad_update, false);
+         test->update (bulk, q, good_update, false);
+
+         /* not added */
+         ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+      } else {
+         /* valid, then invalid */
+         test->update (bulk, q, good_update, false);
+         test->update (bulk, q, bad_update, false);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_COMMAND,
+                                MONGOC_ERROR_COMMAND_INVALID_ARG,
+                                test->error_message);
+      }
+   }
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+_test_update_one_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = mongoc_bulk_operation_update_one;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "Invalid key 'a': update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = mongoc_bulk_operation_update;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "Invalid key 'a': update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_one_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_update_one_with_opts;
+   test.invalid_first = first;
+   test.error_message = "Invalid key 'a': update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_update_many_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'a': 1}";
+   test.good_update_json = "{'$set': {'x': 1}}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_update_many_with_opts;
+   test.invalid_first = first;
+   test.error_message = "Invalid key 'a': update only works with $ operators";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_replace_one_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'$set': {'x': 1}}";
+   test.good_update_json = "{'a': 1}";
+   test.update = mongoc_bulk_operation_replace_one;
+   test.update_with_opts = NULL;
+   test.invalid_first = first;
+   test.error_message = "replacement document contains invalid key: keys "
+                        "cannot begin with \"$\": \"$set\"";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+_test_replace_one_with_opts_invalid (bool first)
+{
+   update_validate_test_t test = {0};
+   test.bad_update_json = "{'$set': {'x': 1}}";
+   test.good_update_json = "{'a': 1}";
+   test.update = NULL;
+   test.update_with_opts = mongoc_bulk_operation_replace_one_with_opts;
+   test.invalid_first = first;
+   test.error_message = "replacement document contains invalid key: keys "
+                        "cannot begin with \"$\": \"$set\"";
+
+   _test_update_validate (&test);
+}
+
+
+static void
+test_update_one_invalid_first (void)
+{
+   _test_update_one_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_invalid_first (void)
+{
+   _test_update_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_one_with_opts_invalid_first (void)
+{
+   _test_update_one_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_many_with_opts_invalid_first (void)
+{
+   _test_update_many_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_replace_one_invalid_first (void)
+{
+   _test_replace_one_invalid (true /* invalid first */);
+}
+
+
+static void
+test_replace_one_with_opts_invalid_first (void)
+{
+   _test_replace_one_with_opts_invalid (true /* invalid first */);
+}
+
+
+static void
+test_update_one_invalid_second (void)
+{
+   _test_update_one_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_invalid_second (void)
+{
+   _test_update_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_one_with_opts_invalid_second (void)
+{
+   _test_update_one_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+test_update_many_with_opts_invalid_second (void)
+{
+   _test_update_many_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+test_replace_one_invalid_second (void)
+{
+   _test_replace_one_invalid (false /* invalid first */);
+}
+
+
+static void
+test_replace_one_with_opts_invalid_second (void)
+{
+   _test_replace_one_with_opts_invalid (false /* invalid first */);
+}
+
+
+static void
+_test_insert_invalid (bool with_opts, bool invalid_first)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t *bad_insert = tmp_bson ("{'a.b': 1}");
+   bson_t *good_insert = tmp_bson ("{'x': 1}");
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+   const char *err = "document to insert contains invalid key: keys cannot "
+                     "contain \".\": \"a.b\"";
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_validate");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   BSON_ASSERT (mongoc_collection_remove (
+      collection, MONGOC_REMOVE_NONE, tmp_bson (NULL), NULL, NULL));
+
+   capture_logs (true);
+
+   if (with_opts) {
+      if (invalid_first) {
+         /* document is rejected immediately */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, bad_insert, NULL, &error);
+
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
+
+         /* now a valid document */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, good_insert, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      } else {
+         /* first a valid document */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, good_insert, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+
+         /* invalid document is rejected without invalidating batch */
+         r = mongoc_bulk_operation_insert_with_opts (
+            bulk, bad_insert, NULL, &error);
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         ASSERT_OR_PRINT (r, error);
+         BSON_ASSERT (!bson_empty (&reply));
+      }
+   } else { /* not "with_opts" */
+      if (invalid_first) {
+         /* invalid, then valid */
+         mongoc_bulk_operation_insert (bulk, bad_insert);
+         mongoc_bulk_operation_insert (bulk, good_insert);
+
+         /* not added */
+         ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
+      } else {
+         /* valid, then invalid */
+         mongoc_bulk_operation_insert (bulk, good_insert);
+         mongoc_bulk_operation_insert (bulk, bad_insert);
+
+         ASSERT_CMPSIZE_T ((size_t) 1, ==, bulk->commands.len);
+
+         /* invalid document invalidated the whole bulk */
+         r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+         BSON_ASSERT (!r);
+         BSON_ASSERT (bson_empty (&reply));
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err);
+      }
+   }
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_insert_invalid_first (void)
+{
+   _test_insert_invalid (true, false);
+}
+
+
+static void
+test_insert_invalid_second (void)
+{
+   _test_insert_invalid (false, false);
+}
+
+
+static void
+test_insert_with_opts_invalid_first (void)
+{
+   _test_insert_invalid (true, true);
+}
+
+
+static void
+test_insert_with_opts_invalid_second (void)
+{
+   _test_insert_invalid (false, true);
+}
+
+
+/* CDRIVER-2018, special dispensation for PHP driver and system.indexes */
+static void
+test_insert_into_system_indexes (void)
+{
+   mongoc_client_t *client;
+   const char *db_name;
+   mongoc_collection_t *collection;
+   mongoc_collection_t *system_indexes;
+   mongoc_bulk_operation_t *bulk;
+   bool r;
+   bson_error_t error;
+   uint32_t i;
+   mongoc_cursor_t *cursor;
+   const bson_t *index_info;
+   bson_iter_t iter;
+   bool found = false;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_system_indexes");
+   db_name = collection->db;
+   system_indexes =
+      mongoc_client_get_collection (client, db_name, "system.indexes");
+
+   mongoc_collection_drop (collection, NULL);
+
+   bulk = mongoc_collection_create_bulk_operation (system_indexes, false, NULL);
+   r = mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'key': {'a.b': 1}, 'ns': '%s', 'name': 'foo'}",
+                collection->ns),
+      tmp_bson ("{'legacyIndex': true}"),
+      &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   /* even modern MongoDB lets us insert into system.indexes to create index */
+   i = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (i, error);
+   cursor = mongoc_collection_find_indexes (collection, &error);
+   ASSERT_OR_PRINT (cursor, error);
+   while (mongoc_cursor_next (cursor, &index_info)) {
+      if (bson_iter_init_find (&iter, index_info, "name") &&
+          !strcmp (bson_iter_utf8 (&iter, NULL), "foo")) {
+         found = true;
+         break;
+      }
+   }
+
+   r = mongoc_cursor_error (cursor, &error);
+   ASSERT_OR_PRINT (!r, error);
+   BSON_ASSERT (found);
+
+   mongoc_cursor_destroy (cursor);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (system_indexes);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+typedef void (*remove_fn) (mongoc_bulk_operation_t *bulk,
+                           const bson_t *selector);
+
+typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
+typedef struct {
+   remove_fn remove;
+   remove_with_opts_fn remove_with_opts;
+} remove_validate_test_t;
+
+
+static void
+_test_remove_validate (remove_validate_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+   collection = get_test_collection (client, "test_update_invalid_first");
+   BSON_ASSERT (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   BSON_ASSERT (bulk);
+
+   capture_logs (true);
+
+   /* invalid */
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$a': 1}"));
+
+   if (test->remove_with_opts) {
+      r = test->remove_with_opts (bulk, tmp_bson (NULL), NULL, &error);
+      BSON_ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Bulk operation is invalid from prior error: "
+                             "document to insert contains invalid key: keys "
+                             "cannot begin with \"$\": \"$a\"");
+   } else {
+      test->remove (bulk, tmp_bson (NULL));
+   }
+
+   /* remove operation was not recorded */
+   ASSERT_CMPSIZE_T ((size_t) 0, ==, bulk->commands.len);
+
+   /* invalid document invalidated the whole bulk */
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (bson_empty (&reply));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "document to insert contains invalid key: keys "
+                          "cannot begin with \"$\": \"$a\"");
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_remove_one_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove = mongoc_bulk_operation_remove_one;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove = mongoc_bulk_operation_remove;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_one_with_opts_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove_with_opts = mongoc_bulk_operation_remove_one_with_opts;
+
+   _test_remove_validate (&test);
+}
+static void
+test_remove_many_with_opts_after_invalid (void)
+{
+   remove_validate_test_t test = {0};
+   test.remove_with_opts = mongoc_bulk_operation_remove_many_with_opts;
+
+   _test_remove_validate (&test);
+}
+
 static void
 test_index_offset (void)
 {
@@ -1275,20 +1912,20 @@ test_index_offset (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_index_offset");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    doc = tmp_bson ("{}");
    BSON_APPEND_INT32 (doc, "_id", 1234);
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, doc, NULL, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{'_id': 1234}");
    doc = tmp_bson ("{'$set': {'hello': 'there'}}");
@@ -1331,14 +1968,14 @@ test_single_ordered_bulk (void)
    bson_error_t error;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_ordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
    mongoc_bulk_operation_update (
@@ -1382,11 +2019,11 @@ test_insert_continue_on_error (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_insert_continue_on_error");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
 
@@ -1396,7 +2033,7 @@ test_insert_continue_on_error (void)
    mongoc_bulk_operation_insert (bulk, doc1);
    mongoc_bulk_operation_insert (bulk, doc1);
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
@@ -1430,11 +2067,11 @@ test_update_continue_on_error (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_update_continue_on_error");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc0, NULL, NULL);
@@ -1452,7 +2089,7 @@ test_update_continue_on_error (void)
       bulk, doc1, tmp_bson ("{'$set': {'b': 2}}"), false);
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
@@ -1496,11 +2133,11 @@ test_remove_continue_on_error (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_remove_continue_on_error");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc0, NULL, NULL);
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc1, NULL, NULL);
@@ -1515,7 +2152,7 @@ test_remove_continue_on_error (void)
    mongoc_bulk_operation_remove_one (bulk, doc1);
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
@@ -1547,26 +2184,26 @@ test_single_error_ordered_bulk (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_error_ordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
    mongoc_bulk_operation_update (
       bulk, tmp_bson ("{'b': 2}"), tmp_bson ("{'$set': {'a': 1}}"), true);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 3, 'a': 2}"));
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
 
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-651, BSON_ASSERT contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
                  " 'nMatched':  0,"
@@ -1603,17 +2240,17 @@ test_multiple_error_ordered_bulk (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_multiple_error_ordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    /* 0 succeeds */
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
@@ -1627,11 +2264,11 @@ test_multiple_error_ordered_bulk (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 4, 'a': 3}"));
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   assert (error.code);
+   BSON_ASSERT (error.code);
 
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-651, BSON_ASSERT contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
                  " 'nMatched':  0,"
@@ -1667,11 +2304,11 @@ test_single_unordered_bulk (void)
    bson_error_t error;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "test_single_unordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
@@ -1714,12 +2351,12 @@ test_single_error_unordered_bulk (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_single_error_unordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
 
@@ -1734,11 +2371,11 @@ test_single_error_unordered_bulk (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 3, 'a': 2}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
 
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   assert (error.code);
+   BSON_ASSERT (error.code);
 
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-651, BSON_ASSERT contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched':  0,"
@@ -1799,7 +2436,7 @@ _test_write_concern (bool has_write_commands, bool ordered, bool multi_err)
          " 'documents': [{'_id': 1}]}",
          ordered ? "true" : "false");
 
-      assert (request);
+      BSON_ASSERT (request);
       mock_server_replies_simple (
          request,
          "{'ok': 1.0, 'n': 1, "
@@ -1844,7 +2481,7 @@ _test_write_concern (bool has_write_commands, bool ordered, bool multi_err)
          MONGOC_QUERY_NONE,
          "{'getLastError': 1, 'w': 2, 'wtimeout': 100}");
 
-      assert (request);
+      BSON_ASSERT (request);
       mock_server_replies_simple (
          request, "{'ok': 1.0, 'n': 1, 'err': 'foo', 'wtimeout': true}");
 
@@ -1872,8 +2509,8 @@ _test_write_concern (bool has_write_commands, bool ordered, bool multi_err)
       first_err = second_err = 64;
    }
 
-   /* join thread, assert mongoc_bulk_operation_execute () returned 0 */
-   assert (!future_get_uint32_t (future));
+   /* join thread, BSON_ASSERT mongoc_bulk_operation_execute () returned 0 */
+   BSON_ASSERT (!future_get_uint32_t (future));
 
    if (multi_err) {
       ASSERT_MATCH (&reply,
@@ -2015,7 +2652,7 @@ _test_write_concern_err_api (bool has_write_commands, int32_t error_api_version)
          request, "{'ok': 1.0, 'n': 1, 'err': 'foo', 'wtimeout': true}");
    }
 
-   assert (!future_get_uint32_t (future));
+   BSON_ASSERT (!future_get_uint32_t (future));
    /* legacy write concern errs have no code from server, driver uses 64 */
    expected_code = has_write_commands ? 42 : 64;
    ASSERT_ERROR_CONTAINS (
@@ -2071,12 +2708,12 @@ test_multiple_error_unordered_bulk (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection =
       get_test_collection (client, "test_multiple_error_unordered_bulk");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    create_unique_index (collection);
 
@@ -2092,14 +2729,14 @@ test_multiple_error_unordered_bulk (void)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 6, 'a': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
 
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   assert (error.code);
+   BSON_ASSERT (error.code);
 
    /* Assume the update at index 1 runs before the update at index 3,
     * although the spec does not require it. Same for inserts.
     */
-   /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-651, BSON_ASSERT contents of the 'op' field */
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched': 0,"
@@ -2164,7 +2801,7 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
          " 'ordered': false,"
          " 'documents': [{'_id': 1}, {'_id': 2}]}");
 
-      assert (request);
+      BSON_ASSERT (request);
       mock_server_replies (
          request,
          0,
@@ -2185,7 +2822,7 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
          " 'ordered': false,"
          " 'deletes': [{'q': {'_id': 3}, 'limit': 0}]}");
 
-      assert (request);
+      BSON_ASSERT (request);
       mock_server_replies (
          request,
          0,
@@ -2243,7 +2880,7 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
    }
 
    /* mongoc_bulk_operation_execute () returned 0 */
-   assert (!future_get_uint32_t (future));
+   BSON_ASSERT (!future_get_uint32_t (future));
 
    /* get err code from server with write commands, otherwise use 64 */
    ASSERT_MATCH (&reply,
@@ -2303,8 +2940,8 @@ test_large_inserts_ordered (void *ctx)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc,
@@ -2314,16 +2951,16 @@ test_large_inserts_ordered (void *ctx)
                      (int) huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_ordered");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
    mongoc_bulk_operation_insert (bulk, huge_doc);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 2, 'a': 2}"));
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
@@ -2346,7 +2983,7 @@ test_large_inserts_ordered (void *ctx)
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
    bson_append_utf8 (big_doc, "big", -1, four_mb_string (), FOUR_MB);
@@ -2389,7 +3026,7 @@ test_large_inserts_unordered (void *ctx)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc,
@@ -2399,10 +3036,10 @@ test_large_inserts_unordered (void *ctx)
                      (int) huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_unordered");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
 
    /* 1 fails */
@@ -2410,7 +3047,7 @@ test_large_inserts_unordered (void *ctx)
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 2, 'a': 2}"));
 
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
@@ -2437,7 +3074,7 @@ test_large_inserts_unordered (void *ctx)
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
    bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) FOUR_MB);
@@ -2476,10 +3113,10 @@ _test_numerous (bool ordered)
    int i;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_numerous_inserts");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
 
@@ -2565,10 +3202,10 @@ test_bulk_edge_over_1000 (void)
    int i;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "OVER_1000");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    mongoc_write_concern_set_w (wc, 1);
 
@@ -2600,19 +3237,19 @@ test_bulk_edge_over_1000 (void)
    mongoc_bulk_operation_execute (bulk_op, &result, &error);
 
    bson_iter_init_find (&iter, &result, "writeErrors");
-   assert (bson_iter_recurse (&iter, &error_iter));
-   assert (bson_iter_next (&error_iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &error_iter));
+   BSON_ASSERT (bson_iter_next (&error_iter));
 
    for (i = 0; i < 1010; i += 3) {
-      assert (bson_iter_recurse (&error_iter, &indexnum));
-      assert (bson_iter_find (&indexnum, "index"));
+      BSON_ASSERT (bson_iter_recurse (&error_iter, &indexnum));
+      BSON_ASSERT (bson_iter_find (&indexnum, "index"));
       if (bson_iter_int32 (&indexnum) != i) {
          fprintf (stderr,
                   "index should be %d, but is %d\n",
                   i,
                   bson_iter_int32 (&indexnum));
       }
-      assert (bson_iter_int32 (&indexnum) == i);
+      BSON_ASSERT (bson_iter_int32 (&indexnum) == i);
       bson_iter_next (&error_iter);
    }
 
@@ -2641,14 +3278,14 @@ test_bulk_edge_case_372 (bool ordered)
    bson_t reply;
 
    client = test_framework_client_new ();
-   assert (client);
-   has_write_cmds = server_has_write_commands (client);
+   BSON_ASSERT (client);
+   has_write_cmds = server_has_write_commands ();
 
    collection = get_test_collection (client, "CDRIVER_372");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
-   assert (bulk);
+   BSON_ASSERT (bulk);
 
    selector = tmp_bson ("{'_id': 0}");
    update = tmp_bson ("{'$set': {'a': 0}}");
@@ -2687,8 +3324,9 @@ test_bulk_edge_case_372 (bool ordered)
 
    check_n_modified (has_write_cmds, &reply, 0);
 
-   assert (bson_iter_init_find (&iter, &reply, "upserted") &&
-           BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "upserted") &&
+                BSON_ITER_HOLDS_ARRAY (&iter) &&
+                bson_iter_recurse (&iter, &citer));
 
    bson_destroy (&reply);
 
@@ -2725,10 +3363,10 @@ test_bulk_new (void)
    uint32_t r;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    collection = get_test_collection (client, "bulk_new");
-   assert (collection);
+   BSON_ASSERT (collection);
 
    bulk = mongoc_bulk_operation_new (true);
    mongoc_bulk_operation_destroy (bulk);
@@ -2736,25 +3374,25 @@ test_bulk_new (void)
    bulk = mongoc_bulk_operation_new (true);
 
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_database (bulk, "test");
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_collection (bulk, "test");
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_client (bulk, client);
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   assert (!r);
+   BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
@@ -2953,7 +3591,7 @@ test_bulk_write_concern_over_1000 (void)
    bool r;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    write_concern = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (write_concern, 1);
@@ -2990,6 +3628,7 @@ test_bulk_write_concern_over_1000 (void)
       abort ();
    }
 
+   bson_destroy (&reply);
    bson_free (str);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_client_destroy (client);
@@ -3555,7 +4194,7 @@ test_bulk_install (TestSuite *suite)
                                   _test_legacy_write_err,
                                   NULL,
                                   (void *) err_test,
-                                  NULL);
+                                  TestSuite_CheckMockServerAllowed);
 
                err_test++;
 
@@ -3566,8 +4205,8 @@ test_bulk_install (TestSuite *suite)
    }
 
    TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
-   TestSuite_Add (suite, "/BulkOperation/error", test_bulk_error);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite, "/BulkOperation/error", test_bulk_error);
+   TestSuite_AddMockServerTest (
       suite, "/BulkOperation/error/unordered", test_bulk_error_unordered);
    TestSuite_AddLive (
       suite, "/BulkOperation/insert_ordered", test_insert_ordered);
@@ -3590,10 +4229,76 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_many_with_opts_check_keys",
                       test_update_many_with_opts_check_keys);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_invalid_first",
+                      test_update_one_invalid_first);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/update_invalid_first", test_update_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_with_opts_invalid_first",
+                      test_update_one_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_many_with_opts_invalid_first",
+                      test_update_many_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_invalid_first",
+                      test_replace_one_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_with_opts_invalid_first",
+                      test_replace_one_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_invalid_second",
+                      test_update_one_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_invalid_second",
+                      test_update_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_with_opts_invalid_second",
+                      test_update_one_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_many_with_opts_invalid_second",
+                      test_update_many_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_invalid_second",
+                      test_replace_one_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_with_opts_invalid_second",
+                      test_replace_one_with_opts_invalid_second);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/insert_invalid_first", test_insert_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_invalid_second",
+                      test_insert_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_with_opts_invalid_first",
+                      test_insert_with_opts_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_with_opts_invalid_second",
+                      test_insert_with_opts_invalid_second);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_into_system_indexes",
+                      test_insert_into_system_indexes);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_one_after_invalid",
+                      test_remove_one_after_invalid);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/remove_after_invalid", test_remove_after_invalid);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_one_with_opts_after_invalid",
+                      test_remove_one_with_opts_after_invalid);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_many_with_opts_after_invalid",
+                      test_remove_many_with_opts_after_invalid);
    TestSuite_AddLive (
       suite, "/BulkOperation/upsert_ordered", test_upsert_ordered);
    TestSuite_AddLive (
       suite, "/BulkOperation/upsert_unordered", test_upsert_unordered);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/upsert_unordered_oversized",
+                      test_upsert_unordered_oversized,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/upsert_large",
                       test_upsert_large,
@@ -3650,53 +4355,60 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_error_unordered_bulk",
                       test_single_error_unordered_bulk);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/ordered",
-                  test_write_concern_legacy_ordered);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/ordered/multi_err",
-                  test_write_concern_legacy_ordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/unordered",
-                  test_write_concern_legacy_unordered);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/legacy/unordered/multi_err",
-                  test_write_concern_legacy_unordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/write_command/ordered",
-                  test_write_concern_write_command_ordered);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/legacy/ordered",
+                                test_write_concern_legacy_ordered);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/legacy/ordered/multi_err",
+      test_write_concern_legacy_ordered_multi_err);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/legacy/unordered",
+                                test_write_concern_legacy_unordered);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/legacy/unordered/multi_err",
+      test_write_concern_legacy_unordered_multi_err);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/write_command/ordered",
+      test_write_concern_write_command_ordered);
+   TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered/multi_err",
       test_write_concern_write_command_ordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/write_command/unordered",
-                  test_write_concern_write_command_unordered);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/write_command/unordered",
+      test_write_concern_write_command_unordered);
+   TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/unordered/multi_err",
       test_write_concern_write_command_unordered_multi_err);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/legacy/v1",
-                  test_write_concern_error_legacy_v1);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/write_command/v1",
-                  test_write_concern_error_write_command_v1);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/legacy/v2",
-                  test_write_concern_error_legacy_v2);
-   TestSuite_Add (suite,
-                  "/BulkOperation/write_concern/error/write_command/v2",
-                  test_write_concern_error_write_command_v2);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/error/legacy/v1",
+                                test_write_concern_error_legacy_v1);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/error/write_command/v1",
+      test_write_concern_error_write_command_v1);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/write_concern/error/legacy/v2",
+                                test_write_concern_error_legacy_v2);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/write_concern/error/write_command/v2",
+      test_write_concern_error_write_command_v2);
    TestSuite_AddLive (suite,
                       "/BulkOperation/multiple_error_unordered_bulk",
                       test_multiple_error_unordered_bulk);
-   TestSuite_Add (suite,
-                  "/BulkOperation/wtimeout_duplicate_key/legacy",
-                  test_wtimeout_plus_duplicate_key_err_legacy);
-   TestSuite_Add (suite,
-                  "/BulkOperation/wtimeout_duplicate_key/write_commands",
-                  test_wtimeout_plus_duplicate_key_err_write_commands);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/wtimeout_duplicate_key/legacy",
+                                test_wtimeout_plus_duplicate_key_err_legacy);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/wtimeout_duplicate_key/write_commands",
+      test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull (suite,
                       "/BulkOperation/large_inserts_ordered",
                       test_large_inserts_ordered,
@@ -3725,55 +4437,55 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/write_concern/over_1000",
                       test_bulk_write_concern_over_1000);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/legacy/secondary",
-                  test_hint_single_legacy_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/legacy/primary",
-                  test_hint_single_legacy_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/command/secondary",
-                  test_hint_single_command_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/single/command/primary",
-                  test_hint_single_command_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/legacy/secondary",
-                  test_hint_pooled_legacy_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/legacy/primary",
-                  test_hint_pooled_legacy_primary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/command/secondary",
-                  test_hint_pooled_command_secondary);
-   TestSuite_Add (suite,
-                  "/BulkOperation/hint/pooled/command/primary",
-                  test_hint_pooled_command_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/legacy/secondary",
+                                test_hint_single_legacy_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/legacy/primary",
+                                test_hint_single_legacy_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/command/secondary",
+                                test_hint_single_command_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/single/command/primary",
+                                test_hint_single_command_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/legacy/secondary",
+                                test_hint_pooled_legacy_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/legacy/primary",
+                                test_hint_pooled_legacy_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/command/secondary",
+                                test_hint_pooled_command_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/hint/pooled/command/primary",
+                                test_hint_pooled_command_primary);
    TestSuite_AddLive (suite, "/BulkOperation/reply_w0", test_bulk_reply_w0);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w0/wire5",
-                  test_bulk_collation_w0_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w0/wire4",
-                  test_bulk_collation_w0_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w1/wire5",
-                  test_bulk_collation_w1_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/w1/wire4",
-                  test_bulk_collation_w1_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w0/wire5",
-                  test_bulk_collation_multi_w0_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w0/wire4",
-                  test_bulk_collation_multi_w0_wire4);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w1/wire5",
-                  test_bulk_collation_multi_w1_wire5);
-   TestSuite_Add (suite,
-                  "/BulkOperation/opts/collation/multi/w1/wire4",
-                  test_bulk_collation_multi_w1_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w0/wire5",
+                                test_bulk_collation_w0_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w0/wire4",
+                                test_bulk_collation_w0_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w1/wire5",
+                                test_bulk_collation_w1_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/w1/wire4",
+                                test_bulk_collation_w1_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w0/wire5",
+                                test_bulk_collation_multi_w0_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w0/wire4",
+                                test_bulk_collation_multi_w0_wire4);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w1/wire5",
+                                test_bulk_collation_multi_w1_wire5);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/opts/collation/multi/w1/wire4",
+                                test_bulk_collation_multi_w1_wire4);
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
                   test_bulk_update_one_error_message);

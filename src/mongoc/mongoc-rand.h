@@ -26,14 +26,15 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_rand_seed (const void *buf, int num);
-BSON_EXPORT (void)
+MONGOC_EXPORT (void)
 mongoc_rand_add (const void *buf, int num, double entropy);
-BSON_EXPORT (int)
+MONGOC_EXPORT (int)
 mongoc_rand_status (void);
 
 BSON_END_DECLS

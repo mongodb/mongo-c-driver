@@ -39,7 +39,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` if successful, otherwise ``false``.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 This function does not check the server response for a write concern error or write concern timeout.
 
@@ -67,7 +67,7 @@ The following is an example of executing the collection stats command.
 
      if (mongoc_collection_command_simple (
             collection, cmd, NULL, &reply, &error)) {
-        str = bson_as_json (&reply, NULL);
+        str = bson_as_canonical_extended_json (&reply, NULL);
         printf ("%s\n", str);
         bson_free (str);
      } else {

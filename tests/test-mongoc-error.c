@@ -78,7 +78,7 @@ _test_command_error (int32_t error_api_version)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    if (error_api_version != 0) {
-      assert (mongoc_client_set_error_api (client, error_api_version));
+      BSON_ASSERT (mongoc_client_set_error_api (client, error_api_version));
    }
 
    future = future_client_command_simple (
@@ -131,7 +131,10 @@ test_error_install (TestSuite *suite)
       suite, "/Error/set_api/single", test_set_error_api_single);
    TestSuite_AddLive (
       suite, "/Error/set_api/pooled", test_set_error_api_pooled);
-   TestSuite_Add (suite, "/Error/command/default", test_command_error_default);
-   TestSuite_Add (suite, "/Error/command/v1", test_command_error_v1);
-   TestSuite_Add (suite, "/Error/command/v2", test_command_error_v2);
+   TestSuite_AddMockServerTest (
+      suite, "/Error/command/default", test_command_error_default);
+   TestSuite_AddMockServerTest (
+      suite, "/Error/command/v1", test_command_error_v1);
+   TestSuite_AddMockServerTest (
+      suite, "/Error/command/v2", test_command_error_v2);
 }

@@ -230,14 +230,15 @@ convert_command_for_test (context_t *context,
          BSON_APPEND_DOUBLE (dst, key, (double) bson_iter_as_int64 (&iter));
 
       } else if (!strcmp (key, "errmsg")) {
-         /* "errmsg values of "" MUST assert that the value is not empty" */
+         /* "errmsg values of "" MUST BSON_ASSERT that the value is not empty"
+          */
          errmsg = bson_iter_utf8 (&iter, NULL);
          ASSERT_CMPSIZE_T (strlen (errmsg), >, (size_t) 0);
          BSON_APPEND_UTF8 (dst, key, "");
 
       } else if (!strcmp (key, "id") && ends_with (path, "cursor")) {
          /* "When encountering a cursor or getMore value of "42" in a test, the
-          * driver MUST assert that the values are equal to each other and
+          * driver MUST BSON_ASSERT that the values are equal to each other and
           * greater than zero."
           */
          if (context->cursor_id == 0) {
@@ -247,7 +248,7 @@ convert_command_for_test (context_t *context,
          }
 
          /* replace the reply's cursor id with 42 or 0 - check_expectations()
-          * will assert it matches the value from the JSON test */
+          * will BSON_ASSERT it matches the value from the JSON test */
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
       } else if (ends_with (path, "cursors") ||
                  ends_with (path, "cursorsUnknown")) {
@@ -264,7 +265,8 @@ convert_command_for_test (context_t *context,
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
 
       } else if (!strcmp (key, "code")) {
-         /* "code values of 42 MUST assert that the value is present and greater
+         /* "code values of 42 MUST BSON_ASSERT that the value is present and
+          * greater
           * than zero" */
          ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), >, (int64_t) 0);
          BSON_APPEND_INT32 (dst, key, 42);
@@ -316,7 +318,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    bson_t *new_event;
 
    if (context->verbose) {
-      cmd_json = bson_as_json (event->command, NULL);
+      cmd_json = bson_as_canonical_extended_json (event->command, NULL);
       printf ("%s\n", cmd_json);
       fflush (stdout);
       bson_free (cmd_json);
@@ -369,7 +371,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    bson_t *new_event;
 
    if (context->verbose) {
-      reply_json = bson_as_json (event->reply, NULL);
+      reply_json = bson_as_canonical_extended_json (event->reply, NULL);
       printf ("\t\t<-- %s\n", reply_json);
       fflush (stdout);
       bson_free (reply_json);
@@ -1017,8 +1019,7 @@ test_reset_callbacks (void *ctx)
    /* reset callbacks */
    mongoc_client_set_apm_callbacks (client, NULL, NULL);
    /* destroys cmd_reply */
-   cursor = mongoc_cursor_new_from_command_reply (
-      client, &cmd_reply, sd->id);
+   cursor = mongoc_cursor_new_from_command_reply (client, &cmd_reply, sd->id);
    ASSERT (mongoc_cursor_next (cursor, &b));
    ASSERT_CMPINT (incremented, ==, 1); /* same value as before */
 
@@ -1568,13 +1569,13 @@ test_client_cmd (void)
                                    0,
                                    0,
                                    0,
-                                   tmp_bson ("{'ismaster': 1}"),
+                                   tmp_bson ("{'ping': 1}"),
                                    NULL,
                                    NULL);
 
    ASSERT (mongoc_cursor_next (cursor, &reply));
-   ASSERT_CMPSTR (test.cmd_name, "ismaster");
-   ASSERT_MATCH (&test.cmd, "{'ismaster': 1}");
+   ASSERT_CMPSTR (test.cmd_name, "ping");
+   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
    ASSERT_CMPSTR (test.db, "admin");
    ASSERT_CMPINT (1, ==, test.started_calls);
    ASSERT_CMPINT (1, ==, test.succeeded_calls);
@@ -1620,11 +1621,11 @@ test_client_cmd_simple (void)
    client = test_framework_client_new ();
    set_cmd_test_callbacks (client, (void *) &test);
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
-   ASSERT_CMPSTR (test.cmd_name, "ismaster");
-   ASSERT_MATCH (&test.cmd, "{'ismaster': 1}");
+   ASSERT_CMPSTR (test.cmd_name, "ping");
+   ASSERT_MATCH (&test.cmd, "{'ping': 1}");
    ASSERT_CMPSTR (test.db, "admin");
    ASSERT_CMPINT (1, ==, test.started_calls);
    ASSERT_CMPINT (1, ==, test.succeeded_calls);
@@ -1669,7 +1670,7 @@ test_client_cmd_op_ids (void)
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
 
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -1685,7 +1686,7 @@ test_client_cmd_op_ids (void)
 
    /* again. test that we use a new op_id. */
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    ASSERT_CMPINT (1, ==, test.started_calls);
@@ -1717,7 +1718,7 @@ test_killcursors_deprecated (void)
 
    /* connect */
    r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
    set_cmd_test_callbacks (client, (void *) &test);
@@ -1738,7 +1739,8 @@ void
 test_command_monitoring_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (suite, "/command_monitoring/get_error", test_get_error);
+   TestSuite_AddMockServerTest (
+      suite, "/command_monitoring/get_error", test_get_error);
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/single",
                       test_set_callbacks_single);
@@ -1770,18 +1772,22 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/new/pooled",
                       test_bulk_op_pooled);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/single/cmd",
-                  test_query_operation_id_single_cmd);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/pooled/cmd",
-                  test_query_operation_id_pooled_cmd);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/single/op_query",
-                  test_query_operation_id_single_op_query);
-   TestSuite_Add (suite,
-                  "/command_monitoring/operation_id/query/pooled/op_query",
-                  test_query_operation_id_pooled_op_query);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/single/cmd",
+      test_query_operation_id_single_cmd);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/pooled/cmd",
+      test_query_operation_id_pooled_cmd);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/single/op_query",
+      test_query_operation_id_single_op_query);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/operation_id/query/pooled/op_query",
+      test_query_operation_id_pooled_op_query);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (
       suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);

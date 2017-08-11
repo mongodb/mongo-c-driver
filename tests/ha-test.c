@@ -591,7 +591,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set, ha_node_t *primary)
    bson_append_array_end (&config, &ar);
    bson_append_document_end (&cmd, &config);
 
-   str = bson_as_json (&cmd, NULL);
+   str = bson_as_canonical_extended_json (&cmd, NULL);
    MONGOC_DEBUG ("Config: %s", str);
    bson_free (str);
 
@@ -602,7 +602,7 @@ again:
       database, MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      str = bson_as_json (doc, NULL);
+      str = bson_as_canonical_extended_json (doc, NULL);
       MONGOC_DEBUG ("Reply: %s", str);
       bson_free (str);
       if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
@@ -782,7 +782,7 @@ again:
    {
       char *str;
 
-      str = bson_as_json(&status, NULL);
+      str = bson_as_canonical_extended_json(&status, NULL);
       fprintf(stderr, "%s\n", str);
       bson_free(str);
    }
@@ -932,7 +932,7 @@ again:
    {
       char *str;
 
-      str = bson_as_json (&reply, NULL);
+      str = bson_as_canonical_extended_json (&reply, NULL);
       fprintf (stderr, "%s\n", str);
       bson_free (str);
    }

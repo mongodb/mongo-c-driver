@@ -9,10 +9,6 @@ EXTRA_DIST += \
   doc/mongoc-theme/static/pygments.css \
   doc/mongoc-theme/theme.conf \
   doc/taglist.py \
-  $(wildcard doc/includes/*.txt)
-
-dist-hook: man html
-
-clean-local:
-	-rm -rf doc/man/.buildinfo doc/man/.doctrees
-	-rm -rf doc/html/.buildinfo doc/html/.doctrees doc/html/_static
+  doc/libbson-objects.inv \
+  $(wildcard doc/includes/*.txt) \
+  $(wildcard doc/static/*)

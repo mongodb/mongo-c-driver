@@ -3,6 +3,7 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 
+COMPRESSORS=${COMPRESSORS:-nocompressors}
 AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
 URI=${URI:-}
@@ -10,6 +11,9 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
 
+if [ "$COMPRESSORS" != "nocompressors" ]; then
+   export MONGOC_TEST_COMPRESSORS="$COMPRESSORS"
+fi
 if [ "$AUTH" != "noauth" ]; then
   export MONGOC_TEST_USER="bob"
   export MONGOC_TEST_PASSWORD="pwd123"
@@ -18,13 +22,19 @@ fi
 if [ "$SSL" != "nossl" ]; then
    export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="on"
    export MONGOC_TEST_SSL_PEM_FILE="tests/x509gen/client.pem"
-   export MONGOC_TEST_SSL_CA_FILE="tests/x509gen/ca.pem"
+   sudo cp tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
+   if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
+      sudo update-ca-certificates
+   else
+      export MONGOC_TEST_SSL_CA_FILE="tests/x509gen/ca.pem"
+   fi
 fi
 
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"
 export MONGOC_TEST_SERVER_LOG="json"
+export MONGOC_TEST_SKIP_MOCK="on"
 
 if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"
@@ -39,7 +49,9 @@ fi
 case "$OS" in
    cygwin*)
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-      chmod +x ./Debug/* src/libbson/Debug/*
+      export PATH=$PATH:`pwd`/tests:`pwd`/Release:`pwd`/src/libbson/Release
+      chmod +x ./Debug/* src/libbson/Debug/* || true
+      chmod +x ./Release/* src/libbson/Release/* || true
       ;;
 
    darwin)
@@ -73,7 +85,7 @@ esac
 
 case "$OS" in
    cygwin*)
-      ./Debug/test-libmongoc.exe -d -F test-results.json
+      test-libmongoc.exe -d -F test-results.json
       ;;
 
    sunos)

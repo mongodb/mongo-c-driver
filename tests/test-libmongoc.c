@@ -57,6 +57,8 @@ test_collection_find_install (TestSuite *suite);
 extern void
 test_collection_find_with_opts_install (TestSuite *suite);
 extern void
+test_connection_uri_install (TestSuite *suite);
+extern void
 test_command_monitoring_install (TestSuite *suite);
 extern void
 test_cursor_install (TestSuite *suite);
@@ -88,6 +90,8 @@ extern void
 test_read_prefs_install (TestSuite *suite);
 extern void
 test_rpc_install (TestSuite *suite);
+extern void
+test_samples_install (TestSuite *suite);
 extern void
 test_sdam_install (TestSuite *suite);
 extern void
@@ -608,32 +612,6 @@ test_framework_get_port (void)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_get_host_list --
- *
- *       Get the single host and port of the test server (not actually a
- *       list).
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-void
-test_framework_get_host_list (mongoc_host_list_t *host_list)
-{
-   char *host = test_framework_get_host ();
-   uint16_t port = test_framework_get_port ();
-   char *host_and_port = bson_strdup_printf ("%s:%hu", host, port);
-
-   _mongoc_host_list_from_string (host_list, host_and_port);
-
-   bson_free (host_and_port);
-   bson_free (host);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * test_framework_get_admin_user --
  *
  *       Get the username of an admin user on the test MongoDB server.
@@ -815,6 +793,91 @@ test_framework_add_user_password_from_env (const char *uri_str)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_get_compressors --
+ *
+ *      Get the list of compressors to enable
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL if the variable is not set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_compressors ()
+{
+   return test_framework_getenv ("MONGOC_TEST_COMPRESSORS");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_has_compressors --
+ *
+ *      Check if the test suite has been configured to use compression
+ *
+ * Returns:
+ *       true if compressors should be used.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+test_framework_has_compressors ()
+{
+   bool retval;
+   char *compressors = test_framework_get_compressors ();
+
+   retval = !!compressors;
+   bson_free (compressors);
+
+   return retval;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_compressors_from_env --
+ *
+ *       Add supported compressors to the URI
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_add_compressors_from_env (const char *uri_str)
+{
+   char *compressors;
+
+   compressors = test_framework_get_compressors ();
+   if (compressors) {
+      char *retval = NULL;
+
+      if (!strstr ("?", uri_str)) {
+         retval = bson_strdup_printf (
+            "%s&%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
+      } else {
+         retval = bson_strdup_printf (
+            "%s/?%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
+      }
+      bson_free (compressors);
+      return retval;
+   }
+
+   return bson_strdup (uri_str);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_get_ssl --
  *
  *       Should we connect to the test MongoDB server over SSL?
@@ -912,13 +975,21 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
    uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
                                  host,
                                  port,
-                                 test_framework_get_ssl () ? "?ssl=true" : "");
+                                 test_framework_get_ssl () ? "/?ssl=true" : "");
 
    uri = mongoc_uri_new (uri_str);
-   assert (uri);
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
-   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+   BSON_ASSERT (uri);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10000);
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000);
+   mongoc_uri_set_option_as_bool (
+      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false);
+   if (test_framework_has_compressors ()) {
+      char *compressors = test_framework_get_compressors ();
+
+      mongoc_uri_set_compressors (uri, compressors);
+      bson_free (compressors);
+   }
 
    client = mongoc_client_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
@@ -1051,7 +1122,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 
          /* append "host1,host2,host3" */
          while (bson_iter_next (&hosts_iter)) {
-            assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
+            BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
             if (!first) {
                bson_string_append (uri_string, ",");
             }
@@ -1065,7 +1136,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
             bson_string_append (uri_string, database_name);
          }
 
-         add_option_to_uri_str (uri_string, "replicaSet", name);
+         add_option_to_uri_str (uri_string, MONGOC_URI_REPLICASET, name);
          bson_free (name);
       } else {
          host = test_framework_get_host ();
@@ -1080,14 +1151,21 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       }
 
       if (test_framework_get_ssl ()) {
-         add_option_to_uri_str (uri_string, "ssl", "true");
+         add_option_to_uri_str (uri_string, MONGOC_URI_SSL, "true");
       }
 
       bson_destroy (&ismaster_response);
    }
 
+   if (test_framework_has_compressors ()) {
+      char *compressors = test_framework_get_compressors ();
+
+      add_option_to_uri_str (uri_string, MONGOC_URI_COMPRESSORS, compressors);
+      bson_free (compressors);
+   }
    /* make tests a little more resilient to transient errors */
-   add_option_to_uri_str (uri_string, "serverSelectionTryOnce", "false");
+   add_option_to_uri_str (
+      uri_string, MONGOC_URI_SERVERSELECTIONTRYONCE, "false");
 
    return bson_string_free (uri_string, false);
 }
@@ -1113,12 +1191,15 @@ char *
 test_framework_get_uri_str ()
 {
    char *uri_str_no_auth;
+   char *uri_str_auth;
    char *uri_str;
 
    uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri_str = test_framework_add_compressors_from_env (uri_str_auth);
 
    bson_free (uri_str_no_auth);
+   bson_free (uri_str_auth);
 
    return uri_str;
 }
@@ -1146,7 +1227,7 @@ test_framework_get_uri ()
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
 
-   assert (uri);
+   BSON_ASSERT (uri);
    bson_free (test_uri_str);
 
    return uri;
@@ -1170,7 +1251,7 @@ test_framework_mongos_count (void)
    const mongoc_host_list_t *h;
    size_t count = 0;
 
-   assert (uri);
+   BSON_ASSERT (uri);
    h = mongoc_uri_get_hosts (uri);
    while (h) {
       ++count;
@@ -1182,13 +1263,41 @@ test_framework_mongos_count (void)
    return count;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_replset_name --
+ *
+ *       Returns the replica set name or NULL. You must free the string.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+char *
+test_framework_replset_name (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   char *replset_name;
+
+   call_ismaster (&reply);
+   if (!bson_iter_init_find (&iter, &reply, "setName")) {
+      return NULL;
+   }
+
+   replset_name = bson_strdup (bson_iter_utf8 (&iter, NULL));
+   bson_destroy (&reply);
+
+   return replset_name;
+}
+
 
 /*
  *--------------------------------------------------------------------------
  *
  * test_framework_replset_member_count --
  *
- *       Returns the number replica set data members (including arbiters).
+ *       Returns the number of replica set members (including arbiters).
  *
  *--------------------------------------------------------------------------
  */
@@ -1275,7 +1384,7 @@ test_framework_server_count (void)
 void
 test_framework_set_ssl_opts (mongoc_client_t *client)
 {
-   assert (client);
+   BSON_ASSERT (client);
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
@@ -1311,7 +1420,7 @@ test_framework_client_new ()
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = mongoc_client_new (test_uri_str);
 
-   assert (client);
+   BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
    bson_free (test_uri_str);
@@ -1363,7 +1472,7 @@ test_framework_get_ssl_opts (void)
 void
 test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 {
-   assert (pool);
+   BSON_ASSERT (pool);
 
    if (test_framework_get_ssl ()) {
 #ifndef MONGOC_ENABLE_SSL
@@ -1381,7 +1490,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_pool_new --
+ * test_framework_client_pool_new --
  *
  *       Get a client pool connected to the test MongoDB topology.
  *
@@ -1399,11 +1508,11 @@ test_framework_client_pool_new ()
    mongoc_uri_t *test_uri = test_framework_get_uri ();
    mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
 
-   assert (pool);
+   BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
 
    mongoc_uri_destroy (test_uri);
-   assert (pool);
+   BSON_ASSERT (pool);
    return pool;
 }
 
@@ -1545,17 +1654,6 @@ int
 test_framework_skip_if_windows (void)
 {
 #ifdef _WIN32
-   return false;
-#else
-   return true;
-#endif
-}
-
-
-int
-test_framework_skip_if_apple (void)
-{
-#ifdef __APPLE__
    return false;
 #else
    return true;
@@ -1884,6 +1982,7 @@ main (int argc, char *argv[])
    test_collection_install (&suite);
    test_collection_find_install (&suite);
    test_collection_find_with_opts_install (&suite);
+   test_connection_uri_install (&suite);
    test_command_monitoring_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
@@ -1903,6 +2002,7 @@ main (int argc, char *argv[])
    test_socket_install (&suite);
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
+   test_samples_install (&suite);
    test_sdam_install (&suite);
    test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);

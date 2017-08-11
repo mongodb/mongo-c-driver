@@ -17,6 +17,7 @@ CMakeCache.txt
 CMakeFiles
 compile
 config.*
+!config.yml
 configure
 COPYING
 data
@@ -98,11 +99,19 @@ test-x509
 # Windows things
 *.dir
 *.vcxproj*
-*.cmake
 Debug
 x64
 *.sdf
 *.sln
 install_manifest.txt
 .vs
-doc/installing.page
+doc/html/_images
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CTestTestfile.cmake
+accept_test1.c
+cmake_install.cmake
+libmongoc-1.0-config-version.cmake
+libmongoc-1.0-config.cmake
+libmongoc-static-1.0-config-version.cmake
+libmongoc-static-1.0-config.cmake

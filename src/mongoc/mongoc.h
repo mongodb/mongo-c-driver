@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #define MONGOC_INSIDE
+#include "mongoc-macros.h"
 #include "mongoc-apm.h"
 #include "mongoc-bulk-operation.h"
 #include "mongoc-client.h"

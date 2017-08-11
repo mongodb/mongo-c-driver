@@ -33,8 +33,8 @@ test_ismaster_helper (mongoc_async_cmd_result_t result,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
-   assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    r->max_wire_version = bson_iter_int32 (&iter);
    r->finished = true;
 }
@@ -62,7 +62,11 @@ test_ismaster_impl (bool with_ssl)
    mongoc_ssl_opt_t copt = {0};
 #endif
 
-   assert (bson_append_int32 (&q, "isMaster", 8, 1));
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
+   BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
@@ -85,7 +89,7 @@ test_ismaster_impl (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-      assert (conn_sock);
+      BSON_ASSERT (conn_sock);
 
       server_addr.sin_family = AF_INET;
       server_addr.sin_port = htons (ports[i]);
@@ -120,18 +124,18 @@ test_ismaster_impl (bool with_ssl)
 
       results[i].finished = false;
 
-      mongoc_async_cmd (async,
-                        sock_streams[i],
-                        setup,
-                        setup_ctx,
-                        "admin",
-                        &q,
-                        &test_ismaster_helper,
-                        (void *) &results[i],
-                        TIMEOUT);
+      mongoc_async_cmd_new (async,
+                            sock_streams[i],
+                            setup,
+                            setup_ctx,
+                            "admin",
+                            &q,
+                            &test_ismaster_helper,
+                            (void *) &results[i],
+                            TIMEOUT);
    }
 
-   mongoc_async_run (async, TIMEOUT);
+   mongoc_async_run (async);
 
    for (i = 0; i < NSERVERS; i++) {
       if (!results[i].finished) {
@@ -161,8 +165,7 @@ test_ismaster (void)
 }
 
 
-/* CDRIVER-1992: temporarily disable test on Windows */
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
 static void
 test_ismaster_ssl (void)
 {
@@ -174,8 +177,9 @@ test_ismaster_ssl (void)
 void
 test_async_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
-#if defined(MONGOC_ENABLE_SSL_OPENSSL) && !defined(_WIN32)
-   TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
+   TestSuite_AddMockServerTest (suite, "/Async/ismaster", test_ismaster);
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   TestSuite_AddMockServerTest (
+      suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #endif
 }

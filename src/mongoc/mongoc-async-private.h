@@ -61,18 +61,7 @@ void
 mongoc_async_destroy (mongoc_async_t *async);
 
 void
-mongoc_async_run (mongoc_async_t *async, int64_t timeout_msec);
-
-struct _mongoc_async_cmd *
-mongoc_async_cmd (mongoc_async_t *async,
-                  mongoc_stream_t *stream,
-                  mongoc_async_cmd_setup_t setup,
-                  void *setup_ctx,
-                  const char *dbname,
-                  const bson_t *cmd,
-                  mongoc_async_cmd_cb_t cb,
-                  void *cb_data,
-                  int64_t timeout_msec);
+mongoc_async_run (mongoc_async_t *async);
 
 BSON_END_DECLS
 

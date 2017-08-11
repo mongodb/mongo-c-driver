@@ -47,8 +47,6 @@ char *
 test_framework_get_host (void);
 uint16_t
 test_framework_get_port (void);
-void
-test_framework_get_host_list (mongoc_host_list_t *host_list);
 char *
 test_framework_get_admin_user (void);
 char *
@@ -73,6 +71,8 @@ mongoc_uri_t *
 test_framework_get_uri (void);
 size_t
 test_framework_mongos_count (void);
+char *
+test_framework_replset_name (void);
 size_t
 test_framework_replset_member_count (void);
 size_t
@@ -127,8 +127,6 @@ int
 test_framework_skip_if_single (void);
 int
 test_framework_skip_if_windows (void);
-int
-test_framework_skip_if_apple (void);
 int
 test_framework_skip_if_no_uds (void); /* skip if no Unix domain socket */
 int

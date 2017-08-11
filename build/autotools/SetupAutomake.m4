@@ -16,6 +16,7 @@ AM_CONDITIONAL([COMPILER_CLANG],[test "$c_compiler" = "clang" && test "$cxx_comp
 
 # Feature Conditionals
 AM_CONDITIONAL([ENABLE_DEBUG],[test "$enable_debug" = "yes"])
+AM_CONDITIONAL([ENABLE_STATIC],[test "$enable_static" = "yes"])
 
 # C99 Features
 AM_CONDITIONAL([ENABLE_STDBOOL],[test "$enable_stdbool" = "yes"])
@@ -25,6 +26,12 @@ AM_CONDITIONAL([ENABLE_PTHREADS],[test "$enable_pthreads" = "yes"])
 
 # Should we compile the bundled libbson
 AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])
+
+# Should we compile the bundled snappy
+AM_CONDITIONAL([WITH_SNAPPY],[test "$with_snappy" = "bundled"])
+
+# Should we compile the bundled zlib
+AM_CONDITIONAL([WITH_ZLIB],[test "$with_zlib" = "bundled"])
 
 # Should we avoid extra BSON_LIBS when linking (SunStudio)
 AM_CONDITIONAL([EXPLICIT_LIBS],[test "$with_gnu_ld" = "yes"])

@@ -41,6 +41,7 @@ See Also
     mongoc_bulk_operation_get_hint
     mongoc_bulk_operation_get_write_concern
     mongoc_bulk_operation_insert
+    mongoc_bulk_operation_insert_with_opts
     mongoc_bulk_operation_remove
     mongoc_bulk_operation_remove_many_with_opts
     mongoc_bulk_operation_remove_one

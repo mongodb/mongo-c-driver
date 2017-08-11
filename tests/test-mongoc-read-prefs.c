@@ -56,7 +56,7 @@ _test_op_query (const mongoc_uri_t *uri,
                         "{'a': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -113,7 +113,7 @@ _test_find_command (const mongoc_uri_t *uri,
                         "    'firstBatch': [{'a': 1}]}}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -165,7 +165,7 @@ _test_command (const mongoc_uri_t *uri,
                         "{'ok': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -207,7 +207,7 @@ _test_command_simple (const mongoc_uri_t *uri,
                         "{'ok': 1}");
 
    /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -679,28 +679,30 @@ test_read_prefs_mongos_tags (void)
 void
 test_read_prefs_install (TestSuite *suite)
 {
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/standalone/null", test_read_prefs_standalone_null);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/standalone/primary",
-                  test_read_prefs_standalone_primary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/standalone/secondary",
-                  test_read_prefs_standalone_secondary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/standalone/primary",
+                                test_read_prefs_standalone_primary);
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/standalone/secondary",
+                                test_read_prefs_standalone_secondary);
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/standalone/tags", test_read_prefs_standalone_tags);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/rsprimary/primary", test_read_prefs_primary_rsprimary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/rssecondary/secondary",
-                  test_read_prefs_secondary_rssecondary);
-   TestSuite_Add (suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/rssecondary/secondary",
+                                test_read_prefs_secondary_rssecondary);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/mongos/null", test_read_prefs_mongos_null);
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/primary", test_read_prefs_mongos_primary);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/secondary", test_read_prefs_mongos_secondary);
-   TestSuite_Add (suite,
-                  "/ReadPrefs/mongos/secondaryPreferred",
-                  test_read_prefs_mongos_secondary_preferred);
-   TestSuite_Add (suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/mongos/secondaryPreferred",
+                                test_read_prefs_mongos_secondary_preferred);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
 }

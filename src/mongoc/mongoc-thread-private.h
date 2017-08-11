@@ -24,6 +24,7 @@
 #include <bson.h>
 
 #include "mongoc-config.h"
+#include "mongoc-log.h"
 
 
 #if !defined(_WIN32)
@@ -81,7 +82,17 @@ mongoc_thread_create (mongoc_thread_t *thread, void *(*cb) (void *), void *arg)
    *thread = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) cb, arg, 0, NULL);
    return 0;
 }
-#define mongoc_thread_join(_n) WaitForSingleObject ((_n), INFINITE)
+static BSON_INLINE DWORD
+mongoc_thread_join (mongoc_thread_t thread)
+{
+   DWORD ret = WaitForSingleObject (thread, INFINITE);
+   if (!CloseHandle (thread)) {
+      MONGOC_ERROR ("Couldn't close thread handle, error 0x%.8X",
+                    GetLastError ());
+   }
+
+   return ret;
+}
 #define mongoc_mutex_t CRITICAL_SECTION
 #define mongoc_mutex_init InitializeCriticalSection
 #define mongoc_mutex_lock EnterCriticalSection

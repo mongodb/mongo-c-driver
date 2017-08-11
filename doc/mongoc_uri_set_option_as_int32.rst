@@ -25,7 +25,7 @@ Description
 
 Sets an individual URI option, after the URI has been parsed from a string.
 
-Only known options of type int32 can be set.
+Only known options of type int32 can be set. Some int32 options, such as :ref:`minHeartbeatFrequencyMS <sdam_uri_options>`, have additional constraints.
 
 Updates the option in-place if already set, otherwise appends it to the URI's :symbol:`bson:bson_t` of options.
 
@@ -33,4 +33,3 @@ Returns
 -------
 
 True if successfully set (the named option is a known option of type int32).
-

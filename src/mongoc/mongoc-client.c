@@ -108,7 +108,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t *uri,
    BSON_ASSERT (host);
 
    connecttimeoutms = mongoc_uri_get_option_as_int32 (
-      uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+      uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    BSON_ASSERT (connecttimeoutms);
 
@@ -344,7 +344,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
          }
 
          connecttimeoutms = mongoc_uri_get_option_as_int32 (
-            uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+            uri, MONGOC_URI_CONNECTTIMEOUTMS, MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
          if (!mongoc_stream_tls_handshake_block (
                 base_stream, host->host, connecttimeoutms, error)) {
@@ -746,7 +746,8 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
    client->read_prefs = mongoc_read_prefs_copy (read_prefs);
 
-   appname = mongoc_uri_get_option_as_utf8 (client->uri, "appname", NULL);
+   appname =
+      mongoc_uri_get_option_as_utf8 (client->uri, MONGOC_URI_APPNAME, NULL);
    if (appname && client->topology->single_threaded) {
       /* the appname should have already been validated */
       BSON_ASSERT (mongoc_client_set_appname (client, appname));
@@ -757,8 +758,11 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
 #ifdef MONGOC_ENABLE_SSL
    client->use_ssl = false;
    if (mongoc_uri_get_ssl (client->uri)) {
+      mongoc_ssl_opt_t ssl_opt = {0};
+
+      _mongoc_ssl_opts_from_uri (&ssl_opt, client->uri);
       /* sets use_ssl = true */
-      mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
+      mongoc_client_set_ssl_opts (client, &ssl_opt);
    }
 #endif
 
@@ -1188,8 +1192,7 @@ mongoc_client_command (mongoc_client_t *client,
       db_name = ns;
    }
 
-   /* flags, skip, limit, batch_size, fields are unused: CDRIVER-1543 */
-   /* ignore client read prefs if passed-in prefs are NULL */
+   /* flags, skip, limit, batch_size, fields are unused */
    cursor = _mongoc_cursor_new_with_opts (
       client, db_name, true /* is_command */, query, NULL, read_prefs, NULL);
 
@@ -1449,7 +1452,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if ((mode & MONGOC_CMD_WRITE) &&
           server_stream->sd->max_wire_version >=
              WIRE_VERSION_CMD_WRITE_CONCERN &&
-          !_mongoc_write_concern_is_default (default_wc) &&
+          !mongoc_write_concern_is_default (default_wc) &&
           (!command_with_opts ||
            !bson_has_field (command_with_opts, "writeConcern"))) {
          _ensure_copied (&command_with_opts, command);
@@ -1462,7 +1465,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       /* use read prefs and read concern for read commands, unless in opts */
       if ((mode & MONGOC_CMD_READ) &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
-          !_mongoc_read_concern_is_default (default_rc) &&
+          !mongoc_read_concern_is_default (default_rc) &&
           (!command_with_opts ||
            !bson_has_field (command_with_opts, "readConcern"))) {
          _ensure_copied (&command_with_opts, command);
@@ -1827,10 +1830,10 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
 
    ++cluster->request_id;
 
-   rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = cluster->request_id;
-   rpc.kill_cursors.response_to = 0;
-   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = cluster->request_id;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
@@ -1841,7 +1844,7 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
    }
 
    r = mongoc_cluster_sendv_to_server (
-      cluster, &rpc, 1, server_stream, NULL, &error);
+      cluster, &rpc, server_stream, NULL, &error);
 
    if (has_ns) {
       if (r) {
@@ -2131,7 +2134,7 @@ mongoc_client_get_server_descriptions (const mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (n);
 
-   topology = (mongoc_topology_t *) client->topology;
+   topology = client->topology;
 
    /* in case the client is pooled */
    mongoc_mutex_lock (&topology->mutex);
@@ -2164,6 +2167,9 @@ mongoc_client_select_server (mongoc_client_t *client,
                              const mongoc_read_prefs_t *prefs,
                              bson_error_t *error)
 {
+   mongoc_ss_optype_t optype = for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ;
+   mongoc_server_description_t *sd;
+
    if (for_writes && prefs) {
       bson_set_error (error,
                       MONGOC_ERROR_SERVER_SELECTION,
@@ -2176,10 +2182,24 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   return mongoc_topology_select (client->topology,
-                                  for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ,
-                                  prefs,
-                                  error);
+   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   if (!sd) {
+      return NULL;
+   }
+
+   if (mongoc_cluster_check_interval (&client->cluster, sd->id)) {
+      /* check not required, or it succeeded */
+      return sd;
+   }
+
+   /* check failed, retry once */
+   mongoc_server_description_destroy (sd);
+   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   if (sd) {
+      return sd;
+   }
+
+   return NULL;
 }
 
 bool

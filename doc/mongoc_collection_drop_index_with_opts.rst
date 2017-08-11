@@ -25,7 +25,7 @@ Parameters
 Description
 -----------
 
-This function requests than an index on ``collection`` be dropped. In the event of an error it returns ``false`` and ``error`` is set.
+This function requests than an index on ``collection`` be dropped.
 
 If no write concern is provided in ``opts``, the collection's write concern is used.
 
@@ -37,5 +37,4 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-``true`` if successful, otherwise ``false`` and ``error`` is set.
-
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.

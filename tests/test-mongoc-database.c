@@ -30,7 +30,7 @@ test_create_with_write_concern (void)
    opts = bson_new ();
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
 
    bad_wc = mongoc_write_concern_new ();
@@ -40,7 +40,7 @@ test_create_with_write_concern (void)
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
-   assert (database);
+   BSON_ASSERT (database);
 
    name = gen_collection_name ("create_collection");
 
@@ -145,14 +145,14 @@ test_has_collection (void)
    bson_t b;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    name = gen_collection_name ("has_collection");
    collection = mongoc_client_get_collection (client, "test", name);
-   assert (collection);
+   BSON_ASSERT (collection);
 
    database = mongoc_client_get_database (client, "test");
-   assert (database);
+   BSON_ASSERT (database);
 
    bson_init (&b);
    bson_oid_init (&oid, NULL);
@@ -164,8 +164,8 @@ test_has_collection (void)
    bson_destroy (&b);
 
    r = mongoc_database_has_collection (database, name, &error);
-   assert (!error.domain);
-   assert (r);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (r);
 
    bson_free (name);
    mongoc_database_destroy (database);
@@ -187,7 +187,7 @@ test_command (void)
    bson_t reply;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    database = mongoc_client_get_database (client, "admin");
 
@@ -198,15 +198,15 @@ test_command (void)
 
    cursor = mongoc_database_command (
       database, MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
-   assert (cursor);
+   BSON_ASSERT (cursor);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
-   assert (doc);
+   BSON_ASSERT (r);
+   BSON_ASSERT (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   assert (!doc);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (!doc);
 
    mongoc_cursor_destroy (cursor);
 
@@ -218,10 +218,10 @@ test_command (void)
    bson_append_int32 (&cmd, "a_non_existing_command", -1, 1);
 
    r = mongoc_database_command_simple (database, &cmd, NULL, &reply, &error);
-   assert (!r);
-   assert (error.domain == MONGOC_ERROR_QUERY);
-   assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
-   assert (strstr (error.message, "a_non_existing_command"));
+   BSON_ASSERT (!r);
+   BSON_ASSERT (error.domain == MONGOC_ERROR_QUERY);
+   BSON_ASSERT (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
+   BSON_ASSERT (strstr (error.message, "a_non_existing_command"));
 
    bson_destroy (&reply);
    mongoc_database_destroy (database);
@@ -377,7 +377,7 @@ test_drop (void)
 
    opts = bson_new ();
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
 
    bad_wc = mongoc_write_concern_new ();
@@ -396,8 +396,8 @@ test_drop (void)
    ASSERT_OR_PRINT (r, error);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
-   assert (!error.domain);
-   assert (!error.code);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
    mongoc_database_destroy (database);
 
@@ -423,8 +423,8 @@ test_drop (void)
    mongoc_write_concern_append (good_wc, opts);
    ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error),
                     error);
-   assert (!error.code);
-   assert (!error.domain);
+   BSON_ASSERT (!error.code);
+   BSON_ASSERT (!error.domain);
 
    /* invalid writeConcern */
    mongoc_write_concern_set_w (bad_wc, 99);
@@ -476,11 +476,11 @@ test_create_collection (void)
    char *name;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
-   assert (database);
+   BSON_ASSERT (database);
    bson_free (dbname);
 
    bson_init (&options);
@@ -535,12 +535,12 @@ test_get_collection_info (void)
    char *noopts_name;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
 
-   assert (database);
+   BSON_ASSERT (database);
    bson_free (dbname);
 
    capped_name = gen_collection_name ("capped");
@@ -575,9 +575,9 @@ test_get_collection_info (void)
 
    /* Filter on an exact match of name */
    cursor = mongoc_database_find_collections (database, &name_filter, &error);
-   assert (cursor);
-   assert (!error.domain);
-   assert (!error.code);
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       if (bson_iter_init (&col_iter, doc) &&
@@ -585,19 +585,19 @@ test_get_collection_info (void)
           BSON_ITER_HOLDS_UTF8 (&col_iter) &&
           (name = bson_iter_utf8 (&col_iter, NULL))) {
          ++num_infos;
-         assert (0 == strcmp (name, noopts_name));
+         BSON_ASSERT (0 == strcmp (name, noopts_name));
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
    }
 
-   assert (1 == num_infos);
+   BSON_ASSERT (1 == num_infos);
 
    mongoc_cursor_destroy (cursor);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
-   assert (!error.domain);
-   assert (!error.code);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
    bson_free (capped_name);
    bson_free (noopts_name);
@@ -709,7 +709,7 @@ test_get_collection (void)
    mongoc_collection_t *collection;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    database = mongoc_client_get_database (client, "test");
 
@@ -761,12 +761,12 @@ test_get_collection_names (void)
    const char *system_prefix = "system.";
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    database = mongoc_client_get_database (client, dbname);
 
-   assert (database);
+   BSON_ASSERT (database);
    bson_free (dbname);
 
    bson_init (&options);
@@ -779,32 +779,32 @@ test_get_collection_names (void)
 
    collection =
       mongoc_database_create_collection (database, name1, &options, &error);
-   assert (collection);
+   BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
    collection =
       mongoc_database_create_collection (database, name2, &options, &error);
-   assert (collection);
+   BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
    collection =
       mongoc_database_create_collection (database, name3, &options, &error);
-   assert (collection);
+   BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
    collection =
       mongoc_database_create_collection (database, name4, &options, &error);
-   assert (collection);
+   BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
    collection =
       mongoc_database_create_collection (database, name5, &options, &error);
-   assert (collection);
+   BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
    names = mongoc_database_get_collection_names (database, &error);
-   assert (!error.domain);
-   assert (!error.code);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
    for (name = names; *name; ++name) {
       /* inefficient, but OK for a unit test. */
@@ -818,13 +818,13 @@ test_get_collection_names (void)
                  strncmp (curname, system_prefix, strlen (system_prefix))) {
          /* Collections prefixed with 'system.' are system collections */
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
 
       bson_free (curname);
    }
 
-   assert (namecount == 5);
+   BSON_ASSERT (namecount == 5);
 
    bson_free (name1);
    bson_free (name2);
@@ -835,8 +835,8 @@ test_get_collection_names (void)
    bson_free (names);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
-   assert (!error.domain);
-   assert (!error.code);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
@@ -869,7 +869,7 @@ test_get_collection_names_error (void)
       server, "test", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
-   assert (!names);
+   BSON_ASSERT (!names);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM, ==, error.domain);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM_SOCKET, ==, error.code);
 
@@ -888,7 +888,7 @@ test_get_default_database (void)
    mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
    mongoc_database_t *db = mongoc_client_get_default_database (client);
 
-   assert (!strcmp ("db_name", mongoc_database_get_name (db)));
+   BSON_ASSERT (!strcmp ("db_name", mongoc_database_get_name (db)));
 
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
@@ -897,7 +897,7 @@ test_get_default_database (void)
    client = mongoc_client_new ("mongodb://host/");
    db = mongoc_client_get_default_database (client);
 
-   assert (!db);
+   BSON_ASSERT (!db);
 
    mongoc_client_destroy (client);
 }
@@ -911,35 +911,35 @@ test_database_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Database/copy", test_copy);
    TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
    TestSuite_AddLive (suite, "/Database/command", test_command);
-   TestSuite_Add (suite,
-                  "/Database/command/read_prefs/simple/single",
-                  test_db_command_simple_read_prefs_single);
-   TestSuite_Add (suite,
-                  "/Database/command/read_prefs/simple/pooled",
-                  test_db_command_simple_read_prefs_pooled);
-   TestSuite_Add (suite,
-                  "/Database/command/read_prefs/single",
-                  test_db_command_read_prefs_single);
-   TestSuite_Add (suite,
-                  "/Database/command/read_prefs/pooled",
-                  test_db_command_read_prefs_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/command/read_prefs/simple/single",
+                                test_db_command_simple_read_prefs_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/command/read_prefs/simple/pooled",
+                                test_db_command_simple_read_prefs_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/command/read_prefs/single",
+                                test_db_command_read_prefs_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/command/read_prefs/pooled",
+                                test_db_command_read_prefs_pooled);
    TestSuite_AddLive (suite, "/Database/drop", test_drop);
    TestSuite_AddLive (
       suite, "/Database/create_collection", test_create_collection);
    TestSuite_AddLive (
       suite, "/Database/get_collection_info", test_get_collection_info);
-   TestSuite_AddLive (suite,
-                      "/Database/get_collection/op_getmore",
-                      test_get_collection_info_op_getmore);
-   TestSuite_AddLive (suite,
-                      "/Database/get_collection/getmore_cmd",
-                      test_get_collection_info_getmore_cmd);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/get_collection/op_getmore",
+                                test_get_collection_info_op_getmore);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/get_collection/getmore_cmd",
+                                test_get_collection_info_getmore_cmd);
    TestSuite_AddLive (suite, "/Database/get_collection", test_get_collection);
    TestSuite_AddLive (
       suite, "/Database/get_collection_names", test_get_collection_names);
-   TestSuite_AddLive (suite,
-                      "/Database/get_collection_names_error",
-                      test_get_collection_names_error);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/get_collection_names_error",
+                                test_get_collection_names_error);
    TestSuite_Add (
       suite, "/Database/get_default_database", test_get_default_database);
 }

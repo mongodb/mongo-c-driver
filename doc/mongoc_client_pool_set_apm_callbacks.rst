@@ -25,7 +25,7 @@ Parameters
 Returns
 -------
 
-Returns true on success, otherwise false and an error is logged.
+Returns true on success. If any arguments are invalid, returns false and logs an error.
 
 .. include:: includes/mongoc_client_pool_call_once.txt
 

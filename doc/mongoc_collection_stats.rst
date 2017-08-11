@@ -37,7 +37,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-True if successful.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 ``reply`` is always initialized and must be freed with :symbol:`bson:bson_destroy`.
 

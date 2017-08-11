@@ -23,7 +23,7 @@ _test_has_readable_writable_server (bool pooled)
    if (pooled) {
       pool = test_framework_client_pool_new ();
       client = mongoc_client_pool_pop (pool);
-      td = _mongoc_client_pool_get_topology_description (pool);
+      td = &_mongoc_client_pool_get_topology (pool)->description;
    } else {
       client = test_framework_client_new ();
       td = &client->topology->description;

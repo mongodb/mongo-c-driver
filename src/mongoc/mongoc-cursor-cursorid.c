@@ -121,17 +121,20 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
    if (_mongoc_cursor_run_command (cursor, command, &cid->array) &&
        _mongoc_cursor_cursorid_start_batch (cursor)) {
       RETURN (true);
-   } else {
-      if (!cursor->error.domain) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Invalid reply to %s command.",
-                         _mongoc_get_command_name (command));
-      }
-
-      RETURN (false);
    }
+
+   bson_destroy (&cursor->error_doc);
+   bson_copy_to (&cid->array, &cursor->error_doc);
+
+   if (!cursor->error.domain) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid reply to %s command.",
+                      _mongoc_get_command_name (command));
+   }
+
+   RETURN (false);
 }
 
 
@@ -152,9 +155,13 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
        BSON_ITER_HOLDS_DOCUMENT (&cid->batch_iter)) {
       bson_iter_document (&cid->batch_iter, &data_len, &data);
 
-      if (bson_init_static (&cid->current_doc, data, data_len)) {
-         *bson = &cid->current_doc;
-      }
+      /* bson_iter_next guarantees valid BSON, so this must succeed */
+      bson_init_static (&cid->current_doc, data, data_len);
+      *bson = &cid->current_doc;
+
+      cursor->end_of_event = false;
+   } else {
+      cursor->end_of_event = true;
    }
 }
 
@@ -191,8 +198,10 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
 
    /* See find, getMore, and killCursors Spec for batchSize rules */
    if (batch_size) {
-      bson_append_int64 (
-         command, MONGOC_CURSOR_BATCH_SIZE, MONGOC_CURSOR_BATCH_SIZE_LEN, abs (_mongoc_n_return (cursor)));
+      bson_append_int64 (command,
+                         MONGOC_CURSOR_BATCH_SIZE,
+                         MONGOC_CURSOR_BATCH_SIZE_LEN,
+                         abs (_mongoc_n_return (cursor)));
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable
@@ -210,8 +219,10 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       max_await_time_ms =
          (int32_t) mongoc_cursor_get_max_await_time_ms (cursor);
       if (max_await_time_ms) {
-         bson_append_int32 (
-            command, MONGOC_CURSOR_MAX_TIME_MS, MONGOC_CURSOR_MAX_TIME_MS_LEN, max_await_time_ms);
+         bson_append_int32 (command,
+                            MONGOC_CURSOR_MAX_TIME_MS,
+                            MONGOC_CURSOR_MAX_TIME_MS_LEN,
+                            max_await_time_ms);
       }
    }
 

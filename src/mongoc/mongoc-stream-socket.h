@@ -21,6 +21,7 @@
 #error "Only <mongoc.h> can be included directly."
 #endif
 
+#include "mongoc-macros.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream.h"
 
@@ -31,9 +32,9 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t;
 
 
-BSON_EXPORT (mongoc_stream_t *)
+MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_stream_socket_new (mongoc_socket_t *socket);
-BSON_EXPORT (mongoc_socket_t *)
+MONGOC_EXPORT (mongoc_socket_t *)
 mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);
 
 

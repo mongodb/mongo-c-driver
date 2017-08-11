@@ -14,6 +14,8 @@ Synopsis
 
 Queue an insert of a single document into a bulk operation. The insert is not performed until :symbol:`mongoc_bulk_operation_execute()` is called.
 
+This function is superseded by :symbol:`mongoc_bulk_operation_insert_with_opts()`.
+
 Parameters
 ----------
 

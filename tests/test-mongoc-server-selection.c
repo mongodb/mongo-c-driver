@@ -27,16 +27,16 @@ test_rtt_calculation_cb (bson_t *test)
    mongoc_server_description_init (description, "localhost:27017", 1);
 
    /* parse RTT into server description */
-   assert (bson_iter_init_find (&iter, test, "avg_rtt_ms"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "avg_rtt_ms"));
    description->round_trip_time_msec = bson_iter_int64 (&iter);
 
    /* update server description with new rtt */
-   assert (bson_iter_init_find (&iter, test, "new_rtt_ms"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "new_rtt_ms"));
    mongoc_server_description_update_rtt (description, bson_iter_int64 (&iter));
 
    /* ensure new RTT was calculated correctly */
-   assert (bson_iter_init_find (&iter, test, "new_avg_rtt"));
-   assert (description->round_trip_time_msec == bson_iter_int64 (&iter));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "new_avg_rtt"));
+   BSON_ASSERT (description->round_trip_time_msec == bson_iter_int64 (&iter));
 
    mongoc_server_description_destroy (description);
 }

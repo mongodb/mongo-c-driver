@@ -60,7 +60,7 @@ future_start (future_t *future,
                                  start_routine,
                                  (void *) future);
 
-   assert (!r);
+   BSON_ASSERT (!r);
 }
 
 
@@ -68,8 +68,8 @@ void
 future_resolve (future_t *future, future_value_t return_value)
 {
    mongoc_mutex_lock (&future->mutex);
-   assert (!future->resolved);
-   assert (future->return_value.type == return_value.type);
+   BSON_ASSERT (!future->resolved);
+   BSON_ASSERT (future->return_value.type == return_value.type);
    future->return_value = return_value;
    future->resolved = true;
    mongoc_cond_signal (&future->cond);
@@ -114,7 +114,7 @@ future_wait (future_t *future)
 void
 future_destroy (future_t *future)
 {
-   assert (future->awaited);
+   BSON_ASSERT (future->awaited);
    bson_free (future->argv);
    mongoc_cond_destroy (&future->cond);
    mongoc_mutex_destroy (&future->mutex);

@@ -33,6 +33,11 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-secure-channel"
 
+/* mingw doesn't define this */
+#ifndef SECBUFFER_ALERT
+#define SECBUFFER_ALERT 17
+#endif
+
 
 PCCERT_CONTEXT
 mongoc_secure_channel_setup_certificate_from_file (const char *filename)
@@ -160,8 +165,19 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       NULL,                                    /* pvStructInfo */
       &blob_private_len);                      /* pcbStructInfo */
    if (!success) {
-      MONGOC_ERROR ("Failed to parse private key. Error 0x%.8X",
-                    GetLastError ());
+      LPTSTR msg = NULL;
+      FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM |
+                        FORMAT_MESSAGE_ARGUMENT_ARRAY,
+                     NULL,
+                     GetLastError (),
+                     LANG_NEUTRAL,
+                     (LPTSTR) &msg,
+                     0,
+                     NULL);
+      MONGOC_ERROR (
+         "Failed to parse private key. %s (0x%.8X)", msg, GetLastError ());
+      LocalFree (msg);
       goto fail;
    }
 
@@ -845,6 +861,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
 
          default: {
             LPTSTR msg = NULL;
+
             FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER |
                               FORMAT_MESSAGE_FROM_SYSTEM |
                               FORMAT_MESSAGE_ARGUMENT_ARRAY,

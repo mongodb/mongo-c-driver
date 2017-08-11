@@ -86,6 +86,8 @@ request_new (const mongoc_buffer_t *buffer,
    _mongoc_array_init (&request->docs, sizeof (bson_t *));
 
    switch (request->opcode) {
+   case MONGOC_OPCODE_COMPRESSED:
+      break;
    case MONGOC_OPCODE_QUERY:
       request_from_query (request, &request->request_rpc);
       break;
@@ -131,7 +133,7 @@ request_matches_flags (const request_t *request, mongoc_query_flags_t flags)
 {
    const mongoc_rpc_t *rpc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (rpc->query.flags != flags) {
@@ -159,10 +161,10 @@ request_matches_query (const request_t *request,
    const bson_t *doc;
    bool n_return_equal;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
-   assert (request->docs.len <= 2);
+   BSON_ASSERT (request->docs.len <= 2);
 
    if (request->is_command && !is_command) {
       test_error ("expected query, got command");
@@ -248,7 +250,7 @@ request_matches_insert (const request_t *request,
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
@@ -289,7 +291,7 @@ request_matches_bulk_insert (const request_t *request,
 {
    const mongoc_rpc_t *rpc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
@@ -332,7 +334,7 @@ request_matches_update (const request_t *request,
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_UPDATE) {
@@ -379,7 +381,7 @@ request_matches_delete (const request_t *request,
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_DELETE) {
@@ -420,7 +422,7 @@ request_matches_getmore (const request_t *request,
 {
    const mongoc_rpc_t *rpc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_GET_MORE) {
@@ -459,7 +461,7 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
 {
    const mongoc_rpc_t *rpc;
 
-   assert (request);
+   BSON_ASSERT (request);
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
@@ -617,7 +619,7 @@ query_flags_str (uint32_t flags)
                break;
             case MONGOC_QUERY_NONE:
             default:
-               assert (false);
+               BSON_ASSERT (false);
             }
          }
       }
@@ -640,7 +642,7 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
    memcpy (&len, rpc->query.query, 4);
    len = BSON_UINT32_FROM_LE (len);
    query = bson_new_from_data (rpc->query.query, (size_t) len);
-   assert (query);
+   BSON_ASSERT (query);
    _mongoc_array_append_val (&request->docs, query);
 
    bson_string_append_printf (query_as_str, "%s ", rpc->query.collection);
@@ -665,7 +667,7 @@ request_from_query (request_t *request, const mongoc_rpc_t *rpc)
       memcpy (&len, rpc->query.fields, 4);
       len = BSON_UINT32_FROM_LE (len);
       fields = bson_new_from_data (rpc->query.fields, (size_t) len);
-      assert (fields);
+      BSON_ASSERT (fields);
       _mongoc_array_append_val (&request->docs, fields);
 
       str = bson_as_json (fields, NULL);
@@ -730,7 +732,7 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
    while (pos < end) {
       uint32_t len = length_prefix (pos);
       doc = bson_new_from_data (pos, len);
-      assert (doc);
+      BSON_ASSERT (doc);
       _mongoc_array_append_val (&request->docs, doc);
       pos += len;
    }
@@ -741,7 +743,7 @@ request_from_insert (request_t *request, const mongoc_rpc_t *rpc)
 
    for (i = 0; i < n_documents; i++) {
       str = bson_as_json (request_get_doc (request, (int) i), NULL);
-      assert (str);
+      BSON_ASSERT (str);
       bson_string_append (insert_as_str, str);
       bson_free (str);
 
@@ -789,7 +791,7 @@ update_flags_str (uint32_t flags)
                break;
             case MONGOC_UPDATE_NONE:
             default:
-               assert (false);
+               BSON_ASSERT (false);
             }
          }
       }
@@ -810,7 +812,7 @@ request_from_update (request_t *request, const mongoc_rpc_t *rpc)
    memcpy (&len, rpc->update.selector, 4);
    len = BSON_UINT32_FROM_LE (len);
    doc = bson_new_from_data (rpc->update.selector, (size_t) len);
-   assert (doc);
+   BSON_ASSERT (doc);
    _mongoc_array_append_val (&request->docs, doc);
 
    str = bson_as_json (doc, NULL);
@@ -822,7 +824,7 @@ request_from_update (request_t *request, const mongoc_rpc_t *rpc)
    memcpy (&len, rpc->update.update, 4);
    len = BSON_UINT32_FROM_LE (len);
    doc = bson_new_from_data (rpc->update.update, (size_t) len);
-   assert (doc);
+   BSON_ASSERT (doc);
    _mongoc_array_append_val (&request->docs, doc);
 
    str = bson_as_json (doc, NULL);
@@ -861,7 +863,7 @@ request_from_delete (request_t *request, const mongoc_rpc_t *rpc)
    memcpy (&len, rpc->delete_.selector, 4);
    len = BSON_UINT32_FROM_LE (len);
    doc = bson_new_from_data (rpc->delete_.selector, (size_t) len);
-   assert (doc);
+   BSON_ASSERT (doc);
    _mongoc_array_append_val (&request->docs, doc);
 
    str = bson_as_json (doc, NULL);
@@ -882,7 +884,7 @@ static void
 request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc)
 {
    /* protocol allows multiple cursor ids but we only implement one */
-   assert (rpc->kill_cursors.n_cursors == 1);
+   BSON_ASSERT (rpc->kill_cursors.n_cursors == 1);
    request->as_str = bson_strdup_printf ("OP_KILLCURSORS %" PRId64,
                                          rpc->kill_cursors.cursors[0]);
 }

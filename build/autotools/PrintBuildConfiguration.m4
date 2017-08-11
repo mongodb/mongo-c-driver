@@ -26,6 +26,10 @@ if test x"${enable_automatic_init_and_cleanup}" != x"no"; then
   automatic_init_deprecated="
       DEPRECATED: use --disable-automatic-init-and-cleanup"
 fi
+if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
+  experimental_features="
+  Feature #1                                       : ${enable_feature_1}"
+fi
 
 echo "
 libmongoc $MONGOC_VERSION was configured with the following options:
@@ -42,8 +46,10 @@ Build configuration:
   Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
+  Snappy Compression                               : ${with_snappy}
+  Zlib Compression                                 : ${with_zlib}
   Libbson                                          : ${with_libbson}
-
+${experimental_features}
 Documentation:
   man                                              : ${enable_man_pages}
   HTML                                             : ${enable_html_docs}

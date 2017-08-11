@@ -28,7 +28,7 @@ Adds update argument to the builder.
 Returns
 -------
 
-Returns true if it successfully added the option to the builder.
+Returns ``true`` if it successfully added the option to the builder, otherwise ``false``.
 
 Setting update
 --------------

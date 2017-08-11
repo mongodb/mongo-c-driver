@@ -37,6 +37,20 @@ LT_INIT
 
 m4_include([build/autotools/ReadCommandLineArguments.m4])
 m4_include([build/autotools/CheckSasl.m4])
+#if test "x$MONGOC_36_EXPERIMENT" = "xyes"; then
+# m4_include([build/autotools/feature.m4])
+#else
+# AC_SUBST(MONGOC_FEATURE, 0)
+# enable_feature_1=no
+#fi
+m4_include([build/autotools/CheckSnappy.m4])
+m4_include([build/autotools/CheckZlib.m4])
+
+if test "x$with_zlib" != "xno" -o "x$with_snappy" != "xno"; then
+   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
+else
+   AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
+fi
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
 m4_include([build/autotools/MaintainerFlags.m4])
@@ -54,10 +68,18 @@ AC_SUBST(MONGOC_CC)
 AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
+# Substitute our dependencies into the pkg-config files.
+AC_SUBST(MONGOC_LIBS, "${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${ZLIB_LIBS} ${SNAPPY_LIBS}")
+
 AC_CONFIG_FILES([
     Makefile
     src/libmongoc-1.0.pc
+    src/libmongoc-static-1.0.pc
     src/libmongoc-ssl-1.0.pc
+    build/cmake/libmongoc-1.0-config-version.cmake
+    build/cmake/libmongoc-static-1.0-config.cmake
+    build/cmake/libmongoc-1.0-config.cmake
+    build/cmake/libmongoc-static-1.0-config-version.cmake
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
 ])

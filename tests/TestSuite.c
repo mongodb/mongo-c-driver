@@ -17,7 +17,6 @@
 #include <bson.h>
 #include <mongoc.h>
 
-#include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
 
@@ -56,7 +55,6 @@ static mongoc_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
 
 
-#define TEST_VERBOSE (1 << 0)
 #define TEST_NOFORK (1 << 1)
 #define TEST_HELPONLY (1 << 2)
 #define TEST_DEBUGOUTPUT (1 << 3)
@@ -188,7 +186,7 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
    unsigned seed;
    if (fd != -1) {
       n_read = read (fd, &seed, 4);
-      assert (n_read == 4);
+      BSON_ASSERT (n_read == 4);
       close (fd);
       test->seed = seed;
       return;
@@ -218,15 +216,13 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 
    memset (suite, 0, sizeof *suite);
 
-   suite->name = strdup (name);
+   suite->name = bson_strdup (name);
    suite->flags = 0;
-   suite->prgname = strdup (argv[0]);
+   suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
 
    for (i = 0; i < argc; i++) {
-      if (0 == strcmp ("-v", argv[i])) {
-         suite->flags |= TEST_VERBOSE;
-      } else if (0 == strcmp ("-d", argv[i])) {
+      if (0 == strcmp ("-d", argv[i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
       } else if ((0 == strcmp ("-f", argv[i])) ||
                  (0 == strcmp ("--no-fork", argv[i]))) {
@@ -268,7 +264,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
             test_error ("-l requires an argument.");
             exit (EXIT_FAILURE);
          }
-         suite->testname = strdup (argv[++i]);
+         suite->testname = bson_strdup (argv[++i]);
       }
    }
 
@@ -299,7 +295,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          abort ();
       }
 
-      suite->flags &= ~(TEST_DEBUGOUTPUT | TEST_VERBOSE);
+      suite->flags &= ~(TEST_DEBUGOUTPUT);
    }
 
    mongoc_once (&once, &_test_suite_ensure_mutex_once);
@@ -319,6 +315,21 @@ static int
 TestSuite_CheckDummy (void)
 {
    return 1;
+}
+
+int
+TestSuite_CheckMockServerAllowed (void)
+{
+   if (test_framework_getenv_bool ("MONGOC_TEST_SKIP_MOCK")) {
+      return 0;
+   }
+
+   /* CDRIVER-2115: don't run mock server tests on 32-bit */
+   if (sizeof (void *) * 8 >= 64) {
+      return 1;
+   } else {
+      return 0;
+   }
 }
 
 static void
@@ -358,6 +369,14 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
 
 
 void
+TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func)
+{
+   TestSuite_AddFull (
+      suite, name, (void *) func, NULL, NULL, TestSuite_CheckMockServerAllowed);
+}
+
+
+void
 TestSuite_AddWC (TestSuite *suite,  /* IN */
                  const char *name,  /* IN */
                  TestFuncWC func,   /* IN */
@@ -380,7 +399,7 @@ TestSuite_AddFull (TestSuite *suite,  /* IN */
    Test *iter;
 
    test = (Test *) calloc (1, sizeof *test);
-   test->name = strdup (name);
+   test->name = bson_strdup (name);
    test->func = func;
    test->check = check;
    test->next = NULL;
@@ -587,7 +606,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
        */
 
       if (suite->flags & TEST_DEBUGOUTPUT) {
-         test_msg ("Begin %s", name);
+         test_msg ("Begin %s, seed %u", name, test->seed);
       }
 
       if ((suite->flags & TEST_NOFORK)) {
@@ -689,7 +708,6 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
             "error).\n"
             "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
             "\"/Client/*\".\n"
-            "    -v            Be verbose with logs.\n"
             "    -s, --silent  Suppress all output.\n"
             "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
             "    -d            Print debug output (useful if a test hangs).\n"
@@ -800,6 +818,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"addr\": { \"host\": \"%s\", \"port\": %d, \"uri\": \"%s\" },\n"
             "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
             "  \"uds\": \"%s\", \n"
+            "  \"compressors\": \"%s\", \n"
             "  \"SSL\": {\n"
             "    \"enabled\": %s,\n"
             "    \"weak_cert_validation\": %s,\n"
@@ -830,6 +849,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             egetenv ("MONGOC_TEST_GSSAPI_HOST"),
             egetenv ("MONGOC_TEST_GSSAPI_USER"),
             udspath,
+            egetenv ("MONGOC_TEST_COMPRESSORS"),
             ssl ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION")
                ? "true"

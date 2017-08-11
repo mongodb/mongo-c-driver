@@ -415,14 +415,14 @@ test_sdam_monitoring_cb (bson_t *test)
    context_t context;
 
    /* parse out the uri and use it to create a client */
-   assert (bson_iter_init_find (&iter, test, "uri"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
    topology = client->topology;
    context_init (&context);
    client_set_topology_event_callbacks (client, &context);
 
    /* for each phase, parse and validate */
-   assert (bson_iter_init_find (&iter, test, "phases"));
+   BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
    bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
@@ -436,7 +436,7 @@ test_sdam_monitoring_cb (bson_t *test)
                                             &client->topology->description);
 
       /* parse out "outcome" and validate */
-      assert (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
+      BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
       bson_iter_bson (&phase_field_iter, &outcome);
       bson_iter_init (&outcome_iter, &outcome);
 
@@ -448,7 +448,7 @@ test_sdam_monitoring_cb (bson_t *test)
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
                      bson_iter_key (&outcome_iter));
-            assert (false);
+            BSON_ASSERT (false);
          }
       }
    }
@@ -680,19 +680,19 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/pooled",
       test_topology_events_pooled);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
       test_heartbeat_events_single_succeeded);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/failed",
       test_heartbeat_events_single_failed);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
       test_heartbeat_events_pooled_succeeded);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
       test_heartbeat_events_pooled_failed);

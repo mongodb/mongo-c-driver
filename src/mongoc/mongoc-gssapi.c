@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2017 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_OPCODE_PRIVATE_H
-#define MONGOC_OPCODE_PRIVATE_H
+#include "mongoc-config.h"
 
-#include "mongoc-opcode.h"
+#ifdef MONGOC_ENABLE_SASL_GSSAPI
+#include "mongoc-gssapi-private.h"
+#include "mongoc-trace-private.h"
 
-bool
-_mongoc_opcode_needs_primary (mongoc_opcode_t opcode);
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "GSSAPI"
 
-#endif /* MONGOC_OPCODE_PRIVATE_H */
+/* ... */
+
+#endif

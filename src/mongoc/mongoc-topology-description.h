@@ -18,20 +18,22 @@
 #define MONGOC_TOPOLOGY_DESCRIPTION_H
 
 #include <bson.h>
+
+#include "mongoc-macros.h"
 #include "mongoc-read-prefs.h"
 
 
 typedef struct _mongoc_topology_description_t mongoc_topology_description_t;
 
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_topology_description_has_readable_server (
    mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs);
-BSON_EXPORT (bool)
+MONGOC_EXPORT (bool)
 mongoc_topology_description_has_writable_server (
    mongoc_topology_description_t *td);
-BSON_EXPORT (const char *)
+MONGOC_EXPORT (const char *)
 mongoc_topology_description_type (const mongoc_topology_description_t *td);
-BSON_EXPORT (mongoc_server_description_t **)
+MONGOC_EXPORT (mongoc_server_description_t **)
 mongoc_topology_description_get_servers (
    const mongoc_topology_description_t *td, size_t *n);
 

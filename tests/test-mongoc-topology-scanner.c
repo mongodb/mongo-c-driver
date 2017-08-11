@@ -33,9 +33,9 @@ test_topology_scanner_helper (uint32_t id,
    }
 
    /* mock servers are configured to return their ids as max wire version */
-   assert (bson);
-   assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   BSON_ASSERT (bson);
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    max_wire_version = (uint32_t) bson_iter_int32 (&iter);
    ASSERT_CMPINT (max_wire_version, ==, id);
 
@@ -92,11 +92,11 @@ _test_topology_scanner (bool with_ssl)
 
    for (i = 0; i < 3; i++) {
       mongoc_topology_scanner_start (topology_scanner, TIMEOUT, false);
-      mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
+      mongoc_topology_scanner_work (topology_scanner);
       mongoc_topology_scanner_reset (topology_scanner);
    }
 
-   assert (finished == 0);
+   BSON_ASSERT (finished == 0);
 
    mongoc_topology_scanner_destroy (topology_scanner);
 
@@ -164,7 +164,7 @@ test_topology_scanner_discovery (void)
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
 
-   uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (primary));
    client = mongoc_client_new (uri_str);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -242,13 +242,13 @@ test_topology_scanner_oscillate (void)
                           mock_server_get_host_and_port (server0));
 
    /* start with server 0 */
-   uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
+   uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (server0));
    client = mongoc_client_new (uri_str);
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   assert (!scanner->async->ncmds);
+   BSON_ASSERT (!scanner->async->ncmds);
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
@@ -266,8 +266,8 @@ test_topology_scanner_oscillate (void)
    /* we don't schedule another check of server0 */
    _mongoc_usleep (250 * 1000);
 
-   assert (!future_get_mongoc_server_description_ptr (future));
-   assert (scanner->async->ncmds == 0);
+   BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
+   BSON_ASSERT (scanner->async->ncmds == 0);
 
    future_destroy (future);
    request_destroy (request);
@@ -319,7 +319,7 @@ test_topology_scanner_socket_timeout (void)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10);
    client = mongoc_client_new_from_uri (uri);
 
    ASSERT (!mongoc_client_command_simple (
@@ -382,7 +382,7 @@ test_topology_scanner_blocking_initiator (void)
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    client = mongoc_client_new_from_uri (uri);
 
    /* pretend last host in linked list is slow */
@@ -404,23 +404,25 @@ test_topology_scanner_blocking_initiator (void)
 void
 test_topology_scanner_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
+   TestSuite_AddMockServerTest (
+      suite, "/TOPOLOGY/scanner", test_topology_scanner);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
+   TestSuite_AddMockServerTest (
+      suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
 #ifndef _WIN32
    TestSuite_Add (suite,
                   "/TOPOLOGY/scanner_connection_error",
                   test_topology_scanner_connection_error);
 #endif
-   TestSuite_Add (suite,
-                  "/TOPOLOGY/scanner_socket_timeout",
-                  test_topology_scanner_socket_timeout);
-   TestSuite_Add (suite,
-                  "/TOPOLOGY/blocking_initiator",
-                  test_topology_scanner_blocking_initiator);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/scanner_socket_timeout",
+                                test_topology_scanner_socket_timeout);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/blocking_initiator",
+                                test_topology_scanner_blocking_initiator);
 }

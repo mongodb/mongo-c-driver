@@ -35,7 +35,7 @@ test_aggregate_w_write_concern (void *context)
    opts = bson_new ();
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
    ASSERT (mongoc_client_set_error_api (client, 2));
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -467,7 +467,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    r = mongoc_collection_insert (
       collection, MONGOC_INSERT_NONE, tmp_bson ("{'a.b': 1}"), NULL, &error);
@@ -475,7 +475,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -499,10 +499,10 @@ test_insert_oversize (void *ctx)
    collection = get_test_collection (client, "test_insert_oversize");
 
    /* two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
 
@@ -825,7 +825,7 @@ receive_bulk (mock_server_t *server, int n, mongoc_insert_flags_t flags)
    request_t *request;
 
    request = mock_server_receives_bulk_insert (server, "test.test", flags, n);
-   assert (request);
+   BSON_ASSERT (request);
    request_destroy (request);
 
    request = mock_server_receives_gle (server, "test");
@@ -1064,12 +1064,12 @@ _test_legacy_bulk_insert (const bson_t **bsons,
    }
 
    /* mongoc_collection_insert_bulk returns false, there was an error */
-   assert (!future_get_bool (future));
+   BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, err_msg);
 
    gle = mongoc_collection_get_last_error (collection);
-   assert (gle);
+   BSON_ASSERT (gle);
 
    ASSERT_MATCH (gle, gle_json_formatted);
 
@@ -1251,7 +1251,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    r = mongoc_collection_save (
       collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
@@ -1262,7 +1262,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid keys");
+                          "contains invalid key");
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -1491,10 +1491,10 @@ test_update_oversize (void *ctx)
    collection = get_test_collection (client, "test_update_oversize");
 
    /* first test oversized selector. two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &huge, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &huge, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
    r = mongoc_collection_update (
@@ -1507,9 +1507,9 @@ test_update_oversize (void *ctx)
    huger = bson_malloc (huger_sz + 1);
    memset (huger, 'a', huger_sz);
    huger[huger_sz] = '\0';
-   assert (BSON_APPEND_DOCUMENT_BEGIN (&huge_update, "$set", &child));
-   assert (bson_append_utf8 (&child, "x", 1, huger, (int) huger_sz));
-   assert (bson_append_document_end (&huge_update, &child));
+   BSON_ASSERT (BSON_APPEND_DOCUMENT_BEGIN (&huge_update, "$set", &child));
+   BSON_ASSERT (bson_append_utf8 (&child, "x", 1, huger, (int) huger_sz));
+   BSON_ASSERT (bson_append_document_end (&huge_update, &child));
 
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &empty, &huge_update, NULL, &error);
@@ -1596,10 +1596,10 @@ test_remove_oversize (void *ctx)
    collection = get_test_collection (client, "test_remove_oversize");
 
    /* two huge strings make the doc too large */
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "x", 1, huge_string (client), (int) huge_string_length (client)));
 
-   assert (bson_append_utf8 (
+   BSON_ASSERT (bson_append_utf8 (
       &doc, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
    r = mongoc_collection_remove (
@@ -2714,7 +2714,7 @@ test_aggregate_bypass (void *context)
    char *json;
 
    client = test_framework_client_new ();
-   assert (client);
+   BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
    collname = gen_collection_name ("data");
@@ -3023,6 +3023,10 @@ test_aggregate_legacy (void *data)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
    /* wire protocol version 0 */
    server = mock_server_with_autoismaster (0);
    mock_server_run (server);
@@ -3048,13 +3052,13 @@ test_aggregate_legacy (void *data)
                                     context->with_options ? ", 'foo': 1" : "");
 
    mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
    request_destroy (request);
    future_destroy (future);
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -3074,6 +3078,10 @@ test_aggregate_modern (void *data)
    request_t *request;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
    /* wire protocol version 1 */
    server = mock_server_with_autoismaster (1);
@@ -3113,7 +3121,7 @@ test_aggregate_modern (void *data)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
 
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
@@ -3294,7 +3302,7 @@ test_validate (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_collection_validate (collection, &opts, &reply, &error), error);
 
-   assert (bson_iter_init_find (&iter, &reply, "valid"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "valid"));
 
    bson_destroy (&reply);
 
@@ -3307,22 +3315,22 @@ test_validate (void *ctx)
 
    /* invalidate reply */
    reply.len = 0;
-   assert (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
+   BSON_ASSERT (!bson_validate (&reply, BSON_VALIDATE_NONE, NULL));
 
    r = mongoc_collection_validate (collection, &opts, &reply, &error);
-   assert (!r);
-   assert (error.domain == expected_err_domain);
-   assert (error.code == expected_err_code);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (error.domain == expected_err_domain);
+   BSON_ASSERT (error.code == expected_err_code);
 
    /* check that reply has been initialized */
-   assert (bson_validate (&reply, 0, NULL));
+   BSON_ASSERT (bson_validate (&reply, 0, NULL));
 
    /* Make sure we don't segfault when reply is NULL */
    memset (&error, 0, sizeof (error));
    r = mongoc_collection_validate (collection, &opts, NULL, &error);
-   assert (!r);
-   assert (error.domain == expected_err_domain);
-   assert (error.code == expected_err_code);
+   BSON_ASSERT (!r);
+   BSON_ASSERT (error.domain == expected_err_domain);
+   BSON_ASSERT (error.code == expected_err_code);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -3484,10 +3492,10 @@ test_stats (void)
    ASSERT_OR_PRINT (mongoc_collection_stats (collection, NULL, &stats, &error),
                     error);
 
-   assert (bson_iter_init_find (&iter, &stats, "ns"));
+   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "ns"));
 
-   assert (bson_iter_init_find (&iter, &stats, "count"));
-   assert (bson_iter_as_int64 (&iter) >= 1);
+   BSON_ASSERT (bson_iter_init_find (&iter, &stats, "count"));
+   BSON_ASSERT (bson_iter_as_int64 (&iter) >= 1);
 
    bson_destroy (&stats);
 
@@ -3663,19 +3671,19 @@ test_find_and_modify (void)
                                                        &error),
                     error);
 
-   assert (bson_iter_init_find (&iter, &reply, "value"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "superduper"));
-   assert (BSON_ITER_HOLDS_INT32 (&citer));
-   assert (bson_iter_int32 (&citer) == 1234);
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "value"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "superduper"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&citer));
+   BSON_ASSERT (bson_iter_int32 (&citer) == 1234);
 
-   assert (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   assert (bson_iter_recurse (&iter, &citer));
-   assert (bson_iter_find (&citer, "updatedExisting"));
-   assert (BSON_ITER_HOLDS_BOOL (&citer));
-   assert (bson_iter_bool (&citer));
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &citer));
+   BSON_ASSERT (bson_iter_find (&citer, "updatedExisting"));
+   BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&citer));
+   BSON_ASSERT (bson_iter_bool (&citer));
 
    bson_destroy (&reply);
    bson_destroy (update);
@@ -3729,14 +3737,14 @@ test_large_return (void *ctx)
 
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
-   assert (cursor);
+   BSON_ASSERT (cursor);
    bson_destroy (&query);
 
    ASSERT_CURSOR_NEXT (cursor, &doc);
-   assert (doc);
+   BSON_ASSERT (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    mongoc_cursor_destroy (cursor);
 
@@ -3790,26 +3798,26 @@ test_many_return (void)
 
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
-   assert (cursor);
-   assert (mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (mongoc_cursor_is_alive (cursor));
    bson_destroy (&query);
 
    i = 0;
 
    while (mongoc_cursor_next (cursor, &doc)) {
-      assert (doc);
+      BSON_ASSERT (doc);
       i++;
-      assert (mongoc_cursor_is_alive (cursor));
+      BSON_ASSERT (mongoc_cursor_is_alive (cursor));
    }
 
-   assert (i == N_BSONS);
+   BSON_ASSERT (i == N_BSONS);
 
-   assert (!mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
-   assert (!mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (!r);
+   BSON_ASSERT (!mongoc_cursor_is_alive (cursor));
    /* mongoc_cursor_next after done is considered an error */
-   assert (mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CURSOR,
                           MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -3863,7 +3871,7 @@ test_find_limit (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3885,7 +3893,7 @@ test_find_limit (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3934,7 +3942,7 @@ test_find_batch_size (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3956,7 +3964,7 @@ test_find_batch_size (void)
                                          NULL);
 
    mock_server_replies_simple (request, "{}");
-   assert (future_get_bool (future));
+   BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
    request_destroy (request);
@@ -3992,7 +4000,7 @@ test_command_fq (void *context)
                                    NULL,
                                    NULL);
    r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
+   BSON_ASSERT (r);
 
    if (bson_iter_init_find (&iter, doc, "db") && BSON_ITER_HOLDS_UTF8 (&iter)) {
       ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
@@ -4003,7 +4011,7 @@ test_command_fq (void *context)
 
 
    r = mongoc_cursor_next (cursor, &doc);
-   assert (!r);
+   BSON_ASSERT (!r);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -4068,14 +4076,14 @@ test_get_index_info (void)
           bson_iter_find (&idx_spec_iter, "name") &&
           BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
           (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
-         assert (0 == strcmp (cur_idx_name, id_idx_name));
+         BSON_ASSERT (0 == strcmp (cur_idx_name, id_idx_name));
          ++num_idxs;
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
    }
 
-   assert (1 == num_idxs);
+   BSON_ASSERT (1 == num_idxs);
 
    mongoc_cursor_destroy (cursor);
 
@@ -4132,11 +4140,11 @@ test_get_index_info (void)
 
          ++num_idxs;
       } else {
-         assert (false);
+         BSON_ASSERT (false);
       }
    }
 
-   assert (3 == num_idxs);
+   BSON_ASSERT (3 == num_idxs);
 
    mongoc_cursor_destroy (cursor);
 
@@ -4169,7 +4177,7 @@ test_find_indexes_err (void)
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listIndexes': 'collection'}");
 
    mock_server_replies_simple (request, "{'ok': 0, 'code': 1234567}");
-   assert (NULL == future_get_mongoc_cursor_ptr (future));
+   BSON_ASSERT (NULL == future_get_mongoc_cursor_ptr (future));
 
    request_destroy (request);
    future_destroy (future);
@@ -4452,6 +4460,86 @@ test_getmore_read_concern_live (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+test_aggregate_secondary (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *pref;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "aggregate_secondary");
+   pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("[]"), NULL, pref);
+
+   ASSERT (cursor);
+   mongoc_cursor_next (cursor, &doc);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   if (test_framework_is_replset ()) {
+      ASSERT (test_framework_server_is_secondary (
+         client, mongoc_cursor_get_hint (cursor)));
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_aggregate_secondary_sharded (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *pref;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   server = mock_mongos_new (2 /* wire version */);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("[]"), NULL, pref);
+
+   ASSERT (cursor);
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'aggregate': 'collection', 'pipeline': []},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_simple (request,
+                               "{ 'ok':1,"
+                               "  'cursor': {"
+                               "     'id': 0,"
+                               "     'ns': 'db.collection',"
+                               "     'firstBatch': []}}");
+
+   ASSERT (!future_get_bool (future)); /* cursor_next returns false */
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (pref);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 
 static void
 test_aggregate_read_concern (void)
@@ -4502,7 +4590,7 @@ test_aggregate_read_concern (void)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
    future_destroy (future);
@@ -4542,7 +4630,7 @@ test_aggregate_read_concern (void)
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */
-   assert (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    mongoc_cursor_destroy (cursor);
    request_destroy (request);
    future_destroy (future);
@@ -4600,7 +4688,7 @@ test_aggregate_with_collation (int wire)
       ASSERT (future_get_bool (future));
       ASSERT_MATCH (doc, "{'_id': 123}");
       /* cursor is completed */
-      assert (!mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
       request_destroy (request);
    } else {
       ASSERT (!future_get_bool (future));
@@ -4735,7 +4823,7 @@ test_insert_duplicate_key (void)
 }
 
 static void
-test_create_index_fail (void)
+test_create_index_fail (void *context)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -4743,7 +4831,8 @@ test_create_index_fail (void)
    bson_t reply;
    bson_error_t error;
 
-   client = mongoc_client_new ("mongodb://example.com/?connectTimeoutMS=10");
+   client =
+      mongoc_client_new ("mongodb://example.doesntexist/?connectTimeoutMS=10");
    collection = mongoc_client_get_collection (client, "test", "test");
    r = mongoc_collection_create_index_with_opts (
       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &reply, &error);
@@ -4752,7 +4841,7 @@ test_create_index_fail (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "connection timeout");
+                          "No suitable servers");
 
    /* reply was initialized */
    ASSERT (bson_empty (&reply));
@@ -4777,27 +4866,32 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/large",
-                  test_legacy_bulk_insert_large);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_middle",
-                  test_legacy_bulk_insert_oversized_middle);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_middle_continue",
-                  test_legacy_bulk_insert_oversized_continue_middle);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_first",
-                  test_legacy_bulk_insert_oversized_first);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_first_continue",
-                  test_legacy_bulk_insert_oversized_first_continue);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_last",
-                  test_legacy_bulk_insert_oversized_last);
-   TestSuite_Add (suite,
-                  "/Collection/bulk_insert/legacy/oversized_last_continue",
-                  test_legacy_bulk_insert_oversized_last_continue);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/bulk_insert/legacy/large",
+                                test_legacy_bulk_insert_large);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_middle",
+      test_legacy_bulk_insert_oversized_middle);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_middle_continue",
+      test_legacy_bulk_insert_oversized_continue_middle);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_first",
+      test_legacy_bulk_insert_oversized_first);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_first_continue",
+      test_legacy_bulk_insert_oversized_first_continue);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/bulk_insert/legacy/oversized_last",
+                                test_legacy_bulk_insert_oversized_last);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/bulk_insert/legacy/oversized_last_continue",
+      test_legacy_bulk_insert_oversized_last_continue);
 
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
@@ -4807,10 +4901,11 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
-   TestSuite_Add (suite,
-                  "/Collection/insert/oversize/mongos",
-                  test_legacy_insert_oversize_mongos);
-   TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/insert/oversize/mongos",
+                                test_legacy_insert_oversize_mongos);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_AddLive (suite, "/Collection/save", test_save);
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
@@ -4818,10 +4913,10 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/index", test_index);
    TestSuite_AddLive (
       suite, "/Collection/index_w_write_concern", test_index_w_write_concern);
-   TestSuite_Add (suite,
-                  "/Collection/index/collation/wire4",
-                  test_index_with_collation_fail);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/index/collation/wire4",
+                                test_index_with_collation_fail);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/index/collation/wire5", test_index_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
@@ -4848,14 +4943,16 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/count", test_count);
-   TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
-   TestSuite_Add (suite, "/Collection/count/read_pref", test_count_read_pref);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/count_with_opts", test_count_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/count/read_pref", test_count_read_pref);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/count/read_concern", test_count_read_concern);
-   TestSuite_Add (suite,
-                  "/Collection/count/collation/wire4",
-                  test_count_with_collation_fail);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/count/collation/wire4",
+                                test_count_with_collation_fail);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/count/collation/wire5", test_count_with_collation_ok);
    TestSuite_AddFull (suite,
                       "/Collection/count/read_concern_live",
@@ -4865,12 +4962,17 @@ test_collection_install (TestSuite *suite)
                       mongod_supports_majority_read_concern);
    TestSuite_AddLive (suite, "/Collection/drop", test_drop);
    TestSuite_AddLive (suite, "/Collection/aggregate", test_aggregate);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/inherit/collection",
-                  test_aggregate_inherit_collection);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/inherit/collection",
+                                test_aggregate_inherit_collection);
    TestSuite_AddLive (
       suite, "/Collection/aggregate/large", test_aggregate_large);
-   TestSuite_Add (
+   TestSuite_AddLive (
+      suite, "/Collection/aggregate/secondary", test_aggregate_secondary);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/secondary/sharded",
+                                test_aggregate_secondary_sharded);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate/bypass_document_validation",
@@ -4878,17 +4980,17 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/collation/wire4",
-                  test_aggregate_with_collation_fail);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate/collation/wire5",
-                  test_aggregate_with_collation_ok);
-   TestSuite_AddLive (
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/collation/wire4",
+                                test_aggregate_with_collation_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/collation/wire5",
+                                test_aggregate_with_collation_ok);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/aggregate_w_server_id", test_aggregate_w_server_id);
-   TestSuite_Add (suite,
-                  "/Collection/aggregate_w_server_id/sharded",
-                  test_aggregate_w_server_id_sharded);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate_w_server_id/sharded",
+                                test_aggregate_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate_w_server_id/option",
                       test_aggregate_server_id_option,
@@ -4903,8 +5005,9 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/rename", test_rename);
    TestSuite_AddLive (suite, "/Collection/stats", test_stats);
-   TestSuite_Add (suite, "/Collection/stats/read_pref", test_stats_read_pref);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/stats/read_pref", test_stats_read_pref);
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_read_concern", test_find_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/getmore_read_concern_live",
@@ -4914,12 +5017,13 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (
       suite, "/Collection/find_and_modify", test_find_and_modify);
-   TestSuite_Add (suite,
-                  "/Collection/find_and_modify/write_concern",
-                  test_find_and_modify_write_concern_wire_32);
-   TestSuite_Add (suite,
-                  "/Collection/find_and_modify/write_concern_pre_32",
-                  test_find_and_modify_write_concern_wire_pre_32);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/find_and_modify/write_concern",
+                                test_find_and_modify_write_concern_wire_32);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Collection/find_and_modify/write_concern_pre_32",
+      test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite,
                       "/Collection/large_return",
                       test_large_return,
@@ -4927,8 +5031,9 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
-   TestSuite_Add (suite, "/Collection/limit", test_find_limit);
-   TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
+   TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/batch_size", test_find_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/command_fully_qualified",
                       test_command_fq,
@@ -4936,10 +5041,14 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/get_index_info", test_get_index_info);
-   TestSuite_Add (
+   TestSuite_AddMockServerTest (
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
-   TestSuite_Add (
-      suite, "/Collection/create_index/fail", test_create_index_fail);
+   TestSuite_AddFull (suite,
+                      "/Collection/create_index/fail",
+                      test_create_index_fail,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_offline);
 }

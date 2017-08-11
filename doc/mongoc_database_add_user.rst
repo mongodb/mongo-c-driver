@@ -38,5 +38,5 @@ Errors are returned through the ``error`` parameter and can include socket or ot
 Returns
 -------
 
-This function shall return ``true`` if the user was successfully added. In the event of an error, it returns ``false`` and ``error`` is set.
+Returns ``true`` if the user was successfully added. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 

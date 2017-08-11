@@ -26,3 +26,7 @@ Returns
 
 A string which should not be modified or freed.
 
+.. only:: html
+
+  .. taglist:: See Also:
+    :tags: authmechanism

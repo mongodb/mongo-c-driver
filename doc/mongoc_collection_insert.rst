@@ -39,7 +39,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-true if the document was successfully inserted, otherwise false and ``error`` is set.
+Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 A write concern timeout or write concern error is considered a failure.
 

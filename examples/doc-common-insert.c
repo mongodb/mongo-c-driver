@@ -41,7 +41,7 @@ void
 print_res (const bson_t *reply)
 {
    BSON_ASSERT (reply);
-   char *str = bson_as_json (reply, NULL);
+   char *str = bson_as_canonical_extended_json (reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
 }

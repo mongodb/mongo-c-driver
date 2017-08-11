@@ -24,5 +24,4 @@ Returns the currently set read concern.
 Returns
 -------
 
-Returns the current readConcern. If none is set, returns empty string.
-
+Returns the current readConcern. If none is set, returns NULL.

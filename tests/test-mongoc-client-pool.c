@@ -14,10 +14,10 @@ test_mongoc_client_pool_basic (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
-   assert (client);
+   BSON_ASSERT (client);
    mongoc_client_pool_push (pool, client);
    mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
@@ -31,11 +31,11 @@ test_mongoc_client_pool_try_pop (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
-   assert (client);
-   assert (!mongoc_client_pool_try_pop (pool));
+   BSON_ASSERT (client);
+   BSON_ASSERT (!mongoc_client_pool_try_pop (pool));
    mongoc_client_pool_push (pool, client);
    mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
@@ -59,13 +59,13 @@ test_mongoc_client_pool_min_size_zero (void)
    mongoc_client_pool_push (pool, client2);
    mongoc_client_pool_push (pool, client1);
 
-   assert (mongoc_client_pool_get_size (pool) == 2);
+   BSON_ASSERT (mongoc_client_pool_get_size (pool) == 2);
    client3 = mongoc_client_pool_pop (pool);
 
    /* min pool size zero means "no min", so clients weren't destroyed */
-   assert (client3 == client1);
+   BSON_ASSERT (client3 == client1);
    client4 = mongoc_client_pool_pop (pool);
-   assert (client4 == client2);
+   BSON_ASSERT (client4 == client2);
 
    mongoc_client_pool_push (pool, client4);
    mongoc_client_pool_push (pool, client3);
@@ -81,23 +81,23 @@ test_mongoc_client_pool_min_size_dispose (void)
    mongoc_uri_t *uri;
    mongoc_client_t *c0, *c1, *c2, *c3;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?minpoolsize=2");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?minpoolsize=2");
    pool = mongoc_client_pool_new (uri);
 
    c0 = mongoc_client_pool_pop (pool);
-   assert (c0);
+   BSON_ASSERT (c0);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 1);
 
    c1 = mongoc_client_pool_pop (pool);
-   assert (c1);
+   BSON_ASSERT (c1);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
 
    c2 = mongoc_client_pool_pop (pool);
-   assert (c2);
+   BSON_ASSERT (c2);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 3);
 
    c3 = mongoc_client_pool_pop (pool);
-   assert (c3);
+   BSON_ASSERT (c3);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 4);
 
    mongoc_client_pool_push (pool, c0); /* queue is [c0] */
@@ -116,14 +116,14 @@ test_mongoc_client_pool_min_size_dispose (void)
    ASSERT_CMPSIZE_T (mongoc_client_pool_num_pushed (pool), ==, (size_t) 2);
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
 
-   /* assert oldest client was destroyed, newest were stored */
+   /* BSON_ASSERT oldest client was destroyed, newest were stored */
    client = mongoc_client_pool_pop (pool);
-   assert (client);
-   assert (client == c3);
+   BSON_ASSERT (client);
+   BSON_ASSERT (client == c3);
 
    client = mongoc_client_pool_pop (pool);
-   assert (client);
-   assert (client == c2);
+   BSON_ASSERT (client);
+   BSON_ASSERT (client == c2);
 
    ASSERT_CMPSIZE_T (mongoc_client_pool_get_size (pool), ==, (size_t) 2);
 
@@ -145,23 +145,23 @@ test_mongoc_client_pool_set_max_size (void)
 
    _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 5; i++) {
       client = mongoc_client_pool_pop (pool);
-      assert (client);
+      BSON_ASSERT (client);
       _mongoc_array_append_val (&conns, client);
-      assert (mongoc_client_pool_get_size (pool) == i + 1);
+      BSON_ASSERT (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
    mongoc_client_pool_max_size (pool, 3);
 
-   assert (mongoc_client_pool_try_pop (pool) == NULL);
+   BSON_ASSERT (mongoc_client_pool_try_pop (pool) == NULL);
 
    for (i = 0; i < 5; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
-      assert (client);
+      BSON_ASSERT (client);
       mongoc_client_pool_push (pool, client);
    }
 
@@ -182,25 +182,25 @@ test_mongoc_client_pool_set_min_size (void)
 
    _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 10; i++) {
       client = mongoc_client_pool_pop (pool);
-      assert (client);
+      BSON_ASSERT (client);
       _mongoc_array_append_val (&conns, client);
-      assert (mongoc_client_pool_get_size (pool) == i + 1);
+      BSON_ASSERT (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
    mongoc_client_pool_min_size (pool, 7);
 
    for (i = 0; i < 10; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
-      assert (client);
+      BSON_ASSERT (client);
       mongoc_client_pool_push (pool, client);
    }
 
-   assert (mongoc_client_pool_get_size (pool) == 7);
+   BSON_ASSERT (mongoc_client_pool_get_size (pool) == 7);
 
    _mongoc_array_clear (&conns);
    _mongoc_array_destroy (&conns);
@@ -229,7 +229,7 @@ test_mongoc_client_pool_handshake (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
    pool = mongoc_client_pool_new (uri);
 
 

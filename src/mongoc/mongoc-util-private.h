@@ -48,11 +48,6 @@
 
 #define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
-#ifdef _WIN32
-#define MONGOC_RAND_R rand_s
-#else
-#define MONGOC_RAND_R rand_r
-#endif
 
 /* Helper macros for stringifying things */
 #define MONGOC_STR(s) #s
@@ -60,6 +55,8 @@
 
 BSON_BEGIN_DECLS
 
+int
+_mongoc_rand_simple (unsigned int *seed);
 
 char *
 _mongoc_hex_md5 (const char *input);
@@ -85,6 +82,10 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  mongoc_error_code_t code,
                                  uint32_t *server_id,
                                  bson_error_t *error);
+
+bool
+_mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error);
+
 bool
 _mongoc_validate_new_document (const bson_t *insert, bson_error_t *error);
 
@@ -93,6 +94,12 @@ _mongoc_validate_replace (const bson_t *insert, bson_error_t *error);
 
 bool
 _mongoc_validate_update (const bson_t *update, bson_error_t *error);
+
+void
+mongoc_lowercase (const char *src, char *buf /* OUT */);
+
+bool
+mongoc_parse_port (uint16_t *port, const char *str);
 
 BSON_END_DECLS
 

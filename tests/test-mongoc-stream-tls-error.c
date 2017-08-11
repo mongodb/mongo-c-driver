@@ -12,6 +12,8 @@
 
 #define TIMEOUT 10000 /* milliseconds */
 
+#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -42,7 +44,7 @@ ssl_error_server (void *ptr)
    iov.iov_len = 1;
 
    listen_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (listen_sock);
+   BSON_ASSERT (listen_sock);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
@@ -50,15 +52,15 @@ ssl_error_server (void *ptr)
 
    r = mongoc_socket_bind (
       listen_sock, (struct sockaddr *) &server_addr, sizeof server_addr);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    sock_len = sizeof (server_addr);
    r = mongoc_socket_getsockname (
       listen_sock, (struct sockaddr *) &server_addr, &sock_len);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_socket_listen (listen_sock, 10);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    mongoc_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
@@ -66,14 +68,14 @@ ssl_error_server (void *ptr)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
-   assert (sock_stream);
+   BSON_ASSERT (sock_stream);
 
    ssl_stream = mongoc_stream_tls_new_with_hostname (
       sock_stream, data->host, data->server, 0);
-   assert (ssl_stream);
+   BSON_ASSERT (ssl_stream);
 
    switch (data->behavior) {
    case SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE:
@@ -82,10 +84,10 @@ ssl_error_server (void *ptr)
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
       r = mongoc_stream_tls_handshake_block (
          ssl_stream, data->host, TIMEOUT, &error);
-      assert (r);
+      BSON_ASSERT (r);
 
       r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
-      assert (r == 1);
+      BSON_ASSERT (r == 1);
       break;
    case SSL_TEST_BEHAVIOR_NORMAL:
    default:
@@ -130,7 +132,7 @@ ssl_hangup_client (void *ptr)
    bson_error_t error;
 
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
-   assert (conn_sock);
+   BSON_ASSERT (conn_sock);
 
    mongoc_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
@@ -144,23 +146,23 @@ ssl_hangup_client (void *ptr)
 
    r = mongoc_socket_connect (
       conn_sock, (struct sockaddr *) &server_addr, sizeof (server_addr), -1);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
-   assert (sock_stream);
+   BSON_ASSERT (sock_stream);
 
    ssl_stream = mongoc_stream_tls_new_with_hostname (
       sock_stream, data->host, data->client, 1);
-   assert (ssl_stream);
+   BSON_ASSERT (ssl_stream);
 
    r = mongoc_stream_tls_handshake_block (
       ssl_stream, data->host, TIMEOUT, &error);
-   assert (r);
+   BSON_ASSERT (r);
 
    wiov.iov_base = (void *) &buf;
    wiov.iov_len = 1;
    r = mongoc_stream_writev (ssl_stream, &wiov, 1, TIMEOUT);
-   assert (r == 1);
+   BSON_ASSERT (r == 1);
 
    riov.iov_base = (void *) &buf;
    riov.iov_len = 1;
@@ -169,8 +171,8 @@ ssl_hangup_client (void *ptr)
    start_time = bson_get_monotonic_time ();
    r = mongoc_stream_readv (ssl_stream, &riov, 1, 1, TIMEOUT);
    /* time is in microseconds */
-   assert (bson_get_monotonic_time () - start_time < 1000 * 1000);
-   assert (r == -1);
+   BSON_ASSERT (bson_get_monotonic_time () - start_time < 1000 * 1000);
+   BSON_ASSERT (r == -1);
    mongoc_stream_destroy (ssl_stream);
    data->client_result->result = SSL_TEST_SUCCESS;
    return NULL;
@@ -202,14 +204,14 @@ test_mongoc_tls_hangup (void)
    mongoc_cond_init (&data.cond);
 
    r = mongoc_thread_create (threads, &ssl_error_server, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_thread_create (threads + 1, &ssl_hangup_client, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
       r = mongoc_thread_join (threads[i]);
-      assert (r == 0);
+      BSON_ASSERT (r == 0);
    }
 
    mongoc_mutex_destroy (&data.cond_mutex);
@@ -309,14 +311,14 @@ test_mongoc_tls_handshake_stall (void)
    mongoc_cond_init (&data.cond);
 
    r = mongoc_thread_create (threads, &ssl_error_server, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    r = mongoc_thread_create (threads + 1, &handshake_stall_client, &data);
-   assert (r == 0);
+   BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
       r = mongoc_thread_join (threads[i]);
-      assert (r == 0);
+      BSON_ASSERT (r == 0);
    }
 
    mongoc_mutex_destroy (&data.cond_mutex);
@@ -325,6 +327,7 @@ test_mongoc_tls_handshake_stall (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
+#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
 test_stream_tls_error_install (TestSuite *suite)
