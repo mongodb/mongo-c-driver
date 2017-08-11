@@ -624,7 +624,6 @@ test_wire_version (void)
    mock_server_t *server;
    const bson_t *doc;
    bson_error_t error;
-   bool r;
    bson_t q = BSON_INITIALIZER;
    future_t *future;
    request_t *request;
