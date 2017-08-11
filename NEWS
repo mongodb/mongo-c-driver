@@ -65,7 +65,6 @@ New features and bug fixes:
     read concern options are set.
   * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
 
-
 Thanks to everyone who contributed to the development of this release.
 
   * Hannes Magnusson
