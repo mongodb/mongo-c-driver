@@ -75,6 +75,15 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
 
+  "install ssl":
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          set -o xtrace
+          SSL=${SSL} sh .evergreen/install-ssl.sh
+
   "fetch build":
     - command: shell.exec
       params:
@@ -6425,6 +6434,9 @@ tasks:
 
     - name: build-and-run-authentication-tests-openssl-0.9.8
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-0.9.8zh
         - command: shell.exec
           type: test
           params:
@@ -6432,12 +6444,15 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.0
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.0t
         - command: shell.exec
           type: test
           params:
@@ -6445,12 +6460,15 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.1
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.1u
         - command: shell.exec
           type: test
           params:
@@ -6458,38 +6476,16 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
-        - func: "run auth tests"
-        - func: "upload build"
-
-    - name: build-and-run-authentication-tests-openssl-1.0.2
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2l sh .evergreen/compile.sh
-        - func: "run auth tests"
-        - func: "upload build"
-
-    - name: build-and-run-authentication-tests-openssl-1.1.0
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0f sh .evergreen/compile.sh
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.1-fips
       commands:
+        - func: "install ssl"
+          vars:
+             SSL: openssl-1.0.1u-fips
         - command: shell.exec
           type: test
           params:
@@ -6497,12 +6493,48 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl OPENSSL_FIPS=1 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.2l
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.1.0f
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-libressl-2.5
       commands:
+        - func: "install ssl"
+          vars:
+             SSL: libressl-2.5.2
         - command: shell.exec
           type: test
           params:
@@ -6510,7 +6542,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
