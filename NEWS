@@ -37,7 +37,7 @@ New features and bug fixes:
       ./configure --with-snappy --with-zlib
     * New functions: mongoc_uri_get_compressors & mongoc_uri_set_compressors, to
       get and set compressor configuration on mongoc_uri_t
-    * Added support for comma seperated "compressors" connection string option (e.g.
+    * Added support for comma separated "compressors" connection string option (e.g.
       mongodb://localhost/?compressors=snappy,zlib)
     * Added support for configuring zlib compression level in the connection string
       (e.g. mongodb://localhost/?compressors=zlib&zlibcompressionlevel=8)

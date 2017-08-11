@@ -15,7 +15,7 @@ Parameters
 ----------
 
 * ``uri``: A :symbol:`mongoc_uri_t`.
-* ``compressors``: One or more comma (,) seperated compressors.
+* ``compressors``: One or more comma (,) separated compressors.
 
 Description
 -----------
