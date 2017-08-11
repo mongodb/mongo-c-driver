@@ -4735,7 +4735,7 @@ test_insert_duplicate_key (void)
 }
 
 static void
-test_create_index_fail (void *context)
+test_create_index_fail (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -4752,7 +4752,7 @@ test_create_index_fail (void *context)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "No suitable servers");
+                          "connection timeout");
 
    /* reply was initialized */
    ASSERT (bson_empty (&reply));
@@ -4940,7 +4940,6 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_indexes/error", test_find_indexes_err);
    TestSuite_AddLive (
       suite, "/Collection/insert/duplicate_key", test_insert_duplicate_key);
-   TestSuite_AddFull (
-      suite, "/Collection/create_index/fail", test_create_index_fail,
-      NULL, NULL, test_framework_skip_if_offline);
+   TestSuite_Add (
+      suite, "/Collection/create_index/fail", test_create_index_fail);
 }

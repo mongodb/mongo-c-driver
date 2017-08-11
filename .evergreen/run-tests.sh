@@ -18,12 +18,7 @@ fi
 if [ "$SSL" != "nossl" ]; then
    export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="on"
    export MONGOC_TEST_SSL_PEM_FILE="tests/x509gen/client.pem"
-   sudo cp tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
-   if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
-      sudo update-ca-certificates
-   else
-      export MONGOC_TEST_SSL_CA_FILE="tests/x509gen/ca.pem"
-   fi
+   export MONGOC_TEST_SSL_CA_FILE="tests/x509gen/ca.pem"
 fi
 
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on

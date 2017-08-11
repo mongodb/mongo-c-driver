@@ -24,7 +24,6 @@
 #include "mongoc-topology-private.h"
 #include "mongoc-topology-description-apm-private.h"
 #include "mongoc-client-private.h"
-#include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 
 #include "utlist.h"
@@ -254,7 +253,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       "serverselectiontimeoutms",
       MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
-   topology->local_threshold_msec = mongoc_uri_get_local_threshold_option (topology->uri);
+   topology->local_threshold_msec = mongoc_uri_get_option_as_int32 (
+      topology->uri, "localthresholdms", MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* Total time allowed to check a server is connectTimeoutMS.
     * Server Discovery And Monitoring Spec:

@@ -229,9 +229,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    cursor->client = client;
    cursor->is_command = is_command ? 1 : 0;
 
-   bson_init (&cursor->filter);
-   bson_init (&cursor->opts);
-
    if (filter) {
       if (!bson_validate (filter, BSON_VALIDATE_EMPTY_KEYS, NULL)) {
          MARK_FAILED (cursor);
@@ -242,8 +239,9 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          GOTO (finish);
       }
 
-      bson_destroy (&cursor->filter);
       bson_copy_to (filter, &cursor->filter);
+   } else {
+      bson_init (&cursor->filter);
    }
 
    if (opts) {
@@ -265,6 +263,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          GOTO (finish);
       }
 
+      bson_init (&cursor->opts);
       bson_copy_to_excluding_noinit (opts, &cursor->opts, "serverId", NULL);
 
       /* true if there's a valid serverId or no serverId, false on err */
@@ -280,6 +279,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       if (server_id) {
          mongoc_cursor_set_hint (cursor, server_id);
       }
+   } else {
+      bson_init (&cursor->opts);
    }
 
    cursor->read_prefs = read_prefs

@@ -1,61 +1,3 @@
-mongo-c-driver 1.6.3
-====================
-
-It is my pleasure to announce mongo-c-driver 1.6.3. This release fixes two bugs
-in the TLS layer that interfered with connections to MongoDB Atlas:
-
-  * mongoc_client_pool_t did not apply all TLS options to pooled connections
-  * SNI wasn't provided when allow_invalid_hostname is set
-
-Thanks to everyone who contributed to the development of this release.
-
-  * Hannes Magnusson
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.6.2
-====================
-
-It is my pleasure to announce mongo-c-driver 1.6.2. This release further
-improves HP-UX compatibility, especially when building with CMake, adds missing
-Windows SSPI files to the distribution tarball, and fixes distribution issues
-we introduced when porting the documentation from Mallard to Sphinx.
-
-Thanks to everyone who contributed to the development of this release.
-
-  * A. Jesse Jiryu Davis
-  * Aleksander Melnikov
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.6.1
-====================
-
-It is my pleasure to announce mongo-c-driver 1.6.1. This is a bugfix release:
-
-  * Correct the rules to parse localThresholdMS option from the MongoDB URI.
-  * Prevent crash in mongoc_cursor_destroy if "query" or "filter" are invalid.
-  * Include a file, mongoc-cluster-sspi.c, that had been omitted from the
-    release archive.
-  * Fix logic bugs in mongoc_bulk_operation_t validation code.
-
-Thanks to everyone who contributed to the development of this release.
-
-  * A. Jesse Jiryu Davis
-  * Jeremy Mikola
-  * Remi Collet
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
 mongo-c-driver 1.6.0
 ====================
 
@@ -101,19 +43,6 @@ Thanks to everyone who contributed to the development of this release.
   * Christopher Wang
   * David Golden
   * Jeremy Mikola
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
-
-mongo-c-driver 1.5.5
-====================
-
-It is my pleasure to announce mongo-c-driver 1.5.5. This release fixes bugs
-parsing the localThresholdMS option from the MongoDB URI, and a crash in
-mongoc_cursor_destroy if "query" or "filter" are invalid. Thanks to Jeremy
-Mikola.
 
 Peace,
 

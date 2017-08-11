@@ -454,8 +454,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* TODO: use topology_select instead? */
    mongoc_topology_description_suitable_servers (
-      &selected_servers, op, &topology, read_prefs,
-      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+      &selected_servers, op, &topology, read_prefs, 15);
 
    /* check each server in expected_servers is in selected_servers */
    memset (matched_servers, 0, sizeof (matched_servers));

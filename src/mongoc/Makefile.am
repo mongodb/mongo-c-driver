@@ -159,7 +159,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-client.c \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
-	src/mongoc/mongoc-cluster-sspi.c \
 	src/mongoc/mongoc-collection.c \
 	src/mongoc/mongoc-counters.c \
 	src/mongoc/mongoc-cursor.c \
@@ -191,7 +190,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-server-stream.c \
 	src/mongoc/mongoc-set.c \
 	src/mongoc/mongoc-socket.c \
-	src/mongoc/mongoc-sspi.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-file.c \

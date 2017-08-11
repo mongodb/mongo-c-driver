@@ -60,7 +60,7 @@ case "$OS" in
       cp -r mongodb /cygdrive/c/mongodb
       echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
 
-      # Make sure MO is running latest version
+      # Crazy python stuff to make sure MO is running latest version
       python.exe -m virtualenv venv
       cd venv
       . Scripts/activate
@@ -74,24 +74,8 @@ case "$OS" in
          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=$MONGO_ORCHESTRATION_HOME/lib/ca.pem --sslPEMKeyFile=$MONGO_ORCHESTRATION_HOME/lib/client.pem"
       fi
       ;;
-   sunos*)
-      # Can't make a virtual env here
-      echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-      nohup mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
-      if [ "$SSL" != "nossl" ]; then
-         export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=$MONGO_ORCHESTRATION_HOME/lib/ca.pem --sslPEMKeyFile=$MONGO_ORCHESTRATION_HOME/lib/client.pem"
-      fi
-      ;;
    *)
       echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-      # Make sure MO is running latest version
-      python -m virtualenv venv
-      cd venv
-      . bin/activate
-      git clone https://github.com/10gen/mongo-orchestration.git
-      cd mongo-orchestration
-      pip install .
-      cd ../..
       nohup mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       if [ "$SSL" != "nossl" ]; then
          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --host localhost --ssl --sslCAFile=$MONGO_ORCHESTRATION_HOME/lib/ca.pem --sslPEMKeyFile=$MONGO_ORCHESTRATION_HOME/lib/client.pem"

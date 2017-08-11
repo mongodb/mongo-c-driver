@@ -33,9 +33,6 @@
    ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time ())))
 
 
-/* either struct sockaddr or void, depending on platform */
-typedef MONGOC_SOCKET_ARG2 mongoc_sockaddr_t;
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -430,7 +427,7 @@ mongoc_socket_accept_ex (mongoc_socket_t *sock, /* IN */
 
 again:
    errno = 0;
-   sd = accept (sock->sd, (mongoc_sockaddr_t *) &addr, &addrlen);
+   sd = accept (sock->sd, (struct sockaddr *) &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
 #ifdef _WIN32
@@ -588,8 +585,7 @@ mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
    bool failed = false;
    int ret;
    int optval;
-   /* getsockopt parameter types vary, we check in CheckCompiler.m4 */
-   mongoc_socklen_t optlen = (mongoc_socklen_t) sizeof optval;
+   mongoc_socklen_t optlen = sizeof optval;
 
    ENTRY;
 
@@ -1189,7 +1185,7 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
 
    BSON_ASSERT (sock);
 
-   ret = getsockname (sock->sd, (mongoc_sockaddr_t *) addr, addrlen);
+   ret = getsockname (sock->sd, addr, addrlen);
 
    _mongoc_socket_capture_errno (sock);
 
@@ -1200,9 +1196,8 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,     /* IN */
 char *
 mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 {
-   /* getpeername parameter types vary, we check in CheckCompiler.m4 */
-   mongoc_sockaddr_t addr;
-   mongoc_socklen_t len = (mongoc_socklen_t) sizeof addr;
+   struct sockaddr addr;
+   mongoc_socklen_t len = sizeof addr;
    char *ret;
    char host[BSON_HOST_NAME_MAX + 1];
 
