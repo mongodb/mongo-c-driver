@@ -11,6 +11,9 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
 
 
+C_TIMEOUT="connectTimeoutMS=30000"
+
+
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 if grep -q "#define MONGOC_ENABLE_SASL 1" src/mongoc/mongoc-config.h; then
    SASL=1
@@ -73,30 +76,30 @@ if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008
    if [ "${OS%_*}" != "cygwin" ]; then
       echo "Authenticating using X.509"
-      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true"
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
    fi
    echo "Connecting to Atlas Free Tier"
-   $PING "$ATLAS_FREE"
+   $PING "$ATLAS_FREE&${C_TIMEOUT}"
    echo "Connecting to Atlas Replica Set"
-   $PING "$ATLAS_REPLSET"
+   $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
    echo "Connecting to Atlas Sharded Cluster"
-   $PING "$ATLAS_SHARD"
+   $PING "$ATLAS_SHARD&${C_TIMEOUT}"
 fi
 
 echo "Authenticating using PLAIN"
-$PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN"
+$PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN&${C_TIMEOUT}"
 
 echo "Authenticating using MONGODB-CR"
-$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR"
+$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR&${C_TIMEOUT}"
 
 if [ $SASL -eq 1 ]; then
 echo "Authenticating using GSSAPI"
-   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI"
+   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
    if [ "${OS%_*}" = "cygwin" ]; then
       echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC"
+      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
       echo "Authenticating using GSSAPI (UTF-8 credentials)"
-      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI"
+      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
    fi
 fi
 
