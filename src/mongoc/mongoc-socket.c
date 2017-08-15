@@ -265,14 +265,10 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
 #define MONGODB_KEEPIDLE 300
 #define MONGODB_KEEPALIVECNT 9
 
+#ifdef _WIN32
 static void
-#ifdef _WIN32
-_mongoc_socket_setkeepalive (SOCKET sd) /* IN */
-#else
-_mongoc_socket_setkeepalive (int sd) /* IN */
-#endif
+_mongoc_socket_setkeepalive_windows (SOCKET sd)
 {
-#ifdef _WIN32
    BOOL optval = 1;
    struct tcp_keepalive keepalive;
    DWORD lpcbBytesReturned = 0;
@@ -282,27 +278,6 @@ _mongoc_socket_setkeepalive (int sd) /* IN */
    DWORD data_size = sizeof data;
    const char *reg_key =
       "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
-#else
-   int optval = 1;
-   mongoc_socklen_t optlen;
-#endif
-#ifdef SOL_TCP
-   int level = SOL_TCP;
-#else
-   int level = SOL_SOCKET;
-#endif
-
-   ENTRY;
-
-#ifdef SO_KEEPALIVE
-   if (setsockopt (sd, level, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
-      TRACE ("Setting SO_KEEPALIVE failed");
-   }
-#else
-   TRACE ("SO_KEEPALIVE not available");
-#endif
-
-#ifdef _WIN32
    keepalive.onoff = true;
    keepalive.keepalivetime = MONGODB_KEEPIDLE * 1000;
    keepalive.keepaliveinterval = MONGODB_KEEPALIVEINTVL * 1000;
@@ -359,56 +334,126 @@ _mongoc_socket_setkeepalive (int sd) /* IN */
                  NULL,
                  NULL) == SOCKET_ERROR) {
       TRACE ("Could not set keepalive values");
+   } else {
+      TRACE ("KeepAlive values updated");
+      TRACE ("KeepAliveTime: %d", keepalive.keepalivetime);
+      TRACE ("KeepAliveInterval: %d", keepalive.keepaliveinterval);
    }
+}
 #else
+#ifdef MONGOC_TRACE
+static const char *
+_mongoc_socket_sockopt_value_to_name (int value)
+{
+   switch (value) {
 #ifdef TCP_KEEPIDLE
+   case TCP_KEEPIDLE:
+      return "TCP_KEEPIDLE";
+#endif
+#ifdef TCP_KEEPALIVE
+   case TCP_KEEPALIVE:
+      return "TCP_KEEPALIVE";
+#endif
+#ifdef TCP_KEEPINTVL
+   case TCP_KEEPINTVL:
+      return "TCP_KEEPINTVL";
+#endif
+#ifdef TCP_KEEPCNT
+   case TCP_KEEPCNT:
+      return "TCP_KEEPCNT";
+#endif
+   default:
+      MONGOC_WARNING ("Don't know what socketopt %d is", value);
+      return "Unknown option name";
+   }
+}
+#endif
+static void
+_mongoc_socket_set_sockopt_if_less (int sd, int name, int value)
+{
+   int optval = 1;
+   mongoc_socklen_t optlen;
+
    optlen = sizeof optval;
-   if (!getsockopt (sd, level, TCP_KEEPIDLE, (char *) &optval, &optlen)) {
-      TRACE ("TCP_KEEPIDLE value currently %d", (int) optval);
-      if (optval > MONGODB_KEEPIDLE) {
-         optval = MONGODB_KEEPIDLE;
+   if (getsockopt (sd, IPPROTO_TCP, name, (char *) &optval, &optlen)) {
+      TRACE ("Getting '%s' failed, errno: %d",
+             _mongoc_socket_sockopt_value_to_name (name),
+             errno);
+   } else {
+      TRACE ("'%s' is %d, target value is %d",
+             _mongoc_socket_sockopt_value_to_name (name),
+             optval,
+             value);
+      if (optval > value) {
+         optval = value;
          if (setsockopt (
-                sd, level, TCP_KEEPIDLE, (char *) &optval, sizeof optval)) {
-            TRACE ("Setting TCP_KEEPIDLE failed");
+                sd, IPPROTO_TCP, name, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting '%s' failed, errno: %d",
+                   _mongoc_socket_sockopt_value_to_name (name),
+                   errno);
          } else {
-            TRACE ("TCP_KEEPIDLE value changed to %d", (int) optval);
+            TRACE ("'%s' value changed to %d",
+                   _mongoc_socket_sockopt_value_to_name (name),
+                   optval);
          }
       }
    }
+}
+
+static void
+_mongoc_socket_setkeepalive_nix (int sd)
+{
+#if defined(TCP_KEEPIDLE)
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPIDLE, MONGODB_KEEPIDLE);
+#elif defined(TCP_KEEPALIVE)
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPALIVE, MONGODB_KEEPIDLE);
+#else
+   TRACE ("%s", "Neither TCP_KEEPIDLE nor TCP_KEEPALIVE available");
 #endif
 
 #ifdef TCP_KEEPINTVL
-   optlen = sizeof optval;
-   if (!getsockopt (sd, level, TCP_KEEPINTVL, (char *) &optval, &optlen)) {
-      TRACE ("TCP_KEEPINTL value currently %d", (int) optval);
-      if (optval > MONGODB_KEEPALIVEINTVL) {
-         optval = MONGODB_KEEPALIVEINTVL;
-         if (setsockopt (
-                sd, level, TCP_KEEPINTVL, (char *) &optval, sizeof optval)) {
-            TRACE ("Setting TCP_KEEPINTVL failed");
-         } else {
-            TRACE ("TCP_KEEPINTVL value changed to %d", (int) optval);
-         }
-      }
-   }
+   _mongoc_socket_set_sockopt_if_less (
+      sd, TCP_KEEPINTVL, MONGODB_KEEPALIVEINTVL);
+#else
+   TRACE ("%s", "TCP_KEEPINTVL not available");
 #endif
 
 #ifdef TCP_KEEPCNT
-   optlen = sizeof optval;
-   if (!getsockopt (sd, level, TCP_KEEPCNT, (char *) &optval, &optlen)) {
-      TRACE ("TCP_KEEPCNT value currently %d", (int) optval);
-      if (optval > MONGODB_KEEPALIVECNT) {
-         optval = MONGODB_KEEPALIVECNT;
-         if (setsockopt (
-                sd, level, TCP_KEEPCNT, (char *) &optval, sizeof optval)) {
-            TRACE ("Setting TCP_KEEPCNT failed");
-         } else {
-            TRACE ("TCP_KEEPCNT value changed to %d", (int) optval);
-         }
-      }
-   }
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPCNT, MONGODB_KEEPALIVECNT);
+#else
+   TRACE ("%s", "TCP_KEEPCNT not available");
 #endif
-#endif /* _WIN32 */
+}
+
+#endif
+static void
+#ifdef _WIN32
+_mongoc_socket_setkeepalive (SOCKET sd) /* IN */
+#else
+_mongoc_socket_setkeepalive (int sd) /* IN */
+#endif
+{
+#ifdef SO_KEEPALIVE
+   int optval = 1;
+
+   ENTRY;
+#ifdef SO_KEEPALIVE
+   if (!setsockopt (
+          sd, SOL_SOCKET, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
+      TRACE ("%s", "Setting SO_KEEPALIVE");
+#ifdef _WIN32
+      _mongoc_socket_setkeepalive_windows (sd);
+#else
+      _mongoc_socket_setkeepalive_nix (sd);
+#endif
+   } else {
+      TRACE ("%s", "Failed setting SO_KEEPALIVE");
+   }
+#else
+   TRACE ("%s", "SO_KEEPALIVE not available");
+#endif
+   EXIT;
+#endif
 }
 
 
