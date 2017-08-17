@@ -697,7 +697,6 @@ endfunction()
 
 set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/debug-stream.c
-   ${SOURCE_DIR}/tests/ha-test.c
    ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/mock_server/future.c
    ${SOURCE_DIR}/tests/mock_server/future-functions.c
@@ -707,13 +706,12 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/mock_server/mock-server.c
    ${SOURCE_DIR}/tests/mock_server/request.c
    ${SOURCE_DIR}/tests/test-conveniences.c
-   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
+   ${SOURCE_DIR}/tests/test-mongoc-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
-   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
@@ -754,44 +752,24 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-version.c
    ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-util.c
+   ${SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
-   ${SOURCE_DIR}/tests/test-write-commands.c
    ${SOURCE_DIR}/tests/TestSuite.c
 )
 
 if (MONGOC_ENABLE_SSL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-x509.c
+      ${SOURCE_DIR}/tests/test-mongoc-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
-   mongoc_add_test(test-replica-set-ssl FALSE
-      ${SOURCE_DIR}/tests/test-replica-set-ssl.c
-      ${SOURCE_DIR}/tests/ha-test.c
-      ${SOURCE_DIR}/tests/mongoc-tests.c
-   )
 endif()
 
 if (MONGOC_ENABLE_SASL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-cyrus.c
+      ${SOURCE_DIR}/tests/test-mongoc-cyrus.c
    )
 endif ()
-
-mongoc_add_test(test-load FALSE
-   ${SOURCE_DIR}/tests/test-load.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-secondary FALSE
-   ${SOURCE_DIR}/tests/test-secondary.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-replica-set FALSE
-   ${SOURCE_DIR}/tests/test-replica-set.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
-mongoc_add_test(test-sharded-cluster FALSE
-   ${SOURCE_DIR}/tests/test-sharded-cluster.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 
