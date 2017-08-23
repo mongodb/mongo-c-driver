@@ -1,4 +1,4 @@
-if (ENABLE_MAINTAINER_FLAGS)
+if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC)
    include(CheckCCompilerFlag)
 
    message(STATUS "Detecting available maintainer flags")
