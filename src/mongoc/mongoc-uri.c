@@ -632,7 +632,6 @@ bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_APPNAME) ||
-          !strcasecmp (key, MONGOC_URI_GSSAPISERVICENAME) ||
           !strcasecmp (key, MONGOC_URI_REPLICASET) ||
           !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
           !strcasecmp (key, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE) ||
@@ -751,6 +750,18 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
          MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
       }
       mongoc_read_concern_set_level (uri->read_concern, value);
+   } else if (!strcmp (lkey, MONGOC_URI_GSSAPISERVICENAME)) {
+      char *tmp = bson_strdup_printf ("SERVICE_NAME:%s", value);
+      if (bson_has_field (&uri->credentials,
+                          MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
+         MONGOC_WARNING (
+            "authMechanismProperties SERVICE_NAME already set, ignoring '%s'",
+            lkey);
+      } else if (!mongoc_uri_parse_auth_mechanism_properties (uri, tmp)) {
+         bson_free (tmp);
+         goto UNSUPPORTED_VALUE;
+      }
+      bson_free (tmp);
    } else if (!strcmp (lkey, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
       if (bson_has_field (&uri->credentials, lkey)) {
          MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
@@ -851,6 +862,15 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          } else {
             bson_append_utf8 (
                &uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
+         }
+      }
+      /* MONGODB-X509 is the only mechanism that doesn't require username */
+      if (strcasecmp (mechanism, "MONGODB-X509")) {
+         if (!mongoc_uri_get_username (uri)) {
+            MONGOC_URI_ERROR (error,
+                              "'%s' authentication mechanism requires username",
+                              mechanism);
+            return false;
          }
       }
    }

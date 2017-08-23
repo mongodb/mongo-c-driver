@@ -189,6 +189,9 @@ test_all_spec_tests (TestSuite *suite)
 
    ASSERT (realpath (JSON_DIR "/connection_uri", resolved));
    install_json_test_suite (suite, resolved, &test_connection_uri_cb);
+
+   ASSERT (realpath (JSON_DIR "/auth", resolved));
+   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
 }
 
 

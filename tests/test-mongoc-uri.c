@@ -376,22 +376,6 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   /* deprecated gssapiServiceName option */
-   uri = mongoc_uri_new ("mongodb://christian%40realm.cc@localhost:27017/"
-                         "?" MONGOC_URI_AUTHMECHANISM
-                         "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=blah");
-   ASSERT (uri);
-   options = mongoc_uri_get_options (uri);
-   ASSERT (options);
-   BSON_ASSERT (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
-   BSON_ASSERT (0 ==
-                strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
-   BSON_ASSERT (
-      bson_iter_init_find_case (&iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
-      BSON_ITER_HOLDS_UTF8 (&iter) &&
-      (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
-   mongoc_uri_destroy (uri);
-
    /* MONGODB-CR */
 
    /* should recognize this mechanism */
@@ -463,6 +447,7 @@ test_mongoc_uri_authmechanismproperties (void)
 {
    mongoc_uri_t *uri;
    bson_t props;
+   const bson_t *options;
 
    uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
                          "=SCRAM-SHA1"
@@ -490,6 +475,20 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'four', 'b': {'$exists': false}}");
 
+   mongoc_uri_destroy (uri);
+
+   /* deprecated gssapiServiceName option */
+   uri = mongoc_uri_new ("mongodb://christian%40realm.cc@localhost:27017/"
+                         "?" MONGOC_URI_AUTHMECHANISM
+                         "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=blah");
+   ASSERT (uri);
+   options = mongoc_uri_get_options (uri);
+   ASSERT (options);
+   BSON_ASSERT (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
+   BSON_ASSERT (0 ==
+                strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
+   ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+   ASSERT_MATCH (&props, "{'SERVICE_NAME': 'blah'}");
    mongoc_uri_destroy (uri);
 }
 
