@@ -281,8 +281,6 @@ test_topology_scanner_oscillate (void)
 }
 
 
-/* skip on Windows: https://daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken/ */
-#ifndef _WIN32
 void
 test_topology_scanner_connection_error (void)
 {
@@ -290,7 +288,7 @@ test_topology_scanner_connection_error (void)
    bson_error_t error;
 
    /* assuming nothing is listening on this port */
-   client = mongoc_client_new ("mongodb://localhost:9876/?connectTimeoutMS=10");
+   client = mongoc_client_new ("mongodb://localhost:9876");
 
    ASSERT (!mongoc_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
@@ -303,7 +301,6 @@ test_topology_scanner_connection_error (void)
 
    mongoc_client_destroy (client);
 }
-#endif
 
 
 void
@@ -414,11 +411,9 @@ test_topology_scanner_install (TestSuite *suite)
       suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
    TestSuite_AddMockServerTest (
       suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
-#ifndef _WIN32
    TestSuite_Add (suite,
                   "/TOPOLOGY/scanner_connection_error",
                   test_topology_scanner_connection_error);
-#endif
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/scanner_socket_timeout",
                                 test_topology_scanner_socket_timeout);

@@ -108,7 +108,10 @@ _mongoc_socket_wait (int sd, /* IN */
                      int64_t expire_at) /* IN */
 {
 #ifdef _WIN32
-   WSAPOLLFD pfd;
+   fd_set read_fds;
+   fd_set write_fds;
+   fd_set error_fds;
+   struct timeval timeout_tv;
 #else
    struct pollfd pfd;
 #endif
@@ -120,14 +123,25 @@ _mongoc_socket_wait (int sd, /* IN */
 
    BSON_ASSERT (events);
 
-   pfd.fd = sd;
 #ifdef _WIN32
-   pfd.events = events;
-#else
-   pfd.events = events | POLLERR | POLLHUP;
-#endif
-   pfd.revents = 0;
+   FD_ZERO (&read_fds);
+   FD_ZERO (&write_fds);
+   FD_ZERO (&error_fds);
 
+   if (events & POLLIN) {
+      FD_SET (sd, &read_fds);
+   }
+
+   if (events & POLLOUT) {
+      FD_SET (sd, &write_fds);
+   }
+
+   FD_SET (sd, &error_fds);
+#else
+   pfd.fd = sd;
+   pfd.events = events | POLLERR | POLLHUP;
+   pfd.revents = 0;
+#endif
    now = bson_get_monotonic_time ();
 
    for (;;) {
@@ -143,9 +157,20 @@ _mongoc_socket_wait (int sd, /* IN */
       }
 
 #ifdef _WIN32
-      ret = WSAPoll (&pfd, 1, timeout);
+      if (timeout == -1) {
+         /* not WSAPoll: daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken */
+         ret = select (0 /*unused*/, &read_fds, &write_fds, &error_fds, NULL);
+      } else {
+         timeout_tv.tv_sec = timeout / 1000;
+         timeout_tv.tv_usec = (timeout % 1000) * 1000;
+         ret = select (
+            0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
+      }
       if (ret == SOCKET_ERROR) {
          errno = WSAGetLastError ();
+         ret = -1;
+      } else if (FD_ISSET (sd, &error_fds)) {
+         errno = WSAECONNRESET;
          ret = -1;
       }
 #else
@@ -155,7 +180,7 @@ _mongoc_socket_wait (int sd, /* IN */
       if (ret > 0) {
 /* Something happened, so return that */
 #ifdef _WIN32
-         RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
+         return (FD_ISSET (sd, &read_fds) || FD_ISSET (sd, &write_fds));
 #else
          RETURN (0 != (pfd.revents & events));
 #endif
@@ -176,7 +201,7 @@ _mongoc_socket_wait (int sd, /* IN */
             RETURN (false);
          }
       } else {
-         /* poll timed out */
+         /* ret == 0, poll timed out */
          RETURN (false);
       }
    }
@@ -210,7 +235,10 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
                     int32_t timeout)           /* IN */
 {
 #ifdef _WIN32
-   WSAPOLLFD *pfds;
+   fd_set read_fds;
+   fd_set write_fds;
+   fd_set error_fds;
+   struct timeval timeout_tv;
 #else
    struct pollfd *pfds;
 #endif
@@ -222,36 +250,59 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
    BSON_ASSERT (sds);
 
 #ifdef _WIN32
-   pfds = (WSAPOLLFD *) bson_malloc (sizeof (*pfds) * nsds);
+   FD_ZERO (&read_fds);
+   FD_ZERO (&write_fds);
+   FD_ZERO (&error_fds);
+
+   for (i = 0; i < nsds; i++) {
+      if (sds[i].events & POLLIN) {
+         FD_SET (sds[i].socket->sd, &read_fds);
+      }
+
+      if (sds[i].events & POLLOUT) {
+         FD_SET (sds[i].socket->sd, &write_fds);
+      }
+
+      FD_SET (sds[i].socket->sd, &error_fds);
+   }
+
+   timeout_tv.tv_sec = timeout / 1000;
+   timeout_tv.tv_usec = (timeout % 1000) * 1000;
+
+   /* not WSAPoll: daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken */
+   ret = select (0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
+   if (ret == SOCKET_ERROR) {
+      errno = WSAGetLastError ();
+      return -1;
+   }
+
+   for (i = 0; i < nsds; i++) {
+      if (FD_ISSET (sds[i].socket->sd, &read_fds)) {
+         sds[i].revents = POLLIN;
+      } else if (FD_ISSET (sds[i].socket->sd, &write_fds)) {
+         sds[i].revents = POLLOUT;
+      } else if (FD_ISSET (sds[i].socket->sd, &error_fds)) {
+         sds[i].revents = POLLHUP;
+      } else {
+         sds[i].revents = 0;
+      }
+   }
 #else
    pfds = (struct pollfd *) bson_malloc (sizeof (*pfds) * nsds);
-#endif
 
    for (i = 0; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
-#ifdef _WIN32
-      pfds[i].events = sds[i].events;
-#else
       pfds[i].events = sds[i].events | POLLERR | POLLHUP;
-#endif
       pfds[i].revents = 0;
    }
 
-#ifdef _WIN32
-   ret = WSAPoll (pfds, nsds, timeout);
-   if (ret == SOCKET_ERROR) {
-      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
-      ret = -1;
-   }
-#else
    ret = poll (pfds, nsds, timeout);
-#endif
-
    for (i = 0; i < nsds; i++) {
       sds[i].revents = pfds[i].revents;
    }
 
    bson_free (pfds);
+#endif
 
    return ret;
 }
