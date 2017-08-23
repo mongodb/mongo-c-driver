@@ -18,7 +18,8 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
 #include "mongoc-trace-private.h"
-
+#include "mongoc-socket-private.h"
+#include "mongoc-errno-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream"
@@ -275,6 +276,20 @@ _mongoc_stream_socket_check_closed (mongoc_stream_t *stream) /* IN */
 }
 
 
+static bool
+_mongoc_stream_socket_timed_out (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
+
+   ENTRY;
+
+   BSON_ASSERT (ss);
+   BSON_ASSERT (ss->sock);
+
+   RETURN (MONGOC_ERRNO_IS_TIMEDOUT (ss->sock->errno_));
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -309,6 +324,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.writev = _mongoc_stream_socket_writev;
    stream->vtable.setsockopt = _mongoc_stream_socket_setsockopt;
    stream->vtable.check_closed = _mongoc_stream_socket_check_closed;
+   stream->vtable.timed_out = _mongoc_stream_socket_timed_out;
    stream->vtable.poll = _mongoc_stream_socket_poll;
    stream->sock = sock;
 

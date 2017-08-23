@@ -8,6 +8,7 @@ mongo-c-driver 1.8.0
   * mongoc_collection_create_index and mongoc_collection_create_index_with_opts
     are both now deprecated. Use mongoc_database_write_command_with_opts
     instead; a guide to creating an index using that function has been added.
+  * New stream method mongoc_stream_timed_out.
 
 Thanks to everyone who contributed to the development of this release.
 

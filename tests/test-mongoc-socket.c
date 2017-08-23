@@ -24,6 +24,7 @@ typedef struct {
    mongoc_mutex_t cond_mutex;
    bool closed_socket;
    int amount;
+   int32_t server_sleep_ms;
 } socket_test_data_t;
 
 
@@ -79,8 +80,13 @@ socket_test_server (void *data_)
 
    strcpy (buf, "pong");
 
+   _mongoc_usleep (data->server_sleep_ms * 1000);
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
-   BSON_ASSERT (r == 5);
+   
+   /* if we sleep the client times out, else assert the client reads the data */
+   if (data->server_sleep_ms == 0) {
+      BSON_ASSERT (r == 5);
+   }
 
    mongoc_stream_destroy (stream);
 
@@ -141,21 +147,28 @@ socket_test_client (void *data_)
    closed = mongoc_stream_check_closed (stream);
    BSON_ASSERT (closed == false);
 
-   r = mongoc_stream_readv (stream, &iov, 1, 5, TIMEOUT);
-   BSON_ASSERT (r == 5);
-   BSON_ASSERT (strcmp (buf, "pong") == 0);
+   if (data->server_sleep_ms == 0) {
+      r = mongoc_stream_readv (stream, &iov, 1, 5, TIMEOUT);
+      BSON_ASSERT (r == 5);
+      BSON_ASSERT (strcmp (buf, "pong") == 0);
 
-   mongoc_mutex_lock (&data->cond_mutex);
-   while (!data->closed_socket) {
-      mongoc_cond_wait (&data->cond, &data->cond_mutex);
-   }
-   mongoc_mutex_unlock (&data->cond_mutex);
+      mongoc_mutex_lock (&data->cond_mutex);
+      while (!data->closed_socket) {
+         mongoc_cond_wait (&data->cond, &data->cond_mutex);
+      }
+      mongoc_mutex_unlock (&data->cond_mutex);
 
-   /* wait up to a second for the client to detect server's shutdown */
-   start = bson_get_monotonic_time ();
-   while (!mongoc_stream_check_closed (stream)) {
-      ASSERT_CMPINT64 (bson_get_monotonic_time (), <, start + 1000 * 1000);
-      _mongoc_usleep (1000);
+      /* wait up to a second for the client to detect server's shutdown */
+      start = bson_get_monotonic_time ();
+      while (!mongoc_stream_check_closed (stream)) {
+         ASSERT_CMPINT64 (bson_get_monotonic_time (), <, start + 1000 * 1000);
+         _mongoc_usleep (1000);
+      }
+      BSON_ASSERT (!mongoc_stream_timed_out (stream));
+   } else {
+      r = mongoc_stream_readv (stream, &iov, 1, 5, data->server_sleep_ms / 2);
+      ASSERT_CMPSSIZE_T (r, ==, (ssize_t) -1);
+      BSON_ASSERT (mongoc_stream_timed_out (stream));
    }
 
    mongoc_stream_destroy (stream);
@@ -324,7 +337,7 @@ sendv_test_client (void *data_)
 
 
 static void
-test_mongoc_socket_check_closed (void)
+_test_mongoc_socket_check_closed (int32_t server_sleep_ms)
 {
    socket_test_data_t data = {0};
    mongoc_thread_t threads[2];
@@ -332,6 +345,7 @@ test_mongoc_socket_check_closed (void)
 
    mongoc_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
+   data.server_sleep_ms = server_sleep_ms;
 
    r = mongoc_thread_create (threads, &socket_test_server, &data);
    BSON_ASSERT (r == 0);
@@ -347,6 +361,21 @@ test_mongoc_socket_check_closed (void)
    mongoc_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 }
+
+
+static void
+test_mongoc_socket_check_closed (void)
+{
+   _test_mongoc_socket_check_closed (0);
+}
+
+
+static void
+test_mongoc_socket_timed_out (void *ctx)
+{
+   _test_mongoc_socket_check_closed (1000);
+}
+
 
 static void
 test_mongoc_socket_sendv (void *ctx)
@@ -373,11 +402,18 @@ test_mongoc_socket_sendv (void *ctx)
    mongoc_cond_destroy (&data.cond);
 }
 
+
 void
 test_socket_install (TestSuite *suite)
 {
    TestSuite_Add (
       suite, "/Socket/check_closed", test_mongoc_socket_check_closed);
+   TestSuite_AddFull (suite,
+                      "/Socket/timed_out",
+                      test_mongoc_socket_timed_out,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Socket/sendv",
                       test_mongoc_socket_sendv,

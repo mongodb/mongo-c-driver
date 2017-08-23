@@ -616,6 +616,16 @@ _mongoc_stream_tls_openssl_sni (SSL *ssl, int *ad, void *arg)
    return SSL_TLSEXT_ERR_OK;
 }
 
+static bool
+_mongoc_stream_tls_openssl_timed_out (mongoc_stream_t *stream)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+
+   ENTRY;
+
+   RETURN (mongoc_stream_timed_out (tls->base_stream));
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -735,6 +745,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
    tls->parent.setsockopt = _mongoc_stream_tls_openssl_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_openssl_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_openssl_check_closed;
+   tls->parent.timed_out = _mongoc_stream_tls_openssl_timed_out;
    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_openssl_handshake;
    tls->ctx = (void *) openssl;
