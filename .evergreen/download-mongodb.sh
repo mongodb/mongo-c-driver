@@ -231,13 +231,15 @@ download_and_extract ()
    MONGODB_DOWNLOAD_URL=$1
    EXTRACT=$2
 
-   curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
+   if ! test -d mongodb -a -x mongodb/bin/mongod; then
+      curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
 
-   $EXTRACT mongodb-binaries.tgz
+      $EXTRACT mongodb-binaries.tgz
 
-   rm -rf mongodb*tgz mongodb/
-   mv mongodb* mongodb
-   chmod -R +x mongodb
-   find . -name vcredist_x64.exe -exec {} /install /quiet \;
+      rm -rf mongodb*tgz mongodb/
+      mv mongodb* mongodb
+      chmod -R +x mongodb
+      find . -name vcredist_x64.exe -exec {} /install /quiet \;
+   fi
    ./mongodb/bin/mongod --version
 }
