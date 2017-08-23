@@ -186,11 +186,9 @@ _mongoc_socket_wait (int sd, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_socket_poll --
+ * mongoc_socket_poll --
  *
  *       A multi-socket poll helper.
- *
- *       @events: in most cases should be POLLIN or POLLOUT.
  *
  *       @expire_at should be an absolute time at which to expire using
  *       the monotonic clock (bson_get_monotonic_time(), which is in
@@ -198,8 +196,7 @@ _mongoc_socket_wait (int sd, /* IN */
  *       forever.
  *
  * Returns:
- *       true if an event matched. otherwise false.
- *       a timeout will return false.
+ *       The number of sockets ready.
  *
  * Side effects:
  *       None.
