@@ -68,7 +68,6 @@ stamp-h1
 *.swp
 tags
 test-libmongoc
-test-load
 test-results.json
 test-mock-server
 test-mongoc-array
@@ -92,11 +91,6 @@ test-mongoc-stream
 test-mongoc-stream-tls
 test-mongoc-uri
 test-mongoc-write-concern
-test-replica-set
-test-replica-set-ssl
-test-secondary
-test-sharded-cluster
-test-x509
 # Windows things
 *.dir
 *.vcxproj*

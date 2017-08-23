@@ -1,23 +1,11 @@
-noinst_PROGRAMS += test-load
-noinst_PROGRAMS += test-secondary
-noinst_PROGRAMS += test-replica-set
-noinst_PROGRAMS += test-sharded-cluster
 noinst_PROGRAMS += test-libmongoc
-if ENABLE_SSL
-noinst_PROGRAMS += test-replica-set-ssl
-endif
 
 
 TEST_PROGS = test-libmongoc
 
 
-TEST_CFLAGS = $(MAINTAINER_CFLAGS) -Wno-format-nonliteral
-
-if OS_SOLARIS
-TEST_CFLAGS += -D_REENTRANT
-endif
-
-TEST_CFLAGS += \
+TEST_CFLAGS = $(MAINTAINER_CFLAGS) \
+	-Wno-format-nonliteral \
 	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
@@ -32,6 +20,11 @@ TEST_CFLAGS += \
 	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
 	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
 	-DOS_RELEASE_FILE_DIR="\"$(top_srcdir)/tests/release_files\""
+
+if OS_SOLARIS
+TEST_CFLAGS += -D_REENTRANT
+endif
+
 
 
 TEST_LIBS = \
@@ -49,46 +42,6 @@ endif
 if OS_WIN32
 TEST_LIBS += -lshlwapi
 endif
-
-test_load_SOURCES = \
-	tests/test-load.c \
-	tests/mongoc-tests.c
-test_load_CFLAGS = $(TEST_CFLAGS)
-test_load_LDADD = libmongoc-1.0.la $(TEST_LIBS)
-
-
-test_secondary_SOURCES = \
-	tests/test-secondary.c \
-	tests/mongoc-tests.c
-test_secondary_CFLAGS = $(TEST_CFLAGS)
-test_secondary_LDADD = libmongoc-1.0.la $(TEST_LIBS)
-
-test_replica_set_SOURCES = \
-	tests/test-replica-set.c \
-	tests/ha-test.c \
-	tests/ha-test.h \
-	tests/mongoc-tests.c
-test_replica_set_CFLAGS = $(TEST_CFLAGS)
-test_replica_set_LDADD = libmongoc.la $(TEST_LIBS)
-
-
-test_replica_set_ssl_SOURCES = \
-	tests/test-replica-set-ssl.c \
-	tests/ha-test.c \
-	tests/ha-test.h \
-	tests/mongoc-tests.c
-test_replica_set_ssl_CFLAGS = $(TEST_CFLAGS)
-test_replica_set_ssl_LDADD = libmongoc-1.0.la $(TEST_LIBS)
-
-test_sharded_cluster_SOURCES = \
-	tests/test-sharded-cluster.c \
-	tests/ha-test.c \
-	tests/ha-test.h \
-	tests/mongoc-tests.c
-test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
-test_sharded_cluster_LDADD = libmongoc-1.0.la $(TEST_LIBS)
-
-
 
 test_libmongoc_SOURCES = \
 	tests/debug-stream.c \
@@ -109,12 +62,12 @@ test_libmongoc_SOURCES = \
 	tests/mock_server/sync-queue.c \
 	tests/mock_server/sync-queue.h \
 	tests/test-libmongoc.c \
-	tests/test-bulk.c \
 	tests/test-conveniences.c \
 	tests/test-conveniences.h \
 	tests/test-mongoc-array.c \
 	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \
+	tests/test-mongoc-bulk.c \
 	tests/test-mongoc-client.c \
 	tests/test-mongoc-client-pool.c \
 	tests/test-mongoc-cluster.c \
@@ -156,15 +109,15 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-usleep.c \
 	tests/test-mongoc-util.c \
 	tests/test-mongoc-version.c \
+	tests/test-mongoc-write-commands.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
-	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
 
 if ENABLE_SSL
 test_libmongoc_SOURCES += \
-	tests/test-x509.c \
+	tests/test-mongoc-x509.c \
 	tests/test-mongoc-stream-tls.c \
 	tests/test-mongoc-stream-tls-error.c \
 	tests/ssl-test.c \
@@ -173,7 +126,7 @@ endif
 
 if ENABLE_SASL
 test_libmongoc_SOURCES += \
-	tests/test-cyrus.c
+	tests/test-mongoc-cyrus.c
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
 test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
@@ -186,19 +139,15 @@ check: test
 
 TEST_ARGS = "--no-fork"
 
-test: $(TEST_PROGS)
-	@ for TEST_PROG in $(TEST_PROGS) ; do \
-		./$$TEST_PROG $(TEST_ARGS) -F test-results.json; \
-	done
+test:
+	./test-libmongoc $(TEST_ARGS) -F test-results.json
 
-valgrind: $(TEST_PROGS)
+valgrind: test-libmongoc
 	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
 
-local-check: $(TEST_PROGS)
+local-check: test-libmongoc
 	@ export MONGOC_TEST_SKIP_LIVE=on
-	@ for TEST_PROG in $(TEST_PROGS) ; do \
-		./$$TEST_PROG $(TEST_ARGS) -F test-results.json; \
-	done
+	./test-libmongoc $(TEST_ARGS) -F test-results.json
 
 
 DISTCLEANFILES += \
@@ -231,8 +180,6 @@ EXTRA_DIST += \
 	tests/mock_server/request.h \
 	tests/mock_server/sync-queue.c \
 	tests/mock_server/sync-queue.h \
-	tests/mongoc-tests.c \
-	tests/mongoc-tests.h \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
 	$(wildcard tests/release_files/*.txt) \

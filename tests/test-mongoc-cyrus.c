@@ -149,7 +149,7 @@ test_sasl_properties (void)
       "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
 
    memset (&sasl, 0, sizeof sasl);
-   _mongoc_sasl_set_properties ((mongoc_sasl_t *)&sasl, uri);
+   _mongoc_sasl_set_properties ((mongoc_sasl_t *) &sasl, uri);
 
    ASSERT (sasl.credentials.canonicalize_host_name);
    ASSERT_CMPSTR (sasl.credentials.service_name, "sn");
@@ -164,7 +164,7 @@ test_sasl_properties (void)
 
    _mongoc_cyrus_destroy (&sasl);
    memset (&sasl, 0, sizeof sasl);
-   _mongoc_sasl_set_properties ((mongoc_sasl_t *)&sasl, uri);
+   _mongoc_sasl_set_properties ((mongoc_sasl_t *) &sasl, uri);
 
    ASSERT (!sasl.credentials.canonicalize_host_name);
    ASSERT_CMPSTR (sasl.credentials.service_name, "sn");
