@@ -1861,7 +1861,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
 
    if (server_id) {
       _mongoc_client_kill_cursor (client,
-                                  selected_server->id,
+                                  server_id,
                                   cursor_id,
                                   0 /* operation_id */,
                                   NULL /* db */,
