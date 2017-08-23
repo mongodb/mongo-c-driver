@@ -254,18 +254,18 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b)                                        \
-   do {                                                              \
-      if (NULL == strstr ((a), (b))) {                               \
-         fprintf (stderr,                                            \
-                  "%s:%d %s(): : [%s] does not contain with [%s]\n", \
-                  __FILE__,                                          \
-                  __LINE__,                                          \
-                  BSON_FUNC,                                         \
-                  a,                                                 \
-                  b);                                                \
-         abort ();                                                   \
-      }                                                              \
+#define ASSERT_CONTAINS(a, b)                                 \
+   do {                                                       \
+      if (NULL == strstr ((a), (b))) {                        \
+         fprintf (stderr,                                     \
+                  "%s:%d %s(): [%s] does not contain [%s]\n", \
+                  __FILE__,                                   \
+                  __LINE__,                                   \
+                  BSON_FUNC,                                  \
+                  a,                                          \
+                  b);                                         \
+         abort ();                                            \
+      }                                                       \
    } while (0)
 
 #define ASSERT_STARTSWITH(a, b)                                    \
