@@ -527,7 +527,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       if (!cursor->done) {
          /* The only way to stop an exhaust cursor is to kill the connection */
          mongoc_cluster_disconnect_node (&cursor->client->cluster,
-                                         cursor->server_id);
+                                         cursor->server_id, false, NULL);
       }
    } else if (cursor->rpc.reply.cursor_id) {
       bson_strncpy (db, cursor->ns, cursor->dblen + 1);

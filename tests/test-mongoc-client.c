@@ -450,7 +450,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
-         mongoc_cluster_disconnect_node (&client->cluster, 1);
+         mongoc_cluster_disconnect_node (
+            &client->cluster, 1, false /* invalidate */, NULL);
       } else {
          scanner_node =
             mongoc_topology_scanner_get_node (client->topology->scanner, 1);
@@ -1969,7 +1970,9 @@ _test_mongoc_client_ssl_opts (bool pooled)
    host = test_framework_get_host ();
    port = test_framework_get_port ();
    uri_str = bson_strdup_printf (
-      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000", host, port);
+      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000&connectTimeoutMS=1000",
+      host,
+      port);
 
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
    uri_str_auth_ssl = bson_strdup_printf ("%s&ssl=true", uri_str_auth);
@@ -2518,8 +2521,6 @@ _cmd (mock_server_t *server,
 
    if (server_replies) {
       mock_server_replies_simple (request, "{'ok': 1}");
-   } else {
-      mock_server_hangs_up (request);
    }
 
    r = future_get_bool (future);
@@ -2619,6 +2620,7 @@ _test_ssl_reconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 1000);
 
    if (pooled) {
       capture_logs (true);
@@ -2633,11 +2635,11 @@ _test_ssl_reconnect (bool pooled)
    ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
                     error);
 
-   /* man-in-the-middle: certificate changed, for example expired*/
+   /* man-in-the-middle: certificate changed, for example expired */
    server_opts.pem_file = CERT_EXPIRED;
    mock_server_set_ssl_opts (server, &server_opts);
 
-   /* server closes connections */
+   /* network timeout */
 
    ASSERT (!_cmd (server, client, false /* server hangs up */, &error));
    if (pooled) {
@@ -3062,7 +3064,7 @@ _test_null_error_pointer (bool pooled)
    /* disconnect */
    mock_server_destroy (server);
    if (pooled) {
-      mongoc_cluster_disconnect_node (&client->cluster, 1);
+      mongoc_cluster_disconnect_node (&client->cluster, 1, false, NULL);
    } else {
       mongoc_topology_scanner_node_t *scanner_node;
 

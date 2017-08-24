@@ -231,6 +231,7 @@ _test_cluster_command_timeout (bool pooled)
    future_t *future;
    request_t *request;
    uint16_t client_port;
+   mongoc_server_description_t *sd;
    bson_t reply;
 
    capture_logs (true);
@@ -260,6 +261,11 @@ _test_cluster_command_timeout (bool pooled)
       MONGOC_ERROR_STREAM,
       MONGOC_ERROR_STREAM_SOCKET,
       "Failed to send \"foo\" command with database \"db\"");
+
+   /* a network timeout does NOT invalidate the server description */
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   BSON_ASSERT (sd->type != MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_destroy (sd);
 
    /* late response */
    mock_server_replies_simple (request, "{'ok': 1, 'bar': 1}");
@@ -319,6 +325,7 @@ _test_write_disconnect (bool legacy)
    future_t *future;
    request_t *request;
    mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_server_description_t *sd;
 
    if (!TestSuite_CheckMockServerAllowed ()) {
       return;
@@ -368,6 +375,11 @@ _test_write_disconnect (bool legacy)
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner,
                                                     1 /* server_id */);
    ASSERT (scanner_node && !scanner_node->stream);
+
+   /* a hangup DOES invalidate the server description */
+   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_destroy (sd);
 
    mongoc_collection_destroy (collection);
    request_destroy (request);

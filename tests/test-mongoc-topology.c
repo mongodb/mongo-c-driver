@@ -858,7 +858,8 @@ _test_server_removed_during_handshake (bool pooled)
                               mock_server_get_host_and_port (server));
 
    /* pretend to close a connection. does NOT affect server description yet */
-   mongoc_cluster_disconnect_node (&client->cluster, 1);
+   mongoc_cluster_disconnect_node (
+      &client->cluster, 1, false /* invalidate */, NULL);
    sd = mongoc_client_get_server_description (client, 1);
    /* still primary */
    ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
@@ -1408,20 +1409,28 @@ test_topology_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/single/hangup", test_ismaster_retry_single_hangup);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/single/timeout", test_ismaster_retry_single_timeout);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/single/hangup/fail", test_ismaster_retry_single_hangup_fail);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/single/timeout/fail", test_ismaster_retry_single_timeout_fail);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/pooled/hangup", test_ismaster_retry_pooled_hangup);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/pooled/timeout", test_ismaster_retry_pooled_timeout);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/pooled/hangup/fail", test_ismaster_retry_pooled_hangup_fail);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/ismaster_retry/pooled/timeout/fail", test_ismaster_retry_pooled_timeout_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/single/hangup",
+                                test_ismaster_retry_single_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/single/timeout",
+                                test_ismaster_retry_single_timeout);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/single/hangup/fail",
+                                test_ismaster_retry_single_hangup_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/single/timeout/fail",
+                                test_ismaster_retry_single_timeout_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/pooled/hangup",
+                                test_ismaster_retry_pooled_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/pooled/timeout",
+                                test_ismaster_retry_pooled_timeout);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/pooled/hangup/fail",
+                                test_ismaster_retry_pooled_hangup_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster_retry/pooled/timeout/fail",
+                                test_ismaster_retry_pooled_timeout_fail);
 }

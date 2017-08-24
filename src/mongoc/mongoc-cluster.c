@@ -409,7 +409,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                     cluster->iov.len,
                                     cluster->sockettimeoutms,
                                     error)) {
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
 
       /* add info about the command to writev_full's error message */
       _bson_error_message_printf (
@@ -427,11 +427,12 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
                                                 reply_header_size,
                                                 reply_header_size,
                                                 cluster->sockettimeoutms)) {
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
       RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_SOCKET,
                    "socket error or timeout");
 
+      mongoc_cluster_disconnect_node (
+         cluster, cmd->server_id, !mongoc_stream_timed_out (stream), error);
       GOTO (done);
    }
 
@@ -1347,7 +1348,9 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
  * mongoc_cluster_disconnect_node --
  *
  *       Remove a node from the set of nodes. This should be done if
- *       a stream in the set is found to be invalid.
+ *       a stream in the set is found to be invalid. If @invalidate is
+ *       true, also mark the server Unknown in the topology description,
+ *       passing the error information from @why as the reason.
  *
  *       WARNING: pointers to a disconnected mongoc_cluster_node_t or
  *       its stream are now invalid, be careful of dangling pointers.
@@ -1363,9 +1366,13 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
  */
 
 void
-mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
+                                uint32_t server_id,
+                                bool invalidate,
+                                const bson_error_t *why /* IN */)
 {
    mongoc_topology_t *topology = cluster->client->topology;
+
    ENTRY;
 
    if (topology->single_threaded) {
@@ -1377,11 +1384,13 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
       /* might never actually have connected */
       if (scanner_node && scanner_node->stream) {
          mongoc_topology_scanner_node_disconnect (scanner_node, true);
-         EXIT;
       }
-      EXIT;
    } else {
       mongoc_set_rm (cluster->nodes, server_id);
+   }
+
+   if (invalidate) {
+      mongoc_topology_invalidate_server (topology, server_id, why);
    }
 
    EXIT;
@@ -1606,10 +1615,9 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * ServerDescription of type Unknown, and fill the ServerDescription's
        * error field with useful information."
        *
-       * error was filled by fetch_stream_single/pooled, pass it to invalidate()
+       * error was filled by fetch_stream_single/pooled, pass it to disconnect()
        */
-      mongoc_cluster_disconnect_node (cluster, server_id);
-      mongoc_topology_invalidate_server (topology, server_id, err_ptr);
+      mongoc_cluster_disconnect_node (cluster, server_id, true, err_ptr);
    }
 
    RETURN (server_stream);
@@ -1643,18 +1651,23 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream = NULL;
+   bson_error_t err_local;
 
    ENTRY;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (server_id);
 
+   if (!error) {
+      error = &err_local;
+   }
+
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, reconnect_ok, error);
 
    if (!server_stream) {
       /* failed */
-      mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (cluster, server_id, true, error);
    }
 
    RETURN (server_stream);
@@ -1801,7 +1814,8 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       if (timestamp == -1 || cluster_node->timestamp < timestamp) {
          /* topology change or net error during background scan made us remove
           * or replace server description since node's birth. destroy node. */
-         mongoc_cluster_disconnect_node (cluster, server_id);
+         mongoc_cluster_disconnect_node (
+            cluster, server_id, false /* invalidate */, NULL);
       } else {
          return _mongoc_cluster_create_server_stream (
             topology, server_id, cluster_node->stream, error);
@@ -2206,7 +2220,11 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 
    if (scanner_node->last_used + (1000 * CHECK_CLOSED_DURATION_MSEC) < now) {
       if (mongoc_stream_check_closed (stream)) {
-         mongoc_cluster_disconnect_node (cluster, server_id);
+         bson_set_error (&error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "connection closed");
+         mongoc_cluster_disconnect_node (cluster, server_id, true, &error);
          return false;
       }
    }
@@ -2223,9 +2241,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       bson_destroy (&command);
 
       if (!r) {
-         mongoc_cluster_disconnect_node (cluster, server_id);
-         mongoc_topology_invalidate_server (
-            topology, server_id, &error /* IN */);
+         mongoc_cluster_disconnect_node (cluster, server_id, true, &error);
       }
    }
 
@@ -2420,6 +2436,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                          bson_error_t *error)
 {
    uint32_t server_id;
+   bson_error_t err_local;
    int32_t msg_len;
    int32_t max_msg_size;
    off_t pos;
@@ -2435,6 +2452,10 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 
    TRACE ("Waiting for reply from server_id \"%u\"", server_id);
 
+   if (!error) {
+      error = &err_local;
+   }
+
    /*
     * Buffer the message length to determine how much more to read.
     */
@@ -2444,7 +2465,11 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       MONGOC_DEBUG (
          "Could not read 4 bytes, stream probably closed or timed out");
       mongoc_counter_protocol_ingress_error_inc ();
-      mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (
+         cluster,
+         server_id,
+         !mongoc_stream_timed_out (server_stream->stream),
+         error);
       RETURN (false);
    }
 
@@ -2459,7 +2484,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Corrupt or malicious reply received.");
-      mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (cluster, server_id, true, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -2472,7 +2497,11 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                                            msg_len - 4,
                                            cluster->sockettimeoutms,
                                            error)) {
-      mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (
+         cluster,
+         server_id,
+         !mongoc_stream_timed_out (server_stream->stream),
+         error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -2485,7 +2514,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Failed to decode reply from server.");
-      mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (cluster, server_id, true, error);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }

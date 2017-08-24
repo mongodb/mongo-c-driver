@@ -82,7 +82,10 @@ void
 mongoc_cluster_destroy (mongoc_cluster_t *cluster);
 
 void
-mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t id);
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
+                                uint32_t id,
+                                bool invalidate,
+                                const bson_error_t *why);
 
 int32_t
 mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
@@ -101,8 +104,7 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               char *buffer);
 
 bool
-mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
-                               uint32_t server_id);
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id);
 
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
