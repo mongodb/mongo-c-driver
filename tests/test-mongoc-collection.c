@@ -491,6 +491,88 @@ test_insert (void)
 
 
 static void
+test_insert_null (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   bson_t reply;
+   const bson_t *out;
+   bool ret;
+   bson_t doc;
+   bson_t filter = BSON_INITIALIZER;
+   bson_iter_t iter;
+   uint32_t len;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection =
+      mongoc_client_get_collection (client, "test", "test_null_insert");
+   ASSERT (collection);
+
+   mongoc_collection_drop (collection, &error);
+
+   bson_init (&doc);
+   bson_append_utf8 (&doc, "hello", 5, "wor\0ld", 6);
+   ret = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 1,"
+                 " 'nMatched':  0,"
+                 " 'nModified': 0,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+   bson_destroy (&doc);
+   bson_destroy (&reply);
+
+   cursor = mongoc_collection_find_with_opts (collection, &filter, NULL, NULL);
+   ASSERT (mongoc_cursor_next (cursor, &out));
+   ASSERT (bson_iter_init_find (&iter, out, "hello"));
+   ASSERT (!memcmp (bson_iter_utf8 (&iter, &len), "wor\0ld", 6));
+   ASSERT_CMPINT (len, ==, 6);
+
+   ASSERT (mongoc_cursor_next (cursor, &out));
+   ASSERT (bson_iter_init_find (&iter, out, "hello"));
+   ASSERT (!memcmp (bson_iter_utf8 (&iter, &len), "wor\0ld", 6));
+   ASSERT_CMPINT (len, ==, 6);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_bulk_operation_destroy (bulk);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_remove_one (bulk, &doc);
+   ret = mongoc_bulk_operation_update_one_with_opts (
+      bulk, &doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 0,"
+                 " 'nMatched':  1,"
+                 " 'nModified': 1,"
+                 " 'nRemoved':  1,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+
+   bson_destroy (&filter);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_insert_oversize (void *ctx)
 {
    mongoc_client_t *client;
@@ -4899,6 +4981,8 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
+   TestSuite_AddLive (
+      suite, "/Collection/insert/null_string", test_insert_null);
    TestSuite_AddFull (suite,
                       "/Collection/insert/oversize",
                       test_insert_oversize,
