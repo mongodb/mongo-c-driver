@@ -87,119 +87,6 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_inc_egress_rpc --
- *
- *       Helper to increment the counter for a particular RPC based on
- *       it's opcode.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
-{
-   mongoc_counter_op_egress_total_inc ();
-
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_DELETE:
-      mongoc_counter_op_egress_delete_inc ();
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      mongoc_counter_op_egress_update_inc ();
-      break;
-   case MONGOC_OPCODE_INSERT:
-      mongoc_counter_op_egress_insert_inc ();
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      mongoc_counter_op_egress_killcursors_inc ();
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      mongoc_counter_op_egress_getmore_inc ();
-      break;
-   case MONGOC_OPCODE_REPLY:
-      mongoc_counter_op_egress_reply_inc ();
-      break;
-   case MONGOC_OPCODE_MSG:
-      mongoc_counter_op_egress_msg_inc ();
-      break;
-   case MONGOC_OPCODE_QUERY:
-      mongoc_counter_op_egress_query_inc ();
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      mongoc_counter_op_egress_compressed_inc ();
-      break;
-   default:
-      BSON_ASSERT (false);
-      break;
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_inc_ingress_rpc --
- *
- *       Helper to increment the counter for a particular RPC based on
- *       it's opcode.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
-{
-   mongoc_counter_op_ingress_total_inc ();
-
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_DELETE:
-      mongoc_counter_op_ingress_delete_inc ();
-      break;
-   case MONGOC_OPCODE_UPDATE:
-      mongoc_counter_op_ingress_update_inc ();
-      break;
-   case MONGOC_OPCODE_INSERT:
-      mongoc_counter_op_ingress_insert_inc ();
-      break;
-   case MONGOC_OPCODE_KILL_CURSORS:
-      mongoc_counter_op_ingress_killcursors_inc ();
-      break;
-   case MONGOC_OPCODE_GET_MORE:
-      mongoc_counter_op_ingress_getmore_inc ();
-      break;
-   case MONGOC_OPCODE_REPLY:
-      mongoc_counter_op_ingress_reply_inc ();
-      break;
-   case MONGOC_OPCODE_MSG:
-      mongoc_counter_op_ingress_msg_inc ();
-      break;
-   case MONGOC_OPCODE_QUERY:
-      mongoc_counter_op_ingress_query_inc ();
-      break;
-   case MONGOC_OPCODE_COMPRESSED:
-      mongoc_counter_op_ingress_compressed_inc ();
-      break;
-   default:
-      BSON_ASSERT (false);
-      break;
-   }
-}
-
-
 size_t
 _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               size_t iovcnt,
@@ -357,7 +244,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    _mongoc_rpc_prep_command (&rpc, cmd_ns, cmd);
    rpc.header.request_id = request_id;
 
-   _mongoc_cluster_inc_egress_rpc (&rpc);
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
@@ -479,7 +365,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
       }
 
       _mongoc_rpc_swab_from_le (&rpc);
-      _mongoc_cluster_inc_ingress_rpc (&rpc);
 
       _mongoc_rpc_get_first_document (&rpc, &tmp);
       bson_copy_to (&tmp, reply_ptr);
@@ -504,7 +389,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    } else {
       GOTO (done);
    }
-   _mongoc_cluster_inc_ingress_rpc (&rpc);
 
    if (!_mongoc_cmd_check_ok (
           reply_ptr, cluster->client->error_api_version, error)) {
@@ -2301,7 +2185,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
    need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
-   _mongoc_cluster_inc_egress_rpc (rpc);
    _mongoc_rpc_gather (rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (rpc);
 
@@ -2521,8 +2404,6 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       _mongoc_buffer_init (buffer, buf, len, NULL, NULL);
    }
    _mongoc_rpc_swab_from_le (rpc);
-
-   _mongoc_cluster_inc_ingress_rpc (rpc);
 
    RETURN (true);
 }

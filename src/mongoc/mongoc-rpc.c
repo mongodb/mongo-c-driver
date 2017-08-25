@@ -19,6 +19,7 @@
 
 #include "mongoc.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-compression-private.h"
@@ -467,36 +468,55 @@
 void
 _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 {
+   mongoc_counter_op_egress_total_inc ();
    switch ((mongoc_opcode_t) rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       _mongoc_rpc_gather_reply (&rpc->reply, &rpc->header, array);
       return;
+
    case MONGOC_OPCODE_MSG:
       _mongoc_rpc_gather_msg (&rpc->msg, &rpc->header, array);
+      mongoc_counter_op_egress_msg_inc ();
       return;
+
    case MONGOC_OPCODE_UPDATE:
       _mongoc_rpc_gather_update (&rpc->update, &rpc->header, array);
+      mongoc_counter_op_egress_update_inc ();
       return;
+
    case MONGOC_OPCODE_INSERT:
       _mongoc_rpc_gather_insert (&rpc->insert, &rpc->header, array);
+      mongoc_counter_op_egress_insert_inc ();
       return;
+
    case MONGOC_OPCODE_QUERY:
       _mongoc_rpc_gather_query (&rpc->query, &rpc->header, array);
+      mongoc_counter_op_egress_query_inc ();
       return;
+
    case MONGOC_OPCODE_GET_MORE:
       _mongoc_rpc_gather_get_more (&rpc->get_more, &rpc->header, array);
+      mongoc_counter_op_egress_getmore_inc ();
       return;
+
    case MONGOC_OPCODE_DELETE:
       _mongoc_rpc_gather_delete (&rpc->delete_, &rpc->header, array);
+      mongoc_counter_op_egress_delete_inc ();
       return;
+
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, &rpc->header, array);
+      mongoc_counter_op_egress_killcursors_inc ();
       return;
+
    case MONGOC_OPCODE_COMPRESSED:
       _mongoc_rpc_gather_compressed (&rpc->compressed, &rpc->header, array);
+      mongoc_counter_op_egress_compressed_inc ();
       return;
+
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
+      BSON_ASSERT (false);
       break;
    }
 }
@@ -544,7 +564,7 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
    }
 #endif
 #if 0
-   _mongoc_rpc_printf (&rpc);
+   _mongoc_rpc_printf (rpc);
 #endif
 }
 
@@ -591,7 +611,7 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
    }
 #endif
 #if 0
-   _mongoc_rpc_printf (&rpc);
+   _mongoc_rpc_printf (rpc);
 #endif
 }
 
@@ -787,6 +807,7 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
       return false;
    }
 
+   mongoc_counter_op_ingress_total_inc ();
    if (!_mongoc_rpc_scatter_header (&rpc->header, buf, 16)) {
       return false;
    }
@@ -795,23 +816,37 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
 
    switch (opcode) {
    case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_ingress_compressed_inc ();
       return _mongoc_rpc_scatter_compressed (&rpc->compressed, buf, buflen);
+
    case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc ();
       return _mongoc_rpc_scatter_reply (&rpc->reply, buf, buflen);
+
    case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_ingress_msg_inc ();
       return _mongoc_rpc_scatter_msg (&rpc->msg, buf, buflen);
+
+
+   /* useless, we are never *getting* these opcodes */
    case MONGOC_OPCODE_UPDATE:
       return _mongoc_rpc_scatter_update (&rpc->update, buf, buflen);
+
    case MONGOC_OPCODE_INSERT:
       return _mongoc_rpc_scatter_insert (&rpc->insert, buf, buflen);
+
    case MONGOC_OPCODE_QUERY:
       return _mongoc_rpc_scatter_query (&rpc->query, buf, buflen);
+
    case MONGOC_OPCODE_GET_MORE:
       return _mongoc_rpc_scatter_get_more (&rpc->get_more, buf, buflen);
+
    case MONGOC_OPCODE_DELETE:
       return _mongoc_rpc_scatter_delete (&rpc->delete_, buf, buflen);
+
    case MONGOC_OPCODE_KILL_CURSORS:
       return _mongoc_rpc_scatter_kill_cursors (&rpc->kill_cursors, buf, buflen);
+
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
       return false;
