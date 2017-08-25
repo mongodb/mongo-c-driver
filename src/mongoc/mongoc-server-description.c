@@ -131,10 +131,8 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    bson_init_static (
       &sd->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&sd->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#ifdef MONGOC_ENABLE_COMPRESSION
    bson_init_static (
       &sd->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#endif
 
    bson_init (&sd->last_is_master);
 
@@ -622,13 +620,11 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          sd->last_write_date_ms = bson_iter_date_time (&child);
       } else if (strcmp ("idleWritePeriodMillis", bson_iter_key (&iter)) == 0) {
          sd->last_write_date_ms = bson_iter_as_int64 (&iter);
-#ifdef MONGOC_ENABLE_COMPRESSION
       } else if (strcmp ("compression", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_ARRAY (&iter))
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_init_static (&sd->compressors, bytes, len);
-#endif
       }
    }
 
@@ -707,10 +703,8 @@ mongoc_server_description_new_copy (
    bson_init_static (
       &copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#ifdef MONGOC_ENABLE_COMPRESSION
    bson_init_static (
       &copy->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#endif
 
    bson_init (&copy->last_is_master);
 
@@ -951,7 +945,6 @@ _match_tag_set (const mongoc_server_description_t *sd,
    return true;
 }
 
-#ifdef MONGOC_ENABLE_COMPRESSION
 /*
  *--------------------------------------------------------------------------
  *
@@ -960,7 +953,7 @@ _match_tag_set (const mongoc_server_description_t *sd,
  *      Get the compressor id if compression was negotiated.
  *
  * Returns:
- *      The compressor ID, or 0 if none was negotiated.
+ *      The compressor ID, or -1 if none was negotiated.
  *
  *--------------------------------------------------------------------------
  */
@@ -980,6 +973,5 @@ mongoc_server_description_compressor_id (
       }
    }
 
-   return 0;
+   return -1;
 }
-#endif

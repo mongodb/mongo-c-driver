@@ -311,9 +311,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    mongoc_apm_command_succeeded_t succeeded_event;
    mongoc_apm_command_failed_t failed_event;
    bool ret = false;
-#ifdef MONGOC_ENABLE_COMPRESSION
    char *output = NULL;
-#endif
 
    ENTRY;
 
@@ -363,8 +361,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
-#ifdef MONGOC_ENABLE_COMPRESSION
-   if (compressor_id && IS_NOT_COMMAND ("ismaster") &&
+   if (compressor_id != -1 && IS_NOT_COMMAND ("ismaster") &&
        IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
        IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
        IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser") &&
@@ -376,7 +373,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          GOTO (done);
       }
    }
-#endif
 
    if (monitored && callbacks->started) {
       mongoc_apm_command_started_init (&started_event,
@@ -558,9 +554,7 @@ done:
    if (reply_ptr == &reply_local) {
       bson_destroy (reply_ptr);
    }
-#ifdef MONGOC_ENABLE_COMPRESSION
    bson_free (output);
-#endif
 
    RETURN (ret);
 }
@@ -591,11 +585,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       bson_error_t *error)
 {
    int32_t compressor_id =
-#ifdef MONGOC_ENABLE_COMPRESSION
       mongoc_server_description_compressor_id (server_stream->sd);
-#else
-      0;
-#endif
 
    mongoc_cmd_parts_assemble (parts, server_stream);
 
@@ -2283,10 +2273,8 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    char cmdname[140];
    int32_t max_msg_size;
    bool ret = false;
-#ifdef MONGOC_ENABLE_COMPRESSION
    int32_t compressor_id = 0;
    char *output = NULL;
-#endif
 
    ENTRY;
 
@@ -2309,23 +2297,19 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
    }
 
    _mongoc_array_clear (&cluster->iov);
-#ifdef MONGOC_ENABLE_COMPRESSION
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
-#endif
 
    need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
    _mongoc_cluster_inc_egress_rpc (rpc);
    _mongoc_rpc_gather (rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (rpc);
 
-#ifdef MONGOC_ENABLE_COMPRESSION
-   if (compressor_id) {
+   if (compressor_id != -1) {
       output = _mongoc_rpc_compress (cluster, compressor_id, rpc, error);
       if (output == NULL) {
          GOTO (done);
       }
    }
-#endif
 
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
@@ -2395,11 +2379,9 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
 
 done:
 
-#ifdef MONGOC_ENABLE_COMPRESSION
    if (compressor_id) {
       bson_free (output);
    }
-#endif
 
    RETURN (ret);
 }

@@ -77,9 +77,7 @@ struct _mongoc_server_description_t {
    bson_oid_t election_id;
    int64_t last_write_date_ms;
 
-#ifdef MONGOC_ENABLE_COMPRESSION
    bson_t compressors;
-#endif
 };
 
 void
