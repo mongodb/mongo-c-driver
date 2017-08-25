@@ -216,8 +216,9 @@ _mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error)
 
 
 const bson_validate_flags_t insert_vflags =
-   (bson_validate_flags_t) BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS |
-   BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS;
+   (bson_validate_flags_t) BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
+   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
+   BSON_VALIDATE_DOLLAR_KEYS;
 
 bool
 _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
@@ -261,7 +262,8 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
    bson_error_t validate_err;
    bson_iter_t iter;
    const char *key;
-   int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_EMPTY_KEYS;
+   int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
+                BSON_VALIDATE_EMPTY_KEYS;
 
    if (!bson_validate_with_error (
           update, (bson_validate_flags_t) vflags, &validate_err)) {
