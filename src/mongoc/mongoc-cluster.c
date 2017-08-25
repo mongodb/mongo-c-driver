@@ -2242,7 +2242,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_sendv_to_server --
+ * mongoc_cluster_legacy_rpc_sendv_to_server --
  *
  *       Sends the given RPCs to the given server.
  *
@@ -2259,11 +2259,12 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
  */
 
 bool
-mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
-                                mongoc_rpc_t *rpc,
-                                mongoc_server_stream_t *server_stream,
-                                const mongoc_write_concern_t *write_concern,
-                                bson_error_t *error)
+mongoc_cluster_legacy_rpc_sendv_to_server (
+   mongoc_cluster_t *cluster,
+   mongoc_rpc_t *rpc,
+   mongoc_server_stream_t *server_stream,
+   const mongoc_write_concern_t *write_concern,
+   bson_error_t *error)
 {
    uint32_t server_id;
    mongoc_topology_scanner_node_t *scanner_node;

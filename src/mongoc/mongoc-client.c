@@ -1366,9 +1366,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       bson_iter_t iter;
 
       if (opts && bson_iter_init (&iter, opts)) {
-         if (!mongoc_cmd_parts_append_opts (&parts, &iter,
-                                            server_stream->sd->max_wire_version,
-                                            error)) {
+         if (!mongoc_cmd_parts_append_opts (
+                &parts, &iter, server_stream->sd->max_wire_version, error)) {
             GOTO (err);
          }
       }
@@ -1751,7 +1750,7 @@ _mongoc_client_op_killcursors (mongoc_cluster_t *cluster,
          cluster, server_stream, cursor_id, operation_id, db, collection);
    }
 
-   r = mongoc_cluster_sendv_to_server (
+   r = mongoc_cluster_legacy_rpc_sendv_to_server (
       cluster, &rpc, server_stream, NULL, &error);
 
    if (has_ns) {

@@ -709,7 +709,7 @@ _mongoc_write_command_delete_legacy (
                                     server_stream,
                                     request_id);
 
-      if (!mongoc_cluster_sendv_to_server (
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          EXIT;
@@ -890,7 +890,7 @@ again:
                                     server_stream,
                                     request_id);
 
-      if (!mongoc_cluster_sendv_to_server (
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          GOTO (cleanup);
@@ -1133,7 +1133,7 @@ _mongoc_write_command_update_legacy (
                                     server_stream,
                                     request_id);
 
-      if (!mongoc_cluster_sendv_to_server (
+      if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
          EXIT;
