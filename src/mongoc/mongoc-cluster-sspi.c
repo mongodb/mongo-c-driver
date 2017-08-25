@@ -135,7 +135,7 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
 bool
 _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
-                                const char *hostname,
+                                mongoc_server_description_t *sd,
                                 bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
@@ -175,7 +175,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                           stream, real_name, sizeof real_name, error)) {
       state = _mongoc_cluster_sspi_new (cluster->uri, real_name);
    } else {
-      state = _mongoc_cluster_sspi_new (cluster->uri, hostname);
+      state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
    }
 
 
@@ -228,12 +228,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
-      if (!mongoc_cluster_run_command_private (cluster,
-                                               &parts,
-                                               stream,
-                                               0,
-                                               &reply,
-                                               error)) {
+      if (!mongoc_cluster_run_command_private (
+             cluster, &parts, stream, sd->id, &reply, error)) {
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
          bson_destroy (&reply);

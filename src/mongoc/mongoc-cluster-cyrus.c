@@ -25,7 +25,7 @@
 bool
 _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
                                  mongoc_stream_t *stream,
-                                 const char *hostname,
+                                 mongoc_server_description_t *sd,
                                  bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
@@ -43,7 +43,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    BSON_ASSERT (stream);
 
    if (!_mongoc_cyrus_new_from_cluster (
-          &sasl, cluster, stream, hostname, error)) {
+          &sasl, cluster, stream, sd->host.host, error)) {
       return false;
    }
 
@@ -68,7 +68,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts, stream, 0, &reply, error)) {
+             cluster, &parts, stream, sd->id, &reply, error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
