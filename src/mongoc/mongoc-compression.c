@@ -31,23 +31,26 @@
 #endif
 
 size_t
-mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t size)
+mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
 {
+   TRACE ("Getting compression length for '%s' (%d)",
+          mongoc_compressor_id_to_name (compressor_id),
+          compressor_id);
    switch (compressor_id) {
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
    case MONGOC_COMPRESSOR_SNAPPY_ID:
-      return snappy_max_compressed_length (size);
+      return snappy_max_compressed_length (len);
       break;
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
    case MONGOC_COMPRESSOR_ZLIB_ID:
-      return compressBound (size);
+      return compressBound (len);
       break;
 #endif
 
    case MONGOC_COMPRESSOR_NOOP_ID:
-      return size;
+      return len;
       break;
    default:
       return 0;
@@ -121,8 +124,11 @@ mongoc_uncompress (int32_t compressor_id,
                    const uint8_t *compressed,
                    size_t compressed_len,
                    uint8_t *uncompressed,
-                   size_t *uncompressed_size)
+                   size_t *uncompressed_len)
 {
+   TRACE ("Uncompressing with '%s' (%d)",
+          mongoc_compressor_id_to_name (compressor_id),
+          compressor_id);
    switch (compressor_id) {
    case MONGOC_COMPRESSOR_SNAPPY_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
@@ -130,7 +136,7 @@ mongoc_uncompress (int32_t compressor_id,
       status = snappy_uncompress ((const char *) compressed,
                                   compressed_len,
                                   (char *) uncompressed,
-                                  uncompressed_size);
+                                  uncompressed_len);
 
       return status == SNAPPY_OK;
 #else
@@ -146,7 +152,7 @@ mongoc_uncompress (int32_t compressor_id,
       int ok;
 
       ok = uncompress (uncompressed,
-                       (unsigned long *) uncompressed_size,
+                       (unsigned long *) uncompressed_len,
                        compressed,
                        compressed_len);
 
@@ -158,6 +164,10 @@ mongoc_uncompress (int32_t compressor_id,
 #endif
       break;
    }
+   case MONGOC_COMPRESSOR_NOOP_ID:
+      memcpy (uncompressed, compressed, compressed_len);
+      *uncompressed_len = compressed_len;
+      return true;
 
    default:
       MONGOC_WARNING ("Unknown compressor ID %d", compressor_id);
@@ -174,6 +184,9 @@ mongoc_compress (int32_t compressor_id,
                  char *compressed,
                  size_t *compressed_len)
 {
+   TRACE ("Compressing with '%s' (%d)",
+          mongoc_compressor_id_to_name (compressor_id),
+          compressor_id);
    switch (compressor_id) {
    case MONGOC_COMPRESSOR_SNAPPY_ID:
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
@@ -201,6 +214,10 @@ mongoc_compress (int32_t compressor_id,
                     "compression is not compiled in");
       return false;
 #endif
+   case MONGOC_COMPRESSOR_NOOP_ID:
+      memcpy (compressed, uncompressed, uncompressed_len);
+      *compressed_len = uncompressed_len;
+      return true;
 
    default:
       return false;
