@@ -1651,7 +1651,7 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream = NULL;
-   bson_error_t err_local;
+   bson_error_t err_local = {0};
 
    ENTRY;
 
