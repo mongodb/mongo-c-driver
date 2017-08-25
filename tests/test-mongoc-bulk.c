@@ -316,6 +316,9 @@ test_bulk_error_unordered (void)
    int i;
    mongoc_uri_t *uri;
 
+   if (test_suite_valgrind ()) {
+      return;
+   }
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
    mock_server_run (mock_server);
 

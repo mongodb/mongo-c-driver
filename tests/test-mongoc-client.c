@@ -201,6 +201,7 @@ test_client_cmd_w_write_concern (void *context)
                     error);
 
    bson_reinit (opts);
+   bson_destroy (&reply);
 
    mongoc_write_concern_append_bad (bad_wc, opts);
    ASSERT (!mongoc_client_write_command_with_opts (
@@ -231,6 +232,7 @@ test_client_cmd_w_write_concern (void *context)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
+         bson_destroy (&reply);
       }
    }
 
@@ -677,7 +679,7 @@ test_wire_version (void)
                               "{'ok': 1.0,"
                               " 'ismaster': true,"
                               " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 6}");
+                              " 'maxWireVersion': 5}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -691,6 +693,7 @@ test_wire_version (void)
    BSON_ASSERT (future_get_bool (future));
    BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
 
+   future_destroy (future);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

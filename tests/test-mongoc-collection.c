@@ -99,7 +99,7 @@ test_aggregate_inherit_collection (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -1907,6 +1907,9 @@ test_index_w_write_concern ()
    bson_t *opts = NULL;
    bool result;
    bool wire_version_5;
+   bool at_least_2 = test_framework_max_wire_version_at_least (2);
+   bool is_replicaset = test_framework_is_replset ();
+   bool is_mongos = test_framework_is_mongos ();
 
    mongoc_index_opt_init (&opt);
    opts = bson_new ();
@@ -1967,11 +1970,11 @@ test_index_w_write_concern ()
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
-   if (!test_framework_is_mongos ()) {
+   if (!is_mongos) {
       if (wire_version_5) {
          ASSERT (!mongoc_collection_create_index_with_opts (
             collection, &keys, &opt, opts, &reply, &error));
-         if (test_framework_is_replset ()) { /* replica set */
+         if (is_replicaset) { /* replica set */
             ASSERT_ERROR_CONTAINS (
                error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
          } else { /* standalone */
@@ -1986,13 +1989,12 @@ test_index_w_write_concern ()
          ASSERT (!error.domain);
       }
    }
-
-   if (!test_framework_max_wire_version_at_least (2)) {
+   if (at_least_2) {
+      ASSERT (!bson_empty (&reply));
+   } else {
       /* On very old versions of the server, create_index_with_write_concern
        * will give an empty reply even if the call succeeds */
       ASSERT (bson_empty (&reply));
-   } else {
-      ASSERT (!bson_empty (&reply));
    }
    bson_destroy (&reply);
 

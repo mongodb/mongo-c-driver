@@ -173,6 +173,7 @@ request_matches_query (const request_t *request,
 
    if (!request->is_command && is_command) {
       test_error ("expected command, got query");
+      abort ();
       return false;
    }
 
