@@ -330,49 +330,6 @@ test_mongoc_rpc_kill_cursors_scatter (void)
 
 
 static void
-test_mongoc_rpc_msg_gather (void)
-{
-   mongoc_rpc_t rpc;
-
-   memset (&rpc, 0xFFFFFFFF, sizeof rpc);
-
-   rpc.header.msg_len = 0;
-   rpc.header.request_id = 1234;
-   rpc.header.response_to = -1;
-   rpc.header.opcode = MONGOC_OPCODE_MSG;
-   rpc.msg.msg = "this is a test message.";
-
-   assert_rpc_equal ("msg1.dat", &rpc);
-}
-
-
-static void
-test_mongoc_rpc_msg_scatter (void)
-{
-   uint8_t *data;
-   mongoc_rpc_t rpc;
-   bool r;
-   size_t length;
-
-   memset (&rpc, 0xFFFFFFFF, sizeof rpc);
-
-   data = get_test_file ("msg1.dat", &length);
-   r = _mongoc_rpc_scatter (&rpc, data, length);
-   ASSERT (r);
-   _mongoc_rpc_swab_from_le (&rpc);
-
-   ASSERT (rpc.header.msg_len == 40);
-   ASSERT (rpc.header.request_id == 1234);
-   ASSERT (rpc.header.response_to == -1);
-   ASSERT (rpc.header.opcode == MONGOC_OPCODE_MSG);
-   ASSERT (!strcmp (rpc.msg.msg, "this is a test message."));
-
-   assert_rpc_equal ("msg1.dat", &rpc);
-   bson_free (data);
-}
-
-
-static void
 test_mongoc_rpc_query_gather (void)
 {
    mongoc_rpc_t rpc;
@@ -707,8 +664,6 @@ test_rpc_install (TestSuite *suite)
       suite, "/Rpc/kill_cursors/gather", test_mongoc_rpc_kill_cursors_gather);
    TestSuite_Add (
       suite, "/Rpc/kill_cursors/scatter", test_mongoc_rpc_kill_cursors_scatter);
-   TestSuite_Add (suite, "/Rpc/msg/gather", test_mongoc_rpc_msg_gather);
-   TestSuite_Add (suite, "/Rpc/msg/scatter", test_mongoc_rpc_msg_scatter);
    TestSuite_Add (suite, "/Rpc/query/gather", test_mongoc_rpc_query_gather);
    TestSuite_Add (suite, "/Rpc/query/scatter", test_mongoc_rpc_query_scatter);
    TestSuite_Add (suite, "/Rpc/reply/gather", test_mongoc_rpc_reply_gather);

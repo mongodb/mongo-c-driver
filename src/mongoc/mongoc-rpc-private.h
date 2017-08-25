@@ -34,6 +34,19 @@ struct _mongoc_cluster_t;
 
 BSON_BEGIN_DECLS
 
+typedef struct _mongoc_rpc_section_t {
+   uint8_t payload_type;
+   union {
+      /* payload_type == 0 */
+      const uint8_t *bson_document;
+      /* payload_type == 1 */
+      struct {
+         int32_t size;
+         char *identifier;
+         const uint8_t *bson_documents;
+      } sequence;
+   } payload;
+} mongoc_rpc_section_t;
 
 #define RPC(_name, _code) \
    typedef struct {       \
@@ -42,6 +55,7 @@ BSON_BEGIN_DECLS
 #define ENUM_FIELD(_name) uint32_t _name;
 #define INT32_FIELD(_name) int32_t _name;
 #define UINT8_FIELD(_name) uint8_t _name;
+#define UINT32_FIELD(_name) uint32_t _name;
 #define INT64_FIELD(_name) int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name) \
    int32_t _len;                       \
@@ -55,6 +69,9 @@ BSON_BEGIN_DECLS
    const mongoc_iovec_t *_name;  \
    int32_t n_##_name;            \
    mongoc_iovec_t _name##_recv;
+#define SECTION_ARRAY_FIELD(_name) \
+   mongoc_rpc_section_t _name[2];  \
+   int32_t n_##_name;
 #define RAW_BUFFER_FIELD(_name) \
    const uint8_t *_name;        \
    int32_t _name##_len;
@@ -101,6 +118,7 @@ BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -108,6 +126,7 @@ BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 

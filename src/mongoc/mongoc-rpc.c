@@ -42,6 +42,11 @@
    iov.iov_len = 1;                          \
    header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
+#define UINT32_FIELD(_name)                   \
+   iov.iov_base = (void *) &rpc->_name;       \
+   iov.iov_len = 4;                           \
+   header->msg_len += (uint32_t) iov.iov_len; \
+   _mongoc_array_append_val (array, iov);
 #define INT32_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
    iov.iov_len = 4;                          \
@@ -90,6 +95,24 @@
          _mongoc_array_append_val (array, rpc->_name[_i]);    \
       }                                                       \
    } while (0);
+#define SECTION_ARRAY_FIELD(_name)                                     \
+   do {                                                                \
+      ssize_t _i;                                                      \
+      BSON_ASSERT (rpc->n_##_name);                                    \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                        \
+         int32_t __l;                                                  \
+         iov.iov_base = (void *) &rpc->_name[_i].payload_type;         \
+         iov.iov_len = 1;                                              \
+         header->msg_len += (int32_t) iov.iov_len;                     \
+         _mongoc_array_append_val (array, iov);                        \
+         memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);       \
+         __l = BSON_UINT32_FROM_LE (__l);                              \
+         iov.iov_base = (void *) rpc->_name[_i].payload.bson_document; \
+         iov.iov_len = __l;                                            \
+         header->msg_len += (int32_t) iov.iov_len;                     \
+         _mongoc_array_append_val (array, iov);                        \
+      }                                                                \
+   } while (0);
 #define RAW_BUFFER_FIELD(_name)              \
    iov.iov_base = (void *) rpc->_name;       \
    iov.iov_len = rpc->_name##_len;           \
@@ -122,6 +145,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -129,6 +153,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
 #undef BSON_OPTIONAL
 
@@ -142,6 +167,7 @@
       _code                                                                 \
    }
 #define UINT8_FIELD(_name)
+#define UINT32_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
@@ -149,6 +175,7 @@
 #define BSON_FIELD(_name)
 #define BSON_ARRAY_FIELD(_name)
 #define IOVEC_ARRAY_FIELD(_name)
+#define SECTION_ARRAY_FIELD(_name)
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
       _code                          \
@@ -206,6 +233,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -213,6 +241,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -226,6 +255,7 @@
       _code                                                             \
    }
 #define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
+#define UINT32_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
@@ -271,6 +301,28 @@
          printf ("\n");                                    \
       }                                                    \
    } while (0);
+#define SECTION_ARRAY_FIELD(_name)                                         \
+   do {                                                                    \
+      ssize_t _i;                                                          \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                            \
+         printf ("  " #_name " : %d\n", rpc->n_##_name);                   \
+         if (rpc->_name[_i].payload_type == 0) {                           \
+            do {                                                           \
+               bson_t b;                                                   \
+               char *s;                                                    \
+               int32_t __l;                                                \
+               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);     \
+               __l = BSON_UINT32_FROM_LE (__l);                            \
+               bson_init_static (                                          \
+                  &b, rpc->_name[_i].payload.bson_document, __l);          \
+               s = bson_as_relaxed_extended_json (&b, NULL);               \
+               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s); \
+               bson_free (s);                                              \
+               bson_destroy (&b);                                          \
+            } while (0);                                                   \
+         }                                                                 \
+      }                                                                    \
+   } while (0);
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
       _code                          \
@@ -310,6 +362,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -317,6 +370,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -337,6 +391,13 @@
    memcpy (&rpc->_name, buf, 1); \
    buflen -= 1;                  \
    buf += 1;
+#define UINT32_FIELD(_name)      \
+   if (buflen < 4) {             \
+      return false;              \
+   }                             \
+   memcpy (&rpc->_name, buf, 4); \
+   buflen -= 4;                  \
+   buf += 4;
 #define INT32_FIELD(_name)       \
    if (buflen < 4) {             \
       return false;              \
@@ -417,6 +478,20 @@
    rpc->n_##_name = 1;                        \
    buf = NULL;                                \
    buflen = 0;
+#define SECTION_ARRAY_FIELD(_name)                                 \
+   do {                                                            \
+      uint32_t __l;                                                \
+      mongoc_rpc_section_t *section = &rpc->_name[rpc->n_##_name]; \
+      section->payload_type = buf[0];                              \
+      buf++;                                                       \
+      buflen -= 1;                                                 \
+      memcpy (&__l, buf, 4);                                       \
+      __l = BSON_UINT32_FROM_LE (__l);                             \
+      section->payload.bson_document = (uint8_t *) buf;            \
+      buf += __l;                                                  \
+      buflen -= __l;                                               \
+   } while (0);                                                    \
+   rpc->n_##_name++;
 #define RAW_BUFFER_FIELD(_name)         \
    rpc->_name = (void *) buf;           \
    rpc->_name##_len = (int32_t) buflen; \
@@ -440,6 +515,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -447,6 +523,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -490,6 +567,10 @@ _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
       return;
 
    case MONGOC_OPCODE_QUERY:
+#ifdef FIXME_OP_MSG
+      fprintf (stderr, "\nFIXME !!!\n");
+      abort ();
+#endif
       _mongoc_rpc_gather_query (&rpc->query, &rpc->header, array);
       mongoc_counter_op_egress_query_inc ();
       return;
