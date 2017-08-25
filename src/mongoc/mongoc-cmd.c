@@ -20,6 +20,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-util-private.h"
 
 
 void
@@ -227,6 +228,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_id = server_stream->sd->id;
 
+   parts->assembled.command_name =
+      _mongoc_get_command_name (parts->assembled.command);
+   TRACE ("Preparing '%s'", parts->assembled.command_name);
    if (!parts->is_write_command) {
       switch (server_stream->topology_type) {
       case MONGOC_TOPOLOGY_SINGLE:
@@ -304,6 +308,8 @@ mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *parts, uint32_t server_id)
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.command = parts->body;
    parts->assembled.server_id = server_id;
+   parts->assembled.command_name =
+      _mongoc_get_command_name (parts->assembled.command);
 }
 
 
@@ -325,4 +331,22 @@ mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
 {
    bson_destroy (&parts->extra);
    bson_destroy (&parts->assembled_body);
+}
+
+bool
+mongoc_cmd_is_compressable (mongoc_cmd_t *cmd)
+{
+   BSON_ASSERT (cmd);
+   BSON_ASSERT (cmd->command_name);
+
+   return !!strcasecmp (cmd->command_name, "ismaster") &&
+          !!strcasecmp (cmd->command_name, "authenticate") &&
+          !!strcasecmp (cmd->command_name, "getnonce") &&
+          !!strcasecmp (cmd->command_name, "saslstart") &&
+          !!strcasecmp (cmd->command_name, "saslcontinue") &&
+          !!strcasecmp (cmd->command_name, "createuser") &&
+          !!strcasecmp (cmd->command_name, "updateuser") &&
+          !!strcasecmp (cmd->command_name, "copydb") &&
+          !!strcasecmp (cmd->command_name, "copydbsaslstart") &&
+          !!strcasecmp (cmd->command_name, "copydbgetnonce");
 }

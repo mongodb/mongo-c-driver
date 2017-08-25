@@ -41,6 +41,7 @@ typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
    const bson_t *command;
+   const char *command_name;
    uint32_t server_id;
    int64_t operation_id;
 } mongoc_cmd_t;
@@ -76,6 +77,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
 void
 mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *op, uint32_t server_id);
+
+bool
+mongoc_cmd_is_compressable (mongoc_cmd_t *cmd);
 
 void
 mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *op);
