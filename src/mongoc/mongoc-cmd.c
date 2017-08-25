@@ -228,10 +228,43 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_id = server_stream->sd->id;
 
+
    parts->assembled.command_name =
       _mongoc_get_command_name (parts->assembled.command);
    TRACE ("Preparing '%s'", parts->assembled.command_name);
-   if (!parts->is_write_command) {
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      if (!bson_has_field (parts->body, "$db")) {
+         BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
+      }
+
+      if (parts->read_prefs &&
+          !bson_has_field (parts->body, "$readPreference")) {
+         bson_t child;
+         const bson_t *tags = NULL;
+         const char *mode_str;
+         int64_t stale;
+
+         bson_append_document_begin (
+            &parts->extra, "$readPreference", 15, &child);
+
+         mode_str = _mongoc_read_mode_as_str (
+            mongoc_read_prefs_get_mode (parts->read_prefs));
+         bson_append_utf8 (&child, "mode", 4, mode_str, -1);
+
+         tags = mongoc_read_prefs_get_tags (parts->read_prefs);
+         if (!bson_empty0 (tags)) {
+            bson_append_array (&child, "tags", 4, tags);
+         }
+
+         stale =
+            mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
+         if (stale != MONGOC_NO_MAX_STALENESS) {
+            bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
+         }
+
+         bson_append_document_end (&parts->extra, &child);
+      }
+   } else if (!parts->is_write_command) {
       switch (server_stream->topology_type) {
       case MONGOC_TOPOLOGY_SINGLE:
          if (server_type == MONGOC_SERVER_MONGOS) {

@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
 #define WIRE_VERSION_MIN 0
-#define WIRE_VERSION_MAX 5
+#define WIRE_VERSION_MAX 6
 
 /* first version that supported aggregation cursors */
 #define WIRE_VERSION_AGG_CURSOR 1
@@ -66,6 +66,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5
 /* first version to support collation */
 #define WIRE_VERSION_COLLATION 5
+/* first version to support OP_MSG */
+#define WIRE_VERSION_OP_MSG 6
 
 
 struct _mongoc_client_t {

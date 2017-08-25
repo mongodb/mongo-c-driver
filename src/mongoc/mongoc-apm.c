@@ -56,12 +56,12 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_document (&iter, &len, &data);
          event->command = bson_new_from_data (data, len);
+         event->command_owned = true;
       } else {
-         /* $query should exist, but user could provide us a misformatted doc */
-         event->command = bson_new ();
+         /* Got $readPreference without $query, probably OP_MSG */
+         event->command = (bson_t *) command;
+         event->command_owned = false;
       }
-
-      event->command_owned = true;
    } else {
       /* discard "const", we promise not to modify "command" */
       event->command = (bson_t *) command;
