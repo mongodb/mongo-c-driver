@@ -137,7 +137,7 @@
 
 
 /*
- * Use ASN1_STRING_get0_data () rather then the deprecated ASN1_STRING_data
+ * Use ASN1_STRING_get0_data () rather than the deprecated ASN1_STRING_data
  */
 #define MONGOC_HAVE_ASN1_STRING_GET0_DATA @MONGOC_HAVE_ASN1_STRING_GET0_DATA@
 

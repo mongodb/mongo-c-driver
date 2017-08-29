@@ -1843,6 +1843,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    if (!mongoc_topology_compatible (&topology->description, NULL, &error)) {
       MONGOC_ERROR ("Could not kill cursor: %s", error.message);
       mongoc_mutex_unlock (&topology->mutex);
+      mongoc_read_prefs_destroy (read_prefs);
       return;
    }
 
