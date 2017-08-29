@@ -2502,7 +2502,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                     cluster->sockettimeoutms,
                                     error);
    if (!ok) {
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       bson_free (output);
       bson_init (reply);
       return false;
@@ -2511,7 +2511,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    ok = _mongoc_buffer_append_from_stream (
       &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
    if (!ok) {
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       bson_free (output);
       bson_init (reply);
       return false;
@@ -2528,7 +2528,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          "Message size %d is not within expected range 16-%d bytes",
          msg_len,
          server_stream->sd->max_msg_size);
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       bson_free (output);
       bson_init (reply);
       return false;
@@ -2540,7 +2540,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                            cluster->sockettimeoutms,
                                            error);
    if (!ok) {
-      mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       bson_free (output);
       bson_init (reply);
       return false;
@@ -2566,7 +2566,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                          MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Could not decompress message from server");
-         mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+         mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
          bson_free (output);
          bson_init (reply);
          return false;
