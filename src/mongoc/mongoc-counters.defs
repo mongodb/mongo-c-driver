@@ -58,12 +58,4 @@ COUNTER(auth_success,           "Auth",         "Success",             "The numb
 
 COUNTER(dns_failure,            "DNS",          "Failure",             "The number of failed DNS requests.")
 COUNTER(dns_success,            "DNS",          "Success",             "The number of successful DNS requests.")
-/*
-COUNTER(op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
-COUNTER(op_ingress_getmore,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
-COUNTER(op_ingress_query,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
-COUNTER(op_ingress_insert,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
-COUNTER(op_ingress_delete,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
-COUNTER(op_ingress_update,      "Operations",   "Ingress Update",      "The number of received Update operations.")
-COUNTER(op_ingress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
-*/
+
