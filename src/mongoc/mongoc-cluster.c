@@ -82,6 +82,11 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
+static mongoc_server_stream_t *
+_mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
+                                      uint32_t server_id,
+                                      mongoc_stream_t *stream,
+                                      bson_error_t *error /* OUT */);
 static void
 _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
