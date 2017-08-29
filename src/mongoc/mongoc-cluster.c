@@ -322,11 +322,13 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < reply_header_size) ||
        (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       GOTO (done);
    }
 
    if (!_mongoc_rpc_scatter_reply_header_only (
           &rpc, reply_header_buf, reply_header_size)) {
+      mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
       GOTO (done);
    }
    doc_len = (size_t) msg_len - reply_header_size;
@@ -348,7 +350,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+         mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
          GOTO (done);
       }
       if (!_mongoc_rpc_scatter (&rpc, reply_buf, msg_len)) {
@@ -384,7 +386,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t *cluster,
          RUN_CMD_ERR (MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "socket error or timeout");
-         mongoc_cluster_disconnect_node (cluster, cmd->server_id);
+         mongoc_cluster_disconnect_node (cluster, cmd->server_id, true, error);
          GOTO (done);
       }
       _mongoc_rpc_swab_from_le (&rpc);
