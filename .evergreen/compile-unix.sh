@@ -85,7 +85,7 @@ CONFIGURE_SCRIPT="./autogen.sh"
 
 
 # --strip-components is an GNU tar extension. Check if the platform
-# (e.g. Solaris) has GNU tar installed as `gtar`, otherwise we assume to be on
+# has GNU tar installed as `gtar`, otherwise we assume to be on
 # platform that supports it
 # command -v returns success error code if found and prints the path to it
 if command -v gtar 2>/dev/null; then
@@ -160,15 +160,6 @@ case "$OS" in
       cpus=$(grep -c '^processor' /proc/cpuinfo)
       MAKEFLAGS="-j${cpus}"
       export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
-   ;;
-
-   sunos)
-      PATH="/opt/mongodbtoolchain/bin:$PATH"
-      if [  "$SASL" != "no" ]; then
-         export SASL_CFLAGS="-I/opt/csw/include/"
-         export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-      fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 esac
 

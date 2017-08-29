@@ -336,14 +336,13 @@ test_mongoc_tls_handshake_stall (void)
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
-/* TLS stream doesn't detect hangup promptly on Solaris for some reason */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
    !defined(MONGOC_ENABLE_SSL_LIBRESSL)
-#if !defined(__sun) && !defined(__APPLE__)
+#if !defined(__APPLE__)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
-   /* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
+/* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    TestSuite_Add (
       suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);

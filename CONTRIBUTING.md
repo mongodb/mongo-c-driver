@@ -21,7 +21,6 @@ operating systems and architectures.
  * FreeBSD (10 and newer)
  * Windows (Vista and newer)
  * macOS (10.8 and newer)
- * Solaris x86_64/SPARC (11 and newer)
  * ARM/SPARC/x86/x86_64
 
 

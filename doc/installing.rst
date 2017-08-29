@@ -16,7 +16,6 @@ The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/wate
 - Microsoft Windows Server 2008
 - RHEL 7.0, 7.1, 7.2
 - SUSE 12
-- smartOS (sunos / Solaris)
 - Ubuntu 12.04, 14.04, 16.04
 - Clang 3.4, 3.5, 3.7, 3.8
 - GCC 4.6, 4.8, 4.9, 5.3

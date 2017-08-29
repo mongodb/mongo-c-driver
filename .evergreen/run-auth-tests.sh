@@ -39,12 +39,6 @@ case "$OS" in
       PING="./mongoc-ping"
       ;;
 
-   sunos)
-      PATH="/opt/mongodbtoolchain/bin:$PATH"
-      export LD_LIBRARY_PATH="install-dir/lib:/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
-      PING="./mongoc-ping"
-      ;;
-
    *)
       # This libtool wrapper script was built in a unique dir like
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
@@ -65,9 +59,6 @@ fi
 cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/ssl/cert.pem || true
 # OpenSSL fips enabled path
 cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/cert.pem || true
-# Solaris CSW OpenSSL install need to copy the OS trust store
-sudo mkdir -p /etc/opt/csw/ssl/ || true
-sudo cp /etc/ssl/cert.pem /etc/opt/csw/ssl/ || true
 
 export PATH=install-dir/bin:$PATH
 openssl version || true
