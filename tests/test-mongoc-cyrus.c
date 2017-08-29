@@ -145,9 +145,10 @@ test_sasl_properties (void)
    mongoc_cyrus_t sasl;
 
    uri = mongoc_uri_new (
-      "mongodb://host/?authMechanism=GSSAPI&"
+      "mongodb://user@host/?authMechanism=GSSAPI&"
       "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:TrUe");
 
+   BSON_ASSERT (uri);
    memset (&sasl, 0, sizeof sasl);
    _mongoc_sasl_set_properties ((mongoc_sasl_t *) &sasl, uri);
 
@@ -156,11 +157,17 @@ test_sasl_properties (void)
 
    mongoc_uri_destroy (uri);
 
+   capture_logs (true);
    /* authMechanismProperties take precedence */
    uri = mongoc_uri_new (
-      "mongodb://host/?authMechanism=GSSAPI&"
+      "mongodb://user@host/?authMechanism=GSSAPI&"
       "canonicalizeHostname=true&gssapiServiceName=blah&"
       "authMechanismProperties=SERVICE_NAME:sn,CANONICALIZE_HOST_NAME:False");
+
+   ASSERT_CAPTURED_LOG (
+      "authMechanismProperties should overwrite gssapiServiceName",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Overwriting previously provided value for 'authMechanismProperties'");
 
    _mongoc_cyrus_destroy (&sasl);
    memset (&sasl, 0, sizeof sasl);
