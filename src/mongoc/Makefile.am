@@ -146,6 +146,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-write-command-private.h \
+	src/mongoc/mongoc-write-command-legacy-private.h \
 	src/mongoc/mongoc-write-concern-private.h
 
 libmongoc_la_SOURCES = \
@@ -205,6 +206,7 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-util.c \
 	src/mongoc/mongoc-version-functions.c \
 	src/mongoc/mongoc-write-command.c \
+	src/mongoc/mongoc-write-command-legacy.c \
 	src/mongoc/mongoc-write-concern.c
 
 if ENABLE_CRYPTO
