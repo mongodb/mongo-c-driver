@@ -113,12 +113,6 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 }
 
 
-/* for speed, pre-split batch every 1000 docs. a future server's
- * maxWriteBatchSize may grow larger than the default, then we'll revise. */
-#define SHOULD_APPEND(_write_cmd, _write_cmd_type) \
-   (((_write_cmd->type) == (_write_cmd_type)) &&   \
-    (_write_cmd)->n_documents < MONGOC_DEFAULT_WRITE_BATCH_SIZE)
-
 /* already failed, e.g. a bad call to mongoc_bulk_operation_insert? */
 #define BULK_EXIT_IF_PRIOR_ERROR       \
    do {                                \
@@ -161,7 +155,7 @@ _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
-      if (SHOULD_APPEND (last, MONGOC_WRITE_COMMAND_DELETE)) {
+      if (last->type == MONGOC_WRITE_COMMAND_DELETE) {
          _mongoc_write_command_delete_append (last, selector, opts);
          RETURN (true);
       }
@@ -375,7 +369,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
 
-      if (SHOULD_APPEND (last, MONGOC_WRITE_COMMAND_INSERT)) {
+      if (last->type == MONGOC_WRITE_COMMAND_INSERT) {
          _mongoc_write_command_insert_append (last, document);
          return true;
       }
@@ -418,7 +412,7 @@ _mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
-      if (SHOULD_APPEND (last, MONGOC_WRITE_COMMAND_UPDATE)) {
+      if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
          _mongoc_write_command_update_append (last, selector, document, opts);
          RETURN (true);
       }
@@ -525,7 +519,7 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
-      if (SHOULD_APPEND (last, MONGOC_WRITE_COMMAND_UPDATE)) {
+      if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
          _mongoc_write_command_update_append (last, selector, document, opts);
          RETURN (true);
       }
