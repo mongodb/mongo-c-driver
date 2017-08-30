@@ -402,7 +402,6 @@ _mongoc_write_command (mongoc_write_command_t *command,
    uint32_t i;
    int32_t max_bson_obj_size;
    int32_t max_write_batch_size;
-   int32_t min_wire_version;
    uint32_t overhead;
    uint32_t key_len;
 
@@ -418,51 +417,6 @@ _mongoc_write_command (mongoc_write_command_t *command,
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_write_batch_size =
       mongoc_server_stream_max_write_batch_size (server_stream);
-
-   /*
-    * If we have an unacknowledged write and the server supports the legacy
-    * opcodes, then submit the legacy opcode so we don't need to wait for
-    * a response from the server.
-    */
-
-   min_wire_version = server_stream->sd->min_wire_version;
-   if ((min_wire_version == 0) &&
-       !mongoc_write_concern_is_acknowledged (write_concern)) {
-      if (command->flags.bypass_document_validation !=
-          MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-         bson_set_error (
-            error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set bypassDocumentValidation for unacknowledged writes");
-         EXIT;
-      }
-      if (command->flags.has_collation) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set collation for unacknowledged writes");
-         EXIT;
-      }
-      gLegacyWriteOps[command->type](command,
-                                     client,
-                                     server_stream,
-                                     database,
-                                     collection,
-                                     write_concern,
-                                     offset,
-                                     result,
-                                     error);
-      EXIT;
-   }
-   if (command->flags.has_collation &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "Collation is not supported by the selected server");
-      EXIT;
-   }
 
    if (!command->n_documents || !bson_iter_init (&iter, command->documents) ||
        !bson_iter_next (&iter)) {
@@ -580,6 +534,7 @@ _mongoc_write_command_execute (
    uint32_t offset,                             /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
+   int32_t min_wire_version;
    ENTRY;
 
    BSON_ASSERT (command);
@@ -588,6 +543,8 @@ _mongoc_write_command_execute (
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
    BSON_ASSERT (result);
+
+   min_wire_version = server_stream->sd->min_wire_version;
 
    if (!write_concern) {
       write_concern = client->write_concern;
@@ -602,7 +559,59 @@ _mongoc_write_command_execute (
       EXIT;
    }
 
+   if (command->flags.has_collation) {
+      if ((min_wire_version == 0) &&
+          !mongoc_write_concern_is_acknowledged (write_concern)) {
+         result->failed = true;
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set collation for unacknowledged writes");
+         EXIT;
+      }
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Collation is not supported by the selected server");
+         result->failed = true;
+         EXIT;
+      }
+   }
+   if (command->flags.bypass_document_validation !=
+       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      if ((min_wire_version == 0) &&
+          !mongoc_write_concern_is_acknowledged (write_concern)) {
+         result->failed = true;
+         bson_set_error (
+            &result->error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Cannot set bypassDocumentValidation for unacknowledged writes");
+         EXIT;
+      }
+   }
+
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
+      /*
+       * If we have an unacknowledged write and the server supports the legacy
+       * opcodes, then submit the legacy opcode so we don't need to wait for
+       * a response from the server.
+       */
+
+      if ((min_wire_version == 0) &&
+          !mongoc_write_concern_is_acknowledged (write_concern)) {
+         gLegacyWriteOps[command->type](command,
+                                        client,
+                                        server_stream,
+                                        database,
+                                        collection,
+                                        write_concern,
+                                        offset,
+                                        result,
+                                        &result->error);
+         EXIT;
+      }
       _mongoc_write_command (command,
                              client,
                              server_stream,
@@ -613,25 +622,6 @@ _mongoc_write_command_execute (
                              result,
                              &result->error);
    } else {
-      if (command->flags.bypass_document_validation !=
-          MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-         bson_set_error (
-            &result->error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set bypassDocumentValidation for unacknowledged writes");
-         result->failed = true;
-         EXIT;
-      }
-      if (command->flags.has_collation &&
-          server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set collation for unacknowledged writes");
-         result->failed = true;
-         EXIT;
-      }
       gLegacyWriteOps[command->type](command,
                                      client,
                                      server_stream,
