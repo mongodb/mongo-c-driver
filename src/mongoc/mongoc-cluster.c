@@ -2445,7 +2445,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                           bson_t *reply,
                           bson_error_t *error)
 {
-   mongoc_rpc_section_t section;
+   mongoc_rpc_section_t section[2];
    mongoc_buffer_t buffer;
    bson_t reply_local;
    char *output = NULL;
@@ -2480,9 +2480,20 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    rpc.msg.flags = 0;
    rpc.msg.n_sections = 1;
 
-   section.payload_type = 0;
-   section.payload.bson_document = bson_get_data (cmd->command);
-   rpc.msg.sections[0] = section;
+   section[0].payload_type = 0;
+   section[0].payload.bson_document = bson_get_data (cmd->command);
+   rpc.msg.sections[0] = section[0];
+
+   if (cmd->payload) {
+      section[1].payload_type = 1;
+      section[1].payload.sequence.size = cmd->payload_size +
+                                         strlen (cmd->payload_identifier) + 1 +
+                                         sizeof (int32_t);
+      section[1].payload.sequence.identifier = cmd->payload_identifier;
+      section[1].payload.sequence.bson_documents = cmd->payload;
+      rpc.msg.sections[1] = section[1];
+      rpc.msg.n_sections++;
+   }
 
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);

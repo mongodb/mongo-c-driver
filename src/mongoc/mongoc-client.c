@@ -1273,6 +1273,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
 bool
 mongoc_client_command_opmsg (mongoc_client_t *client,
                              const bson_t *command,
+                             const char *identifier,
+                             bson_t *documents,
                              bson_t *reply,
                              bson_error_t *error)
 {
@@ -1293,6 +1295,9 @@ mongoc_client_command_opmsg (mongoc_client_t *client,
 
    if (server_stream) {
       mongoc_cmd_parts_assemble (&parts, server_stream);
+      parts.assembled.payload = bson_get_data (documents);
+      parts.assembled.payload_size = documents->len;
+      parts.assembled.payload_identifier = identifier;
       mongoc_cluster_run_opmsg (
          cluster, server_stream, &parts.assembled, reply, error);
       ret = true;

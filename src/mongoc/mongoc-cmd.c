@@ -39,6 +39,8 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.db_name = db_name;
    parts->assembled.command = NULL;
    parts->assembled.query_flags = MONGOC_QUERY_NONE;
+   parts->assembled.payload_identifier = NULL;
+   parts->assembled.payload = NULL;
 }
 
 

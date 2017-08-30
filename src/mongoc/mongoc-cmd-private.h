@@ -42,6 +42,9 @@ typedef struct _mongoc_cmd_t {
    mongoc_query_flags_t query_flags;
    const bson_t *command;
    const char *command_name;
+   const uint8_t *payload;
+   int32_t payload_size;
+   const char *payload_identifier;
    uint32_t server_id;
    int64_t operation_id;
 } mongoc_cmd_t;

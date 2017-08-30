@@ -95,23 +95,48 @@
          _mongoc_array_append_val (array, rpc->_name[_i]);    \
       }                                                       \
    } while (0);
-#define SECTION_ARRAY_FIELD(_name)                                     \
-   do {                                                                \
-      ssize_t _i;                                                      \
-      BSON_ASSERT (rpc->n_##_name);                                    \
-      for (_i = 0; _i < rpc->n_##_name; _i++) {                        \
-         int32_t __l;                                                  \
-         iov.iov_base = (void *) &rpc->_name[_i].payload_type;         \
-         iov.iov_len = 1;                                              \
-         header->msg_len += (int32_t) iov.iov_len;                     \
-         _mongoc_array_append_val (array, iov);                        \
-         memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);       \
-         __l = BSON_UINT32_FROM_LE (__l);                              \
-         iov.iov_base = (void *) rpc->_name[_i].payload.bson_document; \
-         iov.iov_len = __l;                                            \
-         header->msg_len += (int32_t) iov.iov_len;                     \
-         _mongoc_array_append_val (array, iov);                        \
-      }                                                                \
+#define SECTION_ARRAY_FIELD(_name)                                            \
+   do {                                                                       \
+      ssize_t _i;                                                             \
+      BSON_ASSERT (rpc->n_##_name);                                           \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                               \
+         int32_t __l;                                                         \
+         iov.iov_base = (void *) &rpc->_name[_i].payload_type;                \
+         iov.iov_len = 1;                                                     \
+         header->msg_len += (int32_t) iov.iov_len;                            \
+         _mongoc_array_append_val (array, iov);                               \
+         switch (rpc->_name[_i].payload_type) {                               \
+         case 0:                                                              \
+            memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);           \
+            __l = BSON_UINT32_FROM_LE (__l);                                  \
+            iov.iov_base = (void *) rpc->_name[_i].payload.bson_document;     \
+            iov.iov_len = __l;                                                \
+            break;                                                            \
+         case 1:                                                              \
+            memcpy (&__l, rpc->_name[_i].payload.sequence.bson_documents, 4); \
+            __l = BSON_UINT32_FROM_LE (__l);                                  \
+            iov.iov_base = (void *) &rpc->_name[_i].payload.sequence.size;    \
+            iov.iov_len = 4;                                                  \
+            header->msg_len += (int32_t) iov.iov_len;                         \
+            _mongoc_array_append_val (array, iov);                            \
+            iov.iov_base =                                                    \
+               (void *) rpc->_name[_i].payload.sequence.identifier;           \
+            iov.iov_len =                                                     \
+               rpc->_name[_i].payload.sequence.size - __l - sizeof (int32_t); \
+            header->msg_len += (int32_t) iov.iov_len;                         \
+            _mongoc_array_append_val (array, iov);                            \
+            iov.iov_base =                                                    \
+               (void *) rpc->_name[_i].payload.sequence.bson_documents;       \
+            iov.iov_len = __l;                                                \
+            break;                                                            \
+         default:                                                             \
+            MONGOC_ERROR ("Unknown Payload Type: %d",                         \
+                          rpc->_name[_i].payload_type);                       \
+            BSON_ASSERT (0);                                                  \
+         }                                                                    \
+         header->msg_len += (int32_t) iov.iov_len;                            \
+         _mongoc_array_append_val (array, iov);                               \
+      }                                                                       \
    } while (0);
 #define RAW_BUFFER_FIELD(_name)              \
    iov.iov_base = (void *) rpc->_name;       \
