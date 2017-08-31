@@ -104,6 +104,9 @@ mongoc_topology_scanner_new (
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
 
+bool
+mongoc_topology_scanner_valid (mongoc_topology_scanner_t *ts);
+
 void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t *host,

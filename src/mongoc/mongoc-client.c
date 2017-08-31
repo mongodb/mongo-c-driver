@@ -146,6 +146,10 @@ _mongoc_get_srv_dnsapi (const char *service, bson_error_t *error)
       RR_ERR ("Failed to look up service \"%s\": Unknown error", service);
    }
 
+   if (!pdns) {
+      RR_ERR ("No SRV records for [%s]", service);
+   }
+
    do {
       h = _mongoc_host_list_push (
          pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, AF_UNSPEC, h);
@@ -192,6 +196,7 @@ _mongoc_get_srv_query (const char *service, bson_error_t *error)
    int size;
    unsigned char query_buffer[1024];
    ns_msg ns_answer;
+   int n;
    int i;
    char name[1024];
    uint16_t port;
@@ -216,11 +221,15 @@ _mongoc_get_srv_query (const char *service, bson_error_t *error)
    }
 
    if (ns_initparse (query_buffer, size, &ns_answer)) {
-      RR_ERR (
-         "Invalid SRV answer for \"%s\": \"%s\"", service, strerror (h_errno));
+      RR_ERR ("Invalid SRV answer for \"%s\"", service);
    }
 
-   for (i = 0; i < ns_msg_count (ns_answer, ns_s_an); i++) {
+   n = ns_msg_count (ns_answer, ns_s_an);
+   if (!n) {
+      RR_ERR ("No SRV records for \"%s\"", service);
+   }
+
+   for (i = 0; i < n; i++) {
       if (ns_parserr (&ns_answer, ns_s_an, i, &resource_record)) {
          RR_ERR ("Invalid record %d of SRV answer for \"%s\": \"%s\"",
                  i,

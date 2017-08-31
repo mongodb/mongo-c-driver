@@ -1,3 +1,11 @@
+Next Release
+============
+
+New features and bug fixes:
+
+  * Support for mongodb+srv URIs.
+
+
 mongo-c-driver 1.8.0
 ====================
 

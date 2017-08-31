@@ -48,21 +48,17 @@ _mongoc_topology_server_dtor (void *server_, void *ctx_)
  */
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                  mongoc_topology_description_type_t type,
                                   int64_t heartbeat_msec)
 {
    ENTRY;
 
    BSON_ASSERT (description);
-   BSON_ASSERT (type == MONGOC_TOPOLOGY_UNKNOWN ||
-                type == MONGOC_TOPOLOGY_SINGLE ||
-                type == MONGOC_TOPOLOGY_RS_NO_PRIMARY);
 
    memset (description, 0, sizeof (*description));
 
    bson_oid_init (&description->topology_id, NULL);
    description->opened = false;
-   description->type = type;
+   description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->heartbeat_msec = heartbeat_msec;
    description->servers =
       mongoc_set_new (8, _mongoc_topology_server_dtor, NULL);
@@ -158,7 +154,9 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 
    BSON_ASSERT (description);
 
-   mongoc_set_destroy (description->servers);
+   if (description->servers) {
+      mongoc_set_destroy (description->servers);
+   }
 
    if (description->set_name) {
       bson_free (description->set_name);

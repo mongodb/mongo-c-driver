@@ -3,8 +3,6 @@
 mongoc_uri_t
 ============
 
-.. TODO: a section about SRV, and note that without res_nquery, lookups on Unix are not thread-safe
-
 Synopsis
 --------
 
@@ -24,7 +22,7 @@ Format
 
 .. code-block:: none
 
-  mongodb://                                   <1>
+  mongodb[+srv]://                             <1>
      [username:password@]                      <2>
      host1                                     <3>
      [:port1]                                  <4>
@@ -32,7 +30,7 @@ Format
      [/[database]                              <6>
      [?options]]                               <7>
 
-#. mongodb is the specifier of the MongoDB protocol.
+#. "mongodb" is the specifier of the MongoDB protocol. Use "mongodb+srv" with a single service name in place of "host1" to specify the initial list of servers with an SRV record.
 #. An optional username and password.
 #. The only required part of the uri.  This specifies either a hostname, IP address or UNIX domain socket.
 #. An optional port number.  Defaults to :27017.
@@ -63,11 +61,24 @@ To describe a connection to a replica set named 'test' with the following mongod
 * ``db1.example.com`` on port ``27017``
 * ``db2.example.com`` on port ``2500``
 
-You would use the connection string that resembles the following.
+You would use a connection string that resembles the following.
 
 .. code-block:: none
 
   mongodb://db1.example.com,db2.example.com:2500/?replicaSet=test
+
+SRV Example
+-----------
+
+If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ with a name like "_mongodb._tcp.example.com" whose records are a list of one or more MongoDB server hostnames, use a connection string like this:
+
+.. code-block:: c
+
+  uri = mongoc_uri_new ("mongodb+srv://example.com/?replicaSet=rs&appName=applicationName");
+
+The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames.
+
+On Unix, the MongoDB C Driver relies on libresolv to look up SRV records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nquery`` then the driver will fall back to ``res_query``, which is not thread-safe.
 
 Connection Options
 ------------------
@@ -264,6 +275,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_read_prefs
     mongoc_uri_get_read_prefs_t
     mongoc_uri_get_replica_set
+    mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
     mongoc_uri_get_username

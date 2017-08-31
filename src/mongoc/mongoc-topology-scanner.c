@@ -219,6 +219,14 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    bson_free (ts);
 }
 
+/* whether the scanner was successfully initialized - false if a mongodb+srv
+ * URI failed to resolve to any hosts */
+bool
+mongoc_topology_scanner_valid (mongoc_topology_scanner_t *ts)
+{
+   return ts->nodes != NULL;
+}
+
 void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t *host,

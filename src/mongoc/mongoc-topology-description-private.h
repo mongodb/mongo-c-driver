@@ -55,7 +55,6 @@ typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE } mongoc_ss_optype_t;
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                  mongoc_topology_description_type_t type,
                                   int64_t heartbeat_msec);
 
 void

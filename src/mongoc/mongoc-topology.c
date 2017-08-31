@@ -26,6 +26,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-host-list-private.h"
 
 #include "utlist.h"
 
@@ -205,30 +206,14 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    int64_t heartbeat;
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
+   const char *service;
+   char *prefixed_service;
    uint32_t id;
    const mongoc_host_list_t *hl;
 
    BSON_ASSERT (uri);
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
-
-   /*
-    * Not ideal, but there's no great way to do this.
-    * Base on the URI, we assume:
-    *   - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
-    *   - otherwise, if the seed list has a single host, initialize to SINGLE
-    *   - everything else gets initialized to UNKNOWN
-    */
-   if (mongoc_uri_get_replica_set (uri)) {
-      init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
-   } else {
-      hl = mongoc_uri_get_hosts (uri);
-      if (hl->next) {
-         init_type = MONGOC_TOPOLOGY_UNKNOWN;
-      } else {
-         init_type = MONGOC_TOPOLOGY_SINGLE;
-      }
-   }
 
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
@@ -237,8 +222,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    heartbeat = mongoc_uri_get_option_as_int32 (
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
-   mongoc_topology_description_init (
-      &topology->description, init_type, heartbeat);
+   mongoc_topology_description_init (&topology->description, heartbeat);
 
    topology->description.set_name =
       bson_strdup (mongoc_uri_get_replica_set (uri));
@@ -292,10 +276,44 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_cond_init (&topology->cond_client);
    mongoc_cond_init (&topology->cond_server);
 
-   for (hl = mongoc_uri_get_hosts (uri); hl; hl = hl->next) {
+   service = mongoc_uri_get_service (uri);
+   if (service) {
+      /* a mongodb+srv URI. on error, hl is NULL and error is set. */
+      prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+      hl = _mongoc_client_get_srv (prefixed_service, &topology->scanner->error);
+      bson_free (prefixed_service);
+   } else {
+      hl = mongoc_uri_get_hosts (uri);
+   }
+
+   /*
+    * Set topology type from URI:
+    *   - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
+    *   - otherwise, if the seed list has a single host, initialize to SINGLE
+    *   - everything else gets initialized to UNKNOWN
+    */
+   if (mongoc_uri_get_replica_set (uri)) {
+      init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
+   } else {
+      if (hl && hl->next) {
+         init_type = MONGOC_TOPOLOGY_UNKNOWN;
+      } else {
+         init_type = MONGOC_TOPOLOGY_SINGLE;
+      }
+   }
+
+   topology->description.type = init_type;
+
+   while (hl) {
       mongoc_topology_description_add_server (
          &topology->description, hl->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, hl, id);
+
+      hl = hl->next;
+   }
+
+   if (service) {
+      _mongoc_host_list_destroy_all ((mongoc_host_list_t *) hl);
    }
 
    return topology;
@@ -557,6 +575,12 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    int64_t expire_at;   /* when server selection timeout expires */
 
    BSON_ASSERT (topology);
+   if (!mongoc_topology_scanner_valid (topology->scanner)) {
+      mongoc_topology_scanner_get_error (topology->scanner, error);
+      error->domain = MONGOC_ERROR_SERVER_SELECTION;
+      error->code = MONGOC_ERROR_SERVER_SELECTION_FAILURE;
+      return 0;
+   }
 
    heartbeat_msec = topology->description.heartbeat_msec;
    local_threshold_ms = topology->local_threshold_msec;

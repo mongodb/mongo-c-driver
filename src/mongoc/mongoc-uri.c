@@ -39,6 +39,8 @@
 
 struct _mongoc_uri_t {
    char *str;
+   bool is_srv;
+   char srv[BSON_HOST_NAME_MAX + 1];
    mongoc_host_list_t *hosts;
    char *username;
    char *password;
@@ -216,15 +218,21 @@ ends_with (const char *str, const char *suffix)
 
 
 static bool
-mongoc_uri_parse_scheme (const char *str, const char **end)
+mongoc_uri_parse_scheme (mongoc_uri_t *uri, const char *str, const char **end)
 {
-   if (!!strncmp (str, "mongodb://", 10)) {
-      return false;
+   if (!strncmp (str, "mongodb+srv://", 14)) {
+      uri->is_srv = true;
+      *end = str + 14;
+      return true;
    }
 
-   *end = str + 10;
+   if (!strncmp (str, "mongodb://", 10)) {
+      uri->is_srv = false;
+      *end = str + 10;
+      return true;
+   }
 
-   return true;
+   return false;
 }
 
 
@@ -378,6 +386,34 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
    bson_free (hostname);
 
    return r;
+}
+
+
+bool
+mongoc_uri_parse_srv (mongoc_uri_t *uri, const char *str)
+{
+   char *service;
+
+   if (*str == '\0') {
+      return false;
+   }
+
+   service = bson_strdup (str);
+   mongoc_uri_do_unescape (&service);
+   if (!service) {
+      /* invalid */
+      return false;
+   }
+
+   bson_strncpy (uri->srv, service, sizeof uri->srv);
+   bson_free (service);
+
+   if (strchr (uri->srv, ',') || strchr (uri->srv, ':')) {
+      /* prohibit port number or multiple service names */
+      return false;
+   }
+
+   return true;
 }
 
 
@@ -902,9 +938,16 @@ mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
       hosts = before_slash;
    }
 
-   if (!mongoc_uri_parse_hosts (uri, hosts)) {
-      MONGOC_URI_ERROR (error, "%s", "Invalid host string in URI");
-      goto error;
+   if (uri->is_srv) {
+      if (!mongoc_uri_parse_srv (uri, hosts)) {
+         MONGOC_URI_ERROR (error, "%s", "Invalid service name in URI");
+         goto error;
+      }
+   } else {
+      if (!mongoc_uri_parse_hosts (uri, hosts)) {
+         MONGOC_URI_ERROR (error, "%s", "Invalid host string in URI");
+         goto error;
+      }
    }
 
    bson_free (userpass);
@@ -922,9 +965,11 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    char *before_slash = NULL;
    const char *tmp;
 
-   if (!mongoc_uri_parse_scheme (str, &str)) {
+   if (!mongoc_uri_parse_scheme (uri, str, &str)) {
       MONGOC_URI_ERROR (
-         error, "%s", "Invalid URI Schema, expecting 'mongodb://'");
+         error,
+         "%s",
+         "Invalid URI Schema, expecting 'mongodb://' or 'mongodb+srv://'");
       goto error;
    }
 
@@ -1552,6 +1597,18 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
    return retval;
 }
 
+
+const char *
+mongoc_uri_get_service (const mongoc_uri_t *uri)
+{
+   if (uri->is_srv) {
+      return uri->srv;
+   }
+
+   return NULL;
+}
+
+
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
 {
@@ -1595,6 +1652,8 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    copy = (mongoc_uri_t *) bson_malloc0 (sizeof (*copy));
 
    copy->str = bson_strdup (uri->str);
+   copy->is_srv = uri->is_srv;
+   bson_strncpy (copy->srv, uri->srv, sizeof uri->srv);
    copy->username = bson_strdup (uri->username);
    copy->password = bson_strdup (uri->password);
    copy->database = bson_strdup (uri->database);

@@ -98,6 +98,8 @@ extern void
 test_sdam_monitoring_install (TestSuite *suite);
 extern void
 test_server_selection_install (TestSuite *suite);
+extern void
+test_srv_install (TestSuite *suite);
 #if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
 #endif
@@ -2006,6 +2008,7 @@ main (int argc, char *argv[])
    test_sdam_install (&suite);
    test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);
+   test_srv_install (&suite);
 #if 0
    test_server_selection_errors_install (&suite);
 #endif

@@ -890,6 +890,23 @@ tasks:
               BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
               BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
+    - name: test-srv
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "replica_set"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              sh .evergreen/run-srv-tests.sh
+
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
       commands:
@@ -6582,6 +6599,12 @@ buildvariants:
       distros:
       - windows-64-vs2013-compile
     - name: "link-with-pkg-config"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "test-srv"
       distros:
       - ubuntu1604-build
       - ubuntu1604-test

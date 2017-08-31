@@ -100,6 +100,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
+	tests/test-mongoc-srv.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \
 	tests/test-mongoc-topology-reconcile.c \
@@ -190,6 +191,7 @@ EXTRA_DIST += \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
 	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \
+	$(wildcard tests/json/srv/*.json) \
 	$(wildcard tests/json/max_staleness/*/*.json)
 
 if OS_DARWIN

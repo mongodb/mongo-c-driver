@@ -749,6 +749,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
+   ${SOURCE_DIR}/tests/test-mongoc-srv.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-thread.c
    ${SOURCE_DIR}/tests/test-mongoc-topology.c

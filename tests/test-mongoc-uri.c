@@ -1695,6 +1695,26 @@ test_mongoc_uri_local_threshold_ms (void)
 }
 
 
+static void
+test_mongoc_uri_srv (void)
+{
+   mongoc_uri_t *uri;
+
+   capture_logs (true);
+
+   ASSERT (!mongoc_uri_new ("mongodb+srv://"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo\x08\x00bar"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo%00bar"));
+
+   uri = mongoc_uri_new ("mongodb+srv://example.com");
+   BSON_ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "example.com");
+   BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
+
+   mongoc_uri_destroy (uri);
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -1719,4 +1739,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
    TestSuite_Add (
       suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
+   TestSuite_Add (suite, "/Uri/srv", test_mongoc_uri_srv);
 }

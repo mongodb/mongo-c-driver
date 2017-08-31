@@ -41,7 +41,8 @@ main (int argc, char *argv[])
 
    port = (argc == 3) ? atoi (argv[2]) : 27017;
 
-   if (strncmp (argv[1], "mongodb://", 10) == 0) {
+   if (!strncmp (argv[1], "mongodb://", 10)
+       || !strncmp (argv[1], "mongodb+srv://", 14)) {
       host_and_port = bson_strdup (argv[1]);
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s:%hu", argv[1], port);
