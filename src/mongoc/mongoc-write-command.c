@@ -493,8 +493,9 @@ again:
       mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
       parts.is_write_command = true;
       parts.assembled.operation_id = command->operation_id;
+      mongoc_cmd_parts_assemble (&parts, server_stream);
       ret = mongoc_cluster_run_command_monitored (
-         &client->cluster, &parts, server_stream, &reply, error);
+         &client->cluster, &parts.assembled, &reply, error);
 
       if (!ret) {
          result->failed = true;

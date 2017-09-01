@@ -235,7 +235,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    /* begin with raw flags/cmd as assembled flags/cmd, might change below */
    parts->assembled.command = parts->body;
    parts->assembled.query_flags = parts->user_query_flags;
-   parts->assembled.server_id = server_stream->sd->id;
+   parts->assembled.server_stream = server_stream;
 
 
    parts->assembled.command_name =
@@ -327,33 +327,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    EXIT;
 }
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cmd_parts_assemble_simple --
- *
- *       Sets @parts->assembled.command and @parts->query_flags, without
- *       applying any server-specific logic.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *parts, uint32_t server_id)
-{
-   /* must not be assembled already, must have no options set */
-   BSON_ASSERT (!parts->assembled.command);
-   BSON_ASSERT (bson_empty (&parts->assembled_body));
-   BSON_ASSERT (bson_empty (&parts->extra));
-
-   parts->assembled.query_flags = parts->user_query_flags;
-   parts->assembled.command = parts->body;
-   parts->assembled.server_id = server_id;
-   parts->assembled.command_name =
-      _mongoc_get_command_name (parts->assembled.command);
-}
-
 
 /*
  *--------------------------------------------------------------------------

@@ -153,6 +153,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    const bson_t *options;
    bson_t properties;
    char real_name[BSON_HOST_NAME_MAX + 1];
+   mongoc_server_stream_t *server_stream;
 
    options = mongoc_uri_get_options (cluster->uri);
 
@@ -228,14 +229,19 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
+      server_stream = _mongoc_cluster_create_server_stream (
+         cluster->client->topology, sd->id, stream, error);
+      mongoc_cmd_parts_assemble (&parts, server_stream);
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts, stream, sd->id, &reply, error)) {
+             cluster, &parts.assembled, &reply, error)) {
+         mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
          bson_destroy (&reply);
          break;
       }
 
+      mongoc_server_stream_cleanup (server_stream);
       mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&cmd);
 
