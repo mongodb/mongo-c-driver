@@ -1354,9 +1354,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
 
    cluster = &collection->client->cluster;
-   mongoc_cmd_parts_assemble (&parts, server_stream);
    ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts.assembled, reply, &local_error);
+      cluster, &parts, server_stream, reply, &local_error);
 
    reply_initialized = true;
 
@@ -2560,9 +2559,8 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    parts.assembled.operation_id = ++cluster->operation_id;
-   mongoc_cmd_parts_assemble (&parts, server_stream);
    ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts.assembled, reply_ptr, error);
+      cluster, &parts, server_stream, reply_ptr, error);
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {

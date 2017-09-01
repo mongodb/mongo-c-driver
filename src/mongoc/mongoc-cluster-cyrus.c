@@ -38,7 +38,6 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
-   mongoc_server_stream_t *server_stream;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -68,17 +67,12 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
-      server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd->id, stream, error);
-      mongoc_cmd_parts_assemble (&parts, server_stream);
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assmbled, &reply, error)) {
-         mongoc_server_stream_cleanup (server_stream);
+             cluster, &parts, stream, sd->id, &reply, error)) {
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
       }
-      mongoc_server_stream_cleanup (server_stream);
 
       bson_destroy (&cmd);
 

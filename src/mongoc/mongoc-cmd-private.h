@@ -45,7 +45,7 @@ typedef struct _mongoc_cmd_t {
    const uint8_t *payload;
    int32_t payload_size;
    const char *payload_identifier;
-   const mongoc_server_stream_t *server_stream;
+   uint32_t server_id;
    int64_t operation_id;
 } mongoc_cmd_t;
 
@@ -77,6 +77,9 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 void
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            const mongoc_server_stream_t *server_stream);
+
+void
+mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *op, uint32_t server_id);
 
 bool
 mongoc_cmd_is_compressable (mongoc_cmd_t *cmd);

@@ -526,8 +526,8 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       cursor->client->in_exhaust = false;
       if (!cursor->done) {
          /* The only way to stop an exhaust cursor is to kill the connection */
-         mongoc_cluster_disconnect_node (
-            &cursor->client->cluster, cursor->server_id, false, NULL);
+         mongoc_cluster_disconnect_node (&cursor->client->cluster,
+                                         cursor->server_id, false, NULL);
       }
    } else if (cursor->rpc.reply.cursor_id) {
       bson_strncpy (db, cursor->ns, cursor->dblen + 1);
@@ -1292,9 +1292,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       mongoc_write_concern_append (cursor->write_concern, &parts.extra);
    }
 
-   mongoc_cmd_parts_assemble (&parts, server_stream);
    ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts.assembled, reply, &cursor->error);
+      cluster, &parts, server_stream, reply, &cursor->error);
 
    /* Read and Write Concern Spec: "Drivers SHOULD parse server replies for a
     * "writeConcernError" field and report the error only in command-specific

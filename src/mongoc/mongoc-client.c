@@ -1435,9 +1435,8 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
    ENTRY;
 
    parts->assembled.operation_id = ++client->cluster.operation_id;
-   mongoc_cmd_parts_assemble (parts, server_stream);
    RETURN (mongoc_cluster_run_command_monitored (
-      &client->cluster, &parts->assembled, reply, error));
+      &client->cluster, parts, server_stream, reply, error));
 }
 
 
@@ -1522,7 +1521,8 @@ mongoc_client_command_opmsg (mongoc_client_t *client,
       parts.assembled.payload = bson_get_data (documents);
       parts.assembled.payload_size = documents->len;
       parts.assembled.payload_identifier = identifier;
-      mongoc_cluster_run_opmsg (cluster, &parts.assembled, reply, error);
+      mongoc_cluster_run_opmsg (
+         cluster, server_stream, &parts.assembled, reply, error);
       ret = true;
    } else {
       ret = false;
@@ -2057,8 +2057,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    /* Find, getMore And killCursors Commands Spec: "The result from the
     * killCursors command MAY be safely ignored."
     */
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-   mongoc_cluster_run_command_monitored (cluster, &parts.assembled, NULL, NULL);
+   mongoc_cluster_run_command_monitored (
+      cluster, &parts, server_stream, NULL, NULL);
 
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
