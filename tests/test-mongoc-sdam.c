@@ -126,7 +126,7 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
             set_name = bson_iter_utf8 (&outcome_iter, NULL);
             if (set_name) {
-               BSON_ASSERT (&client->topology->description.set_name);
+               BSON_ASSERT (client->topology->description.set_name);
                ASSERT_CMPSTR (client->topology->description.set_name, set_name);
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
