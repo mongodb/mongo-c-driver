@@ -3123,25 +3123,6 @@ test_set_ssl_opts (void)
 }
 #endif
 
-static void
-test_srv (void *ctx)
-{
-   mongoc_host_list_t *h;
-   bson_error_t error;
-
-   h = _mongoc_client_get_srv ("_jabber._tcp.google.com", &error);
-   ASSERT_OR_PRINT (h, error);
-
-   _mongoc_host_list_destroy_all (h);
-
-   h = _mongoc_client_get_srv ("example.com", &error);
-   BSON_ASSERT (!h);
-   ASSERT_ERROR_CONTAINS (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                         "Failed to look up service");
-}
-
 void
 test_client_install (TestSuite *suite)
 {
@@ -3386,10 +3367,4 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Client/srv",
-                      test_srv,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_offline);
 }
