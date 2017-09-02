@@ -75,7 +75,7 @@ AC_ARG_ENABLE(srv,
     [],
     [enable_srv=auto])
 
-AS_IF([test "x$enable_srv" != "xyes" -a test "x$enable_srv" != "xno"],
+AS_IF([test "x$enable_srv" != "xyes" -a "x$enable_srv" != "xno"],
       [enable_srv=auto])
 
 # use strict compiler flags only on development releases
