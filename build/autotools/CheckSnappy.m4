@@ -12,10 +12,8 @@ AS_IF([test "x${with_snappy}" = xauto], [
                   [
                      with_snappy=system
                      SNAPPY_LIBS=-lsnappy
-                  ],
-                  []
-               )],
-               []
+                  ]
+               )]
             )
          ]
       )
@@ -79,7 +77,7 @@ AS_IF([test "x${with_snappy}" = xbundled],[
    else
        AC_SUBST([ac_cv_have_sys_uio_h], [0])
    fi
-   /* end of vendored configure.ac checks from snappy */
+   # end of vendored configure.ac checks from snappy
 
    SNAPPY_LIBS=
    SNAPPY_CFLAGS="-Isrc/snappy-1.1.3"

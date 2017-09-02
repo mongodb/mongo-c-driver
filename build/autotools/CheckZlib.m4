@@ -11,10 +11,8 @@ AS_IF([test "x${with_zlib}" = xauto], [
                   [
                      with_zlib=system
                      ZLIB_LIBS=-lz
-                  ],
-                  []
-               )],
-               []
+                  ]
+               )]
             )
          ]
       )
