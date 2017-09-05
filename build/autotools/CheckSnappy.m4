@@ -28,7 +28,7 @@ AS_IF([test "x${with_snappy}" = xbundled],[
    AC_MSG_CHECKING(whether to enable bundled snappy)
    AC_MSG_RESULT(yes)
 
-   /* start of vendored configure.ac checks from snappy */
+   # start of vendored configure.ac checks from snappy
    AC_CHECK_HEADERS([stdint.h stddef.h sys/mman.h sys/resource.h sys/uio.h windows.h byteswap.h sys/byteswap.h sys/endian.h sys/time.h])
    # See if we have __builtin_expect.
    AC_MSG_CHECKING([if the compiler supports __builtin_expect])
