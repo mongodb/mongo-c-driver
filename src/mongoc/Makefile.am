@@ -316,7 +316,6 @@ endif
 
 if WITH_SNAPPY
 libmongoc_la_LIBADD += libsnappy.la
-lib_LTLIBRARIES += libsnappy.la
 libsnappy_la_CPPFLAGS = $(BSON_CFLAGS)
 libsnappy_la_SOURCES = \
                         src/snappy-1.1.3/snappy.cc \
