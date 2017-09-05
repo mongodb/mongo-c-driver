@@ -79,7 +79,7 @@ test_get_host (void)
 static void
 test_clone (void)
 {
-   mongoc_cursor_t *clone;
+   mongoc_cursor_t *cloned;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    const bson_t *doc;
@@ -123,18 +123,18 @@ test_clone (void)
    }
    ASSERT (doc);
 
-   clone = mongoc_cursor_clone (cursor);
+   cloned = mongoc_cursor_clone (cursor);
    ASSERT (cursor);
 
-   r = mongoc_cursor_next (clone, &doc);
-   if (!r || mongoc_cursor_error (clone, &error)) {
+   r = mongoc_cursor_next (cloned, &doc);
+   if (!r || mongoc_cursor_error (cloned, &error)) {
       test_error ("%s", error.message);
       abort ();
    }
    ASSERT (doc);
 
    mongoc_cursor_destroy (cursor);
-   mongoc_cursor_destroy (clone);
+   mongoc_cursor_destroy (cloned);
    mongoc_client_destroy (client);
 }
 
@@ -1703,8 +1703,8 @@ test_error_document_command (void)
 
    /* MongoDB 2.4 has no "code" in the reply for "no such command" */
    if (test_framework_max_wire_version_at_least (2)) {
-      ASSERT_CMPINT32 (bson_lookup_int32 (error_doc, "code"), ==,
-                       (int32_t) error.code);
+      ASSERT_CMPINT32 (
+         bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
    }
 
    mongoc_cursor_destroy (cursor);
