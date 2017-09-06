@@ -33,8 +33,10 @@ Returns ``true`` if it successfully added the option to the builder, otherwise `
 Setting sort
 ------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/sort.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_SORT_BEGIN */
+   :end-before: /* EXAMPLE_FAM_SORT_END */
    :caption: sort.c
 
 Outputs:

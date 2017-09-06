@@ -39,8 +39,10 @@ Returns Returns ``true`` if it successfully added the option to the builder, oth
 Setting flags
 -------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/flags.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_FLAGS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_FLAGS_END */
    :caption: flags.c
 
 Outputs:

@@ -139,13 +139,7 @@ EXTRA_DIST += \
 	examples/common_operations/explain.c \
 	examples/common_operations/copydb.c \
 	examples/common_operations/common-operations.c \
-	examples/common_operations/clone-collection.c \
-	examples/find_and_modify_with_opts/bypass.c \
-	examples/find_and_modify_with_opts/fields.c \
-	examples/find_and_modify_with_opts/flags.c \
-	examples/find_and_modify_with_opts/opts.c \
-	examples/find_and_modify_with_opts/sort.c \
-	examples/find_and_modify_with_opts/update.c
+	examples/common_operations/clone-collection.c
 
 # These files are included when we generate docs from tutorial.rst
 EXTRA_DIST += \
