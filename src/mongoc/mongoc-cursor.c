@@ -26,6 +26,7 @@
 #include "mongoc-read-concern-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-read-prefs-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -17,7 +17,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
-
+#include "mongoc-client-private.h"
 #include "mongoc-cluster-sspi-private.h"
 #include "mongoc-cluster-sasl-private.h"
 #include "mongoc-sasl-private.h"

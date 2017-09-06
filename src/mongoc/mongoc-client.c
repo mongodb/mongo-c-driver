@@ -52,6 +52,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-host-list-private.h"
+#include "mongoc-read-prefs-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"

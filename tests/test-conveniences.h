@@ -20,6 +20,7 @@
 #include <bson.h>
 
 #include "mongoc.h"
+#include "mongoc-read-prefs-private.h"
 
 bson_t *
 tmp_bson (const char *json, ...);

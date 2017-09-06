@@ -29,13 +29,12 @@
 #include "mongoc-client.h"
 #include "mongoc-list-private.h"
 #include "mongoc-opcode.h"
-#include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-server-stream-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-stream.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-topology-description-private.h"
-#include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-scram-private.h"
 #include "mongoc-cmd-private.h"
@@ -168,6 +167,12 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                           mongoc_cmd_t *cmd,
                           bson_t *reply,
                           bson_error_t *error);
+
+mongoc_server_stream_t *
+_mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
+                                      uint32_t server_id,
+                                      mongoc_stream_t *stream,
+                                      bson_error_t *error /* OUT */);
 BSON_END_DECLS
 
 

@@ -17,7 +17,6 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
-#include "mongoc-read-prefs-private.h"
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"

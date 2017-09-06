@@ -17,6 +17,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
+#include "mongoc-client-private.h"
 #include "mongoc-cyrus-private.h"
 #include "mongoc-cluster-cyrus-private.h"
 #include "mongoc-error.h"
@@ -72,7 +73,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
          cluster->client->topology, sd->id, stream, error);
       mongoc_cmd_parts_assemble (&parts, server_stream);
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts.assmbled, &reply, error)) {
+             cluster, &parts.assembled, &reply, error)) {
          mongoc_server_stream_cleanup (server_stream);
          bson_destroy (&cmd);
          bson_destroy (&reply);
