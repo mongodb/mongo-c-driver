@@ -285,18 +285,18 @@
 #define INT64_FIELD(_name) \
    printf ("  " #_name " : %" PRIi64 "\n", (int64_t) rpc->_name);
 #define CSTRING_FIELD(_name) printf ("  " #_name " : %s\n", rpc->_name);
-#define BSON_FIELD(_name)                             \
-   do {                                               \
-      bson_t b;                                       \
-      char *s;                                        \
-      int32_t __l;                                    \
-      memcpy (&__l, rpc->_name, 4);                   \
-      __l = BSON_UINT32_FROM_LE (__l);                \
-      bson_init_static (&b, rpc->_name, __l);         \
-      s = bson_as_canonical_extended_json (&b, NULL); \
-      printf ("  " #_name " : %s\n", s);              \
-      bson_free (s);                                  \
-      bson_destroy (&b);                              \
+#define BSON_FIELD(_name)                           \
+   do {                                             \
+      bson_t b;                                     \
+      char *s;                                      \
+      int32_t __l;                                  \
+      memcpy (&__l, rpc->_name, 4);                 \
+      __l = BSON_UINT32_FROM_LE (__l);              \
+      bson_init_static (&b, rpc->_name, __l);       \
+      s = bson_as_relaxed_extended_json (&b, NULL); \
+      printf ("  " #_name " : %s\n", s);            \
+      bson_free (s);                                \
+      bson_destroy (&b);                            \
    } while (0);
 #define BSON_ARRAY_FIELD(_name)                                       \
    do {                                                               \
@@ -305,7 +305,7 @@
       const bson_t *__b;                                              \
       __r = bson_reader_new_from_data (rpc->_name, rpc->_name##_len); \
       while ((__b = bson_reader_read (__r, &__eof))) {                \
-         char *s = bson_as_canonical_extended_json (__b, NULL);       \
+         char *s = bson_as_relaxed_extended_json (__b, NULL);         \
          printf ("  " #_name " : %s\n", s);                           \
          bson_free (s);                                               \
       }                                                               \
@@ -357,8 +357,7 @@
             __r = bson_reader_new_from_data (                               \
                rpc->_name[_i].payload.sequence.bson_documents, max);        \
             while ((__b = bson_reader_read (__r, &__eof))) {                \
-               char *s = bson_as_canonical_extended_json (__b, NULL);       \
-               /*printf ("  - %s\n", s);  */                                \
+               char *s = bson_as_relaxed_extended_json (__b, NULL);         \
                bson_free (s);                                               \
             }                                                               \
             bson_reader_destroy (__r);                                      \
@@ -774,6 +773,7 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
    }
+   printf ("\n");
 }
 
 /*
