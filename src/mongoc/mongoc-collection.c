@@ -170,8 +170,6 @@ _mongoc_collection_new (mongoc_client_t *client,
    col->collectionlen = (uint32_t) strlen (col->collection);
    col->nslen = (uint32_t) strlen (col->ns);
 
-   _mongoc_buffer_init (&col->buffer, NULL, 0, NULL, NULL);
-
    col->gle = NULL;
 
    RETURN (col);
@@ -203,8 +201,6 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
    BSON_ASSERT (collection);
 
    bson_clear (&collection->gle);
-
-   _mongoc_buffer_destroy (&collection->buffer);
 
    if (collection->read_prefs) {
       mongoc_read_prefs_destroy (collection->read_prefs);

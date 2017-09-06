@@ -23,7 +23,6 @@
 
 #include <bson.h>
 
-#include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
 
 
@@ -37,7 +36,6 @@ struct _mongoc_collection_t {
    char db[128];
    char collection[128];
    uint32_t collectionlen;
-   mongoc_buffer_t buffer;
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
