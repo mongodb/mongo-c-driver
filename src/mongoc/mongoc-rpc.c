@@ -95,48 +95,47 @@
          _mongoc_array_append_val (array, rpc->_name[_i]);    \
       }                                                       \
    } while (0);
-#define SECTION_ARRAY_FIELD(_name)                                            \
-   do {                                                                       \
-      ssize_t _i;                                                             \
-      BSON_ASSERT (rpc->n_##_name);                                           \
-      for (_i = 0; _i < rpc->n_##_name; _i++) {                               \
-         int32_t __l;                                                         \
-         iov.iov_base = (void *) &rpc->_name[_i].payload_type;                \
-         iov.iov_len = 1;                                                     \
-         header->msg_len += (int32_t) iov.iov_len;                            \
-         _mongoc_array_append_val (array, iov);                               \
-         switch (rpc->_name[_i].payload_type) {                               \
-         case 0:                                                              \
-            memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);           \
-            __l = BSON_UINT32_FROM_LE (__l);                                  \
-            iov.iov_base = (void *) rpc->_name[_i].payload.bson_document;     \
-            iov.iov_len = __l;                                                \
-            break;                                                            \
-         case 1:                                                              \
-            memcpy (&__l, rpc->_name[_i].payload.sequence.bson_documents, 4); \
-            __l = BSON_UINT32_FROM_LE (__l);                                  \
-            iov.iov_base = (void *) &rpc->_name[_i].payload.sequence.size;    \
-            iov.iov_len = 4;                                                  \
-            header->msg_len += (int32_t) iov.iov_len;                         \
-            _mongoc_array_append_val (array, iov);                            \
-            iov.iov_base =                                                    \
-               (void *) rpc->_name[_i].payload.sequence.identifier;           \
-            iov.iov_len =                                                     \
-               rpc->_name[_i].payload.sequence.size - __l - sizeof (int32_t); \
-            header->msg_len += (int32_t) iov.iov_len;                         \
-            _mongoc_array_append_val (array, iov);                            \
-            iov.iov_base =                                                    \
-               (void *) rpc->_name[_i].payload.sequence.bson_documents;       \
-            iov.iov_len = __l;                                                \
-            break;                                                            \
-         default:                                                             \
-            MONGOC_ERROR ("Unknown Payload Type: %d",                         \
-                          rpc->_name[_i].payload_type);                       \
-            BSON_ASSERT (0);                                                  \
-         }                                                                    \
-         header->msg_len += (int32_t) iov.iov_len;                            \
-         _mongoc_array_append_val (array, iov);                               \
-      }                                                                       \
+#define SECTION_ARRAY_FIELD(_name)                                         \
+   do {                                                                    \
+      ssize_t _i;                                                          \
+      BSON_ASSERT (rpc->n_##_name);                                        \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                            \
+         int32_t __l;                                                      \
+         iov.iov_base = (void *) &rpc->_name[_i].payload_type;             \
+         iov.iov_len = 1;                                                  \
+         header->msg_len += (int32_t) iov.iov_len;                         \
+         _mongoc_array_append_val (array, iov);                            \
+         switch (rpc->_name[_i].payload_type) {                            \
+         case 0:                                                           \
+            memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);        \
+            __l = BSON_UINT32_FROM_LE (__l);                               \
+            iov.iov_base = (void *) rpc->_name[_i].payload.bson_document;  \
+            iov.iov_len = __l;                                             \
+            break;                                                         \
+         case 1:                                                           \
+            iov.iov_base = (void *) &rpc->_name[_i].payload.sequence.size; \
+            iov.iov_len = 4;                                               \
+            header->msg_len += (int32_t) iov.iov_len;                      \
+            _mongoc_array_append_val (array, iov);                         \
+            iov.iov_base =                                                 \
+               (void *) rpc->_name[_i].payload.sequence.identifier;        \
+            iov.iov_len =                                                  \
+               strlen (rpc->_name[_i].payload.sequence.identifier) + 1;    \
+            header->msg_len += (int32_t) iov.iov_len;                      \
+            _mongoc_array_append_val (array, iov);                         \
+            iov.iov_base =                                                 \
+               (void *) rpc->_name[_i].payload.sequence.bson_documents;    \
+            iov.iov_len =                                                  \
+               rpc->_name[_i].payload.sequence.size - iov.iov_len - 4;     \
+            break;                                                         \
+         default:                                                          \
+            MONGOC_ERROR ("Unknown Payload Type: %d",                      \
+                          rpc->_name[_i].payload_type);                    \
+            BSON_ASSERT (0);                                               \
+         }                                                                 \
+         header->msg_len += (int32_t) iov.iov_len;                         \
+         _mongoc_array_append_val (array, iov);                            \
+      }                                                                    \
    } while (0);
 #define RAW_BUFFER_FIELD(_name)              \
    iov.iov_base = (void *) rpc->_name;       \
@@ -326,27 +325,45 @@
          printf ("\n");                                    \
       }                                                    \
    } while (0);
-#define SECTION_ARRAY_FIELD(_name)                                         \
-   do {                                                                    \
-      ssize_t _i;                                                          \
-      for (_i = 0; _i < rpc->n_##_name; _i++) {                            \
-         printf ("  " #_name " : %d\n", rpc->n_##_name);                   \
-         if (rpc->_name[_i].payload_type == 0) {                           \
-            do {                                                           \
-               bson_t b;                                                   \
-               char *s;                                                    \
-               int32_t __l;                                                \
-               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);     \
-               __l = BSON_UINT32_FROM_LE (__l);                            \
-               bson_init_static (                                          \
-                  &b, rpc->_name[_i].payload.bson_document, __l);          \
-               s = bson_as_relaxed_extended_json (&b, NULL);               \
-               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s); \
-               bson_free (s);                                              \
-               bson_destroy (&b);                                          \
-            } while (0);                                                   \
-         }                                                                 \
-      }                                                                    \
+#define SECTION_ARRAY_FIELD(_name)                                          \
+   do {                                                                     \
+      ssize_t _i;                                                           \
+      printf ("  " #_name " : %d\n", rpc->n_##_name);                       \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                             \
+         if (rpc->_name[_i].payload_type == 0) {                            \
+            do {                                                            \
+               bson_t b;                                                    \
+               char *s;                                                     \
+               int32_t __l;                                                 \
+               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);      \
+               __l = BSON_UINT32_FROM_LE (__l);                             \
+               bson_init_static (                                           \
+                  &b, rpc->_name[_i].payload.bson_document, __l);           \
+               s = bson_as_relaxed_extended_json (&b, NULL);                \
+               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s);  \
+               bson_free (s);                                               \
+               bson_destroy (&b);                                           \
+            } while (0);                                                    \
+         } else if (rpc->_name[_i].payload_type == 1) {                     \
+            bson_reader_t *__r;                                             \
+            int max = rpc->_name[_i].payload.sequence.size -                \
+                      strlen (rpc->_name[_i].payload.sequence.identifier) - \
+                      1 - sizeof (int32_t);                                 \
+            bool __eof;                                                     \
+            const bson_t *__b;                                              \
+            printf ("  Identifier: %s\n",                                   \
+                    rpc->_name[_i].payload.sequence.identifier);            \
+            printf ("  Size: %d\n", max);                                   \
+            __r = bson_reader_new_from_data (                               \
+               rpc->_name[_i].payload.sequence.bson_documents, max);        \
+            while ((__b = bson_reader_read (__r, &__eof))) {                \
+               char *s = bson_as_canonical_extended_json (__b, NULL);       \
+               /*printf ("  - %s\n", s);  */                                \
+               bson_free (s);                                               \
+            }                                                               \
+            bson_reader_destroy (__r);                                      \
+         }                                                                  \
+      }                                                                     \
    } while (0);
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
