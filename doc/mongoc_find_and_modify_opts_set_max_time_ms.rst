@@ -31,7 +31,9 @@ Returns ``true`` if it successfully added the option to the builder, otherwise `
 Setting maxTimeMS
 -----------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/opts.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_OPTS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_OPTS_END */
    :caption: opts.c
 

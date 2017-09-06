@@ -35,8 +35,10 @@ Returns ``true`` if it successfully added the option to the builder, otherwise `
 Setting bypassDocumentValidation
 --------------------------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/bypass.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_BYPASS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_BYPASS_END */
    :caption: bypass.c
 
 Outputs:

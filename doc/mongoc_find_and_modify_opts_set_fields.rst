@@ -33,8 +33,10 @@ Returns ``true`` if it successfully added the option to the builder, otherwise `
 Setting fields
 --------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/fields.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_FIELDS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_FIELDS_END */
    :caption: fields.c
 
 Outputs:

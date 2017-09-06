@@ -33,8 +33,10 @@ Returns ``true`` if it successfully added the option to the builder, otherwise `
 Setting update
 --------------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/update.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_UPDATE_BEGIN */
+   :end-before: /* EXAMPLE_FAM_UPDATE_END */
    :caption: update.c
 
 Outputs:
