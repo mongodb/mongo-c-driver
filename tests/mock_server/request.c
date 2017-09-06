@@ -177,7 +177,8 @@ request_matches_query (const request_t *request,
    }
 
    if (request->opcode != MONGOC_OPCODE_QUERY) {
-      test_error ("request's opcode does not match QUERY");
+      test_error ("request's opcode does not match QUERY, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -254,7 +255,8 @@ request_matches_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT");
+      test_error ("request's opcode does not match INSERT, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -295,7 +297,8 @@ request_matches_bulk_insert (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_INSERT) {
-      test_error ("request's opcode does not match INSERT");
+      test_error ("request's opcode does not match INSERT, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -338,7 +341,8 @@ request_matches_update (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_UPDATE) {
-      test_error ("request's opcode does not match UPDATE");
+      test_error ("request's opcode does not match UPDATE, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -385,7 +389,8 @@ request_matches_delete (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_DELETE) {
-      test_error ("request's opcode does not match DELETE");
+      test_error ("request's opcode does not match DELETE, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -426,7 +431,8 @@ request_matches_getmore (const request_t *request,
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_GET_MORE) {
-      test_error ("request's opcode does not match GET_MORE");
+      test_error ("request's opcode does not match GET_MORE, got: %d",
+                  request->opcode);
       return false;
    }
 
@@ -465,7 +471,8 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
    rpc = &request->request_rpc;
 
    if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
-      test_error ("request's opcode does not match KILL_CURSORS");
+      test_error ("request's opcode does not match KILL_CURSORS, got: %d",
+                  request->opcode);
       return false;
    }
 

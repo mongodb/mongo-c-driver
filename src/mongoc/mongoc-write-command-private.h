@@ -27,6 +27,7 @@
 #include "mongoc-error.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-server-stream-private.h"
+#include "mongoc-buffer-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -52,7 +53,7 @@ struct _mongoc_bulk_write_flags_t {
 
 typedef struct {
    int type;
-   bson_t *documents;
+   mongoc_buffer_t payload;
    uint32_t n_documents;
    mongoc_bulk_write_flags_t flags;
    int64_t operation_id;
@@ -171,6 +172,9 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
                                bson_error_t *error);
 void
 _mongoc_write_result_destroy (mongoc_write_result_t *result);
+
+void
+_append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
 
 
 BSON_END_DECLS

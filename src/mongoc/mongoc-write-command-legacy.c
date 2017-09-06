@@ -331,11 +331,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
 
    bson_init (&doc);
    _mongoc_write_command_init (&doc, command, collection, write_concern);
-
-   /* copy the whole documents buffer as e.g. "updates": [...] */
-   BSON_APPEND_ARRAY (&doc,
-                      _mongoc_command_type_to_field_name (command->type),
-                      command->documents);
+   _append_array_from_command (command, &doc);
 
    mongoc_apm_command_started_init (
       &event,
@@ -461,8 +457,13 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
          if (has_upserted_id) {
             append_upserted (&doc, &upserted_id);
          } else if (has_updated_existing && !updated_existing && n == 1) {
-            has_upserted_id =
-               get_upserted_id (&command->documents[0], &upserted_id);
+            bson_t tmp;
+            int32_t bson_len = 0;
+
+            memcpy (&bson_len, command->payload.data, 4);
+            bson_len = BSON_UINT32_FROM_LE (bson_len);
+            bson_init_static (&tmp, command->payload.data, bson_len);
+            has_upserted_id = get_upserted_id (&tmp, &upserted_id);
 
             if (has_upserted_id) {
                append_upserted (&doc, &upserted_id);
@@ -514,13 +515,15 @@ _mongoc_write_command_delete_legacy (
    const uint8_t *data;
    mongoc_rpc_t rpc;
    uint32_t request_id;
-   bson_iter_t iter;
    bson_iter_t q_iter;
    uint32_t len;
    int64_t limit = 0;
    bson_t *gle = NULL;
    char ns[MONGOC_NAMESPACE_MAX + 1];
    bool r;
+   bson_reader_t *reader;
+   const bson_t *bson;
+   bool eof;
 
    ENTRY;
 
@@ -534,9 +537,7 @@ _mongoc_write_command_delete_legacy (
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
-   r = bson_iter_init (&iter, command->documents);
-   BSON_ASSERT (r);
-   if (!command->n_documents || !bson_iter_next (&iter)) {
+   if (!command->n_documents) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
                       MONGOC_ERROR_COLLECTION_DELETE_FAILED,
@@ -547,10 +548,12 @@ _mongoc_write_command_delete_legacy (
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
-   do {
+   reader =
+      bson_reader_new_from_data (command->payload.data, command->payload.len);
+   while ((bson = bson_reader_read (reader, &eof))) {
       /* the document is like { "q": { <selector> }, limit: <0 or 1> } */
-      r = (bson_iter_recurse (&iter, &q_iter) &&
-           bson_iter_find (&q_iter, "q") && BSON_ITER_HOLDS_DOCUMENT (&q_iter));
+      r = (bson_iter_init (&q_iter, bson) && bson_iter_find (&q_iter, "q") &&
+           BSON_ITER_HOLDS_DOCUMENT (&q_iter));
 
       BSON_ASSERT (r);
       bson_iter_document (&q_iter, &len, &data);
@@ -626,7 +629,8 @@ _mongoc_write_command_delete_legacy (
       }
 
       started = bson_get_monotonic_time ();
-   } while (bson_iter_next (&iter));
+   }
+   bson_reader_destroy (reader);
 
    EXIT;
 }
@@ -647,21 +651,21 @@ _mongoc_write_command_insert_legacy (
    int64_t started;
    uint32_t current_offset;
    mongoc_iovec_t *iov;
-   const uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_iter_t iter;
-   uint32_t len;
    bson_t *gle = NULL;
    uint32_t size = 0;
    bool has_more;
    char ns[MONGOC_NAMESPACE_MAX + 1];
-   bool r;
    uint32_t n_docs_in_batch;
    uint32_t request_id = 0;
    uint32_t idx = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    bool singly;
+   bson_reader_t *reader;
+   const bson_t *bson;
+   bool eof;
+   int data_offset = 0;
 
    ENTRY;
 
@@ -680,10 +684,7 @@ _mongoc_write_command_insert_legacy (
 
    singly = !command->u.insert.allow_bulk_op_insert;
 
-   r = bson_iter_init (&iter, command->documents);
-   BSON_ASSERT (r);
-
-   if (!command->n_documents || !bson_iter_next (&iter)) {
+   if (!command->n_documents) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
                       MONGOC_ERROR_COLLECTION_INSERT_FAILED,
@@ -702,22 +703,18 @@ again:
    size = (uint32_t) (sizeof (mongoc_rpc_header_t) + 4 + strlen (database) + 1 +
                       strlen (collection) + 1);
 
-   do {
-      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   reader = bson_reader_new_from_data (command->payload.data + data_offset,
+                                       command->payload.len - data_offset);
+   while ((bson = bson_reader_read (reader, &eof))) {
       BSON_ASSERT (n_docs_in_batch <= idx);
-      BSON_ASSERT (idx < command->n_documents);
+      BSON_ASSERT (idx <= command->n_documents);
 
-      bson_iter_document (&iter, &len, &data);
-
-      BSON_ASSERT (data);
-      BSON_ASSERT (len >= 5);
-
-      if (len > max_bson_obj_size) {
+      if (bson->len > max_bson_obj_size) {
          /* document is too large */
          bson_t write_err_doc = BSON_INITIALIZER;
 
          _mongoc_write_command_too_large_error (
-            error, idx, len, max_bson_obj_size, &write_err_doc);
+            error, idx, bson->len, max_bson_obj_size, &write_err_doc);
 
          _mongoc_write_result_merge_legacy (
             result,
@@ -728,26 +725,29 @@ again:
             offset + idx);
 
          bson_destroy (&write_err_doc);
+         data_offset += bson->len;
 
          if (command->flags.ordered) {
             /* send the batch so far (if any) and return the error */
             break;
          }
       } else if ((n_docs_in_batch == 1 && singly) ||
-                 size > (max_msg_size - len)) {
+                 size > (max_msg_size - bson->len)) {
          /* batch is full, send it and then start the next batch */
          has_more = true;
          break;
       } else {
          /* add document to batch and continue building the batch */
-         iov[n_docs_in_batch].iov_base = (void *) data;
-         iov[n_docs_in_batch].iov_len = len;
-         size += len;
+         iov[n_docs_in_batch].iov_base = (void *) bson_get_data (bson);
+         iov[n_docs_in_batch].iov_len = bson->len;
+         size += bson->len;
          n_docs_in_batch++;
+         data_offset += bson->len;
       }
 
       idx++;
-   } while (bson_iter_next (&iter));
+   }
+   bson_reader_destroy (reader);
 
    if (n_docs_in_batch) {
       request_id = ++client->cluster.request_id;
@@ -851,7 +851,7 @@ _mongoc_write_command_update_legacy (
    int32_t max_bson_obj_size;
    mongoc_rpc_t rpc;
    uint32_t request_id = 0;
-   bson_iter_t iter, subiter, subsubiter;
+   bson_iter_t subiter, subsubiter;
    bson_t doc;
    bool has_update, has_selector, is_upsert;
    bson_t update, selector;
@@ -864,6 +864,9 @@ _mongoc_write_command_update_legacy (
    int32_t affected = 0;
    int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
                  BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+   bson_reader_t *reader;
+   const bson_t *bson;
+   bool eof;
 
    ENTRY;
 
@@ -877,10 +880,10 @@ _mongoc_write_command_update_legacy (
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
-   bson_iter_init (&iter, command->documents);
-   while (bson_iter_next (&iter)) {
-      if (bson_iter_recurse (&iter, &subiter) &&
-          bson_iter_find (&subiter, "u") &&
+   reader =
+      bson_reader_new_from_data (command->payload.data, command->payload.len);
+   while ((bson = bson_reader_read (reader, &eof))) {
+      if (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "u") &&
           BSON_ITER_HOLDS_DOCUMENT (&subiter)) {
          bson_iter_document (&subiter, &len, &data);
          bson_init_static (&doc, data, len);
@@ -910,8 +913,9 @@ _mongoc_write_command_update_legacy (
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
-   bson_iter_init (&iter, command->documents);
-   while (bson_iter_next (&iter)) {
+   reader =
+      bson_reader_new_from_data (command->payload.data, command->payload.len);
+   while ((bson = bson_reader_read (reader, &eof))) {
       request_id = ++client->cluster.request_id;
 
       rpc.header.msg_len = 0;
@@ -926,7 +930,7 @@ _mongoc_write_command_update_legacy (
       has_selector = false;
       is_upsert = false;
 
-      bson_iter_recurse (&iter, &subiter);
+      bson_iter_init (&subiter, bson);
       while (bson_iter_next (&subiter)) {
          if (strcmp (bson_iter_key (&subiter), "u") == 0) {
             bson_iter_document (&subiter, &len, &data);

@@ -3358,6 +3358,242 @@ test_bulk_edge_case_372_unordered (void)
 }
 
 
+typedef struct {
+   int started;
+   int succeeded;
+   int failed;
+} stats_t;
+
+
+void
+command_succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   const char *cmd_name = mongoc_apm_command_succeeded_get_command_name (event);
+
+   if (!strcasecmp (cmd_name, "insert")) {
+      ((stats_t *) mongoc_apm_command_succeeded_get_context (event))
+         ->succeeded++;
+   }
+}
+
+
+static void
+test_bulk_max_msg_size (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_write_concern_t *wc;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t reply;
+   bson_t doc;
+   bool retval;
+   mongoc_apm_callbacks_t *callbacks;
+   stats_t stats = {0};
+   int str_size = 16 * 1024 * 1024 - 24;
+   char *msg = bson_malloc (str_size + 1);
+   int filler_string = 14445428;
+
+   memset (msg, 'a', str_size);
+   msg[str_size] = '\0';
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
+      bson_free (msg);
+      return;
+   }
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   client = test_framework_client_new ();
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &stats);
+   collection = mongoc_client_get_collection (client, "test", "max_msg_size");
+   mongoc_collection_drop (collection, NULL);
+
+
+   /* {{{ Exactly 48 000 000 bytes (not to be confused with 48mb!) */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   /* 16 mb doc */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 1);
+   BSON_APPEND_UTF8 (&doc, "msg", msg);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   /* 16 mb doc */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 2);
+   BSON_APPEND_UTF8 (&doc, "msg", msg);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   /* fill up to the 48 000 000 bytes message size */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 3);
+   bson_append_utf8 (&doc, "msg", -1, msg, filler_string);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (3, &reply);
+   /* Make sure this was ONE bulk ! */
+   ASSERT_CMPINT (stats.succeeded, ==, 1);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+   /* {{{ 48 000 001 byte */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   /* 16 mb doc */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 1);
+   BSON_APPEND_UTF8 (&doc, "msg", msg);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   /* 16 mb doc */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 2);
+   BSON_APPEND_UTF8 (&doc, "msg", msg);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   /* fill up to the 48 000 001 bytes message size */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "_id", -1, 3);
+   bson_append_utf8 (&doc, "msg", -1, msg, filler_string + 1);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   bson_destroy (&doc);
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (3, &reply);
+   /* Make sure this was TWO bulks, otherwise our one bulk math was wrong! */
+   ASSERT_CMPINT (stats.succeeded, ==, 2);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+   bson_free (msg);
+}
+
+
+static void
+test_bulk_max_batch_size (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_write_concern_t *wc;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t reply;
+   bson_t doc;
+   bool retval;
+   int i;
+   mongoc_apm_callbacks_t *callbacks;
+   stats_t stats = {0};
+
+   if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
+      return;
+   }
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   client = test_framework_client_new ();
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &stats);
+   collection = get_test_collection (client, "max_batch_size");
+
+
+   /* {{{ Insert 100 000 documents, in one bulk */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   for (i = 1; i <= 100000; i++) {
+      bson_init (&doc);
+      bson_append_int32 (&doc, "_id", -1, i);
+      mongoc_bulk_operation_insert (bulk, &doc);
+      bson_destroy (&doc);
+   }
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (i - 1, &reply);
+   ASSERT_CMPINT (stats.succeeded, ==, 1);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+   /* {{{ Insert 100 001 documents, in two bulks */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   for (i = 1; i <= 100001; i++) {
+      bson_init (&doc);
+      bson_append_int32 (&doc, "_id", -1, i);
+      mongoc_bulk_operation_insert (bulk, &doc);
+      bson_destroy (&doc);
+   }
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (i - 1, &reply);
+   ASSERT_CMPINT (stats.succeeded, ==, 2);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+   /* {{{ Insert 200 000 documents, in two bulks */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   for (i = 1; i <= 200000; i++) {
+      bson_init (&doc);
+      bson_append_int32 (&doc, "_id", -1, i);
+      mongoc_bulk_operation_insert (bulk, &doc);
+      bson_destroy (&doc);
+   }
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (i - 1, &reply);
+   ASSERT_CMPINT (stats.succeeded, ==, 2);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+   /* {{{ Insert 200 001 documents, in 3 bulks */
+   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   for (i = 1; i <= 200001; i++) {
+      bson_init (&doc);
+      bson_append_int32 (&doc, "_id", -1, i);
+      mongoc_bulk_operation_insert (bulk, &doc);
+      bson_destroy (&doc);
+   }
+
+   retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (retval, error);
+   assert_n_inserted (i - 1, &reply);
+   ASSERT_CMPINT (stats.succeeded, ==, 3);
+   stats.succeeded = 0;
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_drop (collection, NULL);
+   /* }}} */
+
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_bulk_new (void)
 {
@@ -4438,6 +4674,10 @@ test_bulk_install (TestSuite *suite)
                       "/BulkOperation/CDRIVER-372_unordered",
                       test_bulk_edge_case_372_unordered);
    TestSuite_AddLive (suite, "/BulkOperation/new", test_bulk_new);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
    TestSuite_AddLive (
       suite, "/BulkOperation/over_1000", test_bulk_edge_over_1000);
    TestSuite_AddLive (suite,
