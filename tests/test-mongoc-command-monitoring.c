@@ -780,6 +780,11 @@ test_command_monitoring_cb (bson_t *scenario)
 
    BSON_ASSERT (scenario);
 
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
+      /* Skip OP_MSG & APM tests */
+      return;
+   }
+
    db_name = bson_lookup_utf8 (scenario, "database_name");
    collection_name = bson_lookup_utf8 (scenario, "collection_name");
 
