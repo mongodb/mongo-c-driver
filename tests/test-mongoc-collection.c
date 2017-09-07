@@ -506,11 +506,6 @@ test_insert_null (void)
    bson_iter_t iter;
    uint32_t len;
 
-   /* nModified isn't available in 2.4 */
-   if (!test_framework_max_wire_version_at_least (2)) {
-      return;
-   }
-
    client = test_framework_client_new ();
    ASSERT (client);
 

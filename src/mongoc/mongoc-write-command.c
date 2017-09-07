@@ -664,7 +664,6 @@ _mongoc_write_command_execute (
    uint32_t offset,                             /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
-   int32_t min_wire_version;
    ENTRY;
 
    BSON_ASSERT (command);
@@ -673,8 +672,6 @@ _mongoc_write_command_execute (
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
    BSON_ASSERT (result);
-
-   min_wire_version = server_stream->sd->min_wire_version;
 
    if (!write_concern) {
       write_concern = client->write_concern;
@@ -690,8 +687,7 @@ _mongoc_write_command_execute (
    }
 
    if (command->flags.has_collation) {
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          result->failed = true;
          bson_set_error (&result->error,
                          MONGOC_ERROR_COMMAND,
@@ -710,8 +706,7 @@ _mongoc_write_command_execute (
    }
    if (command->flags.bypass_document_validation !=
        MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          result->failed = true;
          bson_set_error (
             &result->error,
@@ -743,8 +738,7 @@ _mongoc_write_command_execute (
        * a response from the server.
        */
 
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          gLegacyWriteOps[command->type](command,
                                         client,
                                         server_stream,
@@ -973,20 +967,9 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       } else {
          result->nMatched += affected;
       }
-      /*
-       * SERVER-13001 - in a mixed sharded cluster a call to update could
-       * return nModified (>= 2.6) or not (<= 2.4).  If any call does not
-       * return nModified we can't report a valid final count so omit the
-       * field completely.
-       */
       if (bson_iter_init_find (&iter, reply, "nModified") &&
           BSON_ITER_HOLDS_INT32 (&iter)) {
          result->nModified += bson_iter_int32 (&iter);
-      } else {
-         /*
-          * nModified could be BSON_TYPE_NULL, which should also be omitted.
-          */
-         result->omit_nModified = true;
       }
       break;
    default:
@@ -1121,9 +1104,7 @@ _mongoc_write_result_complete (
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
-      if (!result->omit_nModified) {
-         BSON_APPEND_INT32 (bson, "nModified", result->nModified);
-      }
+      BSON_APPEND_INT32 (bson, "nModified", result->nModified);
       BSON_APPEND_INT32 (bson, "nRemoved", result->nRemoved);
       BSON_APPEND_INT32 (bson, "nUpserted", result->nUpserted);
       if (!bson_empty0 (&result->upserted)) {

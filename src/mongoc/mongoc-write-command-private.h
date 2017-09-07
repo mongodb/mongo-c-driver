@@ -67,7 +67,6 @@ typedef struct {
 
 typedef struct {
    /* true after a legacy update prevents us from calculating nModified */
-   bool omit_nModified;
    uint32_t nInserted;
    uint32_t nMatched;
    uint32_t nModified;
