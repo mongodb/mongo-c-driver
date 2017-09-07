@@ -43,7 +43,7 @@
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 0
+#define WIRE_VERSION_MIN 2
 #define WIRE_VERSION_MAX 6
 
 /* first version that supported aggregation cursors */
