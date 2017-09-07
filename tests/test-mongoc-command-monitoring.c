@@ -929,7 +929,7 @@ decrement_callbacks (void)
 
 
 static void
-test_change_callbacks (void *ctx)
+test_change_callbacks (void)
 {
    mongoc_apm_callbacks_t *inc_callbacks;
    mongoc_apm_callbacks_t *dec_callbacks;
@@ -976,7 +976,7 @@ test_change_callbacks (void *ctx)
 
 
 static void
-test_reset_callbacks (void *ctx)
+test_reset_callbacks (void)
 {
    mongoc_apm_callbacks_t *inc_callbacks;
    mongoc_apm_callbacks_t *dec_callbacks;
@@ -1753,18 +1753,10 @@ test_command_monitoring_install (TestSuite *suite)
                       "/command_monitoring/set_callbacks/pooled",
                       test_set_callbacks_pooled);
    /* require aggregation cursor */
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/set_callbacks/change",
-                      test_change_callbacks,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_1);
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/set_callbacks/reset",
-                      test_reset_callbacks,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_1);
+   TestSuite_Add (
+      suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
+   TestSuite_Add (
+      suite, "/command_monitoring/set_callbacks/reset", test_reset_callbacks);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/collection/single",
                       test_collection_bulk_op_single);

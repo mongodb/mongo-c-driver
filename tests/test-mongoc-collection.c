@@ -20,7 +20,7 @@ BEGIN_IGNORE_DEPRECATIONS
 
 
 static void
-test_aggregate_w_write_concern (void *context)
+test_aggregate_w_write_concern (void)
 {
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
@@ -4893,12 +4893,9 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
-   TestSuite_AddFull (suite,
-                      "/Collection/aggregate/write_concern",
-                      test_aggregate_w_write_concern,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
+   TestSuite_Add (suite,
+                  "/Collection/aggregate/write_concern",
+                  test_aggregate_w_write_concern);
    TestSuite_AddLive (
       suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);

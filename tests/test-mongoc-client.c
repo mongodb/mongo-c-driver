@@ -171,7 +171,7 @@ test_server_id_option (void *ctx)
 
 
 static void
-test_client_cmd_w_write_concern (void *context)
+test_client_cmd_w_write_concern (void)
 {
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
@@ -3188,12 +3188,9 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
-   TestSuite_AddFull (suite,
-                      "/Client/command_w_write_concern",
-                      test_client_cmd_w_write_concern,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
+   TestSuite_Add (suite,
+                  "/Client/command_w_write_concern",
+                  test_client_cmd_w_write_concern);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
    TestSuite_AddMockServerTest (suite,

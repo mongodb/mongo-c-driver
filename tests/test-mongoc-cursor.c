@@ -711,7 +711,7 @@ test_cursor_empty_collection (void)
 
 
 static void
-test_cursor_new_from_aggregate (void *ctx)
+test_cursor_new_from_aggregate (void)
 {
    _test_cursor_new_from_command (
       "{'aggregate': 'test_cursor_new_from_aggregate',"
@@ -721,7 +721,7 @@ test_cursor_new_from_aggregate (void *ctx)
 
 
 static void
-test_cursor_new_from_aggregate_no_initial (void *ctx)
+test_cursor_new_from_aggregate_no_initial (void)
 {
    _test_cursor_new_from_command (
       "{'aggregate': 'test_cursor_new_from_aggregate_no_initial',"
@@ -1810,18 +1810,11 @@ test_cursor_install (TestSuite *suite)
       test_client_kill_cursor_without_primary_wire_version_4);
    TestSuite_AddLive (
       suite, "/Cursor/empty_collection", test_cursor_empty_collection);
-   TestSuite_AddFull (suite,
-                      "/Cursor/new_from_agg",
-                      test_cursor_new_from_aggregate,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
-   TestSuite_AddFull (suite,
-                      "/Cursor/new_from_agg_no_initial",
-                      test_cursor_new_from_aggregate_no_initial,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
+   TestSuite_Add (
+      suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
+   TestSuite_Add (suite,
+                  "/Cursor/new_from_agg_no_initial",
+                  test_cursor_new_from_aggregate_no_initial);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find",
                       test_cursor_new_from_find,
