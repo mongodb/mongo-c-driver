@@ -63,8 +63,6 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
    mongoc_index_opt_init (&opt);
    opt.unique = 1;
 
-   /* mongoc_collection_create_index is deprecated, but works with MongoDB 2.4
-    * once we really drop 2.4, call "createIndexes" command directly */
    BEGIN_IGNORE_DEPRECATIONS
    r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
    END_IGNORE_DEPRECATIONS

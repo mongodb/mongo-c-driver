@@ -1701,11 +1701,8 @@ test_error_document_command (void)
    ASSERT_CMPUINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
    ASSERT_CONTAINS (error.message, "no such");
 
-   /* MongoDB 2.4 has no "code" in the reply for "no such command" */
-   if (test_framework_max_wire_version_at_least (2)) {
-      ASSERT_CMPINT32 (
-         bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
-   }
+   ASSERT_CMPINT32 (
+      bson_lookup_int32 (error_doc, "code"), ==, (int32_t) error.code);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);

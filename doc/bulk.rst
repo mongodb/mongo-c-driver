@@ -19,10 +19,6 @@ We can now start inserting documents to the bulk operation. These will be buffer
 
 The bulk operation will coalesce insertions as a single batch for each consecutive call to :symbol:`mongoc_bulk_operation_insert()`. This creates a pipelined effect when possible.
 
-.. tip::
-
-  The bulk operation API will automatically handle MongoDB servers < 2.6 by speaking the old wire protocol. However, some performance degradation may occur.
-
 To execute the bulk operation and receive the result we call :symbol:`mongoc_bulk_operation_execute()`.
 
 .. literalinclude:: ../examples/bulk/bulk1.c
@@ -45,10 +41,6 @@ Mixed Bulk Write Operations
 ---------------------------
 
 MongoDB C driver also supports executing mixed bulk write operations. A batch of insert, update, and remove operations can be executed together using the bulk write operations API.
-
-.. tip::
-
-  Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions >= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated :symbol:`mongoc_collection_insert_bulk()` method.
 
 Ordered Bulk Write Operations
 -----------------------------
@@ -73,8 +65,6 @@ Example ``reply`` document:
     "writeConcernErrors" : [] }
 
 The ``index`` field in the ``upserted`` array is the 0-based index of the upsert operation; in this example, the sixth operation of the overall bulk operation was an upsert, so its index is 5.
-
-``nModified`` is only reported when using MongoDB 2.6 and later, otherwise the field is omitted.
 
 Unordered Bulk Write Operations
 -------------------------------
