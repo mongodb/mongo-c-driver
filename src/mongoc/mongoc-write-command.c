@@ -731,14 +731,18 @@ _mongoc_write_command_execute (
                            offset,
                            result,
                            &result->error);
-   } else if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
-      /*
-       * If we have an unacknowledged write and the server supports the legacy
-       * opcodes, then submit the legacy opcode so we don't need to wait for
-       * a response from the server.
-       */
-
-      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
+   } else {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
+         _mongoc_write_opquery (command,
+                                client,
+                                server_stream,
+                                database,
+                                collection,
+                                write_concern,
+                                offset,
+                                result,
+                                &result->error);
+      } else {
          gLegacyWriteOps[command->type](command,
                                         client,
                                         server_stream,
@@ -748,27 +752,7 @@ _mongoc_write_command_execute (
                                         offset,
                                         result,
                                         &result->error);
-         EXIT;
       }
-      _mongoc_write_opquery (command,
-                             client,
-                             server_stream,
-                             database,
-                             collection,
-                             write_concern,
-                             offset,
-                             result,
-                             &result->error);
-   } else {
-      gLegacyWriteOps[command->type](command,
-                                     client,
-                                     server_stream,
-                                     database,
-                                     collection,
-                                     write_concern,
-                                     offset,
-                                     result,
-                                     &result->error);
    }
 
    EXIT;
