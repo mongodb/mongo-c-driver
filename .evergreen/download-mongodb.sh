@@ -48,7 +48,6 @@ get_mongodb_download_url_for ()
    VERSION_32="3.2.11"
    VERSION_30="3.0.14"
    VERSION_26="2.6.12"
-   VERSION_24="2.4.12"
 
    EXTRACT="tar zxf"
    # getdata matrix on:
@@ -60,7 +59,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/osx/mongodb-osx-x86_64-enterprise-${VERSION_32}.tgz"
              MONGODB_30="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-${VERSION_30}.tgz"
              MONGODB_26="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-${VERSION_26}.tgz"
-             MONGODB_24="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-${VERSION_24}.tgz"
       ;;
       linux-rhel-7.2-s390x)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-rhel72-latest.tgz"
@@ -68,7 +66,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-rhel-7.1-ppc64le)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-latest.tgz"
@@ -76,7 +73,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-rhel71-${VERSION_32}.tgz"
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-rhel-7.0*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel70-latest.tgz"
@@ -84,7 +80,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel70-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel70-${VERSION_30}.tgz"
              MONGODB_26="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel70-${VERSION_26}.tgz"
-             MONGODB_24=""
       ;;
       linux-rhel-6.2*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-latest.tgz"
@@ -92,7 +87,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-${VERSION_30}.tgz"
              MONGODB_26="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-${VERSION_26}.tgz"
-             MONGODB_24="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-${VERSION_24}.tgz"
       ;;
       linux-rhel-5.5*)
          MONGODB_LATEST="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel55-latest.tgz"
@@ -100,7 +94,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel55-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-rhel55-${VERSION_30}.tgz"
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-sles-12.1-s390x)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-suse12-latest.tgz"
@@ -108,7 +101,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-debian-8*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian81-latest.tgz"
@@ -116,7 +108,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-ubuntu-16.04-s390x)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-ubuntu1604-latest.tgz"
@@ -124,7 +115,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-ubuntu-16.04-ppc64le)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-ubuntu1604-latest.tgz"
@@ -132,7 +122,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-ubuntu-16.04-aarch64)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-arm64-enterprise-ubuntu1604-latest.tgz"
@@ -140,7 +129,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-ubuntu-16.04*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1604-latest.tgz"
@@ -148,7 +136,6 @@ get_mongodb_download_url_for ()
              MONGODB_32=""
              MONGODB_30=""
              MONGODB_26=""
-             MONGODB_24=""
       ;;
       linux-ubuntu-14.04*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-latest.tgz"
@@ -156,7 +143,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-${VERSION_30}.tgz"
              MONGODB_26="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-${VERSION_26}.tgz"
-             MONGODB_24=""
       ;;
       linux-ubuntu-12.04*)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1204-latest.tgz"
@@ -164,7 +150,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1204-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1204-${VERSION_30}.tgz"
              MONGODB_26="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1204-${VERSION_26}.tgz"
-             MONGODB_24="http://downloads.10gen.com/linux/mongodb-linux-x86_64-subscription-ubuntu1204-${VERSION_24}.tgz"
       ;;
       windows32*)
          EXTRACT="/cygdrive/c/Progra~2/7-Zip/7z.exe x"
@@ -173,7 +158,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="https://fastdl.mongodb.org/win32/mongodb-win32-i386-${VERSION_32}.zip"
              MONGODB_30="https://fastdl.mongodb.org/win32/mongodb-win32-i386-${VERSION_30}.zip"
              MONGODB_26="https://fastdl.mongodb.org/win32/mongodb-win32-i386-${VERSION_26}.zip"
-             MONGODB_24="https://fastdl.mongodb.org/win32/mongodb-win32-i386-${VERSION_24}.zip"
       ;;
       windows64*)
          EXTRACT="/cygdrive/c/Progra~2/7-Zip/7z.exe x"
@@ -182,7 +166,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_32}.zip"
              MONGODB_30="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_30}.zip"
              MONGODB_26="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_26}.zip"
-             MONGODB_24="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_24}.zip"
       ;;
       cygwin*)
          EXTRACT="/cygdrive/c/Progra~2/7-Zip/7z.exe x"
@@ -191,7 +174,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.10gen.com/win32/mongodb-win32-x86_64-enterprise-windows-64-${VERSION_32}.zip"
              MONGODB_30="http://downloads.10gen.com/win32/mongodb-win32-x86_64-enterprise-windows-64-${VERSION_30}.zip"
              MONGODB_26="http://downloads.10gen.com/win32/mongodb-win32-x86_64-enterprise-windows-64-${VERSION_26}.zip"
-             MONGODB_24=""
       ;;
       *linux*x86_64)
          MONGODB_LATEST="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-latest.tgz"
@@ -199,7 +181,6 @@ get_mongodb_download_url_for ()
              MONGODB_32="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-${VERSION_32}.tgz"
              MONGODB_30="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-${VERSION_30}.tgz"
              MONGODB_26="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-${VERSION_26}.tgz"
-             MONGODB_24="http://downloads.mongodb.org/linux/mongodb-linux-x86_64-${VERSION_24}.tgz"
       ;;
    esac
 
@@ -210,7 +191,6 @@ get_mongodb_download_url_for ()
       3.2) MONGODB_DOWNLOAD_URL=$MONGODB_32 ;;
       3.0) MONGODB_DOWNLOAD_URL=$MONGODB_30 ;;
       2.6) MONGODB_DOWNLOAD_URL=$MONGODB_26 ;;
-      2.4) MONGODB_DOWNLOAD_URL=$MONGODB_24 ;;
    esac
 
    [ -z "$MONGODB_DOWNLOAD_URL" ] && MONGODB_DOWNLOAD_URL="Unknown version: $_VERSION for $_DISTRO"
