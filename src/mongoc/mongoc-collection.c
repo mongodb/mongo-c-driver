@@ -1050,123 +1050,6 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_collection_create_index_legacy --
- *
- *       Request the MongoDB server create the named index.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is setup upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
-static bool
-_mongoc_collection_create_index_legacy (mongoc_collection_t *collection,
-                                        const bson_t *keys,
-                                        const mongoc_index_opt_t *opt,
-                                        bson_error_t *error)
-{
-   const mongoc_index_opt_t *def_opt;
-   mongoc_collection_t *col;
-   bool ret;
-   bson_t insert;
-   char *name;
-
-   BSON_ASSERT (collection);
-
-   def_opt = mongoc_index_opt_get_default ();
-   opt = opt ? opt : def_opt;
-
-   if (!opt->is_initialized) {
-      MONGOC_WARNING ("Options have not yet been initialized");
-      return false;
-   }
-
-   bson_init (&insert);
-
-   bson_append_document (&insert, "key", -1, keys);
-   bson_append_utf8 (&insert, "ns", -1, collection->ns, -1);
-
-   if (opt->background != def_opt->background) {
-      bson_append_bool (&insert, "background", -1, opt->background);
-   }
-
-   if (opt->unique != def_opt->unique) {
-      bson_append_bool (&insert, "unique", -1, opt->unique);
-   }
-
-   if (opt->name != def_opt->name) {
-      bson_append_utf8 (&insert, "name", -1, opt->name, -1);
-   } else {
-      name = mongoc_collection_keys_to_index_string (keys);
-      if (!name) {
-         bson_set_error (
-            error,
-            MONGOC_ERROR_BSON,
-            MONGOC_ERROR_BSON_INVALID,
-            "Cannot generate index name from invalid `keys` argument");
-         bson_destroy (&insert);
-         return false;
-      }
-      bson_append_utf8 (&insert, "name", -1, name, -1);
-      bson_free (name);
-   }
-
-   if (opt->drop_dups != def_opt->drop_dups) {
-      bson_append_bool (&insert, "dropDups", -1, opt->drop_dups);
-   }
-
-   if (opt->sparse != def_opt->sparse) {
-      bson_append_bool (&insert, "sparse", -1, opt->sparse);
-   }
-
-   if (opt->expire_after_seconds != def_opt->expire_after_seconds) {
-      bson_append_int32 (
-         &insert, "expireAfterSeconds", -1, opt->expire_after_seconds);
-   }
-
-   if (opt->v != def_opt->v) {
-      bson_append_int32 (&insert, "v", -1, opt->v);
-   }
-
-   if (opt->weights != def_opt->weights) {
-      bson_append_document (&insert, "weights", -1, opt->weights);
-   }
-
-   if (opt->default_language != def_opt->default_language) {
-      bson_append_utf8 (
-         &insert, "default_language", -1, opt->default_language, -1);
-   }
-
-   if (opt->language_override != def_opt->language_override) {
-      bson_append_utf8 (
-         &insert, "language_override", -1, opt->language_override, -1);
-   }
-
-   col = mongoc_client_get_collection (
-      collection->client, collection->db, "system.indexes");
-
-   ret = mongoc_collection_insert (
-      col,
-      (mongoc_insert_flags_t) MONGOC_INSERT_NO_VALIDATE,
-      &insert,
-      NULL,
-      error);
-
-   mongoc_collection_destroy (col);
-
-   bson_destroy (&insert);
-
-   return ret;
-}
-
-
 bool
 mongoc_collection_create_index (mongoc_collection_t *collection,
                                 const bson_t *keys,
@@ -1198,7 +1081,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    mongoc_cmd_parts_t parts;
    const mongoc_index_opt_t *def_opt;
    const mongoc_index_opt_geo_t *def_geo;
-   bson_error_t local_error;
    const char *name;
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
@@ -1353,34 +1235,13 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    cluster = &collection->client->cluster;
    mongoc_cmd_parts_assemble (&parts, server_stream);
    ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts.assembled, reply, &local_error);
+      cluster, &parts.assembled, reply, error);
 
    reply_initialized = true;
 
    if (ret) {
       if (reply) {
          ret = !_mongoc_parse_wc_err (reply, error);
-      }
-   } else {
-      /*
-       * If we failed due to the command not being found, then use the legacy
-       * version which performs an insert into the system.indexes collection.
-       */
-      if (local_error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-         if (has_collation) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support collation");
-         }
-         ret = _mongoc_collection_create_index_legacy (
-            collection, keys, opt, error);
-         /* Clear the error reply from the first request */
-         if (reply) {
-            bson_reinit (reply);
-         }
-      } else if (error) {
-         memcpy (error, &local_error, sizeof *error);
       }
    }
 

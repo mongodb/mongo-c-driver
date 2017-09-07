@@ -24,12 +24,7 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-Currently the sole option allowed in ``opts`` is "legacyInsert".
-
-In MongoDB 2.4 and older, indexes are created by inserting a document into the "system.indexes" pseudo-collection.
-That document may have fieldnames containing dots, which are ordinarily prohibited for inserts.
-If ``opts`` contains a boolean field "legacyInsert" with value ``true``, then ``document`` is validated as an index specification
-and dotted fieldnames are allowed.
+Currently the ``opts`` is unused.
 
 Errors
 ------

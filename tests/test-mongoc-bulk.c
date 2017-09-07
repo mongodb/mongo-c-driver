@@ -1740,67 +1740,6 @@ test_insert_with_opts_invalid_second (void)
 }
 
 
-/* CDRIVER-2018, special dispensation for PHP driver and system.indexes */
-static void
-test_insert_into_system_indexes (void)
-{
-   mongoc_client_t *client;
-   const char *db_name;
-   mongoc_collection_t *collection;
-   mongoc_collection_t *system_indexes;
-   mongoc_bulk_operation_t *bulk;
-   bool r;
-   bson_error_t error;
-   uint32_t i;
-   mongoc_cursor_t *cursor;
-   const bson_t *index_info;
-   bson_iter_t iter;
-   bool found = false;
-
-   client = test_framework_client_new ();
-   collection = get_test_collection (client, "test_insert_system_indexes");
-   db_name = collection->db;
-   system_indexes =
-      mongoc_client_get_collection (client, db_name, "system.indexes");
-
-   mongoc_collection_drop (collection, NULL);
-
-   bulk = mongoc_collection_create_bulk_operation (system_indexes, false, NULL);
-   r = mongoc_bulk_operation_insert_with_opts (
-      bulk,
-      tmp_bson ("{'key': {'a.b': 1}, 'ns': '%s', 'name': 'foo'}",
-                collection->ns),
-      tmp_bson ("{'legacyIndex': true}"),
-      &error);
-
-   ASSERT_OR_PRINT (r, error);
-
-   /* even modern MongoDB lets us insert into system.indexes to create index */
-   i = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   ASSERT_OR_PRINT (i, error);
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (cursor, error);
-   while (mongoc_cursor_next (cursor, &index_info)) {
-      if (bson_iter_init_find (&iter, index_info, "name") &&
-          !strcmp (bson_iter_utf8 (&iter, NULL), "foo")) {
-         found = true;
-         break;
-      }
-   }
-
-   r = mongoc_cursor_error (cursor, &error);
-   ASSERT_OR_PRINT (!r, error);
-   BSON_ASSERT (found);
-
-   mongoc_cursor_destroy (cursor);
-
-   mongoc_bulk_operation_destroy (bulk);
-   mongoc_collection_destroy (system_indexes);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
 typedef void (*remove_fn) (mongoc_bulk_operation_t *bulk,
                            const bson_t *selector);
 
@@ -4517,9 +4456,6 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_with_opts_invalid_second",
                       test_insert_with_opts_invalid_second);
-   TestSuite_AddLive (suite,
-                      "/BulkOperation/insert_into_system_indexes",
-                      test_insert_into_system_indexes);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_one_after_invalid",
                       test_remove_one_after_invalid);

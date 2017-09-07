@@ -347,7 +347,6 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
-   bson_iter_t iter;
 
    ENTRY;
 
@@ -356,12 +355,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (opts && bson_iter_init_find_case (&iter, opts, "legacyIndex") &&
-       bson_iter_as_bool (&iter)) {
-      if (!_mongoc_validate_legacy_index (document, error)) {
-         return false;
-      }
-   } else if (!_mongoc_validate_new_document (document, error)) {
+   if (!_mongoc_validate_new_document (document, error)) {
       return false;
    }
 
