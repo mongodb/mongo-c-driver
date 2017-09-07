@@ -309,8 +309,7 @@ void
 _mongoc_write_command_too_large_error (bson_error_t *error,
                                        int32_t idx,
                                        int32_t len,
-                                       int32_t max_bson_size,
-                                       bson_t *err_doc)
+                                       int32_t max_bson_size)
 {
    bson_set_error (error,
                    MONGOC_ERROR_BSON,
@@ -320,12 +319,6 @@ _mongoc_write_command_too_large_error (bson_error_t *error,
                    idx,
                    len,
                    max_bson_size);
-
-   if (err_doc) {
-      BSON_APPEND_INT32 (err_doc, "index", idx);
-      BSON_APPEND_UTF8 (err_doc, "err", error->message);
-      BSON_APPEND_INT32 (err_doc, "code", MONGOC_ERROR_BSON_INVALID);
-   }
 }
 
 
@@ -442,7 +435,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       /* Skip the document if it's too large */
       if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
          _mongoc_write_command_too_large_error (
-            error, index_offset, len, max_bson_obj_size, NULL);
+            error, index_offset, len, max_bson_obj_size);
          result->failed = true;
 
          /* skip this document */
@@ -619,8 +612,7 @@ again:
    bson_append_array_end (&cmd, &ar);
 
    if (!i) {
-      _mongoc_write_command_too_large_error (
-         error, i, len, max_bson_obj_size, NULL);
+      _mongoc_write_command_too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
       ret = false;
       if (bson) {

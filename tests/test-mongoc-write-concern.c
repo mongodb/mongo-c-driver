@@ -35,7 +35,6 @@ static void
 test_write_concern_basic (void)
 {
    mongoc_write_concern_t *write_concern;
-   const bson_t *gle;
    const bson_t *bson;
    bson_iter_t iter;
 
@@ -87,19 +86,8 @@ test_write_concern_basic (void)
     */
    mongoc_write_concern_set_fsync (write_concern, true);
    mongoc_write_concern_set_journal (write_concern, true);
-   gle = _mongoc_write_concern_get_gle (write_concern);
-   ASSERT (bson_iter_init_find (&iter, gle, "getlasterror") &&
-           BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 1);
-   ASSERT (bson_iter_init_find (&iter, gle, "fsync") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, gle, "j") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, gle, "w") &&
-           BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 3);
-   ASSERT (gle);
 
    bson = _mongoc_write_concern_get_bson (write_concern);
-   ASSERT (!bson_iter_init_find (&iter, bson, "getlasterror"));
    ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
            BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
    ASSERT (bson_iter_init_find (&iter, bson, "j") &&
@@ -118,7 +106,6 @@ static void
 test_write_concern_bson_omits_defaults (void)
 {
    mongoc_write_concern_t *write_concern;
-   const bson_t *gle;
    const bson_t *bson;
    bson_iter_t iter;
 
@@ -129,19 +116,9 @@ test_write_concern_bson_omits_defaults (void)
     */
    ASSERT (write_concern);
 
-   gle = _mongoc_write_concern_get_gle (write_concern);
-   ASSERT (bson_iter_init_find (&iter, gle, "getlasterror") &&
-           BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 1);
-   ASSERT (!bson_iter_init_find (&iter, gle, "fsync"));
-   ASSERT (!bson_iter_init_find (&iter, gle, "j"));
-   ASSERT (!bson_iter_init_find (&iter, gle, "w"));
-   ASSERT (gle);
-
    bson = _mongoc_write_concern_get_bson (write_concern);
-   ASSERT (!bson_iter_init_find (&iter, bson, "getlasterror"));
    ASSERT (!bson_iter_init_find (&iter, bson, "fsync"));
    ASSERT (!bson_iter_init_find (&iter, bson, "j"));
-   ASSERT (!bson_iter_init_find (&iter, gle, "w"));
    ASSERT (bson);
 
    mongoc_write_concern_destroy (write_concern);
@@ -152,7 +129,6 @@ static void
 test_write_concern_bson_includes_false_fsync_and_journal (void)
 {
    mongoc_write_concern_t *write_concern;
-   const bson_t *gle;
    const bson_t *bson;
    bson_iter_t iter;
 
@@ -165,18 +141,7 @@ test_write_concern_bson_includes_false_fsync_and_journal (void)
    mongoc_write_concern_set_fsync (write_concern, false);
    mongoc_write_concern_set_journal (write_concern, false);
 
-   gle = _mongoc_write_concern_get_gle (write_concern);
-   ASSERT (bson_iter_init_find (&iter, gle, "getlasterror") &&
-           BSON_ITER_HOLDS_INT32 (&iter) && bson_iter_int32 (&iter) == 1);
-   ASSERT (bson_iter_init_find (&iter, gle, "fsync") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
-   ASSERT (bson_iter_init_find (&iter, gle, "j") &&
-           BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
-   ASSERT (!bson_iter_init_find (&iter, gle, "w"));
-   ASSERT (gle);
-
    bson = _mongoc_write_concern_get_bson (write_concern);
-   ASSERT (!bson_iter_init_find (&iter, bson, "getlasterror"));
    ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
            BSON_ITER_HOLDS_BOOL (&iter) && !bson_iter_bool (&iter));
    ASSERT (bson_iter_init_find (&iter, bson, "j") &&
@@ -189,12 +154,12 @@ test_write_concern_bson_includes_false_fsync_and_journal (void)
 
 
 static void
-test_write_concern_fsync_and_journal_gle_and_validity (void)
+test_write_concern_fsync_and_journal_w1_and_validity (void)
 {
    mongoc_write_concern_t *write_concern = mongoc_write_concern_new ();
 
    /*
-    * Journal and fsync should imply GLE regardless of w; however, journal and
+    * Journal and fsync should imply w=1 regardless of w; however, journal and
     * fsync logically conflict with w=0 and w=-1, so a write concern with such
     * a combination of options will be considered invalid.
     */
@@ -392,7 +357,7 @@ test_write_concern_install (TestSuite *suite)
                   test_write_concern_bson_includes_false_fsync_and_journal);
    TestSuite_Add (suite,
                   "/WriteConcern/fsync_and_journal_gle_and_validity",
-                  test_write_concern_fsync_and_journal_gle_and_validity);
+                  test_write_concern_fsync_and_journal_w1_and_validity);
    TestSuite_Add (suite,
                   "/WriteConcern/wtimeout_validity",
                   test_write_concern_wtimeout_validity);

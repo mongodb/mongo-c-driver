@@ -133,9 +133,6 @@ BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
 
 void
 _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array);
-bool
-_mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
-                       const mongoc_write_concern_t *write_concern);
 void
 _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc);
 void
