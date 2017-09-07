@@ -827,7 +827,6 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    ret = mongoc_cluster_run_command_private (
       cluster, &parts.assembled, &reply, error);
    if (!ret) {
-      mongoc_server_stream_cleanup (server_stream);
       /* error->message is already set */
       error->domain = MONGOC_ERROR_CLIENT;
       error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
