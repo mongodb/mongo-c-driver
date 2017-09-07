@@ -263,11 +263,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *
  *       Send an "aggregate" command to the MongoDB server.
  *
- *       This varies it's behavior based on the wire version.  If we're on
- *       wire_version > 0, we use the new aggregate command, which returns a
- *       database cursor.  On wire_version == 0, we create synthetic cursor on
- *       top of the array returned in result.
- *
  *       This function will always return a new mongoc_cursor_t that should
  *       be freed with mongoc_cursor_destroy().
  *
@@ -276,9 +271,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *
  *       See http://docs.mongodb.org/manual/aggregation/ for more
  *       information on how to build aggregation pipelines.
- *
- * Requires:
- *       MongoDB >= 2.1.0
  *
  * Parameters:
  *       @flags: bitwise or of mongoc_query_flags_t or 0.
@@ -321,7 +313,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    bson_iter_t iter;
    bson_t command;
    bson_t child;
-   bool use_cursor;
 
    ENTRY;
 
@@ -376,8 +367,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       cursor->server_id = server_stream->sd->id;
    }
 
-   use_cursor = server_stream->sd->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
-
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
    /*
@@ -407,25 +396,22 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       }
    }
 
-   /* for newer version, we include a cursor subdocument */
-   if (use_cursor) {
-      bson_append_document_begin (&command, "cursor", 6, &child);
+   bson_append_document_begin (&command, "cursor", 6, &child);
 
-      if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-          BSON_ITER_HOLDS_NUMBER (&iter)) {
-         batch_size = (int32_t) bson_iter_as_int64 (&iter);
-         BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-         has_batch_size = true;
-      }
-
-      bson_append_document_end (&command, &child);
+   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      batch_size = (int32_t) bson_iter_as_int64 (&iter);
+      BSON_APPEND_INT32 (&child, "batchSize", batch_size);
+      has_batch_size = true;
    }
+
+   bson_append_document_end (&command, &child);
 
    if (opts) {
       bool ok = false;
       bson_t opts_dupe = BSON_INITIALIZER;
 
-      if (has_batch_size || server_stream->sd->max_wire_version == 0) {
+      if (has_batch_size) {
          bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
          bson_iter_init (&iter, &opts_dupe);
       } else {
@@ -467,13 +453,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
    mongoc_cmd_parts_assemble (&parts, server_stream);
 
-   if (use_cursor) {
-      _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
-   } else {
-      /* for older versions we get an array that we can create a synthetic
-       * cursor on top of */
-      _mongoc_cursor_array_init (cursor, parts.assembled.command, "result");
-   }
+   _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
 
 done:
    mongoc_server_stream_cleanup (server_stream); /* null ok */
