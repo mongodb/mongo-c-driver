@@ -161,7 +161,7 @@ _test_cluster_node_disconnect (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -236,7 +236,7 @@ _test_cluster_command_timeout (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 200);
@@ -315,7 +315,7 @@ test_cluster_command_timeout_pooled (void)
 
 
 static void
-_test_write_disconnect (bool legacy)
+_test_write_disconnect (void)
 {
    mock_server_t *server;
    char *ismaster_response;
@@ -343,9 +343,8 @@ _test_write_disconnect (bool legacy)
    request = mock_server_receives_ismaster (server);
    ismaster_response = bson_strdup_printf ("{'ok': 1.0,"
                                            " 'ismaster': true,"
-                                           " 'minWireVersion': 0,"
-                                           " 'maxWireVersion': %d}",
-                                           legacy ? 0 : 3);
+                                           " 'minWireVersion': 2,"
+                                           " 'maxWireVersion': 3}");
 
    mock_server_replies_simple (request, ismaster_response);
    request_destroy (request);
@@ -393,14 +392,7 @@ _test_write_disconnect (bool legacy)
 static void
 test_write_command_disconnect (void *ctx)
 {
-   _test_write_disconnect (false);
-}
-
-
-static void
-test_legacy_write_disconnect (void *ctx)
-{
-   _test_write_disconnect (true);
+   _test_write_disconnect ();
 }
 
 
@@ -432,12 +424,6 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Cluster/legacy_write/disconnect",
-                      test_legacy_write_disconnect,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);

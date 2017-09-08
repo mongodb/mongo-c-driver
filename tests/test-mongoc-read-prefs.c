@@ -231,6 +231,7 @@ _run_server (read_pref_test_type_t test_type, int32_t max_wire_version)
    server = mock_server_new ();
    mock_server_run (server);
 
+   BSON_ASSERT (max_wire_version > 0);
    switch (test_type) {
    case READ_PREF_TEST_STANDALONE:
       mock_server_auto_ismaster (server,

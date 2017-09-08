@@ -246,7 +246,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    if (pooled) {
@@ -608,7 +608,7 @@ test_get_collection_info (void)
 }
 
 static void
-_test_get_collection_info_getmore (bool use_cmd)
+_test_get_collection_info_getmore ()
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -617,7 +617,7 @@ _test_get_collection_info_getmore (bool use_cmd)
    request_t *request;
    char **names;
 
-   server = mock_server_with_autoismaster (use_cmd ? WIRE_VERSION_FIND_CMD : 0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "db");
@@ -626,55 +626,27 @@ _test_get_collection_info_getmore (bool use_cmd)
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
 
-   if (use_cmd) {
-      mock_server_replies_simple (request,
-                                  "{'ok': 1,"
-                                  " 'cursor': {"
-                                  "    'id': {'$numberLong': '123'},"
-                                  "    'ns': 'db.$cmd.listCollections',"
-                                  "    'firstBatch': [{'name': 'a'}]}}");
-      request_destroy (request);
-      request = mock_server_receives_command (
-         server,
-         "db",
-         MONGOC_QUERY_SLAVE_OK,
-         "{'getMore': {'$numberLong': '123'},"
-         " 'collection': '$cmd.listCollections'}");
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': {'$numberLong': '123'},"
+                               "    'ns': 'db.$cmd.listCollections',"
+                               "    'firstBatch': [{'name': 'a'}]}}");
+   request_destroy (request);
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'getMore': {'$numberLong': '123'},"
+                                    " 'collection': '$cmd.listCollections'}");
 
-      mock_server_replies_simple (request,
-                                  "{'ok': 1,"
-                                  " 'cursor': {"
-                                  "    'id': {'$numberLong': '0'},"
-                                  "    'ns': 'db.$cmd.listCollections',"
-                                  "    'nextBatch': []}}");
-      request_destroy (request);
-   } else {
-      /* "command not found" */
-      mock_server_replies_simple (request, "{'ok': 0, 'code': 59}");
-      request_destroy (request);
-
-      request = mock_server_receives_query (server,
-                                            "db.system.namespaces",
-                                            MONGOC_QUERY_SLAVE_OK,
-                                            0,
-                                            0,
-                                            NULL,
-                                            NULL);
-      mock_server_replies (request,
-                           MONGOC_REPLY_NONE,
-                           123 /* cursor id */,
-                           0,
-                           1,
-                           "{'name': 'db.a'}");
-      request_destroy (request);
-
-      request =
-         mock_server_receives_getmore (server, "db.system.namespaces", 0, 123);
-      mock_server_replies (
-         request, MONGOC_REPLY_NONE, 0 /* cursor id */, 0, 0, NULL);
-      request_destroy (request);
-   }
-
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': {'$numberLong': '0'},"
+                               "    'ns': 'db.$cmd.listCollections',"
+                               "    'nextBatch': []}}");
+   request_destroy (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (names);
    ASSERT_CMPSTR (names[0], "a");
@@ -687,15 +659,9 @@ _test_get_collection_info_getmore (bool use_cmd)
 }
 
 static void
-test_get_collection_info_op_getmore (void)
-{
-   _test_get_collection_info_getmore (false);
-}
-
-static void
 test_get_collection_info_getmore_cmd (void)
 {
-   _test_get_collection_info_getmore (true);
+   _test_get_collection_info_getmore ();
 }
 
 static void
@@ -928,9 +894,6 @@ test_database_install (TestSuite *suite)
       suite, "/Database/create_collection", test_create_collection);
    TestSuite_AddLive (
       suite, "/Database/get_collection_info", test_get_collection_info);
-   TestSuite_AddMockServerTest (suite,
-                                "/Database/get_collection/op_getmore",
-                                test_get_collection_info_op_getmore);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/get_collection/getmore_cmd",
                                 test_get_collection_info_getmore_cmd);

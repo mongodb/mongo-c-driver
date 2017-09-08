@@ -424,110 +424,6 @@ test_kill_cursors_pooled_cmd (void)
 }
 
 
-static void
-_test_getmore_fail (bool has_primary, bool pooled)
-{
-   mock_rs_t *rs;
-   mongoc_client_pool_t *pool = NULL;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_t *q = BCON_NEW ("a", BCON_INT32 (1));
-   mongoc_read_prefs_t *prefs;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc = NULL;
-   future_t *future;
-   request_t *request;
-
-   capture_logs (true);
-
-   /* wire version 0, five secondaries, no arbiters */
-   rs = mock_rs_with_autoismaster (0, has_primary, 5, 0);
-   mock_rs_run (rs);
-
-   if (pooled) {
-      pool = mongoc_client_pool_new (mock_rs_get_uri (rs));
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
-   }
-
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0, 0, 0, q, NULL, prefs);
-
-   future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (
-      rs, "test.test", MONGOC_QUERY_SLAVE_OK, 0, 0, "{'a': 1}", NULL);
-   BSON_ASSERT (request);
-
-   mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
-   BSON_ASSERT (future_get_bool (future));
-   ASSERT_MATCH (doc, "{'b': 1}");
-   ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));
-
-   request_destroy (request);
-   future_destroy (future);
-   future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
-   BSON_ASSERT (request);
-   mock_rs_hangs_up (request);
-   BSON_ASSERT (!future_get_bool (future));
-   request_destroy (request);
-
-   future_destroy (future);
-   future = future_cursor_destroy (cursor);
-
-   /* driver does not reconnect just to send killcursors */
-   mock_rs_set_request_timeout_msec (rs, 100);
-   BSON_ASSERT (!mock_rs_receives_kill_cursors (rs, 123));
-
-   future_wait (future);
-   future_destroy (future);
-   mongoc_read_prefs_destroy (prefs);
-   mongoc_collection_destroy (collection);
-   bson_destroy (q);
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
-
-   mock_rs_destroy (rs);
-}
-
-
-static void
-test_getmore_fail_with_primary_single (void)
-{
-   _test_getmore_fail (true, false);
-}
-
-
-static void
-test_getmore_fail_with_primary_pooled (void)
-{
-   _test_getmore_fail (true, true);
-}
-
-
-static void
-test_getmore_fail_no_primary_pooled (void)
-{
-   _test_getmore_fail (false, true);
-}
-
-
-static void
-test_getmore_fail_no_primary_single (void)
-{
-   _test_getmore_fail (false, false);
-}
-
-
 /* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
  * test_kill_cursors_single / pooled. Here, test explicit
  * mongoc_client_kill_cursor. */
@@ -960,8 +856,8 @@ _test_cursor_hint (bool pooled, bool use_primary)
    future_t *future;
    request_t *request;
 
-   /* wire version 0, primary, two secondaries, no arbiters */
-   rs = mock_rs_with_autoismaster (0, true, 2, 0);
+   /* wire version 2, primary, two secondaries, no arbiters */
+   rs = mock_rs_with_autoismaster (2, true, 2, 0);
    mock_rs_run (rs);
 
    if (pooled) {
@@ -1073,7 +969,7 @@ test_cursor_hint_mongos (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -1302,88 +1198,6 @@ typedef struct {
 } cursor_n_return_test;
 
 
-static bson_t *
-_make_n_empty_docs (int64_t n)
-{
-   int64_t i;
-   bson_t *docs;
-
-   docs = bson_malloc (n * sizeof (bson_t));
-   for (i = 0; i < n; i++) {
-      bson_init (&docs[i]);
-   }
-
-   return docs;
-}
-
-
-static void
-_test_cursor_n_return_op_query (mongoc_cursor_t *cursor,
-                                mock_server_t *server,
-                                cursor_n_return_test *test)
-{
-   bson_t *reply_docs;
-   const bson_t *doc;
-   request_t *request;
-   future_t *future;
-   int i;
-   int reply_no;
-   bool cursor_finished;
-
-
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (server,
-                                         "db.coll",
-                                         MONGOC_QUERY_SLAVE_OK,
-                                         (uint32_t) test->skip,
-                                         (uint32_t) test->expected_n_return[0],
-                                         NULL,
-                                         NULL);
-
-   reply_docs = _make_n_empty_docs (test->reply_length[0]);
-   mock_server_reply_multi (request,
-                            MONGOC_REPLY_NONE,
-                            reply_docs,
-                            (uint32_t) test->reply_length[0],
-                            123 /* cursor_id */);
-
-   ASSERT (future_get_bool (future));
-   bson_free (reply_docs);
-   future_destroy (future);
-   request_destroy (request);
-
-   /* advance to the end of the batch */
-   for (i = 1; i < test->reply_length[0]; i++) {
-      ASSERT (mongoc_cursor_next (cursor, &doc));
-   }
-
-   for (reply_no = 1; reply_no < 3; reply_no++) {
-      /* expect op_getmore, send reply_length[reply_no] docs to client */
-      future = future_cursor_next (cursor, &doc);
-      request = mock_server_receives_getmore (
-         server, "db.coll", (uint32_t) test->expected_n_return[reply_no], 123);
-
-      reply_docs = _make_n_empty_docs (test->reply_length[reply_no]);
-      cursor_finished = (reply_no == 2);
-      mock_server_reply_multi (request,
-                               MONGOC_REPLY_NONE,
-                               reply_docs,
-                               (uint32_t) test->reply_length[reply_no],
-                               cursor_finished ? 0 : 123);
-
-      ASSERT (future_get_bool (future));
-      bson_free (reply_docs);
-      future_destroy (future);
-      request_destroy (request);
-
-      /* advance to the end of the batch */
-      for (i = 1; i < test->reply_length[reply_no]; i++) {
-         ASSERT (mongoc_cursor_next (cursor, &doc));
-      }
-   }
-}
-
-
 static void
 _make_reply_batch (bson_string_t *reply,
                    uint32_t n_docs,
@@ -1507,7 +1321,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
 
 
 static void
-_test_cursor_n_return (bool find_cmd, bool find_with_opts)
+_test_cursor_n_return (bool find_with_opts)
 {
    cursor_n_return_test tests[] = {{
                                       0,         /* skip              */
@@ -1560,8 +1374,7 @@ _test_cursor_n_return (bool find_cmd, bool find_with_opts)
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   server =
-      mock_server_with_autoismaster (find_cmd ? WIRE_VERSION_FIND_CMD : 0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
 
    mock_server_run (server);
 
@@ -1602,11 +1415,7 @@ _test_cursor_n_return (bool find_cmd, bool find_with_opts)
                                           NULL);
       }
 
-      if (find_cmd) {
-         _test_cursor_n_return_find_cmd (cursor, server, test);
-      } else {
-         _test_cursor_n_return_op_query (cursor, server, test);
-      }
+      _test_cursor_n_return_find_cmd (cursor, server, test);
 
       mongoc_cursor_destroy (cursor);
    }
@@ -1619,30 +1428,16 @@ _test_cursor_n_return (bool find_cmd, bool find_with_opts)
 
 
 static void
-test_n_return_op_query (void)
-{
-   _test_cursor_n_return (false, false);
-}
-
-
-static void
-test_n_return_op_query_with_opts (void)
-{
-   _test_cursor_n_return (false, true);
-}
-
-
-static void
 test_n_return_find_cmd (void)
 {
-   _test_cursor_n_return (true, false);
+   _test_cursor_n_return (false);
 }
 
 
 static void
 test_n_return_find_cmd_with_opts (void)
 {
-   _test_cursor_n_return (true, true);
+   _test_cursor_n_return (true);
 }
 
 
@@ -1783,18 +1578,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
    TestSuite_AddMockServerTest (suite,
-                                "/Cursor/getmore_fail/with_primary/pooled",
-                                test_getmore_fail_with_primary_pooled);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cursor/getmore_fail/with_primary/single",
-                                test_getmore_fail_with_primary_single);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cursor/getmore_fail/no_primary/pooled",
-                                test_getmore_fail_no_primary_pooled);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cursor/getmore_fail/no_primary/single",
-                                test_getmore_fail_no_primary_single);
-   TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/with_primary",
                                 test_client_kill_cursor_with_primary);
    TestSuite_AddMockServerTest (suite,
@@ -1810,11 +1593,11 @@ test_cursor_install (TestSuite *suite)
       test_client_kill_cursor_without_primary_wire_version_4);
    TestSuite_AddLive (
       suite, "/Cursor/empty_collection", test_cursor_empty_collection);
-   TestSuite_Add (
+   TestSuite_AddLive (
       suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
-   TestSuite_Add (suite,
-                  "/Cursor/new_from_agg_no_initial",
-                  test_cursor_new_from_aggregate_no_initial);
+   TestSuite_AddLive (suite,
+                      "/Cursor/new_from_agg_no_initial",
+                      test_cursor_new_from_aggregate_no_initial);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find",
                       test_cursor_new_from_find,
@@ -1851,11 +1634,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/n_return/op_query", test_n_return_op_query);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cursor/n_return/op_query/with_opts",
-                                test_n_return_op_query_with_opts);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
    TestSuite_AddMockServerTest (suite,

@@ -1696,6 +1696,7 @@ test_framework_max_wire_version_at_least (int version)
 
    call_ismaster (&reply);
 
+   BSON_ASSERT (version > 0);
    at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion") &&
                bson_iter_as_int64 (&iter) >= version);
 

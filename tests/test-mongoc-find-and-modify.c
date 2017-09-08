@@ -28,6 +28,7 @@ auto_ismaster (mock_server_t *server,
                                         max_message_size,
                                         max_batch_size);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, response);
 
    bson_free (response);
@@ -383,7 +384,7 @@ test_find_and_modify_opts (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));

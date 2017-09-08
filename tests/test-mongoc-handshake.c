@@ -364,7 +364,8 @@ test_mongoc_handshake_too_big (void)
    /* Should have truncated the platform field so it fits exactly */
    ASSERT (len == HANDSHAKE_MAX_SIZE);
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_simple (
+      request, "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
    request_destroy (request);
 
    request = mock_server_receives_command (

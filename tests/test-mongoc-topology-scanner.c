@@ -32,12 +32,12 @@ test_topology_scanner_helper (uint32_t id,
       abort ();
    }
 
-   /* mock servers are configured to return their ids as max wire version */
+   /* mock servers are configured to return their ids as max wire version + 2*/
    BSON_ASSERT (bson);
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    max_wire_version = (uint32_t) bson_iter_int32 (&iter);
-   ASSERT_CMPINT (max_wire_version, ==, id);
+   ASSERT_CMPINT (max_wire_version, ==, id + 2);
 
    (*finished)--;
 }
@@ -70,7 +70,7 @@ _test_topology_scanner (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server_with_autoismaster (i);
+      servers[i] = mock_server_with_autoismaster (i + 2);
       mock_server_set_rand_delay (servers[i], true);
 
 #ifdef MONGOC_ENABLE_SSL
@@ -151,6 +151,8 @@ test_topology_scanner_discovery (void)
       bson_strdup_printf ("{'ok': 1, "
                           " 'ismaster': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s', '%s']}",
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
@@ -160,6 +162,8 @@ test_topology_scanner_discovery (void)
                           " 'ismaster': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s', '%s']}",
                           mock_server_get_host_and_port (primary),
                           mock_server_get_host_and_port (secondary));
@@ -372,7 +376,7 @@ test_topology_scanner_blocking_initiator (void)
    initiator_data_t data;
    bson_error_t error;
 
-   rs = mock_rs_with_autoismaster (0,    /* wire version   */
+   rs = mock_rs_with_autoismaster (2,    /* wire version   */
                                    true, /* has primary    */
                                    1,    /* n_secondaries  */
                                    0 /* n_arbiters     */);

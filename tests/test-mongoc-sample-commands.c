@@ -2849,5 +2849,5 @@ test_sample_commands ()
 void
 test_samples_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Samples", test_sample_commands);
+   TestSuite_AddLive (suite, "/Samples", test_sample_commands);
 }

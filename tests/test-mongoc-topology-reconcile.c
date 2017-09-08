@@ -74,6 +74,8 @@ rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
                                            " 'ismaster': %s,"
                                            " 'secondary': %s,"
                                            " 'tags': {%s},"
+                                           " 'minWireVersion': 2,"
+                                           " 'maxWireVersion': 5,"
                                            " 'hosts': [%s]"
                                            "}",
                                            primary ? "true" : "false",
@@ -282,8 +284,9 @@ _test_topology_reconcile_sharded (bool pooled)
 
    /* mongos */
    request = mock_server_receives_ismaster (mongos);
-   mock_server_replies_simple (
-      request, "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
+   mock_server_replies_simple (request,
+                               "{'ok': 1, 'ismaster': true, 'minWireVersion': "
+                               "2, 'maxWireVersion': 5, 'msg': 'isdbgrid'}");
 
    request_destroy (request);
 
@@ -297,6 +300,8 @@ _test_topology_reconcile_sharded (bool pooled)
                           " 'setName': 'rs',"
                           " 'ismaster': false,"
                           " 'secondary': true,"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s', '%s']"
                           "}",
                           mock_server_get_host_and_port (mongos),

@@ -592,7 +592,14 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    request = mock_server_receives_ismaster (server);
 
    if (succeeded) {
-      mock_server_replies_ok_and_destroys (request);
+      mock_server_replies (
+         request,
+         MONGOC_REPLY_NONE,
+         0,
+         0,
+         1,
+         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+      request_destroy (request);
    } else {
       mock_server_hangs_up (request);
       request_destroy (request);
@@ -601,7 +608,14 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    /* pooled client opens new socket, handshakes it by calling ismaster again */
    if (pooled && succeeded) {
       request = mock_server_receives_ismaster (server);
-      mock_server_replies_ok_and_destroys (request);
+      mock_server_replies (
+         request,
+         MONGOC_REPLY_NONE,
+         0,
+         0,
+         1,
+         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+      request_destroy (request);
    }
 
    if (succeeded) {

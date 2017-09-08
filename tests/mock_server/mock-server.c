@@ -160,10 +160,11 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
-                                        " 'minWireVersion': 0,"
+                                        " 'minWireVersion': 2,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
@@ -197,10 +198,11 @@ mock_mongos_new (int32_t max_wire_version)
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
                                         " 'msg': 'isdbgrid',"
-                                        " 'minWireVersion': 0,"
+                                        " 'minWireVersion': 2,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);

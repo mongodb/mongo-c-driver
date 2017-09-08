@@ -171,6 +171,8 @@ _test_server_selection (bool try_once)
                           " 'ismaster': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server));
 
@@ -178,6 +180,8 @@ _test_server_selection (bool try_once)
       bson_strdup_printf ("{'ok': 1, "
                           " 'ismaster': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server));
 
@@ -527,7 +531,9 @@ test_cooldown_standalone (void *ctx)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    request = mock_server_receives_ismaster (server); /* not in cooldown now */
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5 }");
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    request_destroy (request);
@@ -574,13 +580,15 @@ test_cooldown_rs (void *ctx)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': false, 'secondary': true, 'setName': 'rs',"
+      "{'ok': 1, 'ismaster': false, 'minWireVersion': 2, 'maxWireVersion': 5 , "
+      "'secondary': true, 'setName': 'rs',"
       " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
       mock_server_get_port (servers[0]),
       mock_server_get_port (servers[1]));
 
    primary_response =
-      bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'setName': 'rs',"
+      bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'minWireVersion': 2, "
+                          "'maxWireVersion': 5 , 'setName': 'rs',"
                           " 'hosts': ['localhost:%hu']}",
                           mock_server_get_port (servers[1]));
 
@@ -677,6 +685,8 @@ _test_select_succeed (bool try_once)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
                               mock_server_get_port (primary),
                               mock_server_get_port (secondary));
@@ -821,6 +831,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -854,6 +866,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'BAD NAME',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -932,10 +946,22 @@ test_rtt (void *ctx)
 
    request = mock_server_receives_ismaster (server);
    _mongoc_usleep (1000 * 1000); /* one second */
-   mock_server_replies_ok_and_destroys (request);
+   mock_server_replies (request,
+                        MONGOC_REPLY_NONE,
+                        0,
+                        0,
+                        1,
+                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   request_destroy (request);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
-   mock_server_replies_ok_and_destroys (request);
+   mock_server_replies (request,
+                        MONGOC_REPLY_NONE,
+                        0,
+                        0,
+                        1,
+                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   request_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
@@ -976,6 +1002,8 @@ test_add_and_scan_failure (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s', 'fake:1']}",
                               mock_server_get_host_and_port (server));
 
@@ -1126,6 +1154,8 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
+                                  "  'minWireVersion': 2,"
+                                  "  'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1219,6 +1249,8 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
+                                  "  'minWireVersion': 2,"
+                                  "  'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
