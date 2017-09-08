@@ -563,6 +563,7 @@ _mongoc_write_command_delete_legacy (
          _mongoc_write_command_too_large_error (
             error, 0, len, max_bson_obj_size, NULL);
          result->failed = true;
+         bson_reader_destroy (reader);
          EXIT;
       }
 
@@ -595,12 +596,14 @@ _mongoc_write_command_delete_legacy (
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
+         bson_reader_destroy (reader);
          EXIT;
       }
 
       if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
+            bson_reader_destroy (reader);
             EXIT;
          }
 
@@ -899,6 +902,7 @@ _mongoc_write_command_update_legacy (
                             MONGOC_ERROR_BSON_INVALID,
                             "update document is corrupt or contains "
                             "invalid keys including $ or .");
+            bson_reader_destroy (reader);
             EXIT;
          }
       } else {
@@ -907,12 +911,14 @@ _mongoc_write_command_update_legacy (
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
                          "updates is malformed.");
+         bson_reader_destroy (reader);
          EXIT;
       }
    }
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
+   bson_reader_destroy (reader);
    reader =
       bson_reader_new_from_data (command->payload.data, command->payload.len);
    while ((bson = bson_reader_read (reader, &eof))) {
@@ -938,6 +944,7 @@ _mongoc_write_command_update_legacy (
                _mongoc_write_command_too_large_error (
                   error, 0, len, max_bson_obj_size, NULL);
                result->failed = true;
+               bson_reader_destroy (reader);
                EXIT;
             }
 
@@ -950,6 +957,7 @@ _mongoc_write_command_update_legacy (
                _mongoc_write_command_too_large_error (
                   error, 0, len, max_bson_obj_size, NULL);
                result->failed = true;
+               bson_reader_destroy (reader);
                EXIT;
             }
 
@@ -983,12 +991,14 @@ _mongoc_write_command_update_legacy (
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, write_concern, error)) {
          result->failed = true;
+         bson_reader_destroy (reader);
          EXIT;
       }
 
       if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
+            bson_reader_destroy (reader);
             EXIT;
          }
 
@@ -1041,4 +1051,5 @@ _mongoc_write_command_update_legacy (
 
       started = bson_get_monotonic_time ();
    }
+   bson_reader_destroy (reader);
 }
