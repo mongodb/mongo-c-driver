@@ -633,6 +633,8 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                       "\"%s\" removed from topology",
                       address);
    }
+
+   mongoc_cmd_parts_cleanup (&parts);
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (sd);
