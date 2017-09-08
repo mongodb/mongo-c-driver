@@ -170,7 +170,7 @@ static void
 test_srv (bson_t *test)
 {
    _test_srv_maybe_pooled (test, false);
-   //_test_srv_maybe_pooled (test, true);
+   _test_srv_maybe_pooled (test, true);
 }
 
 
