@@ -428,7 +428,9 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
    int32_t max_wire_version;
 
    if (td->compatibility_error.code) {
-      memcpy (error, &td->compatibility_error, sizeof (bson_error_t));
+      if (error) {
+         memcpy (error, &td->compatibility_error, sizeof (bson_error_t));
+      }
       return false;
    }
 
