@@ -733,6 +733,7 @@ test_cluster_time_insert_pooled (void)
 }
 
 
+#ifdef TODO_MOCK_SERVER_OP_MSG
 static void
 replies_with_cluster_time (request_t *request,
                            int t,
@@ -901,7 +902,7 @@ test_cluster_time_comparison_pooled (void)
 {
    _test_cluster_time_comparison (true);
 }
-
+#endif
 
 typedef struct {
    const char *name;
@@ -1181,10 +1182,12 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cluster/cluster_time/insert/pooled",
                       test_cluster_time_insert_pooled);
+#ifdef TODO_MOCK_SERVER_OP_MSG
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/single",
                                 test_cluster_time_comparison_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/pooled",
                                 test_cluster_time_comparison_pooled);
+#endif
 }
