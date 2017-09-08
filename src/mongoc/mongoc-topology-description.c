@@ -1797,7 +1797,7 @@ mongoc_topology_description_handle_ismaster (
    }
 
    /* Don't bother checking wire version compatibility if we already errored */
-   if (!error || !error->code) {
+   if (ismaster_response && (!error || !error->code)) {
       _mongoc_topology_description_check_compatible (topology);
    }
    _mongoc_topology_description_monitor_changed (prev_td, topology);
