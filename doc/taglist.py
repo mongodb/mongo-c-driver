@@ -89,8 +89,8 @@ def process_tags(app, doctree):
 
     metadata = env.metadata[env.docname]
 
-    # A page like mongoc_session_opts_get_retry_writes.rst sets its tags with
-    # ":tags: session"
+    # A page like mongoc_session_opts_get_causally_consistent_reads.rst sets its
+    # tags with ":tags: session"
     tags = metadata.get('tags')
     if tags:
         env.tags_all_tags.append({'docname': env.docname,

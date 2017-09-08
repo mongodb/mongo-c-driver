@@ -13,9 +13,9 @@ Synopsis
                                mongoc_session_opt_t *opts,
                                bson_error_t *error)
 
-.. include:: includes/session-lifecycle.txt
+Create a session for a sequence of operations.
 
-Calling :symbol:`mongoc_client_start_session()` creates a server-side session only if the session is configured with options, such as retryable writes, that require a server session.
+.. include:: includes/session-lifecycle.txt
 
 Parameters
 ----------
@@ -32,7 +32,7 @@ If successful, this function returns a newly allocated :symbol:`mongoc_session_t
 Errors
 ------
 
-This function can fail if ``opts`` is misconfigured, if the session is configured with options that the server does not support, or if there was server error when the driver attempted to start the server session.
+This function can fail if the driver is not built with crypto support, if ``opts`` is misconfigured, if the session is configured with options that the server does not support.
 
 .. only:: html
 

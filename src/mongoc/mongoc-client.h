@@ -40,7 +40,6 @@
 #include "mongoc-write-concern.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-server-description.h"
-#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -74,6 +73,9 @@ BSON_BEGIN_DECLS
  */
 typedef struct _mongoc_client_t mongoc_client_t;
 
+
+typedef struct _mongoc_session_t mongoc_session_t;
+typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
 
 /**
  * mongoc_stream_initiator_t:

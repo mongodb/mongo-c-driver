@@ -11,7 +11,7 @@ Synopsis
   void
   mongoc_session_destroy (mongoc_session_t *session);
 
-End a server-side session, if one has been created for this :symbol:`mongoc_session_t`, and free all client resources associated with the session.
+End a session, returning its session id to the pool, and free all client resources associated with the session.
 
 See the example code for :symbol:`mongoc_session_t`.
 

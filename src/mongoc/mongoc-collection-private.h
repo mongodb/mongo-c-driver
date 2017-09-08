@@ -24,7 +24,6 @@
 #include <bson.h>
 
 #include "mongoc-client.h"
-#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -39,7 +38,6 @@ struct _mongoc_collection_t {
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
-   mongoc_session_t *session;
    bson_t *gle;
 };
 
@@ -50,8 +48,7 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const char *collection,
                         const mongoc_read_prefs_t *read_prefs,
                         const mongoc_read_concern_t *read_concern,
-                        const mongoc_write_concern_t *write_concern,
-                        mongoc_session_t *session);
+                        const mongoc_write_concern_t *write_concern);
 mongoc_cursor_t *
 _mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
                                         bson_error_t *error);

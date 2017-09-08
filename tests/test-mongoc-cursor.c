@@ -39,7 +39,6 @@ test_get_host (void)
                                 &q,
                                 NULL,
                                 NULL,
-                                NULL,
                                 NULL);
    r = mongoc_cursor_next (cursor, &doc);
    if (!r && mongoc_cursor_error (cursor, &error)) {
@@ -112,7 +111,6 @@ test_clone (void)
                                 1,
                                 false,
                                 &q,
-                                NULL,
                                 NULL,
                                 NULL,
                                 NULL);
@@ -269,7 +267,6 @@ test_kill_cursor_live (void)
                                 0,
                                 false,
                                 b,
-                                NULL,
                                 NULL,
                                 NULL,
                                 NULL);

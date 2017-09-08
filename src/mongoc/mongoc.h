@@ -45,6 +45,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
+#include "mongoc-session.h"
 #include "mongoc-stream.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-file.h"

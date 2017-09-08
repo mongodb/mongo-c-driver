@@ -26,8 +26,7 @@
 
 typedef enum {
    MONGOC_SESSION_NO_OPTS = 0,
-   MONGOC_SESSION_RETRY_WRITES = (1 << 0),
-   MONGOC_SESSION_CAUSALLY_CONSISTENT_READS = (1 << 1),
+   MONGOC_SESSION_CAUSALLY_CONSISTENT_READS = (1 << 0),
 } mongoc_session_flag_t;
 
 struct _mongoc_session_opt_t {

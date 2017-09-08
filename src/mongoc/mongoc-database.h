@@ -29,7 +29,6 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -132,9 +131,6 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
                                       bson_error_t *error);
 MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_database_get_collection (mongoc_database_t *database, const char *name);
-MONGOC_EXPORT (const mongoc_session_t *)
-mongoc_database_get_session (mongoc_database_t *database);
-
 
 BSON_END_DECLS
 

@@ -43,7 +43,7 @@
  *
  *       Create a new instance of mongoc_database_t for @client.
  *
- *       @client and @session must stay valid for the life of the resulting
+ *       @client must stay valid for the life of the resulting
  *       database structure.
  *
  * Returns:
@@ -61,8 +61,7 @@ _mongoc_database_new (mongoc_client_t *client,
                       const char *name,
                       const mongoc_read_prefs_t *read_prefs,
                       const mongoc_read_concern_t *read_concern,
-                      const mongoc_write_concern_t *write_concern,
-                      mongoc_session_t *session)
+                      const mongoc_write_concern_t *write_concern)
 {
    mongoc_database_t *db;
 
@@ -79,7 +78,6 @@ _mongoc_database_new (mongoc_client_t *client,
                                    : mongoc_read_concern_new ();
    db->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs)
                                : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   db->session = session;
 
    bson_strncpy (db->name, name, sizeof db->name);
 
@@ -158,8 +156,7 @@ mongoc_database_copy (mongoc_database_t *database)
                                  database->name,
                                  database->read_prefs,
                                  database->read_concern,
-                                 database->write_concern,
-                                 database->session));
+                                 database->write_concern));
 }
 
 mongoc_cursor_t *
@@ -193,8 +190,7 @@ mongoc_database_command (mongoc_database_t *database,
                                         command,
                                         NULL /* opts */,
                                         read_prefs,
-                                        NULL /* read concern */,
-                                        database->session);
+                                        NULL /* read concern */);
 }
 
 
@@ -225,7 +221,6 @@ mongoc_database_command_simple (mongoc_database_t *database,
       read_prefs,
       NULL /* read concern */,
       NULL /* write concern */,
-      database->session,
       reply,
       error);
 }
@@ -249,7 +244,6 @@ mongoc_database_read_command_with_opts (mongoc_database_t *database,
       COALESCE (read_prefs, database->read_prefs),
       database->read_concern,
       database->write_concern,
-      database->session,
       reply,
       error);
 }
@@ -271,7 +265,6 @@ mongoc_database_write_command_with_opts (mongoc_database_t *database,
                                             database->read_prefs,
                                             database->read_concern,
                                             database->write_concern,
-                                            database->session,
                                             reply,
                                             error);
 }
@@ -296,7 +289,6 @@ mongoc_database_read_write_command_with_opts (
       COALESCE (read_prefs, database->read_prefs),
       database->read_concern,
       database->write_concern,
-      database->session,
       reply,
       error);
 }
@@ -350,7 +342,6 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
                                            database->read_prefs,
                                            database->read_concern,
                                            database->write_concern,
-                                           database->session,
                                            NULL, /* reply */
                                            error);
    bson_destroy (&cmd);
@@ -1007,8 +998,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
                                           NULL,
                                           NULL,
                                           NULL,
-                                          NULL,
-                                          database->session);
+                                          NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
@@ -1210,7 +1200,6 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                          database->read_prefs,
                                          database->read_concern,
                                          database->write_concern,
-                                         database->session,
                                          NULL, /* reply */
                                          error)) {
       collection = _mongoc_collection_new (database->client,
@@ -1218,8 +1207,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                            name,
                                            database->read_prefs,
                                            database->read_concern,
-                                           database->write_concern,
-                                           database->session);
+                                           database->write_concern);
    }
 
    bson_destroy (&cmd);
@@ -1240,8 +1228,7 @@ mongoc_database_get_collection (mongoc_database_t *database,
                                   collection,
                                   database->read_prefs,
                                   database->read_concern,
-                                  database->write_concern,
-                                  database->session);
+                                  database->write_concern);
 }
 
 
@@ -1251,12 +1238,4 @@ mongoc_database_get_name (mongoc_database_t *database)
    BSON_ASSERT (database);
 
    return database->name;
-}
-
-const mongoc_session_t *
-mongoc_database_get_session (mongoc_database_t *database)
-{
-   BSON_ASSERT (database);
-
-   return database->session;
 }

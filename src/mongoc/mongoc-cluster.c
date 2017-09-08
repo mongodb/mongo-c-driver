@@ -50,7 +50,6 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-compression-private.h"
 #include "mongoc-cmd-private.h"
-#include "mongoc-session-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -158,8 +157,8 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
  *
  * mongoc_cluster_run_command_opquery --
  *
- *       Internal function to run a command on a given stream, optionally
- *       with a session. @error and @reply are optional out-pointers.
+ *       Internal function to run a command on a given stream. @error and
+ *       @reply are optional out-pointers.
  *
  * Returns:
  *       true if successful; otherwise false and @error is set.

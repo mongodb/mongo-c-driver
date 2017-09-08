@@ -98,7 +98,6 @@ mongoc_gridfs_t *
 _mongoc_gridfs_new (mongoc_client_t *client,
                     const char *db,
                     const char *prefix,
-                    mongoc_session_t *session,
                     bson_error_t *error)
 {
    mongoc_gridfs_t *gridfs;
@@ -124,7 +123,6 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    gridfs = (mongoc_gridfs_t *) bson_malloc0 (sizeof *gridfs);
 
    gridfs->client = client;
-   gridfs->session = session;
 
    bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
    gridfs->chunks = mongoc_client_get_collection (client, db, buf);
@@ -416,8 +414,7 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
                                 &q,
                                 &fields,
                                 NULL,
-                                NULL,
-                                gridfs->session);
+                                NULL);
 
    BSON_ASSERT (cursor);
 

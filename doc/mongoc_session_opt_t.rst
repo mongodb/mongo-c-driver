@@ -22,7 +22,5 @@ See the example code for :symbol:`mongoc_session_t`.
     mongoc_session_opts_new
     mongoc_session_opts_get_causally_consistent_reads
     mongoc_session_opts_set_causally_consistent_reads
-    mongoc_session_opts_get_retry_writes
-    mongoc_session_opts_set_retry_writes
     mongoc_session_opts_clone
     mongoc_session_opts_destroy

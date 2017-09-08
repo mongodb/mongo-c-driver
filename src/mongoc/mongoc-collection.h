@@ -32,7 +32,6 @@
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-find-and-modify.h"
-#include "mongoc-session.h"
 
 BSON_BEGIN_DECLS
 
@@ -267,9 +266,6 @@ mongoc_collection_validate (mongoc_collection_t *collection,
                             const bson_t *options,
                             bson_t *reply,
                             bson_error_t *error);
-MONGOC_EXPORT (const mongoc_session_t *)
-mongoc_collection_get_session (mongoc_collection_t *collection);
-
 
 BSON_END_DECLS
 

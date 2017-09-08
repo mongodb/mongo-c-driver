@@ -1136,8 +1136,7 @@ mongoc_client_get_database (mongoc_client_t *client, const char *name)
                                 name,
                                 client->read_prefs,
                                 client->read_concern,
-                                client->write_concern,
-                                NULL /* session */);
+                                client->write_concern);
 }
 
 
@@ -1216,8 +1215,7 @@ mongoc_client_get_collection (mongoc_client_t *client,
                                   collection,
                                   client->read_prefs,
                                   client->read_concern,
-                                  client->write_concern,
-                                  NULL /* session */);
+                                  client->write_concern);
 }
 
 
@@ -1257,7 +1255,7 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
       prefix = "fs";
    }
 
-   return _mongoc_gridfs_new (client, db, prefix, NULL /* session */, error);
+   return _mongoc_gridfs_new (client, db, prefix, error);
 }
 
 
@@ -1467,7 +1465,6 @@ mongoc_client_command (mongoc_client_t *client,
                                           query,
                                           NULL,
                                           read_prefs,
-                                          NULL,
                                           NULL);
 
    return cursor;
@@ -1626,7 +1623,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   const mongoc_read_prefs_t *default_prefs,
                                   mongoc_read_concern_t *default_rc,
                                   mongoc_write_concern_t *default_wc,
-                                  mongoc_session_t *session,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
@@ -1646,7 +1642,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    mongoc_cmd_parts_init (&parts, db_name, flags, command);
    parts.is_write_command = (mode & MONGOC_CMD_WRITE);
-   parts.session = session;
 
    reply_ptr = reply ? reply : &reply_local;
 
@@ -1767,7 +1762,6 @@ mongoc_client_read_command_with_opts (mongoc_client_t *client,
       COALESCE (read_prefs, client->read_prefs),
       client->read_concern,
       client->write_concern,
-      NULL,
       reply,
       error);
 }
@@ -1790,7 +1784,6 @@ mongoc_client_write_command_with_opts (mongoc_client_t *client,
                                             client->read_prefs,
                                             client->read_concern,
                                             client->write_concern,
-                                            NULL,
                                             reply,
                                             error);
 }
@@ -1816,7 +1809,6 @@ mongoc_client_read_write_command_with_opts (
       COALESCE (read_prefs, client->read_prefs),
       client->read_concern,
       client->write_concern,
-      NULL,
       reply,
       error);
 }
@@ -2257,7 +2249,7 @@ mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL, NULL);
+      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 
