@@ -40,7 +40,6 @@ typedef void (*mongoc_write_op_t) (mongoc_write_command_t *command,
                                    mongoc_server_stream_t *server_stream,
                                    const char *database,
                                    const char *collection,
-                                   const mongoc_write_concern_t *write_concern,
                                    uint32_t offset,
                                    mongoc_write_result_t *result,
                                    bson_error_t *error);
@@ -748,7 +747,6 @@ _mongoc_write_command_execute (
                                         server_stream,
                                         database,
                                         collection,
-                                        write_concern,
                                         offset,
                                         result,
                                         &result->error);

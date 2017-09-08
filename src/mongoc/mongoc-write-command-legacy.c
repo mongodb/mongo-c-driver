@@ -25,21 +25,23 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
                               mongoc_write_command_t *command,
                               const char *db,
                               const char *collection,
-                              const mongoc_write_concern_t *write_concern,
                               mongoc_server_stream_t *stream,
                               int64_t request_id)
 {
    bson_t doc;
    mongoc_apm_command_started_t event;
+   mongoc_write_concern_t *wc;
 
    ENTRY;
 
    if (!client->apm_callbacks.started) {
       EXIT;
    }
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
 
    bson_init (&doc);
-   _mongoc_write_command_init (&doc, command, collection, write_concern);
+   _mongoc_write_command_init (&doc, command, collection, wc);
    _append_array_from_command (command, &doc);
 
    mongoc_apm_command_started_init (
@@ -56,6 +58,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
    client->apm_callbacks.started (&event);
 
    mongoc_apm_command_started_cleanup (&event);
+   mongoc_write_concern_destroy (wc);
    bson_destroy (&doc);
 }
 
@@ -112,16 +115,14 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
 
 
 void
-_mongoc_write_command_delete_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error)
+_mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error)
 {
    int64_t started;
    int32_t max_bson_obj_size;
@@ -197,16 +198,11 @@ _mongoc_write_command_delete_legacy (
          limit ? MONGOC_DELETE_SINGLE_REMOVE : MONGOC_DELETE_NONE;
       rpc.delete_.selector = data;
 
-      _mongoc_monitor_legacy_write (client,
-                                    command,
-                                    database,
-                                    collection,
-                                    write_concern,
-                                    server_stream,
-                                    request_id);
+      _mongoc_monitor_legacy_write (
+         client, command, database, collection, server_stream, request_id);
 
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          bson_reader_destroy (reader);
          EXIT;
@@ -228,16 +224,14 @@ _mongoc_write_command_delete_legacy (
 
 
 void
-_mongoc_write_command_insert_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error)
+_mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error)
 {
    int64_t started;
    mongoc_iovec_t *iov;
@@ -340,16 +334,11 @@ again:
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
 
-      _mongoc_monitor_legacy_write (client,
-                                    command,
-                                    database,
-                                    collection,
-                                    write_concern,
-                                    server_stream,
-                                    request_id);
+      _mongoc_monitor_legacy_write (
+         client, command, database, collection, server_stream, request_id);
 
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          GOTO (cleanup);
       }
@@ -377,16 +366,14 @@ cleanup:
 
 
 void
-_mongoc_write_command_update_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error)
+_mongoc_write_command_update_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error)
 {
    int64_t started;
    int32_t max_bson_obj_size;
@@ -508,16 +495,11 @@ _mongoc_write_command_update_legacy (
          }
       }
 
-      _mongoc_monitor_legacy_write (client,
-                                    command,
-                                    database,
-                                    collection,
-                                    write_concern,
-                                    server_stream,
-                                    request_id);
+      _mongoc_monitor_legacy_write (
+         client, command, database, collection, server_stream, request_id);
 
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             &client->cluster, &rpc, server_stream, write_concern, error)) {
+             &client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          bson_reader_destroy (reader);
          EXIT;

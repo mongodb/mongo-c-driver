@@ -29,38 +29,32 @@
 BSON_BEGIN_DECLS
 
 void
-_mongoc_write_command_insert_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error);
+_mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error);
 void
-_mongoc_write_command_update_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error);
+_mongoc_write_command_update_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error);
 void
-_mongoc_write_command_delete_legacy (
-   mongoc_write_command_t *command,
-   mongoc_client_t *client,
-   mongoc_server_stream_t *server_stream,
-   const char *database,
-   const char *collection,
-   const mongoc_write_concern_t *write_concern,
-   uint32_t offset,
-   mongoc_write_result_t *result,
-   bson_error_t *error);
+_mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
+                                     mongoc_client_t *client,
+                                     mongoc_server_stream_t *server_stream,
+                                     const char *database,
+                                     const char *collection,
+                                     uint32_t offset,
+                                     mongoc_write_result_t *result,
+                                     bson_error_t *error);
 BSON_END_DECLS
 
 

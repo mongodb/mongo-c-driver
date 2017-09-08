@@ -2195,7 +2195,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_cluster_t *cluster,
    mongoc_rpc_t *rpc,
    mongoc_server_stream_t *server_stream,
-   const mongoc_write_concern_t *write_concern,
    bson_error_t *error)
 {
    uint32_t server_id;
@@ -2219,10 +2218,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
                       "A cursor derived from this client is in exhaust.");
       GOTO (done);
-   }
-
-   if (!write_concern) {
-      write_concern = cluster->client->write_concern;
    }
 
    _mongoc_array_clear (&cluster->iov);
