@@ -127,15 +127,29 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 }
 
 
+static void
+_mongoc_cmd_parts_ensure_copied (mongoc_cmd_parts_t *parts)
+{
+   if (parts->assembled.command == parts->body) {
+      bson_concat (&parts->assembled_body, parts->body);
+      bson_concat (&parts->assembled_body, &parts->extra);
+      parts->assembled.command = &parts->assembled_body;
+   }
+}
+
+
 /* The server type must be mongos. */
 static void
-_mongoc_cmd_parts_add_cluster_time (bson_t *query,
+_mongoc_cmd_parts_add_cluster_time (mongoc_cmd_parts_t *parts,
                                     const mongoc_server_stream_t *server_stream)
 {
    if (!bson_empty (&server_stream->cluster_time) &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
-      bson_append_document (
-         query, "$clusterTime", 12, &server_stream->cluster_time);
+      _mongoc_cmd_parts_ensure_copied (parts);
+      bson_append_document (&parts->assembled_body,
+                            "$clusterTime",
+                            12,
+                            &server_stream->cluster_time);
    }
 }
 
@@ -170,8 +184,7 @@ _mongoc_cmd_parts_add_read_prefs (bson_t *query,
 
 
 static void
-_iter_concat(bson_t *dst,
-             bson_iter_t *iter)
+_iter_concat (bson_t *dst, bson_iter_t *iter)
 {
    uint32_t len;
    const uint8_t *data;
@@ -252,31 +265,33 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       }
 
       bson_concat (&query, &parts->extra);
-      _mongoc_cmd_parts_add_cluster_time (&query, server_stream);
+      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
       bson_append_document_end (&parts->assembled_body, &query);
-      _mongoc_cmd_parts_add_read_prefs (&parts->assembled_body,
-                                        parts->read_prefs, server_stream);
+      _mongoc_cmd_parts_add_read_prefs (
+         &parts->assembled_body, parts->read_prefs, server_stream);
 
       if (has_dollar_query) {
          /* copy anything that isn't in user's $query */
-         bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body,
-                                        "$query", NULL);
+         bson_copy_to_excluding_noinit (
+            parts->body, &parts->assembled_body, "$query", NULL);
       }
+
+      parts->assembled.command = &parts->assembled_body;
    } else if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
       /* user provided $query, we have no read prefs, just add $clusterTime */
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
       _iter_concat (&query, &dollar_query);
-      _mongoc_cmd_parts_add_cluster_time (&query, server_stream);
+      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
       bson_concat (&query, &parts->extra);
       bson_append_document_end (&parts->assembled_body, &query);
       /* copy anything that isn't in user's $query */
-      bson_copy_to_excluding_noinit (parts->body, &parts->assembled_body,
-                                     "$query", NULL);
+      bson_copy_to_excluding_noinit (
+         parts->body, &parts->assembled_body, "$query", NULL);
+
+      parts->assembled.command = &parts->assembled_body;
    } else {
-      bson_concat (&parts->assembled_body, parts->body);
-      _mongoc_cmd_parts_add_cluster_time (&parts->assembled_body,
-                                          server_stream);
-      bson_concat (&parts->assembled_body, &parts->extra);
+      /* also appends parts->extra to the command */
+      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
    }
 
    if (parts->session) {
@@ -284,7 +299,10 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
          &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
-   parts->assembled.command = &parts->assembled_body;
+   if (!bson_empty (&parts->extra)) {
+      /* if none of the above logic has merged "extra", do it now */
+      _mongoc_cmd_parts_ensure_copied (parts);
+   }
 
    EXIT;
 }
@@ -331,18 +349,11 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
    } /* if (!parts->is_write_command) */
 
    if (!bson_empty (&parts->extra)) {
-      bson_concat (&parts->assembled_body, parts->body);
-      bson_concat (&parts->assembled_body, &parts->extra);
-      parts->assembled.command = &parts->assembled_body;
+      _mongoc_cmd_parts_ensure_copied (parts);
    }
 
    if (parts->session) {
-      if (parts->assembled.command == parts->body) {
-         /* haven't copied yet, we need to now */
-         bson_concat (&parts->assembled_body, parts->body);
-         parts->assembled.command = &parts->assembled_body;
-      }
-
+      _mongoc_cmd_parts_ensure_copied (parts);
       bson_append_document (
          &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
@@ -397,7 +408,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       _mongoc_get_command_name (parts->assembled.command);
 
    if (!parts->assembled.command_name) {
-      bson_set_error (error, MONGOC_ERROR_COMMAND,
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Empty command document");
       RETURN (false);
@@ -439,21 +451,16 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       if (!bson_empty (&parts->extra)) {
-         bson_concat (&parts->assembled_body, parts->body);
-         bson_concat (&parts->assembled_body, &parts->extra);
-         parts->assembled.command = &parts->assembled_body;
+         _mongoc_cmd_parts_ensure_copied (parts);
       }
 
       if (parts->session) {
-         if (parts->assembled.command == parts->body) {
-            /* haven't copied yet, we need to now */
-            bson_concat (&parts->assembled_body, parts->body);
-            parts->assembled.command = &parts->assembled_body;
-         }
-
+         _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (
             &parts->assembled_body, "lsid", 4, &parts->session->lsid);
       }
+
+      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
 
       RETURN (true);
    }
@@ -463,7 +470,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       RETURN (true);
    }
 
-   _mongoc_cmd_parts_assemble_mongod (parts,server_stream);
+   _mongoc_cmd_parts_assemble_mongod (parts, server_stream);
    RETURN (true);
 }
 

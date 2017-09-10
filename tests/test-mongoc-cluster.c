@@ -419,7 +419,6 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
    bson_iter_t iter;
    bson_t client_cluster_time;
 
-
    cmd = mongoc_apm_command_started_get_command (event);
    if (!strcmp (_mongoc_get_command_name (cmd), "killCursors")) {
       /* ignore killCursors */

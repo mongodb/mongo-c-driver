@@ -2653,9 +2653,16 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    bson_init_static (
       &reply_local, rpc.msg.sections[0].payload.bson_document, msg_len);
-   bson_copy_to (&reply_local, reply);
+
+   _mongoc_topology_update_cluster_time (cluster->client->topology,
+                                         &reply_local);
    ok = _mongoc_cmd_check_ok (
       &reply_local, cluster->client->error_api_version, error);
+
+   if (reply) {
+      bson_copy_to (&reply_local, reply);
+   }
+
    _mongoc_buffer_destroy (&buffer);
    bson_free (output);
 
