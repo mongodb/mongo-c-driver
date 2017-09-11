@@ -282,21 +282,25 @@ test_bulk_error_unordered (void)
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
-   request = mock_server_receives_command (
-      mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{ 'update' : 'test', 'writeConcern' : {  }, 'ordered' : false }",
-      NULL);
+   request =
+      mock_server_receives_command (mock_server,
+                                    "test",
+                                    MONGOC_QUERY_NONE,
+                                    "{'update': 'test',"
+                                    " 'writeConcern': {'$exists': false},"
+                                    " 'ordered': false}",
+                                    NULL);
    mock_server_replies_simple (request, "{ 'ok' : 1, 'n' : 5 }");
 
    request_destroy (request);
-   request = mock_server_receives_command (
-      mock_server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{ 'update' : 'test', 'writeConcern' : {  }, 'ordered' : false }",
-      NULL);
+   request =
+      mock_server_receives_command (mock_server,
+                                    "test",
+                                    MONGOC_QUERY_NONE,
+                                    "{'update': 'test',"
+                                    " 'writeConcern': {'$exists': false},"
+                                    " 'ordered': false}",
+                                    NULL);
 
    request_destroy (request);
    mock_server_destroy (mock_server);
@@ -2660,7 +2664,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
                                     "test",
                                     MONGOC_QUERY_NONE,
                                     "{'insert': 'test',"
-                                    " 'writeConcern': {},"
+                                    " 'writeConcern': {'$exists': false},"
                                     " 'ordered': false,"
                                     " 'documents': [{'_id': 1}, {'_id': 2}]}");
 
@@ -2681,7 +2685,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
       "test",
       MONGOC_QUERY_NONE,
       "{'delete': 'test',"
-      " 'writeConcern': {},"
+      " 'writeConcern': {'$exists': false},"
       " 'ordered': false,"
       " 'deletes': [{'q': {'_id': 3}, 'limit': 0}]}");
 

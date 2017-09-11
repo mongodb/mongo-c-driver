@@ -32,10 +32,6 @@
  *    - Remove error parameter to ops, favor result->error.
  */
 
-#define WRITE_CONCERN_DOC(wc)                                                \
-   (wc) ? (_mongoc_write_concern_get_bson ((mongoc_write_concern_t *) (wc))) \
-        : (&gEmptyWriteConcern)
-
 typedef void (*mongoc_write_op_t) (mongoc_write_command_t *command,
                                    mongoc_client_t *client,
                                    mongoc_server_stream_t *server_stream,
@@ -45,8 +41,6 @@ typedef void (*mongoc_write_op_t) (mongoc_write_command_t *command,
                                    mongoc_write_result_t *result,
                                    bson_error_t *error);
 
-
-static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 
 /* indexed by MONGOC_WRITE_COMMAND_DELETE, INSERT, UPDATE */
 static const char *gCommandNames[] = {"delete", "insert", "update"};
@@ -292,8 +286,12 @@ _mongoc_write_command_init (bson_t *doc,
    }
 
    BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
-   BSON_APPEND_DOCUMENT (
-      doc, "writeConcern", WRITE_CONCERN_DOC (write_concern));
+   if (write_concern && !mongoc_write_concern_is_default (write_concern)) {
+      BSON_APPEND_DOCUMENT (doc,
+                            "writeConcern",
+                            _mongoc_write_concern_get_bson (
+                               (mongoc_write_concern_t *) (write_concern)));
+   }
    BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
 
    if (command->flags.bypass_document_validation !=
