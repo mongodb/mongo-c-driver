@@ -1782,8 +1782,11 @@ test_get_database_names (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    future = future_client_get_database_names (client, &error);
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'listDatabases': 1}");
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request,
       0,
@@ -1801,8 +1804,11 @@ test_get_database_names (void)
    future_destroy (future);
 
    future = future_client_get_database_names (client, &error);
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'listDatabases': 1}");
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request, 0, 0, 0, 1, "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
 
