@@ -612,13 +612,11 @@ again:
          break;
       }
       BSON_APPEND_DOCUMENT (&ar, key, bson);
-      data_offset += bson->len;
+      data_offset += len;
       i++;
    }
 
    bson_append_array_end (&cmd, &ar);
-   bson_reader_destroy (reader);
-
 
    if (!i) {
       _mongoc_write_command_too_large_error (
@@ -626,7 +624,7 @@ again:
       result->failed = true;
       ret = false;
       if (bson) {
-         data_offset += bson->len;
+         data_offset += len;
       }
    } else {
       mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
@@ -651,6 +649,7 @@ again:
       bson_destroy (&reply);
       mongoc_cmd_parts_cleanup (&parts);
    }
+   bson_reader_destroy (reader);
 
    if (has_more && (ret || !command->flags.ordered) && !result->must_stop) {
       bson_reinit (&cmd);
