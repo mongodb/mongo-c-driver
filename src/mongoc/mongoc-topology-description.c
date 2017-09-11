@@ -1704,6 +1704,9 @@ _mongoc_topology_description_check_compatible (
    for (i = 0; i < td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
                                                                 (int) i);
+      if (sd->type == MONGOC_SERVER_UNKNOWN) {
+         continue;
+      }
 
       /* A server is considered to be incompatible with a driver if its min and
        * max wire version does not overlap the driver’s. Specifically, a driver
