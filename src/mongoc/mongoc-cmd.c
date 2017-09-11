@@ -22,7 +22,7 @@
 #include "mongoc-write-concern-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
-#include "mongoc-session-private.h"
+#include "mongoc-client-session-private.h"
 
 
 void

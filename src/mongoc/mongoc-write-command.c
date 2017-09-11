@@ -546,7 +546,7 @@ _mongoc_write_opquery (mongoc_write_command_t *command,
                        const char *collection,
                        const mongoc_write_concern_t *write_concern,
                        uint32_t offset,
-                       mongoc_session_t *session,
+                       mongoc_client_session_t *session,
                        mongoc_write_result_t *result,
                        bson_error_t *error)
 {
@@ -676,7 +676,7 @@ _mongoc_write_command_execute (
    const char *collection,                      /* IN */
    const mongoc_write_concern_t *write_concern, /* IN */
    uint32_t offset,                             /* IN */
-   mongoc_session_t *session,                   /* IN */
+   mongoc_client_session_t *session,            /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
    int32_t min_wire_version;

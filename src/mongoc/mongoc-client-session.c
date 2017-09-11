@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc-session-private.h"
+#include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-rand-private.h"
@@ -87,8 +87,8 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 
 
 static bool
-_mongoc_session_uuid(uint8_t *data /* OUT */,
-                     bson_error_t *error)
+_mongoc_client_session_uuid(uint8_t *data /* OUT */,
+                            bson_error_t *error)
 {
 #ifdef MONGOC_ENABLE_CRYPTO
    /* https://tools.ietf.org/html/rfc4122#page-14
@@ -129,23 +129,23 @@ _mongoc_session_uuid(uint8_t *data /* OUT */,
 }
 
 
-mongoc_session_t *
-_mongoc_session_new (mongoc_client_t *client,
-                     mongoc_session_opt_t *opts,
-                     bson_error_t *error)
+mongoc_client_session_t *
+_mongoc_client_session_new (mongoc_client_t *client,
+                            const mongoc_session_opt_t *opts,
+                            bson_error_t *error)
 {
-   mongoc_session_t *session;
+   mongoc_client_session_t *session;
    uint8_t uuid_data[16];
 
    ENTRY;
 
    BSON_ASSERT (client);
 
-   if (!_mongoc_session_uuid (uuid_data, error)) {
+   if (!_mongoc_client_session_uuid (uuid_data, error)) {
       RETURN (NULL);
    }
 
-   session = bson_malloc0 (sizeof (mongoc_session_t));
+   session = bson_malloc0 (sizeof (mongoc_client_session_t));
    session->client = client;
 
    bson_init (&session->lsid);
@@ -163,7 +163,7 @@ _mongoc_session_new (mongoc_client_t *client,
 
 
 mongoc_client_t *
-mongoc_session_get_client (mongoc_session_t *session)
+mongoc_client_session_get_client (mongoc_client_session_t *session)
 {
    BSON_ASSERT (session);
 
@@ -172,7 +172,7 @@ mongoc_session_get_client (mongoc_session_t *session)
 
 
 const mongoc_session_opt_t *
-mongoc_session_get_opts (const mongoc_session_t *session)
+mongoc_client_session_get_opts (const mongoc_client_session_t *session)
 {
    BSON_ASSERT (session);
 
@@ -181,7 +181,7 @@ mongoc_session_get_opts (const mongoc_session_t *session)
 
 
 const bson_t *
-mongoc_session_get_session_id (const mongoc_session_t *session)
+mongoc_client_session_get_session_id (const mongoc_client_session_t *session)
 {
    BSON_ASSERT (session);
 
@@ -190,7 +190,7 @@ mongoc_session_get_session_id (const mongoc_session_t *session)
 
 
 void
-mongoc_session_destroy (mongoc_session_t *session)
+mongoc_client_session_destroy (mongoc_client_session_t *session)
 {
    ENTRY;
 

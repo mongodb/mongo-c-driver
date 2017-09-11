@@ -53,7 +53,7 @@
 #include "mongoc-read-concern-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs-private.h"
-#include "mongoc-session-private.h"
+#include "mongoc-client-session-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -1082,10 +1082,10 @@ mongoc_client_get_uri (const mongoc_client_t *client)
  *       Creates a structure to communicate in a session over @client.
  *
  *       This structure should be freed when the caller is done with it
- *       using mongoc_session_destroy().
+ *       using mongoc_client_session_destroy().
  *
  * Returns:
- *       A newly allocated mongoc_session_t.
+ *       A newly allocated mongoc_client_session_t.
  *
  * Side effects:
  *       None.
@@ -1093,14 +1093,14 @@ mongoc_client_get_uri (const mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 
-mongoc_session_t *
+mongoc_client_session_t *
 mongoc_client_start_session (mongoc_client_t *client,
                              mongoc_session_opt_t *opts,
                              bson_error_t *error)
 {
    ENTRY;
 
-   RETURN (_mongoc_session_new (client, opts, error));
+   RETURN (_mongoc_client_session_new (client, opts, error));
 }
 
 

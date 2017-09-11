@@ -65,7 +65,7 @@ _mongoc_bulk_operation_new (
    mongoc_client_t *client,                     /* IN */
    const char *database,                        /* IN */
    const char *collection,                      /* IN */
-   mongoc_session_t *session,                   /* IN */
+   mongoc_client_session_t *session,            /* IN */
    mongoc_bulk_write_flags_t flags,             /* IN */
    const mongoc_write_concern_t *write_concern) /* IN */
 {

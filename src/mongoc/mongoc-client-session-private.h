@@ -22,7 +22,7 @@
 #endif
 
 #include <bson.h>
-#include "mongoc-session.h"
+#include "mongoc-client-session.h"
 
 typedef enum {
    MONGOC_SESSION_NO_OPTS = 0,
@@ -34,15 +34,15 @@ struct _mongoc_session_opt_t {
 };
 
 
-struct _mongoc_session_t {
+struct _mongoc_client_session_t {
    mongoc_client_t *client;
    mongoc_session_opt_t opts;
    bson_t lsid; /* logical session id */
 };
 
 
-mongoc_session_t *
-_mongoc_session_new (mongoc_client_t *client,
+mongoc_client_session_t *
+_mongoc_client_session_new (mongoc_client_t *client,
                      mongoc_session_opt_t *opts,
                      bson_error_t *error);
 

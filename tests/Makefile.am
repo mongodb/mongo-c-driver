@@ -99,7 +99,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-server-selection-errors.c \
-	tests/test-mongoc-session.c \
+	tests/test-mongoc-client-session.c \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-srv.c \
 	tests/test-mongoc-stream.c \

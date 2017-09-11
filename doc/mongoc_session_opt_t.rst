@@ -8,7 +8,7 @@ Synopsis
 
 .. include:: includes/session-lifecycle.txt
 
-See the example code for :symbol:`mongoc_session_t`.
+See the example code for :symbol:`mongoc_client_session_t`.
 
 .. only:: html
 

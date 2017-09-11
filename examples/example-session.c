@@ -14,7 +14,7 @@ main (int argc, char *argv[])
 
    mongoc_client_t *client;
    mongoc_session_opt_t *opts = NULL;
-   mongoc_session_t *session = NULL;
+   mongoc_client_session_t *session = NULL;
    mongoc_collection_t *collection = NULL;
    const char *uristr = "mongodb://127.0.0.1/?appname=session-example";
    bson_error_t error;
@@ -54,7 +54,7 @@ main (int argc, char *argv[])
    }
 
    /* create a collection bound to the session */
-   collection = mongoc_session_get_collection (session, "db", "collection");
+   collection = mongoc_client_session_get_collection (session, "db", "collection");
    filter = BCON_NEW ("_id", BCON_INT32 (1));
    update = BCON_NEW ("$inc", "{", "x", BCON_INT32 (1), "}");
 
@@ -115,7 +115,7 @@ done:
       mongoc_collection_destroy (collection);
    }
    if (session) {
-      mongoc_session_destroy (session);
+      mongoc_client_session_destroy (session);
    }
 
    /* finish cleaning up */

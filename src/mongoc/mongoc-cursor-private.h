@@ -145,7 +145,7 @@ struct _mongoc_cursor_t {
    void *iface_data;
 
    int64_t operation_id;
-   mongoc_session_t *session;
+   mongoc_client_session_t *session;
 };
 
 

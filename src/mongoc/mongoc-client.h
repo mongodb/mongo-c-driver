@@ -74,7 +74,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_client_t mongoc_client_t;
 
 
-typedef struct _mongoc_session_t mongoc_session_t;
+typedef struct _mongoc_client_session_t mongoc_client_session_t;
 typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
 
 /**
@@ -173,7 +173,7 @@ mongoc_client_command_simple_with_server_id (
    bson_error_t *error);
 MONGOC_EXPORT (void)
 mongoc_client_destroy (mongoc_client_t *client);
-MONGOC_EXPORT (mongoc_session_t *)
+MONGOC_EXPORT (mongoc_client_session_t *)
 mongoc_client_start_session (mongoc_client_t *client,
                              mongoc_session_opt_t *opts,
                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;

@@ -9,9 +9,9 @@ API Reference
    logging
    errors
    lifecycle
-   mongoc_version
    mongoc_bulk_operation_t
    mongoc_client_pool_t
+   mongoc_client_session_t
    mongoc_client_t
    mongoc_collection_t
    mongoc_cursor_t
@@ -37,7 +37,6 @@ API Reference
    mongoc_remove_flags_t
    mongoc_reply_flags_t
    mongoc_server_description_t
-   mongoc_session_t
    mongoc_session_opt_t
    mongoc_socket_t
    mongoc_ssl_opt_t
@@ -50,4 +49,5 @@ API Reference
    mongoc_topology_description_t
    mongoc_update_flags_t
    mongoc_uri_t
+   mongoc_version
    mongoc_write_concern_t

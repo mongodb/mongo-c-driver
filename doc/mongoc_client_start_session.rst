@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  mongoc_session_t *
+  mongoc_client_session_t *
   mongoc_client_start_session (mongoc_client_t *client,
                                mongoc_session_opt_t *opts,
                                bson_error_t *error)
@@ -27,7 +27,7 @@ Parameters
 Returns
 -------
 
-If successful, this function returns a newly allocated :symbol:`mongoc_session_t` that should be freed with :symbol:`mongoc_session_destroy()` when no longer in use. On error, returns NULL and sets ``error``.
+If successful, this function returns a newly allocated :symbol:`mongoc_client_session_t` that should be freed with :symbol:`mongoc_client_session_destroy()` when no longer in use. On error, returns NULL and sets ``error``.
 
 Errors
 ------

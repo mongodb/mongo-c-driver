@@ -429,7 +429,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-session.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-client-session.c
    ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
@@ -480,7 +480,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-session.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-client-session.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -747,7 +747,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
-   ${SOURCE_DIR}/tests/test-mongoc-session.c
+   ${SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-srv.c
