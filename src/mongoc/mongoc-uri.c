@@ -1230,7 +1230,6 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri,
          switch (value) {
          case MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED:
          case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
-            /* Warn on conflict, since write concern will be validated later */
             if (mongoc_write_concern_get_journal (write_concern)) {
                MONGOC_URI_ERROR (
                   error, "Journal conflicts with w value [w=%d].", value);
