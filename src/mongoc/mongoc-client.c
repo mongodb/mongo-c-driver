@@ -2158,10 +2158,18 @@ mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
    int i = 0;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+   bson_t cmd = BSON_INITIALIZER;
 
    BSON_ASSERT (client);
+   BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
+   BSON_APPEND_BOOL (&cmd, "nameOnly", true);
 
-   cursor = mongoc_client_find_databases (client, error);
+   /* ignore client read prefs */
+   cursor = _mongoc_cursor_new_with_opts (
+      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL);
+
+   _mongoc_cursor_array_init (cursor, &cmd, "databases");
+   bson_destroy (&cmd);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       if (bson_iter_init (&iter, doc) && bson_iter_find (&iter, "name") &&
