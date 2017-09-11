@@ -630,6 +630,9 @@ test_upsert_unordered_oversized (void *ctx)
    bson_error_t error;
    bson_t reply;
 
+#ifdef _WIN32
+   return;
+#endif
    client = test_framework_client_new ();
    collection = get_test_collection (client, "upsert_oversized");
    bulk = mongoc_collection_create_bulk_operation (
