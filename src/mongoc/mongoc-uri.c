@@ -1186,9 +1186,7 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
          mongoc_read_prefs_set_mode (uri->read_prefs, MONGOC_READ_NEAREST);
       } else {
          MONGOC_URI_ERROR (
-            error,
-            "Unsupported readPreference value [readPreference=%s].",
-            str);
+            error, "Unsupported readPreference value [readPreference=%s]", str);
          return false;
       }
    }
@@ -1196,8 +1194,9 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
 }
 
 
-static void
-_mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
+static bool
+_mongoc_uri_build_write_concern (mongoc_uri_t *uri,
+                                 bson_error_t *error)
 {
    mongoc_write_concern_t *write_concern;
    const char *str;
@@ -1208,6 +1207,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    BSON_ASSERT (uri);
 
    write_concern = mongoc_write_concern_new ();
+   uri->write_concern = write_concern;
 
    if (bson_iter_init_find_case (&iter, &uri->options, MONGOC_URI_SAFE) &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
@@ -1232,7 +1232,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
          case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
             /* Warn on conflict, since write concern will be validated later */
             if (mongoc_write_concern_get_journal (write_concern)) {
-               MONGOC_WARNING ("Journal conflicts with w value [w=%d].", value);
+               MONGOC_URI_ERROR (
+                  error, "Journal conflicts with w value [w=%d].", value);
+               return false;
             }
             mongoc_write_concern_set_w (write_concern, value);
             break;
@@ -1244,8 +1246,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
                }
                break;
             }
-            MONGOC_WARNING ("Unsupported w value [w=%d].", value);
-            break;
+            MONGOC_URI_ERROR (error, "Unsupported w value [w=%d].", value);
+            return false;
          }
       } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
          str = bson_iter_utf8 (&iter, NULL);
@@ -1258,10 +1260,11 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
          }
       } else {
          BSON_ASSERT (false);
+         return false;
       }
    }
 
-   uri->write_concern = write_concern;
+   return true;
 }
 
 /* can't use mongoc_uri_get_option_as_int32, it treats 0 specially */
@@ -1337,7 +1340,10 @@ mongoc_uri_new_with_error (const char *uri_string, bson_error_t *error)
       return NULL;
    }
 
-   _mongoc_uri_build_write_concern (uri);
+   if (!_mongoc_uri_build_write_concern (uri, error)) {
+      mongoc_uri_destroy (uri);
+      return NULL;
+   }
 
    if (!mongoc_write_concern_is_valid (uri->write_concern)) {
       mongoc_uri_destroy (uri);

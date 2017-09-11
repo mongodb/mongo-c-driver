@@ -688,18 +688,28 @@ test_mongoc_uri_new_with_error (void)
    mongoc_uri_destroy (uri);
 
    ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongo://localhost", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid URI Schema, expecting 'mongodb://'");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/?readPreference=unknown", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Unsupported readPreference value [readPreference=unknown]");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/"
       "?appname="
@@ -707,7 +717,11 @@ test_mongoc_uri_new_with_error (void)
       "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
       "sultInAnError",
       &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Unknown option or value for 'appname=WayTooLongAppname"); /* ... */
 
    uri = mongoc_uri_new ("mongodb://localhost");
    ASSERT (!mongoc_uri_set_option_as_utf8 (
@@ -718,22 +732,58 @@ test_mongoc_uri_new_with_error (void)
       "sultInAnError"));
    mongoc_uri_destroy (uri);
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (
       !mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Incorrect URI escapes in username. Percent-encode "
+                          "username and password according to RFC 3986.");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb:///tmp/mongodb.sock", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI")
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid database name in URI");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=0", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=0]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=-1", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=-1]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?w=-5", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Unsupported w value [w=-5].");
 }
 
 
