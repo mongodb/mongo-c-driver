@@ -68,7 +68,7 @@
       }                                                       \
    } while (0)
 
-#define IS_NOT_COMMAND(name_) (!!strcasecmp (cmd->command_name, name_))
+#define IS_NOT_COMMAND(_name) (!!strcasecmp (cmd->command_name, _name))
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
@@ -560,6 +560,7 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
 {
    if (!mongoc_cmd_parts_assemble (parts, server_stream, error)) {
       _mongoc_bson_init_if_set (reply);
+      mongoc_cmd_parts_cleanup (parts);
       return false;
    }
 
@@ -607,9 +608,14 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    start = bson_get_monotonic_time ();
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, &error);
+   if (!server_stream) {
+      RETURN (NULL);
+   }
+
    mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, command);
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, &error)) {
+      mongoc_server_stream_cleanup (server_stream);
       RETURN (NULL);
    }
 
@@ -1707,10 +1713,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       scanner_node->has_auth = true;
    }
 
-   return mongoc_server_stream_new (topology->description.type,
-                                    sd,
-                                    &topology->description.cluster_time,
-                                    stream);
+   return mongoc_server_stream_new (&topology->description, sd, stream);
 }
 
 
@@ -1733,10 +1736,7 @@ _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
 
    if (sd) {
       server_stream =
-         mongoc_server_stream_new (topology->description.type,
-                                   sd,
-                                   &topology->description.cluster_time,
-                                   stream);
+         mongoc_server_stream_new (&topology->description, sd, stream);
    }
 
    mongoc_mutex_unlock (&topology->mutex);

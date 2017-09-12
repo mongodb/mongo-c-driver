@@ -633,22 +633,20 @@ again:
       parts.session = session;
       parts.assembled.operation_id = command->operation_id;
       ret = mongoc_cmd_parts_assemble (&parts, server_stream, error);
-      if (!ret) {
-         result->failed = true;
-         result->must_stop = true;
-         bson_init (&reply);
-      } else {
+      if (ret) {
          ret = mongoc_cluster_run_command_monitored (
             &client->cluster, &parts.assembled, &reply, error);
-         if (!ret) {
-            result->failed = true;
-            if (bson_empty (&reply)) {
-               /* The command not only failed,
-                * the roundtrip to the server failed and the node was
-                * disconnected
-                */
-               result->must_stop = true;
-            }
+      } else {
+         /* assembling failed */
+         result->must_stop = true;
+         bson_init (&reply);
+      }
+
+      if (!ret) {
+         result->failed = true;
+         if (bson_empty (&reply)) {
+            /* assembling failed, or a network error running the command */
+            result->must_stop = true;
          }
       }
 

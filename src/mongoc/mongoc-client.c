@@ -1568,15 +1568,15 @@ mongoc_client_command_opmsg (mongoc_client_t *client,
    server_stream = mongoc_cluster_stream_for_reads (cluster, NULL, error);
 
    if (server_stream) {
-      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
-         _mongoc_bson_init_if_set (reply);
-         ret = false;
-      } else {
+      if (mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
          parts.assembled.payload = bson_get_data (documents);
          parts.assembled.payload_size = documents->len;
          parts.assembled.payload_identifier = identifier;
          mongoc_cluster_run_opmsg (cluster, &parts.assembled, reply, error);
          ret = true;
+      } else {
+         _mongoc_bson_init_if_set (reply);
+         ret = false;
       }
    } else {
       ret = false;

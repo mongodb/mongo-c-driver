@@ -40,9 +40,8 @@ typedef struct _mongoc_server_stream_t {
 
 
 mongoc_server_stream_t *
-mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
+mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,
-                          const bson_t *cluster_time,
                           mongoc_stream_t *stream);
 
 int32_t

@@ -1353,11 +1353,11 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
 
    cluster = &collection->client->cluster;
-   if (!mongoc_cmd_parts_assemble (&parts, server_stream, &local_error)) {
-      _mongoc_bson_init_if_set (reply);
-   } else {
+   if (mongoc_cmd_parts_assemble (&parts, server_stream, &local_error)) {
       ret = mongoc_cluster_run_command_monitored (
          cluster, &parts.assembled, reply, &local_error);
+   } else {
+      _mongoc_bson_init_if_set (reply);
    }
 
    reply_initialized = true;
@@ -2566,6 +2566,7 @@ mongoc_collection_find_and_modify_with_opts (
    if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
       bson_init (reply_ptr);
       bson_destroy (&command);
+      mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (server_stream);
       RETURN (false);
    }

@@ -32,7 +32,7 @@ If successful, this function returns a newly allocated :symbol:`mongoc_session_t
 Errors
 ------
 
-This function can fail if the driver is not built with crypto support, if ``opts`` is misconfigured, if the session is configured with options that the server does not support.
+This function can fail if the driver is not built with crypto support, if ``opts`` is misconfigured, or if the session is configured with options that the server does not support.
 
 .. only:: html
 
