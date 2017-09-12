@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const mongoc_session_opt_t *
-  mongoc_client_session_get_opts (mongoc_client_session_t *session);
+  mongoc_client_session_get_opts (const mongoc_client_session_t *session);
 
 Get a reference to the :symbol:`mongoc_session_opt_t` with which this session was configured.
 

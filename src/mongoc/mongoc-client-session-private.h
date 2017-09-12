@@ -43,7 +43,7 @@ struct _mongoc_client_session_t {
 
 mongoc_client_session_t *
 _mongoc_client_session_new (mongoc_client_t *client,
-                     mongoc_session_opt_t *opts,
-                     bson_error_t *error);
+                            const mongoc_session_opt_t *opts,
+                            bson_error_t *error);
 
 #endif /* MONGOC_SESSION_PRIVATE_H */

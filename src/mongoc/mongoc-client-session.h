@@ -46,7 +46,7 @@ MONGOC_EXPORT (void)
 mongoc_session_opts_destroy (mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_session_get_client (mongoc_client_session_t *session);
+mongoc_client_session_get_client (const mongoc_client_session_t *session);
 
 MONGOC_EXPORT (const mongoc_session_opt_t *)
 mongoc_client_session_get_opts (const mongoc_client_session_t *session);

@@ -57,6 +57,14 @@ mongoc_session_opts_get_causally_consistent_reads (
 }
 
 
+static void
+_mongoc_session_opts_copy (const mongoc_session_opt_t *src,
+                           mongoc_session_opt_t *dst)
+{
+   dst->flags = src->flags;
+}
+
+
 mongoc_session_opt_t *
 mongoc_session_opts_clone (const mongoc_session_opt_t *opts)
 {
@@ -67,7 +75,7 @@ mongoc_session_opts_clone (const mongoc_session_opt_t *opts)
    BSON_ASSERT (opts);
 
    cloned_opts = bson_malloc (sizeof (mongoc_session_opt_t));
-   memcpy (cloned_opts, opts, sizeof (mongoc_session_opt_t));
+   _mongoc_session_opts_copy (opts, cloned_opts);
 
    RETURN (cloned_opts);
 }
@@ -122,7 +130,7 @@ _mongoc_client_session_uuid(uint8_t *data /* OUT */,
                    MONGOC_ERROR_CLIENT,
                    MONGOC_ERROR_CLIENT_AUTHENTICATE,
                    "mongoc_client_start_session requires a cryptography library"
-                   " like OpenSSL, Secure Channel, Common Crypto, etc.");
+                   " like libcrypto, Common Crypto, or CNG");
 
    return false;
 #endif
@@ -153,7 +161,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
       &session->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 
    if (opts) {
-      memcpy (&session->opts, opts, sizeof *opts);
+      _mongoc_session_opts_copy (opts, &session->opts);
    } else {
       session->opts.flags = MONGOC_SESSION_NO_OPTS;
    }
@@ -163,7 +171,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
 
 
 mongoc_client_t *
-mongoc_client_session_get_client (mongoc_client_session_t *session)
+mongoc_client_session_get_client (const mongoc_client_session_t *session)
 {
    BSON_ASSERT (session);
 

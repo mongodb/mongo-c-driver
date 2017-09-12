@@ -1095,7 +1095,7 @@ mongoc_client_get_uri (const mongoc_client_t *client)
 
 mongoc_client_session_t *
 mongoc_client_start_session (mongoc_client_t *client,
-                             mongoc_session_opt_t *opts,
+                             const mongoc_session_opt_t *opts,
                              bson_error_t *error)
 {
    ENTRY;
