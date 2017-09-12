@@ -1590,7 +1590,7 @@ transition_t gSDAMTransitionTable
          NULL, /* MONGOC_TOPOLOGY_SHARDED */
          NULL, /* MONGOC_TOPOLOGY_RS_NO_PRIMARY */
          _mongoc_topology_description_check_if_has_primary /* MONGOC_TOPOLOGY_RS_WITH_PRIMARY
-                                                              */
+                                                            */
       },
       {/* STANDALONE */
        _mongoc_topology_description_update_unknown_with_standalone,
@@ -1704,7 +1704,8 @@ _mongoc_topology_description_check_compatible (
    for (i = 0; i < td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
                                                                 (int) i);
-      if (sd->type == MONGOC_SERVER_UNKNOWN) {
+      if (sd->type == MONGOC_SERVER_UNKNOWN ||
+          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
          continue;
       }
 
