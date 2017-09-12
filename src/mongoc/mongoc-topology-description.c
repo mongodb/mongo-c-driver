@@ -1708,6 +1708,10 @@ _mongoc_topology_description_check_compatible (
          continue;
       }
 
+      if (sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
+         continue;
+      }
+
       /* A server is considered to be incompatible with a driver if its min and
        * max wire version does not overlap the driver’s. Specifically, a driver
        * with a min and max range of [a, b] must be considered incompatible
