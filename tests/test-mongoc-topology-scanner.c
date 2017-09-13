@@ -376,9 +376,9 @@ test_topology_scanner_blocking_initiator (void)
    initiator_data_t data;
    bson_error_t error;
 
-   rs = mock_rs_with_autoismaster (2,    /* wire version   */
-                                   true, /* has primary    */
-                                   1,    /* n_secondaries  */
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN, /* wire version   */
+                                   true,             /* has primary    */
+                                   1,                /* n_secondaries  */
                                    0 /* n_arbiters     */);
 
    mock_rs_run (rs);

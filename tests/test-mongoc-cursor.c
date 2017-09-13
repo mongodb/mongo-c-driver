@@ -856,8 +856,8 @@ _test_cursor_hint (bool pooled, bool use_primary)
    future_t *future;
    request_t *request;
 
-   /* wire version 2, primary, two secondaries, no arbiters */
-   rs = mock_rs_with_autoismaster (2, true, 2, 0);
+   /* wire version WIRE_VERSION_MIN, primary, two secondaries, no arbiters */
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN, true, 2, 0);
    mock_rs_run (rs);
 
    if (pooled) {
