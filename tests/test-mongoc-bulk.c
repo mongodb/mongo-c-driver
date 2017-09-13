@@ -3377,6 +3377,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *event)
 }
 
 
+#ifdef TODO_CDRIVER_2279
 static void
 test_bulk_max_msg_size (void)
 {
@@ -3484,6 +3485,7 @@ test_bulk_max_msg_size (void)
    mongoc_client_destroy (client);
    bson_free (msg);
 }
+#endif
 
 
 static void
@@ -4676,8 +4678,10 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/BulkOperation/new", test_bulk_new);
    TestSuite_AddLive (
       suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
+#ifdef TODO_CDRIVER_2279
    TestSuite_AddLive (
       suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
+#endif
    TestSuite_AddLive (
       suite, "/BulkOperation/over_1000", test_bulk_edge_over_1000);
    TestSuite_AddLive (suite,
