@@ -411,12 +411,15 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    max_document_count =
       mongoc_server_stream_max_write_batch_size (server_stream);
 
-
    bson_init (&cmd);
    _mongoc_write_command_init (&cmd, command, collection, write_concern);
    mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
    parts.assembled.operation_id = command->operation_id;
-   mongoc_cmd_parts_assemble (&parts, server_stream);
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      bson_destroy (&cmd);
+      mongoc_cmd_parts_cleanup (&parts);
+      EXIT;
+   }
 
    /*
     * OP_MSG header == 16 byte
