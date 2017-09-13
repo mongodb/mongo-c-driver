@@ -10,7 +10,13 @@ env:
   - CFLAGS="$CFLAGS -Werror -Wno-cast-align" 
 
 script:
-  - ./autogen.sh --enable-maintainer-flags --disable-automatic-init-and-cleanup --with-libbson=bundled
+  - ulimit -a
+  - ulimit -c unlimited || true
+  - ./autogen.sh --enable-debug --enable-maintainer-flags --disable-automatic-init-and-cleanup --with-libbson=bundled
   - make
   - make test
+
+after_failure:
+  - sudo apt-get install gdb
+  - find . -name \*core\* -exec ./.travis.scripts/debug-core.sh {} \;
 
