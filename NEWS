@@ -20,11 +20,13 @@ mongo-c-driver 1.8.0
   * Wire version checks introduced in 1.8.0 will prevent the driver from
     connecting to a future MongoDB server version if its wire protocol is
     incompatible.
+  * New CMake option ENABLE_MAINTAINER_FLAGS.
 
 Thanks to everyone who contributed to the development of this release.
 
   * A. Jesse Jiryu Davis
   * Hannes Magnusson
+  * Jeremy Mikola
 
 Peace,
 
