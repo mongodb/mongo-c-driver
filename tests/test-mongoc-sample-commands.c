@@ -23,6 +23,7 @@
  * These are the C examples for that page.
  */
 
+/* clang-format off */
 #include <mongoc.h>
 
 #include "TestSuite.h"
@@ -65,27 +66,20 @@ test_example_1 (mongoc_database_t *db)
    bson_error_t error;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("canvas"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("cotton"),
-                   "]",
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (28),
-                   "w",
-                   BCON_DOUBLE (35.5),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("canvas"),
+      "qty", BCON_INT64 (100),
+      "tags", "[",
+      BCON_UTF8 ("cotton"),
+      "]",
+      "size", "{",
+      "h", BCON_DOUBLE (28),
+      "w", BCON_DOUBLE (35.5),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
 
    /* MONGOC_INSERT_NONE means "no special options" */
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, doc, NULL, &error);
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error);
    bson_destroy (doc);
 
    if (!r) {
@@ -94,7 +88,7 @@ test_example_1 (mongoc_database_t *db)
    }
    /* End Example 1 */
    ASSERT_COUNT (1, collection);
-/* Start Example 1 Post */
+   /* Start Example 1 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 1 Post */
@@ -135,24 +129,17 @@ test_example_3 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("blank"),
-                   BCON_UTF8 ("red"),
-                   "]",
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "tags", "[",
+      BCON_UTF8 ("blank"), BCON_UTF8 ("red"),
+      "]",
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -161,23 +148,17 @@ test_example_3 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("mat"),
-                   "qty",
-                   BCON_INT64 (85),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("gray"),
-                   "]",
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (27.9),
-                   "w",
-                   BCON_DOUBLE (35.5),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("mat"),
+      "qty", BCON_INT64 (85),
+      "tags", "[",
+      BCON_UTF8 ("gray"),
+      "]",
+      "size", "{",
+      "h", BCON_DOUBLE (27.9),
+      "w", BCON_DOUBLE (35.5),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -186,24 +167,17 @@ test_example_3 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("mousepad"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("gel"),
-                   BCON_UTF8 ("blue"),
-                   "]",
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (19),
-                   "w",
-                   BCON_DOUBLE (22.85),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("mousepad"),
+      "qty", BCON_INT64 (25),
+      "tags", "[",
+      BCON_UTF8 ("gel"), BCON_UTF8 ("blue"),
+      "]",
+      "size", "{",
+      "h", BCON_DOUBLE (19),
+      "w", BCON_DOUBLE (22.85),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -219,7 +193,7 @@ test_example_3 (mongoc_database_t *db)
    }
    /* End Example 3 */
    ASSERT_COUNT (4, collection);
-/* Start Example 3 Post */
+   /* Start Example 3 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -241,21 +215,15 @@ test_example_6 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -264,21 +232,15 @@ test_example_6 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "qty",
-                   BCON_INT64 (50),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "qty", BCON_INT64 (50),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -287,21 +249,15 @@ test_example_6 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "qty", BCON_INT64 (100),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -310,21 +266,15 @@ test_example_6 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "qty",
-                   BCON_INT64 (75),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "qty", BCON_INT64 (75),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -333,21 +283,15 @@ test_example_6 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "qty",
-                   BCON_INT64 (45),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (10),
-                   "w",
-                   BCON_DOUBLE (15.25),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "qty", BCON_INT64 (45),
+      "size", "{",
+      "h", BCON_DOUBLE (10),
+      "w", BCON_DOUBLE (15.25),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -363,7 +307,7 @@ test_example_6 (mongoc_database_t *db)
    }
    /* End Example 6 */
    ASSERT_COUNT (5, collection);
-/* Start Example 6 Post */
+   /* Start Example 6 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -424,7 +368,11 @@ test_example_10 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "status", "{", "$in", "[", BCON_UTF8 ("A"), BCON_UTF8 ("D"), "]", "}");
+      "status", "{",
+      "$in", "[",
+      BCON_UTF8 ("A"), BCON_UTF8 ("D"),
+      "]",
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 10 */
    ASSERT_CURSOR_COUNT (5, cursor);
@@ -446,7 +394,10 @@ test_example_11 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "status", BCON_UTF8 ("A"), "qty", "{", "$lt", BCON_INT64 (30), "}");
+      "status", BCON_UTF8 ("A"),
+      "qty", "{",
+      "$lt", BCON_INT64 (30),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 11 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -467,20 +418,16 @@ test_example_12 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("$or",
-                      "[",
-                      "{",
-                      "status",
-                      BCON_UTF8 ("A"),
-                      "}",
-                      "{",
-                      "qty",
-                      "{",
-                      "$lt",
-                      BCON_INT64 (30),
-                      "}",
-                      "}",
-                      "]");
+   filter = BCON_NEW (
+      "$or", "[",
+      "{",
+      "status", BCON_UTF8 ("A"),
+      "}","{",
+      "qty", "{",
+      "$lt", BCON_INT64 (30),
+      "}",
+      "}",
+      "]");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 12 */
    ASSERT_CURSOR_COUNT (3, cursor);
@@ -501,22 +448,17 @@ test_example_13 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("status",
-                      BCON_UTF8 ("A"),
-                      "$or",
-                      "[",
-                      "{",
-                      "qty",
-                      "{",
-                      "$lt",
-                      BCON_INT64 (30),
-                      "}",
-                      "}",
-                      "{",
-                      "item",
-                      BCON_REGEX ("^p", ""),
-                      "}",
-                      "]");
+   filter = BCON_NEW (
+      "status", BCON_UTF8 ("A"),
+      "$or", "[",
+      "{",
+      "qty", "{",
+      "$lt", BCON_INT64 (30),
+      "}",
+      "}","{",
+      "item", BCON_REGEX ("^p", ""),
+      "}",
+      "]");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 13 */
    ASSERT_CURSOR_COUNT (2, cursor);
@@ -541,21 +483,15 @@ test_example_14 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -564,21 +500,15 @@ test_example_14 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "qty",
-                   BCON_INT64 (50),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "qty", BCON_INT64 (50),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -587,21 +517,15 @@ test_example_14 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "qty", BCON_INT64 (100),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -610,21 +534,15 @@ test_example_14 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "qty",
-                   BCON_INT64 (75),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "qty", BCON_INT64 (75),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -633,21 +551,15 @@ test_example_14 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "qty",
-                   BCON_INT64 (45),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (10),
-                   "w",
-                   BCON_DOUBLE (15.25),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "qty", BCON_INT64 (45),
+      "size", "{",
+      "h", BCON_DOUBLE (10),
+      "w", BCON_DOUBLE (15.25),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -661,9 +573,9 @@ test_example_14 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 14 */
+   /* End Example 14 */
 
-/* Start Example 14 Post */
+   /* Start Example 14 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -681,15 +593,12 @@ test_example_15 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("size",
-                      "{",
-                      "h",
-                      BCON_DOUBLE (14),
-                      "w",
-                      BCON_DOUBLE (21),
-                      "uom",
-                      BCON_UTF8 ("cm"),
-                      "}");
+   filter = BCON_NEW (
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 15 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -710,15 +619,12 @@ test_example_16 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("size",
-                      "{",
-                      "w",
-                      BCON_DOUBLE (21),
-                      "h",
-                      BCON_DOUBLE (14),
-                      "uom",
-                      BCON_UTF8 ("cm"),
-                      "}");
+   filter = BCON_NEW (
+      "size", "{",
+      "w", BCON_DOUBLE (21),
+      "h", BCON_DOUBLE (14),
+      "uom", BCON_UTF8 ("cm"),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 16 */
    ASSERT_CURSOR_COUNT (0, cursor);
@@ -760,7 +666,10 @@ test_example_18 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("size.h", "{", "$lt", BCON_INT64 (15), "}");
+   filter = BCON_NEW (
+      "size.h", "{",
+      "$lt", BCON_INT64 (15),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 18 */
    ASSERT_CURSOR_COUNT (4, cursor);
@@ -781,15 +690,12 @@ test_example_19 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("size.h",
-                      "{",
-                      "$lt",
-                      BCON_INT64 (15),
-                      "}",
-                      "size.uom",
-                      BCON_UTF8 ("in"),
-                      "status",
-                      BCON_UTF8 ("D"));
+   filter = BCON_NEW (
+      "size.h", "{",
+      "$lt", BCON_INT64 (15),
+      "}",
+      "size.uom", BCON_UTF8 ("in"),
+      "status", BCON_UTF8 ("D"));
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 19 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -814,20 +720,15 @@ test_example_20 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("blank"),
-                   BCON_UTF8 ("red"),
-                   "]",
-                   "dim_cm",
-                   "[",
-                   BCON_INT64 (14),
-                   BCON_INT64 (21),
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "tags", "[",
+      BCON_UTF8 ("blank"), BCON_UTF8 ("red"),
+      "]",
+      "dim_cm", "[",
+      BCON_INT64 (14), BCON_INT64 (21),
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -836,20 +737,15 @@ test_example_20 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "qty",
-                   BCON_INT64 (50),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("red"),
-                   BCON_UTF8 ("blank"),
-                   "]",
-                   "dim_cm",
-                   "[",
-                   BCON_INT64 (14),
-                   BCON_INT64 (21),
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "qty", BCON_INT64 (50),
+      "tags", "[",
+      BCON_UTF8 ("red"), BCON_UTF8 ("blank"),
+      "]",
+      "dim_cm", "[",
+      BCON_INT64 (14), BCON_INT64 (21),
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -858,21 +754,15 @@ test_example_20 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("red"),
-                   BCON_UTF8 ("blank"),
-                   BCON_UTF8 ("plain"),
-                   "]",
-                   "dim_cm",
-                   "[",
-                   BCON_INT64 (14),
-                   BCON_INT64 (21),
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "qty", BCON_INT64 (100),
+      "tags", "[",
+      BCON_UTF8 ("red"), BCON_UTF8 ("blank"), BCON_UTF8 ("plain"),
+      "]",
+      "dim_cm", "[",
+      BCON_INT64 (14), BCON_INT64 (21),
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -881,20 +771,15 @@ test_example_20 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "qty",
-                   BCON_INT64 (75),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("blank"),
-                   BCON_UTF8 ("red"),
-                   "]",
-                   "dim_cm",
-                   "[",
-                   BCON_DOUBLE (22.85),
-                   BCON_INT64 (30),
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "qty", BCON_INT64 (75),
+      "tags", "[",
+      BCON_UTF8 ("blank"), BCON_UTF8 ("red"),
+      "]",
+      "dim_cm", "[",
+      BCON_DOUBLE (22.85), BCON_INT64 (30),
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -903,19 +788,15 @@ test_example_20 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "qty",
-                   BCON_INT64 (45),
-                   "tags",
-                   "[",
-                   BCON_UTF8 ("blue"),
-                   "]",
-                   "dim_cm",
-                   "[",
-                   BCON_INT64 (10),
-                   BCON_DOUBLE (15.25),
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "qty", BCON_INT64 (45),
+      "tags", "[",
+      BCON_UTF8 ("blue"),
+      "]",
+      "dim_cm", "[",
+      BCON_INT64 (10), BCON_DOUBLE (15.25),
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -929,9 +810,9 @@ test_example_20 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 20 */
+   /* End Example 20 */
 
-/* Start Example 20 Post */
+   /* Start Example 20 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -949,7 +830,10 @@ test_example_21 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("tags", "[", BCON_UTF8 ("red"), BCON_UTF8 ("blank"), "]");
+   filter = BCON_NEW (
+      "tags", "[",
+      BCON_UTF8 ("red"), BCON_UTF8 ("blank"),
+      "]");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 21 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -970,14 +854,12 @@ test_example_22 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("tags",
-                      "{",
-                      "$all",
-                      "[",
-                      BCON_UTF8 ("red"),
-                      BCON_UTF8 ("blank"),
-                      "]",
-                      "}");
+   filter = BCON_NEW (
+      "tags", "{",
+      "$all", "[",
+      BCON_UTF8 ("red"), BCON_UTF8 ("blank"),
+      "]",
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 22 */
    ASSERT_CURSOR_COUNT (4, cursor);
@@ -1019,7 +901,10 @@ test_example_24 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("dim_cm", "{", "$gt", BCON_INT64 (25), "}");
+   filter = BCON_NEW (
+      "dim_cm", "{",
+      "$gt", BCON_INT64 (25),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 24 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1041,7 +926,10 @@ test_example_25 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "dim_cm", "{", "$gt", BCON_INT64 (15), "$lt", BCON_INT64 (20), "}");
+      "dim_cm", "{",
+      "$gt", BCON_INT64 (15),
+      "$lt", BCON_INT64 (20),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 25 */
    ASSERT_CURSOR_COUNT (4, cursor);
@@ -1062,16 +950,13 @@ test_example_26 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("dim_cm",
-                      "{",
-                      "$elemMatch",
-                      "{",
-                      "$gt",
-                      BCON_INT64 (22),
-                      "$lt",
-                      BCON_INT64 (30),
-                      "}",
-                      "}");
+   filter = BCON_NEW (
+      "dim_cm", "{",
+      "$elemMatch", "{",
+      "$gt", BCON_INT64 (22),
+      "$lt", BCON_INT64 (30),
+      "}",
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 26 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1092,7 +977,10 @@ test_example_27 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("dim_cm.1", "{", "$gt", BCON_INT64 (25), "}");
+   filter = BCON_NEW (
+      "dim_cm.1", "{",
+      "$gt", BCON_INT64 (25),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 27 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1113,7 +1001,10 @@ test_example_28 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("tags", "{", "$size", BCON_INT64 (3), "}");
+   filter = BCON_NEW (
+      "tags", "{",
+      "$size", BCON_INT64 (3),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 28 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1138,23 +1029,17 @@ test_example_29 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (5),
-                   "}",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("C"),
-                   "qty",
-                   BCON_INT64 (15),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (5),
+      "}","{",
+      "warehouse", BCON_UTF8 ("C"),
+      "qty", BCON_INT64 (15),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1163,17 +1048,14 @@ test_example_29 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("C"),
-                   "qty",
-                   BCON_INT64 (5),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("C"),
+      "qty", BCON_INT64 (5),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1182,23 +1064,17 @@ test_example_29 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (60),
-                   "}",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("B"),
-                   "qty",
-                   BCON_INT64 (15),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (60),
+      "}","{",
+      "warehouse", BCON_UTF8 ("B"),
+      "qty", BCON_INT64 (15),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1207,23 +1083,17 @@ test_example_29 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (40),
-                   "}",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("B"),
-                   "qty",
-                   BCON_INT64 (5),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (40),
+      "}","{",
+      "warehouse", BCON_UTF8 ("B"),
+      "qty", BCON_INT64 (5),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1232,23 +1102,17 @@ test_example_29 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("B"),
-                   "qty",
-                   BCON_INT64 (15),
-                   "}",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("C"),
-                   "qty",
-                   BCON_INT64 (35),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("B"),
+      "qty", BCON_INT64 (15),
+      "}","{",
+      "warehouse", BCON_UTF8 ("C"),
+      "qty", BCON_INT64 (35),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1262,9 +1126,9 @@ test_example_29 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 29 */
+   /* End Example 29 */
 
-/* Start Example 29 Post */
+   /* Start Example 29 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1283,7 +1147,10 @@ test_example_30 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "instock", "{", "warehouse", BCON_UTF8 ("A"), "qty", BCON_INT64 (5), "}");
+      "instock", "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (5),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 30 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1305,7 +1172,10 @@ test_example_31 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "instock", "{", "qty", BCON_INT64 (5), "warehouse", BCON_UTF8 ("A"), "}");
+      "instock", "{",
+      "qty", BCON_INT64 (5),
+      "warehouse", BCON_UTF8 ("A"),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 31 */
    ASSERT_CURSOR_COUNT (0, cursor);
@@ -1326,7 +1196,10 @@ test_example_32 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("instock.0.qty", "{", "$lte", BCON_INT64 (20), "}");
+   filter = BCON_NEW (
+      "instock.0.qty", "{",
+      "$lte", BCON_INT64 (20),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 32 */
    ASSERT_CURSOR_COUNT (3, cursor);
@@ -1347,7 +1220,10 @@ test_example_33 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("instock.qty", "{", "$lte", BCON_INT64 (20), "}");
+   filter = BCON_NEW (
+      "instock.qty", "{",
+      "$lte", BCON_INT64 (20),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 33 */
    ASSERT_CURSOR_COUNT (5, cursor);
@@ -1368,16 +1244,13 @@ test_example_34 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("instock",
-                      "{",
-                      "$elemMatch",
-                      "{",
-                      "qty",
-                      BCON_INT64 (5),
-                      "warehouse",
-                      BCON_UTF8 ("A"),
-                      "}",
-                      "}");
+   filter = BCON_NEW (
+      "instock", "{",
+      "$elemMatch", "{",
+      "qty", BCON_INT64 (5),
+      "warehouse", BCON_UTF8 ("A"),
+      "}",
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 34 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1398,19 +1271,15 @@ test_example_35 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("instock",
-                      "{",
-                      "$elemMatch",
-                      "{",
-                      "qty",
-                      "{",
-                      "$gt",
-                      BCON_INT64 (10),
-                      "$lte",
-                      BCON_INT64 (20),
-                      "}",
-                      "}",
-                      "}");
+   filter = BCON_NEW (
+      "instock", "{",
+      "$elemMatch", "{",
+      "qty", "{",
+      "$gt", BCON_INT64 (10),
+      "$lte", BCON_INT64 (20),
+      "}",
+      "}",
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 35 */
    ASSERT_CURSOR_COUNT (3, cursor);
@@ -1432,7 +1301,10 @@ test_example_36 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "instock.qty", "{", "$gt", BCON_INT64 (10), "$lte", BCON_INT64 (20), "}");
+      "instock.qty", "{",
+      "$gt", BCON_INT64 (10),
+      "$lte", BCON_INT64 (20),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 36 */
    ASSERT_CURSOR_COUNT (4, cursor);
@@ -1454,7 +1326,8 @@ test_example_37 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW (
-      "instock.qty", BCON_INT64 (5), "instock.warehouse", BCON_UTF8 ("A"));
+      "instock.qty", BCON_INT64 (5),
+      "instock.warehouse", BCON_UTF8 ("A"));
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 37 */
    ASSERT_CURSOR_COUNT (2, cursor);
@@ -1479,7 +1352,9 @@ test_example_38 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("_id", BCON_INT64 (1), "item", BCON_NULL);
+   doc = BCON_NEW (
+      "_id", BCON_INT64 (1),
+      "item", BCON_NULL);
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1502,9 +1377,9 @@ test_example_38 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 38 */
+   /* End Example 38 */
 
-/* Start Example 38 Post */
+   /* Start Example 38 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1543,7 +1418,10 @@ test_example_40 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("item", "{", "$type", BCON_INT64 (10), "}");
+   filter = BCON_NEW (
+      "item", "{",
+      "$type", BCON_INT64 (10),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 40 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1564,7 +1442,10 @@ test_example_41 (mongoc_database_t *db)
    mongoc_cursor_t *cursor;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   filter = BCON_NEW ("item", "{", "$exists", BCON_BOOL (false), "}");
+   filter = BCON_NEW (
+      "item", "{",
+      "$exists", BCON_BOOL (false),
+      "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
    /* End Example 41 */
    ASSERT_CURSOR_COUNT (1, cursor);
@@ -1589,28 +1470,20 @@ test_example_42 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "status",
-                   BCON_UTF8 ("A"),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (5),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "status", BCON_UTF8 ("A"),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (5),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1619,28 +1492,20 @@ test_example_42 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "status",
-                   BCON_UTF8 ("A"),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("C"),
-                   "qty",
-                   BCON_INT64 (5),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "status", BCON_UTF8 ("A"),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("C"),
+      "qty", BCON_INT64 (5),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1649,28 +1514,20 @@ test_example_42 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "status",
-                   BCON_UTF8 ("D"),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (60),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "status", BCON_UTF8 ("D"),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (60),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1679,28 +1536,20 @@ test_example_42 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "status",
-                   BCON_UTF8 ("D"),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("A"),
-                   "qty",
-                   BCON_INT64 (40),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "status", BCON_UTF8 ("D"),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (40),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1709,34 +1558,23 @@ test_example_42 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "status",
-                   BCON_UTF8 ("A"),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (10),
-                   "w",
-                   BCON_DOUBLE (15.25),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "instock",
-                   "[",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("B"),
-                   "qty",
-                   BCON_INT64 (15),
-                   "}",
-                   "{",
-                   "warehouse",
-                   BCON_UTF8 ("C"),
-                   "qty",
-                   BCON_INT64 (35),
-                   "}",
-                   "]");
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "status", BCON_UTF8 ("A"),
+      "size", "{",
+      "h", BCON_DOUBLE (10),
+      "w", BCON_DOUBLE (15.25),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("B"),
+      "qty", BCON_INT64 (15),
+      "}","{",
+      "warehouse", BCON_UTF8 ("C"),
+      "qty", BCON_INT64 (35),
+      "}",
+      "]");
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -1750,9 +1588,9 @@ test_example_42 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 42 */
+   /* End Example 42 */
 
-/* Start Example 42 Post */
+   /* Start Example 42 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1793,8 +1631,8 @@ test_example_44 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW (
-      "projection", "{", "item", BCON_INT64 (1), "status", BCON_INT64 (1), "}");
+   opts = BCON_NEW ("projection", "{", "item", BCON_INT64 (1),
+   "status", BCON_INT64 (1), "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 44 */
    {
@@ -1828,15 +1666,9 @@ test_example_45 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW ("projection",
-                    "{",
-                    "item",
-                    BCON_INT64 (1),
-                    "status",
-                    BCON_INT64 (1),
-                    "_id",
-                    BCON_INT64 (0),
-                    "}");
+   opts = BCON_NEW ("projection", "{", "item", BCON_INT64 (1),
+   "status", BCON_INT64 (1),
+   "_id", BCON_INT64 (0), "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 45 */
    {
@@ -1870,13 +1702,8 @@ test_example_46 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW ("projection",
-                    "{",
-                    "status",
-                    BCON_INT64 (0),
-                    "instock",
-                    BCON_INT64 (0),
-                    "}");
+   opts = BCON_NEW ("projection", "{", "status", BCON_INT64 (0),
+   "instock", BCON_INT64 (0), "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 46 */
    {
@@ -1910,15 +1737,9 @@ test_example_47 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW ("projection",
-                    "{",
-                    "item",
-                    BCON_INT64 (1),
-                    "status",
-                    BCON_INT64 (1),
-                    "size.uom",
-                    BCON_INT64 (1),
-                    "}");
+   opts = BCON_NEW ("projection", "{", "item", BCON_INT64 (1),
+   "status", BCON_INT64 (1),
+   "size.uom", BCON_INT64 (1), "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 47 */
    {
@@ -1998,15 +1819,9 @@ test_example_49 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW ("projection",
-                    "{",
-                    "item",
-                    BCON_INT64 (1),
-                    "status",
-                    BCON_INT64 (1),
-                    "instock.qty",
-                    BCON_INT64 (1),
-                    "}");
+   opts = BCON_NEW ("projection", "{", "item", BCON_INT64 (1),
+   "status", BCON_INT64 (1),
+   "instock.qty", BCON_INT64 (1), "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 49 */
    {
@@ -2052,18 +1867,11 @@ test_example_50 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    filter = BCON_NEW ("status", BCON_UTF8 ("A"));
-   opts = BCON_NEW ("projection",
-                    "{",
-                    "item",
-                    BCON_INT64 (1),
-                    "status",
-                    BCON_INT64 (1),
-                    "instock",
-                    "{",
-                    "$slice",
-                    BCON_INT64 (-1),
-                    "}",
-                    "}");
+   opts = BCON_NEW ("projection", "{", "item", BCON_INT64 (1),
+   "status", BCON_INT64 (1),
+   "instock", "{",
+   "$slice", BCON_INT64 (-1),
+   "}", "}");
    cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
    /* End Example 50 */
    {
@@ -2103,21 +1911,15 @@ test_example_51 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("canvas"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (28),
-                   "w",
-                   BCON_DOUBLE (35.5),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("canvas"),
+      "qty", BCON_INT64 (100),
+      "size", "{",
+      "h", BCON_DOUBLE (28),
+      "w", BCON_DOUBLE (35.5),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2126,21 +1928,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2149,21 +1945,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("mat"),
-                   "qty",
-                   BCON_INT64 (85),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (27.9),
-                   "w",
-                   BCON_DOUBLE (35.5),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("mat"),
+      "qty", BCON_INT64 (85),
+      "size", "{",
+      "h", BCON_DOUBLE (27.9),
+      "w", BCON_DOUBLE (35.5),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2172,21 +1962,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("mousepad"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (19),
-                   "w",
-                   BCON_DOUBLE (22.85),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("P"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("mousepad"),
+      "qty", BCON_INT64 (25),
+      "size", "{",
+      "h", BCON_DOUBLE (19),
+      "w", BCON_DOUBLE (22.85),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("P"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2195,21 +1979,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "qty",
-                   BCON_INT64 (50),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("P"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "qty", BCON_INT64 (50),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("P"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2218,21 +1996,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "qty", BCON_INT64 (100),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2241,21 +2013,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "qty",
-                   BCON_INT64 (75),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "qty", BCON_INT64 (75),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2264,21 +2030,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "qty",
-                   BCON_INT64 (45),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (10),
-                   "w",
-                   BCON_DOUBLE (15.25),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "qty", BCON_INT64 (45),
+      "size", "{",
+      "h", BCON_DOUBLE (10),
+      "w", BCON_DOUBLE (15.25),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2287,21 +2047,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("sketchbook"),
-                   "qty",
-                   BCON_INT64 (80),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("sketchbook"),
+      "qty", BCON_INT64 (80),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2310,21 +2064,15 @@ test_example_51 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("sketch pad"),
-                   "qty",
-                   BCON_INT64 (95),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30.5),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("sketch pad"),
+      "qty", BCON_INT64 (95),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30.5),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2338,9 +2086,9 @@ test_example_51 (mongoc_database_t *db)
    if (!r) {
       MONGOC_ERROR ("%s\n", error.message);
    }
-/* End Example 51 */
+   /* End Example 51 */
 
-/* Start Example 51 Post */
+   /* Start Example 51 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2361,22 +2109,18 @@ test_example_52 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW ("item", BCON_UTF8 ("paper"));
-   update = BCON_NEW ("$set",
-                      "{",
-                      "size.uom",
-                      BCON_UTF8 ("cm"),
-                      "status",
-                      BCON_UTF8 ("P"),
-                      "}",
-                      "$currentDate",
-                      "{",
-                      "lastModified",
-                      BCON_BOOL (true),
-                      "}");
+   update = BCON_NEW (
+      "$set", "{",
+      "size.uom", BCON_UTF8 ("cm"),
+      "status", BCON_UTF8 ("P"),
+      "}",
+      "$currentDate", "{",
+      "lastModified", BCON_BOOL (true),
+      "}");
 
    /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (
-      collection, MONGOC_UPDATE_NONE, selector, update, NULL, &error);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector,
+                                 update, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2391,8 +2135,7 @@ test_example_52 (mongoc_database_t *db)
       const bson_t *doc;
 
       filter = BCON_NEW ("item", BCON_UTF8 ("paper"));
-      cursor =
-         mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
       while (mongoc_cursor_next (cursor, &doc)) {
          ASSERT_CMPSTR (bson_lookup_utf8 (doc, "size.uom"), "cm");
          ASSERT_CMPSTR (bson_lookup_utf8 (doc, "status"), "P");
@@ -2401,7 +2144,7 @@ test_example_52 (mongoc_database_t *db)
       mongoc_cursor_destroy (cursor);
       bson_destroy (filter);
    }
-/* Start Example 52 Post */
+   /* Start Example 52 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 52 Post */
@@ -2419,22 +2162,20 @@ test_example_53 (mongoc_database_t *db)
    bson_error_t error;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   selector = BCON_NEW ("qty", "{", "$lt", BCON_INT64 (50), "}");
-   update = BCON_NEW ("$set",
-                      "{",
-                      "size.uom",
-                      BCON_UTF8 ("in"),
-                      "status",
-                      BCON_UTF8 ("P"),
-                      "}",
-                      "$currentDate",
-                      "{",
-                      "lastModified",
-                      BCON_BOOL (true),
-                      "}");
+   selector = BCON_NEW (
+      "qty", "{",
+      "$lt", BCON_INT64 (50),
+      "}");
+   update = BCON_NEW (
+      "$set", "{",
+      "size.uom", BCON_UTF8 ("in"),
+      "status", BCON_UTF8 ("P"),
+      "}",
+      "$currentDate", "{",
+      "lastModified", BCON_BOOL (true),
+      "}");
 
-   r = mongoc_collection_update (
-      collection, MONGOC_UPDATE_MULTI_UPDATE, selector, update, NULL, &error);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_MULTI_UPDATE, selector, update, NULL, &error);
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -2448,9 +2189,11 @@ test_example_53 (mongoc_database_t *db)
       mongoc_cursor_t *cursor;
       const bson_t *doc;
 
-      filter = BCON_NEW ("qty", "{", "$lt", BCON_INT64 (50), "}");
-      cursor =
-         mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
+      filter = BCON_NEW (
+         "qty", "{",
+         "$lt", BCON_INT64 (50),
+         "}");
+      cursor = mongoc_collection_find_with_opts (collection, filter, NULL, NULL);
       while (mongoc_cursor_next (cursor, &doc)) {
          ASSERT_CMPSTR (bson_lookup_utf8 (doc, "size.uom"), "in");
          ASSERT_CMPSTR (bson_lookup_utf8 (doc, "status"), "P");
@@ -2459,7 +2202,7 @@ test_example_53 (mongoc_database_t *db)
       mongoc_cursor_destroy (cursor);
       bson_destroy (filter);
    }
-/* Start Example 53 Post */
+   /* Start Example 53 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 53 Post */
@@ -2478,27 +2221,20 @@ test_example_54 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW ("item", BCON_UTF8 ("paper"));
-   replacement = BCON_NEW ("item",
-                           BCON_UTF8 ("paper"),
-                           "instock",
-                           "[",
-                           "{",
-                           "warehouse",
-                           BCON_UTF8 ("A"),
-                           "qty",
-                           BCON_INT64 (60),
-                           "}",
-                           "{",
-                           "warehouse",
-                           BCON_UTF8 ("B"),
-                           "qty",
-                           BCON_INT64 (40),
-                           "}",
-                           "]");
+   replacement = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "instock", "[",
+      "{",
+      "warehouse", BCON_UTF8 ("A"),
+      "qty", BCON_INT64 (60),
+      "}","{",
+      "warehouse", BCON_UTF8 ("B"),
+      "qty", BCON_INT64 (40),
+      "}",
+      "]");
 
    /* MONGOC_UPDATE_NONE means "no special options" */
-   r = mongoc_collection_update (
-      collection, MONGOC_UPDATE_NONE, selector, replacement, NULL, &error);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE, selector, replacement, NULL, &error);
    bson_destroy (selector);
    bson_destroy (replacement);
 
@@ -2515,8 +2251,7 @@ test_example_54 (mongoc_database_t *db)
 
       filter = BCON_NEW ("item", BCON_UTF8 ("paper"));
       opts = BCON_NEW ("projection", "{", "_id", BCON_INT64 (0), "}");
-      cursor =
-         mongoc_collection_find_with_opts (collection, filter, opts, NULL);
+      cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
       while (mongoc_cursor_next (cursor, &doc)) {
          bson_t subdoc;
 
@@ -2530,7 +2265,7 @@ test_example_54 (mongoc_database_t *db)
       bson_destroy (opts);
       bson_destroy (filter);
    }
-/* Start Example 54 Post */
+   /* Start Example 54 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 54 Post */
@@ -2550,21 +2285,15 @@ test_example_55 (mongoc_database_t *db)
 
    collection = mongoc_database_get_collection (db, "inventory");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("journal"),
-                   "qty",
-                   BCON_INT64 (25),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (14),
-                   "w",
-                   BCON_DOUBLE (21),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("journal"),
+      "qty", BCON_INT64 (25),
+      "size", "{",
+      "h", BCON_DOUBLE (14),
+      "w", BCON_DOUBLE (21),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2573,21 +2302,15 @@ test_example_55 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("notebook"),
-                   "qty",
-                   BCON_INT64 (50),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("P"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("notebook"),
+      "qty", BCON_INT64 (50),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("P"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2596,21 +2319,15 @@ test_example_55 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("paper"),
-                   "qty",
-                   BCON_INT64 (100),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (8.5),
-                   "w",
-                   BCON_DOUBLE (11),
-                   "uom",
-                   BCON_UTF8 ("in"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("paper"),
+      "qty", BCON_INT64 (100),
+      "size", "{",
+      "h", BCON_DOUBLE (8.5),
+      "w", BCON_DOUBLE (11),
+      "uom", BCON_UTF8 ("in"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2619,21 +2336,15 @@ test_example_55 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("planner"),
-                   "qty",
-                   BCON_INT64 (75),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (22.85),
-                   "w",
-                   BCON_DOUBLE (30),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("D"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("planner"),
+      "qty", BCON_INT64 (75),
+      "size", "{",
+      "h", BCON_DOUBLE (22.85),
+      "w", BCON_DOUBLE (30),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("D"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2642,21 +2353,15 @@ test_example_55 (mongoc_database_t *db)
       goto done;
    }
 
-   doc = BCON_NEW ("item",
-                   BCON_UTF8 ("postcard"),
-                   "qty",
-                   BCON_INT64 (45),
-                   "size",
-                   "{",
-                   "h",
-                   BCON_DOUBLE (10),
-                   "w",
-                   BCON_DOUBLE (15.25),
-                   "uom",
-                   BCON_UTF8 ("cm"),
-                   "}",
-                   "status",
-                   BCON_UTF8 ("A"));
+   doc = BCON_NEW (
+      "item", BCON_UTF8 ("postcard"),
+      "qty", BCON_INT64 (45),
+      "size", "{",
+      "h", BCON_DOUBLE (10),
+      "w", BCON_DOUBLE (15.25),
+      "uom", BCON_UTF8 ("cm"),
+      "}",
+      "status", BCON_UTF8 ("A"));
 
    r = mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
    bson_destroy (doc);
@@ -2672,7 +2377,7 @@ test_example_55 (mongoc_database_t *db)
    }
    /* End Example 55 */
    ASSERT_COUNT (5, collection);
-/* Start Example 55 Post */
+   /* Start Example 55 Post */
 done:
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2694,8 +2399,7 @@ test_example_57 (mongoc_database_t *db)
    selector = BCON_NEW ("status", BCON_UTF8 ("A"));
 
    /* MONGOC_REMOVE_NONE means "no special options" */
-   r = mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
+   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
@@ -2704,7 +2408,7 @@ test_example_57 (mongoc_database_t *db)
    }
    /* End Example 57 */
    ASSERT_COUNT (3, collection);
-/* Start Example 57 Post */
+   /* Start Example 57 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 57 Post */
@@ -2723,8 +2427,7 @@ test_example_58 (mongoc_database_t *db)
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW ("status", BCON_UTF8 ("D"));
 
-   r = mongoc_collection_remove (
-      collection, MONGOC_REMOVE_SINGLE_REMOVE, selector, NULL, &error);
+   r = mongoc_collection_remove (collection, MONGOC_REMOVE_SINGLE_REMOVE, selector, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
@@ -2733,7 +2436,7 @@ test_example_58 (mongoc_database_t *db)
    }
    /* End Example 58 */
    ASSERT_COUNT (2, collection);
-/* Start Example 58 Post */
+   /* Start Example 58 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 58 Post */
@@ -2753,8 +2456,7 @@ test_example_56 (mongoc_database_t *db)
    selector = BCON_NEW (NULL);
 
    /* MONGOC_REMOVE_NONE means "no special options" */
-   r = mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
+   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
@@ -2763,7 +2465,7 @@ test_example_56 (mongoc_database_t *db)
    }
    /* End Example 56 */
    ASSERT_COUNT (0, collection);
-/* Start Example 56 Post */
+   /* Start Example 56 Post */
 done:
    mongoc_collection_destroy (collection);
    /* End Example 56 Post */
@@ -2771,7 +2473,7 @@ done:
 
 
 static void
-test_sample_commands ()
+test_sample_commands (void)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
