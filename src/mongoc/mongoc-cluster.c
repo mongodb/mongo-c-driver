@@ -1694,6 +1694,10 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
       sd = _mongoc_stream_run_ismaster (
          cluster, stream, scanner_node->host.host_and_port, server_id);
+
+      if (!sd) {
+         return NULL;
+      }
    }
 
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
