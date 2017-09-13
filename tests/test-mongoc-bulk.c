@@ -15,32 +15,6 @@
 
 /*--------------------------------------------------------------------------
  *
- * check_n_modified --
- *
- *       Check a bulk operation reply's nModified field is correct or absent.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Aborts if the field is incorrect.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-check_n_modified (const bson_t *reply, int32_t n_modified)
-{
-   bson_iter_t iter;
-
-   BSON_ASSERT (bson_iter_init_find (&iter, reply, "nModified"));
-   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
-   BSON_ASSERT (bson_iter_int32 (&iter) == n_modified);
-}
-
-
-/*--------------------------------------------------------------------------
- *
  * assert_error_count --
  *
  *       Check the length of a bulk operation reply's writeErrors.
@@ -224,11 +198,11 @@ test_bulk (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 4,"
                  " 'nMatched':  4,"
+                 " 'nModified': 4,"
                  " 'nRemoved':  4,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 4);
    ASSERT_COUNT (0, collection);
 
    bson_destroy (&reply);
@@ -377,10 +351,9 @@ test_insert (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0}");
-
-   check_n_modified (&reply, 0);
 
    bson_destroy (&reply);
    ASSERT_COUNT (2, collection);
@@ -525,12 +498,12 @@ test_upsert (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 1,"
                  " 'upserted':  [{'index': 0, '_id': 1234}],"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -550,12 +523,12 @@ test_upsert (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'upserted':  {'$exists': false},"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection); /* doc remains from previous operation */
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -705,6 +678,7 @@ test_upserted_index (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted':    5,"
                  " 'nMatched':    34,"
+                 " 'nModified':   34,"
                  " 'nRemoved':     0,"
                  " 'nUpserted':   13,"
                  " 'upserted': ["
@@ -724,7 +698,6 @@ test_upserted_index (bool ordered)
                  " ],"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 34);
    ASSERT_COUNT (18, collection);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -790,12 +763,12 @@ test_update_one (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  1,"
+                 " 'nModified': 1,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'upserted': {'$exists': false},"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 1);
    ASSERT_COUNT (2, collection);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -861,12 +834,12 @@ test_replace_one (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  1,"
+                 " 'nModified': 1,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'upserted': {'$exists': false},"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 1);
    ASSERT_COUNT (2, collection);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -989,12 +962,12 @@ test_upsert_large (void *ctx)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  1,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 1,"
                  " 'upserted': [{'index': 0, '_id': 'aaaaaaaaaa'}],"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -1046,12 +1019,12 @@ test_upsert_huge (void *ctx)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 1,"
                  " 'upserted':  [{'index': 0, '_id': 1}],"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection);
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
@@ -1139,13 +1112,13 @@ test_update (bool ordered)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  2,"
+                 " 'nModified': 1,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'upserted':  {'$exists': false},"
                  " 'writeErrors': []}");
 
    /* one doc already had "foo": "bar" */
-   check_n_modified (&reply, 1);
    ASSERT_COUNT (3, collection);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -1832,12 +1805,12 @@ test_index_offset (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  1,"
                  " 'nUpserted': 1,"
                  " 'upserted': [{'index': 1, '_id': 1234}],"
                  " 'writeErrors': []}");
 
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
@@ -1881,12 +1854,12 @@ test_single_ordered_bulk (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched':  1,"
+                 " 'nModified': 1,"
                  " 'nRemoved':  1,"
                  " 'nUpserted': 1,"
                  " 'upserted': [{'index': 2, '_id': {'$exists': true}}]"
                  "}");
 
-   check_n_modified (&reply, 1);
    ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
@@ -1927,11 +1900,11 @@ test_insert_continue_on_error (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 2,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}, {'index': 3}]}");
 
-   check_n_modified (&reply, 0);
    assert_error_count (2, &reply);
    ASSERT_COUNT (2, collection);
 
@@ -1981,11 +1954,11 @@ test_update_continue_on_error (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  2,"
+                 " 'nModified': 2,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   check_n_modified (&reply, 2);
    assert_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
    ASSERT_CMPINT (1,
@@ -2042,11 +2015,11 @@ test_remove_continue_on_error (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 0,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  2,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': [{'index': 1}]}");
 
-   check_n_modified (&reply, 0);
    assert_error_count (1, &reply);
    ASSERT_COUNT (1, collection);
 
@@ -2090,6 +2063,7 @@ test_single_error_ordered_bulk (void)
    ASSERT_MATCH (&reply,
                  "{'nInserted': 1,"
                  " 'nMatched':  0,"
+                 " 'nModified': 0,"
                  " 'nRemoved':  0,"
                  " 'nUpserted': 0,"
                  " 'writeErrors': ["
@@ -2101,7 +2075,6 @@ test_single_error_ordered_bulk (void)
                   */
                  "}");
    assert_error_count (1, &reply);
-   check_n_modified (&reply, 0);
    ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
