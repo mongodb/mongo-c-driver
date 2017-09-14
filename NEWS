@@ -1,3 +1,8 @@
+mongo-c-driver 1.4.3
+====================
+
+No change since 1.4.2, released to keep pace with libbson.
+
 mongo-c-driver 1.4.2
 ====================
 
