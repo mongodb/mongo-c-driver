@@ -409,6 +409,11 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
    int64_t max_staleness_seconds;
    int32_t max_wire_version;
 
+   if (td->compatibility_error.code) {
+      memcpy (error, &td->compatibility_error, sizeof (bson_error_t));
+      return false;
+   }
+
    if (!read_prefs) {
       /* NULL means read preference Primary */
       return true;

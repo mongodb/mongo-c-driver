@@ -38,7 +38,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-scram-private.h"
-
+#include "mongoc-cmd-private.h"
 
 BSON_BEGIN_DECLS
 
@@ -82,7 +82,10 @@ void
 mongoc_cluster_destroy (mongoc_cluster_t *cluster);
 
 void
-mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t id);
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
+                                uint32_t id,
+                                bool invalidate,
+                                const bson_error_t *why);
 
 int32_t
 mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
@@ -101,8 +104,7 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
                               char *buffer);
 
 bool
-mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
-                               uint32_t server_id);
+mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id);
 
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t *cluster,
@@ -135,21 +137,16 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
 bool
 mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
+                                      mongoc_cmd_parts_t *parts,
                                       mongoc_server_stream_t *server_stream,
-                                      mongoc_query_flags_t flags,
-                                      const char *db_name,
-                                      const bson_t *command,
-                                      int64_t operation_id,
                                       bson_t *reply,
                                       bson_error_t *error);
 
 bool
 mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
+                                    mongoc_cmd_parts_t *parts,
                                     mongoc_stream_t *stream,
                                     uint32_t server_id,
-                                    mongoc_query_flags_t flags,
-                                    const char *db_name,
-                                    const bson_t *command,
                                     bson_t *reply,
                                     bson_error_t *error);
 

@@ -75,6 +75,15 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
 
+  "install ssl":
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          set -o xtrace
+          SSL=${SSL} sh .evergreen/install-ssl.sh
+
   "fetch build":
     - command: shell.exec
       params:
@@ -325,7 +334,6 @@ functions:
         working_dir: "mongoc"
         script: |
               sudo apt-get install -y awscli || true
-              sudo /opt/csw/bin/pkgutil -y -i sasl_dev sasl_gssapi || true
 
   "prepare kerberos" :
     - command: shell.exec
@@ -429,7 +437,42 @@ tasks:
         - func: "upload release"
         - func: "upload build"
 
-    - name: debug-compile-zlib
+    - name: hardened-compile
+      tags: ["hardened"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
+              export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=no sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: test-latest-server-hardened
+      tags: ["hardened"]
+      depends_on:
+        - name: "hardened-compile"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "hardened-compile"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+
+
+    - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
       commands:
         - command: shell.exec
@@ -439,10 +482,10 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=no --enable-zlib=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=bundled sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: debug-compile-snappy
+    - name: debug-compile-compression-snappy
       tags: ["snappy", "compression"]
       commands:
         - command: shell.exec
@@ -452,7 +495,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=no" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=no sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -465,17 +508,17 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=bundled sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: test-latest-server-zlib
+    - name: test-latest-server-compression-zlib
       tags: ["zlib", "compression"]
       depends_on:
-        - name: "debug-compile-zlib"
+        - name: "debug-compile-compression-zlib"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-zlib"
+            BUILD_NAME: "debug-compile-compression-zlib"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -490,14 +533,14 @@ tasks:
             COMPRESSORS: zlib
 
 
-    - name: test-latest-server-snappy
+    - name: test-latest-server-compression-snappy
       tags: ["snappy", "compression"]
       depends_on:
-        - name: "debug-compile-snappy"
+        - name: "debug-compile-compression-snappy"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-snappy"
+            BUILD_NAME: "debug-compile-compression-snappy"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -642,7 +685,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=no sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-undefined
       commands:
@@ -651,7 +694,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" SNAPPY=no sh .evergreen/compile.sh
 
     - name: debug-compile-scan-build
       tags: ["debug-compile", "special", "scan-build", "clang"]
@@ -756,8 +799,8 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
     - name: link-with-cmake-windows-ssl
       depends_on:
@@ -778,8 +821,8 @@ tasks:
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
               export ENABLE_SSL=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
     - name: link-with-cmake-mingw
       depends_on:
@@ -797,7 +840,7 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.bat
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
 
     - name: link-with-pkg-config
       depends_on:
@@ -6390,6 +6433,9 @@ tasks:
 
     - name: build-and-run-authentication-tests-openssl-0.9.8
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-0.9.8zh
         - command: shell.exec
           type: test
           params:
@@ -6397,12 +6443,15 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-0.9.8zh sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.0
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.0t
         - command: shell.exec
           type: test
           params:
@@ -6410,12 +6459,15 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.0t sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.1
       commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.1u
         - command: shell.exec
           type: test
           params:
@@ -6423,38 +6475,16 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u sh .evergreen/compile.sh
-        - func: "run auth tests"
-        - func: "upload build"
-
-    - name: build-and-run-authentication-tests-openssl-1.0.2
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.2l sh .evergreen/compile.sh
-        - func: "run auth tests"
-        - func: "upload build"
-
-    - name: build-and-run-authentication-tests-openssl-1.1.0
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.1.0f sh .evergreen/compile.sh
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.1-fips
       commands:
+        - func: "install ssl"
+          vars:
+             SSL: openssl-1.0.1u-fips
         - command: shell.exec
           type: test
           params:
@@ -6462,12 +6492,48 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl-1.0.1u-fips sh .evergreen/compile.sh
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl OPENSSL_FIPS=1 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.2l
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.1.0f
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-libressl-2.5
       commands:
+        - func: "install ssl"
+          vars:
+             SSL: libressl-2.5.2
         - command: shell.exec
           type: test
           params:
@@ -6475,7 +6541,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl-2.5.2 sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6703,6 +6769,8 @@ buildvariants:
   run_on:
     - rhel70
   tasks:
+    - ".hardened"
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6780,70 +6848,27 @@ buildvariants:
     - ".3.4 .nossl !.nosasl"
       # Ubuntu16.04 only supports MongoDB 3.4+
 
-# Interesting platforms
-#- name: solaris
-#  display_name: "*Solaris (x86-64) (GCC 4.9.2)"
-#  expansions:
-#    CC: "gcc"
-#    MARCH: "x86_64"
-#  batchtime: 1440 # 1 day
-#  run_on:
-#    - solaris
-#  tasks:
-#    - "release-compile"
-#    - "debug-compile"
-#    - "debug-compile-nosasl-openssl"
-#    - ".debug-compile !.sspi .nossl"
-#    - ".authentication-tests .nosasl !.ssl !.sspi" # Revert me: CDRIVER-2000
-#    - ".authentication-tests .openssl"
-#    - ".latest .nossl" # No MongoDB SSL builds available for any version
-#    - ".3.4 .nossl" # No MongoDB SSL builds available for any version
-#    - ".3.2 .nossl !.nosasl"
-#    - ".3.0 .nossl !.nosasl"
-#    - ".2.6 .nossl !.nosasl"
-#
-#- name: solaris-32
-#  display_name: "Solaris (i386) (GCC 4.9.2)"
-#  expansions:
-#    CC: "gcc"
-#    MARCH: "i386"
-#  batchtime: 1440 # 1 day
-#  run_on:
-#    - solaris
-#  tasks:
-#    - "release-compile"
-#    - "debug-compile"
-#    - ".debug-compile !.sspi .nossl .nosasl"
-#    - ".authentication-tests .nosasl !.ssl"
-#    - ".latest .nossl .nosasl"
-#    - ".3.4 .nossl .nosasl"
-#      # We don't have i386 builds of OpenSSL or Cyrus SASL installed
-
 - name: darwin
-  display_name: "*Darwin, OS X (Apple LLVM)"
+  display_name: "*Darwin, macOS (Apple LLVM)"
   expansions:
     CC: "clang"
   run_on:
-    - osx-1010
+    - macos-1012
   tasks:
+    - ".compression"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .darwinssl"
-    - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
     - ".authentication-tests !.ssl !.sspi"
-    - ".authentication-tests .openssl"
     - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
-    - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.4 .darwinssl !.nosasl .server"
-    - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .darwinssl !.nosasl .server"
-    - ".3.2 .openssl !.nosasl .server"
     - ".3.2 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
     - ".2.4 .nossl !.nosasl"
@@ -6855,6 +6880,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6885,6 +6911,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
       # No 32bit OpenSSL builds
@@ -6912,6 +6939,7 @@ buildvariants:
   run_on:
     - windows-64-vs2013-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6968,6 +6996,7 @@ buildvariants:
   run_on:
     - windows-64-vs2010-compile
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -7040,6 +7069,7 @@ buildvariants:
   - rhel71-power8-build
   - rhel71-power8-test
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -7153,6 +7183,7 @@ buildvariants:
   - suse12-zseries-build
   - suse12-zseries-test
   tasks:
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"

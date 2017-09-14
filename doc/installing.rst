@@ -16,7 +16,6 @@ The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/wate
 - Microsoft Windows Server 2008
 - RHEL 7.0, 7.1, 7.2
 - SUSE 12
-- smartOS (sunos / Solaris)
 - Ubuntu 12.04, 14.04, 16.04
 - Clang 3.4, 3.5, 3.7, 3.8
 - GCC 4.6, 4.8, 4.9, 5.3
@@ -99,14 +98,15 @@ If ``configure`` completed successfully, you'll see something like the following
     Compile with debug symbols (slow)                : no
     Enable GCC build optimization                    : yes
     Enable automatic init and cleanup                : no
+    Enable maintainer flags                          : no
     Code coverage support                            : no
     Cross Compiling                                  : no
     Fast counters                                    : no
     Shared memory performance counters               : yes
     SASL                                             : sasl2
     SSL                                              : openssl
-    Snappy Compression                               : yes
-    Zlib Compression                                 : yes
+    Snappy Compression                               : bundled
+    Zlib Compression                                 : bundled
     Libbson                                          : bundled
 
   Documentation:
@@ -258,6 +258,8 @@ Now let's do the same for the MongoDB C driver.
 
   cd mongo-c-driver-|release|
   cmake -G "Visual Studio 14 2015 Win64" \\
+    "-DENABLE_SSL=WINDOWS" \\
+    "-DENABLE_SASL=SSPI" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
     "-DCMAKE_BUILD_TYPE=Release" # Defaults to debug builds
@@ -311,4 +313,12 @@ To compile against the Windows native SSPI, configure the driver like so:
     "-DENABLE_SASL=SSPI" \
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
+
+OpenSSL support on Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For backwards compatibility CMake will default to OpenSSL support.
+If not found, it will fallback to native TLS support provided by the platform.
+
+OpenSSL 1.1.0 support requires CMake 3.7 or later on Windows.
 

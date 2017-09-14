@@ -193,10 +193,10 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       /* evaluate once */                                \
       int64_t _a = (a);                                  \
       int64_t _b = (b);                                  \
-      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
+      if (!(_a > (_b * 2) / 3 && (_a < (_b * 3) / 2))) { \
          fprintf (stderr,                                \
                   "FAIL\n\nAssert Failure: %" PRId64     \
-                  " not within 20%% of %" PRId64 "\n"    \
+                  " not within 50%% of %" PRId64 "\n"    \
                   "%s:%d  %s()\n",                       \
                   _a,                                    \
                   _b,                                    \
@@ -254,18 +254,18 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CONTAINS(a, b)                                        \
-   do {                                                              \
-      if (NULL == strstr ((a), (b))) {                               \
-         fprintf (stderr,                                            \
-                  "%s:%d %s(): : [%s] does not contain with [%s]\n", \
-                  __FILE__,                                          \
-                  __LINE__,                                          \
-                  BSON_FUNC,                                         \
-                  a,                                                 \
-                  b);                                                \
-         abort ();                                                   \
-      }                                                              \
+#define ASSERT_CONTAINS(a, b)                                 \
+   do {                                                       \
+      if (NULL == strstr ((a), (b))) {                        \
+         fprintf (stderr,                                     \
+                  "%s:%d %s(): [%s] does not contain [%s]\n", \
+                  __FILE__,                                   \
+                  __LINE__,                                   \
+                  BSON_FUNC,                                  \
+                  a,                                          \
+                  b);                                         \
+         abort ();                                            \
+      }                                                       \
    } while (0)
 
 #define ASSERT_STARTSWITH(a, b)                                    \
@@ -342,7 +342,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
          fprintf (stderr,                                                \
                   "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
                   (_field),                                              \
-                  bson_as_extended_json (_bson, NULL));                  \
+                  bson_as_canonical_extended_json (_bson, NULL));        \
          abort ();                                                       \
       }                                                                  \
    } while (0)
@@ -354,7 +354,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             stderr,                                                        \
             "FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
             (_field),                                                      \
-            bson_as_extended_json (_bson, NULL));                          \
+            bson_as_canonical_extended_json (_bson, NULL));                \
          abort ();                                                         \
       }                                                                    \
    } while (0)
@@ -372,21 +372,6 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #define gettestpid _getpid
 #else
 #define gettestpid getpid
-#endif
-
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#define BEGIN_IGNORE_DEPRECATIONS  \
-   _Pragma ("GCC diagnostic push") \
-      _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("GCC diagnostic pop")
-#elif defined(__clang__)
-#define BEGIN_IGNORE_DEPRECATIONS    \
-   _Pragma ("clang diagnostic push") \
-      _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
-#define END_IGNORE_DEPRECATIONS _Pragma ("clang diagnostic pop")
-#else
-#define BEGIN_IGNORE_DEPRECATIONS
-#define END_IGNORE_DEPRECATIONS
 #endif
 
 #define ASSERT_OR_PRINT_ERRNO(_statement, _errcode)                          \

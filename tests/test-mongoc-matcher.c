@@ -2,6 +2,7 @@
 #include <bcon.h>
 #include <mongoc.h>
 #include <mongoc-matcher-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 
@@ -58,7 +59,7 @@ test_mongoc_matcher_basic (void)
 
 #if 0
    {
-      char *out = bson_as_extended_json(&matcher_query, NULL);
+      char *out = bson_as_canonical_extended_json(&matcher_query, NULL);
       fprintf(stderr, "bson: %s\n", out);
       free(out);
    }

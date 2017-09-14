@@ -14,6 +14,8 @@ if test -z "$GREP"; then
 fi
 
 AC_CHECK_HEADERS_ONCE([strings.h])
+AC_CHECK_HEADERS_ONCE([unistd.h])
+AC_CHECK_HEADERS_ONCE([stdarg.h])
 
 # Optional for documentation
 AC_PATH_PROG(SPHINX_BUILD, sphinx-build)

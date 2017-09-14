@@ -13,16 +13,12 @@ Synopsis
                                   const bson_t *keys,
                                   const mongoc_index_opt_t *opt,
                                   bson_error_t *error)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_index);
+     BSON_GNUC_DEPRECATED;
 
 Deprecated
 ----------
 
-.. warning::
-
-  This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_collection_create_index()` instead.
+This function is deprecated and should not be used in new code. See :doc:`create-indexes`.
 
 Parameters
 ----------

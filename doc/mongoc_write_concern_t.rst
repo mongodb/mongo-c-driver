@@ -63,6 +63,7 @@ The write concern ``MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED`` (value -1) is a depr
     mongoc_write_concern_get_wtag
     mongoc_write_concern_get_wtimeout
     mongoc_write_concern_is_acknowledged
+    mongoc_write_concern_is_default
     mongoc_write_concern_is_valid
     mongoc_write_concern_journal_is_set
     mongoc_write_concern_new

@@ -7,6 +7,7 @@ fam_opts (mongoc_collection_t *collection)
    bson_t *update;
    bson_error_t error;
    bson_t query = BSON_INITIALIZER;
+   mongoc_write_concern_t *wc;
    bson_t extra = BSON_INITIALIZER;
    bool success;
 
@@ -25,6 +26,11 @@ fam_opts (mongoc_collection_t *collection)
    /* Abort if the operation takes too long. */
    mongoc_find_and_modify_opts_set_max_time_ms (opts, 100);
 
+   /* Set write concern w: 2 */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_write_concern_append (wc, &extra);
+
    /* Some future findAndModify option the driver doesn't support conveniently
     */
    BSON_APPEND_INT32 (&extra, "futureOption", 42);
@@ -36,7 +42,7 @@ fam_opts (mongoc_collection_t *collection)
    if (success) {
       char *str;
 
-      str = bson_as_extended_json (&reply, NULL);
+      str = bson_as_canonical_extended_json (&reply, NULL);
       printf ("%s\n", str);
       bson_free (str);
    } else {
@@ -48,5 +54,6 @@ fam_opts (mongoc_collection_t *collection)
    bson_destroy (&extra);
    bson_destroy (update);
    bson_destroy (&query);
+   mongoc_write_concern_destroy (wc);
    mongoc_find_and_modify_opts_destroy (opts);
 }

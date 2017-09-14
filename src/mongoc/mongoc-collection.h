@@ -77,7 +77,7 @@ MONGOC_EXPORT (bool)
 mongoc_collection_read_write_command_with_opts (
    mongoc_collection_t *collection,
    const bson_t *command,
-   const mongoc_read_prefs_t *read_prefs,
+   const mongoc_read_prefs_t *read_prefs /* IGNORED */,
    const bson_t *opts,
    bson_t *reply,
    bson_error_t *error);
@@ -123,20 +123,21 @@ MONGOC_EXPORT (bool)
 mongoc_collection_create_index (mongoc_collection_t *collection,
                                 const bson_t *keys,
                                 const mongoc_index_opt_t *opt,
-                                bson_error_t *error);
+                                bson_error_t *error) BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (bool)
 mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
                                           const bson_t *keys,
                                           const mongoc_index_opt_t *opt,
                                           const bson_t *opts,
                                           bson_t *reply,
-                                          bson_error_t *error);
+                                          bson_error_t *error)
+   BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (bool)
 mongoc_collection_ensure_index (mongoc_collection_t *collection,
                                 const bson_t *keys,
                                 const mongoc_index_opt_t *opt,
                                 bson_error_t *error)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_index);
+   BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                 bson_error_t *error);
@@ -190,7 +191,8 @@ mongoc_collection_save (mongoc_collection_t *collection,
                         const bson_t *document,
                         const mongoc_write_concern_t *write_concern,
                         bson_error_t *error)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert or mongoc_collection_update);
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert or
+                             mongoc_collection_update);
 MONGOC_EXPORT (bool)
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,

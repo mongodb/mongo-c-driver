@@ -37,6 +37,7 @@ There are a number of built in stream types that come with mongoc. The default c
     mongoc_stream_read
     mongoc_stream_readv
     mongoc_stream_setsockopt
+    mongoc_stream_timed_out
     mongoc_stream_uncork
     mongoc_stream_write
     mongoc_stream_writev

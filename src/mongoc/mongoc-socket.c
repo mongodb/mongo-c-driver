@@ -24,6 +24,9 @@
 #include "mongoc-host-list.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-trace-private.h"
+#ifdef _WIN32
+#include <Mstcpip.h>
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
@@ -35,6 +38,35 @@
 
 /* either struct sockaddr or void, depending on platform */
 typedef MONGOC_SOCKET_ARG2 mongoc_sockaddr_t;
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_capture_errno --
+ *
+ *       Save the errno state for contextual use.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
+{
+#ifdef _WIN32
+   errno = sock->errno_ = WSAGetLastError ();
+#else
+   sock->errno_ = errno;
+#endif
+   TRACE ("setting errno: %d %s", sock->errno_, strerror (sock->errno_));
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -96,16 +128,15 @@ _mongoc_socket_setnonblock (int sd)
  */
 
 static bool
-#ifdef _WIN32
-_mongoc_socket_wait (SOCKET sd, /* IN */
-#else
-_mongoc_socket_wait (int sd, /* IN */
-#endif
-                     int events,        /* IN */
-                     int64_t expire_at) /* IN */
+_mongoc_socket_wait (mongoc_socket_t *sock, /* IN */
+                     int events,            /* IN */
+                     int64_t expire_at)     /* IN */
 {
 #ifdef _WIN32
-   WSAPOLLFD pfd;
+   fd_set read_fds;
+   fd_set write_fds;
+   fd_set error_fds;
+   struct timeval timeout_tv;
 #else
    struct pollfd pfd;
 #endif
@@ -115,16 +146,28 @@ _mongoc_socket_wait (int sd, /* IN */
 
    ENTRY;
 
+   BSON_ASSERT (sock);
    BSON_ASSERT (events);
 
-   pfd.fd = sd;
 #ifdef _WIN32
-   pfd.events = events;
-#else
-   pfd.events = events | POLLERR | POLLHUP;
-#endif
-   pfd.revents = 0;
+   FD_ZERO (&read_fds);
+   FD_ZERO (&write_fds);
+   FD_ZERO (&error_fds);
 
+   if (events & POLLIN) {
+      FD_SET (sock->sd, &read_fds);
+   }
+
+   if (events & POLLOUT) {
+      FD_SET (sock->sd, &write_fds);
+   }
+
+   FD_SET (sock->sd, &error_fds);
+#else
+   pfd.fd = sock->sd;
+   pfd.events = events | POLLERR | POLLHUP;
+   pfd.revents = 0;
+#endif
    now = bson_get_monotonic_time ();
 
    for (;;) {
@@ -140,9 +183,20 @@ _mongoc_socket_wait (int sd, /* IN */
       }
 
 #ifdef _WIN32
-      ret = WSAPoll (&pfd, 1, timeout);
+      if (timeout == -1) {
+         /* not WSAPoll: daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken */
+         ret = select (0 /*unused*/, &read_fds, &write_fds, &error_fds, NULL);
+      } else {
+         timeout_tv.tv_sec = timeout / 1000;
+         timeout_tv.tv_usec = (timeout % 1000) * 1000;
+         ret = select (
+            0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
+      }
       if (ret == SOCKET_ERROR) {
-         errno = WSAGetLastError ();
+         _mongoc_socket_capture_errno (sock);
+         ret = -1;
+      } else if (FD_ISSET (sock->sd, &error_fds)) {
+         errno = WSAECONNRESET;
          ret = -1;
       }
 #else
@@ -152,7 +206,8 @@ _mongoc_socket_wait (int sd, /* IN */
       if (ret > 0) {
 /* Something happened, so return that */
 #ifdef _WIN32
-         RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
+         return (FD_ISSET (sock->sd, &read_fds)
+                 || FD_ISSET (sock->sd, &write_fds));
 #else
          RETURN (0 != (pfd.revents & events));
 #endif
@@ -164,16 +219,23 @@ _mongoc_socket_wait (int sd, /* IN */
             now = bson_get_monotonic_time ();
 
             if (expire_at < now) {
+               _mongoc_socket_capture_errno (sock);
                RETURN (false);
             } else {
                continue;
             }
          } else {
             /* poll failed for some non-transient reason */
+            _mongoc_socket_capture_errno (sock);
             RETURN (false);
          }
       } else {
-         /* poll timed out */
+/* ret == 0, poll timed out */
+#ifdef _WIN32
+         sock->errno_ = timeout ? WSAETIMEDOUT : EAGAIN;
+#else
+         sock->errno_ = timeout ? ETIMEDOUT : EAGAIN;
+#endif
          RETURN (false);
       }
    }
@@ -183,11 +245,9 @@ _mongoc_socket_wait (int sd, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_socket_poll --
+ * mongoc_socket_poll --
  *
  *       A multi-socket poll helper.
- *
- *       @events: in most cases should be POLLIN or POLLOUT.
  *
  *       @expire_at should be an absolute time at which to expire using
  *       the monotonic clock (bson_get_monotonic_time(), which is in
@@ -195,8 +255,7 @@ _mongoc_socket_wait (int sd, /* IN */
  *       forever.
  *
  * Returns:
- *       true if an event matched. otherwise false.
- *       a timeout will return false.
+ *       The number of sockets ready.
  *
  * Side effects:
  *       None.
@@ -210,7 +269,10 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
                     int32_t timeout)           /* IN */
 {
 #ifdef _WIN32
-   WSAPOLLFD *pfds;
+   fd_set read_fds;
+   fd_set write_fds;
+   fd_set error_fds;
+   struct timeval timeout_tv;
 #else
    struct pollfd *pfds;
 #endif
@@ -222,38 +284,258 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
    BSON_ASSERT (sds);
 
 #ifdef _WIN32
-   pfds = (WSAPOLLFD *) bson_malloc (sizeof (*pfds) * nsds);
+   FD_ZERO (&read_fds);
+   FD_ZERO (&write_fds);
+   FD_ZERO (&error_fds);
+
+   for (i = 0; i < nsds; i++) {
+      if (sds[i].events & POLLIN) {
+         FD_SET (sds[i].socket->sd, &read_fds);
+      }
+
+      if (sds[i].events & POLLOUT) {
+         FD_SET (sds[i].socket->sd, &write_fds);
+      }
+
+      FD_SET (sds[i].socket->sd, &error_fds);
+   }
+
+   timeout_tv.tv_sec = timeout / 1000;
+   timeout_tv.tv_usec = (timeout % 1000) * 1000;
+
+   /* not WSAPoll: daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken */
+   ret = select (0 /*unused*/, &read_fds, &write_fds, &error_fds, &timeout_tv);
+   if (ret == SOCKET_ERROR) {
+      errno = WSAGetLastError ();
+      return -1;
+   }
+
+   for (i = 0; i < nsds; i++) {
+      if (FD_ISSET (sds[i].socket->sd, &read_fds)) {
+         sds[i].revents = POLLIN;
+      } else if (FD_ISSET (sds[i].socket->sd, &write_fds)) {
+         sds[i].revents = POLLOUT;
+      } else if (FD_ISSET (sds[i].socket->sd, &error_fds)) {
+         sds[i].revents = POLLHUP;
+      } else {
+         sds[i].revents = 0;
+      }
+   }
 #else
    pfds = (struct pollfd *) bson_malloc (sizeof (*pfds) * nsds);
-#endif
 
    for (i = 0; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
-#ifdef _WIN32
-      pfds[i].events = sds[i].events;
-#else
       pfds[i].events = sds[i].events | POLLERR | POLLHUP;
-#endif
       pfds[i].revents = 0;
    }
 
-#ifdef _WIN32
-   ret = WSAPoll (pfds, nsds, timeout);
-   if (ret == SOCKET_ERROR) {
-      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
-      ret = -1;
-   }
-#else
    ret = poll (pfds, nsds, timeout);
-#endif
-
    for (i = 0; i < nsds; i++) {
       sds[i].revents = pfds[i].revents;
    }
 
    bson_free (pfds);
+#endif
 
    return ret;
+}
+
+
+/* https://jira.mongodb.org/browse/CDRIVER-2176 */
+#define MONGODB_KEEPALIVEINTVL 10
+#define MONGODB_KEEPIDLE 300
+#define MONGODB_KEEPALIVECNT 9
+
+#ifdef _WIN32
+static void
+_mongoc_socket_setkeepalive_windows (SOCKET sd)
+{
+   BOOL optval = 1;
+   struct tcp_keepalive keepalive;
+   DWORD lpcbBytesReturned = 0;
+   HKEY hKey;
+   DWORD type;
+   DWORD data;
+   DWORD data_size = sizeof data;
+   const char *reg_key =
+      "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
+   keepalive.onoff = true;
+   keepalive.keepalivetime = MONGODB_KEEPIDLE * 1000;
+   keepalive.keepaliveinterval = MONGODB_KEEPALIVEINTVL * 1000;
+   /*
+    * Windows hardcodes probes to 10:
+    * https://msdn.microsoft.com/en-us/library/windows/desktop/dd877220(v=vs.85).aspx
+    * "On Windows Vista and later, the number of keep-alive probes (data
+    * retransmissions) is set to 10 and cannot be changed."
+    *
+    * Note that win2k (and seeminly all versions thereafter) do not set the
+    * registry value by default so there is no way to derive the default value
+    * programmatically. It is however listed in the docs. A user can however
+    * change the default value by setting the registry values.
+    */
+
+   if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, reg_key, 0, KEY_QUERY_VALUE, &hKey) ==
+       ERROR_SUCCESS) {
+      /* https://technet.microsoft.com/en-us/library/cc957549.aspx */
+      DWORD default_keepalivetime = 7200000; /* 2 hours */
+      /* https://technet.microsoft.com/en-us/library/cc957548.aspx */
+      DWORD default_keepaliveinterval = 1000; /* 1 second */
+
+      if (RegQueryValueEx (
+             hKey, "KeepAliveTime", NULL, &type, (LPBYTE) &data, &data_size) ==
+          ERROR_SUCCESS) {
+         if (type == REG_DWORD && data < keepalive.keepalivetime) {
+            keepalive.keepalivetime = data;
+         }
+      } else if (default_keepalivetime < keepalive.keepalivetime) {
+         keepalive.keepalivetime = default_keepalivetime;
+      }
+
+      if (RegQueryValueEx (hKey,
+                           "KeepAliveInterval",
+                           NULL,
+                           &type,
+                           (LPBYTE) &data,
+                           &data_size) == ERROR_SUCCESS) {
+         if (type == REG_DWORD && data < keepalive.keepaliveinterval) {
+            keepalive.keepaliveinterval = data;
+         }
+      } else if (default_keepaliveinterval < keepalive.keepaliveinterval) {
+         keepalive.keepaliveinterval = default_keepaliveinterval;
+      }
+      RegCloseKey (hKey);
+   }
+   if (WSAIoctl (sd,
+                 SIO_KEEPALIVE_VALS,
+                 &keepalive,
+                 sizeof keepalive,
+                 NULL,
+                 0,
+                 &lpcbBytesReturned,
+                 NULL,
+                 NULL) == SOCKET_ERROR) {
+      TRACE ("Could not set keepalive values");
+   } else {
+      TRACE ("KeepAlive values updated");
+      TRACE ("KeepAliveTime: %d", keepalive.keepalivetime);
+      TRACE ("KeepAliveInterval: %d", keepalive.keepaliveinterval);
+   }
+}
+#else
+#ifdef MONGOC_TRACE
+static const char *
+_mongoc_socket_sockopt_value_to_name (int value)
+{
+   switch (value) {
+#ifdef TCP_KEEPIDLE
+   case TCP_KEEPIDLE:
+      return "TCP_KEEPIDLE";
+#endif
+#ifdef TCP_KEEPALIVE
+   case TCP_KEEPALIVE:
+      return "TCP_KEEPALIVE";
+#endif
+#ifdef TCP_KEEPINTVL
+   case TCP_KEEPINTVL:
+      return "TCP_KEEPINTVL";
+#endif
+#ifdef TCP_KEEPCNT
+   case TCP_KEEPCNT:
+      return "TCP_KEEPCNT";
+#endif
+   default:
+      MONGOC_WARNING ("Don't know what socketopt %d is", value);
+      return "Unknown option name";
+   }
+}
+#endif
+static void
+_mongoc_socket_set_sockopt_if_less (int sd, int name, int value)
+{
+   int optval = 1;
+   mongoc_socklen_t optlen;
+
+   optlen = sizeof optval;
+   if (getsockopt (sd, IPPROTO_TCP, name, (char *) &optval, &optlen)) {
+      TRACE ("Getting '%s' failed, errno: %d",
+             _mongoc_socket_sockopt_value_to_name (name),
+             errno);
+   } else {
+      TRACE ("'%s' is %d, target value is %d",
+             _mongoc_socket_sockopt_value_to_name (name),
+             optval,
+             value);
+      if (optval > value) {
+         optval = value;
+         if (setsockopt (
+                sd, IPPROTO_TCP, name, (char *) &optval, sizeof optval)) {
+            TRACE ("Setting '%s' failed, errno: %d",
+                   _mongoc_socket_sockopt_value_to_name (name),
+                   errno);
+         } else {
+            TRACE ("'%s' value changed to %d",
+                   _mongoc_socket_sockopt_value_to_name (name),
+                   optval);
+         }
+      }
+   }
+}
+
+static void
+_mongoc_socket_setkeepalive_nix (int sd)
+{
+#if defined(TCP_KEEPIDLE)
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPIDLE, MONGODB_KEEPIDLE);
+#elif defined(TCP_KEEPALIVE)
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPALIVE, MONGODB_KEEPIDLE);
+#else
+   TRACE ("%s", "Neither TCP_KEEPIDLE nor TCP_KEEPALIVE available");
+#endif
+
+#ifdef TCP_KEEPINTVL
+   _mongoc_socket_set_sockopt_if_less (
+      sd, TCP_KEEPINTVL, MONGODB_KEEPALIVEINTVL);
+#else
+   TRACE ("%s", "TCP_KEEPINTVL not available");
+#endif
+
+#ifdef TCP_KEEPCNT
+   _mongoc_socket_set_sockopt_if_less (sd, TCP_KEEPCNT, MONGODB_KEEPALIVECNT);
+#else
+   TRACE ("%s", "TCP_KEEPCNT not available");
+#endif
+}
+
+#endif
+static void
+#ifdef _WIN32
+_mongoc_socket_setkeepalive (SOCKET sd) /* IN */
+#else
+_mongoc_socket_setkeepalive (int sd) /* IN */
+#endif
+{
+#ifdef SO_KEEPALIVE
+   int optval = 1;
+
+   ENTRY;
+#ifdef SO_KEEPALIVE
+   if (!setsockopt (
+          sd, SOL_SOCKET, SO_KEEPALIVE, (char *) &optval, sizeof optval)) {
+      TRACE ("%s", "Setting SO_KEEPALIVE");
+#ifdef _WIN32
+      _mongoc_socket_setkeepalive_windows (sd);
+#else
+      _mongoc_socket_setkeepalive_nix (sd);
+#endif
+   } else {
+      TRACE ("%s", "Failed setting SO_KEEPALIVE");
+   }
+#else
+   TRACE ("%s", "SO_KEEPALIVE not available");
+#endif
+   EXIT;
+#endif
 }
 
 
@@ -309,34 +591,6 @@ mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
    BSON_ASSERT (sock);
    TRACE ("Current errno: %d", sock->errno_);
    return sock->errno_;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_socket_capture_errno --
- *
- *       Save the errno state for contextual use.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
-{
-#ifdef _WIN32
-   errno = sock->errno_ = WSAGetLastError ();
-#else
-   sock->errno_ = errno;
-#endif
-   TRACE ("setting errno: %d %s", sock->errno_, strerror (sock->errno_));
 }
 
 
@@ -441,7 +695,7 @@ again:
    try_again = (failed && _mongoc_socket_errno_is_again (sock));
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
+      if (_mongoc_socket_wait (sock, POLLIN, expire_at)) {
          GOTO (again);
       }
       RETURN (NULL);
@@ -536,7 +790,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 #else
    if (sock->sd != -1) {
       if (owned) {
-        shutdown (sock->sd, SHUT_RDWR);
+         shutdown (sock->sd, SHUT_RDWR);
       }
 
       if (0 == close (sock->sd)) {
@@ -601,7 +855,7 @@ mongoc_socket_connect (mongoc_socket_t *sock,       /* IN */
    }
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
+      if (_mongoc_socket_wait (sock, POLLOUT, expire_at)) {
          optval = -1;
          ret = getsockopt (
             sock->sd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen);
@@ -734,8 +988,11 @@ mongoc_socket_new (int domain,   /* IN */
       GOTO (fail);
    }
 
-   if (domain != AF_UNIX && !_mongoc_socket_setnodelay (sd)) {
-      MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
+   if (domain != AF_UNIX) {
+      if (!_mongoc_socket_setnodelay (sd)) {
+         MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
+      }
+      _mongoc_socket_setkeepalive (sd);
    }
 
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
@@ -807,7 +1064,7 @@ again:
    if (failed) {
       _mongoc_socket_capture_errno (sock);
       if (_mongoc_socket_errno_is_again (sock) &&
-          _mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
+          _mongoc_socket_wait (sock, POLLIN, expire_at)) {
          GOTO (again);
       }
    }
@@ -1157,7 +1414,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
       /*
        * Block on poll() until our desired condition is met.
        */
-      if (!_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
+      if (!_mongoc_socket_wait (sock, POLLOUT, expire_at)) {
          GOTO (CLEANUP);
       }
    }
@@ -1218,7 +1475,7 @@ mongoc_socket_check_closed (mongoc_socket_t *sock) /* IN */
    char buf[1];
    ssize_t r;
 
-   if (_mongoc_socket_wait (sock->sd, POLLIN, 0)) {
+   if (_mongoc_socket_wait (sock, POLLIN, 0)) {
       sock->errno_ = 0;
 
       r = recv (sock->sd, buf, 1, MSG_PEEK);

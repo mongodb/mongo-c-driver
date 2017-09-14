@@ -64,7 +64,7 @@ main (int argc, char *argv[])
    cursor = mongoc_database_command (
       database, (mongoc_query_flags_t) 0, 0, 1, 0, &ping, NULL, NULL);
    if (mongoc_cursor_next (cursor, &reply)) {
-      str = bson_as_extended_json (reply, NULL);
+      str = bson_as_canonical_extended_json (reply, NULL);
       fprintf (stdout, "%s\n", str);
       bson_free (str);
    } else if (mongoc_cursor_error (cursor, &error)) {

@@ -435,6 +435,20 @@ future_value_get_const_mongoc_find_and_modify_opts_ptr (future_value_t *future_v
 }
 
 void
+future_value_set_const_mongoc_iovec_ptr (future_value_t *future_value, const_mongoc_iovec_ptr value)
+{
+   future_value->type = future_value_const_mongoc_iovec_ptr_type;
+   future_value->const_mongoc_iovec_ptr_value = value;
+}
+
+const_mongoc_iovec_ptr
+future_value_get_const_mongoc_iovec_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_const_mongoc_iovec_ptr_type);
+   return future_value->const_mongoc_iovec_ptr_value;
+}
+
+void
 future_value_set_const_mongoc_read_prefs_ptr (future_value_t *future_value, const_mongoc_read_prefs_ptr value)
 {
    future_value->type = future_value_const_mongoc_read_prefs_ptr_type;

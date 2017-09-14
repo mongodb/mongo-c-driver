@@ -5,6 +5,7 @@
 #include <mongoc-collection-private.h>
 #include <mongoc-write-concern-private.h>
 #include <mongoc-read-concern-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 
@@ -13,6 +14,9 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
+
+
+BEGIN_IGNORE_DEPRECATIONS
 
 
 static void
@@ -95,7 +99,7 @@ test_aggregate_inherit_collection (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -482,6 +486,94 @@ test_insert (void)
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    bson_context_destroy (context);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_insert_null (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   bson_t reply;
+   const bson_t *out;
+   bool ret;
+   bson_t doc;
+   bson_t filter = BSON_INITIALIZER;
+   bson_iter_t iter;
+   uint32_t len;
+
+   /* nModified isn't available in 2.4 */
+   if (!test_framework_max_wire_version_at_least (2)) {
+      return;
+   }
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection =
+      mongoc_client_get_collection (client, "test", "test_null_insert");
+   ASSERT (collection);
+
+   mongoc_collection_drop (collection, &error);
+
+   bson_init (&doc);
+   bson_append_utf8 (&doc, "hello", 5, "wor\0ld", 6);
+   ret = mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 1,"
+                 " 'nMatched':  0,"
+                 " 'nModified': 0,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+   bson_destroy (&doc);
+   bson_destroy (&reply);
+
+   cursor = mongoc_collection_find_with_opts (collection, &filter, NULL, NULL);
+   ASSERT (mongoc_cursor_next (cursor, &out));
+   ASSERT (bson_iter_init_find (&iter, out, "hello"));
+   ASSERT (!memcmp (bson_iter_utf8 (&iter, &len), "wor\0ld", 6));
+   ASSERT_CMPINT (len, ==, 6);
+
+   ASSERT (mongoc_cursor_next (cursor, &out));
+   ASSERT (bson_iter_init_find (&iter, out, "hello"));
+   ASSERT (!memcmp (bson_iter_utf8 (&iter, &len), "wor\0ld", 6));
+   ASSERT_CMPINT (len, ==, 6);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_bulk_operation_destroy (bulk);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_remove_one (bulk, &doc);
+   ret = mongoc_bulk_operation_update_one_with_opts (
+      bulk, &doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 0,"
+                 " 'nMatched':  1,"
+                 " 'nModified': 1,"
+                 " 'nRemoved':  1,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+
+   bson_destroy (&filter);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
 
@@ -1815,6 +1907,9 @@ test_index_w_write_concern ()
    bson_t *opts = NULL;
    bool result;
    bool wire_version_5;
+   bool at_least_2 = test_framework_max_wire_version_at_least (2);
+   bool is_replicaset = test_framework_is_replset ();
+   bool is_mongos = test_framework_is_mongos ();
 
    mongoc_index_opt_init (&opt);
    opts = bson_new ();
@@ -1875,11 +1970,11 @@ test_index_w_write_concern ()
    bson_reinit (opts);
    mongoc_write_concern_append_bad (bad_wc, opts);
    /* skip this part of the test if sharded cluster */
-   if (!test_framework_is_mongos ()) {
+   if (!is_mongos) {
       if (wire_version_5) {
          ASSERT (!mongoc_collection_create_index_with_opts (
             collection, &keys, &opt, opts, &reply, &error));
-         if (test_framework_is_replset ()) { /* replica set */
+         if (is_replicaset) { /* replica set */
             ASSERT_ERROR_CONTAINS (
                error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
          } else { /* standalone */
@@ -1894,13 +1989,12 @@ test_index_w_write_concern ()
          ASSERT (!error.domain);
       }
    }
-
-   if (!test_framework_max_wire_version_at_least (2)) {
+   if (at_least_2) {
+      ASSERT (!bson_empty (&reply));
+   } else {
       /* On very old versions of the server, create_index_with_write_concern
        * will give an empty reply even if the call succeeds */
       ASSERT (bson_empty (&reply));
-   } else {
-      ASSERT (!bson_empty (&reply));
    }
    bson_destroy (&reply);
 
@@ -4895,6 +4989,8 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
+   TestSuite_AddLive (
+      suite, "/Collection/insert/null_string", test_insert_null);
    TestSuite_AddFull (suite,
                       "/Collection/insert/oversize",
                       test_insert_oversize,

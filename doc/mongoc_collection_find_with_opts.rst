@@ -62,7 +62,7 @@ Examples
      cursor = mongoc_collection_find_with_opts (collection, filter, opts, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_extended_json (doc, NULL);
+        str = bson_as_canonical_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }

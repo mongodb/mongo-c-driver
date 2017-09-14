@@ -55,12 +55,8 @@ case "$OS" in
       ;;
 
    darwin)
+      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-libmongoc
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
-      ;;
-
-   sunos)
-      PATH="/opt/mongodbtoolchain/bin:$PATH"
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs"
       ;;
 
    *)
@@ -86,10 +82,6 @@ esac
 case "$OS" in
    cygwin*)
       test-libmongoc.exe -d -F test-results.json
-      ;;
-
-   sunos)
-      gmake -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
       ;;
 
    *)

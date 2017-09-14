@@ -1,5 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-write-concern-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

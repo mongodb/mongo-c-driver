@@ -23,6 +23,8 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-host-list.h"
 
+BSON_BEGIN_DECLS
+
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
 
 MONGOC_EXPORT (void)
@@ -54,5 +56,7 @@ MONGOC_EXPORT (int32_t)
 mongoc_server_description_compressor_id (
    const mongoc_server_description_t *description);
 #endif
+
+BSON_END_DECLS
 
 #endif

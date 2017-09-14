@@ -8,8 +8,8 @@ log_query (const bson_t *doc, const bson_t *query)
    char *str1;
    char *str2;
 
-   str1 = bson_as_extended_json (doc, NULL);
-   str2 = bson_as_extended_json (query, NULL);
+   str1 = bson_as_canonical_extended_json (doc, NULL);
+   str2 = bson_as_canonical_extended_json (query, NULL);
 
    printf ("Matching %s against %s\n", str2, str1);
 

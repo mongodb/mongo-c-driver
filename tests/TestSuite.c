@@ -116,6 +116,7 @@ test_error (const char *format, ...)
    fprintf (stderr, "\n");
    fflush (stderr);
    va_end (ap);
+   abort ();
 }
 
 

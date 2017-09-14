@@ -1214,6 +1214,7 @@ _mongoc_write_command (mongoc_write_command_t *command,
                        mongoc_write_result_t *result,
                        bson_error_t *error)
 {
+   mongoc_cmd_parts_t parts;
    const uint8_t *data;
    bson_iter_t iter;
    const char *key;
@@ -1241,7 +1242,6 @@ _mongoc_write_command (mongoc_write_command_t *command,
    BSON_ASSERT (collection);
 
    bson_init (&cmd);
-
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_write_batch_size =
       mongoc_server_stream_max_write_batch_size (server_stream);
@@ -1362,14 +1362,11 @@ again:
          GOTO (cleanup);
       }
    } else {
-      ret = mongoc_cluster_run_command_monitored (&client->cluster,
-                                                  server_stream,
-                                                  MONGOC_QUERY_NONE,
-                                                  database,
-                                                  &cmd,
-                                                  command->operation_id,
-                                                  &reply,
-                                                  error);
+      mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
+      parts.is_write_command = true;
+      parts.assembled.operation_id = command->operation_id;
+      ret = mongoc_cluster_run_command_monitored (
+         &client->cluster, &parts, server_stream, &reply, error);
 
       if (!ret) {
          result->failed = true;
@@ -1384,6 +1381,7 @@ again:
       _mongoc_write_result_merge (result, command, &reply, offset);
       offset += i;
       bson_destroy (&reply);
+      mongoc_cmd_parts_cleanup (&parts);
    }
 
    if (has_more && (ret || !command->flags.ordered) && !result->must_stop) {

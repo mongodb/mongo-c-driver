@@ -21,6 +21,8 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
+SNAPPY=${SNAPPY:-bundled}
+ZLIB=${ZLIB:-bundled}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
@@ -32,54 +34,6 @@ echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
 
-install_openssl_fips() {
-   curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
-   tar zxvf fips.tar.gz
-   cd openssl-fips-2.0.14
-   ./config --prefix=$INSTALL_DIR -fPIC
-   cpus=$(grep -c '^processor' /proc/cpuinfo)
-   make -j${cpus} || true
-   make install || true
-   cd ..
-   SSL_EXTRA_FLAGS="--openssldir=$INSTALL_DIR --with-fipsdir=$INSTALL_DIR fips"
-   export OPENSSL_FIPS=1
-   SSL=${SSL%-fips}
-}
-install_openssl () {
-   SSL_VERSION=${SSL##openssl-}
-   tmp=$(echo $SSL_VERSION | tr . _)
-   curl -L --retry 5 -o ssl.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_${tmp}.tar.gz
-   tar zxvf ssl.tar.gz
-   cd openssl-OpenSSL_$tmp
-   ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
-   cpus=$(grep -c '^processor' /proc/cpuinfo)
-   make -j32 || true
-   make -j${cpus} || true
-   make install || true
-   cd ..
-
-   # x505_vfy.h has issues in 1.1.0e
-   export CPPFLAGS=-Wno-redundant-decls
-   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
-   SSL="openssl";
-}
-
-install_libressl () {
-   SSL_VERSION=${SSL##libressl-}
-   curl --retry 5 -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
-   tar zxvf ssl.tar.gz
-   cd $SSL
-   ./configure --prefix=$INSTALL_DIR
-   cpus=$(grep -c '^processor' /proc/cpuinfo)
-   make -j${cpus}
-   make install
-   cd ..
-
-   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-   export EXTRA_LIB_PATH="$INSTALL_DIR/lib"
-   SSL="libressl";
-}
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
@@ -87,21 +41,6 @@ echo "OS: $OS"
 # Automatically retrieve the machine architecture, lowercase, unless provided
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-
-case "$SSL" in
-   openssl-*-fips)
-      install_openssl_fips;
-      install_openssl;
-   ;;
-
-   openssl-*)
-      install_openssl;
-  ;;
-
-  libressl-*)
-     install_libressl;
-     ;;
-esac
 
 # Default configure flags for debug builds and release builds
 DEBUG_FLAGS="\
@@ -131,6 +70,14 @@ else
    RELEASE_FLAGS="$RELEASE_FLAGS --with-libbson=bundled"
    DEBUG_FLAGS="$DEBUG_FLAGS --with-libbson=bundled"
 fi
+if [ ! -z "$ZLIB" ]; then
+   RELEASE_FLAGS="$RELEASE_FLAGS --with-zlib=${ZLIB}"
+   DEBUG_FLAGS="$DEBUG_FLAGS --with-zlib=${ZLIB}"
+fi
+if [ ! -z "$SNAPPY" ]; then
+   RELEASE_FLAGS="$RELEASE_FLAGS --with-snappy=${SNAPPY}"
+   DEBUG_FLAGS="$DEBUG_FLAGS --with-snappy=${SNAPPY}"
+fi
 
 # By default we build from git clone, which requires autotools
 # This gets overwritten if we detect we should use the release archive
@@ -138,7 +85,7 @@ CONFIGURE_SCRIPT="./autogen.sh"
 
 
 # --strip-components is an GNU tar extension. Check if the platform
-# (e.g. Solaris) has GNU tar installed as `gtar`, otherwise we assume to be on
+# has GNU tar installed as `gtar`, otherwise we assume to be on
 # platform that supports it
 # command -v returns success error code if found and prints the path to it
 if command -v gtar 2>/dev/null; then
@@ -154,7 +101,7 @@ fi
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-sasl=${SASL}"
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-ssl=${SSL}"
-[ "$COVERAGE" = "yes" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-coverage"
+[ "$COVERAGE" = "yes" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-coverage --disable-examples"
 
 [ "$VALGRIND" = "yes" ] && TARGET="valgrind" || TARGET="test"
 
@@ -181,17 +128,20 @@ LSAN_OPTIONS="log_pointers=true"
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
-      # We don't have the 32bit versions of these libs
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --disable-snappy --disable-zlib"
+      CXXFLAGS="$CXXFLAGS -m32 -march=i386"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=bundled --with-zlib=bundled"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
+      CXXFLAGS="$CXXFLAGS -march=z196 -mtune=zEC12"
    ;;
    x86_64)
       CFLAGS="$CFLAGS -m64 -march=x86-64"
+      CXXFLAGS="$CXXFLAGS -m64 -march=x86-64"
    ;;
    ppc64le)
       CFLAGS="$CFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
+      CXXFLAGS="$CXXFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
    ;;
 esac
 CFLAGS="$CFLAGS -Werror"
@@ -202,7 +152,7 @@ case "$OS" in
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
       export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
       # llvm-cov is installed from brew
-      export PATH=/usr/local/opt/llvm/bin:$PATH
+      export PATH=$PATH:/usr/local/opt/llvm/bin
    ;;
 
    linux)
@@ -211,14 +161,14 @@ case "$OS" in
       MAKEFLAGS="-j${cpus}"
       export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
+esac
 
-   sunos)
-      PATH="/opt/mongodbtoolchain/bin:$PATH"
-      if [  "$SASL" != "no" ]; then
-         export SASL_CFLAGS="-I/opt/csw/include/"
-         export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
-      fi
-      export LD_LIBRARY_PATH="/opt/csw/lib/amd64/:.libs:src/libbson/.libs:$LD_LIBRARY_PATH"
+case "$CC" in
+   clang)
+      CXX=clang++
+   ;;
+   gcc)
+      CXX=g++
    ;;
 esac
 
@@ -228,7 +178,9 @@ export MONGOC_TEST_SKIP_LIVE=on
 export MONGOC_TEST_SKIP_SLOW=on
 
 export CFLAGS="$CFLAGS"
+export CXXFLAGS="$CXXFLAGS"
 export CC="$CC"
+export CXX="$CXX"
 
 if [ "$LIBBSON" = "external" ]; then
    # This usually happens in mongoc ./autogen.sh, but since we are compiling against
@@ -239,8 +191,8 @@ if [ "$LIBBSON" = "external" ]; then
    make all
    make install
    cd ../../
-   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 fi
+export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 
 export PATH=$INSTALL_DIR/bin:$PATH
 echo "OpenSSL Version:"

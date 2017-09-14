@@ -277,6 +277,12 @@ _apply_read_preferences_mongos (
  * Side effects:
  *       Sets @result->query_with_read_prefs and @result->flags.
  *
+ *  Note:
+ *       This function, the mongoc_apply_read_prefs_result_t struct, and all
+ *       related functions are only used for find operations with OP_QUERY.
+ *       Remove them once MongoDB 3.0 is EOL, all find operations will then
+ *       use the "find" command.
+ *
  *--------------------------------------------------------------------------
  */
 

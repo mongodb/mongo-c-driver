@@ -141,8 +141,54 @@ To verify the server certificate against a specific CA, provide a PEM armored fi
 
 See :doc:`mongoc_ssl_opt_t` for more information on the various SSL related options.
 
+Compressing data to and from MongoDB
+------------------------------------
+
+MongoDB 3.4 added Snappy compression support, and zlib compression in 3.6.
+To enable compression support the client must be configured with which compressors to use:
+
+.. code-block:: none
+
+  mongoc_client_t *client = NULL;
+  client = mongoc_client_new ("mongodb://localhost:27017/?compressors=snappy,zlib");
+
+
+The ``compressors`` option specifies the priority order of compressors the
+client wants to use. Messages are compressed if the client and server share any
+compressors in common.
+
+Note that the compressor used by the server might not be the same compressor as
+the client used.  For example, if the client uses the connection string
+``compressors=zlib,snappy`` the client will use ``zlib`` compression to send
+data (if possible), but the server might still reply using ``snappy``,
+depending on how the server was configured.
+
+The driver must be built with zlib and/or snappy support to enable compression
+support, any unknown (or not compiled in) compressor value will be ignored.
+
+
 Additional Connection Options
 -----------------------------
 
 The full list of connection options can be found in the :symbol:`mongoc_uri_t` docs.
+
+Certain socket/connection related options are not configurable:
+
+
+============== ===================================================== ======================
+Option         Description                                           Value
+============== ===================================================== ======================
+SO_KEEPALIVE   TCP Keep Alive                                        Enabled
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPIDLE   How long a connection needs to remain idle before TCP 300 seconds
+               starts sending keepalive probes
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPINTVL  The time in seconds between TCP probes                10 seconds
+-------------- ----------------------------------------------------- ----------------------
+TCP_KEEPCNT    How many probes to send, without acknowledgement,     9 probes
+               before dropping the connection
+-------------- ----------------------------------------------------- ----------------------
+TCP_NODELAY    Send packets as soon as possible or buffer small      Enabled (no buffering)
+               packets (Nagle algorithm) 
+============== ===================================================== ======================
 

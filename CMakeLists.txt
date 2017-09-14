@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.1)
 
-project (libmongoc C)
+set (MESSAGES_ENABLED 1)
+
+function(message)
+   list (GET ARGV 0 MessageType)
+   if (MESSAGES_ENABLED)
+      list (REMOVE_AT ARGV 0)
+      _message (${MessageType} "${ARGV}")
+   endif()
+endfunction()
 
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
@@ -13,14 +21,25 @@ set (ENABLE_SASL AUTO CACHE STRING
      "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
      SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
      \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
+
+set(ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
+option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
+set(ENABLE_SNAPPY bundled CACHE STRING "Enable snappy support")
+set(ENABLE_ZLIB bundled CACHE STRING "Enable zlib support")
 
 if (NOT WIN32)
     message(WARNING "CMake support is experimental and may not produce production quality artifacts")
+endif ()
+
+if (ENABLE_SNAPPY STREQUAL "bundled")
+project (libmongoc C CXX)
+else ()
+project (libmongoc C)
 endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
@@ -37,6 +56,8 @@ if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
    message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
 endif()
 
+include(MaintainerFlags)
+
 # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
 # but you should use the standard CMAKE_PREFIX_PATH instead.
 message (STATUS "Searching for libbson CMake packages")
@@ -46,19 +67,32 @@ find_package (libbson-1.0
    ${BSON_ROOT_DIR}
    REQUIRED)
 
-find_package (libbson-static-1.0
-   "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
-   HINTS
-   ${BSON_ROOT_DIR}
-   REQUIRED)
-
 message ("--   libbson found version \"${BSON_VERSION}\"")
 message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
 message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
 
-message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
-message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
+if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
+   find_package (libbson-static-1.0
+      "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+      HINTS
+      ${BSON_ROOT_DIR})
+
+   if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
+      message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
+   endif ()
+
+   if (BSON_STATIC_LIBRARY)
+      set (MONGOC_ENABLE_STATIC ON)
+   endif ()
+
+   message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
+   message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+   message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
+endif ()
+
+if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
+   message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC")
+endif ()
 
 if (NOT (ENABLE_SSL STREQUAL DARWIN
          OR ENABLE_SSL STREQUAL WINDOWS
@@ -132,6 +166,11 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 
 if (OPENSSL_FOUND)
+   if (WIN32 AND OPENSSL_VERSION GREATER 1.1 AND NOT
+         ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.7)
+      message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
+         "You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
+   endif ()
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
@@ -378,6 +417,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-cmd.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
@@ -532,10 +572,50 @@ else()
    message (STATUS "SASL disabled")
 endif()
 
-add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
-add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
 
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set (MONGOC_INTERNAL_INCLUDE_DIRS "")
+
+if (ENABLE_SNAPPY STREQUAL "bundled")
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
+   include(FindSnappy)
+endif ()
+
+if (ENABLE_ZLIB STREQUAL "bundled")
+   message (STATUS "Enabling zlib compression (bundled)")
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
+   set (SOURCES ${SOURCES}
+      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
+   )
+   configure_file (
+      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   )
+
+   list (
+      APPEND
+      MONGOC_INTERNAL_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/zlib-1.2.11"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
+   )
+endif ()
 
 set(THREADS_PREFER_PTHREAD_FLAG 1)
 find_package (Threads REQUIRED)
@@ -548,23 +628,33 @@ if(WIN32)
    set (LIBS ${LIBS} ws2_32)
 endif()
 
+add_library(mongoc_shared SHARED ${SOURCES} ${HEADERS})
+set_target_properties(mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
-target_include_directories (mongoc_shared PUBLIC ${BSON_INCLUDE_DIRS})
+target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
-
-target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
-target_include_directories (mongoc_static PUBLIC ${BSON_STATIC_INCLUDE_DIRS})
-target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
 
 # CMake wants to make different symlinks than the Autotools, see
 # https://cmake.org/pipermail/cmake/2007-September/016501.html
 # This hack sets up standard symlink, libmongoc-1.0.so -> libmongoc-1.0.0.so
 set_target_properties(mongoc_shared PROPERTIES VERSION 0 SOVERSION ${MONGOC_MAJOR_VERSION})
-set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
-
 set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
-set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 
+if (MONGOC_ENABLE_STATIC)
+   add_library(mongoc_static STATIC ${SOURCES} ${HEADERS})
+   target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
+   target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
+   target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
+   set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
+   set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
+endif ()
+
+if (ENABLE_SNAPPY STREQUAL "bundled")
+   set_target_properties(mongoc_shared PROPERTIES LINKER_LANGUAGE CXX)
+   if (MONGOC_ENABLE_STATIC)
+      set_target_properties(mongoc_static PROPERTIES LINKER_LANGUAGE CXX)
+   endif ()
+endif ()
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
@@ -574,9 +664,11 @@ function(mongoc_add_test test use_shared)
       endif()
       if (${use_shared})
          target_link_libraries(${test} mongoc_shared)
+         target_include_directories(${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       else()
          target_compile_definitions(${test} PUBLIC "MONGOC_COMPILATION")
          target_link_libraries(${test} mongoc_static)
+         target_include_directories(${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       endif()
       if(WIN32)
          target_link_libraries(${test} shlwapi)
@@ -596,12 +688,15 @@ function(mongoc_add_example example use_shared)
          target_link_libraries(${example} shlwapi)
       endif()
       set (EXAMPLES ${EXAMPLES} ${example})
+      if (ENABLE_SNAPPY STREQUAL "bundled")
+         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
+         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
+      endif ()
    endif ()
 endfunction()
 
 set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/debug-stream.c
-   ${SOURCE_DIR}/tests/ha-test.c
    ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/mock_server/future.c
    ${SOURCE_DIR}/tests/mock_server/future-functions.c
@@ -611,13 +706,12 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/mock_server/mock-server.c
    ${SOURCE_DIR}/tests/mock_server/request.c
    ${SOURCE_DIR}/tests/test-conveniences.c
-   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
+   ${SOURCE_DIR}/tests/test-mongoc-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
-   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
@@ -658,44 +752,24 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-version.c
    ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-util.c
+   ${SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
-   ${SOURCE_DIR}/tests/test-write-commands.c
    ${SOURCE_DIR}/tests/TestSuite.c
 )
 
 if (MONGOC_ENABLE_SSL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-x509.c
+      ${SOURCE_DIR}/tests/test-mongoc-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
-   mongoc_add_test(test-replica-set-ssl FALSE
-      ${SOURCE_DIR}/tests/test-replica-set-ssl.c
-      ${SOURCE_DIR}/tests/ha-test.c
-      ${SOURCE_DIR}/tests/mongoc-tests.c
-   )
 endif()
 
 if (MONGOC_ENABLE_SASL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-cyrus.c
+      ${SOURCE_DIR}/tests/test-mongoc-cyrus.c
    )
 endif ()
-
-mongoc_add_test(test-load FALSE
-   ${SOURCE_DIR}/tests/test-load.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-secondary FALSE
-   ${SOURCE_DIR}/tests/test-secondary.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-replica-set FALSE
-   ${SOURCE_DIR}/tests/test-replica-set.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
-mongoc_add_test(test-sharded-cluster FALSE
-   ${SOURCE_DIR}/tests/test-sharded-cluster.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 
@@ -713,6 +787,7 @@ mongoc_add_example(
    ${SOURCE_DIR}/examples/example-sdam-monitoring.c)
 mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
 mongoc_add_example(example-command-with-opts TRUE ${SOURCE_DIR}/examples/example-command-with-opts.c)
+mongoc_add_example(example-create-indexes TRUE ${SOURCE_DIR}/examples/example-create-indexes.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
@@ -727,11 +802,20 @@ file(COPY ${SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 install(
-  TARGETS mongoc_shared mongoc_static ${EXAMPLES}
+  TARGETS mongoc_shared ${EXAMPLES}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
 )
+
+if (MONGOC_ENABLE_STATIC)
+   install(
+     TARGETS mongoc_shared mongoc_static ${EXAMPLES}
+     LIBRARY DESTINATION lib
+     ARCHIVE DESTINATION lib
+     RUNTIME DESTINATION bin
+   )
+endif ()
 
 set (MONGOC_HEADER_INSTALL_DIR "include/libmongoc-${MONGOC_API_VERSION}")
 
@@ -768,15 +852,16 @@ install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
   DESTINATION lib/pkgconfig
 )
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-@ONLY)
-install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-  DESTINATION lib/pkgconfig
-)
-
+if (MONGOC_ENABLE_STATIC)
+   configure_file(
+     ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
+     ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
+   @ONLY)
+   install(
+     FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
+     DESTINATION lib/pkgconfig
+   )
+endif ()
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
   configure_file(
@@ -790,3 +875,4 @@ if (MONGOC_ENABLE_SSL)
 endif()
 
 include (build/cmake/MongoCPackage.cmake)
+

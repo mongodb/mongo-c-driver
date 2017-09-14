@@ -62,14 +62,6 @@ get_mongodb_download_url_for ()
              MONGODB_26="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-${VERSION_26}.tgz"
              MONGODB_24="https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-${VERSION_24}.tgz"
       ;;
-      sunos*i86pc)
-         MONGODB_LATEST="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-latest.tgz"
-             MONGODB_34="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-${VERSION_34}.tgz"
-             MONGODB_32="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-${VERSION_32}.tgz"
-             MONGODB_30="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-${VERSION_30}.tgz"
-             MONGODB_26="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-${VERSION_26}.tgz"
-             MONGODB_24="https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-${VERSION_24}.tgz"
-      ;;
       linux-rhel-7.2-s390x)
          MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-rhel72-latest.tgz"
              MONGODB_34="http://downloads.10gen.com/linux/mongodb-linux-s390x-enterprise-rhel72-${VERSION_34}.tgz"
@@ -231,13 +223,15 @@ download_and_extract ()
    MONGODB_DOWNLOAD_URL=$1
    EXTRACT=$2
 
-   curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
+   if ! test -d mongodb -a -x mongodb/bin/mongod; then
+      curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
 
-   $EXTRACT mongodb-binaries.tgz
+      $EXTRACT mongodb-binaries.tgz
 
-   rm -rf mongodb*tgz mongodb/
-   mv mongodb* mongodb
-   chmod -R +x mongodb
-   find . -name vcredist_x64.exe -exec {} /install /quiet \;
+      rm -rf mongodb*tgz mongodb/
+      mv mongodb* mongodb
+      chmod -R +x mongodb
+      find . -name vcredist_x64.exe -exec {} /install /quiet \;
+   fi
    ./mongodb/bin/mongod --version
 }

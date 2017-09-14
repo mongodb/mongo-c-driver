@@ -87,6 +87,7 @@ typedef_list = [
 
     # Const libmongoc.
     typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
+    typedef("const_mongoc_iovec_ptr", "const mongoc_iovec_t *"),
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
     typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
 ]
@@ -231,6 +232,15 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
+                    "mongoc_collection_read_write_command_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
                     "mongoc_collection_insert_bulk",
                     [param("mongoc_collection_ptr", "collection"),
                      param("mongoc_insert_flags_t", "flags"),
@@ -301,7 +311,7 @@ future_functions = [
     future_function("ssize_t",
                     "mongoc_gridfs_file_writev",
                     [param("mongoc_gridfs_file_ptr", "file"),
-                     param("mongoc_iovec_ptr", "iov"),
+                     param("const_mongoc_iovec_ptr", "iov"),
                      param("size_t", "iovcnt"),
                      param("uint32_t", "timeout_msec")]),
 

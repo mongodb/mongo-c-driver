@@ -29,6 +29,11 @@ Synopsis
      void *padding[4];
   } mongoc_index_opt_t;
 
+Deprecated
+----------
+
+This structure is deprecated and should not be used in new code. See :doc:`create-indexes`.
+
 Description
 -----------
 

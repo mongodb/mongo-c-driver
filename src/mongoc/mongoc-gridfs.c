@@ -33,6 +33,7 @@
 #include "mongoc-client.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-util-private.h"
 
 #define MONGOC_GRIDFS_STREAM_CHUNK 4096
 
@@ -62,7 +63,11 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
    mongoc_index_opt_init (&opt);
    opt.unique = 1;
 
+   /* mongoc_collection_create_index is deprecated, but works with MongoDB 2.4
+    * once we really drop 2.4, call "createIndexes" command directly */
+   BEGIN_IGNORE_DEPRECATIONS
    r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
+   END_IGNORE_DEPRECATIONS
 
    bson_destroy (&keys);
 
@@ -76,8 +81,9 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
    bson_append_int32 (&keys, "uploadDate", -1, 1);
    opt.unique = 0;
 
+   BEGIN_IGNORE_DEPRECATIONS
    r = mongoc_collection_create_index (gridfs->files, &keys, &opt, error);
-
+   END_IGNORE_DEPRECATIONS
    bson_destroy (&keys);
 
    if (!r) {

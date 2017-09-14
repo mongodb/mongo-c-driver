@@ -201,6 +201,7 @@ test_client_cmd_w_write_concern (void *context)
                     error);
 
    bson_reinit (opts);
+   bson_destroy (&reply);
 
    mongoc_write_concern_append_bad (bad_wc, opts);
    ASSERT (!mongoc_client_write_command_with_opts (
@@ -231,6 +232,7 @@ test_client_cmd_w_write_concern (void *context)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
+         bson_destroy (&reply);
       }
    }
 
@@ -450,7 +452,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
-         mongoc_cluster_disconnect_node (&client->cluster, 1);
+         mongoc_cluster_disconnect_node (
+            &client->cluster, 1, false /* invalidate */, NULL);
       } else {
          scanner_node =
             mongoc_topology_scanner_get_node (client->topology->scanner, 1);
@@ -614,20 +617,27 @@ test_mongoc_client_authenticate_timeout (void *context)
 }
 
 
-#ifdef TODO_CDRIVER_689
 static void
 test_wire_version (void)
 {
+   mongoc_uri_t *uri;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    mock_server_t *server;
    const bson_t *doc;
    bson_error_t error;
-   bool r;
    bson_t q = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+
+   if (!test_framework_skip_if_slow ()) {
+      return;
+   }
 
    server = mock_server_new ();
+
+   /* too new */
    mock_server_auto_ismaster (server,
                               "{'ok': 1.0,"
                               " 'ismaster': true,"
@@ -635,27 +645,61 @@ test_wire_version (void)
                               " 'maxWireVersion': 11}");
 
    mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   client = mongoc_client_new_from_uri (uri);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
-   r = mongoc_cursor_next (cursor, &doc);
-   BSON_ASSERT (!r);
-
-   r = mongoc_cursor_error (cursor, &error);
-   BSON_ASSERT (r);
-
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
    BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   mongoc_cursor_destroy (cursor);
 
+   /* too old */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': -1,"
+                              " 'maxWireVersion': -1}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
+   BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
+   mongoc_cursor_destroy (cursor);
+
+   /* compatible again */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_request (server);
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK, 0, 0, "test.test", "{}", true);
+
+   /* no error */
+   BSON_ASSERT (future_get_bool (future));
+   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
+
+   future_destroy (future);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
-#endif
 
 
 static void
@@ -962,11 +1006,12 @@ test_command_with_opts_read_prefs (void)
    mongoc_client_t *client;
    mongoc_read_prefs_t *read_prefs;
    bson_t *cmd;
+   bson_t *opts;
    bson_error_t error;
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1003,9 +1048,67 @@ test_command_with_opts_read_prefs (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   /* read prefs not included for read/write command, but read concern is */
+   cmd = tmp_bson ("{'whatever': 1}");
+   opts = tmp_bson ("{'readConcern': {'level': 'majority'}}");
+   future = future_client_read_write_command_with_opts (
+      client, "admin", cmd, NULL, opts, NULL, &error);
+
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_NONE,
+                                    "{'whatever': 1,"
+                                    " 'readConcern': {'level': 'majority'},"
+                                    " '$readPreference': {'$exists': false}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+
+static void
+test_read_write_cmd_with_opts (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *secondary;
+   bson_error_t error;
+   bson_t reply;
+   future_t *future;
+   request_t *request;
+
+   rs = mock_rs_with_autoismaster (
+      0, true /* has primary */, 1 /* secondary */, 0 /* arbiters */);
+
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   secondary = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* mongoc_client_read_write_command_with_opts must ignore read prefs
+    * CDRIVER-2224
+    */
+   future = future_client_read_write_command_with_opts (
+      client, "db", tmp_bson ("{'ping': 1}"), secondary, NULL, &reply, &error);
+
+   request =
+      mock_rs_receives_command (rs, "db", MONGOC_QUERY_NONE, "{'ping': 1}");
+
+   ASSERT (mock_rs_request_is_to_primary (rs, request));
+   mock_rs_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_read_prefs_destroy (secondary);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
 }
 
 
@@ -1870,7 +1973,9 @@ _test_mongoc_client_ssl_opts (bool pooled)
    host = test_framework_get_host ();
    port = test_framework_get_port ();
    uri_str = bson_strdup_printf (
-      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000", host, port);
+      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000&connectTimeoutMS=1000",
+      host,
+      port);
 
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
    uri_str_auth_ssl = bson_strdup_printf ("%s&ssl=true", uri_str_auth);
@@ -2312,7 +2417,6 @@ test_mongoc_client_select_server_retry_fail (void)
 }
 
 
-
 /* CDRIVER-2172: in single mode, if the selected server has a socket that's been
  * idle for socketCheckIntervalMS, check it with ping. If it fails, retry once.
  */
@@ -2420,8 +2524,6 @@ _cmd (mock_server_t *server,
 
    if (server_replies) {
       mock_server_replies_simple (request, "{'ok': 1}");
-   } else {
-      mock_server_hangs_up (request);
    }
 
    r = future_get_bool (future);
@@ -2521,6 +2623,7 @@ _test_ssl_reconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 1000);
 
    if (pooled) {
       capture_logs (true);
@@ -2535,11 +2638,11 @@ _test_ssl_reconnect (bool pooled)
    ASSERT_OR_PRINT (_cmd (server, client, true /* server replies */, &error),
                     error);
 
-   /* man-in-the-middle: certificate changed, for example expired*/
+   /* man-in-the-middle: certificate changed, for example expired */
    server_opts.pem_file = CERT_EXPIRED;
    mock_server_set_ssl_opts (server, &server_opts);
 
-   /* server closes connections */
+   /* network timeout */
 
    ASSERT (!_cmd (server, client, false /* server hangs up */, &error));
    if (pooled) {
@@ -2670,6 +2773,56 @@ _respond_to_ping (future_t *future, mock_server_t *server)
 }
 
 static void
+test_mongoc_handshake_pool (void)
+{
+   mock_server_t *server;
+   request_t *request1;
+   request_t *request2;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client1;
+   mongoc_client_t *client2;
+   mongoc_client_pool_t *pool;
+   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   future_t *future;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_appname (uri, BSON_FUNC);
+
+   pool = mongoc_client_pool_new (uri);
+
+   client1 = mongoc_client_pool_pop (pool);
+   request1 = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request1, true);
+   mock_server_replies_simple (request1, server_reply);
+   request_destroy (request1);
+
+   client2 = mongoc_client_pool_pop (pool);
+   future = future_client_command_simple (
+      client2, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+
+   request2 = mock_server_receives_ismaster (server);
+   _assert_ismaster_valid (request2, true);
+   mock_server_replies_simple (request2, server_reply);
+   request_destroy (request2);
+
+   request2 = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+   mock_server_replies_ok_and_destroys (request2);
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   mongoc_client_pool_push (pool, client1);
+   mongoc_client_pool_push (pool, client2);
+
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+static void
 _test_client_sends_handshake (bool pooled)
 {
    mock_server_t *server;
@@ -2703,9 +2856,8 @@ _test_client_sends_handshake (bool pooled)
 
    request = mock_server_receives_ismaster (server);
 
-   /* Make sure the isMaster request has a "meta" field: */
+   /* Make sure the isMaster request has a "client" field: */
    _assert_ismaster_valid (request, true);
-
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
@@ -2915,7 +3067,7 @@ _test_null_error_pointer (bool pooled)
    /* disconnect */
    mock_server_destroy (server);
    if (pooled) {
-      mongoc_cluster_disconnect_node (&client->cluster, 1);
+      mongoc_cluster_disconnect_node (&client->cluster, 1, false, NULL);
    } else {
       mongoc_topology_scanner_node_t *scanner_node;
 
@@ -3056,6 +3208,9 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command_with_opts/read_prefs",
                                 test_command_with_opts_read_prefs);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_with_opts/read_write",
+                                test_read_write_cmd_with_opts);
    TestSuite_AddMockServerTest (
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddMockServerTest (
@@ -3117,6 +3272,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
+   TestSuite_AddMockServerTest (
+      suite, "/Client/handshake/pool", test_mongoc_handshake_pool);
    TestSuite_Add (suite,
                   "/Client/application_handshake",
                   test_mongoc_client_application_handshake);
@@ -3139,12 +3296,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/appname_pooled_no_uri",
                                 test_client_appname_pooled_no_uri);
-
-#ifdef TODO_CDRIVER_689
    TestSuite_AddMockServerTest (
       suite, "/Client/wire_version", test_wire_version);
-#endif
-
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);

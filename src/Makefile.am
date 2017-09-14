@@ -1,3 +1,23 @@
+if WITH_SNAPPY
+lib_LTLIBRARIES += libsnappy.la
+endif
+lib_LTLIBRARIES += libmongoc-1.0.la
+
+libmongoc_1_0_la_SOURCES =
+libmongoc_1_0_la_LIBADD = \
+        libmongoc.la
+
+libmongoc_1_0_la_LDFLAGS = \
+	$(OPTIMIZE_LDFLAGS) \
+	$(COVERAGE_LDFLAGS) \
+        -fvisibility=hidden \
+        -no-undefined \
+        -rpath $(libdir)
+
+
+include src/mongoc/Makefile.am
+include src/tools/Makefile.am
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = $(top_builddir)/src/libmongoc-1.0.pc
 if ENABLE_SSL
@@ -8,71 +28,6 @@ if ENABLE_STATIC
   pkgconfig_DATA += $(top_builddir)/src/libmongoc-static-1.0.pc
 endif
 
-
-lib_LTLIBRARIES += libmongoc-1.0.la
-
-# For libmongoc-test and other test programs.
-noinst_LTLIBRARIES += libmongoc-priv.la
-
-
-MONGOC_CPPFLAGS_SHARED = \
-	-DMONGOC_COMPILATION \
-	$(LIBC_FEATURES) \
-	$(MAINTAINER_CFLAGS) \
-	$(OPTIMIZE_CFLAGS) \
-	$(COVERAGE_CFLAGS) \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mongoc \
-	-I$(top_builddir)/src/mongoc \
-	$(BSON_CFLAGS) \
-	$(PTHREAD_CFLAGS) \
-	$(SSL_CFLAGS) \
-	$(SNAPPY_CFLAGS) \
-	$(ZLIB_CFLAGS) \
-	$(SASL_CFLAGS) \
-	-fvisibility=hidden
-
-if OS_SOLARIS
-MONGOC_CPPFLAGS_SHARED += -D_REENTRANT
-endif
-libmongoc_priv_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
-libmongoc_1_0_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
-
-
-MONGOC_LDFLAGS_SHARED = $(OPTIMIZE_LDFLAGS) $(COVERAGE_LDFLAGS)
-libmongoc_priv_la_LDFLAGS = \
-	$(MONGOC_LDFLAGS_SHARED) \
-	-no-undefined
-
-libmongoc_1_0_la_LDFLAGS = \
-	$(MONGOC_LDFLAGS_SHARED) \
-	-no-undefined \
-	-rpath $(libdir)
-
-MONGOC_LIBADD_SHARED = \
-	$(BSON_LIBS) \
-	$(PTHREAD_LIBS) \
-	$(SHM_LIB) \
-	$(SSL_LIBS) \
-	$(SNAPPY_LIBS) \
-	$(ZLIB_LIBS) \
-	$(SASL_LIBS)
-
-if OS_WIN32
-MONGOC_LIBADD_SHARED += -lws2_32
-endif
-libmongoc_priv_la_LIBADD = $(MONGOC_LIBADD_SHARED)
-libmongoc_1_0_la_LIBADD = $(MONGOC_LIBADD_SHARED)
-
-
-# Sources defined in src/mongoc/Makefile.am
-MONGOC_SOURCES_SHARED = 
-libmongoc_1_0_la_SOURCES = $(MONGOC_SOURCES_SHARED)
-libmongoc_priv_la_SOURCES = $(MONGOC_SOURCES_SHARED)
-
-
-include src/mongoc/Makefile.am
-include src/tools/Makefile.am
 
 EXTRA_DIST += \
 	src/libmongoc-1.0.pc.in \

@@ -46,7 +46,7 @@ m4_include([build/autotools/CheckSasl.m4])
 m4_include([build/autotools/CheckSnappy.m4])
 m4_include([build/autotools/CheckZlib.m4])
 
-if test "x$have_zlib" = "xyes" -o "x$have_snappy" = "xyes"; then
+if test "x$with_zlib" != "xno" -o "x$with_snappy" != "xno"; then
    AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)
@@ -69,7 +69,14 @@ AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
 # Substitute our dependencies into the pkg-config files.
-AC_SUBST(MONGOC_LIBS, "${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${ZLIB_LIBS} ${SNAPPY_LIBS}")
+MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB}"
+if test "x$with_zlib" != "xbundled"; then
+   MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
+fi
+if test "x$with_snappy" != "xbundled"; then
+   MONGOC_LIBS="${MONGOC_LIBS} ${SNAPPY_LIBS}"
+fi
+AC_SUBST(MONGOC_LIBS)
 
 AC_CONFIG_FILES([
     Makefile
@@ -82,6 +89,8 @@ AC_CONFIG_FILES([
     build/cmake/libmongoc-static-1.0-config-version.cmake
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
+    src/snappy-1.1.3/snappy-stubs-public.h
+    src/zlib-1.2.11/zconf.h
 ])
 
 m4_include([build/autotools/Libbson.m4])

@@ -35,8 +35,6 @@ struct _mongoc_read_concern_t {
 };
 
 
-bool
-_mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern);
 const bson_t *
 _mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern);
 

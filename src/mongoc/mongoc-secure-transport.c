@@ -50,13 +50,20 @@ SecIdentityCreate (CFAllocatorRef allocator,
 void
 _bson_append_cftyperef (bson_string_t *retval, const char *label, CFTypeRef str)
 {
-   if (str) {
-      if (CFGetTypeID (str) == CFStringGetTypeID ()) {
-         const char *cs =
-            CFStringGetCStringPtr (str, CFStringGetFastestEncoding (str));
+   if (str && CFGetTypeID (str) == CFStringGetTypeID ()) {
+      CFIndex length = CFStringGetLength (str);
+      CFStringEncoding encoding = kCFStringEncodingASCII;
+      CFIndex maxSize =
+         CFStringGetMaximumSizeForEncoding (length, encoding) + 1;
 
+      char *cs = bson_malloc ((size_t) maxSize);
+      if (CFStringGetCString (str, cs, maxSize, encoding)) {
          bson_string_append_printf (retval, "%s%s", label, cs);
+      } else {
+         bson_string_append_printf (retval, "%s(null)", label);
       }
+
+      bson_free (cs);
    }
 }
 

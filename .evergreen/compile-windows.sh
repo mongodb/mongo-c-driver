@@ -11,7 +11,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 
 INSTALL_DIR="C:/mongoc"
-CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF"
+CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF -DENABLE_MAINTAINER_FLAGS=ON"
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
 CC=${CC:-"Visual Studio 14 2015 Win64"}
@@ -70,6 +70,12 @@ case "$SSL" in
       ;;
    esac
 esac
+if [ ! -z "$ZLIB" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=${ZLIB}"
+fi
+if [ ! -z "$SNAPPY" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
+fi
 
 export CONFIGURE_FLAGS
 export INSTALL_DIR
