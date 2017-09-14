@@ -46,7 +46,7 @@ m4_include([build/autotools/CheckSasl.m4])
 m4_include([build/autotools/CheckSnappy.m4])
 m4_include([build/autotools/CheckZlib.m4])
 
-if test "x$with_zlib" != "xno" -o "x$with_snappy" != "xno"; then
+if test "x$have_zlib" = "xyes" -o "x$have_snappy" = "xyes"; then
    AC_SUBST(MONGOC_ENABLE_COMPRESSION, 1)
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION, 0)

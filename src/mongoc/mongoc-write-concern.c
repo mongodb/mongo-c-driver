@@ -351,14 +351,16 @@ _mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern)
 
 
 /**
- * mongoc_write_concern_is_default:
+ * _mongoc_write_concern_is_default:
  * @write_concern: A mongoc_write_concern_t.
+ *
+ * This is an internal function.
  *
  * Returns is_default, which is true when write_concern has not been modified.
  *
  */
 bool
-mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
+_mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
 {
    return !write_concern || write_concern->is_default;
 }

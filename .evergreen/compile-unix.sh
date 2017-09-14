@@ -182,7 +182,7 @@ case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
       # We don't have the 32bit versions of these libs
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --without-snappy --without-zlib"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --disable-snappy --disable-zlib"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"

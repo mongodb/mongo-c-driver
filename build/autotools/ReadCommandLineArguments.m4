@@ -89,22 +89,6 @@ AC_ARG_WITH(libbson,
 AS_IF([test "x$with_libbson" != xbundled && test "x$with_libbson" != xsystem],
       [with_libbson=auto])
 
-AC_ARG_WITH(snappy,
-    AC_HELP_STRING([--with-snappy=@<:@auto/system/bundled/no@:>@],
-                   [use system installed snappy or bundled snappy. default=auto]),
-    [],
-    [with_snappy=auto])
-AS_IF([test "x$with_snappy" != xbundled && test "x$with_snappy" != xsystem && test "x$with_snappy" != xno],
-      [with_snappy=auto])
-
-AC_ARG_WITH(zlib,
-    AC_HELP_STRING([--with-zlib=@<:@auto/system/bundled/no@:>@],
-                   [use system installed zlib or bundled zlib. default=auto]),
-    [],
-    [with_zlib=auto])
-AS_IF([test "x$with_zlib" != xbundled && test "x$with_zlib" != xsystem && test "x$with_zlib" != xno],
-      [with_zlib=auto])
-
 AC_ARG_ENABLE([html-docs],
               [AS_HELP_STRING([--enable-html-docs=@<:@yes/no@:>@],
                               [build HTML documentation @<:@default=no@:>@])],

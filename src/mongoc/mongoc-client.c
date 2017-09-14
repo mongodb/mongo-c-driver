@@ -1452,7 +1452,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if ((mode & MONGOC_CMD_WRITE) &&
           server_stream->sd->max_wire_version >=
              WIRE_VERSION_CMD_WRITE_CONCERN &&
-          !mongoc_write_concern_is_default (default_wc) &&
+          !_mongoc_write_concern_is_default (default_wc) &&
           (!command_with_opts ||
            !bson_has_field (command_with_opts, "writeConcern"))) {
          _ensure_copied (&command_with_opts, command);
@@ -1465,7 +1465,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       /* use read prefs and read concern for read commands, unless in opts */
       if ((mode & MONGOC_CMD_READ) &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
-          !mongoc_read_concern_is_default (default_rc) &&
+          !_mongoc_read_concern_is_default (default_rc) &&
           (!command_with_opts ||
            !bson_has_field (command_with_opts, "readConcern"))) {
          _ensure_copied (&command_with_opts, command);

@@ -48,7 +48,6 @@ See `Read Concern Levels <https://docs.mongodb.com/master/reference/read-concern
     mongoc_read_concern_copy
     mongoc_read_concern_destroy
     mongoc_read_concern_get_level
-    mongoc_read_concern_is_default
     mongoc_read_concern_new
     mongoc_read_concern_set_level
 

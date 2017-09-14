@@ -1,39 +1,38 @@
-# If --with-zlib=auto, determine if there is a system installed zlib
-AS_IF([test "x${with_zlib}" = xauto], [
-      PKG_CHECK_MODULES(ZLIB, [zlib],
-         [with_zlib=system],
-         [
-            # If we didn't find zlib with pkgconfig
-            with_zlib=no
-            AC_CHECK_LIB([zlib],[compress2],
-               [AC_CHECK_HEADER([zlib-c.h],
-                  [
-                     with_zlib=system
-                     ZLIB_LIBS=-lz
-                  ],
-                  []
-               )],
-               []
-            )
-         ]
-      )
-   ]
-)
+have_zlib=no
+AC_MSG_CHECKING([whether to enable zlib])
+AC_ARG_ENABLE([zlib],
+              [AS_HELP_STRING([--enable-zlib=@<:@auto/yes/no@:>@],
+                              [Enable wire protocol compression through zlib])],
+              [],
+              [enable_zlib=auto])
+AC_MSG_RESULT([$enable_zlib])
 
-AS_IF([test "x${ZLIB_LIBS}" = "x" -a "x$with_zlib" = "xsystem"],
-      [AC_MSG_ERROR([Cannot find system installed zlib. try --with-zlib=bundled])])
+AS_IF([test "x$enable_zlib" != "xno"],[
+   PKG_CHECK_MODULES(ZLIB, [zlib], [have_zlib=yes], [
+      AC_CHECK_LIB([zlib],[compress],[
+         AC_CHECK_HEADER([zlib-c.h], [
+            have_zlib=yes
+            ZLIB_LIBS=-lz
+         ], [have_zlib=no])
+      ],[have_zlib=no])
+   ])
 
-# If we are using the bundled zlib, recurse into its configure.
-AS_IF([test "x${with_zlib}" = xbundled],[
-   AC_MSG_CHECKING(whether to enable bundled zlib)
-   AC_ERROR(bundled zlib is not currently supported)
+   AC_MSG_CHECKING([zlib is available])
+   if test "$enable_zlib" = "yes" -a "$have_zlib" = "no" ; then
+      AC_MSG_ERROR([You must install the zlib development headers to enable zlib support.])
+   else
+      AC_MSG_RESULT([$have_zlib])
+   fi
 ])
 
-if test "x$with_zlib" != "xno"; then
+if test "x$have_zlib" = "xyes"; then
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_ZLIB, 1)
+   enable_zlib=yes
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_ZLIB, 0)
+   enable_zlib=no
 fi
 AC_SUBST(ZLIB_LIBS)
 AC_SUBST(ZLIB_CFLAGS)
+
 

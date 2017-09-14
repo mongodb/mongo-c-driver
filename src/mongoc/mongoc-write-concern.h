@@ -86,8 +86,6 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (bool)
 mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
                              bson_t *doc);
-MONGOC_EXPORT (bool)
-mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern);
 
 BSON_END_DECLS
 

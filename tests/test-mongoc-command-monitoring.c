@@ -318,7 +318,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    bson_t *new_event;
 
    if (context->verbose) {
-      cmd_json = bson_as_canonical_extended_json (event->command, NULL);
+      cmd_json = bson_as_extended_json (event->command, NULL);
       printf ("%s\n", cmd_json);
       fflush (stdout);
       bson_free (cmd_json);
@@ -371,7 +371,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    bson_t *new_event;
 
    if (context->verbose) {
-      reply_json = bson_as_canonical_extended_json (event->reply, NULL);
+      reply_json = bson_as_extended_json (event->reply, NULL);
       printf ("\t\t<-- %s\n", reply_json);
       fflush (stdout);
       bson_free (reply_json);

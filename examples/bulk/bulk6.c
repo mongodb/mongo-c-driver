@@ -29,7 +29,7 @@ bulk6 (mongoc_collection_t *collection)
 
    ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
 
-   str = bson_as_canonical_extended_json (&reply, NULL);
+   str = bson_as_extended_json (&reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
 

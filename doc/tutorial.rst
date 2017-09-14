@@ -225,7 +225,7 @@ Use the following code:
      /*
       * Print the document as a JSON string.
       */
-     str = bson_as_canonical_extended_json (document, NULL);
+     str = bson_as_extended_json (document, NULL);
      printf ("%s\n", str);
      bson_free (str);
 
@@ -284,7 +284,7 @@ Using BCON
      /*
       * Print the document as a JSON string.
       */
-     str = bson_as_canonical_extended_json (document, NULL);
+     str = bson_as_extended_json (document, NULL);
      printf ("%s\n", str);
      bson_free (str);
 
@@ -322,7 +322,7 @@ For *single* documents, BSON can be created from JSON strings via :doc:`bson_new
         return EXIT_FAILURE;
      }
 
-     string = bson_as_canonical_extended_json (bson, NULL);
+     string = bson_as_extended_json (bson, NULL);
      printf ("%s\n", string);
      bson_free (string);
 
@@ -452,7 +452,7 @@ This first example uses an empty query specifier to find all documents in the da
      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_canonical_extended_json (doc, NULL);
+        str = bson_as_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }
@@ -511,7 +511,7 @@ To look for a specific document, add a specifier to ``query``. This example adds
      cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
 
      while (mongoc_cursor_next (cursor, &doc)) {
-        str = bson_as_canonical_extended_json (doc, NULL);
+        str = bson_as_extended_json (doc, NULL);
         printf ("%s\n", str);
         bson_free (str);
      }
@@ -814,7 +814,7 @@ This example executes the `collStats <http://docs.mongodb.org/manual/reference/c
      command = BCON_NEW ("collStats", BCON_UTF8 ("mycoll"));
      if (mongoc_collection_command_simple (
             collection, command, NULL, &reply, &error)) {
-        str = bson_as_canonical_extended_json (&reply, NULL);
+        str = bson_as_extended_json (&reply, NULL);
         printf ("%s\n", str);
         bson_free (str);
      } else {

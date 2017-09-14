@@ -4,8 +4,7 @@ set (PACKAGE_LIBRARIES mongoc-1.0)
 
 include (CMakePackageConfigHelpers)
 
-# These aren't pkg-config files, they're CMake package configuration files.
-function (install_package_config_file prefix)
+foreach (prefix "1.0" "static-1.0")
    foreach (suffix "config.cmake" "config-version.cmake")
       configure_package_config_file (
          build/cmake/libmongoc-${prefix}-${suffix}.in
@@ -16,15 +15,9 @@ function (install_package_config_file prefix)
 
       install (
          FILES
-         ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-${prefix}-${suffix}
+           ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-${prefix}-${suffix}
          DESTINATION
-         lib/cmake/libmongoc-${prefix}
+           lib/cmake/libmongoc-${prefix}
       )
    endforeach ()
-endfunction ()
-
-install_package_config_file ("1.0")
-
-if (ENABLE_STATIC)
-   install_package_config_file ("static-1.0")
-endif ()
+endforeach ()

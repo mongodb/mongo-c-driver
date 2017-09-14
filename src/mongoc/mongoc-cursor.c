@@ -242,8 +242,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Invalid filter: %s",
-                         validate_err.message);
+                         "Invalid filter: %s", validate_err.message);
          GOTO (finish);
       }
 
@@ -258,8 +257,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                         "Invalid opts: %s",
-                         validate_err.message);
+                         "Invalid opts: %s", validate_err.message);
          GOTO (finish);
       }
 
@@ -1186,6 +1184,24 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
+   if (cursor->rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
+      uint8_t *buf = NULL;
+      size_t len = cursor->rpc.compressed.uncompressed_size +
+                   sizeof (mongoc_rpc_header_t);
+
+      buf = bson_malloc0 (len);
+      if (!_mongoc_rpc_decompress (&cursor->rpc, buf, len)) {
+         bson_free (buf);
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Could not decompress server reply");
+         GOTO (done);
+      }
+
+      _mongoc_buffer_destroy (&cursor->buffer);
+      _mongoc_buffer_init (&cursor->buffer, buf, len, NULL, NULL);
+   }
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
@@ -1288,7 +1304,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       cursor->read_prefs, server_stream, command, flags, &read_prefs_result);
 
    if (cursor->write_concern &&
-       !mongoc_write_concern_is_default (cursor->write_concern) &&
+       !_mongoc_write_concern_is_default (cursor->write_concern) &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
       mongoc_write_concern_append (cursor->write_concern,
                                    read_prefs_result.query_with_read_prefs);
@@ -1613,6 +1629,24 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       GOTO (fail);
    }
 
+   if (cursor->rpc.header.opcode == MONGOC_OPCODE_COMPRESSED) {
+      uint8_t *buf = NULL;
+      size_t len = cursor->rpc.compressed.uncompressed_size +
+                   sizeof (mongoc_rpc_header_t);
+
+      buf = bson_malloc0 (len);
+      if (!_mongoc_rpc_decompress (&cursor->rpc, buf, len)) {
+         bson_free (buf);
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Could not decompress server reply");
+         GOTO (fail);
+      }
+
+      _mongoc_buffer_destroy (&cursor->buffer);
+      _mongoc_buffer_init (&cursor->buffer, buf, len, NULL, NULL);
+   }
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,

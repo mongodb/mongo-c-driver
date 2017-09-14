@@ -452,7 +452,7 @@ match_json (const bson_t *doc,
                "pattern:\n%s\n"
                "%s\n"
                "%s:%d %s()\n",
-               doc ? bson_as_canonical_extended_json (doc, NULL) : "{}",
+               doc ? bson_as_extended_json (doc, NULL) : "{}",
                double_quoted,
                ctx.errmsg,
                filename,

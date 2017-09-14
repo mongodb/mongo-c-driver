@@ -747,7 +747,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
       }
       mongoc_uri_bson_append_or_replace_key (&uri->credentials, lkey, value);
    } else if (!strcmp (lkey, MONGOC_URI_READCONCERNLEVEL)) {
-      if (!mongoc_read_concern_is_default (uri->read_concern)) {
+      if (!_mongoc_read_concern_is_default (uri->read_concern)) {
          MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
       }
       mongoc_read_concern_set_level (uri->read_concern, value);

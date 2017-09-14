@@ -1,23 +1,18 @@
 mongo-c-driver 1.7.0
 ====================
 
-It is my please to announce mongo-c-driver 1.7.0.
-
-New features and bug fixes:
-
   * CMake build now installs .pc files for programs that link to libmongoc using
     pkg-config. Both the CMake and Autotools build systems now install .cmake
     files for programs that link to libmongoc using CMake. Linking to libmongoc
     statically or dynamically is now much more convenient. See the new tutorial
     section "Include and link libmongoc in your C program".
-  * New CMake option ENABLE_STATIC can be ON, OFF, or AUTO (the default)
   * Minimum required CMake version has been increased to 3.1.
   * CMake remains experimental on non-Windows platforms and issues a warning now
   * Support for wire compression.
     * Support for snappy and zlib. MongoDB 3.4 only supports snappy, while zlib
       support is expected in MongoDB 3.6.
       The enable, configure mongoc like so:
-      ./configure --with-snappy --with-zlib
+      ./configure --enable-snappy --enable-zlib
     * New functions: mongoc_uri_get_compressors & mongoc_uri_set_compressors, to
       get and set compressor configuration on mongoc_uri_t
     * Added support for comma seperated "compressors" connection string option (e.g.
@@ -43,26 +38,7 @@ New features and bug fixes:
     * Case is now preserved in Unix domain paths.
   * New function mongoc_cursor_error_document provides access to server's error
     reply if a query or command fails.
-  * New function mongoc_write_concern_is_default determines whether any write
-    concern options have been set, and mongoc_read_concern_is_default checks if
-    read concern options are set.
   * mongoc_gridfs_find_one_with_opts optimized to use limit 1.
-
-Thanks to everyone who contributed to the development of this release.
-
-  * Hannes Magnusson
-  * A. Jesse Jiryu Davis
-  * David Golden
-  * Jeremy Mikola
-  * Bernard Spil
-  * Aleksander Melnikov
-  * Adam Seering
-  * Remi Collet
-
-Peace,
-
-    A. Jesse Jiryu Davis
-
 
 mongo-c-driver 1.6.0
 ====================

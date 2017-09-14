@@ -22,7 +22,7 @@ query_collection (mongoc_collection_t *col)
    while (mongoc_cursor_next (cursor, &doc)) {
       char *str;
 
-      str = bson_as_canonical_extended_json (doc, NULL);
+      str = bson_as_extended_json (doc, NULL);
       fprintf (stderr, "%s\n", str);
       bson_free (str);
    }

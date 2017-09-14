@@ -439,7 +439,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy=no --with-zlib" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=no --enable-zlib=yes" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-snappy
@@ -452,7 +452,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib=no" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=no" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -465,7 +465,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--with-snappy --with-zlib" sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' EXTRA_CONFIGURE_FLAGS="--enable-snappy=yes --enable-zlib=yes" sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-zlib
@@ -756,8 +756,8 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
 
     - name: link-with-cmake-windows-ssl
       depends_on:
@@ -778,8 +778,8 @@ tasks:
               # that links dynamically or statically to it, using variables from
               # CMake's find_package command.
               export ENABLE_SSL=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.bat
 
     - name: link-with-cmake-mingw
       depends_on:
@@ -797,7 +797,7 @@ tasks:
               # Build libmongoc with CMake (not Autotools) and compile a program
               # that links dynamically or statically to it, using variables from
               # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.bat
 
     - name: link-with-pkg-config
       depends_on:

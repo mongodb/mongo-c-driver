@@ -880,10 +880,11 @@ mongoc_server_description_filter_tags (
 
       if (found) {
          for (i = 0; i < description_len; i++) {
-            if (!sd_matched[i] && descriptions[i]) {
+            if (!sd_matched[i]) {
                TRACE ("Rejected [%s] [%s], doesn't match tags",
                       mongoc_server_description_type (descriptions[i]),
                       descriptions[i]->host.host_and_port);
+
                descriptions[i] = NULL;
             }
          }
