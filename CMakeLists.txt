@@ -393,6 +393,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-change-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
@@ -456,6 +457,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc.h
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-change-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.h
@@ -807,6 +809,7 @@ mongoc_add_example(fam TRUE ${SOURCE_DIR}/examples/find_and_modify_with_opts/fam
 if (NOT WIN32)
    mongoc_add_example(example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
 endif ()
+mongoc_add_example(example-collection-watch TRUE ${SOURCE_DIR}/examples/example-collection-watch.c)
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)

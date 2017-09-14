@@ -37,6 +37,7 @@ BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_collection_t mongoc_collection_t;
+typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_aggregate (mongoc_collection_t *collection,
@@ -266,6 +267,10 @@ mongoc_collection_validate (mongoc_collection_t *collection,
                             const bson_t *options,
                             bson_t *reply,
                             bson_error_t *error);
+MONGOC_EXPORT (mongoc_change_stream_t *)
+mongoc_collection_watch (const mongoc_collection_t *coll,
+                         const bson_t *pipeline,
+                         const bson_t *opts);
 
 BSON_END_DECLS
 

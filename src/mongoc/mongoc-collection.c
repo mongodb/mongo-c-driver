@@ -19,6 +19,7 @@
 
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
+#include "mongoc-change-stream-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-find-and-modify-private.h"
 #include "mongoc-find-and-modify.h"
@@ -2520,4 +2521,12 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    mongoc_find_and_modify_opts_destroy (opts);
 
    return ret;
+}
+
+mongoc_change_stream_t *
+mongoc_collection_watch (const mongoc_collection_t *coll,
+                         const bson_t *pipeline,
+                         const bson_t *opts)
+{
+   return _mongoc_change_stream_new (coll, pipeline, opts);
 }
