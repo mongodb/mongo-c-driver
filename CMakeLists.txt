@@ -13,7 +13,7 @@ endfunction()
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
      \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
-     Secure Channel, \"OPENSSL\", \"AUTO\",\ or \"OFF\". These options are
+     Secure Channel, \"OPENSSL\", \"LIBRESSL\", \"AUTO\",\ or \"OFF\". These options are
      case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
      required for authenticating to MongoDB 3.0 and later.")
 
@@ -100,10 +100,11 @@ endif ()
 if (NOT (ENABLE_SSL STREQUAL DARWIN
          OR ENABLE_SSL STREQUAL WINDOWS
          OR ENABLE_SSL STREQUAL OPENSSL
+         OR ENABLE_SSL STREQUAL LIBRESSL
          OR ENABLE_SSL STREQUAL AUTO
          OR ENABLE_SSL STREQUAL OFF))
    message (FATAL_ERROR
-            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, AUTO, or OFF")
+            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
 endif()
 
 if (NOT ENABLE_SSL STREQUAL OFF)
