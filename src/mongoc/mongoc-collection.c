@@ -439,9 +439,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       }
    }
 
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-
-   _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
+   _mongoc_cursor_cursorid_init (cursor, &command);
 
 done:
    mongoc_server_stream_cleanup (server_stream); /* null ok */
@@ -1221,9 +1219,9 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
 
    cluster = &collection->client->cluster;
-   if (mongoc_cmd_parts_assemble (&parts, server_stream, &local_error)) {
+   if (mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
       ret = mongoc_cluster_run_command_monitored (
-         cluster, &parts.assembled, reply, &local_error);
+         cluster, &parts.assembled, reply, error);
    } else {
       _mongoc_bson_init_if_set (reply);
    }

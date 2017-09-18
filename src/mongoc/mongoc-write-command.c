@@ -749,6 +749,7 @@ _mongoc_write_command_execute (
                                 collection,
                                 write_concern,
                                 offset,
+                                session,
                                 result,
                                 &result->error);
       } else {
