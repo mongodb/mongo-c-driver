@@ -6,7 +6,9 @@ Build-Depends: debhelper (>= 9),
                libbson-dev (>= 1.8.0),
                libssl-dev,
                pkg-config,
-               python3-sphinx
+               python3-sphinx,
+               zlib1g-dev,
+               libsnappy-dev
 Standards-Version: 3.9.8
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
