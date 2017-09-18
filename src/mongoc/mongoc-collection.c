@@ -15,7 +15,6 @@
  */
 
 
-#include <bcon.h>
 #include <stdio.h>
 
 #include "mongoc-bulk-operation.h"
@@ -395,22 +394,17 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    }
 
    bson_append_document_begin (&command, "cursor", 6, &child);
-
    if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
        BSON_ITER_HOLDS_NUMBER (&iter)) {
       batch_size = (int32_t) bson_iter_as_int64 (&iter);
       BSON_APPEND_INT32 (&child, "batchSize", batch_size);
       has_batch_size = true;
    }
-
    bson_append_document_end (&command, &child);
 
    if (opts) {
-      bson_t opts_dupe = BSON_INITIALIZER;
-
       if (has_batch_size) {
-         bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
-         bson_iter_init (&iter, &opts_dupe);
+         bson_copy_to_excluding_noinit (opts, &cursor->opts, "batchSize", NULL);
       } else {
          bson_concat (&cursor->opts, opts);
       }
