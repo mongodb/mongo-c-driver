@@ -62,6 +62,7 @@ cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/cert.pem || true
 
 export PATH=install-dir/bin:$PATH
 openssl version || true
+ulimit -c unlimited || true
 
 if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008

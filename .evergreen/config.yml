@@ -250,6 +250,13 @@ functions:
         content_type: ${content_type|text/plain}
         display_name: "orchestration.log"
 
+  "backtrace":
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+          ./.evergreen/debug-core-evergreen.sh
+
   "upload working dir":
     - command: archive.targz_pack
       params:
@@ -366,6 +373,7 @@ pre:
   - func: "prepare kerberos"
 
 post:
+  - func: "backtrace"
   - func: "upload working dir"
   - func: "upload mo artifacts"
   - func: "upload test results"

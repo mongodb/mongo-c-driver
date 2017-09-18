@@ -28,4 +28,5 @@ export MONGOC_TEST_SRV=on
 
 ./autogen.sh
 make -j8
+ulimit -c unlimited || true
 ./test-libmongoc --no-fork -d -F test-results.json -l '/srv*'

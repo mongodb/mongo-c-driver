@@ -85,6 +85,7 @@ case "$OS" in
       ;;
 
    *)
+      ulimit -c unlimited || true
       make -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
       ;;
 esac

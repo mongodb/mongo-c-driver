@@ -212,6 +212,8 @@ fi
 openssl md5 README.rst || true
 $SCAN_BUILD make all
 
+ulimit -c unlimited || true
+
 # Write stderr to error.log and to console.
 mkfifo pipe
 tee error.log < pipe &
