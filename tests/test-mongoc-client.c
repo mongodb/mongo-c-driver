@@ -87,7 +87,7 @@ test_client_cmd_w_server_id_sharded (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
@@ -171,7 +171,7 @@ test_server_id_option (void *ctx)
 
 
 static void
-test_client_cmd_w_write_concern (void *context)
+test_client_cmd_w_write_concern (void)
 {
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
@@ -266,7 +266,7 @@ test_client_cmd_write_concern (void)
    char *cmd;
 
    /* set up client and wire protocol version */
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
@@ -831,7 +831,7 @@ _test_command_read_prefs (bool simple, bool pooled)
    const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1084,8 +1084,10 @@ test_read_write_cmd_with_opts (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (
-      0, true /* has primary */, 1 /* secondary */, 0 /* arbiters */);
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
+                                   true /* has primary */,
+                                   1 /* secondary */,
+                                   0 /* arbiters */);
 
    mock_rs_run (rs);
    client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
@@ -1125,7 +1127,7 @@ test_command_with_opts_legacy (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
@@ -1333,7 +1335,7 @@ test_command_no_errmsg (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    mongoc_client_set_error_api (client, 2);
@@ -1772,7 +1774,7 @@ test_server_status (void)
 static void
 test_get_database_names (void)
 {
-   mock_server_t *server = mock_server_with_autoismaster (0);
+   mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mongoc_client_t *client;
    bson_error_t error;
    future_t *future;
@@ -1938,6 +1940,7 @@ test_mongoc_client_mismatched_me (void)
                                " 'setName': 'rs',"
                                " 'ismaster': false,"
                                " 'secondary': true,"
+                               " 'minWireVersion': 2, 'maxWireVersion': 5,"
                                " 'me': 'foo.com'," /* mismatched "me" field */
                                " 'hosts': ['%s']}",
                                mock_server_get_host_and_port (server));
@@ -2359,6 +2362,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    mock_server_run (server);
    ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true,"
                                   " 'secondary': false,"
+                                  " 'minWireVersion': 2, 'maxWireVersion': 5,"
                                   " 'setName': 'rs', 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -2440,7 +2444,8 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
 
    server = mock_server_new ();
    mock_server_run (server);
-   ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true}");
+   ismaster = bson_strdup_printf (
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}");
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
    client = mongoc_client_new_from_uri (uri);
@@ -2562,7 +2567,7 @@ test_client_set_ssl_copies_args (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -2625,7 +2630,7 @@ _test_ssl_reconnect (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -2789,7 +2794,8 @@ test_mongoc_handshake_pool (void)
    mongoc_client_t *client1;
    mongoc_client_t *client2;
    mongoc_client_pool_t *pool;
-   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   const char *const server_reply =
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
    future_t *future;
 
    server = mock_server_new ();
@@ -2838,7 +2844,8 @@ _test_client_sends_handshake (bool pooled)
    future_t *future;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
-   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   const char *const server_reply =
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
    const int heartbeat_ms = 500;
 
    if (!TestSuite_CheckMockServerAllowed ()) {
@@ -2955,7 +2962,8 @@ test_client_appname (bool pooled, bool use_uri)
    future_t *future;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
-   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   const char *const server_reply =
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
    const int heartbeat_ms = 500;
 
    server = mock_server_new ();
@@ -3050,7 +3058,7 @@ _test_null_error_pointer (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
@@ -3188,12 +3196,9 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
-   TestSuite_AddFull (suite,
+   TestSuite_AddLive (suite,
                       "/Client/command_w_write_concern",
-                      test_client_cmd_w_write_concern,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
+                      test_client_cmd_w_write_concern);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
    TestSuite_AddMockServerTest (suite,

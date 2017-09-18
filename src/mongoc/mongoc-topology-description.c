@@ -1789,6 +1789,10 @@ _mongoc_topology_description_check_compatible (
          continue;
       }
 
+      if (sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
+         continue;
+      }
+
       /* A server is considered to be incompatible with a driver if its min and
        * max wire version does not overlap the driver’s. Specifically, a driver
        * with a min and max range of [a, b] must be considered incompatible
@@ -1878,7 +1882,10 @@ mongoc_topology_description_handle_ismaster (
              mongoc_server_description_type (sd));
    }
 
-   _mongoc_topology_description_check_compatible (topology);
+   /* Don't bother checking wire version compatibility if we already errored */
+   if (ismaster_response && (!error || !error->code)) {
+      _mongoc_topology_description_check_compatible (topology);
+   }
    _mongoc_topology_description_monitor_changed (prev_td, topology);
 
    if (prev_td) {

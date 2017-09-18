@@ -31,8 +31,12 @@ To test this, perform a ``mongodump`` of a single collection and pipe it to the 
 
 .. code-block:: none
 
-  $ echo "db.test.insert({hello:'world'})" | mongoMongoDB shell version: 2.6.1
+  $ echo "db.test.insert({hello:'world'})" | mongo
+  MongoDB shell version: 2.6.1
   connecting to: test
   WriteResult({ "nInserted" : 1 })
-  bye$ mongodump -d test -c test -o - | filter-bsondump{ "_id" : { "$oid" : "537afac9a70e5b4d556153bc" }, "hello" : "world" }
+  bye
+
+  $ mongodump -d test -c test -o - | filter-bsondump
+  { "_id" : { "$oid" : "537afac9a70e5b4d556153bc" }, "hello" : "world" }
 

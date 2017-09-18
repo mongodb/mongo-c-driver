@@ -20,7 +20,7 @@ BEGIN_IGNORE_DEPRECATIONS
 
 
 static void
-test_aggregate_w_write_concern (void *context)
+test_aggregate_w_write_concern (void)
 {
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
@@ -507,11 +507,6 @@ test_insert_null (void)
    bson_iter_t iter;
    uint32_t len;
 
-   /* nModified isn't available in 2.4 */
-   if (!test_framework_max_wire_version_at_least (2)) {
-      return;
-   }
-
    client = test_framework_client_new ();
    ASSERT (client);
 
@@ -608,53 +603,6 @@ test_insert_oversize (void *ctx)
    bson_destroy (&doc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-}
-
-
-/* CDRIVER-759, a 2.4 mongos responds to getLastError after an oversized insert:
- *
- * { err: "assertion src/mongo/s/strategy_shard.cpp:461", n: 0, ok: 1.0 }
- *
- * There's an "err" but no "code".
-*/
-
-static void
-test_legacy_insert_oversize_mongos (void)
-{
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_t b = BSON_INITIALIZER;
-   bson_error_t error;
-   future_t *future;
-   request_t *request;
-
-   server = mock_server_with_autoismaster (0);
-   mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   ASSERT (client);
-
-   collection = mongoc_client_get_collection (client, "test", "test");
-   future = future_collection_insert (
-      collection, MONGOC_INSERT_NONE, &b, NULL, &error);
-
-   request = mock_server_receives_insert (
-      server, "test.test", MONGOC_INSERT_NONE, "{}");
-   request_destroy (request);
-   request = mock_server_receives_gle (server, "test");
-   mock_server_replies_simple (request, "{'err': 'oh no!', 'n': 0, 'ok': 1}");
-   ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COLLECTION,
-                          MONGOC_ERROR_COLLECTION_INSERT_FAILED,
-                          "oh no!");
-
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
 }
 
 
@@ -846,6 +794,7 @@ auto_ismaster (mock_server_t *server,
                                         max_message_size,
                                         max_batch_size);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, response);
 
    bson_free (response);
@@ -909,71 +858,6 @@ destroy_all (bson_t **ptr, int n)
    for (i = 0; i < n; i++) {
       bson_destroy (ptr[i]);
    }
-}
-
-
-static void
-receive_bulk (mock_server_t *server, int n, mongoc_insert_flags_t flags)
-{
-   request_t *request;
-
-   request = mock_server_receives_bulk_insert (server, "test.test", flags, n);
-   BSON_ASSERT (request);
-   request_destroy (request);
-
-   request = mock_server_receives_gle (server, "test");
-   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 0, 'err': null}");
-   request_destroy (request);
-}
-
-
-static void
-test_legacy_bulk_insert_large (void)
-{
-   enum { N_BSONS = 10 };
-
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_t *bsons[N_BSONS];
-   bson_error_t error;
-   future_t *future;
-
-   server = mock_server_new ();
-   mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   ASSERT (client);
-
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   /* docs size 50 bytes each */
-   make_bulk_insert (bsons, N_BSONS, 50);
-
-   /* max message of 240 bytes, so 4 docs per batch, 3 batches. */
-   auto_ismaster (server,
-                  0,     /* max_wire_version */
-                  240,   /* max_message_size */
-                  1000,  /* max_bson_size */
-                  1000); /* max_write_batch_size */
-
-   future = future_collection_insert_bulk (collection,
-                                           MONGOC_INSERT_NONE,
-                                           (const bson_t **) bsons,
-                                           10,
-                                           NULL,
-                                           &error);
-   receive_bulk (server, 4, MONGOC_INSERT_NONE);
-   receive_bulk (server, 4, MONGOC_INSERT_NONE);
-   receive_bulk (server, 2, MONGOC_INSERT_NONE);
-
-   ASSERT_OR_PRINT (future_get_bool (future), error);
-
-   future_destroy (future);
-   destroy_all (bsons, N_BSONS);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
 }
 
 
@@ -1089,211 +973,6 @@ expected_batch_size (const bson_t **bsons,
    *has_oversized = (bool) n_oversized;
 
    return batch_sz;
-}
-
-
-static void
-_test_legacy_bulk_insert (const bson_t **bsons,
-                          int n_bsons,
-                          bool continue_on_err,
-                          const char *err_msg,
-                          const char *gle_json,
-                          ...)
-{
-   const int MAX_MESSAGE_SIZE = 300;
-   const int MAX_BSON_SIZE = 200;
-
-   va_list args;
-   char *gle_json_formatted;
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   future_t *future;
-   mongoc_insert_flags_t flags;
-   int offset;
-   bool has_oversized = false;
-   int batch_sz;
-   const bson_t *gle;
-
-   va_start (args, gle_json);
-   gle_json_formatted = bson_strdupv_printf (gle_json, args);
-   va_end (args);
-
-   server = mock_server_new ();
-   mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   ASSERT (client);
-
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   auto_ismaster (server,
-                  0,
-                  MAX_MESSAGE_SIZE,
-                  MAX_BSON_SIZE,
-                  1 /* max_write_batch_size, irrelevant */);
-
-   flags =
-      continue_on_err ? MONGOC_INSERT_CONTINUE_ON_ERROR : MONGOC_INSERT_NONE;
-
-   future = future_collection_insert_bulk (
-      collection, flags, bsons, (uint32_t) n_bsons, NULL, &error);
-
-   offset = 0;
-
-   /* mock server receives each batch. check each is the right size. */
-   while ((batch_sz = expected_batch_size (bsons,
-                                           n_bsons,
-                                           MAX_MESSAGE_SIZE,
-                                           MAX_BSON_SIZE,
-                                           continue_on_err,
-                                           &offset,
-                                           &has_oversized))) {
-      receive_bulk (server, batch_sz, flags);
-      if (has_oversized && !continue_on_err) {
-         break;
-      }
-   }
-
-   /* mongoc_collection_insert_bulk returns false, there was an error */
-   BSON_ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, err_msg);
-
-   gle = mongoc_collection_get_last_error (collection);
-   BSON_ASSERT (gle);
-
-   ASSERT_MATCH (gle, gle_json_formatted);
-
-   future_destroy (future);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-   bson_free (gle_json_formatted);
-}
-
-
-static void
-_test_legacy_bulk_insert_oversized_middle (bool continue_on_err)
-{
-   enum { N_BSONS = 5 };
-
-   bson_t *bsons[N_BSONS];
-
-   /* first batch */
-   bsons[0] = make_document (100);
-   bsons[1] = make_document (100);
-
-   /* second batch */
-   bsons[2] = make_document (100);
-   bsons[3] = make_document (300); /* too big */
-
-   /* final batch, only sent if continue_on_err */
-   bsons[4] = make_document (100);
-
-   _test_legacy_bulk_insert ((const bson_t **) bsons,
-                             N_BSONS,
-                             continue_on_err,
-                             "Document 3 is too large",
-                             "{'nInserted': %d,"
-                             " 'nMatched': 0,"
-                             " 'nRemoved': 0,"
-                             " 'nUpserted': 0,"
-                             " 'writeErrors': [{'index': 3}]}",
-                             continue_on_err ? 4 : 3);
-
-   destroy_all (bsons, N_BSONS);
-}
-
-static void
-test_legacy_bulk_insert_oversized_middle (void)
-{
-   _test_legacy_bulk_insert_oversized_middle (false);
-}
-
-
-static void
-test_legacy_bulk_insert_oversized_continue_middle (void)
-{
-   _test_legacy_bulk_insert_oversized_middle (true);
-}
-
-
-static void
-_test_legacy_bulk_insert_oversized_first (bool continue_on_err)
-{
-   enum { N_BSONS = 2 };
-
-   bson_t *bsons[N_BSONS];
-
-   bsons[0] = make_document (300); /* too big */
-   bsons[1] = make_document (100);
-
-   _test_legacy_bulk_insert ((const bson_t **) bsons,
-                             N_BSONS,
-                             continue_on_err,
-                             "Document 0 is too large",
-                             "{'nInserted': %d,"
-                             " 'nMatched': 0,"
-                             " 'nRemoved': 0,"
-                             " 'nUpserted': 0,"
-                             " 'writeErrors': [{'index': 0}]}",
-                             continue_on_err ? 1 : 0);
-
-   destroy_all (bsons, N_BSONS);
-}
-
-
-static void
-test_legacy_bulk_insert_oversized_first (void)
-{
-   _test_legacy_bulk_insert_oversized_first (false);
-}
-
-
-static void
-test_legacy_bulk_insert_oversized_first_continue (void)
-{
-   _test_legacy_bulk_insert_oversized_first (true);
-}
-
-
-static void
-_test_legacy_bulk_insert_oversized_last (bool continue_on_err)
-{
-   enum { N_BSONS = 2 };
-
-   bson_t *bsons[N_BSONS];
-
-   bsons[0] = make_document (100);
-   bsons[1] = make_document (300); /* too big */
-
-   _test_legacy_bulk_insert ((const bson_t **) bsons,
-                             N_BSONS,
-                             continue_on_err,
-                             "Document 1 is too large",
-                             "{'nInserted': 1,"
-                             " 'nMatched': 0,"
-                             " 'nRemoved': 0,"
-                             " 'nUpserted': 0,"
-                             " 'writeErrors': [{'index': 1}]}");
-
-   destroy_all (bsons, N_BSONS);
-}
-
-
-static void
-test_legacy_bulk_insert_oversized_last (void)
-{
-   _test_legacy_bulk_insert_oversized_last (false);
-}
-
-
-static void
-test_legacy_bulk_insert_oversized_last_continue (void)
-{
-   _test_legacy_bulk_insert_oversized_last (true);
 }
 
 
@@ -2291,7 +1970,7 @@ test_count_read_pref (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2596,7 +2275,7 @@ test_count_with_opts (void)
    bson_error_t error;
 
    /* use a mongos since we don't send SLAVE_OK to mongos by default */
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -2966,12 +2645,8 @@ again:
       } else {
          bson_init (&opts);
 
-         /* servers < 2.6 error is passed allowDiskUse */
-         if (test_framework_max_wire_version_at_least (2)) {
-            BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
-         }
+         BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
 
-         /* this is ok, the driver silently omits batchSize if server < 2.6 */
          BSON_APPEND_INT32 (&opts, "batchSize", 10);
          cursor = mongoc_collection_aggregate (
             collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
@@ -3107,62 +2782,6 @@ options_json (test_aggregate_context_t *c)
 
 
 static void
-test_aggregate_legacy (void *data)
-{
-   test_aggregate_context_t *context = (test_aggregate_context_t *) data;
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   future_t *future;
-   request_t *request;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-
-   if (!TestSuite_CheckMockServerAllowed ()) {
-      return;
-   }
-
-   /* wire protocol version 0 */
-   server = mock_server_with_autoismaster (0);
-   mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   collection = mongoc_client_get_collection (client, "db", "collection");
-
-   cursor = mongoc_collection_aggregate (collection,
-                                         MONGOC_QUERY_NONE,
-                                         tmp_bson ("[{'a': 1}]"),
-                                         tmp_bson (options_json (context)),
-                                         NULL);
-
-   future = future_cursor_next (cursor, &doc);
-
-   /* no "cursor" argument */
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SLAVE_OK,
-                                    "{'aggregate': 'collection',"
-                                    " 'pipeline': [{'a': 1}],"
-                                    " 'cursor': {'$exists': false} %s}",
-                                    context->with_options ? ", 'foo': 1" : "");
-
-   mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
-   BSON_ASSERT (future_get_bool (future));
-   ASSERT_MATCH (doc, "{'_id': 123}");
-   request_destroy (request);
-   future_destroy (future);
-
-   /* cursor is completed */
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-
-static void
 test_aggregate_modern (void *data)
 {
    test_aggregate_context_t *context = (test_aggregate_context_t *) data;
@@ -3178,8 +2797,7 @@ test_aggregate_modern (void *data)
       return;
    }
 
-   /* wire protocol version 1 */
-   server = mock_server_with_autoismaster (1);
+   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -3614,7 +3232,7 @@ test_stats_read_pref (void)
    bson_error_t error;
    bson_t stats;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -3940,7 +3558,7 @@ test_find_limit (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -4011,7 +3629,7 @@ test_find_batch_size (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -4261,7 +3879,7 @@ test_find_indexes_err (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    mongoc_client_set_error_api (client, 2);
@@ -4285,35 +3903,27 @@ test_find_indexes_err (void)
 static void
 test_aggregate_install (TestSuite *suite)
 {
-   static test_aggregate_context_t test_aggregate_contexts[2][2][2];
+   static test_aggregate_context_t test_aggregate_contexts[2][2];
 
-   int wire_version, with_batch_size, with_options;
-   char *legacy_or_modern;
-   TestFuncWC func;
+   int with_batch_size, with_options;
    char *name;
    test_aggregate_context_t *context;
 
-   for (wire_version = 0; wire_version < 2; wire_version++) {
-      for (with_batch_size = 0; with_batch_size < 2; with_batch_size++) {
-         for (with_options = 0; with_options < 2; with_options++) {
-            legacy_or_modern = wire_version ? "legacy" : "modern";
-            func = wire_version ? test_aggregate_legacy : test_aggregate_modern;
+   for (with_batch_size = 0; with_batch_size < 2; with_batch_size++) {
+      for (with_options = 0; with_options < 2; with_options++) {
+         context = &test_aggregate_contexts[with_batch_size][with_options];
 
-            context = &test_aggregate_contexts[wire_version][with_batch_size]
-                                              [with_options];
+         context->with_batch_size = (bool) with_batch_size;
+         context->with_options = (bool) with_options;
 
-            context->with_batch_size = (bool) with_batch_size;
-            context->with_options = (bool) with_options;
+         name = bson_strdup_printf (
+            "/Collection/aggregate/%s/%s",
+            context->with_batch_size ? "batch_size" : "no_batch_size",
+            context->with_options ? "with_options" : "no_options");
 
-            name = bson_strdup_printf (
-               "/Collection/aggregate/%s/%s/%s",
-               legacy_or_modern,
-               context->with_batch_size ? "batch_size" : "no_batch_size",
-               context->with_options ? "with_options" : "no_options");
-
-            TestSuite_AddWC (suite, name, func, NULL, (void *) context);
-            bson_free (name);
-         }
+         TestSuite_AddWC (
+            suite, name, test_aggregate_modern, NULL, (void *) context);
+         bson_free (name);
       }
    }
 }
@@ -4950,44 +4560,14 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
-   TestSuite_AddFull (suite,
+   TestSuite_AddLive (suite,
                       "/Collection/aggregate/write_concern",
-                      test_aggregate_w_write_concern,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_2);
+                      test_aggregate_w_write_concern);
    TestSuite_AddLive (
       suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/bulk_insert/legacy/large",
-                                test_legacy_bulk_insert_large);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_middle",
-      test_legacy_bulk_insert_oversized_middle);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_middle_continue",
-      test_legacy_bulk_insert_oversized_continue_middle);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_first",
-      test_legacy_bulk_insert_oversized_first);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_first_continue",
-      test_legacy_bulk_insert_oversized_first_continue);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/bulk_insert/legacy/oversized_last",
-                                test_legacy_bulk_insert_oversized_last);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_last_continue",
-      test_legacy_bulk_insert_oversized_last_continue);
-
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
    TestSuite_AddLive (suite, "/Collection/insert", test_insert);
    TestSuite_AddLive (
@@ -4998,9 +4578,6 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
-   TestSuite_AddMockServerTest (suite,
-                                "/Collection/insert/oversize/mongos",
-                                test_legacy_insert_oversize_mongos);
    TestSuite_AddMockServerTest (
       suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_AddLive (suite, "/Collection/save", test_save);

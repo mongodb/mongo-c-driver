@@ -1216,11 +1216,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       }
    }
 
-   if (!mongoc_cluster_legacy_rpc_sendv_to_server (&cursor->client->cluster,
-                                                   &rpc,
-                                                   server_stream,
-                                                   NULL,
-                                                   &cursor->error)) {
+   if (!mongoc_cluster_legacy_rpc_sendv_to_server (
+          &cursor->client->cluster, &rpc, server_stream, &cursor->error)) {
       GOTO (done);
    }
 
@@ -1629,7 +1626,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       }
 
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
-             cluster, &rpc, server_stream, NULL, &cursor->error)) {
+             cluster, &rpc, server_stream, &cursor->error)) {
          GOTO (fail);
       }
    }

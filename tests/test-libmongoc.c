@@ -1698,6 +1698,7 @@ test_framework_max_wire_version_at_least (int version)
 
    call_ismaster (&reply);
 
+   BSON_ASSERT (version > 0);
    at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion") &&
                bson_iter_as_int64 (&iter) >= version);
 
@@ -1875,24 +1876,6 @@ test_framework_skip_if_not_replset (void)
       return 0;
    }
    return !test_framework_skip_if_replset ();
-}
-
-int
-test_framework_skip_if_max_wire_version_less_than_1 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (2);
-}
-
-int
-test_framework_skip_if_max_wire_version_less_than_2 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (2);
 }
 
 int

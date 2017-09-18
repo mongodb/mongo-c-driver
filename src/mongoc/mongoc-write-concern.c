@@ -91,7 +91,6 @@ mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
    if (write_concern) {
       if (write_concern->compiled.len) {
          bson_destroy (&write_concern->compiled);
-         bson_destroy (&write_concern->compiled_gle);
       }
 
       bson_free (write_concern->wtag);
@@ -326,31 +325,6 @@ _mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern)
 }
 
 /**
- * mongoc_write_concern_get_gle:
- * @write_concern: A mongoc_write_concern_t.
- *
- * This is an internal function.
- *
- * Freeze the write concern if necessary and retrieve the encoded bson_t
- * representing the write concern as a get last error command.
- *
- * You may not modify the write concern further after calling this function.
- *
- * Returns: A bson_t that should not be modified or freed as it is owned by
- *    the mongoc_write_concern_t instance.
- */
-const bson_t *
-_mongoc_write_concern_get_gle (mongoc_write_concern_t *write_concern)
-{
-   if (!write_concern->frozen) {
-      _mongoc_write_concern_freeze (write_concern);
-   }
-
-   return &write_concern->compiled_gle;
-}
-
-
-/**
  * mongoc_write_concern_is_default:
  * @write_concern: A mongoc_write_concern_t.
  *
@@ -379,17 +353,14 @@ static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 {
    bson_t *compiled;
-   bson_t *compiled_gle;
 
    BSON_ASSERT (write_concern);
 
    compiled = &write_concern->compiled;
-   compiled_gle = &write_concern->compiled_gle;
 
    write_concern->frozen = true;
 
    bson_init (compiled);
-   bson_init (compiled_gle);
 
    if (write_concern->w == MONGOC_WRITE_CONCERN_W_TAG) {
       BSON_ASSERT (write_concern->wtag);
@@ -413,9 +384,6 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    if (write_concern->wtimeout) {
       bson_append_int32 (compiled, "wtimeout", 8, write_concern->wtimeout);
    }
-
-   BSON_APPEND_INT32 (compiled_gle, "getlasterror", 1);
-   bson_concat (compiled_gle, compiled);
 }
 
 

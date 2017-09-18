@@ -43,7 +43,7 @@
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 0
+#define WIRE_VERSION_MIN 2
 #define WIRE_VERSION_MAX 6
 
 /* first version that supported aggregation cursors */
@@ -113,8 +113,7 @@ typedef enum {
 BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 mongoc_host_list_t *
-_mongoc_client_get_srv (const char *service,
-                        bson_error_t *error);
+_mongoc_client_get_srv (const char *service, bson_error_t *error);
 
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
@@ -142,12 +141,6 @@ _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_buffer_t *buffer,
                      mongoc_server_stream_t *server_stream,
                      bson_error_t *error);
-
-bool
-_mongoc_client_recv_gle (mongoc_client_t *client,
-                         mongoc_server_stream_t *server_stream,
-                         bson_t **gle_doc,
-                         bson_error_t *error);
 
 void
 _mongoc_client_kill_cursor (mongoc_client_t *client,

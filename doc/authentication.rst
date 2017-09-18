@@ -65,7 +65,7 @@ GSSAPI (Kerberos) Authentication
 
   Kerberos support requires compiling the driver against ``cyrus-sasl`` on UNIX-like environments. On Windows, configure the driver to build against the Windows Native SSPI.
 
-``GSSAPI`` (Kerberos) authentication is available in the Enterprise Edition of MongoDB, version 2.4 and newer. To authenticate using ``GSSAPI``, the MongoDB C driver must be installed with SASL support. 
+``GSSAPI`` (Kerberos) authentication is available in the Enterprise Edition of MongoDB. To authenticate using ``GSSAPI``, the MongoDB C driver must be installed with SASL support. 
 
 On UNIX-like environments, run the ``kinit`` command before using the following authentication methods:
 
@@ -120,7 +120,7 @@ SASL Plain Authentication
 
   The MongoDB C Driver must be compiled with SASL support in order to use ``SASL PLAIN`` authentication.
 
-MongoDB Enterprise Edition versions 2.6.0 and newer support the ``SASL PLAIN`` authentication mechanism, initially intended for delegating authentication to an LDAP server. Using the ``SASL PLAIN`` mechanism is very similar to the challenge response mechanism with usernames and passwords. This authentication mechanism uses the ``$external`` virtual database for ``LDAP`` support:
+MongoDB Enterprise Edition supports the ``SASL PLAIN`` authentication mechanism, initially intended for delegating authentication to an LDAP server. Using the ``SASL PLAIN`` mechanism is very similar to the challenge response mechanism with usernames and passwords. This authentication mechanism uses the ``$external`` virtual database for ``LDAP`` support:
 
 .. note::
 
@@ -148,7 +148,7 @@ X.509 Certificate Authentication
 
     $ mongod --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem
 
-The ``MONGODB-X509`` mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during SSL negotiation. This authentication method requires the use of SSL connections with certificate validation and is available in MongoDB 2.6.0 and newer:
+The ``MONGODB-X509`` mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during SSL negotiation. This authentication method requires the use of SSL connections with certificate validation.
 
 .. code-block:: none
 

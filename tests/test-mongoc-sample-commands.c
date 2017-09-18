@@ -23,6 +23,7 @@
  * These are the C examples for that page.
  */
 
+/* clang-format off */
 #include <mongoc.h>
 
 #include "TestSuite.h"
@@ -2472,7 +2473,7 @@ done:
 
 
 static void
-test_sample_commands (void *ctx)
+test_sample_commands (void)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
@@ -2550,11 +2551,5 @@ test_sample_commands (void *ctx)
 void
 test_samples_install (TestSuite *suite)
 {
-   /* One of the examples uses MongoDB 2.6+'s $currentDate */
-   TestSuite_AddFull (suite,
-                      "/Samples",
-                      test_sample_commands,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_1);
+   TestSuite_AddLive (suite, "/Samples", test_sample_commands);
 }

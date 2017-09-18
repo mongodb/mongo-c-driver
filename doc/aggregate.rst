@@ -24,11 +24,13 @@ Let's use the MongoDB shell to verify that everything was imported successfully.
 
 .. code-block:: none
 
-  $ mongo testMongoDB shell version: 2.6.1
+  $ mongo test
+  MongoDB shell version: 2.6.1
   connecting to: test
   > db.zipcodes.count()
   29467
-  > db.zipcodes.findOne(){
+  > db.zipcodes.findOne()
+  {
   	"_id" : "35004",
   	"city" : "ACMAR",
   	"loc" : [

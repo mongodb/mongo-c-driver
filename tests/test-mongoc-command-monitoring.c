@@ -843,7 +843,7 @@ test_get_error (void)
    request_t *request;
    bson_error_t error = {0};
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -929,7 +929,7 @@ decrement_callbacks (void)
 
 
 static void
-test_change_callbacks (void *ctx)
+test_change_callbacks (void)
 {
    mongoc_apm_callbacks_t *inc_callbacks;
    mongoc_apm_callbacks_t *dec_callbacks;
@@ -976,7 +976,7 @@ test_change_callbacks (void *ctx)
 
 
 static void
-test_reset_callbacks (void *ctx)
+test_reset_callbacks (void)
 {
    mongoc_apm_callbacks_t *inc_callbacks;
    mongoc_apm_callbacks_t *dec_callbacks;
@@ -1339,7 +1339,7 @@ test_bulk_op_pooled (void)
 
 
 static void
-_test_query_operation_id (bool pooled, bool use_cmd)
+_test_query_operation_id (bool pooled)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -1355,7 +1355,7 @@ _test_query_operation_id (bool pooled, bool use_cmd)
 
    op_id_test_init (&test);
 
-   server = mock_server_with_autoismaster (use_cmd ? 4 : 0);
+   server = mock_server_with_autoismaster (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1386,7 +1386,7 @@ _test_query_operation_id (bool pooled, bool use_cmd)
                                 1,
                                 "db.collection",
                                 "{}",
-                                use_cmd);
+                                true);
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -1397,17 +1397,8 @@ _test_query_operation_id (bool pooled, bool use_cmd)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
-   if (use_cmd) {
-      mock_server_replies_simple (request,
-                                  "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
-   } else {
-      mock_server_replies (request,
-                           MONGOC_REPLY_QUERY_FAILURE,
-                           123,
-                           0,
-                           0,
-                           "{'$err': 'uh oh', 'code': 4321}");
-   }
+   mock_server_replies_simple (request,
+                               "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
 
    ASSERT (!future_get_bool (future));
    future_destroy (future);
@@ -1451,30 +1442,15 @@ _test_query_operation_id (bool pooled, bool use_cmd)
 static void
 test_query_operation_id_single_cmd (void)
 {
-   _test_query_operation_id (false, true);
+   _test_query_operation_id (false);
 }
 
 
 static void
 test_query_operation_id_pooled_cmd (void)
 {
-   _test_query_operation_id (true, true);
+   _test_query_operation_id (true);
 }
-
-
-static void
-test_query_operation_id_single_op_query (void)
-{
-   _test_query_operation_id (false, false);
-}
-
-
-static void
-test_query_operation_id_pooled_op_query (void)
-{
-   _test_query_operation_id (true, false);
-}
-
 
 typedef struct {
    int started_calls;
@@ -1753,18 +1729,10 @@ test_command_monitoring_install (TestSuite *suite)
                       "/command_monitoring/set_callbacks/pooled",
                       test_set_callbacks_pooled);
    /* require aggregation cursor */
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/set_callbacks/change",
-                      test_change_callbacks,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_1);
-   TestSuite_AddFull (suite,
-                      "/command_monitoring/set_callbacks/reset",
-                      test_reset_callbacks,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_1);
+   TestSuite_AddLive (
+      suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
+   TestSuite_AddLive (
+      suite, "/command_monitoring/set_callbacks/reset", test_reset_callbacks);
    TestSuite_AddLive (suite,
                       "/command_monitoring/operation_id/bulk/collection/single",
                       test_collection_bulk_op_single);
@@ -1785,14 +1753,6 @@ test_command_monitoring_install (TestSuite *suite)
       suite,
       "/command_monitoring/operation_id/query/pooled/cmd",
       test_query_operation_id_pooled_cmd);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/command_monitoring/operation_id/query/single/op_query",
-      test_query_operation_id_single_op_query);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/command_monitoring/operation_id/query/pooled/op_query",
-      test_query_operation_id_pooled_op_query);
    TestSuite_AddLive (suite, "/command_monitoring/client_cmd", test_client_cmd);
    TestSuite_AddLive (
       suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);

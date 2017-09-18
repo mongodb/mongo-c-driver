@@ -2235,15 +2235,10 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_cluster_t *cluster,
    mongoc_rpc_t *rpc,
    mongoc_server_stream_t *server_stream,
-   const mongoc_write_concern_t *write_concern,
    bson_error_t *error)
 {
    uint32_t server_id;
    mongoc_topology_scanner_node_t *scanner_node;
-   const bson_t *b;
-   mongoc_rpc_t gle;
-   bool need_gle;
-   char cmdname[140];
    int32_t max_msg_size;
    bool ret = false;
    int32_t compressor_id = 0;
@@ -2265,14 +2260,9 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
       GOTO (done);
    }
 
-   if (!write_concern) {
-      write_concern = cluster->client->write_concern;
-   }
-
    _mongoc_array_clear (&cluster->iov);
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
-   need_gle = _mongoc_rpc_needs_gle (rpc, write_concern);
    _mongoc_rpc_gather (rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (rpc);
 
@@ -2294,40 +2284,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
                       BSON_UINT32_FROM_LE (rpc->header.msg_len),
                       max_msg_size);
       GOTO (done);
-   }
-
-   if (need_gle) {
-      gle.header.msg_len = 0;
-      gle.header.request_id = ++cluster->request_id;
-      gle.header.response_to = 0;
-      gle.header.opcode = MONGOC_OPCODE_QUERY;
-      gle.query.flags = MONGOC_QUERY_NONE;
-
-      switch (BSON_UINT32_FROM_LE (rpc->header.opcode)) {
-      case MONGOC_OPCODE_INSERT:
-         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->insert.collection);
-         break;
-      case MONGOC_OPCODE_DELETE:
-         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->delete_.collection);
-         break;
-      case MONGOC_OPCODE_UPDATE:
-         DB_AND_CMD_FROM_COLLECTION (cmdname, rpc->update.collection);
-         break;
-      default:
-         BSON_ASSERT (false);
-         DB_AND_CMD_FROM_COLLECTION (cmdname, "admin.$cmd");
-         break;
-      }
-
-      gle.query.collection = cmdname;
-      gle.query.skip = 0;
-      gle.query.n_return = 1;
-      b = _mongoc_write_concern_get_gle (
-         (mongoc_write_concern_t *) write_concern);
-      gle.query.query = bson_get_data (b);
-      gle.query.fields = NULL;
-      _mongoc_rpc_gather (&gle, &cluster->iov);
-      _mongoc_rpc_swab_to_le (&gle);
    }
 
    if (!_mongoc_stream_writev_full (server_stream->stream,

@@ -254,6 +254,7 @@ mock_rs_run (mock_rs_t *rs)
    rs->hosts_str = hosts_str = hosts (&rs->servers);
    rs->uri = make_uri (&rs->servers);
 
+   BSON_ASSERT (rs->max_wire_version > 0);
    if (rs->has_primary) {
       /* primary's ismaster response */
       ismaster_json =

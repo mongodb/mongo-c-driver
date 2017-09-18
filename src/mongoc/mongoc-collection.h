@@ -135,8 +135,7 @@ MONGOC_EXPORT (bool)
 mongoc_collection_ensure_index (mongoc_collection_t *collection,
                                 const bson_t *keys,
                                 const mongoc_index_opt_t *opt,
-                                bson_error_t *error)
-   BSON_GNUC_DEPRECATED;
+                                bson_error_t *error) BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                 bson_error_t *error);
@@ -258,7 +257,8 @@ mongoc_collection_set_write_concern (
 MONGOC_EXPORT (const char *)
 mongoc_collection_get_name (mongoc_collection_t *collection);
 MONGOC_EXPORT (const bson_t *)
-mongoc_collection_get_last_error (const mongoc_collection_t *collection);
+mongoc_collection_get_last_error (const mongoc_collection_t *collection)
+   BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (char *)
 mongoc_collection_keys_to_index_string (const bson_t *keys);
 MONGOC_EXPORT (bool)

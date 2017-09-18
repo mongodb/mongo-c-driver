@@ -350,115 +350,11 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_database_add_user_legacy --
- *
- *       A helper to add a user or update their password on @database.
- *       This uses the legacy protocol by inserting into system.users.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error may be set.
- *
- *--------------------------------------------------------------------------
- */
-
-static bool
-mongoc_database_add_user_legacy (mongoc_database_t *database,
-                                 const char *username,
-                                 const char *password,
-                                 bson_error_t *error)
-{
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor = NULL;
-   const bson_t *doc;
-   bool ret = false;
-   bson_t query;
-   bson_t opts;
-   bson_t user;
-   char *input;
-   char *pwd = NULL;
-
-   ENTRY;
-
-   BSON_ASSERT (database);
-   BSON_ASSERT (username);
-   BSON_ASSERT (password);
-
-   /*
-    * Users are stored in the <dbname>.system.users virtual collection.
-    */
-   collection = mongoc_client_get_collection (
-      database->client, database->name, "system.users");
-   BSON_ASSERT (collection);
-
-   /*
-    * Hash the users password.
-    */
-   input = bson_strdup_printf ("%s:mongo:%s", username, password);
-   pwd = _mongoc_hex_md5 (input);
-   bson_free (input);
-
-   /*
-    * Check to see if the user exists. If so, we will update the
-    * password instead of inserting a new user.
-    */
-   bson_init (&query);
-   bson_append_utf8 (&query, "user", 4, username, -1);
-
-   bson_init (&opts);
-   bson_append_int64 (&opts, "limit", 5, 1);
-   bson_append_bool (&opts, "singleBatch", 11, true);
-
-   cursor = mongoc_collection_find_with_opts (collection, &query, &opts, NULL);
-   if (!mongoc_cursor_next (cursor, &doc)) {
-      if (mongoc_cursor_error (cursor, error)) {
-         GOTO (failure);
-      }
-      bson_init (&user);
-      bson_append_utf8 (&user, "user", 4, username, -1);
-      bson_append_bool (&user, "readOnly", 8, false);
-      bson_append_utf8 (&user, "pwd", 3, pwd, -1);
-   } else {
-      bson_init (&user);
-      bson_copy_to_excluding_noinit (doc, &user, "pwd", (char *) NULL);
-      bson_append_utf8 (&user, "pwd", 3, pwd, -1);
-   }
-
-   if (!mongoc_collection_insert (
-          collection, MONGOC_INSERT_NONE, &user, NULL, error)) {
-      GOTO (failure_with_user);
-   }
-
-   ret = true;
-
-failure_with_user:
-   bson_destroy (&user);
-
-failure:
-   if (cursor) {
-      mongoc_cursor_destroy (cursor);
-   }
-   mongoc_collection_destroy (collection);
-   bson_destroy (&query);
-   bson_destroy (&opts);
-   bson_free (pwd);
-
-   RETURN (ret);
-}
-
-
 bool
 mongoc_database_remove_user (mongoc_database_t *database,
                              const char *username,
                              bson_error_t *error)
 {
-   mongoc_collection_t *col;
-   bson_error_t lerror;
    bson_t cmd;
    bool ret;
 
@@ -469,25 +365,8 @@ mongoc_database_remove_user (mongoc_database_t *database,
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "dropUser", username);
-   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
    bson_destroy (&cmd);
-
-   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
-      bson_init (&cmd);
-      BSON_APPEND_UTF8 (&cmd, "user", username);
-
-      col = mongoc_client_get_collection (
-         database->client, database->name, "system.users");
-      BSON_ASSERT (col);
-
-      ret = mongoc_collection_remove (
-         col, MONGOC_REMOVE_SINGLE_REMOVE, &cmd, NULL, error);
-
-      bson_destroy (&cmd);
-      mongoc_collection_destroy (col);
-   } else if (error) {
-      memcpy (error, &lerror, sizeof *error);
-   }
 
    RETURN (ret);
 }
@@ -497,8 +376,6 @@ bool
 mongoc_database_remove_all_users (mongoc_database_t *database,
                                   bson_error_t *error)
 {
-   mongoc_collection_t *col;
-   bson_error_t lerror;
    bson_t cmd;
    bool ret;
 
@@ -508,24 +385,8 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
 
    bson_init (&cmd);
    BSON_APPEND_INT32 (&cmd, "dropAllUsersFromDatabase", 1);
-   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
    bson_destroy (&cmd);
-
-   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
-      bson_init (&cmd);
-
-      col = mongoc_client_get_collection (
-         database->client, database->name, "system.users");
-      BSON_ASSERT (col);
-
-      ret =
-         mongoc_collection_remove (col, MONGOC_REMOVE_NONE, &cmd, NULL, error);
-
-      bson_destroy (&cmd);
-      mongoc_collection_destroy (col);
-   } else if (error) {
-      memcpy (error, &lerror, sizeof *error);
-   }
 
    RETURN (ret);
 }
@@ -553,7 +414,6 @@ mongoc_database_add_user (mongoc_database_t *database,
                           const bson_t *custom_data,
                           bson_error_t *error)
 {
-   bson_error_t lerror;
    bson_t cmd;
    bson_t ar;
    char *input;
@@ -565,48 +425,29 @@ mongoc_database_add_user (mongoc_database_t *database,
    BSON_ASSERT (database);
    BSON_ASSERT (username);
 
-   /*
-    * CDRIVER-232:
-    *
-    * Perform a (slow and tedious) round trip to mongod to determine if
-    * we can safely call createUser. Otherwise, we will fallback and
-    * perform legacy insertion into users collection.
-    */
+   /* usersInfo succeeded or failed with auth err, we're on modern mongod */
+   input = bson_strdup_printf ("%s:mongo:%s", username, password);
+   hashed_password = _mongoc_hex_md5 (input);
+   bson_free (input);
+
    bson_init (&cmd);
-   BSON_APPEND_UTF8 (&cmd, "usersInfo", username);
-   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
-   bson_destroy (&cmd);
-
-   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
-      ret =
-         mongoc_database_add_user_legacy (database, username, password, error);
-   } else if (ret || (lerror.code == 13)) {
-      /* usersInfo succeeded or failed with auth err, we're on modern mongod */
-      input = bson_strdup_printf ("%s:mongo:%s", username, password);
-      hashed_password = _mongoc_hex_md5 (input);
-      bson_free (input);
-
-      bson_init (&cmd);
-      BSON_APPEND_UTF8 (&cmd, "createUser", username);
-      BSON_APPEND_UTF8 (&cmd, "pwd", hashed_password);
-      BSON_APPEND_BOOL (&cmd, "digestPassword", false);
-      if (custom_data) {
-         BSON_APPEND_DOCUMENT (&cmd, "customData", custom_data);
-      }
-      if (roles) {
-         BSON_APPEND_ARRAY (&cmd, "roles", roles);
-      } else {
-         bson_append_array_begin (&cmd, "roles", 5, &ar);
-         bson_append_array_end (&cmd, &ar);
-      }
-
-      ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
-
-      bson_free (hashed_password);
-      bson_destroy (&cmd);
-   } else if (error) {
-      memcpy (error, &lerror, sizeof *error);
+   BSON_APPEND_UTF8 (&cmd, "createUser", username);
+   BSON_APPEND_UTF8 (&cmd, "pwd", hashed_password);
+   BSON_APPEND_BOOL (&cmd, "digestPassword", false);
+   if (custom_data) {
+      BSON_APPEND_DOCUMENT (&cmd, "customData", custom_data);
    }
+   if (roles) {
+      BSON_APPEND_ARRAY (&cmd, "roles", roles);
+   } else {
+      bson_append_array_begin (&cmd, "roles", 5, &ar);
+      bson_append_array_end (&cmd, &ar);
+   }
+
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
+
+   bson_free (hashed_password);
+   bson_destroy (&cmd);
 
    RETURN (ret);
 }

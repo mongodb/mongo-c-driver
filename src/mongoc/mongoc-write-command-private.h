@@ -67,7 +67,6 @@ typedef struct {
 
 typedef struct {
    /* true after a legacy update prevents us from calculating nModified */
-   bool omit_nModified;
    uint32_t nInserted;
    uint32_t nMatched;
    uint32_t nModified;
@@ -136,8 +135,7 @@ void
 _mongoc_write_command_too_large_error (bson_error_t *error,
                                        int32_t idx,
                                        int32_t len,
-                                       int32_t max_bson_size,
-                                       bson_t *err_doc);
+                                       int32_t max_bson_size);
 void
 _mongoc_write_command_execute (mongoc_write_command_t *command,
                                mongoc_client_t *client,

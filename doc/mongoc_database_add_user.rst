@@ -28,8 +28,6 @@ Parameters
 
 This function shall create a new user with access to ``database``.
 
-This function handles the difference between MongoDB ``2.4`` and ``2.6``.
-
 Errors
 ------
 

@@ -106,7 +106,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    mongoc_cluster_t *cluster,
    mongoc_rpc_t *rpcs,
    mongoc_server_stream_t *server_stream,
-   const mongoc_write_concern_t *write_concern,
    bson_error_t *error);
 
 bool

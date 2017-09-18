@@ -40,7 +40,6 @@ typedef void (*mongoc_write_op_t) (mongoc_write_command_t *command,
                                    mongoc_server_stream_t *server_stream,
                                    const char *database,
                                    const char *collection,
-                                   const mongoc_write_concern_t *write_concern,
                                    uint32_t offset,
                                    mongoc_write_result_t *result,
                                    bson_error_t *error);
@@ -309,8 +308,7 @@ void
 _mongoc_write_command_too_large_error (bson_error_t *error,
                                        int32_t idx,
                                        int32_t len,
-                                       int32_t max_bson_size,
-                                       bson_t *err_doc)
+                                       int32_t max_bson_size)
 {
    bson_set_error (error,
                    MONGOC_ERROR_BSON,
@@ -320,12 +318,6 @@ _mongoc_write_command_too_large_error (bson_error_t *error,
                    idx,
                    len,
                    max_bson_size);
-
-   if (err_doc) {
-      BSON_APPEND_INT32 (err_doc, "index", idx);
-      BSON_APPEND_UTF8 (err_doc, "err", error->message);
-      BSON_APPEND_INT32 (err_doc, "code", MONGOC_ERROR_BSON_INVALID);
-   }
 }
 
 
@@ -445,7 +437,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       /* Skip the document if it's too large */
       if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
          _mongoc_write_command_too_large_error (
-            error, index_offset, len, max_bson_obj_size, NULL);
+            error, index_offset, len, max_bson_obj_size);
          result->failed = true;
 
          /* skip this document */
@@ -623,8 +615,7 @@ again:
    bson_append_array_end (&cmd, &ar);
 
    if (!i) {
-      _mongoc_write_command_too_large_error (
-         error, i, len, max_bson_obj_size, NULL);
+      _mongoc_write_command_too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
       ret = false;
       if (bson) {
@@ -682,7 +673,6 @@ _mongoc_write_command_execute (
    mongoc_client_session_t *session,            /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
-   int32_t min_wire_version;
    ENTRY;
 
    BSON_ASSERT (command);
@@ -691,8 +681,6 @@ _mongoc_write_command_execute (
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
    BSON_ASSERT (result);
-
-   min_wire_version = server_stream->sd->min_wire_version;
 
    if (!write_concern) {
       write_concern = client->write_concern;
@@ -708,8 +696,7 @@ _mongoc_write_command_execute (
    }
 
    if (command->flags.has_collation) {
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          result->failed = true;
          bson_set_error (&result->error,
                          MONGOC_ERROR_COMMAND,
@@ -728,8 +715,7 @@ _mongoc_write_command_execute (
    }
    if (command->flags.bypass_document_validation !=
        MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          result->failed = true;
          bson_set_error (
             &result->error,
@@ -754,46 +740,27 @@ _mongoc_write_command_execute (
                            offset,
                            result,
                            &result->error);
-   } else if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
-      /*
-       * If we have an unacknowledged write and the server supports the legacy
-       * opcodes, then submit the legacy opcode so we don't need to wait for
-       * a response from the server.
-       */
-
-      if ((min_wire_version == 0) &&
-          !mongoc_write_concern_is_acknowledged (write_concern)) {
+   } else {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
+         _mongoc_write_opquery (command,
+                                client,
+                                server_stream,
+                                database,
+                                collection,
+                                write_concern,
+                                offset,
+                                result,
+                                &result->error);
+      } else {
          gLegacyWriteOps[command->type](command,
                                         client,
                                         server_stream,
                                         database,
                                         collection,
-                                        write_concern,
                                         offset,
                                         result,
                                         &result->error);
-         EXIT;
       }
-      _mongoc_write_opquery (command,
-                             client,
-                             server_stream,
-                             database,
-                             collection,
-                             write_concern,
-                             offset,
-                             session,
-                             result,
-                             &result->error);
-   } else {
-      gLegacyWriteOps[command->type](command,
-                                     client,
-                                     server_stream,
-                                     database,
-                                     collection,
-                                     write_concern,
-                                     offset,
-                                     result,
-                                     &result->error);
    }
 
    EXIT;
@@ -992,20 +959,9 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       } else {
          result->nMatched += affected;
       }
-      /*
-       * SERVER-13001 - in a mixed sharded cluster a call to update could
-       * return nModified (>= 2.6) or not (<= 2.4).  If any call does not
-       * return nModified we can't report a valid final count so omit the
-       * field completely.
-       */
       if (bson_iter_init_find (&iter, reply, "nModified") &&
           BSON_ITER_HOLDS_INT32 (&iter)) {
          result->nModified += bson_iter_int32 (&iter);
-      } else {
-         /*
-          * nModified could be BSON_TYPE_NULL, which should also be omitted.
-          */
-         result->omit_nModified = true;
       }
       break;
    default:
@@ -1140,9 +1096,7 @@ _mongoc_write_result_complete (
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
-      if (!result->omit_nModified) {
-         BSON_APPEND_INT32 (bson, "nModified", result->nModified);
-      }
+      BSON_APPEND_INT32 (bson, "nModified", result->nModified);
       BSON_APPEND_INT32 (bson, "nRemoved", result->nRemoved);
       BSON_APPEND_INT32 (bson, "nUpserted", result->nUpserted);
       if (!bson_empty0 (&result->upserted)) {

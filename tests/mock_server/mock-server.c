@@ -161,10 +161,11 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
-                                        " 'minWireVersion': 0,"
+                                        " 'minWireVersion': 2,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
@@ -210,15 +211,15 @@ mock_mongos_new (int32_t max_wire_version)
    }
 
    ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                     " 'ismaster': true,"
-                                     " 'msg': 'isdbgrid',"
-                                     " 'minWireVersion': 0,"
-                                     " 'maxWireVersion': %d"
-                                     " %s"
-                                     "}",
-                                  max_wire_version,
-                                  cluster_time);
+                                        " 'ismaster': true,"
+                                        " 'msg': 'isdbgrid',"
+                                        " 'minWireVersion': 2,"
+                                        " 'maxWireVersion': %d",
+                                        " %s",
+                                        max_wire_version,
+                                        cluster_time);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
@@ -517,10 +518,22 @@ mock_server_auto_ismaster (mock_server_t *server,
 {
    char *formatted_response_json;
    va_list args;
+   bson_t *tmp;
+   bson_iter_t iter;
 
    va_start (args, response_json);
    formatted_response_json = bson_strdupv_printf (response_json, args);
    va_end (args);
+   tmp = tmp_bson (formatted_response_json);
+
+   if (!bson_iter_init_find (&iter, tmp, "minWireVersion")) {
+      BSON_APPEND_INT32 (tmp, "minWireVersion", WIRE_VERSION_MIN);
+   }
+   if (!bson_iter_init_find (&iter, tmp, "maxWireVersion")) {
+      BSON_APPEND_INT32 (tmp, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
+   }
+   bson_free (formatted_response_json);
+   formatted_response_json = bson_as_json (tmp, 0);
 
    return mock_server_autoresponds (
       server, auto_ismaster, (void *) formatted_response_json, bson_free);
