@@ -1868,7 +1868,8 @@ mongoc_topology_description_handle_ismaster (
    mongoc_server_description_handle_ismaster (
       sd, ismaster_response, rtt_msec, error);
 
-   mongoc_topology_description_update_cluster_time (topology, ismaster_response);
+   mongoc_topology_description_update_cluster_time (topology,
+                                                    ismaster_response);
    _mongoc_topology_description_monitor_server_changed (topology, prev_sd, sd);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {

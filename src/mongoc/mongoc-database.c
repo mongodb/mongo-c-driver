@@ -211,18 +211,17 @@ mongoc_database_command_simple (mongoc_database_t *database,
     * preference argument."
     */
 
-   return _mongoc_client_command_with_opts (
-      database->client,
-      database->name,
-      command,
-      MONGOC_CMD_READ,
-      NULL /* opts */,
-      MONGOC_QUERY_NONE,
-      read_prefs,
-      NULL /* read concern */,
-      NULL /* write concern */,
-      reply,
-      error);
+   return _mongoc_client_command_with_opts (database->client,
+                                            database->name,
+                                            command,
+                                            MONGOC_CMD_READ,
+                                            NULL /* opts */,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            NULL /* read concern */,
+                                            NULL /* write concern */,
+                                            reply,
+                                            error);
 }
 
 

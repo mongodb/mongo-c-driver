@@ -1309,13 +1309,8 @@ mongoc_client_command (mongoc_client_t *client,
    }
 
    /* flags, skip, limit, batch_size, fields are unused */
-   cursor = _mongoc_cursor_new_with_opts (client,
-                                          db_name,
-                                          true /* is_command */,
-                                          query,
-                                          NULL,
-                                          read_prefs,
-                                          NULL);
+   cursor = _mongoc_cursor_new_with_opts (
+      client, db_name, true /* is_command */, query, NULL, read_prefs, NULL);
 
    return cursor;
 }
@@ -1962,8 +1957,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
       /* Find, getMore And killCursors Commands Spec: "The result from the
        * killCursors command MAY be safely ignored."
        */
-      mongoc_cluster_run_command_monitored (cluster, &parts.assembled, NULL,
-                                            NULL);
+      mongoc_cluster_run_command_monitored (
+         cluster, &parts.assembled, NULL, NULL);
    }
 
    mongoc_cmd_parts_cleanup (&parts);

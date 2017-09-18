@@ -211,13 +211,13 @@ mock_mongos_new (int32_t max_wire_version)
    }
 
    ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
-                                        " 'msg': 'isdbgrid',"
-                                        " 'minWireVersion': 2,"
-                                        " 'maxWireVersion': %d"
-                                        " %s}",
-                                        max_wire_version,
-                                        cluster_time);
+                                  " 'ismaster': true,"
+                                  " 'msg': 'isdbgrid',"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': %d"
+                                  " %s}",
+                                  max_wire_version,
+                                  cluster_time);
 
    BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);

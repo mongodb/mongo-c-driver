@@ -470,13 +470,8 @@ _mongoc_cursor_new (mongoc_client_t *client,
 done:
 
    if (error.domain != 0) {
-      cursor = _mongoc_cursor_new_with_opts (client,
-                                             db_and_collection,
-                                             is_command,
-                                             NULL,
-                                             NULL,
-                                             NULL,
-                                             NULL);
+      cursor = _mongoc_cursor_new_with_opts (
+         client, db_and_collection, is_command, NULL, NULL, NULL, NULL);
 
       MARK_FAILED (cursor);
       memcpy (&cursor->error, &error, sizeof (bson_error_t));
@@ -1329,7 +1324,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (opts) {
       bson_iter_init (&iter, opts);
-      if (!mongoc_cmd_parts_append_opts (&parts, &iter,
+      if (!mongoc_cmd_parts_append_opts (&parts,
+                                         &iter,
                                          server_stream->sd->max_wire_version,
                                          &cursor->error)) {
          GOTO (done);
