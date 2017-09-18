@@ -1,0 +1,6 @@
+# The upstream libmongoc bundles zLib and Snappy for compression support
+# on systems where these libraries are not available. The Debian package does
+# not build using this embedded libraries, it uses zlib1g-dev and libsnappy-dev.
+# Upstream will delete this extraneous binary in the next release:
+# https://jira.mongodb.org/browse/CDRIVER-2288
+libmongoc: source-contains-prebuilt-ms-help-file
