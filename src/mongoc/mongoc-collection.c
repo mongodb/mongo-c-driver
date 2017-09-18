@@ -406,7 +406,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    bson_append_document_end (&command, &child);
 
    if (opts) {
-      bool ok = false;
       bson_t opts_dupe = BSON_INITIALIZER;
 
       if (has_batch_size) {

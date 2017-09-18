@@ -214,8 +214,8 @@ mock_mongos_new (int32_t max_wire_version)
                                         " 'ismaster': true,"
                                         " 'msg': 'isdbgrid',"
                                         " 'minWireVersion': 2,"
-                                        " 'maxWireVersion': %d",
-                                        " %s",
+                                        " 'maxWireVersion': %d"
+                                        " %s}",
                                         max_wire_version,
                                         cluster_time);
 
