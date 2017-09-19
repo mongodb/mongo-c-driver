@@ -187,7 +187,7 @@ _mongoc_secure_transport_import_pem (const char *filename,
 
 
    if (!filename) {
-      MONGOC_INFO ("%s", "No certificate provided");
+      TRACE ("%s", "No certificate provided");
       return false;
    }
 
@@ -299,8 +299,8 @@ mongoc_secure_transport_setup_certificate (
    SecExternalItemType type = kSecItemTypeCertificate;
 
    if (!opt->pem_file) {
-      MONGOC_INFO (
-         "No private key provided, the server won't be able to verify us");
+      TRACE ("%s",
+             "No private key provided, the server won't be able to verify us");
       return false;
    }
 
@@ -349,8 +349,7 @@ mongoc_secure_transport_setup_certificate (
     */
    success = !SSLSetCertificate (secure_transport->ssl_ctx_ref,
                                  secure_transport->my_cert);
-   MONGOC_DEBUG ("Setting client certificate %s",
-                 success ? "succeeded" : "failed");
+   TRACE ("Setting client certificate %s", success ? "succeeded" : "failed");
 
    CFRelease (items);
    return true;
@@ -393,13 +392,13 @@ mongoc_secure_transport_setup_ca (
        * when it is */
       success = !SSLSetTrustedRoots (
          secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
-      MONGOC_DEBUG ("Setting certificate authority %s (%s)",
-                    success ? "succeeded" : "failed",
-                    opt->ca_file);
+      TRACE ("Setting certificate authority %s (%s)",
+             success ? "succeeded" : "failed",
+             opt->ca_file);
       return true;
    }
 
-   MONGOC_INFO ("No CA provided, using defaults");
+   TRACE ("%s", "No CA provided, using defaults");
    return false;
 }
 
