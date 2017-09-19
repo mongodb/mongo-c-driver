@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef LIBMONGOC_MONGOC_CHANGE_STREAM_H
-#define LIBMONGOC_MONGOC_CHANGE_STREAM_H
+#ifndef MONGOC_CHANGE_STREAM_H
+#define MONGOC_CHANGE_STREAM_H
 
 #include <bson.h>
 
@@ -34,4 +34,4 @@ mongoc_change_stream_error_document (const mongoc_change_stream_t *,
                                      bson_error_t *,
                                      const bson_t **);
 
-#endif /* LIBMONGOC_MONGOC_CHANGE_STREAM_H */
+#endif /* MONGOC_CHANGE_STREAM_H */

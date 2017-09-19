@@ -1310,7 +1310,7 @@ mongoc_client_command (mongoc_client_t *client,
 
    /* flags, skip, limit, batch_size, fields are unused */
    cursor = _mongoc_cursor_new_with_opts (
-      client, db_name, true /* is_command */, query, NULL, read_prefs, NULL);
+      client, db_name, false /* is_find */, query, NULL, read_prefs, NULL);
 
    return cursor;
 }
@@ -2057,7 +2057,7 @@ mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL);
+      client, "admin", false /* is_find */, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
    bson_destroy (&cmd);
@@ -2094,7 +2094,7 @@ mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", true /* is_command */, NULL, NULL, NULL, NULL);
+      client, "admin", false /* is_find */, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 

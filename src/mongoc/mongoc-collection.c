@@ -63,7 +63,8 @@
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                                mongoc_query_flags_t flags,
-                               const mongoc_read_prefs_t *prefs)
+                               const mongoc_read_prefs_t *prefs,
+                               bool is_command)
 {
    return _mongoc_cursor_new (collection->client,
                               collection->ns,
@@ -71,7 +72,7 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                               0,     /* skip */
                               0,     /* limit */
                               0,     /* batch_size */
-                              false, /* is_command */
+                              !is_command, /* is_find */
                               NULL,  /* query */
                               NULL,  /* fields */
                               prefs, /* read prefs */
@@ -325,7 +326,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
+   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs, true);
 
    if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
@@ -515,7 +516,7 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
                               skip,
                               limit,
                               batch_size,
-                              false,
+                              true /* is_find */,
                               query,
                               fields,
                               COALESCE (read_prefs, collection->read_prefs),
@@ -568,7 +569,7 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
    return _mongoc_cursor_new_with_opts (
       collection->client,
       collection->ns,
-      false /* is_command */,
+      true /* is_find */,
       filter,
       opts,
       COALESCE (read_prefs, collection->read_prefs),
@@ -642,7 +643,7 @@ mongoc_collection_command (mongoc_collection_t *collection,
    /* flags, skip, limit, batch_size, fields are unused */
    return _mongoc_cursor_new_with_opts (collection->client,
                                         ns,
-                                        true /* is_command */,
+                                        false /* is_find */,
                                         query,
                                         NULL,
                                         read_prefs,
@@ -1309,7 +1310,7 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
     * "listIndexes can be run on a secondary" when directly connected but
     * "run listIndexes on the primary node in replicaSet mode". */
    cursor = _mongoc_collection_cursor_new (
-      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
+      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
@@ -1325,7 +1326,7 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
             error->code = 0;
             error->domain = 0;
             cursor = _mongoc_collection_cursor_new (
-               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
+               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
