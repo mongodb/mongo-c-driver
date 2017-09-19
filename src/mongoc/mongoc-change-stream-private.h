@@ -14,12 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef LIBMONGOC_MONGOC_CHANGE_STREAM_PRIVATE_H
-#define LIBMONGOC_MONGOC_CHANGE_STREAM_PRIVATE_H
+#ifndef MONGOC_CHANGE_STREAM_PRIVATE_H
+#define MONGOC_CHANGE_STREAM_PRIVATE_H
+
+#include "mongoc-change-stream.h"
+#include "mongoc-collection.h"
+#include "mongoc-cursor.h"
+
+struct _mongoc_change_stream_t {
+   bson_t pipeline_to_append;
+   bson_t change_stream_stage_opts;
+   bson_t agg_opts;
+   bson_t resume_token; /* empty, or has resumeAfter: doc */
+
+   bson_error_t err;
+   bson_t err_doc;
+
+   mongoc_cursor_t *cursor;
+   mongoc_collection_t *coll;
+   int64_t max_await_time_ms;
+   int32_t batch_size;
+};
 
 mongoc_change_stream_t *
 _mongoc_change_stream_new (const mongoc_collection_t *coll,
                            const bson_t *pipeline,
                            const bson_t *opts);
 
-#endif /* LIBMONGOC_MONGOC_CHANGE_STREAM_PRIVATE_H */
+#endif /* MONGOC_CHANGE_STREAM_PRIVATE_H */

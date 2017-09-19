@@ -111,7 +111,7 @@ struct _mongoc_cursor_t {
    bool server_id_set;
    bool slave_ok;
 
-   unsigned is_command : 1;
+   unsigned is_find : 1;
    unsigned sent : 1;
    unsigned done : 1;
    unsigned end_of_event : 1;
@@ -150,7 +150,7 @@ struct _mongoc_cursor_t {
 
 
 int32_t
-_mongoc_n_return (mongoc_cursor_t *cursor);
+_mongoc_n_return (bool is_initial_request, mongoc_cursor_t *cursor);
 void
 _mongoc_set_cursor_ns (mongoc_cursor_t *cursor, const char *ns, uint32_t nslen);
 bool
@@ -212,6 +212,10 @@ _mongoc_cursor_error_document (mongoc_cursor_t *cursor,
 void
 _mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 
+bool
+_mongoc_cursor_set_opt_int64 (mongoc_cursor_t *cursor,
+                              const char *option,
+                              int64_t value);
 
 BSON_END_DECLS
 
