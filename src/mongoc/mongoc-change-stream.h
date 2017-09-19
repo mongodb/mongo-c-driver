@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc-macros.h"
-#include "mongoc-collection.h"
-
 #ifndef LIBMONGOC_MONGOC_CHANGE_STREAM_H
 #define LIBMONGOC_MONGOC_CHANGE_STREAM_H
+
+#include <bson.h>
+
+#include "mongoc-macros.h"
 
 typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 

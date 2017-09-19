@@ -15,7 +15,7 @@
  */
 
 #include "mongoc-change-stream.h"
-
+#include "mongoc-collection.h"
 
 struct _mongoc_change_stream_t {
    int dummy;

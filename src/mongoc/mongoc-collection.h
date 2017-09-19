@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-change-stream.h"
 #include "mongoc-macros.h"
 #include "mongoc-bulk-operation.h"
 #include "mongoc-flags.h"
@@ -37,7 +38,6 @@ BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_collection_t mongoc_collection_t;
-typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_aggregate (mongoc_collection_t *collection,
