@@ -611,7 +611,8 @@ _mongoc_stream_tls_openssl_sni (SSL *ssl, int *ad, void *arg)
    }
 
    hostname = SSL_get_servername (ssl, TLSEXT_NAMETYPE_host_name);
-   TRACE ("Got SNI: '%s'", hostname);
+   /* This is intentionally debug since its only used by the mock test server */
+   MONGOC_DEBUG ("Got SNI: '%s'", hostname);
 
    return SSL_TLSEXT_ERR_OK;
 }
