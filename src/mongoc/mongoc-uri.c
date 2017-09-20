@@ -656,6 +656,7 @@ mongoc_uri_option_is_bool (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME) ||
           !strcasecmp (key, MONGOC_URI_JOURNAL) ||
+          !strcasecmp (key, MONGOC_URI_RETRYWRITES) ||
           !strcasecmp (key, MONGOC_URI_SAFE) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
           !strcasecmp (key, MONGOC_URI_SLAVEOK) ||
