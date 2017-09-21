@@ -84,7 +84,7 @@ Example
                           "]");
 
      cursor = mongoc_collection_aggregate (
-        collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL, NULL);
+        collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
 
      bson_destroy (pipeline);
 
