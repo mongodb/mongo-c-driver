@@ -30,7 +30,7 @@ Currently supported values for the authMechanism connection string option are:
 Basic Authentication (SCRAM-SHA-1)
 ----------------------------------
 
-The default authentication mechanism when talking to MongoDB 3.0 and later is ``SCRAM-SHA-1`` (`RFC 5802 <http://tools.ietf.org/html/rfc5802>`_). Using this authentication mechnism means that the password is never actually sent over the wire when authenticating, but rather a computed proof that the client password is the same as the password the server knows.
+The default authentication mechanism when talking to MongoDB 3.0 and later is ``SCRAM-SHA-1`` (`RFC 5802 <http://tools.ietf.org/html/rfc5802>`_). Using this authentication mechanism means that the password is never actually sent over the wire when authenticating, but rather a computed proof that the client password is the same as the password the server knows.
 
 
 .. code-block:: none

@@ -21,5 +21,5 @@ Parameters
 Description
 -----------
 
-Sets the write tag that must be satistified for the write to indicate success. Write tags are preset write concerns configured on your MongoDB server. See :symbol:`mongoc_write_concern_t` for more information on this setting.
+Sets the write tag that must be satisfied for the write to indicate success. Write tags are preset write concerns configured on your MongoDB server. See :symbol:`mongoc_write_concern_t` for more information on this setting.
 
