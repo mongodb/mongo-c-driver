@@ -233,6 +233,10 @@ _mongoc_server_session_new (bson_error_t *error)
    bson_append_binary (
       &s->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 
+   /* transaction number is a positive integer and will be incremented before
+    * each use, so ensure it is initialized to zero. */
+   s->txn_number = 0;
+
    RETURN (s);
 }
 

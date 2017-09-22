@@ -37,6 +37,7 @@ typedef struct _mongoc_server_session_t {
    struct _mongoc_server_session_t *prev, *next;
    int64_t last_used_usec;
    bson_t lsid; /* logical session id */
+   int64_t txn_number; /* transaction number */
 } mongoc_server_session_t;
 
 struct _mongoc_client_session_t {
