@@ -1215,6 +1215,7 @@ test_hint_no_warmup_pooled (void)
 {
    _test_cursor_hint_no_warmup (true);
 }
+#endif
 
 static void
 test_tailable_alive (void)
@@ -1864,6 +1865,7 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
+#endif
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/n_return/op_query", test_n_return_op_query);
