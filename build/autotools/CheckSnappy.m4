@@ -25,10 +25,12 @@ AS_IF([test "x${found_snappy}" = xyes], [
    AS_IF([test "x${with_snappy}" = xauto -o "x${with_snappy}" = xbundled], [
       with_snappy=bundled
    ], [
-      # snappy not found, with-snappy=system
-      AC_MSG_ERROR([Cannot find system installed snappy. try --with-snappy=bundled])
-   ]
-)])
+      AS_IF([test "x${with_snappy}" = xno ], [], [
+         # snappy not found, with-snappy=system
+         AC_MSG_ERROR([Cannot find system installed snappy. try --with-snappy=bundled])
+      ])
+   ])
+])
 
 # If we are using the bundled snappy, recurse into its configure.
 AS_IF([test "x${with_snappy}" = xbundled],[

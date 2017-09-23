@@ -29,10 +29,12 @@ AS_IF([test "x${found_zlib}" = "xyes"], [
    AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xbundled], [
       with_zlib=bundled
    ], [
-      # zlib not found, with-zlib=system
-      AC_MSG_ERROR([Cannot find system installed zlib. try --with-zlib=bundled])
-   ]
-)])
+      AS_IF([test "x${with_zlib}" = xno], [], [
+         # zlib not found, with-zlib=system
+         AC_MSG_ERROR([Cannot find system installed zlib. try --with-zlib=bundled])
+      ])
+   ])
+])
 
 
 # If we are using the bundled zlib, recurse into its configure.
