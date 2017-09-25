@@ -341,5 +341,29 @@ future_client_get_gridfs (
 );
 
 
+future_t *
+future_collection_watch (
+
+   mongoc_collection_ptr coll,
+   const_bson_ptr pipeline,
+   const_bson_ptr opts
+);
+
+
+future_t *
+future_change_stream_next (
+
+   mongoc_change_stream_ptr stream,
+   const_bson_ptr_ptr bson
+);
+
+
+future_t *
+future_change_stream_destroy (
+
+   mongoc_change_stream_ptr stream
+);
+
+
 
 #endif /* FUTURE_FUNCTIONS_H */

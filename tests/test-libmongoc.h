@@ -118,6 +118,10 @@ test_framework_skip_if_not_rs_version_5 (void);
 int
 test_framework_skip_if_rs_version_5 (void);
 int
+test_framework_skip_if_not_rs_version_6 (void);
+int
+test_framework_skip_if_rs_version_6 (void);
+int
 test_framework_skip_if_mongos (void);
 int
 test_framework_skip_if_replset (void);
