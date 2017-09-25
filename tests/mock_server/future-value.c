@@ -421,6 +421,20 @@ future_value_get_mongoc_write_concern_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_change_stream_ptr (future_value_t *future_value, mongoc_change_stream_ptr value)
+{
+   future_value->type = future_value_mongoc_change_stream_ptr_type;
+   future_value->mongoc_change_stream_ptr_value = value;
+}
+
+mongoc_change_stream_ptr
+future_value_get_mongoc_change_stream_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_change_stream_ptr_type);
+   return future_value->mongoc_change_stream_ptr_value;
+}
+
+void
 future_value_set_const_mongoc_find_and_modify_opts_ptr (future_value_t *future_value, const_mongoc_find_and_modify_opts_ptr value)
 {
    future_value->type = future_value_const_mongoc_find_and_modify_opts_ptr_type;
