@@ -549,6 +549,15 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                &parts->assembled_body, "lsid", 4, &server_session->lsid);
             server_session->last_used_usec = bson_get_monotonic_time ();
             _mongoc_client_push_server_session (parts->client, server_session);
+
+            /* Append the transaction number field and initialize a bson_iter_t
+             * to it so that _mongoc_write_opmsg can later increment and update
+             * the value for each command after possible batch splitting. */
+            if (parts->is_retryable_write) {
+               bson_append_int64 (&parts->assembled_body, "txnNumber", 6, 0);
+               bson_iter_init_find (
+                  &parts->txn_number_iter, &parts->assembled_body, "txnNumber");
+            }
          }
       }
 
