@@ -1468,15 +1468,15 @@ _mongoc_topology_description_update_rs_without_primary (
    /* Add new servers that this replica set member knows about */
    _mongoc_topology_description_add_new_servers (topology, server);
 
-   if (!_mongoc_topology_description_matches_me (server)) {
-      _mongoc_topology_description_remove_server (topology, server);
-      return;
-   }
-
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    if (server->current_primary) {
       _mongoc_topology_description_label_unknown_member (
          topology, server->current_primary, MONGOC_SERVER_POSSIBLE_PRIMARY);
+   }
+
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server (topology, server);
+      return;
    }
 }
 
