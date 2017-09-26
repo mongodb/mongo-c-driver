@@ -66,7 +66,7 @@ when adding a new symbol.
 ### Documentation
 
 We strive to document all symbols. See doc/ for documentation examples. If you
-add a new function, add a new .txt file describing the function so that we can
+add a new function, add a new .rst file describing the function so that we can
 generate man pages and HTML for it.
 
 
