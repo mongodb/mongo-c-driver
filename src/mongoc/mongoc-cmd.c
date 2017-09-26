@@ -36,6 +36,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->read_prefs = NULL;
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
+   parts->is_retryable_write = false;
    parts->client = client;
    bson_init (&parts->read_concern_document);
    bson_init (&parts->extra);

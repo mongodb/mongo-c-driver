@@ -421,6 +421,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    parts.is_write_command = true;
    parts.assembled.is_acknowledged =
       mongoc_write_concern_is_acknowledged (write_concern);
+   parts.is_retryable_write = command->flags.is_retryable;
 
    bson_iter_init (&iter, &command->cmd_opts);
    if (!mongoc_cmd_parts_append_opts (
