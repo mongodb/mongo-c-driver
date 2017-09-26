@@ -17,6 +17,7 @@ _topology_has_description (mongoc_topology_description_t *topology,
 {
    mongoc_server_description_t *sd;
    bson_iter_t server_iter;
+   const char *server_type;
    const char *set_name;
 
    sd = server_description_by_hostname (topology, address);
@@ -31,8 +32,14 @@ _topology_has_description (mongoc_topology_description_t *topology,
             ASSERT_CMPSTR (sd->set_name, set_name);
          }
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
-         BSON_ASSERT (sd->type == server_type_from_test (
-                                     bson_iter_utf8 (&server_iter, NULL)));
+         server_type = bson_iter_utf8 (&server_iter, NULL);
+         if (sd->type != server_type_from_test (server_type)) {
+            fprintf (stderr,
+                     "expected server type %s not %s\n",
+                     server_type,
+                     mongoc_server_description_type (sd));
+            abort ();
+         }
       } else if (strcmp ("setVersion", bson_iter_key (&server_iter)) == 0) {
          int64_t expected_set_version;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -71,6 +78,7 @@ static void
 test_sdam_cb (bson_t *test)
 {
    mongoc_client_t *client;
+   mongoc_topology_description_t *td;
    bson_t phase;
    bson_t phases;
    bson_t servers;
@@ -87,6 +95,7 @@ test_sdam_cb (bson_t *test)
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
+   td = &client->topology->description;
 
    /* for each phase, parse and validate */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
@@ -96,8 +105,7 @@ test_sdam_cb (bson_t *test)
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
-      process_sdam_test_ismaster_responses (&phase,
-                                            &client->topology->description);
+      process_sdam_test_ismaster_responses (&phase, td);
 
       /* parse out "outcome" and validate */
       BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
@@ -108,9 +116,7 @@ test_sdam_cb (bson_t *test)
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
             ASSERT_CMPINT (
-               bson_count_keys (&servers),
-               ==,
-               (int) client->topology->description.servers->items_len);
+               bson_count_keys (&servers), ==, (int) td->servers->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
@@ -119,21 +125,31 @@ test_sdam_cb (bson_t *test)
                hostname = bson_iter_key (&servers_iter);
                bson_iter_bson (&servers_iter, &server);
 
-               _topology_has_description (
-                  &client->topology->description, &server, hostname);
+               _topology_has_description (td, &server, hostname);
             }
 
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
             set_name = bson_iter_utf8 (&outcome_iter, NULL);
             if (set_name) {
-               BSON_ASSERT (client->topology->description.set_name);
-               ASSERT_CMPSTR (client->topology->description.set_name, set_name);
+               BSON_ASSERT (td->set_name);
+               ASSERT_CMPSTR (td->set_name, set_name);
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
                     0) {
-            ASSERT_CMPSTR (mongoc_topology_description_type (
-                              &client->topology->description),
+            ASSERT_CMPSTR (mongoc_topology_description_type (td),
                            bson_iter_utf8 (&outcome_iter, NULL));
+         } else if (strcmp ("logicalSessionTimeoutMinutes",
+                            bson_iter_key (&outcome_iter)) == 0) {
+            /* TODO: implement logicalSessionTimeoutMinutes, CDRIVER-2192 */
+         } else if (strcmp ("compatible", bson_iter_key (&outcome_iter)) == 0) {
+            if (bson_iter_as_bool (&outcome_iter)) {
+               ASSERT_CMPINT (0, ==, td->compatibility_error.domain);
+            } else {
+               ASSERT_ERROR_CONTAINS (td->compatibility_error,
+                                      MONGOC_ERROR_PROTOCOL,
+                                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                                      "");
+            }
          } else {
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
