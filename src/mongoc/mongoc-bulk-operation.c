@@ -847,6 +847,10 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
    if (!bulk->operation_id) {
       bulk->operation_id = ++bulk->client->cluster.operation_id;
    }
+
+   /* retryable writes option is inherited from the client */
+   bulk->flags.is_retryable = mongoc_uri_get_option_as_bool (
+      bulk->client->uri, MONGOC_URI_RETRYWRITES, false);
 }
 
 

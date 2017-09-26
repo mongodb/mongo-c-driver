@@ -100,6 +100,10 @@ _mongoc_collection_write_command_execute (
       EXIT;
    }
 
+   /* retryable writes option is inherited from the client */
+   command->flags.is_retryable = mongoc_uri_get_option_as_bool (
+      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
+
    _mongoc_write_command_execute (command,
                                   collection->client,
                                   server_stream,
@@ -2826,6 +2830,10 @@ mongoc_collection_create_bulk_operation_with_opts (
    }
 
    write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
+
+   /* retryable writes option is inherited from the client */
+   write_flags.is_retryable = mongoc_uri_get_option_as_bool (
+      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
 
    bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
