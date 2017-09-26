@@ -1,0 +1,24 @@
+remove analytics from packaged HTML files
+Index: mongo-c-driver/doc/conf.py
+===================================================================
+--- mongo-c-driver.orig/doc/conf.py
++++ mongo-c-driver/doc/conf.py
+@@ -93,6 +93,9 @@ def create_nojekyll(app, env):
+ 
+ 
+ def add_ga_javascript(app, pagename, templatename, context, doctree):
++    if not app.env.config.analytics:
++        return
++
+     context['metatags'] = context.get('metatags', '') + """<script>
+   (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push(
+       {'gtm.start': new Date().getTime(),event:'gtm.js'}
+@@ -114,6 +117,8 @@ def setup(app):
+     app.connect('doctree-read', process_nodes)
+     app.connect('env-updated', create_nojekyll)
+     app.connect('html-page-context', add_ga_javascript)
++    # Run sphinx-build -D analytics=1 to enable Google Analytics.
++    app.add_config_value('analytics', False, 'html')
+     app.connect('html-page-context', add_canonical_link)
+ 
+ 
