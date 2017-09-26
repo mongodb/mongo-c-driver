@@ -731,6 +731,17 @@ _mongoc_write_command_execute (
       EXIT;
    }
 
+   if (command->flags.is_retryable &&
+       server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
+      bson_set_error (
+         &result->error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "Retryable writes are not supported by the selected server");
+      result->failed = true;
+      EXIT;
+   }
+
    if (command->flags.has_collation) {
       if (!mongoc_write_concern_is_acknowledged (write_concern)) {
          result->failed = true;
