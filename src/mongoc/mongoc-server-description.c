@@ -60,6 +60,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
    sd->last_write_date_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
@@ -531,6 +532,16 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_INT32 (&iter))
             goto failure;
          sd->max_write_batch_size = bson_iter_int32 (&iter);
+      } else if (strcmp ("logicalSessionTimeoutMinutes",
+                         bson_iter_key (&iter)) == 0) {
+         if (BSON_ITER_HOLDS_NUMBER (&iter)) {
+            sd->session_timeout_minutes = bson_iter_as_int64 (&iter);
+         } else if (BSON_ITER_HOLDS_NULL (&iter)) {
+            /* this arises executing standard JSON tests */
+            sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
+         } else {
+            goto failure;
+         }
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_INT32 (&iter))
             goto failure;

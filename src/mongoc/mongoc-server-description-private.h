@@ -24,6 +24,7 @@
 #define MONGOC_DEFAULT_WRITE_BATCH_SIZE 1000
 #define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
 #define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
+#define MONGOC_NO_SESSIONS -1
 #define MONGOC_IDLE_WRITE_PERIOD_MS 10 * 1000
 
 /* represent a server or topology with no replica set config version */
@@ -64,6 +65,7 @@ struct _mongoc_server_description_t {
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_write_batch_size;
+   int64_t session_timeout_minutes;
 
    bson_t hosts;
    bson_t passives;

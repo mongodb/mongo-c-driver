@@ -140,7 +140,15 @@ test_sdam_cb (bson_t *test)
                            bson_iter_utf8 (&outcome_iter, NULL));
          } else if (strcmp ("logicalSessionTimeoutMinutes",
                             bson_iter_key (&outcome_iter)) == 0) {
-            /* TODO: implement logicalSessionTimeoutMinutes, CDRIVER-2192 */
+            if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
+               ASSERT_CMPINT64 (td->session_timeout_minutes,
+                                ==,
+                                (int64_t) MONGOC_NO_SESSIONS);
+            } else {
+               ASSERT_CMPINT64 (td->session_timeout_minutes,
+                                ==,
+                                bson_iter_as_int64 (&outcome_iter));
+            }
          } else if (strcmp ("compatible", bson_iter_key (&outcome_iter)) == 0) {
             if (bson_iter_as_bool (&outcome_iter)) {
                ASSERT_CMPINT (0, ==, td->compatibility_error.domain);

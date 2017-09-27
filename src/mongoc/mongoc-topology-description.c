@@ -70,6 +70,7 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->cluster_time_t = 0;
    description->cluster_time_i = 0;
    bson_init (&description->cluster_time);
+   description->session_timeout_minutes = MONGOC_NO_SESSIONS;
 
    EXIT;
 }
@@ -136,6 +137,8 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
    dst->cluster_time_t = src->cluster_time_t;
    dst->cluster_time_i = src->cluster_time_i;
    bson_copy_to (&src->cluster_time, &dst->cluster_time);
+
+   dst->session_timeout_minutes = src->session_timeout_minutes;
 
    EXIT;
 }
@@ -1759,6 +1762,52 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_update_session_timeout --
+ *
+ *      Fill out td.session_timeout_minutes.
+ *
+ *      Server Discovery and Monitoring Spec: "set logicalSessionTimeoutMinutes
+ *      to the smallest logicalSessionTimeoutMinutes value among all
+ *      ServerDescriptions of known ServerType. If any ServerDescription of
+ *      known ServerType has a null logicalSessionTimeoutMinutes, then
+ *      logicalSessionTimeoutMinutes MUST be set to null."
+ *
+ * --------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_topology_description_update_session_timeout (
+   mongoc_topology_description_t *td)
+{
+   mongoc_set_t *set;
+   size_t i;
+   mongoc_server_description_t *sd;
+
+   set = td->servers;
+
+   td->session_timeout_minutes = MONGOC_NO_SESSIONS;
+
+   for (i = 0; i < set->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
+      if (sd->type == MONGOC_SERVER_UNKNOWN ||
+          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
+         continue;
+      }
+
+      if (sd->session_timeout_minutes == MONGOC_NO_SESSIONS) {
+         td->session_timeout_minutes = MONGOC_NO_SESSIONS;
+         return;
+      } else if (td->session_timeout_minutes == MONGOC_NO_SESSIONS) {
+         td->session_timeout_minutes = sd->session_timeout_minutes;
+      } else if (td->session_timeout_minutes > sd->session_timeout_minutes) {
+         td->session_timeout_minutes = sd->session_timeout_minutes;
+      }
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_description_check_compatible --
  *
  *      Fill out td.compatibility_error if any server's wire versions do
@@ -1878,6 +1927,8 @@ mongoc_topology_description_handle_ismaster (
              _mongoc_topology_description_type (topology),
              mongoc_server_description_type (sd));
    }
+
+   _mongoc_topology_description_update_session_timeout (topology);
 
    /* Don't bother checking wire version compatibility if we already errored */
    if (ismaster_response && (!error || !error->code)) {

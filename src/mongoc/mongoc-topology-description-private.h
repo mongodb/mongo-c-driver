@@ -53,6 +53,10 @@ struct _mongoc_topology_description_t {
    uint32_t cluster_time_i;
    bson_t cluster_time;
 
+   /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
+    * logicalSessionTimeoutMinutes. see Server Discovery and Monitoring Spec */
+   int64_t session_timeout_minutes;
+
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 };
