@@ -54,7 +54,7 @@ _mongoc_cursor_find_command (mongoc_cursor_t *cursor,
                              mongoc_server_stream_t *server_stream);
 
 
-static bool
+bool
 _mongoc_cursor_set_opt_int64 (mongoc_cursor_t *cursor,
                               const char *option,
                               int64_t value)
@@ -123,13 +123,13 @@ _mongoc_cursor_get_opt_bool (const mongoc_cursor_t *cursor, const char *option)
 
 
 int32_t
-_mongoc_n_return (mongoc_cursor_t *cursor)
+_mongoc_n_return (bool is_initial_message, mongoc_cursor_t *cursor)
 {
    int64_t limit;
    int64_t batch_size;
    int64_t n_return;
 
-   if (cursor->is_command) {
+   if (!cursor->is_find && is_initial_message) {
       /* commands always have n_return of 1 */
       return 1;
    }
@@ -212,7 +212,7 @@ _first_dollar_field (const bson_t *bson)
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const char *db_and_collection,
-                              bool is_command,
+                              bool is_find,
                               const bson_t *filter,
                               const bson_t *opts,
                               const mongoc_read_prefs_t *read_prefs,
@@ -230,7 +230,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
 
    cursor = (mongoc_cursor_t *) bson_malloc0 (sizeof *cursor);
    cursor->client = client;
-   cursor->is_command = is_command ? 1 : 0;
+   cursor->is_find = is_find ? 1 : 0;
 
    bson_init (&cursor->filter);
    bson_init (&cursor->opts);
@@ -343,7 +343,7 @@ _mongoc_cursor_new (mongoc_client_t *client,
                     uint32_t skip,
                     int32_t limit,
                     uint32_t batch_size,
-                    bool is_command,
+                    bool is_find,
                     const bson_t *query,
                     const bson_t *fields,
                     const mongoc_read_prefs_t *read_prefs,
@@ -471,14 +471,14 @@ done:
 
    if (error.domain != 0) {
       cursor = _mongoc_cursor_new_with_opts (
-         client, db_and_collection, is_command, NULL, NULL, NULL, NULL);
+         client, db_and_collection, is_find, NULL, NULL, NULL, NULL);
 
       MARK_FAILED (cursor);
       memcpy (&cursor->error, &error, sizeof (bson_error_t));
    } else {
       cursor = _mongoc_cursor_new_with_opts (client,
                                              db_and_collection,
-                                             is_command,
+                                             is_find,
                                              has_filter ? &filter : query,
                                              &opts,
                                              read_prefs,
@@ -598,7 +598,7 @@ _use_find_command (const mongoc_cursor_t *cursor,
     * exhaust flag."
     */
    return server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
-          !cursor->is_command &&
+          cursor->is_find &&
           !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST);
 }
 
@@ -773,7 +773,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
       EXIT;
    }
 
-   if (cursor->is_command) {
+   if (!cursor->is_find) {
       /* cursor is from mongoc_client_command. we're in mongoc_cursor_next. */
       if (!_mongoc_rpc_reply_get_first (&cursor->rpc.reply, &reply)) {
          MONGOC_ERROR ("_mongoc_cursor_monitor_succeeded can't parse reply");
@@ -1166,7 +1166,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
    rpc.query.n_return = 0;
    rpc.query.fields = NULL;
 
-   if (cursor->is_command) {
+   if (!cursor->is_find) {
       /* "filter" isn't a query, it's like {commandName: ... }*/
       cmd_name = _mongoc_get_command_name (&cursor->filter);
       BSON_ASSERT (cmd_name);
@@ -1186,17 +1186,17 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
                    server_stream,
                    query_ptr,
                    flags,
-                   !!cursor->is_command,
+                   !!cursor->is_find,
                    &result);
 
    rpc.query.query = bson_get_data (result.assembled_query);
    rpc.query.flags = result.flags;
-   rpc.query.n_return = _mongoc_n_return (cursor);
+   rpc.query.n_return = _mongoc_n_return (true, cursor);
    if (!bson_empty (&fields)) {
       rpc.query.fields = bson_get_data (&fields);
    }
 
-   if (cursor->is_command) {
+   if (!cursor->is_find) {
       /* cursor from deprecated mongoc_client_command() is about to send its
        * command from mongoc_cursor_next() */
       if (!_mongoc_cursor_monitor_command (
@@ -1247,7 +1247,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
    }
 
    if (!_mongoc_rpc_check_ok (&cursor->rpc,
-                              (bool) cursor->is_command,
+                              (bool) !cursor->is_find,
                               cursor->client->error_api_version,
                               &cursor->error,
                               &cursor->error_doc)) {
@@ -1313,6 +1313,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    cluster = &cursor->client->cluster;
    mongoc_cmd_parts_init (&parts, db, MONGOC_QUERY_NONE, command);
+   parts.is_find = cursor->is_find;
    parts.read_prefs = cursor->read_prefs;
    parts.session = cursor->session;
    parts.assembled.operation_id = cursor->operation_id;
@@ -1614,7 +1615,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
       if (flags & MONGOC_QUERY_TAILABLE_CURSOR) {
          rpc.get_more.n_return = 0;
       } else {
-         rpc.get_more.n_return = _mongoc_n_return (cursor);
+         rpc.get_more.n_return = _mongoc_n_return (false, cursor);
       }
 
       if (!_mongoc_cursor_monitor_legacy_get_more (cursor, server_stream)) {
@@ -1982,7 +1983,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    _clone = (mongoc_cursor_t *) bson_malloc0 (sizeof *_clone);
 
    _clone->client = cursor->client;
-   _clone->is_command = cursor->is_command;
+   _clone->is_find = cursor->is_find;
    _clone->nslen = cursor->nslen;
    _clone->dblen = cursor->dblen;
    _clone->has_fields = cursor->has_fields;
@@ -2201,8 +2202,9 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   cursor = _mongoc_cursor_new_with_opts (
-      client, NULL, false /* is_command */, NULL, NULL, NULL, NULL);
+   cursor =
+      _mongoc_cursor_new_with_opts (
+      client, NULL, true /* is_find */, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
    _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);

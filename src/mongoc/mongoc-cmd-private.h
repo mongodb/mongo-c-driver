@@ -58,6 +58,7 @@ typedef struct _mongoc_cmd_parts_t {
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;
    bool is_write_command;
+   bool is_find;
    mongoc_client_session_t *session;
 } mongoc_cmd_parts_t;
 

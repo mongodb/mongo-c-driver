@@ -35,6 +35,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
    parts->is_write_command = false;
+   parts->is_find = false;
    parts->session = NULL;
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
@@ -117,6 +118,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          }
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
+         continue;
+      } else if (!parts->is_find && (BSON_ITER_IS_KEY (iter, "awaitData") ||
+                                     BSON_ITER_IS_KEY (iter, "tailable") ||
+                                     BSON_ITER_IS_KEY (iter, "batchSize"))) {
          continue;
       }
 

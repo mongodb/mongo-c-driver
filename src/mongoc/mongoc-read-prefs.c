@@ -292,7 +292,7 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
                 const mongoc_server_stream_t *server_stream,
                 const bson_t *query_bson,
                 mongoc_query_flags_t initial_flags,
-                bool is_command,
+                bool is_find,
                 mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_server_description_type_t server_type;
@@ -354,11 +354,11 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
     * connected to a mongos. Drivers MUST check the mongos version they are
     * connected to before adding $clusterTime to any command they send to a
     * mongos node." We use OP_QUERY only for commands, not queries, with
-    * recent MongoDB versions, but check is_command anyway. Additionally, this
+    * recent MongoDB versions, but check is_find anyway. Additionally, this
     * code path is only hit for MongoDB 3.5.x, before we implement OP_MSG.
     */
    if (!bson_empty (&server_stream->cluster_time) &&
-       is_command &&
+       !is_find &&
        server_stream->sd->type == MONGOC_SERVER_MONGOS &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
 

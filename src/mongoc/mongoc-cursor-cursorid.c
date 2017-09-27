@@ -202,7 +202,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
       bson_append_int64 (command,
                          MONGOC_CURSOR_BATCH_SIZE,
                          MONGOC_CURSOR_BATCH_SIZE_LEN,
-                         abs (_mongoc_n_return (cursor)));
+                         abs (_mongoc_n_return (false, cursor)));
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable
