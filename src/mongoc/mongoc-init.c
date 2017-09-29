@@ -20,24 +20,39 @@
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
+
+#include "mongoc-handshake-private.h"
+
 #ifdef MONGOC_ENABLE_SSL
-# include "mongoc-scram-private.h"
-# include "mongoc-ssl.h"
-# include "mongoc-ssl-private.h"
+#include "mongoc-scram-private.h"
+#include "mongoc-ssl.h"
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#include "tls.h"
+#endif
 #endif
 #include "mongoc-thread-private.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
-#ifdef MONGOC_ENABLE_SASL
+#ifndef MONGOC_NO_AUTOMATIC_GLOBALS
+#pragma message( \
+   "Configure the driver with --disable-automatic-init-and-cleanup\
+ (if using ./configure) or ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF (with cmake).\
+ Automatic cleanup is deprecated and will be removed in version 2.0.")
+#endif
+
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
+#include "mongoc-cyrus-private.h"
 
 static void *
-mongoc_sasl_mutex_alloc (void)
+mongoc_cyrus_mutex_alloc (void)
 {
    mongoc_mutex_t *mutex;
 
-   mutex = bson_malloc0 (sizeof (mongoc_mutex_t));
+   mutex = (mongoc_mutex_t *) bson_malloc0 (sizeof (mongoc_mutex_t));
    mongoc_mutex_init (mutex);
 
    return (void *) mutex;
@@ -45,7 +60,7 @@ mongoc_sasl_mutex_alloc (void)
 
 
 static int
-mongoc_sasl_mutex_lock (void *mutex)
+mongoc_cyrus_mutex_lock (void *mutex)
 {
    mongoc_mutex_lock ((mongoc_mutex_t *) mutex);
 
@@ -54,7 +69,7 @@ mongoc_sasl_mutex_lock (void *mutex)
 
 
 static int
-mongoc_sasl_mutex_unlock (void *mutex)
+mongoc_cyrus_mutex_unlock (void *mutex)
 {
    mongoc_mutex_unlock ((mongoc_mutex_t *) mutex);
 
@@ -63,35 +78,46 @@ mongoc_sasl_mutex_unlock (void *mutex)
 
 
 static void
-mongoc_sasl_mutex_free (void *mutex)
+mongoc_cyrus_mutex_free (void *mutex)
 {
    mongoc_mutex_destroy ((mongoc_mutex_t *) mutex);
    bson_free (mutex);
 }
 
-#endif//MONGOC_ENABLE_SASL
+#endif /* MONGOC_ENABLE_SASL_CYRUS */
 
 
-static MONGOC_ONCE_FUN( _mongoc_do_init)
+static MONGOC_ONCE_FUN (_mongoc_do_init)
 {
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_init();
-   _mongoc_scram_startup();
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   int status;
+   sasl_callback_t callbacks[] = {
+      {SASL_CB_LOG, SASL_CALLBACK_FN (_mongoc_cyrus_log), NULL},
+      {SASL_CB_LIST_END}};
+#endif
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   _mongoc_openssl_init ();
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   tls_init ();
 #endif
 
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SSL
+   _mongoc_scram_startup ();
+#endif
+
+#ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked
     * before mongoc_log_set_handler() can complete. */
-   sasl_set_mutex (mongoc_sasl_mutex_alloc,
-                   mongoc_sasl_mutex_lock,
-                   mongoc_sasl_mutex_unlock,
-                   mongoc_sasl_mutex_free);
+   sasl_set_mutex (mongoc_cyrus_mutex_alloc,
+                   mongoc_cyrus_mutex_lock,
+                   mongoc_cyrus_mutex_unlock,
+                   mongoc_cyrus_mutex_free);
 
-   /* TODO: logging callback? */
-   sasl_client_init (NULL);
+   status = sasl_client_init (callbacks);
+   BSON_ASSERT (status == SASL_OK);
 #endif
 
-   _mongoc_counters_init();
+   _mongoc_counters_init ();
 
 #ifdef _WIN32
    {
@@ -105,11 +131,11 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 
       /* check the version perhaps? */
 
-      assert (err == 0);
-
-      atexit ((void(*)(void))WSACleanup);
+      BSON_ASSERT (err == 0);
    }
 #endif
+
+   _mongoc_handshake_init ();
 
    MONGOC_ONCE_RETURN;
 }
@@ -121,13 +147,13 @@ mongoc_init (void)
    mongoc_once (&once, _mongoc_do_init);
 }
 
-static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
+static MONGOC_ONCE_FUN (_mongoc_do_cleanup)
 {
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_cleanup();
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   _mongoc_openssl_cleanup ();
 #endif
 
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 #ifdef MONGOC_HAVE_SASL_CLIENT_DONE
    sasl_client_done ();
 #else
@@ -139,6 +165,10 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 #ifdef _WIN32
    WSACleanup ();
 #endif
+
+   _mongoc_counters_cleanup ();
+
+   _mongoc_handshake_cleanup ();
 
    MONGOC_ONCE_RETURN;
 }
@@ -154,18 +184,21 @@ mongoc_cleanup (void)
  * On GCC, just use __attribute__((constructor)) to perform initialization
  * automatically for the application.
  */
-#ifdef __GNUC__
-static void _mongoc_init_ctor (void) __attribute__((constructor));
+#if defined(__GNUC__) && !defined(MONGOC_NO_AUTOMATIC_GLOBALS)
+static void
+_mongoc_init_ctor (void) __attribute__ ((constructor));
 static void
 _mongoc_init_ctor (void)
 {
    mongoc_init ();
 }
 
-static void _mongoc_init_dtor (void) __attribute__((destructor));
+static void
+_mongoc_init_dtor (void) __attribute__ ((destructor));
 static void
 _mongoc_init_dtor (void)
 {
+   bson_mem_restore_vtable ();
    mongoc_cleanup ();
 }
 #endif

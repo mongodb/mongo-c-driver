@@ -17,7 +17,7 @@
 #ifndef MONGOC_MATCHER_OP_PRIVATE_H
 #define MONGOC_MATCHER_OP_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -27,17 +27,16 @@
 BSON_BEGIN_DECLS
 
 
-typedef union  _mongoc_matcher_op_t         mongoc_matcher_op_t;
-typedef struct _mongoc_matcher_op_base_t    mongoc_matcher_op_base_t;
+typedef union _mongoc_matcher_op_t mongoc_matcher_op_t;
+typedef struct _mongoc_matcher_op_base_t mongoc_matcher_op_base_t;
 typedef struct _mongoc_matcher_op_logical_t mongoc_matcher_op_logical_t;
 typedef struct _mongoc_matcher_op_compare_t mongoc_matcher_op_compare_t;
-typedef struct _mongoc_matcher_op_exists_t  mongoc_matcher_op_exists_t;
-typedef struct _mongoc_matcher_op_type_t    mongoc_matcher_op_type_t;
-typedef struct _mongoc_matcher_op_not_t     mongoc_matcher_op_not_t;
+typedef struct _mongoc_matcher_op_exists_t mongoc_matcher_op_exists_t;
+typedef struct _mongoc_matcher_op_type_t mongoc_matcher_op_type_t;
+typedef struct _mongoc_matcher_op_not_t mongoc_matcher_op_not_t;
 
 
-typedef enum
-{
+typedef enum {
    MONGOC_MATCHER_OPCODE_EQ,
    MONGOC_MATCHER_OPCODE_GT,
    MONGOC_MATCHER_OPCODE_GTE,
@@ -55,80 +54,76 @@ typedef enum
 } mongoc_matcher_opcode_t;
 
 
-struct _mongoc_matcher_op_base_t
-{
+struct _mongoc_matcher_op_base_t {
    mongoc_matcher_opcode_t opcode;
 };
 
 
-struct _mongoc_matcher_op_logical_t
-{
+struct _mongoc_matcher_op_logical_t {
    mongoc_matcher_op_base_t base;
    mongoc_matcher_op_t *left;
    mongoc_matcher_op_t *right;
 };
 
 
-struct _mongoc_matcher_op_compare_t
-{
+struct _mongoc_matcher_op_compare_t {
    mongoc_matcher_op_base_t base;
    char *path;
    bson_iter_t iter;
 };
 
 
-struct _mongoc_matcher_op_exists_t
-{
+struct _mongoc_matcher_op_exists_t {
    mongoc_matcher_op_base_t base;
    char *path;
    bool exists;
 };
 
 
-struct _mongoc_matcher_op_type_t
-{
+struct _mongoc_matcher_op_type_t {
    mongoc_matcher_op_base_t base;
    bson_type_t type;
    char *path;
 };
 
 
-struct _mongoc_matcher_op_not_t
-{
+struct _mongoc_matcher_op_not_t {
    mongoc_matcher_op_base_t base;
    mongoc_matcher_op_t *child;
    char *path;
 };
 
 
-union _mongoc_matcher_op_t
-{
+union _mongoc_matcher_op_t {
    mongoc_matcher_op_base_t base;
    mongoc_matcher_op_logical_t logical;
    mongoc_matcher_op_compare_t compare;
    mongoc_matcher_op_exists_t exists;
    mongoc_matcher_op_type_t type;
-   mongoc_matcher_op_not_t not;
+   mongoc_matcher_op_not_t not_;
 };
 
 
-mongoc_matcher_op_t *_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode,
-                                                     mongoc_matcher_op_t     *left,
-                                                     mongoc_matcher_op_t     *right);
-mongoc_matcher_op_t *_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode,
-                                                     const char              *path,
-                                                     const bson_iter_t       *iter);
-mongoc_matcher_op_t *_mongoc_matcher_op_exists_new  (const char              *path,
-                                                     bool                     exists);
-mongoc_matcher_op_t *_mongoc_matcher_op_type_new    (const char              *path,
-                                                     bson_type_t              type);
-mongoc_matcher_op_t *_mongoc_matcher_op_not_new     (const char              *path,
-                                                     mongoc_matcher_op_t     *child);
-bool                 _mongoc_matcher_op_match       (mongoc_matcher_op_t     *op,
-                                                     const bson_t            *bson);
-void                 _mongoc_matcher_op_destroy     (mongoc_matcher_op_t     *op);
-void                 _mongoc_matcher_op_to_bson     (mongoc_matcher_op_t     *op,
-                                                     bson_t                  *bson);
+mongoc_matcher_op_t *
+_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
+                                mongoc_matcher_op_t *left,
+                                mongoc_matcher_op_t *right);
+mongoc_matcher_op_t *
+_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
+                                const char *path,
+                                const bson_iter_t *iter);
+mongoc_matcher_op_t *
+_mongoc_matcher_op_exists_new (const char *path, bool exists);
+mongoc_matcher_op_t *
+_mongoc_matcher_op_type_new (const char *path, bson_type_t type);
+mongoc_matcher_op_t *
+_mongoc_matcher_op_not_new (const char *path, mongoc_matcher_op_t *child);
+bool
+_mongoc_matcher_op_match (mongoc_matcher_op_t *op, const bson_t *bson);
+void
+_mongoc_matcher_op_destroy (mongoc_matcher_op_t *op);
+void
+_mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op, bson_t *bson);
 
 
 BSON_END_DECLS

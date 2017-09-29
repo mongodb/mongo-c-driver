@@ -1,56 +1,62 @@
+#include <assert.h>
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
    mongoc_gridfs_file_list_t *list;
-   mongoc_gridfs_file_opt_t opt = { 0 };
+   mongoc_gridfs_file_opt_t opt = {0};
    mongoc_client_t *client;
    mongoc_stream_t *stream;
-   bson_t query;
+   bson_t filter;
+   bson_t opts;
    bson_t child;
    bson_error_t error;
    ssize_t r;
    char buf[4096];
    mongoc_iovec_t iov;
-   const char * filename;
-   const char * command;
+   const char *filename;
+   const char *command;
+   bson_value_t id;
 
    if (argc < 2) {
-      fprintf(stderr, "usage - %s command ...\n", argv[0]);
+      fprintf (stderr, "usage - %s command ...\n", argv[0]);
       return 1;
    }
 
-   mongoc_init();
+   mongoc_init ();
 
-   iov.iov_base = (void *)buf;
+   iov.iov_base = (void *) buf;
    iov.iov_len = sizeof buf;
 
    /* connect to localhost client */
-   client = mongoc_client_new ("mongodb://127.0.0.1:27017");
-   assert(client);
+   client =
+      mongoc_client_new ("mongodb://127.0.0.1:27017?appname=gridfs-example");
+   assert (client);
+   mongoc_client_set_error_api (client, 2);
 
    /* grab a gridfs handle in test prefixed by fs */
    gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
-   assert(gridfs);
+   assert (gridfs);
 
    command = argv[1];
    filename = argv[2];
 
-   if (strcmp(command, "read") == 0) {
+   if (strcmp (command, "read") == 0) {
       if (argc != 3) {
-         fprintf(stderr, "usage - %s read filename\n", argv[0]);
+         fprintf (stderr, "usage - %s read filename\n", argv[0]);
          return 1;
       }
-      file = mongoc_gridfs_find_one_by_filename(gridfs, filename, &error);
-      assert(file);
+      file = mongoc_gridfs_find_one_by_filename (gridfs, filename, &error);
+      assert (file);
 
       stream = mongoc_stream_gridfs_new (file);
-      assert(stream);
+      assert (stream);
 
       for (;;) {
          r = mongoc_stream_readv (stream, &iov, 1, -1, 0);
@@ -69,44 +75,56 @@ int main (int argc, char *argv[])
 
       mongoc_stream_destroy (stream);
       mongoc_gridfs_file_destroy (file);
-   } else if (strcmp(command, "list") == 0) {
-      bson_init (&query);
-      bson_append_document_begin (&query, "$orderby", -1, &child);
-      bson_append_int32 (&child, "filename", -1, 1);
-      bson_append_document_end (&query, &child);
-      bson_append_document_begin (&query, "$query", -1, &child);
-      bson_append_document_end (&query, &child);
+   } else if (strcmp (command, "list") == 0) {
+      bson_init (&filter);
 
-      list = mongoc_gridfs_find (gridfs, &query);
+      bson_init (&opts);
+      bson_append_document_begin (&opts, "sort", -1, &child);
+      BSON_APPEND_INT32 (&child, "filename", 1);
+      bson_append_document_end (&opts, &child);
 
-      bson_destroy (&query);
+      list = mongoc_gridfs_find_with_opts (gridfs, &filter, &opts);
+
+      bson_destroy (&filter);
+      bson_destroy (&opts);
 
       while ((file = mongoc_gridfs_file_list_next (list))) {
-         const char * name = mongoc_gridfs_file_get_filename(file);
-         printf("%s\n", name ? name : "?");
+         const char *name = mongoc_gridfs_file_get_filename (file);
+         printf ("%s\n", name ? name : "?");
 
          mongoc_gridfs_file_destroy (file);
       }
 
       mongoc_gridfs_file_list_destroy (list);
-   } else if (strcmp(command, "write") == 0) {
+   } else if (strcmp (command, "write") == 0) {
       if (argc != 4) {
-         fprintf(stderr, "usage - %s write filename input_file\n", argv[0]);
+         fprintf (stderr, "usage - %s write filename input_file\n", argv[0]);
          return 1;
       }
 
-      stream = mongoc_stream_file_new_for_path (argv [3], O_RDONLY, 0);
+      stream = mongoc_stream_file_new_for_path (argv[3], O_RDONLY, 0);
       assert (stream);
 
       opt.filename = filename;
 
+      /* the driver generates a file_id for you */
       file = mongoc_gridfs_create_file_from_stream (gridfs, stream, &opt);
-      assert(file);
+      assert (file);
 
-      mongoc_gridfs_file_save(file);
-      mongoc_gridfs_file_destroy(file);
+      id.value_type = BSON_TYPE_INT32;
+      id.value.v_int32 = 1;
+
+      /* optional: the following method specifies a file_id of any
+         BSON type */
+      if (!mongoc_gridfs_file_set_id (file, &id, &error)) {
+         fprintf (stderr, "%s\n", error.message);
+         return 1;
+      }
+
+      mongoc_gridfs_file_save (file);
+      mongoc_gridfs_file_destroy (file);
    } else {
-      fprintf(stderr, "Unknown command");
+      fprintf (stderr, "Unknown command");
       return 1;
    }
 

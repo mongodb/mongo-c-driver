@@ -24,10 +24,10 @@
 
 
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
-                               bson_iter_t             *iter,
-                               bool                     is_root,
-                               bson_error_t            *error);
+_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode,
+                               bson_iter_t *iter,
+                               bool is_root,
+                               bson_error_t *error);
 
 
 /*
@@ -52,20 +52,19 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
  */
 
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_compare (bson_iter_t  *iter,  /* IN */
-                               const char   *path,  /* IN */
+_mongoc_matcher_parse_compare (bson_iter_t *iter,   /* IN */
+                               const char *path,    /* IN */
                                bson_error_t *error) /* OUT */
 {
-   const char * key;
-   mongoc_matcher_op_t * op = NULL, * op_child;
+   const char *key;
+   mongoc_matcher_op_t *op = NULL, *op_child;
    bson_iter_t child;
 
    BSON_ASSERT (iter);
    BSON_ASSERT (path);
 
    if (bson_iter_type (iter) == BSON_TYPE_DOCUMENT) {
-      if (!bson_iter_recurse (iter, &child) ||
-          !bson_iter_next (&child)) {
+      if (!bson_iter_recurse (iter, &child) || !bson_iter_next (&child)) {
          bson_set_error (error,
                          MONGOC_ERROR_MATCHER,
                          MONGOC_ERROR_MATCHER_INVALID,
@@ -76,38 +75,38 @@ _mongoc_matcher_parse_compare (bson_iter_t  *iter,  /* IN */
       key = bson_iter_key (&child);
 
       if (key[0] != '$') {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path,
-                                              iter);
-      } else if (strcmp(key, "$not") == 0) {
-         if (!(op_child = _mongoc_matcher_parse_compare (&child, path,
-                                                         error))) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_EQ, path, iter);
+      } else if (strcmp (key, "$not") == 0) {
+         if (!(op_child =
+                  _mongoc_matcher_parse_compare (&child, path, error))) {
             return NULL;
          }
          op = _mongoc_matcher_op_not_new (path, op_child);
-      } else if (strcmp(key, "$gt") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_GT, path,
-                                              &child);
-      } else if (strcmp(key, "$gte") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_GTE, path,
-                                              &child);
-      } else if (strcmp(key, "$in") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_IN, path,
-                                              &child);
-      } else if (strcmp(key, "$lt") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_LT, path,
-                                              &child);
-      } else if (strcmp(key, "$lte") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_LTE, path,
-                                              &child);
-      } else if (strcmp(key, "$ne") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_NE, path,
-                                              &child);
-      } else if (strcmp(key, "$nin") == 0) {
-         op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_NIN, path,
-                                              &child);
-      } else if (strcmp(key, "$exists") == 0) {
+      } else if (strcmp (key, "$gt") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_GT, path, &child);
+      } else if (strcmp (key, "$gte") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_GTE, path, &child);
+      } else if (strcmp (key, "$in") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_IN, path, &child);
+      } else if (strcmp (key, "$lt") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_LT, path, &child);
+      } else if (strcmp (key, "$lte") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_LTE, path, &child);
+      } else if (strcmp (key, "$ne") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_NE, path, &child);
+      } else if (strcmp (key, "$nin") == 0) {
+         op = _mongoc_matcher_op_compare_new (
+            MONGOC_MATCHER_OPCODE_NIN, path, &child);
+      } else if (strcmp (key, "$exists") == 0) {
          op = _mongoc_matcher_op_exists_new (path, bson_iter_bool (&child));
-      } else if (strcmp(key, "$type") == 0) {
+      } else if (strcmp (key, "$type") == 0) {
          op = _mongoc_matcher_op_type_new (path, bson_iter_type (&child));
       } else {
          bson_set_error (error,
@@ -118,7 +117,8 @@ _mongoc_matcher_parse_compare (bson_iter_t  *iter,  /* IN */
          return NULL;
       }
    } else {
-      op = _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path, iter);
+      op =
+         _mongoc_matcher_op_compare_new (MONGOC_MATCHER_OPCODE_EQ, path, iter);
    }
 
    BSON_ASSERT (op);
@@ -145,7 +145,7 @@ _mongoc_matcher_parse_compare (bson_iter_t  *iter,  /* IN */
  */
 
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
+_mongoc_matcher_parse (bson_iter_t *iter,   /* IN */
                        bson_error_t *error) /* OUT */
 {
    bson_iter_t child;
@@ -158,7 +158,7 @@ _mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
    if (*key != '$') {
       return _mongoc_matcher_parse_compare (iter, key, error);
    } else {
-      BSON_ASSERT (bson_iter_type(iter) == BSON_TYPE_ARRAY);
+      BSON_ASSERT (bson_iter_type (iter) == BSON_TYPE_ARRAY);
 
       if (!bson_iter_recurse (iter, &child)) {
          bson_set_error (error,
@@ -170,14 +170,14 @@ _mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
       }
 
       if (strcmp (key, "$or") == 0) {
-         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_OR,
-                                               &child, false, error);
-      } else if (strcmp(key, "$and") == 0) {
-         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND,
-                                               &child, false, error);
-      } else if (strcmp(key, "$nor") == 0) {
-         return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_NOR,
-                                               &child, false, error);
+         return _mongoc_matcher_parse_logical (
+            MONGOC_MATCHER_OPCODE_OR, &child, false, error);
+      } else if (strcmp (key, "$and") == 0) {
+         return _mongoc_matcher_parse_logical (
+            MONGOC_MATCHER_OPCODE_AND, &child, false, error);
+      } else if (strcmp (key, "$nor") == 0) {
+         return _mongoc_matcher_parse_logical (
+            MONGOC_MATCHER_OPCODE_NOR, &child, false, error);
       }
    }
 
@@ -214,10 +214,10 @@ _mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
  */
 
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,  /* IN */
-                               bson_iter_t             *iter,    /* IN */
-                               bool                     is_root, /* IN */
-                               bson_error_t            *error)   /* OUT */
+_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t opcode, /* IN */
+                               bson_iter_t *iter,              /* IN */
+                               bool is_root,                   /* IN */
+                               bson_error_t *error)            /* OUT */
 {
    mongoc_matcher_op_t *left;
    mongoc_matcher_op_t *right;
@@ -328,15 +328,15 @@ mongoc_matcher_new (const bson_t *query, /* IN */
 
    BSON_ASSERT (query);
 
-   matcher = bson_malloc0 (sizeof *matcher);
+   matcher = (mongoc_matcher_t *) bson_malloc0 (sizeof *matcher);
    bson_copy_to (query, &matcher->query);
 
    if (!bson_iter_init (&iter, &matcher->query)) {
       goto failure;
    }
 
-   if (!(op = _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND, &iter,
-                                             true, error))) {
+   if (!(op = _mongoc_matcher_parse_logical (
+            MONGOC_MATCHER_OPCODE_AND, &iter, true, error))) {
       goto failure;
    }
 
@@ -369,8 +369,8 @@ failure:
  */
 
 bool
-mongoc_matcher_match (const mongoc_matcher_t *matcher,  /* IN */
-                      const bson_t           *document) /* IN */
+mongoc_matcher_match (const mongoc_matcher_t *matcher, /* IN */
+                      const bson_t *document)          /* IN */
 {
    BSON_ASSERT (matcher);
    BSON_ASSERT (matcher->optree);

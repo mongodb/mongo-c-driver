@@ -17,7 +17,7 @@
 #ifndef MONGOC_MATCHER_PRIVATE_H
 #define MONGOC_MATCHER_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -29,9 +29,8 @@
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_matcher_t
-{
-   bson_t               query;
+struct _mongoc_matcher_t {
+   bson_t query;
    mongoc_matcher_op_t *optree;
 };
 

@@ -17,7 +17,7 @@
 #ifndef MONGOC_READ_PREFS_PRIVATE_H
 #define MONGOC_READ_PREFS_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -29,17 +29,42 @@
 
 BSON_BEGIN_DECLS
 
-
-struct _mongoc_read_prefs_t
-{
+struct _mongoc_read_prefs_t {
    mongoc_read_mode_t mode;
-   bson_t             tags;
+   bson_t tags;
+   int64_t max_staleness_seconds;
 };
 
 
-int _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
-                              const mongoc_cluster_node_t *node);
+typedef struct _mongoc_assemble_query_result_t {
+   bson_t *assembled_query;
+   bool query_owned;
+   mongoc_query_flags_t flags;
+} mongoc_assemble_query_result_t;
 
+
+#define ASSEMBLE_QUERY_RESULT_INIT   \
+   {                                 \
+      NULL, false, MONGOC_QUERY_NONE \
+   }
+
+const char *
+_mongoc_read_mode_as_str (mongoc_read_mode_t mode);
+
+void
+assemble_query (const mongoc_read_prefs_t *read_prefs,
+                const mongoc_server_stream_t *server_stream,
+                const bson_t *query_bson,
+                mongoc_query_flags_t initial_flags,
+                bool is_command,
+                mongoc_assemble_query_result_t *result);
+
+void
+assemble_query_result_cleanup (mongoc_assemble_query_result_t *result);
+
+bool
+_mongoc_read_prefs_validate (const mongoc_read_prefs_t *read_prefs,
+                             bson_error_t *error);
 
 BSON_END_DECLS
 

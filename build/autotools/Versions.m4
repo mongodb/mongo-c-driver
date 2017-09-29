@@ -1,24 +1,43 @@
-m4_define([mongoc_major_version], [1])
-m4_define([mongoc_minor_version], [1])
-m4_define([mongoc_micro_version], [11])
-m4_define([mongoc_prerelease_version], [])
+MONGOC_CURRENT_FILE=${srcdir}/VERSION_CURRENT
+MONGOC_VERSION=$(cat $MONGOC_CURRENT_FILE)
+# Ensure newline for "cut" implementations that need it, e.g. HP-UX.
+MONGOC_MAJOR_VERSION=$( (cat $MONGOC_CURRENT_FILE; echo) | cut -d- -f1 | cut -d. -f1 )
+MONGOC_MINOR_VERSION=$( (cat $MONGOC_CURRENT_FILE; echo) | cut -d- -f1 | cut -d. -f2 )
+MONGOC_MICRO_VERSION=$( (cat $MONGOC_CURRENT_FILE; echo) | cut -d- -f1 | cut -d. -f3 )
+MONGOC_PRERELEASE_VERSION=$(cut -s -d- -f2 $MONGOC_CURRENT_FILE)
+AC_SUBST(MONGOC_VERSION)
+AC_SUBST(MONGOC_MAJOR_VERSION)
+AC_SUBST(MONGOC_MINOR_VERSION)
+AC_SUBST(MONGOC_MICRO_VERSION)
+AC_SUBST(MONGOC_PRERELEASE_VERSION)
 
-m4_define(
-    [mongoc_version],
-    m4_ifset(
-        [mongoc_prerelease_version],
-        [mongoc_major_version.mongoc_minor_version.mongoc_micro_version-mongoc_prerelease_version],
-        [mongoc_major_version.mongoc_minor_version.mongoc_micro_version]))
+MONGOC_RELEASED_FILE=${srcdir}/VERSION_RELEASED
+MONGOC_RELEASED_VERSION=$(cat $MONGOC_RELEASED_FILE)
+MONGOC_RELEASED_MAJOR_VERSION=$(cut -d- -f1 $MONGOC_RELEASED_FILE | cut -d. -f1)
+MONGOC_RELEASED_MINOR_VERSION=$(cut -d- -f1 $MONGOC_RELEASED_FILE | cut -d. -f2)
+MONGOC_RELEASED_MICRO_VERSION=$(cut -d- -f1 $MONGOC_RELEASED_FILE | cut -d. -f3)
+MONGOC_RELEASED_PRERELEASE_VERSION=$(cut -s -d- -f2 $MONGOC_RELEASED_FILE)
+AC_SUBST(MONGOC_RELEASED_VERSION)
+AC_SUBST(MONGOC_RELEASED_MAJOR_VERSION)
+AC_SUBST(MONGOC_RELEASED_MINOR_VERSION)
+AC_SUBST(MONGOC_RELEASED_MICRO_VERSION)
+AC_SUBST(MONGOC_RELEASED_PRERELEASE_VERSION)
 
-# bump up by 1 for every micro release with no API changes, otherwise
-# set to 0. after release, bump up by 1
-m4_define([mongoc_interface_age], [11])
-m4_define([mongoc_binary_age], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version)])
+AC_MSG_NOTICE([Current version (from VERSION_CURRENT file): $MONGOC_VERSION])
 
-m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version - mongoc_interface_age)])
-m4_define([lt_revision], [mongoc_interface_age])
-m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
+if test "x$MONGOC_RELEASED_PRERELEASE_VERSION" != "x"; then
+   AC_ERROR([RELEASED_VERSION file has prerelease version $MONGOC_RELEASED_VERSION])
+fi
 
-m4_define([libbson_required_version], [1.1.11])
+if test "x$MONGOC_VERSION" != "x$MONGOC_RELEASED_VERSION"; then
+   AC_MSG_NOTICE([Most recent release (from VERSION_RELEASED file): $MONGOC_RELEASED_VERSION])
+   if test "x$MONGOC_PRERELEASE_VERSION" = "x"; then
+      AC_ERROR([Current version ($MONGOC_PRERELEASE_VERSION) must be a prerelease (with "-dev", "-beta", etc.) or equal to previous release])
+   fi
+fi
+
+
+dnl So far, we've synchronized libbson and mongoc versions.
+m4_define([libbson_required_version], $MONGOC_RELEASED_VERSION)
 
 m4_define([sasl_required_version], [2.1.6])

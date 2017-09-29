@@ -17,7 +17,7 @@
 #ifndef MONGOC_B64_PRIVATE_H
 #define MONGOC_B64_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -27,18 +27,14 @@
 
 int
 mongoc_b64_ntop (uint8_t const *src,
-                 size_t         srclength,
-                 char          *target,
-                 size_t         targsize);
+                 size_t srclength,
+                 char *target,
+                 size_t targsize);
 
 void
 mongoc_b64_initialize_rmap (void);
 
-#ifdef MONGOC_ENABLE_SSL
 int
-mongoc_b64_pton (char const *src,
-                 uint8_t    *target,
-                 size_t      targsize);
-#endif
+mongoc_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
 #endif /* MONGOC_B64_PRIVATE_H */

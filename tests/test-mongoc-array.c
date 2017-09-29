@@ -9,31 +9,31 @@ test_array (void)
    int i;
    int v;
 
-   _mongoc_array_init(&ar, sizeof i);
-   assert(ar.element_size == sizeof i);
-   assert(ar.len == 0);
-   assert(ar.allocated);
-   assert(ar.data);
+   _mongoc_array_init (&ar, sizeof i);
+   BSON_ASSERT (ar.element_size == sizeof i);
+   BSON_ASSERT (ar.len == 0);
+   BSON_ASSERT (ar.allocated);
+   BSON_ASSERT (ar.data);
 
    for (i = 0; i < 100; i++) {
-      _mongoc_array_append_val(&ar, i);
+      _mongoc_array_append_val (&ar, i);
    }
 
    for (i = 0; i < 100; i++) {
-      v = _mongoc_array_index(&ar, int, i);
-      assert(v == i);
+      v = _mongoc_array_index (&ar, int, i);
+      BSON_ASSERT (v == i);
    }
 
-   assert(ar.len == 100);
-   assert(ar.allocated >= (100 * sizeof i));
+   BSON_ASSERT (ar.len == 100);
+   BSON_ASSERT (ar.allocated >= (100 * sizeof i));
 
-   _mongoc_array_clear(&ar);
-   assert(ar.len == 0);
-   assert(ar.allocated);
-   assert(ar.data);
-   assert(ar.element_size);
+   _mongoc_array_clear (&ar);
+   BSON_ASSERT (ar.len == 0);
+   BSON_ASSERT (ar.allocated);
+   BSON_ASSERT (ar.data);
+   BSON_ASSERT (ar.element_size);
 
-   _mongoc_array_destroy(&ar);
+   _mongoc_array_destroy (&ar);
 }
 
 

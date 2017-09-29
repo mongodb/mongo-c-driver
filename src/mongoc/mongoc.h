@@ -22,7 +22,10 @@
 #include <bson.h>
 
 #define MONGOC_INSIDE
+#include "mongoc-macros.h"
+#include "mongoc-apm.h"
 #include "mongoc-bulk-operation.h"
+#include "mongoc-change-stream.h"
 #include "mongoc-client.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-collection.h"
@@ -39,9 +42,11 @@
 #include "mongoc-host-list.h"
 #include "mongoc-init.h"
 #include "mongoc-matcher.h"
+#include "mongoc-handshake.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
+#include "mongoc-client-session.h"
 #include "mongoc-stream.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-file.h"
@@ -50,6 +55,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"
+#include "mongoc-version-functions.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-rand.h"
 #include "mongoc-stream-tls.h"

@@ -28,19 +28,19 @@
  * Returns: @list or a new list if @list is NULL.
  */
 mongoc_list_t *
-_mongoc_list_append (mongoc_list_t *list,
-                     void          *data)
+_mongoc_list_append (mongoc_list_t *list, void *data)
 {
    mongoc_list_t *item;
    mongoc_list_t *iter;
 
-   item = bson_malloc0(sizeof *item);
-   item->data = data;
+   item = (mongoc_list_t *) bson_malloc0 (sizeof *item);
+   item->data = (void *) data;
    if (!list) {
       return item;
    }
 
-   for (iter = list; iter->next; iter = iter->next) { }
+   for (iter = list; iter->next; iter = iter->next) {
+   }
    iter->next = item;
 
    return list;
@@ -57,13 +57,12 @@ _mongoc_list_append (mongoc_list_t *list,
  * Returns: A new link containing data with @list following.
  */
 mongoc_list_t *
-_mongoc_list_prepend (mongoc_list_t *list,
-                      void          *data)
+_mongoc_list_prepend (mongoc_list_t *list, void *data)
 {
    mongoc_list_t *item;
 
-   item = bson_malloc0(sizeof *item);
-   item->data = data;
+   item = (mongoc_list_t *) bson_malloc0 (sizeof *item);
+   item->data = (void *) data;
    item->next = list;
 
    return item;
@@ -80,14 +79,13 @@ _mongoc_list_prepend (mongoc_list_t *list,
  * Returns: @list with the link containing @data removed.
  */
 mongoc_list_t *
-_mongoc_list_remove (mongoc_list_t *list,
-                     void          *data)
+_mongoc_list_remove (mongoc_list_t *list, void *data)
 {
    mongoc_list_t *iter;
    mongoc_list_t *prev = NULL;
    mongoc_list_t *ret = list;
 
-   bson_return_val_if_fail(list, NULL);
+   BSON_ASSERT (list);
 
    for (iter = list; iter; iter = iter->next) {
       if (iter->data == data) {
@@ -96,7 +94,7 @@ _mongoc_list_remove (mongoc_list_t *list,
          } else {
             ret = iter->next;
          }
-         bson_free(iter);
+         bson_free (iter);
          break;
       }
       prev = iter;
@@ -117,14 +115,14 @@ _mongoc_list_remove (mongoc_list_t *list,
 void
 _mongoc_list_foreach (mongoc_list_t *list,
                       void (*func) (void *data, void *user_data),
-                      void          *user_data)
+                      void *user_data)
 {
    mongoc_list_t *iter;
 
-   bson_return_if_fail(func);
+   BSON_ASSERT (func);
 
    for (iter = list; iter; iter = iter->next) {
-      func(iter->data, user_data);
+      func (iter->data, user_data);
    }
 }
 
@@ -142,7 +140,7 @@ _mongoc_list_destroy (mongoc_list_t *list)
 
    while (list) {
       tmp = list->next;
-      bson_free(list);
+      bson_free (list);
       list = tmp;
    }
 }

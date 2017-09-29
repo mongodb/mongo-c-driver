@@ -17,22 +17,17 @@
 
 COUNTER(op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
 COUNTER(op_ingress_total,       "Operations",   "Ingress Total",       "The number of received operations.")
+COUNTER(op_egress_msg,          "Operations",   "Egress Messages",     "The number of sent messages operations.")
+COUNTER(op_ingress_msg,         "Operations",   "Ingress Messages",    "The number of received messages operations.")
+COUNTER(op_egress_compressed,   "Operations",   "Egress Compressed",   "The number of sent compressed operations.")
+COUNTER(op_ingress_compressed,  "Operations",   "Ingress Compressed",  "The number of received compressed operations.")
 COUNTER(op_egress_query,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
-COUNTER(op_ingress_query,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
-COUNTER(op_egress_getmore,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
-COUNTER(op_ingress_getmore,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
-COUNTER(op_egress_insert,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
-COUNTER(op_ingress_insert,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
-COUNTER(op_egress_delete,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
-COUNTER(op_ingress_delete,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
-COUNTER(op_egress_update,       "Operations",   "Egress Update",       "The number of sent Update operations.")
-COUNTER(op_ingress_update,      "Operations",   "Ingress Update",      "The number of received Update operations.")
-COUNTER(op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
-COUNTER(op_ingress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
-COUNTER(op_egress_msg,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
-COUNTER(op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
-COUNTER(op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
 COUNTER(op_ingress_reply,       "Operations",   "Ingress Reply",       "The number of received Reply operations.")
+COUNTER(op_egress_getmore,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
+COUNTER(op_egress_insert,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
+COUNTER(op_egress_delete,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
+COUNTER(op_egress_update,       "Operations",   "Egress Update",       "The number of sent Update operations.")
+COUNTER(op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
 
 
 COUNTER(cursors_active,         "Cursors",      "Active",              "The number of active cursors.")
@@ -63,3 +58,4 @@ COUNTER(auth_success,           "Auth",         "Success",             "The numb
 
 COUNTER(dns_failure,            "DNS",          "Failure",             "The number of failed DNS requests.")
 COUNTER(dns_success,            "DNS",          "Success",             "The number of successful DNS requests.")
+

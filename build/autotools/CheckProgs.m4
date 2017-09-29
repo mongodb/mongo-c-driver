@@ -13,9 +13,12 @@ if test -z "$GREP"; then
     AC_MSG_ERROR([You need 'grep' to compile libbson])
 fi
 
+AC_CHECK_HEADERS_ONCE([strings.h])
+AC_CHECK_HEADERS_ONCE([unistd.h])
+AC_CHECK_HEADERS_ONCE([stdarg.h])
+
 # Optional for documentation
-AC_PATH_PROG(PYTHON, python)
-AC_PATH_PROG(YELP_BUILD, yelp-build)
+AC_PATH_PROG(SPHINX_BUILD, sphinx-build)
 
 AC_PROG_INSTALL
 

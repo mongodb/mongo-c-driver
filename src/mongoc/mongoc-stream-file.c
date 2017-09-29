@@ -16,13 +16,13 @@
 
 
 #ifdef _WIN32
-# include <io.h>
-# include <share.h>
+#include <io.h>
+#include <share.h>
 #endif
 
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-file.h"
-#include "mongoc-trace.h"
+#include "mongoc-trace-private.h"
 
 
 /*
@@ -31,22 +31,21 @@
  */
 
 
-struct _mongoc_stream_file_t
-{
+struct _mongoc_stream_file_t {
    mongoc_stream_t vtable;
-   int             fd;
+   int fd;
 };
 
 
 static int
 _mongoc_stream_file_close (mongoc_stream_t *stream)
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
    int ret;
 
    ENTRY;
 
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    if (file->fd != -1) {
 #ifdef _WIN32
@@ -65,11 +64,11 @@ _mongoc_stream_file_close (mongoc_stream_t *stream)
 static void
 _mongoc_stream_file_destroy (mongoc_stream_t *stream)
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
 
    ENTRY;
 
-   bson_return_if_fail (file);
+   BSON_ASSERT (file);
 
    if (file->fd) {
       _mongoc_stream_file_close (stream);
@@ -81,10 +80,21 @@ _mongoc_stream_file_destroy (mongoc_stream_t *stream)
 }
 
 
+static void
+_mongoc_stream_file_failed (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   _mongoc_stream_file_destroy (stream);
+
+   EXIT;
+}
+
+
 static int
 _mongoc_stream_file_flush (mongoc_stream_t *stream) /* IN */
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
 
    BSON_ASSERT (file);
 
@@ -101,13 +111,13 @@ _mongoc_stream_file_flush (mongoc_stream_t *stream) /* IN */
 
 
 static ssize_t
-_mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
-                           mongoc_iovec_t  *iov,          /* IN */
-                           size_t           iovcnt,       /* IN */
-                           size_t           min_bytes,    /* IN */
-                           int32_t          timeout_msec) /* IN */
+_mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
+                           mongoc_iovec_t *iov,     /* IN */
+                           size_t iovcnt,           /* IN */
+                           size_t min_bytes,        /* IN */
+                           int32_t timeout_msec)    /* IN */
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
    ssize_t ret = 0;
 
 #ifdef _WIN32
@@ -117,7 +127,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
    ENTRY;
 
    for (i = 0; i < iovcnt; i++) {
-      nread = _read (file->fd, iov [i].iov_base, iov [i].iov_len);
+      nread = _read (file->fd, iov[i].iov_base, iov[i].iov_len);
       if (nread < 0) {
          RETURN (ret ? ret : -1);
       } else if (nread == 0) {
@@ -140,12 +150,12 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
 
 
 static ssize_t
-_mongoc_stream_file_writev (mongoc_stream_t *stream,       /* IN */
-                            mongoc_iovec_t  *iov,          /* IN */
-                            size_t           iovcnt,       /* IN */
-                            int32_t          timeout_msec) /* IN */
+_mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
+                            mongoc_iovec_t *iov,     /* IN */
+                            size_t iovcnt,           /* IN */
+                            int32_t timeout_msec)    /* IN */
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
 
 #ifdef _WIN32
    ssize_t ret = 0;
@@ -153,8 +163,8 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream,       /* IN */
    size_t i;
 
    for (i = 0; i < iovcnt; i++) {
-      nwrite = _write (file->fd, iov [i].iov_base, iov [i].iov_len);
-      if (nwrite != iov [i].iov_len) {
+      nwrite = _write (file->fd, iov[i].iov_base, iov[i].iov_len);
+      if (nwrite != iov[i].iov_len) {
          return ret ? ret : -1;
       }
       ret += nwrite;
@@ -179,30 +189,31 @@ mongoc_stream_file_new (int fd) /* IN */
 {
    mongoc_stream_file_t *stream;
 
-   bson_return_val_if_fail (fd != -1, NULL);
+   BSON_ASSERT (fd != -1);
 
-   stream = bson_malloc0 (sizeof *stream);
+   stream = (mongoc_stream_file_t *) bson_malloc0 (sizeof *stream);
    stream->vtable.type = MONGOC_STREAM_FILE;
    stream->vtable.close = _mongoc_stream_file_close;
    stream->vtable.destroy = _mongoc_stream_file_destroy;
+   stream->vtable.failed = _mongoc_stream_file_failed;
    stream->vtable.flush = _mongoc_stream_file_flush;
    stream->vtable.readv = _mongoc_stream_file_readv;
    stream->vtable.writev = _mongoc_stream_file_writev;
    stream->vtable.check_closed = _mongoc_stream_file_check_closed;
    stream->fd = fd;
 
-   return (mongoc_stream_t *)stream;
+   return (mongoc_stream_t *) stream;
 }
 
 
 mongoc_stream_t *
-mongoc_stream_file_new_for_path (const char *path,  /* IN */
-                                 int         flags, /* IN */
-                                 int         mode)  /* IN */
+mongoc_stream_file_new_for_path (const char *path, /* IN */
+                                 int flags,        /* IN */
+                                 int mode)         /* IN */
 {
    int fd = -1;
 
-   bson_return_val_if_fail (path, NULL);
+   BSON_ASSERT (path);
 
 #ifdef _WIN32
    if (_sopen_s (&fd, path, (flags | _O_BINARY), _SH_DENYNO, mode) != 0) {
@@ -223,7 +234,7 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
 int
 mongoc_stream_file_get_fd (mongoc_stream_file_t *stream)
 {
-   bson_return_val_if_fail (stream, -1);
+   BSON_ASSERT (stream);
 
    return stream->fd;
 }

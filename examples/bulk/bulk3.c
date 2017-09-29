@@ -41,7 +41,7 @@ bulk3 (mongoc_collection_t *collection)
 
    ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
 
-   str = bson_as_json (&reply, NULL);
+   str = bson_as_canonical_extended_json (&reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
 
@@ -54,15 +54,15 @@ bulk3 (mongoc_collection_t *collection)
 }
 
 int
-main (int argc,
-      char *argv[])
+main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost/");
+   client = mongoc_client_new ("mongodb://localhost/?appname=bulk3-example");
+   mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk3 (collection);

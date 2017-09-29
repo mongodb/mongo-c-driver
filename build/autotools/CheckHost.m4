@@ -1,8 +1,13 @@
 AC_CANONICAL_HOST
 
 os_win32=no
-os_linux=no
+os_netbsd=no
 os_freebsd=no
+os_openbsd=no
+os_hpux=no
+os_linux=no
+os_solaris=no
+os_darwin=no
 os_gnu=no
 
 case "$host" in
@@ -20,6 +25,10 @@ case "$host" in
         ;;
     *-*-*openbsd*)
         os_openbsd=yes
+	TARGET_OS=unix
+        ;;
+    *-*-hpux*)
+        os_hpux=yes
 	TARGET_OS=unix
         ;;
     *-*-linux*)

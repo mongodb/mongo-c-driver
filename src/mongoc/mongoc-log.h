@@ -17,31 +17,37 @@
 #ifndef MONGOC_LOG_H
 #define MONGOC_LOG_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 
 
 #ifndef MONGOC_LOG_DOMAIN
-# define MONGOC_LOG_DOMAIN "mongoc"
+#define MONGOC_LOG_DOMAIN "mongoc"
 #endif
 
 
-#define MONGOC_ERROR(...)    mongoc_log(MONGOC_LOG_LEVEL_ERROR,    MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_CRITICAL(...) mongoc_log(MONGOC_LOG_LEVEL_CRITICAL, MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_WARNING(...)  mongoc_log(MONGOC_LOG_LEVEL_WARNING,  MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_MESSAGE(...)  mongoc_log(MONGOC_LOG_LEVEL_MESSAGE,  MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_INFO(...)     mongoc_log(MONGOC_LOG_LEVEL_INFO,     MONGOC_LOG_DOMAIN, __VA_ARGS__)
-#define MONGOC_DEBUG(...)    mongoc_log(MONGOC_LOG_LEVEL_DEBUG,    MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_ERROR(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_ERROR, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_CRITICAL(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_CRITICAL, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_WARNING(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_WARNING, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_MESSAGE(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_MESSAGE, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_INFO(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_INFO, MONGOC_LOG_DOMAIN, __VA_ARGS__)
+#define MONGOC_DEBUG(...) \
+   mongoc_log (MONGOC_LOG_LEVEL_DEBUG, MONGOC_LOG_DOMAIN, __VA_ARGS__)
 
 
-typedef enum
-{
+typedef enum {
    MONGOC_LOG_LEVEL_ERROR,
    MONGOC_LOG_LEVEL_CRITICAL,
    MONGOC_LOG_LEVEL_WARNING,
@@ -63,10 +69,10 @@ typedef enum
  * libmongoc library. This is useful if you would like to show them in a
  * user interface or alternate storage.
  */
-typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
-                                   const char         *log_domain,
-                                   const char         *message,
-                                   void               *user_data);
+typedef void (*mongoc_log_func_t) (mongoc_log_level_t log_level,
+                                   const char *log_domain,
+                                   const char *message,
+                                   void *user_data);
 
 
 /**
@@ -76,8 +82,8 @@ typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
  *
  * Sets the function to be called to handle logging.
  */
-void mongoc_log_set_handler (mongoc_log_func_t  log_func,
-                             void              *user_data);
+MONGOC_EXPORT (void)
+mongoc_log_set_handler (mongoc_log_func_t log_func, void *user_data);
 
 
 /**
@@ -93,18 +99,18 @@ void mongoc_log_set_handler (mongoc_log_func_t  log_func,
  * does not re-enter the logging system or deadlock will occur.
  *
  */
-void mongoc_log (mongoc_log_level_t  log_level,
-                 const char         *log_domain,
-                 const char         *format,
-                 ...)
-   BSON_GNUC_PRINTF(3, 4);
+MONGOC_EXPORT (void)
+mongoc_log (mongoc_log_level_t log_level,
+            const char *log_domain,
+            const char *format,
+            ...) BSON_GNUC_PRINTF (3, 4);
 
 
-
-void mongoc_log_default_handler (mongoc_log_level_t  log_level,
-                                 const char         *log_domain,
-                                 const char         *message,
-                                 void               *user_data);
+MONGOC_EXPORT (void)
+mongoc_log_default_handler (mongoc_log_level_t log_level,
+                            const char *log_domain,
+                            const char *message,
+                            void *user_data);
 
 
 /**
@@ -113,8 +119,26 @@ void mongoc_log_default_handler (mongoc_log_level_t  log_level,
  *
  * Returns: The string representation of log_level
  */
-const char *
+MONGOC_EXPORT (const char *)
 mongoc_log_level_str (mongoc_log_level_t log_level);
+
+
+/**
+ * mongoc_log_trace_enable:
+ *
+ * Enables tracing at runtime (if it has been enabled at compile time).
+ */
+MONGOC_EXPORT (void)
+mongoc_log_trace_enable (void);
+
+
+/**
+ * mongoc_log_trace_disable:
+ *
+ * Disables tracing at runtime (if it has been enabled at compile time).
+ */
+MONGOC_EXPORT (void)
+mongoc_log_trace_disable (void);
 
 
 BSON_END_DECLS

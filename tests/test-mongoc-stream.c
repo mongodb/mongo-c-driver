@@ -1,4 +1,3 @@
-#include "mongoc-tests.h"
 
 #include <fcntl.h>
 #include <mongoc.h>
@@ -17,20 +16,30 @@ test_buffered_basic (void)
    ssize_t r;
    char buf[16236];
 
-   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply2.dat", O_RDONLY, 0);
-   assert (stream);
+   stream =
+      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
-   buffered = mongoc_stream_buffered_new(stream, 1024);
+   buffered = mongoc_stream_buffered_new (stream, 1024);
 
    /* try to read large chunk larger than buffer. */
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
-   r = mongoc_stream_readv(buffered, &iov, 1, iov.iov_len, -1);
-   BSON_ASSERT(r == iov.iov_len);
+   r = mongoc_stream_readv (buffered, &iov, 1, iov.iov_len, -1);
+   if (r != iov.iov_len) {
+      char msg[100];
+
+      bson_snprintf (msg,
+                     100,
+                     "Expected %lld got %llu",
+                     (long long) r,
+                     (unsigned long long) iov.iov_len);
+      ASSERT_CMPSTR (msg, "failed");
+   }
 
    /* cleanup */
-   mongoc_stream_destroy(buffered);
+   mongoc_stream_destroy (buffered);
 }
 
 
@@ -43,36 +52,45 @@ test_buffered_oversized (void)
    ssize_t r;
    char buf[16236];
 
-   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply2.dat", O_RDONLY, 0);
-   assert (stream);
+   stream =
+      mongoc_stream_file_new_for_path (BINARY_DIR "/reply2.dat", O_RDONLY, 0);
+   BSON_ASSERT (stream);
 
    /* buffered assumes ownership of stream */
-   buffered = mongoc_stream_buffered_new(stream, 20000);
+   buffered = mongoc_stream_buffered_new (stream, 20000);
 
    /* try to read large chunk larger than buffer. */
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
-   r = mongoc_stream_readv(buffered, &iov, 1, iov.iov_len, -1);
-   BSON_ASSERT(r == iov.iov_len);
+   r = mongoc_stream_readv (buffered, &iov, 1, iov.iov_len, -1);
+   if (r != iov.iov_len) {
+      char msg[100];
+
+      bson_snprintf (msg,
+                     100,
+                     "Expected %lld got %llu",
+                     (long long) r,
+                     (unsigned long long) iov.iov_len);
+      ASSERT_CMPSTR (msg, "failed");
+   }
 
    /* cleanup */
-   mongoc_stream_destroy(buffered);
+   mongoc_stream_destroy (buffered);
 }
 
 
-typedef struct
-{
+typedef struct {
    mongoc_stream_t vtable;
-   ssize_t         rval;
+   ssize_t rval;
 } failing_stream_t;
 
 static ssize_t
 failing_stream_writev (mongoc_stream_t *stream,
-                       mongoc_iovec_t  *iov,
-                       size_t           iovcnt,
-                       int32_t          timeout_msec)
+                       mongoc_iovec_t *iov,
+                       size_t iovcnt,
+                       int32_t timeout_msec)
 {
-   failing_stream_t *fstream = (failing_stream_t *)stream;
+   failing_stream_t *fstream = (failing_stream_t *) stream;
 
    return fstream->rval;
 }
@@ -94,7 +112,7 @@ failing_stream_new (ssize_t rval)
    stream->vtable.destroy = failing_stream_destroy;
    stream->rval = rval;
 
-   return (mongoc_stream_t *)stream;
+   return (mongoc_stream_t *) stream;
 }
 
 
@@ -108,10 +126,10 @@ test_stream_writev_full (void)
    char bufb[80];
    bool r;
    mongoc_iovec_t iov[2];
-   bson_error_t error = { 0 };
+   bson_error_t error = {0};
    const char *error_message = "Failure during socket delivery: ";
-   const char *short_message =
-      "Failure to send all requested bytes (only sent: 10/100 in 100ms) during socket delivery";
+   const char *short_message = "Failure to send all requested bytes (only "
+                               "sent: 10/100 in 100ms) during socket delivery";
 
    iov[0].iov_base = bufa;
    iov[0].iov_len = sizeof (bufa);
@@ -124,12 +142,7 @@ test_stream_writev_full (void)
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
-   if ((error.message) != strstr ((error.message), (error_message))) {
-      fprintf (stderr,
-               "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n",
-               error.message, error_message);
-      abort ();
-   }
+   ASSERT_STARTSWITH (error.message, error_message);
 
    errno = 0;
    r = _mongoc_stream_writev_full (short_stream, iov, 2, 100, &error);

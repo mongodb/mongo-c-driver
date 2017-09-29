@@ -17,7 +17,7 @@
 #ifndef MONGOC_ARRAY_PRIVATE_H
 #define MONGOC_ARRAY_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -30,26 +30,29 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_array_t mongoc_array_t;
 
 
-struct _mongoc_array_t
-{
-   size_t  len;
-   size_t  element_size;
-   size_t  allocated;
-   void   *data;
+struct _mongoc_array_t {
+   size_t len;
+   size_t element_size;
+   size_t allocated;
+   void *data;
 };
 
 
-#define _mongoc_array_append_val(a, v) _mongoc_array_append_vals(a, &v, 1)
-#define _mongoc_array_index(a, t, i)   (((t*)(a)->data)[i])
-#define _mongoc_array_clear(a)         (a)->len = 0
+#define _mongoc_array_append_val(a, v) _mongoc_array_append_vals (a, &v, 1)
+#define _mongoc_array_index(a, t, i) (((t *) (a)->data)[i])
+#define _mongoc_array_clear(a) (a)->len = 0
 
 
-void _mongoc_array_init        (mongoc_array_t *array,
-                                size_t          element_size);
-void _mongoc_array_append_vals (mongoc_array_t *array,
-                                const void     *data,
-                                uint32_t        n_elements);
-void _mongoc_array_destroy     (mongoc_array_t *array);
+void
+_mongoc_array_init (mongoc_array_t *array, size_t element_size);
+void
+_mongoc_array_copy (mongoc_array_t *dst, const mongoc_array_t *src);
+void
+_mongoc_array_append_vals (mongoc_array_t *array,
+                           const void *data,
+                           uint32_t n_elements);
+void
+_mongoc_array_destroy (mongoc_array_t *array);
 
 
 BSON_END_DECLS

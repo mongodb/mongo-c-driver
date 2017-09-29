@@ -1,21 +1,11 @@
 {
   "id": "shard_cluster_1",
-  "configsvrs": [
-    {
-      "port": 27117
-    },
-    {
-      "port": 27118
-    },
-    {
-      "port": 27119
-    }
-  ],
   "shards": [
     {
       "id": "sh01",
       "shardParams": {
         "procParams": {
+          "shardsvr": true,
           "port": 27217
         }
       }
@@ -24,6 +14,7 @@
       "id": "sh02",
       "shardParams": {
         "procParams": {
+          "shardsvr": true,
           "port": 27218
         }
       }
@@ -31,10 +22,14 @@
   ],
   "routers": [
     {
-      "port": 27017
+      "port": 27017,
+      "ipv6": true,
+      "bind_ip": ""
     },
     {
-      "port": 27018
+      "port": 27018,
+      "ipv6": true,
+      "bind_ip": ""
     }
   ]
 }

@@ -1,0 +1,37 @@
+language: c
+
+compiler:
+  - gcc
+  - clang
+
+os:
+  - linux
+  - osx
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mongodb; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew services start mongodb; fi
+
+services: mongodb
+
+env:
+  - CFLAGS="$CFLAGS -Werror -Wno-cast-align" 
+
+addons:
+  apt:
+    packages:
+      - gdb
+
+script:
+  - ulimit -a
+  - ulimit -c unlimited || true
+  - ./autogen.sh --enable-debug --enable-maintainer-flags --disable-automatic-init-and-cleanup --with-libbson=bundled
+  - make
+  - make test TEST_ARGS=""
+
+
+after_failure:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gdb; fi
+  - find /cores . -name \*core\* -exec ./.travis.scripts/debug-core.sh {} \;
+

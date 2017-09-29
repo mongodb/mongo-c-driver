@@ -17,15 +17,15 @@
 #ifndef MONGOC_ERRNO_PRIVATE_H
 #define MONGOC_ERRNO_PRIVATE_H
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
 #include <errno.h>
 #ifdef _WIN32
-# include <winsock2.h>
-# include <winerror.h>
+#include <winsock2.h>
+#include <winerror.h>
 #endif
 
 
@@ -33,12 +33,20 @@ BSON_BEGIN_DECLS
 
 
 #if defined(_WIN32)
-# define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EAGAIN) || (errno == WSAEWOULDBLOCK) || (errno == WSAEINPROGRESS))
+#define MONGOC_ERRNO_IS_AGAIN(errno) \
+   ((errno == EAGAIN) || (errno == WSAEWOULDBLOCK) || (errno == WSAEINPROGRESS))
+#define MONGOC_ERRNO_IS_TIMEDOUT(errno) (errno == WSAETIMEDOUT)
 #elif defined(__sun)
 /* for some reason, accept() returns -1 and errno of 0 */
-# define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS) || (errno == 0))
+#define MONGOC_ERRNO_IS_AGAIN(errno)                                   \
+   ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || \
+    (errno == EINPROGRESS) || (errno == 0))
+#define MONGOC_ERRNO_IS_TIMEDOUT(errno) (errno == ETIMEDOUT)
 #else
-# define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
+#define MONGOC_ERRNO_IS_AGAIN(errno)                                   \
+   ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || \
+    (errno == EINPROGRESS))
+#define MONGOC_ERRNO_IS_TIMEDOUT(errno) (errno == ETIMEDOUT)
 #endif
 
 

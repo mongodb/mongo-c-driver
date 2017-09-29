@@ -17,8 +17,8 @@
 #ifndef MONGOC_FLAGS_H
 #define MONGOC_FLAGS_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-# error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
@@ -38,9 +38,8 @@ BSON_BEGIN_DECLS
  *
  * #mongoc_delete_flags_t are used when performing a delete operation.
  */
-typedef enum
-{
-   MONGOC_DELETE_NONE          = 0,
+typedef enum {
+   MONGOC_DELETE_NONE = 0,
    MONGOC_DELETE_SINGLE_REMOVE = 1 << 0,
 } mongoc_delete_flags_t;
 
@@ -53,9 +52,8 @@ typedef enum
  *
  * #mongoc_remove_flags_t are used when performing a remove operation.
  */
-typedef enum
-{
-   MONGOC_REMOVE_NONE          = 0,
+typedef enum {
+   MONGOC_REMOVE_NONE = 0,
    MONGOC_REMOVE_SINGLE_REMOVE = 1 << 0,
 } mongoc_remove_flags_t;
 
@@ -68,9 +66,8 @@ typedef enum
  *
  * #mongoc_insert_flags_t are used when performing an insert operation.
  */
-typedef enum
-{
-   MONGOC_INSERT_NONE              = 0,
+typedef enum {
+   MONGOC_INSERT_NONE = 0,
    MONGOC_INSERT_CONTINUE_ON_ERROR = 1 << 0,
 } mongoc_insert_flags_t;
 
@@ -97,16 +94,15 @@ typedef enum
  *
  * #mongoc_query_flags_t is used for querying a Mongo instance.
  */
-typedef enum
-{
-   MONGOC_QUERY_NONE              = 0,
-   MONGOC_QUERY_TAILABLE_CURSOR   = 1 << 1,
-   MONGOC_QUERY_SLAVE_OK          = 1 << 2,
-   MONGOC_QUERY_OPLOG_REPLAY      = 1 << 3,
+typedef enum {
+   MONGOC_QUERY_NONE = 0,
+   MONGOC_QUERY_TAILABLE_CURSOR = 1 << 1,
+   MONGOC_QUERY_SLAVE_OK = 1 << 2,
+   MONGOC_QUERY_OPLOG_REPLAY = 1 << 3,
    MONGOC_QUERY_NO_CURSOR_TIMEOUT = 1 << 4,
-   MONGOC_QUERY_AWAIT_DATA        = 1 << 5,
-   MONGOC_QUERY_EXHAUST           = 1 << 6,
-   MONGOC_QUERY_PARTIAL           = 1 << 7,
+   MONGOC_QUERY_AWAIT_DATA = 1 << 5,
+   MONGOC_QUERY_EXHAUST = 1 << 6,
+   MONGOC_QUERY_PARTIAL = 1 << 7,
 } mongoc_query_flags_t;
 
 
@@ -122,13 +118,12 @@ typedef enum
  * #mongoc_reply_flags_t contains flags supplied by the Mongo server in reply
  * to a request.
  */
-typedef enum
-{
-   MONGOC_REPLY_NONE               = 0,
-   MONGOC_REPLY_CURSOR_NOT_FOUND   = 1 << 0,
-   MONGOC_REPLY_QUERY_FAILURE      = 1 << 1,
+typedef enum {
+   MONGOC_REPLY_NONE = 0,
+   MONGOC_REPLY_CURSOR_NOT_FOUND = 1 << 0,
+   MONGOC_REPLY_QUERY_FAILURE = 1 << 1,
    MONGOC_REPLY_SHARD_CONFIG_STALE = 1 << 2,
-   MONGOC_REPLY_AWAIT_CAPABLE      = 1 << 3,
+   MONGOC_REPLY_AWAIT_CAPABLE = 1 << 3,
 } mongoc_reply_flags_t;
 
 
@@ -140,10 +135,9 @@ typedef enum
  *
  * #mongoc_update_flags_t is used when updating documents found in Mongo.
  */
-typedef enum
-{
-   MONGOC_UPDATE_NONE         = 0,
-   MONGOC_UPDATE_UPSERT       = 1 << 0,
+typedef enum {
+   MONGOC_UPDATE_NONE = 0,
+   MONGOC_UPDATE_UPSERT = 1 << 0,
    MONGOC_UPDATE_MULTI_UPDATE = 1 << 1,
 } mongoc_update_flags_t;
 

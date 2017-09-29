@@ -15,7 +15,7 @@
  */
 
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
@@ -25,51 +25,69 @@
 
 
 #include <bson.h>
+#include "mongoc-crypto-private.h"
 
 
 BSON_BEGIN_DECLS
 
 #define MONGOC_SCRAM_HASH_SIZE 20
 
-typedef struct _mongoc_scram_t
-{
-   bool         done;
-   int          step;
-   char        *user;
-   char        *pass;
-   uint8_t      salted_password[MONGOC_SCRAM_HASH_SIZE];
-   char         encoded_nonce[48];
-   int32_t      encoded_nonce_len;
-   uint8_t     *auth_message;
-   uint32_t     auth_messagemax;
-   uint32_t     auth_messagelen;
+typedef struct _mongoc_scram_t {
+   bool done;
+   int step;
+   char *user;
+   char *pass;
+   uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
+   char encoded_nonce[48];
+   int32_t encoded_nonce_len;
+   uint8_t *auth_message;
+   uint32_t auth_messagemax;
+   uint32_t auth_messagelen;
+#ifdef MONGOC_ENABLE_CRYPTO
+   mongoc_crypto_t crypto;
+#endif
 } mongoc_scram_t;
 
 void
-_mongoc_scram_startup();
+_mongoc_scram_startup ();
 
 void
 _mongoc_scram_init (mongoc_scram_t *scram);
 
 void
-_mongoc_scram_set_pass (mongoc_scram_t *scram,
-                        const char     *pass);
+_mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass);
 
 void
-_mongoc_scram_set_user (mongoc_scram_t *scram,
-                        const char     *user);
+_mongoc_scram_set_user (mongoc_scram_t *scram, const char *user);
+
+void
+_mongoc_scram_set_client_key (mongoc_scram_t *scram,
+                              const uint8_t *client_key,
+                              size_t len);
+
+void
+_mongoc_scram_set_server_key (mongoc_scram_t *scram,
+                              const uint8_t *server_key,
+                              size_t len);
+
+void
+_mongoc_scram_set_salted_password (mongoc_scram_t *scram,
+                                   const uint8_t *salted_password,
+                                   size_t len);
+
 void
 _mongoc_scram_destroy (mongoc_scram_t *scram);
 
 bool
 _mongoc_scram_step (mongoc_scram_t *scram,
-                    const uint8_t  *inbuf,
-                    uint32_t        inbuflen,
-                    uint8_t        *outbuf,
-                    uint32_t        outbufmax,
-                    uint32_t       *outbuflen,
-                    bson_error_t   *error);
-
+                    const uint8_t *inbuf,
+                    uint32_t inbuflen,
+                    uint8_t *outbuf,
+                    uint32_t outbufmax,
+                    uint32_t *outbuflen,
+                    bson_error_t *error);
 
 BSON_END_DECLS
 

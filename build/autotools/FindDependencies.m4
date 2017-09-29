@@ -22,17 +22,15 @@ AC_SUBST([SHM_LIB])
 # Check for sched_getcpu
 AC_CHECK_FUNCS([sched_getcpu])
 
-# Check for clock_gettime
-AC_SEARCH_LIBS([clock_gettime], [rt], [
-    AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
-])
-AS_IF([test "$ac_cv_search_clock_gettime" = "-lrt"],
-      [LDFLAGS="$LDFLAGS -lrt"])
-
 AS_IF([test "$enable_rdtscp" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"])
 
 AS_IF([test "$enable_shm_counters" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DMONGOC_ENABLE_SHM_COUNTERS"])
+
+AC_CHECK_TYPE([socklen_t],
+              [AC_SUBST(MONGOC_HAVE_SOCKLEN, 1)],
+              [AC_SUBST(MONGOC_HAVE_SOCKLEN, 0)],
+              [#include <sys/socket.h>])
 
 AX_PTHREAD
