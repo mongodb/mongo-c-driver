@@ -447,11 +447,13 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
+#define MAX_TEST_CHECK_FUNCS 10
 
 
 typedef void (*TestFunc) (void);
 typedef void (*TestFuncWC) (void *);
 typedef void (*TestFuncDtor) (void *);
+typedef int (*CheckFunc) (void);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
 
@@ -464,7 +466,8 @@ struct _Test {
    void *ctx;
    int exit_code;
    unsigned seed;
-   int (*check) (void);
+   CheckFunc checks[MAX_TEST_CHECK_FUNCS];
+   size_t num_checks;
 };
 
 
@@ -500,12 +503,14 @@ TestSuite_AddWC (TestSuite *suite,
                  TestFuncDtor dtor,
                  void *ctx);
 void
-TestSuite_AddFull (TestSuite *suite,
-                   const char *name,
-                   TestFuncWC func,
-                   TestFuncDtor dtor,
-                   void *ctx,
-                   int (*check) (void));
+_TestSuite_AddFull (TestSuite *suite,
+                    const char *name,
+                    TestFuncWC func,
+                    TestFuncDtor dtor,
+                    void *ctx,
+                    ...);
+#define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
+   _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
 int
 TestSuite_Run (TestSuite *suite);
 void
