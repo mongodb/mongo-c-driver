@@ -164,7 +164,7 @@ functions:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  ${workdir}/mongoc/man-page-images/index.html
+        local_file:  mongoc/man-page-images/index.html
         remote_file: ${project}/man-page-images/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
