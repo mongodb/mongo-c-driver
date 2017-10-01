@@ -1591,6 +1591,8 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    ret = bson_iter_init_find (&iter, &reply, "secondary") &&
          bson_iter_as_bool (&iter);
 
+   bson_destroy (&reply);
+
    mongoc_server_description_destroy (sd);
 
    return ret;
