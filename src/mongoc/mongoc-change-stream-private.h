@@ -23,8 +23,8 @@
 
 struct _mongoc_change_stream_t {
    bson_t pipeline_to_append;
-   bson_t change_stream_stage_opts;
-   bson_t agg_opts;
+   bson_t full_document;
+   bson_t collation;
    bson_t resume_token; /* empty, or has resumeAfter: doc */
 
    bson_error_t err;

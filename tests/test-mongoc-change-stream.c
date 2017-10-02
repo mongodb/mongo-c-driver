@@ -88,10 +88,7 @@ test_change_stream_pipeline (void)
    coll = mongoc_client_get_collection (client, "db", "coll");
    ASSERT (coll);
 
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
-   ASSERT (stream);
-
-   future = future_change_stream_next (stream, &next_doc);
+   future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
 
    request = mock_server_receives_command (
       server,
@@ -110,7 +107,13 @@ test_change_stream_pipeline (void)
       request,
       "{'cursor' : {'id': 123, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
 
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+
+   future_destroy (future);
    request_destroy (request);
+
+   future = future_change_stream_next (stream, &next_doc);
 
    request =
       mock_server_receives_command (server,
@@ -143,10 +146,7 @@ test_change_stream_pipeline (void)
    DESTROY_CHANGE_STREAM (123);
 
    /* Test non-empty pipeline */
-   stream = mongoc_collection_watch (coll, nonempty_pipeline, NULL);
-   ASSERT (stream);
-
-   future = future_change_stream_next (stream, &next_doc);
+   future = future_collection_watch (coll, nonempty_pipeline, NULL);
 
    request = mock_server_receives_command (
       server,
@@ -164,7 +164,15 @@ test_change_stream_pipeline (void)
    mock_server_replies_simple (
       request,
       "{'cursor': {'id': 123, 'ns': 'db.coll','firstBatch': []},'ok': 1}");
+
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+
+   future_destroy (future);
    request_destroy (request);
+
+
+   future = future_change_stream_next (stream, &next_doc);
    request =
       mock_server_receives_command (server,
                                     "db",
@@ -213,8 +221,6 @@ test_change_stream_live_single_server (void *test_ctx)
 
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
-
-   ASSERT (!mongoc_change_stream_next (stream, &next_doc));
 
    ASSERT (
       mongoc_change_stream_error_document (stream, NULL, &reported_err_doc));
@@ -279,6 +285,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    test_resume_token_ctx_t ctx = {0};
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new();
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -291,16 +298,23 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    coll = drop_and_get_coll (client, "db", "coll_resume");
    ASSERT (coll);
 
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
+   /* Set the batch size to 1 so we only get one document per call to next. */
+   stream = mongoc_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
    ASSERT (stream);
-
-   /* Create the cursor with change_stream_next to listen for later docs. */
-   ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
-   ASSERT (next_doc == NULL);
+
+   /* Insert a few docs to listen for. Use write concern majority, so subsequent
+    * call to watch will be guaranteed to retrieve them. */
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   ASSERT (mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 0}"), wc, NULL));
 
    ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 0}"), NULL, NULL));
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, NULL));
+
+   ASSERT (mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, NULL));
 
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
@@ -308,16 +322,10 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT_MATCH (&stream->resume_token,
                  "{'resumeAfter': {'documentKey': {'_id': 0 } } }");
 
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), NULL, NULL));
-
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
    ASSERT_MATCH (&stream->resume_token,
                  "{'resumeAfter': {'documentKey': {'_id': 1 } } }");
-
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), NULL, NULL));
 
    _mongoc_client_kill_cursor (client,
                                stream->cursor->server_id,
@@ -344,6 +352,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT_MATCH (&stream->resume_token,
                  "{'resumeAfter': {'documentKey': {'_id': 2 } } }");
 
+   mongoc_write_concern_destroy (wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
@@ -390,6 +399,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    test_batch_size_ctx_t ctx = {0};
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    uint32_t i;
 
    client = test_framework_client_new ();
@@ -416,10 +426,11 @@ test_change_stream_live_batch_size (void *test_ctx)
 
    ctx.expected_getmore_batch_size = 1;
 
+   mongoc_write_concern_set_wmajority (wc, 1000);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW ("_id", BCON_INT32 (i));
       ASSERT (
-         mongoc_collection_insert (coll, MONGOC_INSERT_NONE, doc, NULL, NULL));
+         mongoc_collection_insert (coll, MONGOC_INSERT_NONE, doc, wc, NULL));
       bson_free (doc);
    }
 
@@ -436,6 +447,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    /* 10 getMores for results, 1 for initial next, 1 for last empty next */
    ASSERT (ctx.num_get_mores == 12);
 
+   mongoc_write_concern_destroy (wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
@@ -455,6 +467,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
    const bson_t *next_doc = NULL;
    mongoc_change_stream_t *stream;
    bson_error_t err;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -466,11 +479,11 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
       coll, tmp_bson ("{'pipeline': [{'$project': {'_id': 0 }}]}"), NULL);
 
    ASSERT (stream);
-   ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
 
+   mongoc_write_concern_set_wmajority (wc, 1000);
    ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), NULL, NULL));
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, NULL));
 
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (mongoc_change_stream_error_document (stream, &err, NULL));
@@ -479,6 +492,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
                           MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                           "Cannot provide resume functionality");
 
+   mongoc_write_concern_destroy (wc);
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
@@ -518,10 +532,7 @@ test_change_stream_resumable_error ()
    coll = mongoc_client_get_collection (client, "db", "coll");
    ASSERT (coll);
 
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
-   ASSERT (stream);
-
-   future = future_change_stream_next (stream, &next_doc);
+   future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
 
    request = mock_server_receives_command (
       server,
@@ -536,7 +547,14 @@ test_change_stream_resumable_error ()
                                "'db.coll','firstBatch': []},'ok': 1 "
                                "}");
 
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+
+   future_destroy (future);
    request_destroy (request);
+
+   future = future_change_stream_next (stream, &next_doc);
+
    request =
       mock_server_receives_command (server,
                                     "db",
@@ -710,10 +728,7 @@ test_change_stream_nonresumable_error ()
    coll = mongoc_client_get_collection (client, "db", "coll");
    ASSERT (coll);
 
-   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
-   ASSERT (stream);
-
-   future = future_change_stream_next (stream, &next_doc);
+   future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
 
    request = mock_server_receives_command (
       server,
@@ -727,8 +742,12 @@ test_change_stream_nonresumable_error ()
                                "{'cursor': {'id': 123, 'ns': "
                                "'db.coll','firstBatch': []},'ok': 1 "
                                "}");
-
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
    request_destroy (request);
+
+   future = future_change_stream_next (stream, &next_doc);
    request =
       mock_server_receives_command (server,
                                     "db",
@@ -783,16 +802,13 @@ test_change_stream_options (void)
     */
 
    /* fullDocument */
-   stream = mongoc_collection_watch (
+   future = future_collection_watch (
       coll,
       tmp_bson ("{}"),
       tmp_bson ("{ 'fullDocument': 'updateLookup', "
                 "'resumeAfter': {'_id': 0 }, "
                 "'maxAwaitTimeMS': 5000, 'batchSize': "
                 "5, 'collation': { 'locale': 'en' }}"));
-   ASSERT (stream);
-
-   future = future_change_stream_next (stream, &next_doc);
 
    request = mock_server_receives_command (server,
                                            "db",
@@ -812,7 +828,13 @@ test_change_stream_options (void)
    mock_server_replies_simple (
       request,
       "{'cursor': {'id': 123,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
+
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
    request_destroy (request);
+
+   future = future_change_stream_next (stream, &next_doc);
    request = mock_server_receives_command (server,
                                            "db",
                                            MONGOC_QUERY_SLAVE_OK,
@@ -838,34 +860,27 @@ test_change_stream_options (void)
 static void
 test_change_stream_live_watch (void *test_ctx)
 {
-   /* Use one client to listen to the change stream, and one to act on the
-    * collection */
-   mongoc_client_pool_t *client_pool = test_framework_client_pool_new ();
-   mongoc_client_t *client = mongoc_client_pool_pop (client_pool);
-   mongoc_client_t *cs_client = mongoc_client_pool_pop (client_pool);
+   mongoc_client_t *client = test_framework_client_new ();
    bson_t *inserted_doc = tmp_bson ("{ 'x': 'y'}");
    const bson_t *next_doc = NULL;
-   mongoc_collection_t *cs_coll;
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
-   future_t *future;
-   mongoc_write_concern_t *def_w = mongoc_write_concern_new ();
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
 
-   cs_coll = drop_and_get_coll (cs_client, "db", "coll_watch");
-   ASSERT (cs_coll);
+   mongoc_write_concern_set_wmajority (wc, 1000);
 
-   stream = mongoc_collection_watch (cs_coll, tmp_bson ("{}"), NULL);
+   coll = drop_and_get_coll (client, "db", "coll_watch");
+   ASSERT (coll);
+
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
 
    /* Test that inserting a doc produces the expected change stream doc */
-   future = future_change_stream_next (stream, &next_doc);
-   coll = mongoc_client_get_collection (client, "db", "coll_watch");
-
    ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, inserted_doc, NULL, NULL));
-   ASSERT (future_get_bool (future));
-   future_destroy (future);
+      coll, MONGOC_INSERT_NONE, inserted_doc, wc, NULL));
+
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
    /* Validation rules as follows:
     * { _id: <present>, operationType: "insert", ns: <doc>, documentKey:
@@ -883,17 +898,14 @@ test_change_stream_live_watch (void *test_ctx)
       "'fullDocument': { '_id': { '$exists': true }, 'x': 'y' }}");
 
    /* Test updating a doc */
-   future = future_change_stream_next (stream, &next_doc);
-
    ASSERT (mongoc_collection_update (coll,
                                      MONGOC_UPDATE_NONE,
                                      tmp_bson ("{}"),
                                      tmp_bson ("{'$set': {'x': 'z'} }"),
-                                     def_w,
+                                     wc,
                                      NULL));
-   mongoc_write_concern_destroy (def_w);
-   ASSERT (future_get_bool (future));
-   future_destroy (future);
+
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
    ASSERT_MATCH (
       next_doc,
@@ -902,11 +914,10 @@ test_change_stream_live_watch (void *test_ctx)
       "true }, 'updateDescription': { 'updatedFields': { 'x': 'z' } "
       "}, 'fullDocument': { '$exists': false }}");
 
-   mongoc_client_pool_push (client_pool, client);
-   mongoc_client_pool_push (client_pool, cs_client);
+   mongoc_write_concern_destroy (wc);
+   mongoc_change_stream_destroy (stream);
    mongoc_collection_destroy (coll);
-   mongoc_collection_destroy (cs_coll);
-   mongoc_client_pool_destroy (client_pool);
+   mongoc_client_destroy (client);
 }
 
 /* From Change Streams Spec tests:
@@ -943,6 +954,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
 
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
+   mongoc_change_stream_next (stream, &next_doc);
 
    raw_cursor = stream->cursor;
    ASSERT (raw_cursor);
@@ -970,6 +982,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
    ASSERT (test_framework_server_is_secondary (client, raw_cursor->server_id));
 
    mongoc_read_prefs_destroy (prefs);
+   mongoc_change_stream_destroy (stream);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 }
