@@ -155,7 +155,6 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
                           mongoc_cmd_t *cmd);
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
-                      bool is_command,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */);

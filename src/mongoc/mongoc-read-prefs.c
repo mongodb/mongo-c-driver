@@ -279,8 +279,8 @@ _apply_read_preferences_mongos (
  *  Note:
  *       This function, the mongoc_assemble_query_result_t struct, and all
  *       related functions are only used for find operations with OP_QUERY.
- *       Remove them once MongoDB 3.0 is EOL, all find operations will then
- *       use the "find" command.
+ *       Remove them once we have implemented exhaust cursors with OP_MSG in
+ *       the server, and all previous server versions are EOL.
  *
  *--------------------------------------------------------------------------
  */
@@ -290,7 +290,6 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
                 const mongoc_server_stream_t *server_stream,
                 const bson_t *query_bson,
                 mongoc_query_flags_t initial_flags,
-                bool is_find,
                 mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_server_description_type_t server_type;

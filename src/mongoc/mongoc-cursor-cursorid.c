@@ -124,8 +124,8 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
       RETURN (true);
    }
 
-   bson_destroy (&cursor->error_doc);
-   bson_copy_to (&cid->array, &cursor->error_doc);
+   bson_destroy (&cursor->reply);
+   bson_copy_to (&cid->array, &cursor->reply);
 
    if (!cursor->error.domain) {
       bson_set_error (&cursor->error,

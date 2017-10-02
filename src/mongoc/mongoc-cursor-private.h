@@ -120,6 +120,7 @@ struct _mongoc_cursor_t {
 
    bson_t filter;
    bson_t opts;
+   bson_t reply;
 
    mongoc_read_concern_t *read_concern;
    mongoc_read_prefs_t *read_prefs;
@@ -133,7 +134,6 @@ struct _mongoc_cursor_t {
    uint32_t dblen;
 
    bson_error_t error;
-   bson_t error_doc;
 
    /* for OP_QUERY and OP_GETMORE replies*/
    mongoc_rpc_t rpc;

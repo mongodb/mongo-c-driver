@@ -56,7 +56,6 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
                 const mongoc_server_stream_t *server_stream,
                 const bson_t *query_bson,
                 mongoc_query_flags_t initial_flags,
-                bool is_command,
                 mongoc_assemble_query_result_t *result);
 
 void

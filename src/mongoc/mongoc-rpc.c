@@ -1179,13 +1179,11 @@ _mongoc_populate_query_error (const bson_t *doc,
 
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
-                      bool is_command,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */)
 {
    bson_t b;
-   bool r;
 
    ENTRY;
 
@@ -1199,33 +1197,7 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
       RETURN (false);
    }
 
-   if (is_command) {
-      if (rpc->reply.n_returned != 1) {
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Expected only one reply document, got %d",
-                         rpc->reply.n_returned);
-         RETURN (false);
-      }
-
-      if (_mongoc_rpc_get_first_document (rpc, &b)) {
-         r = _mongoc_cmd_check_ok (&b, error_api_version, error);
-         if (!r && error_doc) {
-            bson_destroy (error_doc);
-            bson_copy_to (&b, error_doc);
-         }
-
-         bson_destroy (&b);
-         RETURN (r);
-      } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Failed to decode document from the server.");
-         RETURN (false);
-      }
-   } else if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
+   if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
       if (_mongoc_rpc_get_first_document (rpc, &b)) {
          _mongoc_populate_query_error (&b, error_api_version, error);
 
