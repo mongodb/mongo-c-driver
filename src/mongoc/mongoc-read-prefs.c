@@ -15,11 +15,9 @@
  */
 
 
-#include "mongoc-config.h"
 #include "mongoc-error.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
-#include "mongoc-client-private.h"
 
 
 mongoc_read_prefs_t *
@@ -273,7 +271,7 @@ _apply_read_preferences_mongos (
  * assemble_query --
  *
  *       Update @result based on @read_prefs, following the Server Selection
- *       Spec, and add "$clusterTime" following Driver Sessions Spec.
+ *       Spec.
  *
  * Side effects:
  *       Sets @result->assembled_query and @result->flags.
@@ -348,24 +346,6 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
    default:
       /* must not call _apply_read_preferences with unknown topology type */
       BSON_ASSERT (false);
-   }
-
-   /* This code path was hit for MongoDB 3.5.x, before we implemented OP_MSG.
-    * Delete once the mock server replies with OP_MSG.
-    */
-   if (!bson_empty (&server_stream->cluster_time) &&
-       !is_find &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
-
-      if (!result->query_owned) {
-         result->assembled_query = bson_copy (query_bson);
-         result->query_owned = true;
-      }
-
-      bson_append_document (result->assembled_query,
-                            "$clusterTime",
-                            12,
-                            &server_stream->cluster_time);
    }
 
    EXIT;
