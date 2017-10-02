@@ -578,9 +578,12 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    BSON_ASSERT (topology);
    if (!mongoc_topology_scanner_valid (topology->scanner)) {
-      mongoc_topology_scanner_get_error (topology->scanner, error);
-      error->domain = MONGOC_ERROR_SERVER_SELECTION;
-      error->code = MONGOC_ERROR_SERVER_SELECTION_FAILURE;
+      if (error) {
+         mongoc_topology_scanner_get_error (topology->scanner, error);
+         error->domain = MONGOC_ERROR_SERVER_SELECTION;
+         error->code = MONGOC_ERROR_SERVER_SELECTION_FAILURE;
+      }
+
       return 0;
    }
 

@@ -181,6 +181,23 @@ test_srv_check (void)
 }
 
 
+/* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
+ * code path it follows when the topology scanner is invalid */
+static void
+test_null_error_pointer (void)
+{
+   mongoc_client_t *client;
+
+   client = mongoc_client_new ("mongodb+srv://doesntexist");
+   ASSERT (!mongoc_topology_select_server_id (client->topology,
+                                              MONGOC_SS_READ,
+                                              NULL /* read prefs */,
+                                              NULL /* error */));
+
+   mongoc_client_destroy (client);
+}
+
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -203,4 +220,5 @@ void
 test_srv_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
+   TestSuite_Add (suite, "/srv/null_error_pointer", test_null_error_pointer);
 }
