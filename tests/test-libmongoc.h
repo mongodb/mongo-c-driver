@@ -99,6 +99,8 @@ bool
 test_framework_server_is_secondary (mongoc_client_t *client,
                                     uint32_t server_id);
 bool
+test_framework_clustertime_supported (void);
+bool
 test_framework_max_wire_version_at_least (int version);
 
 int

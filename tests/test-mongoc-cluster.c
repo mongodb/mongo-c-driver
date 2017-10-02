@@ -424,11 +424,10 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
    _mongoc_bson_destroy_if_set (test->command);
    test->command = bson_copy (cmd);
 
-   /* Only a MongoDB 3.6+ mongos reports $clusterTime. If we've received a
-    * $clusterTime, we send it to any MongoDB 3.6+ mongos. In this case, we
-    * got a $clusterTime during the initial handshake. */
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME) &&
-       test_framework_is_mongos ()) {
+   /* Only a MongoDB 3.6+ server reports $clusterTime. If we've received a
+    * $clusterTime, we send it to any server. In this case, we got a
+    * $clusterTime during the initial handshake. */
+   if (test_framework_clustertime_supported ()) {
       BSON_ASSERT (bson_iter_init_find (&iter, cmd, "$clusterTime"));
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
 
@@ -466,9 +465,8 @@ test_cluster_time_cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    test =
       (cluster_time_test_t *) mongoc_apm_command_succeeded_get_context (event);
 
-   /* Only a MongoDB 3.6+ mongos reports $clusterTime. Save it in "test". */
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME) &&
-       test_framework_is_mongos ()) {
+   /* Only a MongoDB 3.6+ server reports $clusterTime. Save it in "test". */
+   if (test_framework_clustertime_supported ()) {
       BSON_ASSERT (bson_iter_init_find (&iter, reply, "$clusterTime"));
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
       bson_iter_document (&iter, &len, &data);

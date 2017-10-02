@@ -1599,6 +1599,21 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
 }
 
 
+bool
+test_framework_clustertime_supported (void)
+{
+   bson_t reply;
+   bool has_cluster_time;
+
+   call_ismaster (&reply);
+   has_cluster_time = bson_has_field (&reply, "$clusterTime");
+   bson_destroy (&reply);
+
+   return has_cluster_time &&
+          test_framework_max_wire_version_at_least (WIRE_VERSION_CLUSTER_TIME);
+}
+
+
 int
 test_framework_skip_if_auth (void)
 {

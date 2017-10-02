@@ -350,16 +350,11 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
       BSON_ASSERT (false);
    }
 
-   /* Driver Sessions Spec: "The $clusterTime field should only be sent when
-    * connected to a mongos. Drivers MUST check the mongos version they are
-    * connected to before adding $clusterTime to any command they send to a
-    * mongos node." We use OP_QUERY only for commands, not queries, with
-    * recent MongoDB versions, but check is_find anyway. Additionally, this
-    * code path is only hit for MongoDB 3.5.x, before we implement OP_MSG.
+   /* This code path was hit for MongoDB 3.5.x, before we implemented OP_MSG.
+    * Delete once the mock server replies with OP_MSG.
     */
    if (!bson_empty (&server_stream->cluster_time) &&
        !is_find &&
-       server_stream->sd->type == MONGOC_SERVER_MONGOS &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
 
       if (!result->query_owned) {

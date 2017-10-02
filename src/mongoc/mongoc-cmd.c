@@ -139,7 +139,6 @@ _mongoc_cmd_parts_ensure_copied (mongoc_cmd_parts_t *parts)
 }
 
 
-/* The server type must be mongos. */
 static void
 _mongoc_cmd_parts_add_cluster_time (mongoc_cmd_parts_t *parts,
                                     const mongoc_server_stream_t *server_stream)
@@ -348,6 +347,8 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
          BSON_ASSERT (false);
       }
    } /* if (!parts->is_write_command) */
+
+   _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
 
    if (!bson_empty (&parts->extra)) {
       _mongoc_cmd_parts_ensure_copied (parts);
