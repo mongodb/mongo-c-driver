@@ -119,10 +119,6 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
          continue;
-      } else if (!parts->is_find && (BSON_ITER_IS_KEY (iter, "awaitData") ||
-                                     BSON_ITER_IS_KEY (iter, "tailable") ||
-                                     BSON_ITER_IS_KEY (iter, "batchSize"))) {
-         continue;
       }
 
       bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter);
