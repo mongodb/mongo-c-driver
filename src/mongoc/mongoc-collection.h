@@ -179,21 +179,26 @@ mongoc_collection_update (mongoc_collection_t *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error);
 MONGOC_EXPORT (bool)
-mongoc_collection_update_one_with_opts (
-   mongoc_collection_t *collection,
-   const bson_t *selector,
-   const bson_t *update,
-   const bson_t *opts,
-   bson_t *reply,
-   bson_error_t *error);
+mongoc_collection_update_one_with_opts (mongoc_collection_t *collection,
+                                        const bson_t *selector,
+                                        const bson_t *update,
+                                        const bson_t *opts,
+                                        bson_t *reply,
+                                        bson_error_t *error);
 MONGOC_EXPORT (bool)
-mongoc_collection_update_many_with_opts (
-   mongoc_collection_t *collection,
-   const bson_t *selector,
-   const bson_t *update,
-   const bson_t *opts,
-   bson_t *reply,
-   bson_error_t *error);
+mongoc_collection_update_many_with_opts (mongoc_collection_t *collection,
+                                         const bson_t *selector,
+                                         const bson_t *update,
+                                         const bson_t *opts,
+                                         bson_t *reply,
+                                         bson_error_t *error);
+bool
+mongoc_collection_replace_one_with_opts (mongoc_collection_t *collection,
+                                         const bson_t *selector,
+                                         const bson_t *replacement,
+                                         const bson_t *opts,
+                                         bson_t *reply,
+                                         bson_error_t *error);
 MONGOC_EXPORT (bool)
 mongoc_collection_delete (mongoc_collection_t *collection,
                           mongoc_delete_flags_t flags,
