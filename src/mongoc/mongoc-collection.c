@@ -36,6 +36,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-write-command-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -69,14 +70,14 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
    return _mongoc_cursor_new (collection->client,
                               collection->ns,
                               flags,
-                              0,     /* skip */
-                              0,     /* limit */
-                              0,     /* batch_size */
+                              0,           /* skip */
+                              0,           /* limit */
+                              0,           /* batch_size */
                               !is_command, /* is_find */
-                              NULL,  /* query */
-                              NULL,  /* fields */
-                              prefs, /* read prefs */
-                              NULL); /* read concern */
+                              NULL,        /* query */
+                              NULL,        /* fields */
+                              prefs,       /* read prefs */
+                              NULL);       /* read concern */
 }
 
 static void
@@ -1622,6 +1623,172 @@ mongoc_collection_update (mongoc_collection_t *collection,
    _mongoc_write_command_destroy (&command);
 
    RETURN (ret);
+}
+
+static bool
+_mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
+                                                const bson_t *selector,
+                                                const bson_t *update,
+                                                const bson_t *opts,
+                                                bson_t *reply,
+                                                bson_error_t *error,
+                                                bool is_multi,
+                                                bool is_update)
+{
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   bson_iter_t iter;
+   bool ret;
+   mongoc_write_concern_t *write_concern;
+   bson_t copied_opts;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (update);
+
+   write_concern = collection->write_concern;
+
+   /* update document, all keys must be $-operators */
+   if (is_update) {
+      if (!_mongoc_validate_update (update, error)) {
+         return false;
+      }
+   } else if (!_mongoc_validate_replace (update, error)) {
+      return false;
+   }
+
+   bson_init (&copied_opts);
+
+   if (opts) {
+      if (!bson_iter_init (&iter, opts)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid 'opts' parameter.");
+         bson_destroy (&copied_opts);
+         return false;
+      }
+
+      if (bson_iter_find (&iter, "writeConcern")) {
+         write_concern = _mongoc_write_concern_new_from_iter (&iter);
+      }
+
+      if (bson_iter_init_find (&iter, opts, "bypassDocumentValidation") &&
+          BSON_ITER_HOLDS_BOOL (&iter)) {
+         write_flags.bypass_document_validation = bson_iter_as_bool (&iter);
+      }
+
+      bson_copy_to_excluding_noinit (
+         opts, &copied_opts, "bypassDocumentValidation", "writeConcern", NULL);
+   }
+
+   if (is_multi) {
+      bson_append_bool (&copied_opts, "multi", 5, true);
+   }
+
+   _mongoc_write_result_init (&result);
+
+   _mongoc_write_command_init_update (
+      &command,
+      selector,
+      update,
+      &copied_opts,
+      write_flags,
+      ++collection->client->cluster.operation_id);
+
+   _mongoc_collection_write_command_execute (
+      &command, collection, write_concern, &result);
+
+   ret = _mongoc_write_result_complete (&result,
+                                        collection->client->error_api_version,
+                                        write_concern,
+                                        /* no error domain override */
+                                        (mongoc_error_domain_t) 0,
+                                        NULL,
+                                        error);
+
+   if (reply && mongoc_write_concern_is_acknowledged (write_concern)) {
+      /* set fields described in CRUD spec for the UpdateResult */
+      bson_append_int64 (reply, "matchedCount", 12, result.nMatched);
+      bson_append_int64 (reply, "modifiedCount", 13, result.nModified);
+      /* result.upserted is an array because this is a bulk update (of one) */
+      if (bson_iter_init_find (&iter, &result.upserted, "0")) {
+         bson_iter_t child;
+         bson_iter_recurse (&iter, &child);
+         if (bson_iter_find (&child, "_id")) {
+            bson_append_value (
+               reply, "upsertedId", 10, bson_iter_value (&child));
+         }
+      }
+   }
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+
+   bson_destroy (&copied_opts);
+   if (write_concern != collection->write_concern) {
+      /* write_concern was created from opts */
+      mongoc_write_concern_destroy (write_concern);
+   }
+   RETURN (ret);
+}
+
+bool
+mongoc_collection_update_one_with_opts (mongoc_collection_t *collection,
+                                        const bson_t *selector,
+                                        const bson_t *update,
+                                        const bson_t *opts,
+                                        bson_t *reply,
+                                        bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace_with_opts (collection,
+                                                          selector,
+                                                          update,
+                                                          opts,
+                                                          reply,
+                                                          error,
+                                                          false /* is_multi */,
+                                                          true /* is_update */);
+}
+
+bool
+mongoc_collection_update_many_with_opts (mongoc_collection_t *collection,
+                                         const bson_t *selector,
+                                         const bson_t *update,
+                                         const bson_t *opts,
+                                         bson_t *reply,
+                                         bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace_with_opts (collection,
+                                                          selector,
+                                                          update,
+                                                          opts,
+                                                          reply,
+                                                          error,
+                                                          true /* is_multi */,
+                                                          true /* is_update */);
+}
+
+bool
+mongoc_collection_replace_one_with_opts (mongoc_collection_t *collection,
+                                         const bson_t *selector,
+                                         const bson_t *replacement,
+                                         const bson_t *opts,
+                                         bson_t *reply,
+                                         bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace_with_opts (
+      collection,
+      selector,
+      replacement,
+      opts,
+      reply,
+      error,
+      false /* is_multi */,
+      false /* is_update */);
 }
 
 

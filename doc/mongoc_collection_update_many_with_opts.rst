@@ -31,10 +31,10 @@ Parameters
 * ``reply`` An uninitialized :symbol:`bson:bson_t` populated with the update result or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-``opts`` may be ``NULL`` or a document consisting of any subset of the following
-parameters:
+``opts`` may be ``NULL`` or a document consisting of the following optional
+fields:
 
-* ``arrayFilters`` An ``Array`` of filters specifying to which array elements an update should apply.
+* ``arrayFilters`` An array of filters specifying to which array elements an update should apply.
 * ``bypassDocumentValidation`` A ``boolean``, if true, allows the write to opt-out of document level validation.
 * ``collation`` A `Collation Document <https://docs.mongodb.com/manual/reference/collation/>`_.
 * ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
@@ -63,3 +63,5 @@ Returns
 Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 A write concern timeout or write concern error is considered a failure.
+
+If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable.

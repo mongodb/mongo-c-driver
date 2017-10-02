@@ -66,21 +66,20 @@ typedef struct {
 
 
 typedef struct {
-   /* true after a legacy update prevents us from calculating nModified */
    uint32_t nInserted;
    uint32_t nMatched;
    uint32_t nModified;
    uint32_t nRemoved;
    uint32_t nUpserted;
-   /* like [{"index": int, "_id": value}, ...] */
-   bson_t writeErrors;
    /* like [{"index": int, "code": int, "errmsg": str}, ...] */
+   bson_t writeErrors;
+   /* like [{"index": int, "_id": value}, ...] */
    bson_t upserted;
-   /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
    uint32_t n_writeConcernErrors;
+   /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
    bson_t writeConcernErrors;
    bool failed;    /* The command failed */
-   bool must_stop; /* The stream may have been disonnected */
+   bool must_stop; /* The stream may have been disconnected */
    bson_error_t error;
    uint32_t upsert_append_count;
 } mongoc_write_result_t;
