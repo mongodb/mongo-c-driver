@@ -619,7 +619,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    buf = bson_string_new (NULL);
 
    for (i = 0; i < test->num_checks; i++) {
-      if (!test->checks[i] ()) {
+      if (!test->checks[i]()) {
          if (!suite->silent) {
             bson_string_append_printf (
                buf,
@@ -936,32 +936,48 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
 }
 
 
+static bool
+TestSuite_TestMatchesName (const TestSuite *suite,
+                           const Test *test,
+                           const char *testname)
+{
+   char name[128];
+   bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
+
+   snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+   name[sizeof name - 1] = '\0';
+
+   if (star) {
+      /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
+      return (0 == strncmp (name, testname, strlen (testname) - 1));
+   } else {
+      return (0 == strcmp (name, testname));
+   }
+}
+
+
 static int
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
-   char name[128];
    Test *test;
-   int count = 1;
-   bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
-   bool match;
+   int count = 0;
    int status = 0;
 
    ASSERT (suite);
    ASSERT (testname);
 
+   /* initialize "count" so we can omit comma after last test output */
    for (test = suite->tests; test; test = test->next) {
-      snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-      name[sizeof name - 1] = '\0';
-      if (star) {
-         /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
-         match = (0 == strncmp (name, testname, strlen (testname) - 1));
-      } else {
-         match = (0 == strcmp (name, testname));
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
+         count++;
       }
+   }
 
-      if (match) {
+   for (test = suite->tests; test; test = test->next) {
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
          status += TestSuite_RunTest (suite, test, &count);
+         count--;
       }
    }
 
