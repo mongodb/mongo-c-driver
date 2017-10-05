@@ -777,9 +777,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    ENTRY;
 
-   /* cursors created by mongoc_client_command don't use this function */
-   BSON_ASSERT (cursor->is_find);
-
    client = cursor->client;
 
    if (!client->apm_callbacks.succeeded) {
