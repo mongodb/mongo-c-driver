@@ -568,7 +568,7 @@ _mongoc_write_concern_new_from_iter (bson_iter_t *iter)
          write_concern->journal = bson_iter_bool (&inner);
       } else if (BSON_ITER_IS_KEY (&inner, "wtimeout") &&
                  BSON_ITER_HOLDS_INT32 (&inner)) {
-         write_concern->wtimeout = bson_iter_bool (&inner);
+         write_concern->wtimeout = bson_iter_int32 (&inner);
       }
    }
 

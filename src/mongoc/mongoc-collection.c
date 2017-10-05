@@ -1649,6 +1649,8 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
    BSON_ASSERT (selector);
    BSON_ASSERT (update);
 
+   _mongoc_bson_init_if_set (reply);
+
    write_concern = collection->write_concern;
 
    /* update document, all keys must be $-operators */
