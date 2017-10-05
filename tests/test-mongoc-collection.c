@@ -4555,6 +4555,288 @@ test_create_index_fail (void *context)
    mongoc_client_destroy (client);
 }
 
+typedef bool (*update_fn_t) (mongoc_collection_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             bson_t *,
+                             bson_error_t *);
+
+/* Tests that documents in `coll` found with `selector` all match `match` */
+static void
+_test_docs_in_coll_matches (mongoc_collection_t *coll,
+                            bson_t *selector,
+                            const char *match,
+                            uint32_t expected_count)
+{
+   const bson_t *next_doc;
+   mongoc_cursor_t *cursor =
+      mongoc_collection_find_with_opts (coll, selector, NULL, NULL);
+   while (expected_count > 0) {
+      ASSERT (mongoc_cursor_next (cursor, &next_doc));
+      ASSERT_MATCH (next_doc, match);
+      --expected_count;
+   }
+   ASSERT (expected_count == 0);
+   mongoc_cursor_destroy (cursor);
+}
+
+typedef struct _test_update_and_replace_ctx_t {
+   const char *expected_command;
+} test_update_and_replace_ctx_t;
+
+/* Tests that update commands match the `expected_command` in the update ctx */
+void
+_test_update_and_replace_command_start (
+   const mongoc_apm_command_started_t *event)
+{
+   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
+
+   test_update_and_replace_ctx_t *ctx =
+      (test_update_and_replace_ctx_t *) mongoc_apm_command_started_get_context (
+         event);
+
+   if (strcmp (cmd_name, "update") == 0) {
+      ASSERT_MATCH (cmd, ctx->expected_command);
+   }
+}
+
+/* Tests `update_one`, `update_many`, and `replace_one` */
+static void
+_test_update_and_replace (bool is_replace, bool is_multi)
+{
+   update_fn_t fn = NULL;
+   bson_t *update = NULL;
+   bson_error_t err = {0};
+   bson_t reply;
+   bson_t opts_with_wc = BSON_INITIALIZER;
+   bool ret = false;
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_database_t *db = get_test_database (client);
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, "coll");
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   mongoc_write_concern_t *wc2 = mongoc_write_concern_new ();
+   test_update_and_replace_ctx_t ctx;
+   mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc2, 500);
+
+   /* Set wc to majority so writes are committed when we check results */
+   mongoc_collection_set_write_concern (coll, wc);
+   mongoc_apm_set_command_started_cb (callbacks,
+                                      _test_update_and_replace_command_start);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   mongoc_collection_drop (coll, NULL);
+
+   /* Test `replace_one`, `update_one` or `update_many` based on args */
+   if (is_replace) {
+      ASSERT (!is_multi);
+      fn = mongoc_collection_replace_one_with_opts;
+   } else {
+      fn = is_multi ? mongoc_collection_update_many_with_opts
+                    : mongoc_collection_update_one_with_opts;
+   }
+
+   /* Test a simple update with bypassDocumentValidation */
+   ctx.expected_command = "{'update': 'coll', 'bypassDocumentValidation': "
+                          "true, 'writeConcern': {'w': 'majority', 'wtimeout': "
+                          "1000}}";
+   ret = mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, &err);
+   ASSERT_OR_PRINT (ret, err);
+   update =
+      is_replace ? tmp_bson ("{'a': 1}") : tmp_bson ("{'$set': {'a': 1}}");
+   ret = fn (coll,
+             tmp_bson ("{}"),
+             update,
+             tmp_bson ("{'bypassDocumentValidation': true}"),
+             &reply,
+             &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply,
+                 "{'modifiedCount': 1, 'matchedCount': 1, "
+                 "'upsertedId': {'$exists': false}}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id':1}"), "{'a': 1}", 1);
+
+   /* Test passing an upsert */
+   ctx.expected_command =
+      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 1000}}";
+   update = is_replace ? tmp_bson ("{'b': 'TEST'}")
+                       : tmp_bson ("{'$set': {'b': 'TEST'}}");
+   ret = fn (coll,
+             tmp_bson ("{'_id': 2}"),
+             update,
+             tmp_bson ("{'upsert': true}"),
+             &reply,
+             &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply,
+                 "{'modifiedCount': 0, 'matchedCount': 0, "
+                 "'upsertedId': {'$exists': true}}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (
+      coll, tmp_bson ("{'_id':2}"), "{'b': 'TEST'}", 1);
+
+   /* Test collation */
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_COLLATION)) {
+      update = is_replace ? tmp_bson ("{'b': 'test'}")
+                          : tmp_bson ("{'$set': {'b': 'test'}}");
+      ret = fn (coll,
+                tmp_bson ("{'b': 'TEST'}"),
+                update,
+                tmp_bson ("{'collation': {'locale': 'en', 'strength': 2}}"),
+                &reply,
+                &err);
+      ASSERT_OR_PRINT (ret, err);
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 1, 'matchedCount': 1, "
+                    "'upsertedId': {'$exists': false}}");
+      bson_destroy (&reply);
+      _test_docs_in_coll_matches (
+         coll, tmp_bson ("{'_id':2}"), "{'b': 'test'}", 1);
+   }
+
+   /* Test passing write concern through the options */
+   /* Note, we can't reuse wc since it gets frozen in mongoc_collection_insert
+    */
+   mongoc_write_concern_append (wc2, &opts_with_wc);
+   ctx.expected_command =
+      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 500}}";
+   update =
+      is_replace ? tmp_bson ("{'b': 0}") : tmp_bson ("{'$set': {'b': 0}}");
+   ret =
+      fn (coll, tmp_bson ("{'_id': 2}"), update, &opts_with_wc, &reply, &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply,
+                 "{'modifiedCount': 1, 'matchedCount': 1, "
+                 "'upsertedId': {'$exists': false}}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id':2}"), "{'b': 0}", 1);
+   bson_destroy (&opts_with_wc);
+
+   /* Test passing NULL for opts, reply, and error */
+   ctx.expected_command =
+      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 1000}}";
+   update =
+      is_replace ? tmp_bson ("{'b': 1}") : tmp_bson ("{'$set': {'b': 1}}");
+   ret = fn (coll, tmp_bson ("{'_id': 2}"), update, NULL, NULL, NULL);
+   ASSERT (ret);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id' :2}"), "{'b': 1}", 1);
+
+   /* Test multiple matching documents */
+   ret = mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 3, 'a': 1}"), wc, &err);
+   ASSERT_OR_PRINT (ret, err);
+   ret = mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 4, 'a': 1}"), wc, &err);
+   ASSERT_OR_PRINT (ret, err);
+   update =
+      is_replace ? tmp_bson ("{'a': 2}") : tmp_bson ("{'$set': {'a': 2}}");
+   ret = fn (
+      coll, tmp_bson ("{'_id': {'$in': [3,4]}}"), update, NULL, &reply, &err);
+   ASSERT_OR_PRINT (ret, err);
+   if (is_multi) {
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 2, 'matchedCount': 2, "
+                    "'upsertedId': {'$exists': false}}");
+      _test_docs_in_coll_matches (
+         coll, tmp_bson ("{'_id': {'$in': [3,4]}}"), "{'a': 2}", 2);
+   } else {
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 1, 'matchedCount': 1, "
+                    "'upsertedId': {'$exists': false}}");
+      /* omit testing collection since not sure which was updated */
+   }
+
+   /* Test function specific behavior */
+   if (is_replace) {
+      /* Test that replace really does replace */
+      ret = mongoc_collection_insert (coll,
+                                      MONGOC_INSERT_NONE,
+                                      tmp_bson ("{'_id': 5, 'a': 1, 'b': 2}"),
+                                      wc,
+                                      &err);
+      ASSERT_OR_PRINT (ret, err);
+      ret = fn (coll,
+                tmp_bson ("{'_id': 5}"),
+                tmp_bson ("{'a': 2}"),
+                NULL,
+                &reply,
+                &err);
+      ASSERT_OR_PRINT (ret, err);
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 1, 'matchedCount': 1, "
+                    "'upsertedId': {'$exists': false}}");
+      _test_docs_in_coll_matches (
+         coll, tmp_bson ("{'_id': 5}"), "{'a': 2, 'b': {'$exists': false}}", 1);
+
+      /* Test that a non-replace update fails. */
+      ret = fn (coll,
+                tmp_bson ("{}"),
+                tmp_bson ("{'$set': {'a': 1}}"),
+                NULL,
+                NULL,
+                &err);
+      ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "invalid key");
+   } else {
+      /* Test arrayFilters if the servers supports it */
+      if (test_framework_max_wire_version_at_least (6)) {
+         ret = mongoc_collection_insert (
+            coll,
+            MONGOC_INSERT_NONE,
+            tmp_bson ("{'_id': 6, 'a': [{'x':1},{'x':2}]}"),
+            wc,
+            &err);
+         ASSERT_OR_PRINT (ret, err);
+         update = tmp_bson ("{'$set': {'a.$[i].x': 3}}");
+         ret = fn (coll,
+                   tmp_bson ("{'_id': 6}"),
+                   update,
+                   tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
+                   &reply,
+                   &err);
+         ASSERT_OR_PRINT (ret, err);
+         ASSERT_MATCH (&reply,
+                       "{'modifiedCount': 1, 'matchedCount': 1, "
+                       "'upsertedId': {'$exists': false}}");
+         bson_destroy (&reply);
+         _test_docs_in_coll_matches (
+            coll, tmp_bson ("{'_id':6}"), "{'a': [{'x':1},{'x':3}]}", 1);
+      }
+
+      /* Test that a replace fails */
+      ret = fn (coll, tmp_bson ("{}"), tmp_bson ("{'a': 1}"), NULL, NULL, &err);
+      ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid key");
+   }
+
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_write_concern_destroy (wc);
+   mongoc_write_concern_destroy (wc2);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_update_and_replace (void)
+{
+   _test_update_and_replace (false /* is_replace */, false /* is_multi */);
+   _test_update_and_replace (true /* is_replace */, false /* is_multi */);
+   _test_update_and_replace (false /* is_replace */, true /* is_multi */);
+   /* Note, there is no multi replace */
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -4725,4 +5007,6 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_offline);
+   TestSuite_AddLive (
+      suite, "/Collection/update_and_replace", test_update_and_replace);
 }
