@@ -756,7 +756,7 @@ mock_server_receives_request (mock_server_t *server)
  *       not match.
  *
  * Side effects:
- *       Logs if the current request is not a command matching
+ *       Logs if the current request is not an OP_QUERY command matching
  *       database_name, command_name, and command_json.
  *
  *--------------------------------------------------------------------------
@@ -793,6 +793,75 @@ mock_server_receives_command (mock_server_t *server,
 
    bson_free (formatted_command_json);
    bson_free (ns);
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass varargs
+ *       list of bson_t pointers, which are matched to the series of
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+_mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
+{
+   request_t *request;
+   const bson_t *doc;
+   const bson_t *pattern;
+   bool is_command_doc;
+   va_list args;
+   int i;
+
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   if (request->opcode != MONGOC_OPCODE_MSG) {
+      test_error ("%s", "request's opcode does not match OP_MSG");
+   }
+
+   BSON_ASSERT (request->docs.len >= 1);
+
+   i = 0;
+   va_start (args, flags);
+   while ((pattern = va_arg (args, const bson_t *))) {
+      if (i > request->docs.len) {
+         test_error ("Expected at least %d documents in request, got %zu\n",
+                     i,
+                     request->docs.len);
+      }
+
+      doc = request_get_doc (request, i);
+      /* pass is_command=true for first doc, including "find" command */
+      is_command_doc = (i == 0);
+      match_bson (doc, pattern, is_command_doc);
+      i++;
+   }
+   va_end (args);
+
+   if (i < request->docs.len) {
+      test_error (
+         "Expected %d documents in request, got %zu\n", i, request->docs.len);
+   }
+
+   if (flags != request->request_rpc.msg.flags) {
+      test_error ("Expected OP_MSG flags %u, got %u\n",
+                  flags,
+                  request->request_rpc.msg.flags);
+   }
 
    return request;
 }
@@ -990,9 +1059,8 @@ mock_server_receives_update (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request &&
-       !request_matches_update (
-          request, ns, flags, selector_json, update_json)) {
+   if (request && !request_matches_update (
+                     request, ns, flags, selector_json, update_json)) {
       request_destroy (request);
       return NULL;
    }
@@ -1740,6 +1808,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
+   bool is_op_msg;
 
    mongoc_reply_flags_t flags = reply->flags;
    const bson_t *docs = reply->docs;
@@ -1756,10 +1825,13 @@ _mock_server_reply_with_stream (mock_server_t *server,
       }
    }
 
-   test_suite_mock_server_log ("%5.2f  %hu <- %hu \t%s",
+   is_op_msg = reply->request_opcode == MONGOC_OPCODE_MSG;
+
+   test_suite_mock_server_log ("%5.2f  %hu <- %hu %s %s",
                                mock_server_get_uptime_sec (server),
                                reply->client_port,
                                mock_server_get_port (server),
+                               is_op_msg ? "OP_MSG" : "OP_REPLY",
                                docs_json->str);
 
    len = 0;
@@ -1788,13 +1860,22 @@ _mock_server_reply_with_stream (mock_server_t *server,
    mongoc_mutex_unlock (&server->mutex);
    r.header.msg_len = 0;
    r.header.response_to = reply->response_to;
-   r.header.opcode = MONGOC_OPCODE_REPLY;
-   r.reply.flags = flags;
-   r.reply.cursor_id = cursor_id;
-   r.reply.start_from = 0;
-   r.reply.n_returned = 1;
-   r.reply.documents = buf;
-   r.reply.documents_len = (uint32_t) len;
+
+   if (is_op_msg) {
+      r.header.opcode = MONGOC_OPCODE_MSG;
+      r.msg.n_sections = 1;
+      /* we don't yet implement payload type 1, a document stream */
+      r.msg.sections[0].payload_type = 0;
+      r.msg.sections[0].payload.bson_document = buf;
+   } else {
+      r.header.opcode = MONGOC_OPCODE_REPLY;
+      r.reply.flags = flags;
+      r.reply.cursor_id = cursor_id;
+      r.reply.start_from = 0;
+      r.reply.n_returned = 1;
+      r.reply.documents = buf;
+      r.reply.documents_len = (uint32_t) len;
+   }
 
    _mongoc_rpc_gather (&r, &ar);
    _mongoc_rpc_swab_to_le (&r);

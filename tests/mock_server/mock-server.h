@@ -154,6 +154,11 @@ mock_server_receives_getmore (mock_server_t *server,
 request_t *
 mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id);
 
+request_t *
+_mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...);
+#define mock_server_receives_msg(_server, _flags, ...) \
+   _mock_server_receives_msg (_server, _flags, __VA_ARGS__, NULL)
+
 void
 mock_server_hangs_up (request_t *request);
 

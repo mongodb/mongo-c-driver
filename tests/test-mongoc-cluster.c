@@ -723,7 +723,6 @@ test_cluster_time_insert_pooled (void)
 }
 
 
-#ifdef TODO_MOCK_SERVER_OP_MSG
 static void
 replies_with_cluster_time (request_t *request,
                            int t,
@@ -769,7 +768,7 @@ static request_t *
 receives_with_cluster_time (mock_server_t *server,
                             uint32_t timestamp,
                             uint32_t increment,
-                            const char *docs_json)
+                            bson_t *command)
 {
    request_t *request;
    const bson_t *doc;
@@ -777,8 +776,7 @@ receives_with_cluster_time (mock_server_t *server,
    uint32_t t;
    uint32_t i;
 
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_NONE, docs_json);
+   request = mock_server_receives_msg (server, 0, command);
    BSON_ASSERT (request);
    doc = request_get_doc (request, 0);
 
@@ -822,6 +820,7 @@ _test_cluster_time_comparison (bool pooled)
    bson_error_t error;
    future_t *future;
    request_t *request;
+   bson_t *ping = tmp_bson ("{'ping': 1}");
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -842,11 +841,12 @@ _test_cluster_time_comparison (bool pooled)
 
    if (pooled) {
       /* a pooled client handshakes its own connection */
-      request = mock_server_receives_ismaster (server);
+      request =
+         mock_server_receives_msg (server, 0, tmp_bson ("{'ismaster': 1}"));
       replies_with_cluster_time (request, 1, 1, ismaster);
    }
 
-   request = receives_with_cluster_time (server, 1, 1, "{'ping': 1}");
+   request = receives_with_cluster_time (server, 1, 1, ping);
 
    /* timestamp is 2, increment is 2 */
    replies_with_cluster_time (request, 2, 2, "{'ok': 1.0}");
@@ -855,7 +855,7 @@ _test_cluster_time_comparison (bool pooled)
    future = future_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
-   request = receives_with_cluster_time (server, 2, 2, "{'ping': 1}");
+   request = receives_with_cluster_time (server, 2, 2, ping);
 
    /* timestamp is 2, increment is only 1 */
    replies_with_cluster_time (request, 2, 1, "{'ok': 1.0}");
@@ -865,7 +865,7 @@ _test_cluster_time_comparison (bool pooled)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    /* client doesn't update cluster time, since new value is less than old */
-   request = receives_with_cluster_time (server, 2, 2, "{'ping': 1}");
+   request = receives_with_cluster_time (server, 2, 2, ping);
 
    /* timestamp is 2, increment is only 1 */
    mock_server_replies_ok_and_destroys (request);
@@ -877,6 +877,8 @@ _test_cluster_time_comparison (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+
+   mock_server_destroy (server);
 }
 
 
@@ -892,7 +894,7 @@ test_cluster_time_comparison_pooled (void)
 {
    _test_cluster_time_comparison (true);
 }
-#endif
+
 
 typedef struct {
    const char *name;
@@ -903,6 +905,37 @@ typedef struct {
 } dollar_query_test_t;
 
 
+static bool
+auto_ismaster (request_t *request, void *data)
+{
+   dollar_query_test_t *test;
+
+   if (!request->is_command ||
+       strcasecmp (request->command_name, "ismaster") != 0) {
+      return false;
+   }
+
+   test = (dollar_query_test_t *) data;
+   if (test->cluster_time) {
+      mock_server_replies_simple (
+         request,
+         "{'ok': 1, "
+         " 'minWireVersion': 0,"
+         " 'maxWireVersion': 6,"
+         " '$clusterTime': {'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}}");
+   } else {
+      mock_server_replies_simple (request,
+                                  "{'ok': 1, "
+                                  " 'minWireVersion': 0,"
+                                  " 'maxWireVersion': 6}");
+   }
+
+   request_destroy (request);
+
+   return true;
+}
+
+
 static void
 _test_dollar_query (void *ctx)
 {
@@ -911,7 +944,6 @@ _test_dollar_query (void *ctx)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
-   mongoc_query_flags_t flags;
    mongoc_cursor_t *cursor;
    future_t *future;
    request_t *request;
@@ -920,18 +952,16 @@ _test_dollar_query (void *ctx)
 
    test = (dollar_query_test_t *) ctx;
 
-   server = mock_mongos_new (test->cluster_time ? WIRE_VERSION_CLUSTER_TIME
-                                                : WIRE_VERSION_COLLATION);
+   server = mock_server_new ();
+   mock_server_autoresponds (server, auto_ismaster, test, NULL);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
    if (test->secondary) {
       read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-      flags = MONGOC_QUERY_SLAVE_OK;
    } else {
       read_prefs = NULL;
-      flags = MONGOC_QUERY_NONE;
    }
 
    cursor = mongoc_collection_find (collection,
@@ -944,9 +974,9 @@ _test_dollar_query (void *ctx)
                                     read_prefs);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server, "db", flags, test->e);
+   request = mock_server_receives_msg (server, 0, tmp_bson (test->e));
    mock_server_replies_to_find (
-      request, flags, 0, 0, "db.collection", "", true);
+      request, MONGOC_QUERY_NONE, 0, 0, "db.collection", "", true);
 
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -982,10 +1012,8 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/query/secondary",
     "{'a': 1}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1}, "
-    "      '$clusterTime': {'$exists': false}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1}, "
+    "   '$clusterTime': {'$exists': false},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -993,10 +1021,8 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/query/cluster_time_secondary",
     "{'a': 1}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1}, "
-    "      '$clusterTime': {'$exists': true}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1}, "
+    "   '$clusterTime': {'$exists': true},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -1020,10 +1046,8 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/dollar_query/from_user/secondary",
     "{'$query': {'a': 1}}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1},"
-    "      '$clusterTime': {'$exists': false}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': false},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -1031,10 +1055,8 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/dollar_query/from_user/cluster_time_secondary",
     "{'$query': {'a': 1}}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1},"
-    "      '$clusterTime': {'$exists': true}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   '$clusterTime': {'$exists': true},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -1050,11 +1072,9 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/dollar_orderby/secondary",
     "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1},"
-    "      'sort': {'a': 1},"
-    "      '$clusterTime': {'$exists': false}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   'sort': {'a': 1},"
+    "   '$clusterTime': {'$exists': false},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -1071,11 +1091,9 @@ dollar_query_test_t tests[] = {
    {"/Cluster/cluster_time/dollar_orderby/cluster_time_secondary",
     "{'$query': {'a': 1}, '$orderby': {'a': 1}}",
     "{"
-    "   '$query': {"
-    "      'find': 'collection', 'filter': {'a': 1},"
-    "      'sort': {'a': 1},"
-    "      '$clusterTime': {'$exists': true}"
-    "    },"
+    "   'find': 'collection', 'filter': {'a': 1},"
+    "   'sort': {'a': 1},"
+    "   '$clusterTime': {'$exists': true},"
     "   '$readPreference': {'mode': 'secondary'}"
     "}",
     true,
@@ -1089,15 +1107,12 @@ test_cluster_install (TestSuite *suite)
    dollar_query_test_t *p = tests;
 
    while (p->name) {
-      /* mock server must support OP_MSG first */
-      if (!p->cluster_time) {
-         TestSuite_AddFull (suite,
-                            p->name,
-                            _test_dollar_query,
-                            NULL,
-                            p,
-                            TestSuite_CheckMockServerAllowed);
-      }
+      TestSuite_AddFull (suite,
+                         p->name,
+                         _test_dollar_query,
+                         NULL,
+                         p,
+                         TestSuite_CheckMockServerAllowed);
 
       p++;
    }
@@ -1166,12 +1181,10 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Cluster/cluster_time/insert/pooled",
                       test_cluster_time_insert_pooled);
-#ifdef TODO_MOCK_SERVER_OP_MSG
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/single",
                                 test_cluster_time_comparison_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/pooled",
                                 test_cluster_time_comparison_pooled);
-#endif
 }

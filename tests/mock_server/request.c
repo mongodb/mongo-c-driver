@@ -44,6 +44,9 @@ request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 static void
 request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
 
+static void
+request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc);
+
 static char *
 query_flags_str (uint32_t flags);
 static char *
@@ -112,8 +115,11 @@ request_new (const mongoc_buffer_t *buffer,
       request_from_delete (request, &request->request_rpc);
       break;
 
-   case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_MSG:
+      request_from_op_msg (request, &request->request_rpc);
+      break;
+
+   case MONGOC_OPCODE_REPLY:
    default:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
@@ -729,7 +735,7 @@ insert_flags_str (uint32_t flags)
 
 
 static uint32_t
-length_prefix (void *data)
+length_prefix (const uint8_t *data)
 {
    uint32_t len_le;
 
@@ -919,4 +925,90 @@ request_from_getmore (request_t *request, const mongoc_rpc_t *rpc)
                           rpc->get_more.collection,
                           rpc->get_more.cursor_id,
                           rpc->get_more.n_return);
+}
+
+
+static void
+parse_op_msg_doc (request_t *request,
+                  const uint8_t *data,
+                  int32_t len,
+                  bson_string_t *msg_as_str)
+{
+   int32_t data_len;
+   int32_t doc_len;
+   bson_t *doc;
+   const uint8_t *pos;
+   char *str;
+
+   if (len == -1) {
+      data_len = length_prefix (data);
+   } else {
+      data_len = len;
+   }
+
+   pos = data;
+   while (pos < data + data_len) {
+      if (pos > data) {
+         bson_string_append (msg_as_str, ", ");
+      }
+
+      doc_len = length_prefix (pos);
+      doc = bson_new_from_data (pos, (size_t) doc_len);
+      BSON_ASSERT (doc);
+      _mongoc_array_append_val (&request->docs, doc);
+
+      str = bson_as_json (doc, NULL);
+      bson_string_append (msg_as_str, str);
+      bson_free (str);
+
+      pos += doc_len;
+   }
+}
+
+
+static void
+request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
+{
+   const mongoc_rpc_section_t *section;
+   int32_t section_no;
+   const bson_t *doc;
+   bson_iter_t iter;
+   bson_string_t *msg_as_str = bson_string_new ("OP_MSG");
+
+   for (section_no = 0; section_no < rpc->msg.n_sections; section_no++) {
+      bson_string_append (msg_as_str, (section_no > 0 ? ", " : " "));
+      section = &rpc->msg.sections[section_no];
+      switch (section->payload_type) {
+      case 0:
+         /* a single BSON document */
+         parse_op_msg_doc (
+            request, section->payload.bson_document, -1, msg_as_str);
+         break;
+      case 1:
+         /* a sequence of BSON documents */
+         bson_string_append (msg_as_str, section->payload.sequence.identifier);
+         bson_string_append (msg_as_str, ": [");
+         parse_op_msg_doc (request,
+                           section->payload.sequence.bson_documents,
+                           section->payload.sequence.size,
+                           msg_as_str);
+         bson_string_append (msg_as_str, "]");
+         break;
+      default:
+         fprintf (
+            stderr, "Unimplemented payload type %d\n", section->payload_type);
+         abort ();
+      }
+   }
+
+   request->as_str = bson_string_free (msg_as_str, false);
+   request->is_command = true; /* true for all OP_MSG requests */
+
+   if (request->docs.len) {
+      doc = request_get_doc (request, 0);
+      bson_iter_init (&iter, doc);
+      if (bson_iter_next (&iter)) {
+         request->command_name = bson_strdup (bson_iter_key (&iter));
+      }
+   }
 }
