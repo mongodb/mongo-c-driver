@@ -135,6 +135,11 @@ fam_SOURCES = examples/find_and_modify_with_opts/fam.c
 fam_CFLAGS = $(EXAMPLE_CFLAGS)
 fam_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-update
+example_update_SOURCES = examples/example-update.c
+example_update_CFLAGS = $(EXAMPLE_CFLAGS)
+example_update_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += example-collection-watch
 example_collection_watch_SOURCES = examples/example-collection-watch.c
 example_collection_watch_CFLAGS = $(EXAMPLE_CFLAGS)
