@@ -614,7 +614,6 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    int status = 0;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-   name[sizeof name - 1] = '\0';
 
    buf = bson_string_new (NULL);
 
@@ -945,7 +944,6 @@ TestSuite_TestMatchesName (const TestSuite *suite,
    bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-   name[sizeof name - 1] = '\0';
 
    if (star) {
       /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
