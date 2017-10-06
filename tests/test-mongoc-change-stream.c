@@ -200,7 +200,7 @@ test_change_stream_pipeline (void)
 static void
 test_change_stream_live_single_server (void *test_ctx)
 {
-   /* Temporarily skip on arm64 until mongod tested against is updated */
+/* Temporarily skip on arm64 until mongod tested against is updated */
 #ifndef __aarch64__
    mongoc_client_t *client = test_framework_client_new ();
    mongoc_collection_t *coll;
@@ -243,7 +243,7 @@ test_change_stream_live_single_server (void *test_ctx)
 
 typedef struct _test_resume_token_ctx_t {
    bool expecting_resume_token;
-   const char *expected_resume_token_pattern;
+   const bson_t *expected_resume_token_bson;
 } test_resume_token_ctx_t;
 
 static void
@@ -258,12 +258,15 @@ test_resume_token_command_start (const mongoc_apm_command_started_t *event)
 
    if (strcmp (cmd_name, "aggregate") == 0) {
       if (ctx->expecting_resume_token) {
+         char *rt_pattern = bson_as_canonical_extended_json (
+            ctx->expected_resume_token_bson, NULL);
          char *pattern =
             bson_strdup_printf ("{'aggregate': 'coll_resume', 'pipeline': "
-                                "[{'$changeStream': {'resumeAfter':  %s } ]}",
-                                ctx->expected_resume_token_pattern);
+                                "[{'$changeStream': %s }]}",
+                                rt_pattern);
          ASSERT_MATCH (cmd, pattern);
          bson_free (pattern);
+         bson_free (rt_pattern);
       } else {
          ASSERT_MATCH (cmd,
                        "{'aggregate': 'coll_resume', 'pipeline': [{ "
@@ -275,6 +278,7 @@ test_resume_token_command_start (const mongoc_apm_command_started_t *event)
 
 /* From Change Streams Spec tests:
  * "ChangeStream must continuously track the last seen resumeToken"
+ * Note: we should not inspect the resume token, since the format may change.
  */
 static void
 test_change_stream_live_track_resume_token (void *test_ctx)
@@ -285,7 +289,8 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    test_resume_token_ctx_t ctx = {0};
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
-   mongoc_write_concern_t *wc = mongoc_write_concern_new();
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t doc0_rt, doc1_rt, doc2_rt;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -319,13 +324,14 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT_MATCH (&stream->resume_token,
-                 "{'resumeAfter': {'documentKey': {'_id': 0 } } }");
+   ASSERT (!bson_empty (&stream->resume_token));
+   bson_copy_to (&stream->resume_token, &doc0_rt);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT_MATCH (&stream->resume_token,
-                 "{'resumeAfter': {'documentKey': {'_id': 1 } } }");
+   ASSERT (!bson_empty (&stream->resume_token));
+   ASSERT (bson_compare (&stream->resume_token, &doc0_rt) != 0);
+   bson_copy_to (&stream->resume_token, &doc1_rt);
 
    _mongoc_client_kill_cursor (client,
                                stream->cursor->server_id,
@@ -337,21 +343,26 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* Now that the cursor has been killed, the next call to next will have to
     * resume, forcing it to send the resumeAfter token in the aggregate cmd. */
    ctx.expecting_resume_token = true;
-   ctx.expected_resume_token_pattern = "{'documentKey': {'_id': 1 } } }";
+   ctx.expected_resume_token_bson = &doc1_rt;
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
    ASSERT (next_doc);
-   ASSERT_MATCH (&stream->resume_token,
-                 "{'resumeAfter': {'documentKey': {'_id': 2 } } }");
+   ASSERT (!bson_empty (&stream->resume_token));
+   ASSERT (bson_compare (&stream->resume_token, &doc0_rt) != 0);
+   ASSERT (bson_compare (&stream->resume_token, &doc1_rt) != 0);
+   bson_copy_to (&stream->resume_token, &doc2_rt);
 
    /* There are no docs left. But the next call should still keep the same
     * resume token */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
    ASSERT (!next_doc);
-   ASSERT_MATCH (&stream->resume_token,
-                 "{'resumeAfter': {'documentKey': {'_id': 2 } } }");
+   ASSERT (!bson_empty (&stream->resume_token));
+   ASSERT (bson_compare (&stream->resume_token, &doc2_rt) == 0);
 
+   bson_destroy (&doc0_rt);
+   bson_destroy (&doc1_rt);
+   bson_destroy (&doc2_rt);
    mongoc_write_concern_destroy (wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_change_stream_destroy (stream);
