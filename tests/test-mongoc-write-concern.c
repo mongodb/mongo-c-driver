@@ -270,7 +270,7 @@ test_write_concern_wtimeout_validity (void)
 }
 
 static void
-_test_write_concern_from_iterator (const char *swc, bool ok)
+_test_write_concern_from_iterator (const char *swc, bool ok, bool is_default)
 {
    bson_t *bson = tmp_bson (swc);
    const bson_t *bson2;
@@ -287,6 +287,7 @@ _test_write_concern_from_iterator (const char *swc, bool ok)
    wc = _mongoc_write_concern_new_from_iter (&iter, &error);
    if (ok) {
       BSON_ASSERT (wc);
+      ASSERT (mongoc_write_concern_is_default (wc) == is_default);
       bson2 = _mongoc_write_concern_get_bson (wc);
       ASSERT (bson_compare (bson, bson2));
       mongoc_write_concern_destroy (wc);
@@ -302,52 +303,102 @@ _test_write_concern_from_iterator (const char *swc, bool ok)
 static void
 test_write_concern_from_iterator (void)
 {
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'majority'}}",
-                                      true);
+   _test_write_concern_from_iterator ("{'writeConcern': {}}", true, true);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'majority', 'j': true}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 'sometag'}}",
-                                      true);
+      "{'writeConcern': {'w': 'majority'}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'j': true}}", true);
+      "{'writeConcern': {'w': 'majority', 'j': true}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'j': false}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': true}}",
-                                      true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1, 'j': false}}",
-                                      true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': true}}",
-                                      false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 0, 'j': false}}",
-                                      true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 42}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'j': true}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'j': false}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': -3}}", true);
+      "{'writeConcern': {'w': 'sometag'}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true);
+      "{'writeConcern': {'w': 'sometag', 'j': true}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 'sometag', 'wtimeout': 42}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 42}}",
-                                      true);
+      "{'writeConcern': {'w': 'sometag', 'j': false}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 1, 'wtimeout': 42}}", true);
+      "{'writeConcern': {'w': 1, 'j': true}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': 0, 'wtimeout': 42}}", true);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': 1.0}}", false);
+      "{'writeConcern': {'w': 1, 'j': false}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': {'some': 'stuff'}}}", false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'w': []}}", false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'wtimeout': 'never'}}",
-                                      false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'j': 'never'}}",
-                                      false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'j': 1.0}}", false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': 1.0}}",
-                                      false);
-   _test_write_concern_from_iterator ("{'writeConcern': {'fsync': true}}",
-                                      true);
+      "{'writeConcern': {'w': 0, 'j': true}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 0, 'j': false}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 1}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'j': true}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'j': false}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': -2}}", true, true);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': -3}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 'sometag', 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 1, 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 0, 'wtimeout': 42}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': 1.0}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': {'some': 'stuff'}}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': []}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'wtimeout': 'never'}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'j': 'never'}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'j': 1.0}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'fsync': 1.0}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'fsync': true}}", true, false);
+}
+
+
+static void
+test_write_concern_always_mutable (void)
+{
+   mongoc_write_concern_t *write_concern;
+
+   write_concern = mongoc_write_concern_new ();
+
+   ASSERT (write_concern);
+
+   mongoc_write_concern_set_fsync (write_concern, true);
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'fsync': true}");
+
+   mongoc_write_concern_set_journal (write_concern, true);
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'fsync': true, 'j': true}");
+
+   mongoc_write_concern_set_w (write_concern, 2);
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'w': 2, 'fsync': true, 'j': true}");
+
+   mongoc_write_concern_set_wtimeout (write_concern, 100);
+   ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
+                 "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
+
+   mongoc_write_concern_set_wmajority (write_concern, 200);
+   ASSERT_MATCH (
+      _mongoc_write_concern_get_bson (write_concern),
+      "{'w': 'majority', 'fsync': true, 'j': true, 'wtimeout': 200}");
+
+   mongoc_write_concern_set_wtag (write_concern, "MultipleDC");
+   ASSERT_MATCH (
+      _mongoc_write_concern_get_bson (write_concern),
+      "{'w': 'MultipleDC', 'fsync': true, 'j': true, 'wtimeout': 200}");
+
+   mongoc_write_concern_destroy (write_concern);
 }
 
 
@@ -370,4 +421,6 @@ test_write_concern_install (TestSuite *suite)
                   test_write_concern_wtimeout_validity);
    TestSuite_Add (
       suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
+   TestSuite_Add (
+      suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
 }

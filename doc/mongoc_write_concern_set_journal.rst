@@ -23,3 +23,7 @@ Description
 
 Sets if the write must have been journaled before indicating success.
 
+Beginning in version 1.9.0, this function can now alter the write concern after
+it has been used in an operation. Previously, using the struct with an operation
+would mark it as "frozen" and calling this function would log a warning instead
+instead of altering the write concern.

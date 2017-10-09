@@ -82,6 +82,34 @@ test_read_concern_bson_omits_defaults (void)
 }
 
 
+static void
+test_read_concern_always_mutable (void)
+{
+   mongoc_read_concern_t *read_concern;
+
+   read_concern = mongoc_read_concern_new ();
+
+   ASSERT (read_concern);
+
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
+                 "{'level': 'local'}");
+
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
+                 "{'level': 'majority'}");
+
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (read_concern),
+                 "{'level': 'linearizable'}");
+
+   mongoc_read_concern_destroy (read_concern);
+}
+
+
 void
 test_read_concern_install (TestSuite *suite)
 {
@@ -90,4 +118,6 @@ test_read_concern_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/ReadConcern/bson_omits_defaults",
                   test_read_concern_bson_omits_defaults);
+   TestSuite_Add (
+      suite, "/ReadConcern/always_mutable", test_read_concern_always_mutable);
 }

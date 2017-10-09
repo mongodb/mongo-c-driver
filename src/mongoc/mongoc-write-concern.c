@@ -17,19 +17,10 @@
 
 #include "mongoc-error.h"
 #include "mongoc-log.h"
+#include "mongoc-util-private.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
 
-
-static BSON_INLINE bool
-_mongoc_write_concern_warn_frozen (mongoc_write_concern_t *write_concern)
-{
-   if (write_concern->frozen) {
-      MONGOC_WARNING ("Cannot modify a frozen write-concern.");
-   }
-
-   return write_concern->frozen;
-}
 
 static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern);
@@ -54,6 +45,8 @@ mongoc_write_concern_new (void)
    write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
    write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
    write_concern->is_default = true;
+
+   bson_init (&write_concern->compiled);
 
    return write_concern;
 }
@@ -89,10 +82,7 @@ void
 mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
-      if (write_concern->compiled.len) {
-         bson_destroy (&write_concern->compiled);
-      }
-
+      bson_destroy (&write_concern->compiled);
       bson_free (write_concern->wtag);
       bson_free (write_concern);
    }
@@ -121,10 +111,9 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
 {
    BSON_ASSERT (write_concern);
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      write_concern->fsync_ = !!fsync_;
-      write_concern->is_default = false;
-   }
+   write_concern->fsync_ = !!fsync_;
+   write_concern->is_default = false;
+   write_concern->frozen = false;
 }
 
 
@@ -159,10 +148,9 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
 {
    BSON_ASSERT (write_concern);
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      write_concern->journal = !!journal;
-      write_concern->is_default = false;
-   }
+   write_concern->journal = !!journal;
+   write_concern->is_default = false;
+   write_concern->frozen = false;
 }
 
 
@@ -191,12 +179,11 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w)
    BSON_ASSERT (write_concern);
    BSON_ASSERT (w >= -3);
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      write_concern->w = w;
-      if (w != MONGOC_WRITE_CONCERN_W_DEFAULT) {
-         write_concern->is_default = false;
-      }
+   write_concern->w = w;
+   if (w != MONGOC_WRITE_CONCERN_W_DEFAULT) {
+      write_concern->is_default = false;
    }
+   write_concern->frozen = false;
 }
 
 
@@ -229,10 +216,9 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
       return;
    }
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      write_concern->wtimeout = wtimeout_msec;
-      write_concern->is_default = false;
-   }
+   write_concern->wtimeout = wtimeout_msec;
+   write_concern->is_default = false;
+   write_concern->frozen = false;
 }
 
 
@@ -262,13 +248,12 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
 {
    BSON_ASSERT (write_concern);
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
-      write_concern->is_default = false;
+   write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
+   write_concern->is_default = false;
+   write_concern->frozen = false;
 
-      if (wtimeout_msec >= 0) {
-         write_concern->wtimeout = wtimeout_msec;
-      }
+   if (wtimeout_msec >= 0) {
+      write_concern->wtimeout = wtimeout_msec;
    }
 }
 
@@ -292,12 +277,11 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
 {
    BSON_ASSERT (write_concern);
 
-   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
-      bson_free (write_concern->wtag);
-      write_concern->wtag = bson_strdup (wtag);
-      write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
-      write_concern->is_default = false;
-   }
+   bson_free (write_concern->wtag);
+   write_concern->wtag = bson_strdup (wtag);
+   write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
+   write_concern->is_default = false;
+   write_concern->frozen = false;
 }
 
 /**
@@ -306,13 +290,8 @@ mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
  *
  * This is an internal function.
  *
- * Freeze the write concern if necessary and retrieve the encoded bson_t
- * representing the write concern.
- *
- * You may not modify the write concern further after calling this function.
- *
- * Returns: A bson_t that should not be modified or freed as it is owned by
- *    the mongoc_write_concern_t instance.
+ * Returns: A bson_t representing the write concern, which is owned by the
+ *    mongoc_write_concern_t instance and should not be modified or freed.
  */
 const bson_t *
 _mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern)
@@ -344,10 +323,8 @@ mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
  *
  * This is an internal function.
  *
- * Freeze the write concern if necessary and encode it into a bson_ts which
- * represent the raw bson form and the get last error command form.
- *
- * You may not modify the write concern further after calling this function.
+ * Encodes the write concern into a bson_t, which may then be returned by
+ * mongoc_read_concern_get_bson().
  */
 static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
@@ -360,7 +337,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 
    write_concern->frozen = true;
 
-   bson_init (compiled);
+   bson_reinit (compiled);
 
    if (write_concern->w == MONGOC_WRITE_CONCERN_W_TAG) {
       BSON_ASSERT (write_concern->wtag);
@@ -541,23 +518,23 @@ _mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error)
    mongoc_write_concern_t *write_concern;
 
    BSON_ASSERT (iter);
-   write_concern =
-      (mongoc_write_concern_t *) bson_malloc0 (sizeof *write_concern);
-   write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
-   write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
-   write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
+
+   write_concern = mongoc_write_concern_new ();
 
    BSON_ASSERT (bson_iter_recurse (iter, &inner));
    while (bson_iter_next (&inner)) {
       if (BSON_ITER_IS_KEY (&inner, "w")) {
          if (BSON_ITER_HOLDS_INT32 (&inner)) {
-            write_concern->w = bson_iter_int32 (&inner);
+            mongoc_write_concern_set_w (write_concern,
+                                        bson_iter_int32 (&inner));
          } else if (BSON_ITER_HOLDS_UTF8 (&inner)) {
             if (!strcmp (bson_iter_utf8 (&inner, NULL), "majority")) {
-               write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
+               /* mongoc_write_concern_set_wmajority() only assigns wtimeout if
+                * it is >= 0. Since we set wtimeout below, pass -1 here. */
+               mongoc_write_concern_set_wmajority (write_concern, -1);
             } else {
-               write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
-               write_concern->wtag = bson_iter_dup_utf8 (&inner, NULL);
+               mongoc_write_concern_set_wtag (write_concern,
+                                              bson_iter_utf8 (&inner, NULL));
             }
          } else {
             /* wrong type for "w" */
@@ -567,17 +544,22 @@ _mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error)
          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
             goto fail;
          }
-         write_concern->fsync_ = bson_iter_bool (&inner);
+         BEGIN_IGNORE_DEPRECATIONS;
+         mongoc_write_concern_set_fsync (write_concern,
+                                         bson_iter_bool (&inner));
+         END_IGNORE_DEPRECATIONS;
       } else if (BSON_ITER_IS_KEY (&inner, "j")) {
          if (!BSON_ITER_HOLDS_BOOL (&inner)) {
             goto fail;
          }
-         write_concern->journal = bson_iter_bool (&inner);
+         mongoc_write_concern_set_journal (write_concern,
+                                           bson_iter_bool (&inner));
       } else if (BSON_ITER_IS_KEY (&inner, "wtimeout")) {
          if (!BSON_ITER_HOLDS_INT32 (&inner)) {
             goto fail;
          }
-         write_concern->wtimeout = bson_iter_int32 (&inner);
+         mongoc_write_concern_set_wtimeout (write_concern,
+                                            bson_iter_int32 (&inner));
       }
    }
 
