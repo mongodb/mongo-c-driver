@@ -84,14 +84,14 @@ $PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN&${C_TIMEOUT}"
 echo "Authenticating using MONGODB-CR"
 $PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR&${C_TIMEOUT}"
 
-if [ $SASL -eq 1 ]; then
-echo "Authenticating using GSSAPI"
-   $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
-   if [ "${OS%_*}" = "cygwin" ]; then
-      echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
-      $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
-      echo "Authenticating using GSSAPI (UTF-8 credentials)"
-      $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
-   fi
-fi
-
+# CDRIVER-2319, reenable this once fixed
+# if [ $SASL -eq 1 ]; then
+# echo "Authenticating using GSSAPI"
+#    $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+#    if [ "${OS%_*}" = "cygwin" ]; then
+#       echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
+#       $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
+#       echo "Authenticating using GSSAPI (UTF-8 credentials)"
+#       $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+#    fi
+# fi
