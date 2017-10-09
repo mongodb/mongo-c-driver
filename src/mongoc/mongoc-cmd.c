@@ -139,21 +139,6 @@ _mongoc_cmd_parts_ensure_copied (mongoc_cmd_parts_t *parts)
 }
 
 
-static void
-_mongoc_cmd_parts_add_cluster_time (mongoc_cmd_parts_t *parts,
-                                    const mongoc_server_stream_t *server_stream)
-{
-   if (!bson_empty (&server_stream->cluster_time) &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
-      _mongoc_cmd_parts_ensure_copied (parts);
-      bson_append_document (&parts->assembled_body,
-                            "$clusterTime",
-                            12,
-                            &server_stream->cluster_time);
-   }
-}
-
-
 /* The server type must be mongos. */
 static void
 _mongoc_cmd_parts_add_read_prefs (bson_t *query,
@@ -196,7 +181,7 @@ _iter_concat (bson_t *dst, bson_iter_t *iter)
 }
 
 
-/* Update result with the read prefs and $clusterTime. Server must be mongos.
+/* Update result with the read prefs. Server must be mongos.
  */
 static void
 _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
@@ -253,7 +238,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    }
 
    if (add_read_prefs) {
-      /* produce {$query: {user query, $clusterTime}, $readPreference: ... } */
+      /* produce {$query: {user query}, $readPreference: ... } */
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
 
       if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
@@ -265,7 +250,6 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       }
 
       bson_concat (&query, &parts->extra);
-      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
       bson_append_document_end (&parts->assembled_body, &query);
       _mongoc_cmd_parts_add_read_prefs (
          &parts->assembled_body, parts->read_prefs, server_stream);
@@ -278,10 +262,9 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
       parts->assembled.command = &parts->assembled_body;
    } else if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
-      /* user provided $query, we have no read prefs, just add $clusterTime */
+      /* user provided $query, we have no read prefs */
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
       _iter_concat (&query, &dollar_query);
-      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
       bson_concat (&query, &parts->extra);
       bson_append_document_end (&parts->assembled_body, &query);
       /* copy anything that isn't in user's $query */
@@ -289,14 +272,6 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
          parts->body, &parts->assembled_body, "$query", NULL);
 
       parts->assembled.command = &parts->assembled_body;
-   } else {
-      /* also appends parts->extra to the command */
-      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
-   }
-
-   if (parts->session) {
-      bson_append_document (
-         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
    if (!bson_empty (&parts->extra)) {
@@ -348,16 +323,8 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       }
    } /* if (!parts->is_write_command) */
 
-   _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
-
    if (!bson_empty (&parts->extra)) {
       _mongoc_cmd_parts_ensure_copied (parts);
-   }
-
-   if (parts->session) {
-      _mongoc_cmd_parts_ensure_copied (parts);
-      bson_append_document (
-         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
    EXIT;
@@ -462,7 +429,13 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "lsid", 4, &parts->session->lsid);
       }
 
-      _mongoc_cmd_parts_add_cluster_time (parts, server_stream);
+      if (!bson_empty (&server_stream->cluster_time)) {
+         _mongoc_cmd_parts_ensure_copied (parts);
+         bson_append_document (&parts->assembled_body,
+                               "$clusterTime",
+                               12,
+                               &server_stream->cluster_time);
+      }
 
       RETURN (true);
    }
