@@ -29,14 +29,14 @@ mongoc_session_opts_new (void)
 
 
 void
-mongoc_session_opts_set_causally_consistent_reads (
-   mongoc_session_opt_t *opts, bool causally_consistent_reads)
+mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
+                                            bool causal_consistency)
 {
    ENTRY;
 
    BSON_ASSERT (opts);
 
-   if (causally_consistent_reads) {
+   if (causal_consistency) {
       opts->flags |= MONGOC_SESSION_CAUSALLY_CONSISTENT_READS;
    } else {
       opts->flags &= ~MONGOC_SESSION_CAUSALLY_CONSISTENT_READS;
@@ -46,8 +46,7 @@ mongoc_session_opts_set_causally_consistent_reads (
 }
 
 bool
-mongoc_session_opts_get_causally_consistent_reads (
-   const mongoc_session_opt_t *opts)
+mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
 {
    ENTRY;
 
@@ -95,8 +94,7 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 
 
 static bool
-_mongoc_client_session_uuid(uint8_t *data /* OUT */,
-                            bson_error_t *error)
+_mongoc_client_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
 {
 #ifdef MONGOC_ENABLE_CRYPTO
    /* https://tools.ietf.org/html/rfc4122#page-14
@@ -109,7 +107,7 @@ _mongoc_client_session_uuid(uint8_t *data /* OUT */,
     *
     *   o  Set all the other bits to randomly (or pseudo-randomly) chosen
     *      values.
-   */
+    */
 
    if (!_mongoc_rand_bytes (data, 16)) {
       bson_set_error (error,

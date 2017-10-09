@@ -20,7 +20,7 @@ See the example code for :symbol:`mongoc_client_session_t`.
     :maxdepth: 1
 
     mongoc_session_opts_new
-    mongoc_session_opts_get_causally_consistent_reads
-    mongoc_session_opts_set_causally_consistent_reads
+    mongoc_session_opts_get_causal_consistency
+    mongoc_session_opts_set_causal_consistency
     mongoc_session_opts_clone
     mongoc_session_opts_destroy

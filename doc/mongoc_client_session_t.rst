@@ -4,7 +4,7 @@
 mongoc_client_session_t
 =======================
 
-Use a session for a sequence of operations, optionally with causally consistent reads.
+Use a session for a sequence of operations, optionally with causal consistency.
 
 Synopsis
 --------

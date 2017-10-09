@@ -89,7 +89,7 @@ def process_tags(app, doctree):
 
     metadata = env.metadata[env.docname]
 
-    # A page like mongoc_session_opts_get_causally_consistent_reads.rst sets its
+    # A page like mongoc_session_opts_get_causal_consistency.rst sets its
     # tags with ":tags: session"
     tags = metadata.get('tags')
     if tags:

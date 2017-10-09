@@ -1,5 +1,5 @@
 Start a session with :symbol:`mongoc_client_start_session`, use the session for a sequence of operations, then free it with :symbol:`mongoc_client_session_destroy()`.
 
-To configure causally consistent reads, before starting a session create a :symbol:`mongoc_session_opt_t` with :symbol:`mongoc_session_opts_new()` and call :symbol:`mongoc_session_opts_set_causally_consistent_reads()`, then free the struct with :symbol:`mongoc_session_opts_destroy`.
+To configure causal consistency, before starting a session create a :symbol:`mongoc_session_opt_t` with :symbol:`mongoc_session_opts_new()` and call :symbol:`mongoc_session_opts_set_causal_consistency()`, then free the struct with :symbol:`mongoc_session_opts_destroy`.
 
 A :symbol:`mongoc_client_session_t` must be used by only one thread at a time.

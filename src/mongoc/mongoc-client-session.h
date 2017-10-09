@@ -32,12 +32,11 @@ MONGOC_EXPORT (mongoc_session_opt_t *)
 mongoc_session_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (void)
-mongoc_session_opts_set_causally_consistent_reads (
-   mongoc_session_opt_t *opts, bool causally_consistent_reads);
+mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
+                                            bool causal_consistency);
 
 MONGOC_EXPORT (bool)
-mongoc_session_opts_get_causally_consistent_reads (
-   const mongoc_session_opt_t *opts);
+mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT (mongoc_session_opt_t *)
 mongoc_session_opts_clone (const mongoc_session_opt_t *opts);

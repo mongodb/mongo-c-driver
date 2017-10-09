@@ -44,7 +44,7 @@ main (int argc, char *argv[])
 
    opts = mongoc_session_opts_new ();
    mongoc_session_opts_set_retry_writes (opts, true);
-   mongoc_session_opts_set_causally_consistent_reads (opts, true);
+   mongoc_session_opts_set_causal_consistency (opts, true);
    session = mongoc_client_start_session (client, opts, &error);
    mongoc_session_opts_destroy (opts);
 

@@ -15,12 +15,12 @@ test_session_opts_clone (void)
 
    opts = mongoc_session_opts_new ();
    clone = mongoc_session_opts_clone (opts);
-   BSON_ASSERT (!mongoc_session_opts_get_causally_consistent_reads (clone));
+   BSON_ASSERT (!mongoc_session_opts_get_causal_consistency (clone));
    mongoc_session_opts_destroy (clone);
 
-   mongoc_session_opts_set_causally_consistent_reads (opts, true);
+   mongoc_session_opts_set_causal_consistency (opts, true);
    clone = mongoc_session_opts_clone (opts);
-   BSON_ASSERT (mongoc_session_opts_get_causally_consistent_reads (clone));
+   BSON_ASSERT (mongoc_session_opts_get_causal_consistency (clone));
    mongoc_session_opts_destroy (clone);
 
    mongoc_session_opts_destroy (opts);
