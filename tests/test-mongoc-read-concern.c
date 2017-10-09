@@ -79,8 +79,8 @@ test_read_concern_bson_omits_defaults (void)
    ASSERT (read_concern);
 
    bson = _mongoc_read_concern_get_bson (read_concern);
-   ASSERT (!bson_iter_init_find (&iter, bson, "level"));
    ASSERT (bson);
+   ASSERT (!bson_iter_init_find (&iter, bson, "level"));
 
    mongoc_read_concern_destroy (read_concern);
 }
