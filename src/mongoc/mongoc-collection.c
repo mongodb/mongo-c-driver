@@ -42,25 +42,6 @@
 #define MONGOC_LOG_DOMAIN "collection"
 
 
-#define _BSON_APPEND_WRITE_CONCERN(_bson, _write_concern)                      \
-   do {                                                                        \
-      const bson_t *write_concern_bson;                                        \
-      mongoc_write_concern_t *write_concern_copy = NULL;                       \
-      if (_write_concern->frozen) {                                            \
-         write_concern_bson = _mongoc_write_concern_get_bson (_write_concern); \
-      } else {                                                                 \
-         /* _mongoc_write_concern_get_bson will freeze the write_concern */    \
-         write_concern_copy = mongoc_write_concern_copy (_write_concern);      \
-         write_concern_bson =                                                  \
-            _mongoc_write_concern_get_bson (write_concern_copy);               \
-      }                                                                        \
-      BSON_APPEND_DOCUMENT (_bson, "writeConcern", write_concern_bson);        \
-      if (write_concern_copy) {                                                \
-         mongoc_write_concern_destroy (write_concern_copy);                    \
-      }                                                                        \
-   } while (0);
-
-
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                                mongoc_query_flags_t flags,
@@ -2958,7 +2939,10 @@ mongoc_collection_find_and_modify_with_opts (
          }
 
          if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
-            _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
+            BSON_APPEND_DOCUMENT (
+               &command,
+               "writeConcern",
+               _mongoc_write_concern_get_bson (collection->write_concern));
          }
       }
    }
