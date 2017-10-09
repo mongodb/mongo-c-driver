@@ -22,11 +22,11 @@
 #include "mongoc-write-concern-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
-#include "mongoc-client-session-private.h"
 
 
 void
 mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
+                       mongoc_client_t *client,
                        const char *db_name,
                        mongoc_query_flags_t user_query_flags,
                        const bson_t *command_body)
@@ -37,6 +37,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->is_write_command = false;
    parts->is_find = false;
    parts->session = NULL;
+   parts->client = client;
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
 
@@ -116,6 +117,13 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                             "The selected server does not support readConcern");
             RETURN (false);
          }
+      } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
+         if (!_mongoc_client_session_from_iter (
+                parts->client, iter, &parts->session, error)) {
+            RETURN (false);
+         }
+
+         continue;
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
          continue;

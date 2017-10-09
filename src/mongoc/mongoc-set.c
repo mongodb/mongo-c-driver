@@ -84,7 +84,9 @@ mongoc_set_rm (mongoc_set_t *set, uint32_t id)
       &key, set->items, set->items_len, sizeof (key), mongoc_set_id_cmp);
 
    if (ptr) {
-      set->dtor (ptr->item, set->dtor_ctx);
+      if (set->dtor) {
+         set->dtor (ptr->item, set->dtor_ctx);
+      }
 
       i = ptr - set->items;
 

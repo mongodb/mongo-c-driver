@@ -93,6 +93,10 @@ struct _mongoc_client_t {
 
    int32_t error_api_version;
    bool error_api_set;
+
+   /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
+   mongoc_set_t *client_sessions;
+   uint32_t client_session_id_counter;
 };
 
 
@@ -166,6 +170,16 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 mongoc_server_session_t *
 _mongoc_client_pop_server_session (mongoc_client_t *client,
                                    bson_error_t *error);
+
+bool
+_mongoc_client_lookup_session (const mongoc_client_t *client,
+                               uint32_t client_session_id,
+                               mongoc_client_session_t **cs,
+                               bson_error_t *error);
+
+void
+_mongoc_client_unregister_session (mongoc_client_t *client,
+                                   mongoc_client_session_t *session);
 
 void
 _mongoc_client_push_server_session (mongoc_client_t *client,

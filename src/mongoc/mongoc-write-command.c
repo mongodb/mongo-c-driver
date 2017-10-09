@@ -369,6 +369,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                      const char *collection,
                      const mongoc_write_concern_t *write_concern,
                      uint32_t index_offset,
+                     mongoc_client_session_t *cs,
                      mongoc_write_result_t *result,
                      bson_error_t *error)
 {
@@ -405,7 +406,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
    bson_init (&cmd);
    _mongoc_write_command_init (&cmd, command, collection, write_concern);
-   mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
+   mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
+   parts.session = cs;
    parts.assembled.operation_id = command->operation_id;
    if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
       bson_destroy (&cmd);
@@ -620,7 +622,7 @@ again:
          data_offset += len;
       }
    } else {
-      mongoc_cmd_parts_init (&parts, database, MONGOC_QUERY_NONE, &cmd);
+      mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
       parts.is_write_command = true;
       parts.session = session;
       parts.assembled.operation_id = command->operation_id;
@@ -668,7 +670,7 @@ _mongoc_write_command_execute (
    const char *collection,                      /* IN */
    const mongoc_write_concern_t *write_concern, /* IN */
    uint32_t offset,                             /* IN */
-   mongoc_client_session_t *session,            /* IN */
+   mongoc_client_session_t *cs,                 /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
    ENTRY;
@@ -736,6 +738,7 @@ _mongoc_write_command_execute (
                            collection,
                            write_concern,
                            offset,
+                           cs,
                            result,
                            &result->error);
    } else {
@@ -747,7 +750,7 @@ _mongoc_write_command_execute (
                                 collection,
                                 write_concern,
                                 offset,
-                                session,
+                                cs,
                                 result,
                                 &result->error);
       } else {

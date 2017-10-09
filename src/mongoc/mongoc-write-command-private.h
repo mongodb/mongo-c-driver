@@ -143,7 +143,7 @@ _mongoc_write_command_execute (mongoc_write_command_t *command,
                                const char *collection,
                                const mongoc_write_concern_t *write_concern,
                                uint32_t offset,
-                               mongoc_client_session_t *session,
+                               mongoc_client_session_t *cs,
                                mongoc_write_result_t *result);
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);

@@ -189,7 +189,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    }
 
    for (step = 0;; step++) {
-      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
       bson_init (&cmd);
 
       if (res == MONGOC_SSPI_AUTH_GSS_CONTINUE) {

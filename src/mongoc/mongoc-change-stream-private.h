@@ -24,7 +24,7 @@
 struct _mongoc_change_stream_t {
    bson_t pipeline_to_append;
    bson_t full_document;
-   bson_t collation;
+   bson_t opts;
    bson_t resume_token; /* empty, or has resumeAfter: doc */
 
    bson_error_t err;

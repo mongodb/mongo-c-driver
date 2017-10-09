@@ -1,5 +1,6 @@
 #include "mongoc.h"
 #include "mongoc-util-private.h"
+#include "mongoc-collection-private.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
@@ -313,6 +314,484 @@ test_session_pool_reap_pooled (void *ctx)
 }
 
 
+static void
+test_session_id_bad (void *ctx)
+{
+   const char *bad_opts[] = {
+      "{'sessionId': null}",
+      "{'sessionId': 'foo'}",
+      "{'sessionId': {'$numberInt': '1'}}",
+      "{'sessionId': {'$numberDouble': '1'}}",
+      /* doesn't fit in uint32 */
+      "{'sessionId': {'$numberLong': '5000000000'}}",
+      /* doesn't match existing mongoc_client_session_t */
+      "{'sessionId': {'$numberLong': '123'}}",
+      NULL,
+   };
+
+   const char **bad_opt;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   for (bad_opt = bad_opts; *bad_opt; bad_opt++) {
+      r = mongoc_client_read_command_with_opts (client,
+                                                "admin",
+                                                tmp_bson ("{'ping': 1}"),
+                                                NULL,
+                                                tmp_bson (*bad_opt),
+                                                NULL,
+                                                &error);
+
+      BSON_ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid sessionId");
+
+      memset (&error, 0, sizeof (bson_error_t));
+   }
+
+   mongoc_client_destroy (client);
+}
+
+
+typedef struct {
+   mongoc_client_t *session_client, *client;
+   mongoc_database_t *session_db, *db;
+   mongoc_collection_t *session_collection, *collection;
+   mongoc_client_session_t *cs;
+   bson_t opts;
+   bson_error_t error;
+   int n_started;
+   bool monitor;
+   bool succeeded;
+} session_test_t;
+
+
+static void
+started (const mongoc_apm_command_started_t *event)
+{
+   bson_iter_t iter;
+   bson_t lsid;
+   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
+   session_test_t *test =
+      (session_test_t *) mongoc_apm_command_started_get_context (event);
+
+   if (!test->monitor) {
+      return;
+   }
+
+   if (strcmp (cmd_name, "killCursors") == 0) {
+      /* we omit lsid from killCursors, as permitted by Driver Sessions Spec */
+      return;
+   }
+
+   test->n_started++;
+
+   if (!bson_iter_init_find (&iter, cmd, "lsid")) {
+      fprintf (stderr,
+               "no lsid sent with command %s\n",
+               cmd_name);
+      abort ();
+   }
+
+   bson_iter_bson (&iter, &lsid);
+   match_bson (&lsid, &test->cs->server_session->lsid, false);
+}
+
+
+static session_test_t *
+session_test_new (bool correct_client)
+{
+   mongoc_apm_callbacks_t *callbacks;
+   session_test_t *test;
+   bson_error_t error;
+
+   test = bson_malloc0 (sizeof (session_test_t));
+
+   test->n_started = 0;
+   test->monitor = true;
+   test->succeeded = false;
+
+   test->session_client = test_framework_client_new ();
+   mongoc_client_set_error_api (test->session_client, 2);
+   test->session_db = mongoc_client_get_database (test->session_client, "db");
+   test->session_collection =
+      mongoc_database_get_collection (test->session_db, "collection");
+
+   bson_init (&test->opts);
+
+   if (correct_client) {
+      test->client = test->session_client;
+      test->db = test->session_db;
+      test->collection = test->session_collection;
+   } else {
+      test->client = test_framework_client_new ();
+      mongoc_client_set_error_api (test->client, 2);
+      test->db = mongoc_client_get_database (test->client, "db");
+      test->collection =
+         mongoc_database_get_collection (test->db, "collection");
+   }
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, started);
+   mongoc_client_set_apm_callbacks (test->client, callbacks, test);
+
+   /* test each function with a session from the correct client and a session
+    * from the wrong client */
+   test->cs = mongoc_client_start_session (test->session_client, NULL, &error);
+   ASSERT_OR_PRINT (test->cs, error);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   return test;
+}
+
+
+static void
+session_test_destroy (session_test_t *test)
+{
+   if (test->client != test->session_client) {
+      mongoc_collection_destroy (test->collection);
+      mongoc_database_destroy (test->db);
+      mongoc_client_destroy (test->client);
+   }
+
+   mongoc_client_session_destroy (test->cs);
+   mongoc_collection_destroy (test->session_collection);
+   mongoc_database_destroy (test->session_db);
+   mongoc_client_destroy (test->session_client);
+   bson_destroy (&test->opts);
+   bson_free (test);
+}
+
+
+typedef void (*session_test_fn_t) (session_test_t *);
+
+
+static void
+run_session_test (void *ctx)
+{
+   session_test_fn_t test_fn = (session_test_fn_t) ctx;
+   session_test_t *test;
+   bson_error_t error;
+   bson_t opts = BSON_INITIALIZER;
+
+   /*
+    * use the same client for the session and the operation, expect success
+    */
+   test = session_test_new (true);
+   test_fn (test);
+   ASSERT_OR_PRINT (test->succeeded, test->error);
+   ASSERT_CMPINT (test->n_started, >, 0);
+   session_test_destroy (test);
+
+   /*
+    * use a session from the wrong client, expect failure
+    */
+   test = session_test_new (false);
+   test_fn (test);
+   BSON_ASSERT (!test->succeeded);
+   error = test->error;
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid sessionId");
+
+   mongoc_client_session_append (test->cs, &opts, NULL);
+   mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
+   session_test_destroy (test);
+   bson_destroy (&opts);
+}
+
+
+/* "session argument is for right client" tests from Driver Sessions Spec */
+static void
+test_session_read_cmd (session_test_t *test)
+{
+   test->succeeded =
+      mongoc_client_read_command_with_opts (test->client,
+                                            "db",
+                                            tmp_bson ("{'ping': 1}"),
+                                            NULL,
+                                            &test->opts,
+                                            NULL,
+                                            &test->error);
+}
+
+
+static void
+test_session_count (session_test_t *test)
+{
+   test->succeeded =
+      (-1 != mongoc_collection_count_with_opts (test->collection,
+                                                MONGOC_QUERY_NONE,
+                                                NULL,
+                                                0,
+                                                0,
+                                                &test->opts,
+                                                NULL,
+                                                &test->error));
+}
+
+
+static void
+test_session_cursor (session_test_t *test)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   cursor = mongoc_collection_find_with_opts (
+      test->collection, tmp_bson ("{}"), &test->opts, NULL);
+
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   test->succeeded = !mongoc_cursor_error (cursor, &test->error);
+
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
+test_session_drop (session_test_t *test)
+{
+   bson_error_t error;
+   bool r;
+   bson_t opts = BSON_INITIALIZER;
+
+   mongoc_client_session_append (test->cs, &opts, NULL);
+
+   /* create the collection so that "drop" can succeed */
+   r = mongoc_database_write_command_with_opts (
+      test->session_db,
+      tmp_bson ("{'create': 'collection'}"),
+      &opts,
+      NULL,
+      &error);
+
+   ASSERT_OR_PRINT (r, error);
+   test->succeeded = mongoc_collection_drop_with_opts (
+      test->collection, &test->opts, &test->error);
+
+   bson_destroy (&opts);
+}
+
+
+static void
+test_session_drop_index (session_test_t *test)
+{
+   bson_error_t error;
+   bool r;
+
+   /* create the index so that "dropIndexes" can succeed */
+   r = mongoc_database_write_command_with_opts (
+      test->session_db,
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'a': 1}, 'name': 'foo'}]}",
+                test->collection->collection),
+      &test->opts,
+      NULL,
+      &error);
+
+   ASSERT_OR_PRINT (r, error);
+
+   test->succeeded = mongoc_collection_drop_index_with_opts (
+      test->collection, "foo", &test->opts, &test->error);
+}
+
+static void
+test_session_create_index (session_test_t *test)
+{
+   BEGIN_IGNORE_DEPRECATIONS
+   test->succeeded =
+      mongoc_collection_create_index_with_opts (test->collection,
+                                                tmp_bson ("{'a': 1}"),
+                                                NULL,
+                                                &test->opts,
+                                                NULL,
+                                                &test->error);
+   END_IGNORE_DEPRECATIONS
+}
+
+static void
+test_session_replace_one (session_test_t *test)
+{
+   test->succeeded = mongoc_collection_replace_one_with_opts (test->collection,
+                                                              tmp_bson ("{}"),
+                                                              tmp_bson ("{}"),
+                                                              &test->opts,
+                                                              NULL,
+                                                              &test->error);
+}
+
+static void
+test_session_rename (session_test_t *test)
+{
+   bson_error_t error;
+   bool r;
+
+   /* ensure "rename" can succeed */
+   mongoc_database_write_command_with_opts (test->session_db,
+                                            tmp_bson ("{'drop': 'newname'}"),
+                                            &test->opts,
+                                            NULL,
+                                            NULL);
+
+   r = mongoc_database_write_command_with_opts (
+      test->session_db,
+      tmp_bson ("{'insert': 'collection', 'documents': [{}]}"),
+      &test->opts,
+      NULL,
+      NULL);
+
+   ASSERT_OR_PRINT (r, error);
+   test->succeeded = mongoc_collection_rename_with_opts (
+      test->collection, "db", "newname", true, &test->opts, &test->error);
+}
+
+static void
+test_session_fam (session_test_t *test)
+{
+   mongoc_find_and_modify_opts_t *fam_opts;
+
+   fam_opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_set_update (fam_opts,
+                                           tmp_bson ("{'$set': {'x': 1}}"));
+   BSON_ASSERT (mongoc_find_and_modify_opts_append (fam_opts, &test->opts));
+   test->succeeded = mongoc_collection_find_and_modify_with_opts (
+      test->collection, tmp_bson ("{}"), fam_opts, NULL, &test->error);
+
+   mongoc_find_and_modify_opts_destroy (fam_opts);
+}
+
+static void
+test_session_db_drop (session_test_t *test)
+{
+   test->succeeded =
+      mongoc_database_drop_with_opts (test->db, &test->opts, &test->error);
+}
+
+static void
+test_session_gridfs_find (session_test_t *test)
+{
+   mongoc_gridfs_t *gfs;
+   bson_error_t error;
+   mongoc_gridfs_file_list_t *list;
+   mongoc_gridfs_file_t *f;
+
+   /* work around lack of mongoc_client_get_gridfs_with_opts for now, can't yet
+    * include lsid with the GridFS createIndexes command */
+   test->monitor = false;
+   gfs = mongoc_client_get_gridfs (test->client, "test", NULL, &error);
+   ASSERT_OR_PRINT (gfs, error);
+   test->monitor = true;
+   list = mongoc_gridfs_find_with_opts (gfs, tmp_bson ("{}"), &test->opts);
+   f = mongoc_gridfs_file_list_next (list);
+   test->succeeded = !mongoc_gridfs_file_list_error (list, &test->error);
+
+   if (f) {
+      mongoc_gridfs_file_destroy (f);
+   }
+
+   mongoc_gridfs_file_list_destroy (list);
+   mongoc_gridfs_destroy (gfs);
+}
+
+static void
+test_session_gridfs_find_one (session_test_t *test)
+{
+   mongoc_gridfs_t *gfs;
+   bson_error_t error;
+   mongoc_gridfs_file_t *f;
+
+   /* work around lack of mongoc_client_get_gridfs_with_opts for now, can't yet
+    * include lsid with the GridFS createIndexes command */
+   test->monitor = false;
+   gfs = mongoc_client_get_gridfs (test->client, "test", NULL, &error);
+   ASSERT_OR_PRINT (gfs, error);
+   test->monitor = true;
+   f = mongoc_gridfs_find_one_with_opts (
+      gfs, tmp_bson ("{}"), &test->opts, &test->error);
+
+   test->succeeded = test->error.domain == 0;
+
+   if (f) {
+      mongoc_gridfs_file_destroy (f);
+   }
+
+   mongoc_gridfs_destroy (gfs);
+}
+
+
+static void
+test_watch (session_test_t *test)
+{
+   mongoc_change_stream_t *change_stream;
+
+   change_stream =
+      mongoc_collection_watch (test->collection, tmp_bson ("{}"), &test->opts);
+
+   test->succeeded =
+      !mongoc_change_stream_error_document (change_stream, &test->error, NULL);
+   mongoc_change_stream_destroy (change_stream);
+}
+
+
+static void
+test_aggregate (session_test_t *test)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   cursor = mongoc_collection_aggregate (
+      test->collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), &test->opts, NULL);
+
+   mongoc_cursor_next (cursor, &doc);
+   test->succeeded = !mongoc_cursor_error (cursor, &test->error);
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
+test_create (session_test_t *test)
+{
+   mongoc_collection_t *collection;
+
+   /* ensure "create" can succeed */
+   mongoc_database_write_command_with_opts (test->session_db,
+                                            tmp_bson ("{'drop': 'newname'}"),
+                                            &test->opts,
+                                            NULL,
+                                            NULL);
+
+   collection = mongoc_database_create_collection (
+      test->db, "newname", &test->opts, &test->error);
+
+   test->succeeded = (collection != NULL);
+
+   if (collection) {
+      mongoc_collection_destroy (collection);
+   }
+}
+
+
+static void
+add_session_test (TestSuite *suite, const char *name, session_test_fn_t test_fn)
+{
+   TestSuite_AddFull (suite,
+                      name,
+                      run_session_test,
+                      NULL,
+                      (void *) test_fn,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
+}
+
+
 void
 test_session_install (TestSuite *suite)
 {
@@ -370,4 +849,30 @@ test_session_install (TestSuite *suite)
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_slow);
+   TestSuite_AddFull (suite,
+                      "/Session/id_bad",
+                      test_session_id_bad,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
+   add_session_test (suite, "/Session/read_cmd", test_session_read_cmd);
+   add_session_test (suite, "/Session/count", test_session_count);
+   add_session_test (suite, "/Session/cursor", test_session_cursor);
+   add_session_test (suite, "/Session/drop", test_session_drop);
+   add_session_test (suite, "/Session/drop_index", test_session_drop_index);
+   add_session_test (suite, "/Session/create_index", test_session_create_index);
+   add_session_test (suite, "/Session/replace_one", test_session_replace_one);
+   add_session_test (suite, "/Session/rename", test_session_rename);
+   add_session_test (suite, "/Session/fam", test_session_fam);
+   add_session_test (suite, "/Session/db_drop", test_session_db_drop);
+   add_session_test (suite, "/Session/gridfs_find", test_session_gridfs_find);
+   add_session_test (
+      suite, "/Session/gridfs_find_one", test_session_gridfs_find_one);
+   add_session_test_wc (suite,
+                        "/Session/watch",
+                        test_watch,
+                        test_framework_skip_if_not_rs_version_6);
+   add_session_test (suite, "/Session/aggregate", test_aggregate);
+   add_session_test (suite, "/Session/create", test_create);
 }

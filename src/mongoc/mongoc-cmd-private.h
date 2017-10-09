@@ -60,11 +60,13 @@ typedef struct _mongoc_cmd_parts_t {
    bool is_write_command;
    bool is_find;
    mongoc_client_session_t *session;
+   mongoc_client_t *client;
 } mongoc_cmd_parts_t;
 
 
 void
 mongoc_cmd_parts_init (mongoc_cmd_parts_t *op,
+                       mongoc_client_t *client,
                        const char *db_name,
                        mongoc_query_flags_t user_query_flags,
                        const bson_t *command_body);

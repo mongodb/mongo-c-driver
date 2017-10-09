@@ -645,7 +645,8 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
-   mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, command);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, command);
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, &error)) {
       mongoc_server_stream_cleanup (server_stream);
@@ -846,7 +847,8 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     */
    bson_init (&command);
    bson_append_int32 (&command, "getnonce", 8, 1);
-   mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
 
@@ -886,7 +888,8 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     * Execute the authenticate command. mongoc_cluster_run_command_private
     * checks for {ok: 1} in the response.
     */
-   mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
 
@@ -970,7 +973,8 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    bson_append_utf8 (&b, "payload", 7, (const char *) buf, buflen);
    BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
 
-   mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &b);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &b);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
    ret = mongoc_cluster_run_command_parts (
@@ -1041,7 +1045,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
                      username_from_uri ? username_from_uri
                                        : username_from_subject);
 
-   mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
    ret = mongoc_cluster_run_command_parts (
@@ -1136,7 +1141,8 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
 
       TRACE ("SCRAM: authenticating (step %d)", scram.step);
 
-      mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, &cmd);
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, sd->id, stream, error);
       if (!mongoc_cluster_run_command_parts (
@@ -2219,7 +2225,8 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
        now) {
       bson_init (&command);
       BSON_APPEND_INT32 (&command, "ping", 1);
-      mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_SLAVE_OK, &command);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, &command);
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, server_id, stream, &error);
       r = mongoc_cluster_run_command_parts (

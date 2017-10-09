@@ -43,6 +43,7 @@ struct _mongoc_client_session_t {
    mongoc_client_t *client;
    mongoc_session_opt_t opts;
    mongoc_server_session_t *server_session;
+   uint32_t client_session_id;
 };
 
 mongoc_server_session_t *
@@ -57,7 +58,14 @@ _mongoc_server_session_destroy (mongoc_server_session_t *server_session);
 
 mongoc_client_session_t *
 _mongoc_client_session_new (mongoc_client_t *client,
+                            mongoc_server_session_t *server_session,
                             const mongoc_session_opt_t *opts,
-                            bson_error_t *error);
+                            uint32_t client_session_id);
+
+bool
+_mongoc_client_session_from_iter (mongoc_client_t *client,
+                                  bson_iter_t *iter,
+                                  mongoc_client_session_t **cs,
+                                  bson_error_t *error);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

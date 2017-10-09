@@ -53,6 +53,10 @@ mongoc_client_session_get_opts (const mongoc_client_session_t *session);
 MONGOC_EXPORT (const bson_t *)
 mongoc_client_session_get_lsid (const mongoc_client_session_t *session);
 
+MONGOC_EXPORT (bool)
+mongoc_client_session_append (mongoc_client_session_t *client_session,
+                              bson_t *opts,
+                              bson_error_t *error);
 
 /* There is no mongoc_client_session_end, only mongoc_client_session_destroy.
  * Driver Sessions Spec: "In languages that have idiomatic ways of disposing of
@@ -61,7 +65,7 @@ mongoc_client_session_get_lsid (const mongoc_client_session_t *session);
  */
 
 MONGOC_EXPORT (void)
-mongoc_client_session_destroy (mongoc_client_session_t *uri);
+mongoc_client_session_destroy (mongoc_client_session_t *session);
 
 BSON_END_DECLS
 

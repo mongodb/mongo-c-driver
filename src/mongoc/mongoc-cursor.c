@@ -732,7 +732,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    }
 
    bson_copy_to_excluding_noinit (
-      &cursor->opts, &doc, "serverId", "maxAwaitTimeMS", NULL);
+      &cursor->opts, &doc, "serverId", "maxAwaitTimeMS", "sessionId", NULL);
 
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
@@ -1098,6 +1098,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
       /* singleBatch limit and batchSize are handled in _mongoc_n_return,
        * exhaust noCursorTimeout oplogReplay tailable in _mongoc_cursor_flags
        * maxAwaitTimeMS is handled in _mongoc_cursor_prepare_getmore_command
+       * sessionId is used to retrieve the mongoc_client_session_t
        */
       else if (strcmp (key, MONGOC_CURSOR_SINGLE_BATCH) &&
                strcmp (key, MONGOC_CURSOR_LIMIT) &&
@@ -1176,11 +1177,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   assemble_query (cursor->read_prefs,
-                   server_stream,
-                   query_ptr,
-                   flags,
-                   &result);
+   assemble_query (
+      cursor->read_prefs, server_stream, query_ptr, flags, &result);
 
    rpc.query.query = bson_get_data (result.assembled_query);
    rpc.query.flags = result.flags;
@@ -1295,10 +1293,10 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    ENTRY;
 
    cluster = &cursor->client->cluster;
-   mongoc_cmd_parts_init (&parts, db, MONGOC_QUERY_NONE, command);
+   mongoc_cmd_parts_init (
+      &parts, cursor->client, db, MONGOC_QUERY_NONE, command);
    parts.is_find = cursor->is_find;
    parts.read_prefs = cursor->read_prefs;
-   parts.session = cursor->session;
    parts.assembled.operation_id = cursor->operation_id;
    server_stream = _mongoc_cursor_fetch_stream (cursor);
 

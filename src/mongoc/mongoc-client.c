@@ -956,6 +956,8 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    client->topology = topology;
    client->error_api_version = MONGOC_ERROR_API_VERSION_LEGACY;
    client->error_api_set = false;
+   client->client_sessions = mongoc_set_new (8, NULL, NULL);
+   client->client_session_id_counter = 0;
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -1021,6 +1023,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_read_prefs_destroy (client->read_prefs);
       mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
+      mongoc_set_destroy (client->client_sessions);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup (&client->ssl_opts);
@@ -1082,9 +1085,28 @@ mongoc_client_start_session (mongoc_client_t *client,
                              const mongoc_session_opt_t *opts,
                              bson_error_t *error)
 {
+   mongoc_server_session_t *ss;
+   mongoc_client_session_t *cs;
+
    ENTRY;
 
-   RETURN (_mongoc_client_session_new (client, opts, error));
+   ss = _mongoc_client_pop_server_session (client, error);
+   if (!ss) {
+      RETURN (NULL);
+   }
+
+   cs = _mongoc_client_session_new (
+      client, ss, opts, client->client_session_id_counter++);
+
+   /* by the time counter wraps around, session id 0 should be long dead */
+   BSON_ASSERT (
+      !mongoc_set_get (client->client_sessions, cs->client_session_id));
+
+   /* remember session so if we see its client_session_id in a command, we can
+    * find its lsid and clusterTime */
+   mongoc_set_add (client->client_sessions, cs->client_session_id, cs);
+
+   RETURN (cs);
 }
 
 
@@ -1494,7 +1516,7 @@ mongoc_client_command_simple (mongoc_client_t *client,
    }
 
    cluster = &client->cluster;
-   mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
+   mongoc_cmd_parts_init (&parts, client, db_name, MONGOC_QUERY_NONE, command);
    parts.read_prefs = read_prefs;
 
    /* Server Selection Spec: "The generic command method has a default read
@@ -1574,7 +1596,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
 
-   mongoc_cmd_parts_init (&parts, db_name, flags, command);
+   mongoc_cmd_parts_init (&parts, client, db_name, flags, command);
    parts.is_write_command = (mode & MONGOC_CMD_WRITE);
 
    reply_ptr = reply ? reply : &reply_local;
@@ -1776,7 +1798,8 @@ mongoc_client_command_simple_with_server_id (
       &client->cluster, server_id, true /* reconnect ok */, error);
 
    if (server_stream) {
-      mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
+      mongoc_cmd_parts_init (
+         &parts, client, db_name, MONGOC_QUERY_NONE, command);
       parts.read_prefs = read_prefs;
 
       ret = _mongoc_client_command_with_stream (
@@ -2040,7 +2063,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    ENTRY;
 
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &command);
-   mongoc_cmd_parts_init (&parts, db, MONGOC_QUERY_SLAVE_OK, &command);
+   mongoc_cmd_parts_init (
+      &parts, cluster->client, db, MONGOC_QUERY_SLAVE_OK, &command);
    parts.assembled.operation_id = ++cluster->operation_id;
 
    if (mongoc_cmd_parts_assemble (&parts, server_stream, NULL)) {
@@ -2418,6 +2442,52 @@ mongoc_server_session_t *
 _mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error)
 {
    return _mongoc_topology_pop_server_session (client->topology, error);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_lookup_session --
+ *
+ *       Retrieve a mongoc_client_session_t associated with @client_session_id.
+ *       Use this to find the "lsid" and "$clusterTime" to send in the server
+ *       command.
+ *
+ * Returns:
+ *       True on success, false on error and @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_client_lookup_session (const mongoc_client_t *client,
+                               uint32_t client_session_id,
+                               mongoc_client_session_t **cs /* OUT */,
+                               bson_error_t *error /* OUT */)
+{
+   ENTRY;
+
+   *cs = mongoc_set_get (client->client_sessions, client_session_id);
+
+   if (*cs) {
+      RETURN (true);
+   }
+
+   bson_set_error (error,
+                   MONGOC_ERROR_COMMAND,
+                   MONGOC_ERROR_COMMAND_INVALID_ARG,
+                   "Invalid sessionId");
+
+   RETURN (false);
+}
+
+void
+_mongoc_client_unregister_session (mongoc_client_t *client,
+                                   mongoc_client_session_t *session)
+{
+   mongoc_set_rm (client->client_sessions, session->client_session_id);
 }
 
 void

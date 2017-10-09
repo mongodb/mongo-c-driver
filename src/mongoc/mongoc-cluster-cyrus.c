@@ -50,7 +50,8 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    }
 
    for (;;) {
-      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
 
       if (!_mongoc_cyrus_step (
              &sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {

@@ -1035,7 +1035,7 @@ future_command_private (mongoc_client_t *client)
    ASSERT_OR_PRINT (server_stream, error);
 
    mongoc_cmd_parts_init (
-      &parts, "test", MONGOC_QUERY_NONE, tmp_bson ("{'cmd': 1}"));
+      &parts, client, "test", MONGOC_QUERY_NONE, tmp_bson ("{'cmd': 1}"));
 
    /* mongoc_cluster_run_command_parts will call mongoc_cmd_parts_cleanup */
    return future_cluster_run_command_parts (

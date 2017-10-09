@@ -101,7 +101,7 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
    }
    bson_append_document_end (&command, &cursor_doc);
 
-   bson_copy_to (&stream->collation, &command_opts);
+   bson_copy_to (&stream->opts, &command_opts);
 
    sd = mongoc_client_select_server (stream->coll->client,
                                      false /* for_writes */,
@@ -173,7 +173,7 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
    stream->coll = mongoc_collection_copy ((mongoc_collection_t *) coll);
    bson_init (&stream->pipeline_to_append);
    bson_init (&stream->full_document);
-   bson_init (&stream->collation);
+   bson_init (&stream->opts);
    bson_init (&stream->resume_token);
    bson_init (&stream->err_doc);
    memset (&stream->err, 0, sizeof (bson_error_t));
@@ -185,7 +185,7 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
     * resumeAfter: optional<Doc>, passed to $changeStream stage
     * maxAwaitTimeMS: Optional<Int64>, set on the cursor
     * batchSize: Optional<Int32>, passed as agg option, {cursor: { batchSize: }}
-    * collation: Optional<Document>, passed as agg option
+    * standard command options like "sessionId", "maxTimeMS", or "collation"
     */
 
    if (opts) {
@@ -206,14 +206,19 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
          }
       }
 
-      if (bson_iter_init_find (&iter, opts, "collation")) {
-         SET_BSON_OR_ERR (&stream->collation, "collation");
-      }
-
       if (bson_iter_init_find (&iter, opts, "maxAwaitTimeMS") &&
           BSON_ITER_HOLDS_INT (&iter)) {
          stream->max_await_time_ms = bson_iter_as_int64 (&iter);
       }
+
+      /* save the remaining opts for mongoc_collection_read_command_with_opts */
+      bson_copy_to_excluding_noinit (opts,
+                                     &stream->opts,
+                                     "fullDocument",
+                                     "resumeAfter",
+                                     "batchSize",
+                                     "maxAwaitTimeMS",
+                                     NULL);
    }
 
    if (!full_doc_set) {
@@ -348,7 +353,7 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    BSON_ASSERT (stream);
    bson_destroy (&stream->pipeline_to_append);
    bson_destroy (&stream->full_document);
-   bson_destroy (&stream->collation);
+   bson_destroy (&stream->opts);
    bson_destroy (&stream->resume_token);
    bson_destroy (&stream->err_doc);
    if (stream->cursor) {

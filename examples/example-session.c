@@ -14,13 +14,14 @@ main (int argc, char *argv[])
 
    mongoc_client_t *client;
    mongoc_session_opt_t *opts = NULL;
-   mongoc_client_session_t *session = NULL;
+   mongoc_client_session_t *client_session = NULL;
    mongoc_collection_t *collection = NULL;
    const char *uristr = "mongodb://127.0.0.1/?appname=session-example";
    bson_error_t error;
-   bson_t *filter;
-   bson_t *update;
-   bson_t *find_opts;
+   bson_t *selector = NULL;
+   bson_t *update = NULL;
+   bson_t *update_opts = NULL;
+   bson_t *find_opts = NULL;
    mongoc_read_prefs_t *secondary = NULL;
    mongoc_cursor_t *cursor = NULL;
    const bson_t *doc;
@@ -43,43 +44,41 @@ main (int argc, char *argv[])
    mongoc_client_set_error_api (client, 2);
 
    opts = mongoc_session_opts_new ();
-   mongoc_session_opts_set_retry_writes (opts, true);
    mongoc_session_opts_set_causal_consistency (opts, true);
-   session = mongoc_client_start_session (client, opts, &error);
+   client_session = mongoc_client_start_session (client, opts, &error);
    mongoc_session_opts_destroy (opts);
 
-   if (!session) {
+   if (!client_session) {
       fprintf (stderr, "Failed to start session: %s\n", error.message);
       goto done;
    }
 
-   /* create a collection bound to the session */
-   collection = mongoc_client_session_get_collection (session, "db", "collection");
-   filter = BCON_NEW ("_id", BCON_INT32 (1));
+   collection = mongoc_client_get_collection (client, "test", "collection");
+   selector = BCON_NEW ("_id", BCON_INT32 (1));
    update = BCON_NEW ("$inc", "{", "x", BCON_INT32 (1), "}");
+   update_opts = bson_new ();
+   if (!mongoc_client_session_append (client_session, update_opts, &error)) {
+      fprintf (stderr, "Could not add session to opts: %s\n", error.message);
+      goto done;
+   }
 
-   /*
-    * update with "$inc". since we're in a retry-writes session, the update is
-    * safely retried once if there's a network error
-    */
-   r = mongoc_collection_update (collection,
-                                 MONGOC_UPDATE_UPSERT,
-                                 filter,
-                                 update,
-                                 NULL /* write concern */,
-                                 &error);
-
-   bson_destroy (filter);
-   bson_destroy (update);
+   r = mongoc_collection_update_one_with_opts (
+      collection, selector, update, update_opts, NULL /* reply */, &error);
 
    if (!r) {
       fprintf (stderr, "Update failed: %s\n", error.message);
       goto done;
    }
 
-   filter = BCON_NEW ("_id", BCON_INT32 (1));
+   bson_destroy (selector);
+   selector = BCON_NEW ("_id", BCON_INT32 (1));
    secondary = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
    find_opts = BCON_NEW ("maxTimeMS", BCON_INT32 (2000));
+   if (!mongoc_client_session_append (client_session, find_opts, &error)) {
+      fprintf (stderr, "Could not add session to opts: %s\n", error.message);
+      goto done;
+   };
 
    /* read from secondary. since we're in a causally consistent session, the
     * data is guaranteed to reflect the update we did on the primary. the query
@@ -87,9 +86,9 @@ main (int argc, char *argv[])
     * and fails after 2000 ms.
     */
    cursor = mongoc_collection_find_with_opts (
-      collection, filter, find_opts, secondary);
+      collection, selector, find_opts, secondary);
 
-   bson_destroy (filter);
+   bson_destroy (selector);
    mongoc_read_prefs_destroy (secondary);
    bson_destroy (find_opts);
 
@@ -107,18 +106,31 @@ main (int argc, char *argv[])
    exit_code = EXIT_SUCCESS;
 
 done:
-   /* must destroy cursor and collection before the session they came from */
+   if (find_opts) {
+      bson_destroy (find_opts);
+   }
+   if (update) {
+      bson_destroy (update);
+   }
+   if (selector) {
+      bson_destroy (selector);
+   }
+   if (update_opts) {
+      bson_destroy (update_opts);
+   }
+   if (secondary) {
+      mongoc_read_prefs_destroy (secondary);
+   }
+   /* destroy cursor, collection, session before the client they came from */
    if (cursor) {
       mongoc_cursor_destroy (cursor);
    }
    if (collection) {
       mongoc_collection_destroy (collection);
    }
-   if (session) {
-      mongoc_client_session_destroy (session);
+   if (client_session) {
+      mongoc_client_session_destroy (client_session);
    }
-
-   /* finish cleaning up */
    if (client) {
       mongoc_client_destroy (client);
    }

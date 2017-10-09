@@ -202,24 +202,20 @@ _mongoc_server_session_destroy (mongoc_server_session_t *server_session)
 
 mongoc_client_session_t *
 _mongoc_client_session_new (mongoc_client_t *client,
+                            mongoc_server_session_t *server_session,
                             const mongoc_session_opt_t *opts,
-                            bson_error_t *error)
+                            uint32_t client_session_id)
 {
-   mongoc_server_session_t *server_session;
    mongoc_client_session_t *session;
 
    ENTRY;
 
    BSON_ASSERT (client);
 
-   server_session = _mongoc_client_pop_server_session (client, error);
-   if (!server_session) {
-      RETURN (NULL);
-   }
-
    session = bson_malloc0 (sizeof (mongoc_client_session_t));
    session->client = client;
    session->server_session = server_session;
+   session->client_session_id = client_session_id;
 
    if (opts) {
       _mongoc_session_opts_copy (opts, &session->opts);
@@ -258,6 +254,50 @@ mongoc_client_session_get_lsid (const mongoc_client_session_t *session)
 }
 
 
+bool
+_mongoc_client_session_from_iter (mongoc_client_t *client,
+                                  bson_iter_t *iter,
+                                  mongoc_client_session_t **cs,
+                                  bson_error_t *error)
+{
+   ENTRY;
+
+   /* must be int64 that fits in uint32 */
+   if (!BSON_ITER_HOLDS_INT64 (iter) || bson_iter_int64 (iter) > 0xffffffff) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid sessionId");
+      RETURN (false);
+   }
+
+   RETURN (_mongoc_client_lookup_session (
+      client, (uint32_t) bson_iter_int64 (iter), cs, error));
+}
+
+
+bool
+mongoc_client_session_append (mongoc_client_session_t *client_session,
+                              bson_t *opts,
+                              bson_error_t *error)
+{
+   ENTRY;
+
+   BSON_ASSERT (client_session);
+   BSON_ASSERT (opts);
+
+   if (!bson_append_int64 (
+          opts, "sessionId", 9, client_session->client_session_id)) {
+      bson_set_error (
+         error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "invalid opts");
+
+      RETURN (false);
+   }
+
+   RETURN (true);
+}
+
+
 void
 mongoc_client_session_destroy (mongoc_client_session_t *session)
 {
@@ -265,6 +305,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
 
    BSON_ASSERT (session);
 
+   _mongoc_client_unregister_session (session->client, session);
    _mongoc_client_push_server_session (session->client,
                                        session->server_session);
 
