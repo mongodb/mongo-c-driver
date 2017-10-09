@@ -212,6 +212,7 @@ _mongoc_read_concern_freeze (mongoc_read_concern_t *read_concern)
 
    bson_init (compiled);
 
-   BSON_ASSERT (read_concern->level);
-   BSON_APPEND_UTF8 (compiled, "level", read_concern->level);
+   if (read_concern->level) {
+      BSON_APPEND_UTF8 (compiled, "level", read_concern->level);
+   }
 }

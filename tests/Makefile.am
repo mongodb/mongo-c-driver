@@ -91,6 +91,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-matcher.c \
 	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-queue.c \
+	tests/test-mongoc-read-concern.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-retryable-writes.c \
 	tests/test-mongoc-rpc.c \

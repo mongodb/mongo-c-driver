@@ -91,6 +91,8 @@ test_handshake_install (TestSuite *suite);
 extern void
 test_queue_install (TestSuite *suite);
 extern void
+test_read_concern_install (TestSuite *suite);
+extern void
 test_read_prefs_install (TestSuite *suite);
 extern void
 test_retryable_writes_install (TestSuite *suite);
@@ -2138,6 +2140,7 @@ main (int argc, char *argv[])
    test_log_install (&suite);
    test_matcher_install (&suite);
    test_queue_install (&suite);
+   test_read_concern_install (&suite);
    test_read_prefs_install (&suite);
    test_retryable_writes_install (&suite);
    test_rpc_install (&suite);
