@@ -167,6 +167,12 @@ If you have started with MongoDB with `--ipv6`, you can test IPv6 with:
 
 * `MONGOC_CHECK_IPV6=on`
 
+The mock server timeout threshold for future functions can be set with:
+
+* `MONGOC_TEST_FUTURE_TIMEOUT_MS=<int>`
+
+This is useful for debugging, so future calls don't timeout when stepping through code.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner
