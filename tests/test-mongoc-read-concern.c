@@ -15,8 +15,12 @@ test_read_concern_append (void)
 
    cmd = tmp_bson ("{'foo': 1}");
 
-   /* append valid readConcern */
+   /* append default readConcern */
    rc = mongoc_read_concern_new ();
+   ASSERT (mongoc_read_concern_is_default (rc));
+   ASSERT_MATCH (cmd, "{'foo': 1, 'readConcern': {'$exists': false}}");
+
+   /* append readConcern with level */
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    ASSERT (mongoc_read_concern_append (rc, cmd));
 

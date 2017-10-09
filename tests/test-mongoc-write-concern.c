@@ -20,8 +20,12 @@ test_write_concern_append (void)
    wc = NULL;
    BSON_ASSERT (!mongoc_write_concern_append (wc, cmd));
 
-   /* append valid writeConcern */
+   /* append default writeConcern */
    wc = mongoc_write_concern_new ();
+   ASSERT (mongoc_write_concern_is_default (wc));
+   ASSERT_MATCH (cmd, "{'foo': 1, 'writeConcern': {'$exists': false}}");
+
+   /* append writeConcern with w */
    mongoc_write_concern_set_w (wc, 1);
    BSON_ASSERT (mongoc_write_concern_append (wc, cmd));
 
