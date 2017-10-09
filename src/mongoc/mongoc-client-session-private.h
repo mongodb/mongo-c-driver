@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_SESSION_PRIVATE_H
-#define MONGOC_SESSION_PRIVATE_H
+#ifndef MONGOC_CLIENT_SESSION_PRIVATE_H
+#define MONGOC_CLIENT_SESSION_PRIVATE_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
@@ -46,4 +46,4 @@ _mongoc_client_session_new (mongoc_client_t *client,
                             const mongoc_session_opt_t *opts,
                             bson_error_t *error);
 
-#endif /* MONGOC_SESSION_PRIVATE_H */
+#endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

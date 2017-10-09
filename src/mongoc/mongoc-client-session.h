@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_SESSION_H
-#define MONGOC_SESSION_H
+#ifndef MONGOC_CLIENT_SESSION_H
+#define MONGOC_CLIENT_SESSION_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
@@ -66,4 +66,4 @@ mongoc_client_session_destroy (mongoc_client_session_t *uri);
 BSON_END_DECLS
 
 
-#endif /* MONGOC_SESSION_H */
+#endif /* MONGOC_CLIENT_SESSION_H */
