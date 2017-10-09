@@ -27,6 +27,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-host-list-private.h"
+#include "mongoc-trace-private.h"
 
 #include "utlist.h"
 
@@ -214,7 +215,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    BSON_ASSERT (uri);
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
-
+   topology->session_pool = NULL;
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
@@ -373,6 +374,10 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
+   while (topology->session_pool) {
+      DL_DELETE (topology->session_pool, topology->session_pool);
+   }
+
    mongoc_cond_destroy (&topology->cond_client);
    mongoc_cond_destroy (&topology->cond_server);
    mongoc_mutex_destroy (&topology->mutex);
@@ -1205,4 +1210,93 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
    mongoc_topology_description_update_cluster_time (&topology->description,
                                                     reply);
    mongoc_mutex_unlock (&topology->mutex);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_pop_server_session --
+ *
+ *       Internal function. Get a server session from the pool or create
+ *       one. On error, return NULL and fill out @error.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_server_session_t *
+_mongoc_topology_pop_server_session (mongoc_topology_t *topology,
+                                     bson_error_t *error)
+{
+   int64_t timeout;
+   mongoc_server_session_t *ss = NULL;
+
+   ENTRY;
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   timeout = topology->description.session_timeout_minutes;
+
+   while (topology->session_pool) {
+      ss = topology->session_pool;
+      DL_DELETE (topology->session_pool, ss);
+      if (_mongoc_server_session_timed_out (ss, timeout)) {
+         _mongoc_server_session_destroy (ss);
+         ss = NULL;
+      } else {
+         break;
+      }
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   if (!ss) {
+      ss = _mongoc_server_session_new (error);
+   }
+
+   RETURN (ss);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_push_server_session --
+ *
+ *       Internal function. Return a server session to the pool.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_push_server_session (mongoc_topology_t *topology,
+                                      mongoc_server_session_t *server_session)
+{
+   int64_t timeout;
+   mongoc_server_session_t *ss;
+
+   ENTRY;
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   timeout = topology->description.session_timeout_minutes;
+
+   /* start at back of queue and reap timed-out sessions */
+   while (topology->session_pool && topology->session_pool->prev) {
+      ss = topology->session_pool->prev;
+      if (_mongoc_server_session_timed_out (ss, timeout)) {
+         DL_DELETE (topology->session_pool, ss);
+         _mongoc_server_session_destroy (ss);
+      } else {
+         /* if ss is not timed out, sessions in front of it are ok too */
+         break;
+      }
+   }
+
+   if (_mongoc_server_session_timed_out (server_session, timeout)) {
+      _mongoc_server_session_destroy (server_session);
+   } else {
+      DL_PREPEND (topology->session_pool, server_session);
+   }
+   mongoc_mutex_unlock (&topology->mutex);
+
+   EXIT;
 }
