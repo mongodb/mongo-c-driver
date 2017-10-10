@@ -190,6 +190,7 @@ _test_last_write_date (bool pooled)
       client = mongoc_client_new_from_uri (uri);
       test_framework_set_ssl_opts (client);
    }
+   mongoc_uri_destroy (uri);
 
    collection = get_test_collection (client, "test_last_write_date");
    r = mongoc_collection_insert (

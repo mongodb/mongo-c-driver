@@ -1641,6 +1641,14 @@ test_index_w_write_concern ()
    ASSERT (bson_validate (&reply, 0, NULL));
    result = mongoc_collection_drop_index (collection, "hello_1", &error);
    ASSERT_OR_PRINT (result, error);
+   if (at_least_2) {
+      ASSERT (!bson_empty (&reply));
+   } else {
+      /* On very old versions of the server, create_index_with_write_concern
+       * will give an empty reply even if the call succeeds */
+      ASSERT (bson_empty (&reply));
+   }
+   bson_destroy (&reply);
 
    /* writeConcern that will result in writeConcernError */
    mongoc_write_concern_set_w (bad_wc, 99);
@@ -1668,15 +1676,14 @@ test_index_w_write_concern ()
          ASSERT (!error.code);
          ASSERT (!error.domain);
       }
+
+      if (at_least_2) {
+         ASSERT (!bson_empty (&reply));
+      } else {
+         ASSERT (bson_empty (&reply));
+      }
+      bson_destroy (&reply);
    }
-   if (at_least_2) {
-      ASSERT (!bson_empty (&reply));
-   } else {
-      /* On very old versions of the server, create_index_with_write_concern
-       * will give an empty reply even if the call succeeds */
-      ASSERT (bson_empty (&reply));
-   }
-   bson_destroy (&reply);
 
    /* Make sure it doesn't crash with a NULL reply or writeConcern */
    result = mongoc_collection_create_index_with_opts (
@@ -4190,6 +4197,7 @@ test_aggregate_secondary (void)
          client, mongoc_cursor_get_hint (cursor)));
    }
 
+   mongoc_read_prefs_destroy (pref);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

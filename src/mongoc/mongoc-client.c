@@ -1683,16 +1683,17 @@ mongoc_client_command_simple_with_server_id (
       RETURN (false);
    }
 
-   mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
-   parts.read_prefs = read_prefs;
-
    server_stream = mongoc_cluster_stream_for_server (
       &client->cluster, server_id, true /* reconnect ok */, error);
 
    if (server_stream) {
+      mongoc_cmd_parts_init (&parts, db_name, MONGOC_QUERY_NONE, command);
+      parts.read_prefs = read_prefs;
+
       ret = _mongoc_client_command_with_stream (
          client, &parts, server_stream, reply, error);
 
+      mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (server_stream);
       RETURN (ret);
    } else {
