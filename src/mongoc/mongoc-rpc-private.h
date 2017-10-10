@@ -42,6 +42,7 @@ typedef struct _mongoc_rpc_section_t {
       /* payload_type == 1 */
       struct {
          int32_t size;
+         uint32_t size_le;
          const char *identifier;
          const uint8_t *bson_documents;
       } sequence;

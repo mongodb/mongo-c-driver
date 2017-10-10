@@ -6286,9 +6286,8 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
-# Awaiting SERVER-31052
-#    - ".latest .openssl !.nosasl .server"
-#    - ".latest .nossl !.nosasl"
+    - ".latest .openssl !.nosasl .server"
+    - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
 #      # RHEL7.2  s390x is only supported by MongoDB 3.4+
@@ -6309,9 +6308,8 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
-# Awaiting SERVER-31052
-#    - ".latest .openssl !.nosasl .server"
-#    - ".latest .nossl !.nosasl"
+    - ".latest .openssl !.nosasl .server"
+    - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
@@ -6325,17 +6323,15 @@ buildvariants:
   - suse12-zseries-build
   - suse12-zseries-test
   tasks:
-# Awaiting SERVER-31052
-    - ".compression !.latest"
+    - ".compression"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
-# Awaiting SERVER-31052
-#    - ".latest .openssl !.nosasl .server"
-#    - ".latest .nossl !.nosasl"
+    - ".latest .openssl !.nosasl .server"
+    - ".latest .nossl !.nosasl"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # SUSE12 s390x is only supported by MongoDB 3.4+
