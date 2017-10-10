@@ -279,6 +279,7 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
    bson_destroy (&query);
    mongoc_find_and_modify_opts_destroy (opts);
    mongoc_collection_drop (collection, NULL);
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }

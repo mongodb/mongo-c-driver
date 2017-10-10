@@ -547,6 +547,8 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
  *
  * Side effects:
  *       @reply is set and should ALWAYS be released with bson_destroy().
+ *       mongoc_cmd_parts_cleanup will be always be called on parts. The
+ *       caller should *not* call cleanup on the parts.
  *
  *--------------------------------------------------------------------------
  */
@@ -558,14 +560,18 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   bool ret;
+
    if (!mongoc_cmd_parts_assemble (parts, server_stream, error)) {
       _mongoc_bson_init_if_set (reply);
       mongoc_cmd_parts_cleanup (parts);
       return false;
    }
 
-   return mongoc_cluster_run_command_private (
+   ret = mongoc_cluster_run_command_private (
       cluster, &parts->assembled, reply, error);
+   mongoc_cmd_parts_cleanup (parts);
+   return ret;
 }
 
 /*
@@ -640,7 +646,6 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                       address);
    }
 
-   mongoc_cmd_parts_cleanup (&parts);
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (sd);
@@ -854,7 +859,6 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     * Execute the authenticate command. mongoc_cluster_run_command_private
     * checks for {ok: 1} in the response.
     */
-   mongoc_cmd_parts_cleanup (&parts);
    mongoc_cmd_parts_init (&parts, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
@@ -866,7 +870,6 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    }
 
    mongoc_server_stream_cleanup (server_stream);
-   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    bson_destroy (&reply);
 
@@ -952,7 +955,6 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
       error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
    }
 
-   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&b);
    bson_destroy (&reply);
 
@@ -1028,7 +1030,6 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
       bson_free (username_from_subject);
    }
 
-   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&cmd);
    bson_destroy (&reply);
 
@@ -1124,7 +1125,6 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
       }
       mongoc_server_stream_cleanup (server_stream);
 
-      mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&cmd);
 
       if (bson_iter_init_find (&iter, &reply, "done") &&
@@ -2199,7 +2199,6 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          cluster, server_stream, &parts, NULL, &error);
 
       mongoc_server_stream_cleanup (server_stream);
-      mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&command);
 
       if (!r) {
@@ -2460,7 +2459,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
 {
    mongoc_rpc_section_t section[2];
    mongoc_buffer_t buffer;
-   bson_t reply_local;
+   bson_t reply_local; /* only statically initialized */
    char *output = NULL;
    mongoc_rpc_t rpc;
    int32_t msg_len;
@@ -2473,7 +2472,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Empty command document");
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
    if (cluster->client->in_exhaust) {
@@ -2481,7 +2480,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
                       "A cursor derived from this client is in exhaust.");
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
@@ -2522,7 +2521,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       if (compressor_id != -1) {
          output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
          if (output == NULL) {
-            bson_init (reply);
+            _mongoc_bson_init_if_set (reply);
+            _mongoc_buffer_destroy (&buffer);
             return false;
          }
       }
@@ -2536,7 +2536,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
+      _mongoc_buffer_destroy (&buffer);
       return false;
    }
 
@@ -2546,7 +2547,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
+      _mongoc_buffer_destroy (&buffer);
       return false;
    }
 
@@ -2564,7 +2566,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
+      _mongoc_buffer_destroy (&buffer);
       return false;
    }
 
@@ -2577,7 +2580,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
+      _mongoc_buffer_destroy (&buffer);
       return false;
    }
 
@@ -2588,7 +2592,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Malformed message from server");
       bson_free (output);
-      bson_init (reply);
+      _mongoc_bson_init_if_set (reply);
+      _mongoc_buffer_destroy (&buffer);
       return false;
    }
    if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
@@ -2604,7 +2609,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
          bson_free (output);
-         bson_init (reply);
+         _mongoc_bson_init_if_set (reply);
+         _mongoc_buffer_destroy (&buffer);
          return false;
       }
    }

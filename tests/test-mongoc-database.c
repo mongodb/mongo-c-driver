@@ -70,6 +70,7 @@ test_create_with_write_concern (void)
    ASSERT (!error.domain);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+   mongoc_collection_destroy (collection);
 
    /* writeConcern that results in writeConcernError */
    bad_wc->wtimeout = 0;
@@ -77,7 +78,6 @@ test_create_with_write_concern (void)
    if (!test_framework_is_mongos ()) { /* skip if sharded */
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      mongoc_collection_destroy (collection);
       collection =
          mongoc_database_create_collection (database, name, opts, &error);
 
@@ -448,8 +448,8 @@ test_drop (void)
          ASSERT_OR_PRINT (r, error);
          ASSERT (!error.code);
          ASSERT (!error.domain);
-         mongoc_database_destroy (database);
       }
+      mongoc_database_destroy (database);
    }
 
    bson_free (dbname);
