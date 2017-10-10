@@ -4620,10 +4620,13 @@ _test_update_and_replace (bool is_replace, bool is_multi)
    test_update_and_replace_ctx_t ctx;
    mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
 
-   mongoc_write_concern_set_wmajority (wc, 1000);
-   mongoc_write_concern_set_wmajority (wc2, 500);
+   /* Give wc and wc2 different j values so we can distinguish them but make
+    * sure they have w:1 so the writes are committed when we check results */
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_set_w (wc2, 1);
+   mongoc_write_concern_set_journal (wc2, true);
 
-   /* Set wc to majority so writes are committed when we check results */
    mongoc_collection_set_write_concern (coll, wc);
    mongoc_apm_set_command_started_cb (callbacks,
                                       _test_update_and_replace_command_start);
@@ -4641,8 +4644,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
 
    /* Test a simple update with bypassDocumentValidation */
    ctx.expected_command = "{'update': 'coll', 'bypassDocumentValidation': "
-                          "true, 'writeConcern': {'w': 'majority', 'wtimeout': "
-                          "1000}}";
+                          "true, 'writeConcern': {'w': 1, 'j': false}}";
    ret = mongoc_collection_insert (
       coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, &err);
    ASSERT_OR_PRINT (ret, err);
@@ -4663,7 +4665,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
 
    /* Test passing an upsert */
    ctx.expected_command =
-      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 1000}}";
+      "{'update': 'coll', 'writeConcern': {'w': 1, 'j': false}}";
    update = is_replace ? tmp_bson ("{'b': 'TEST'}")
                        : tmp_bson ("{'$set': {'b': 'TEST'}}");
    ret = fn (coll,
@@ -4704,7 +4706,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
     */
    mongoc_write_concern_append (wc2, &opts_with_wc);
    ctx.expected_command =
-      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 500}}";
+      "{'update': 'coll', 'writeConcern': {'w': 1, 'j': true}}";
    update =
       is_replace ? tmp_bson ("{'b': 0}") : tmp_bson ("{'$set': {'b': 0}}");
    ret =
@@ -4719,7 +4721,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
 
    /* Test passing NULL for opts, reply, and error */
    ctx.expected_command =
-      "{'update': 'coll', 'writeConcern': {'w': 'majority', 'wtimeout': 1000}}";
+      "{'update': 'coll', 'writeConcern': {'w': 1, 'j': false}}";
    update =
       is_replace ? tmp_bson ("{'b': 1}") : tmp_bson ("{'$set': {'b': 1}}");
    ret = fn (coll, tmp_bson ("{'_id': 2}"), update, NULL, NULL, NULL);
