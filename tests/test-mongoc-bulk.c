@@ -2801,10 +2801,12 @@ _test_numerous (bool ordered)
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
-   int n_docs = 4100; /* exceeds max write batch size of 1000 */
+   int n_docs;
    bson_t doc;
    bson_iter_t iter;
    int i;
+
+   n_docs = 4 * (int) test_framework_max_write_batch_size () + 100;
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
@@ -2884,7 +2886,7 @@ test_numerous_unordered (void)
 
 
 static void
-test_bulk_edge_over_1000 (void)
+test_bulk_split (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -2893,19 +2895,25 @@ test_bulk_edge_over_1000 (void)
    bson_iter_t iter, error_iter, indexnum;
    bson_t doc, result;
    bson_error_t error;
+   int n_docs;
    int i;
+   uint32_t r;
+
+   /* ensure we need two batches */
+   n_docs = (int) test_framework_max_write_batch_size () + 10;
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
 
-   collection = get_test_collection (client, "OVER_1000");
+   collection = get_test_collection (client, "split");
    BSON_ASSERT (collection);
 
    mongoc_write_concern_set_w (wc, 1);
 
    bulk_op = mongoc_collection_create_bulk_operation (collection, false, wc);
 
-   for (i = 0; i < 1010; i += 3) {
+   /* if n_docs is 100,010 insert 3337 docs with _ids 0, 3, 6, ..., 100,008 */
+   for (i = 0; i < n_docs; i += 3) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
 
@@ -2914,12 +2922,15 @@ test_bulk_edge_over_1000 (void)
       bson_destroy (&doc);
    }
 
-   mongoc_bulk_operation_execute (bulk_op, NULL, &error);
+   r = mongoc_bulk_operation_execute (bulk_op, NULL, &error); /* succeed */
+   ASSERT_OR_PRINT (r, error);
 
    mongoc_bulk_operation_destroy (bulk_op);
 
+   /* ordered false so we continue on error */
    bulk_op = mongoc_collection_create_bulk_operation (collection, false, wc);
-   for (i = 0; i < 1010; i++) {
+   /* insert n_docs documents with _ids 0, 1, 2, 3, ..., 100,008 */
+   for (i = 0; i < n_docs; i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
 
@@ -2928,13 +2939,21 @@ test_bulk_edge_over_1000 (void)
       bson_destroy (&doc);
    }
 
-   mongoc_bulk_operation_execute (bulk_op, &result, &error);
+   /* two thirds of the docs succeed, but _ids 0, 3, 6, ... are duplicates */
+   r = mongoc_bulk_operation_execute (bulk_op, &result, &error);
+   BSON_ASSERT (!r);
 
+   /* all 100,010 docs were inserted, either by the first or second bulk op */
+   ASSERT_COUNT (n_docs, collection);
+
+   /* result like {writeErrors: [{index: i, code: n, errmsg: ''}, ... ]} */
    bson_iter_init_find (&iter, &result, "writeErrors");
    BSON_ASSERT (bson_iter_recurse (&iter, &error_iter));
    BSON_ASSERT (bson_iter_next (&error_iter));
 
-   for (i = 0; i < 1010; i += 3) {
+   /* we expect duplicate key errs about _ids 0, 3, 6, ..., 100,008
+    * and the error index should equal the _id */
+   for (i = 0; i < n_docs; i += 3) {
       BSON_ASSERT (bson_iter_recurse (&error_iter, &indexnum));
       BSON_ASSERT (bson_iter_find (&indexnum, "index"));
       if (bson_iter_int32 (&indexnum) != i) {
@@ -3341,7 +3360,7 @@ typedef enum { HANGUP, SERVER_ERROR, ERR_TYPE_LAST } err_type_t;
 
 
 static void
-test_bulk_write_concern_over_1000 (void)
+test_bulk_write_concern_split (void)
 {
    mongoc_client_t *client;
    mongoc_bulk_operation_t *bulk;
@@ -3354,6 +3373,9 @@ test_bulk_write_concern_over_1000 (void)
    bson_t reply;
    bson_iter_t iter;
    bool r;
+   int num_docs;
+
+   num_docs = (int) test_framework_max_write_batch_size () + 10;
 
    client = test_framework_client_new ();
    BSON_ASSERT (client);
@@ -3362,7 +3384,7 @@ test_bulk_write_concern_over_1000 (void)
    mongoc_write_concern_set_w (write_concern, 1);
    mongoc_client_set_write_concern (client, write_concern);
 
-   str = gen_collection_name ("bulk_write_concern_over_1000");
+   str = gen_collection_name ("bulk_write_concern_split");
    bulk = mongoc_bulk_operation_new (true);
    mongoc_bulk_operation_set_database (bulk, "test");
    mongoc_bulk_operation_set_collection (bulk, str);
@@ -3370,7 +3392,7 @@ test_bulk_write_concern_over_1000 (void)
    mongoc_bulk_operation_set_write_concern (bulk, write_concern);
    mongoc_bulk_operation_set_client (bulk, client);
 
-   for (i = 0; i < 1010; i += 3) {
+   for (i = 0; i < num_docs; i += 3) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
 
@@ -4099,11 +4121,10 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
    TestSuite_AddLive (
       suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/over_1000", test_bulk_edge_over_1000);
+   TestSuite_AddLive (suite, "/BulkOperation/split", test_bulk_split);
    TestSuite_AddLive (suite,
-                      "/BulkOperation/write_concern/over_1000",
-                      test_bulk_write_concern_over_1000);
+                      "/BulkOperation/write_concern/split",
+                      test_bulk_write_concern_split);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/secondary",
                                 test_hint_single_command_secondary);
