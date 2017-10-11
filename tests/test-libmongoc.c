@@ -1726,6 +1726,27 @@ test_framework_max_wire_version_at_least (int version)
    return at_least;
 }
 
+
+int64_t
+test_framework_max_write_batch_size (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   int64_t size;
+
+   call_ismaster (&reply);
+
+   if (bson_iter_init_find (&iter, &reply, "maxWriteBatchSize")) {
+      size = bson_iter_as_int64 (&iter);
+   } else {
+      size = 1000;
+   }
+
+   bson_destroy (&reply);
+
+   return size;
+}
+
 #define N_SERVER_VERSION_PARTS 4
 
 static server_version_t

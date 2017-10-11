@@ -3173,6 +3173,7 @@ test_bulk_max_msg_size (void)
 static void
 test_bulk_max_batch_size (void)
 {
+   int64_t max_batch;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    mongoc_write_concern_t *wc;
@@ -3189,6 +3190,8 @@ test_bulk_max_batch_size (void)
       return;
    }
 
+   max_batch = test_framework_max_write_batch_size ();
+
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
    client = test_framework_client_new ();
@@ -3200,7 +3203,7 @@ test_bulk_max_batch_size (void)
 
    /* {{{ Insert 100 000 documents, in one bulk */
    bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
-   for (i = 1; i <= 100000; i++) {
+   for (i = 1; i <= max_batch; i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
       mongoc_bulk_operation_insert (bulk, &doc);
@@ -3218,7 +3221,7 @@ test_bulk_max_batch_size (void)
 
    /* {{{ Insert 100 001 documents, in two bulks */
    bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
-   for (i = 1; i <= 100001; i++) {
+   for (i = 1; i <= (max_batch + 1); i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
       mongoc_bulk_operation_insert (bulk, &doc);
@@ -3236,7 +3239,7 @@ test_bulk_max_batch_size (void)
 
    /* {{{ Insert 200 000 documents, in two bulks */
    bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
-   for (i = 1; i <= 200000; i++) {
+   for (i = 1; i <= 2 * max_batch; i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
       mongoc_bulk_operation_insert (bulk, &doc);
@@ -3254,7 +3257,7 @@ test_bulk_max_batch_size (void)
 
    /* {{{ Insert 200 001 documents, in 3 bulks */
    bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
-   for (i = 1; i <= 200001; i++) {
+   for (i = 1; i <= (2 * max_batch + 1); i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
       mongoc_bulk_operation_insert (bulk, &doc);

@@ -102,6 +102,8 @@ bool
 test_framework_clustertime_supported (void);
 bool
 test_framework_max_wire_version_at_least (int version);
+int64_t
+test_framework_max_write_batch_size (void);
 
 int
 test_framework_skip_if_auth (void);
