@@ -428,7 +428,6 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       26 + parts.assembled.command->len + gCommandFieldLens[command->type] + 1;
 
    do {
-      len = 0;
       memcpy (&len,
               command->payload.data + payload_batch_size + payload_total_offset,
               4);
@@ -465,7 +464,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       }
 
       if (ship_it) {
-         /* Seek passed the document offset we have already sent */
+         /* Seek past the document offset we have already sent */
          parts.assembled.payload = command->payload.data + payload_total_offset;
          /* Only send the documents up to this size */
          parts.assembled.payload_size = payload_batch_size;
@@ -478,19 +477,18 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          payload_total_offset += payload_batch_size;
          payload_batch_size = 0;
 
-         /* Result merge needs to know the absolute index for a document
-          * so it can rewrite the error message which contains the relative
-          * document index per batch
-          */
-         document_count = 0;
-
          if (!ret) {
             result->failed = true;
             result->must_stop = true;
          }
 
+         /* Result merge needs to know the absolute index for a document
+          * so it can rewrite the error message which contains the relative
+          * document index per batch
+          */
          _mongoc_write_result_merge (result, command, &reply, index_offset);
          index_offset += document_count;
+         document_count = 0;
          bson_destroy (&reply);
       }
       /* While we have more documents to write */
