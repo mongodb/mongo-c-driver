@@ -2,6 +2,4 @@ Start a session with :symbol:`mongoc_client_start_session`, use the session for 
 
 To configure causal consistency, before starting a session create a :symbol:`mongoc_session_opt_t` with :symbol:`mongoc_session_opts_new()` and call :symbol:`mongoc_session_opts_set_causal_consistency()`, then free the struct with :symbol:`mongoc_session_opts_destroy`.
 
-.. the timeout warning is mandated by the Driver Sessions Spec
-
-A :symbol:`mongoc_client_session_t` must be used by only one thread at a time. Due to session pooling, :symbol:`mongoc_client_start_session` may return a session that has been idle for some time and is about to be closed after its idle timeout. Use the session within one minute of acquiring it to refresh the session and avoid a timeout.
+A :symbol:`mongoc_client_session_t` must be used by only one thread at a time.

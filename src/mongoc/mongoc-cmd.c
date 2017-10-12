@@ -296,10 +296,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
    if (parts->session) {
       bson_append_document (
-         &parts->assembled_body,
-         "lsid",
-         4,
-         mongoc_client_session_get_session_id (parts->session));
+         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
    if (!bson_empty (&parts->extra)) {
@@ -360,10 +357,7 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
    if (parts->session) {
       _mongoc_cmd_parts_ensure_copied (parts);
       bson_append_document (
-         &parts->assembled_body,
-         "lsid",
-         4,
-         mongoc_client_session_get_session_id (parts->session));
+         &parts->assembled_body, "lsid", 4, &parts->session->lsid);
    }
 
    EXIT;
@@ -465,10 +459,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       if (parts->session) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (
-            &parts->assembled_body,
-            "lsid",
-            4,
-            mongoc_client_session_get_session_id (parts->session));
+            &parts->assembled_body, "lsid", 4, &parts->session->lsid);
       }
 
       _mongoc_cmd_parts_add_cluster_time (parts, server_stream);

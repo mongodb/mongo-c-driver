@@ -38,7 +38,7 @@
 #include "mongoc-stream.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-client-session-private.h"
+
 
 BSON_BEGIN_DECLS
 
@@ -161,14 +161,6 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   mongoc_write_concern_t *default_wc,
                                   bson_t *reply,
                                   bson_error_t *error);
-
-mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client,
-                                   bson_error_t *error);
-
-void
-_mongoc_client_push_server_session (mongoc_client_t *client,
-                                    mongoc_server_session_t *server_session);
 
 BSON_END_DECLS
 

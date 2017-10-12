@@ -2323,17 +2323,3 @@ mongoc_client_set_appname (mongoc_client_t *client, const char *appname)
 
    return _mongoc_topology_set_appname (client->topology, appname);
 }
-
-mongoc_server_session_t *
-_mongoc_client_pop_server_session (mongoc_client_t *client, bson_error_t *error)
-{
-   return _mongoc_topology_pop_server_session (client->topology, error);
-}
-
-void
-_mongoc_client_push_server_session (mongoc_client_t *client,
-                                    mongoc_server_session_t *server_session)
-{
-   return _mongoc_topology_push_server_session (client->topology,
-                                                server_session);
-}

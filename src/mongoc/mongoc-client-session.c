@@ -94,8 +94,7 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 
 
 static bool
-_mongoc_server_session_uuid(uint8_t *data /* OUT */,
-                            bson_error_t *error)
+_mongoc_client_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
 {
 #ifdef MONGOC_ENABLE_CRYPTO
    /* https://tools.ietf.org/html/rfc4122#page-14
@@ -136,85 +135,28 @@ _mongoc_server_session_uuid(uint8_t *data /* OUT */,
 }
 
 
-mongoc_server_session_t *
-_mongoc_server_session_new (bson_error_t *error)
-{
-   uint8_t uuid_data[16];
-   mongoc_server_session_t *s;
-
-   ENTRY;
-
-   if (!_mongoc_server_session_uuid (uuid_data, error)) {
-      RETURN (NULL);
-   }
-
-   s = bson_malloc0 (sizeof (mongoc_server_session_t));
-   s->last_used_usec = -1;
-   s->prev = NULL;
-   s->next = NULL;
-   bson_init (&s->lsid);
-   bson_append_binary (
-      &s->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
-
-   RETURN (s);
-}
-
-
-bool
-_mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
-                                  int64_t session_timeout_minutes)
-{
-   int64_t timeout_usec;
-   const int64_t minute_to_usec = 60 * 1000 * 1000;
-
-   ENTRY;
-
-   if (session_timeout_minutes == -1) {
-      /* not connected right now; keep the session */
-      return false;
-   }
-
-   /* Driver Sessions Spec: if a session has less than one minute left before
-    * becoming stale, discard it */
-   timeout_usec = server_session->last_used_usec
-                  + session_timeout_minutes * minute_to_usec;
-
-   RETURN (timeout_usec - bson_get_monotonic_time ()) < 1 * minute_to_usec;
-}
-
-
-void
-_mongoc_server_session_destroy (mongoc_server_session_t *server_session)
-{
-   ENTRY;
-
-   bson_destroy (&server_session->lsid);
-   bson_free (server_session);
-
-   EXIT;
-}
-
-
 mongoc_client_session_t *
 _mongoc_client_session_new (mongoc_client_t *client,
                             const mongoc_session_opt_t *opts,
                             bson_error_t *error)
 {
-   mongoc_server_session_t *server_session;
    mongoc_client_session_t *session;
+   uint8_t uuid_data[16];
 
    ENTRY;
 
    BSON_ASSERT (client);
 
-   server_session = _mongoc_client_pop_server_session (client, error);
-   if (!server_session) {
+   if (!_mongoc_client_session_uuid (uuid_data, error)) {
       RETURN (NULL);
    }
 
    session = bson_malloc0 (sizeof (mongoc_client_session_t));
    session->client = client;
-   session->server_session = server_session;
+
+   bson_init (&session->lsid);
+   bson_append_binary (
+      &session->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 
    if (opts) {
       _mongoc_session_opts_copy (opts, &session->opts);
@@ -249,7 +191,7 @@ mongoc_client_session_get_session_id (const mongoc_client_session_t *session)
 {
    BSON_ASSERT (session);
 
-   return &session->server_session->lsid;
+   return &session->lsid;
 }
 
 
@@ -260,9 +202,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
 
    BSON_ASSERT (session);
 
-   _mongoc_client_push_server_session (session->client,
-                                       session->server_session);
-
+   bson_destroy (&session->lsid);
    bson_free (session);
 
    EXIT;
