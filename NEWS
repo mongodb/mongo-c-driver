@@ -1,3 +1,25 @@
+mongo-c-driver 1.8.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.8.1. This release fixes the
+following bugs:
+
+  * Remove a syntax error in the configure script that affects some shells.
+  * The configure script respects --with-zlib=system and --with-snappy=system.
+  * The internal mongoc_server_description_t struct is properly reinitialized
+    after a network error.
+  * Fix the encoding of this NEWS file.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.8.0
 ====================
 

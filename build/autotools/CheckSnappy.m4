@@ -1,27 +1,36 @@
 # If --with-snappy=auto, determine if there is a system installed snappy
 # greater than our required version.
-AS_IF([test "x${with_snappy}" = xauto], [
-      PKG_CHECK_MODULES(SNAPPY, [snappy],
-         [with_snappy=system],
-         [
-            # If we didn't find snappy with pkgconfig, use bundled
-            # unless we find it manually
-            with_snappy=bundled
-            AC_CHECK_LIB([snappy],[snappy_uncompress],
-               [AC_CHECK_HEADER([snappy-c.h],
-                  [
-                     with_snappy=system
-                     SNAPPY_LIBS=-lsnappy
-                  ]
-               )]
-            )
-         ]
-      )
-   ]
-)
+found_snappy=no
 
-AS_IF([test "x${SNAPPY_LIBS}" = "x" -a "x$with_snappy" = "xsystem"],
-      [AC_MSG_ERROR([Cannot find system installed snappy. try --with-snappy=bundled])])
+AS_IF([test "x${with_snappy}" = xauto -o "x${with_snappy}" = xsystem], [
+   PKG_CHECK_MODULES(SNAPPY, [snappy], [
+      found_snappy=yes
+   ], [
+      # If we didn't find snappy with pkgconfig, search manually. If that
+      # fails and with-snappy=system, fail, or if with-snappy=auto, use
+      # bundled.
+      AC_CHECK_LIB([snappy], [snappy_uncompress], [
+         AC_CHECK_HEADER([snappy-c.h], [
+            found_snappy=yes
+         ])
+      ])
+   ])
+])
+
+AS_IF([test "x${found_snappy}" = xyes], [
+   with_snappy=system
+   SNAPPY_LIBS=-lsnappy
+], [
+   # snappy not found
+   AS_IF([test "x${with_snappy}" = xauto -o "x${with_snappy}" = xbundled], [
+      with_snappy=bundled
+   ], [
+      AS_IF([test "x${with_snappy}" = xno ], [], [
+         # snappy not found, with-snappy=system
+         AC_MSG_ERROR([Cannot find system installed snappy. try --with-snappy=bundled])
+      ])
+   ])
+])
 
 # If we are using the bundled snappy, recurse into its configure.
 AS_IF([test "x${with_snappy}" = xbundled],[
@@ -83,7 +92,7 @@ AS_IF([test "x${with_snappy}" = xbundled],[
    SNAPPY_CFLAGS="-Isrc/snappy-1.1.3"
 ])
 
-if test "x$with_snappy" != "xno"; then
+if test "x${with_snappy}" != "xno"; then
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 1)
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_SNAPPY, 0)

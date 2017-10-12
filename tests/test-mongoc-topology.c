@@ -341,6 +341,11 @@ _test_topology_invalidate_server (bool pooled)
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
    BSON_ASSERT (sd->error.domain != 0);
    ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
+   BSON_ASSERT (bson_empty (&sd->last_is_master));
+   BSON_ASSERT (bson_empty (&sd->hosts));
+   BSON_ASSERT (bson_empty (&sd->passives));
+   BSON_ASSERT (bson_empty (&sd->arbiters));
+   BSON_ASSERT (bson_empty (&sd->compressors));
 
    mongoc_server_stream_cleanup (server_stream);
 
@@ -1327,6 +1332,39 @@ test_ismaster_retry_pooled_timeout_fail (void)
 }
 
 
+/* ensure there's no invalid access if a null bson_error_t pointer is passed
+ * to mongoc_topology_compatible () */
+static void
+test_compatible_null_error_pointer (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_topology_description_t *td;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (1); /* incompatible */
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   td = &client->topology->description;
+
+   /* trigger connection, fails due to incompatibility */
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "");
+
+   /* null error pointer is ok */
+   ASSERT (!mongoc_topology_compatible (
+      td, NULL /* read prefs */, NULL /* error */));
+
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -1433,4 +1471,7 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout/fail",
                                 test_ismaster_retry_pooled_timeout_fail);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/compatible_null_error_pointer",
+                                test_compatible_null_error_pointer);
 }
