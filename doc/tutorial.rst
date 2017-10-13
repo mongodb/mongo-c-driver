@@ -540,7 +540,7 @@ To look for a specific document, add a specifier to ``query``. This example adds
 Updating a Document
 ^^^^^^^^^^^^^^^^^^^
 
-This code snippet gives an example of using :doc:`mongoc_collection_update() <mongoc_collection_update>` to update the fields of a document.
+This code snippet gives an example of using :doc:`mongoc_collection_update_one_with_opts() <mongoc_collection_update_one_with_opts>` to update the fields of a document.
 
 Using the "mydb" database, the following example inserts an example document into the "mycoll" collection. Then, using its ``_id`` field, the document is updated with different values and a new field.
 
@@ -586,8 +586,8 @@ Using the "mydb" database, the following example inserts an example document int
                         BCON_BOOL (true),
                         "}");
 
-     if (!mongoc_collection_update (
-            collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
+     if (!mongoc_collection_update_one_with_opts (
+            collection, query, update, NULL, NULL, &error)) {
         fprintf (stderr, "%s\n", error.message);
         goto fail;
      }
