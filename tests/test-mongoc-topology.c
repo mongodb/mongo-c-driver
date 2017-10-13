@@ -345,7 +345,9 @@ _test_topology_invalidate_server (bool pooled)
    BSON_ASSERT (bson_empty (&sd->hosts));
    BSON_ASSERT (bson_empty (&sd->passives));
    BSON_ASSERT (bson_empty (&sd->arbiters));
+#ifdef MONGOC_ENABLE_COMPRESSION
    BSON_ASSERT (bson_empty (&sd->compressors));
+#endif
 
    mongoc_server_stream_cleanup (server_stream);
 
