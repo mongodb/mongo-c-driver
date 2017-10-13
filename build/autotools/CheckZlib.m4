@@ -15,6 +15,10 @@ AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
          ])
       ])
    ])
+], [
+   AS_IF([test "x${with_zlib}" != xbundled -a "x${with_zlib}" != xno], [
+      AC_MSG_ERROR([Invalid --with-zlib option: must be system, bundled, auto, or no.])
+   ])
 ])
 
 AS_IF([test "x${found_zlib}" = "xyes"], [
