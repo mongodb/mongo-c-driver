@@ -215,10 +215,14 @@ $SCAN_BUILD make all
 ulimit -c unlimited || true
 
 # Write stderr to error.log and to console.
-mkfifo pipe
-tee error.log < pipe &
-$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
-rm pipe
+mkfifo pipe || true
+if [ -e pipe ]; then
+   tee error.log < pipe &
+   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
+   rm pipe
+else
+   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
+fi
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then
