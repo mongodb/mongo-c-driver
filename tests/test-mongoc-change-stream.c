@@ -286,6 +286,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    mongoc_client_t *client;
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
+   bson_error_t error;
    test_resume_token_ctx_t ctx = {0};
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
@@ -307,19 +308,20 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    stream = mongoc_collection_watch (
       coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
    ASSERT (stream);
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
    mongoc_write_concern_set_wmajority (wc, 1000);
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 0}"), wc, NULL));
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 0}"), wc, &error), error);
 
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, NULL));
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, &error), error);
 
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, NULL));
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, &error), error);
 
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
@@ -355,7 +357,8 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* There are no docs left. But the next call should still keep the same
     * resume token */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
    ASSERT (!next_doc);
    ASSERT (!bson_empty (&stream->resume_token));
    ASSERT (bson_compare (&stream->resume_token, &doc2_rt) == 0);
