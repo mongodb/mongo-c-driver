@@ -110,6 +110,7 @@ typedef enum {
 } mongoc_command_mode_t;
 
 
+
 BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 mongoc_host_list_t *
