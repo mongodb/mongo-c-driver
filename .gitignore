@@ -26,12 +26,14 @@ depcomp
 .dirstamp
 .DS_Store
 echo-server
+example-collection-watch
 example-command-monitoring
 example-command-with-opts
 example-create-indexes
 example-client
 example-pool
 example-scram
+example-update
 example-gridfs
 example-matcher
 example-session
