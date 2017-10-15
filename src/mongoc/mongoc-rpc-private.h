@@ -85,7 +85,6 @@ typedef struct _mongoc_rpc_section_t {
 #include "op-header.def"
 #include "op-insert.def"
 #include "op-kill-cursors.def"
-#include "op-msg.def"
 #include "op-query.def"
 #include "op-reply.def"
 #include "op-reply-header.def"
@@ -94,6 +93,7 @@ typedef struct _mongoc_rpc_section_t {
 /* restore default packing */
 #pragma pack()
 
+#include "op-msg.def"
 
 typedef union {
    mongoc_rpc_delete_t delete_;
