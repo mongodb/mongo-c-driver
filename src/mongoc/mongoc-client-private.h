@@ -109,9 +109,7 @@ typedef enum {
    MONGOC_CMD_RW = 3,
 } mongoc_command_mode_t;
 
-
-
-BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
+BSON_STATIC_ASSERT2 (mongoc_cmd_rw, MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 mongoc_host_list_t *
 _mongoc_client_get_srv (const char *service, bson_error_t *error);

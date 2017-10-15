@@ -110,10 +110,12 @@ typedef union {
 } mongoc_rpc_t;
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_rpc_header_t) == 16);
-BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
-                    offsetof (mongoc_rpc_reply_t, opcode));
-BSON_STATIC_ASSERT (sizeof (mongoc_rpc_reply_header_t) == 36);
+BSON_STATIC_ASSERT2 (sizeof_rpc_header, sizeof (mongoc_rpc_header_t) == 16);
+BSON_STATIC_ASSERT2 (offsetof_rpc_header,
+                     offsetof (mongoc_rpc_header_t, opcode) ==
+                     offsetof (mongoc_rpc_reply_t, opcode));
+BSON_STATIC_ASSERT2 (sizeof_reply_header,
+                     sizeof (mongoc_rpc_reply_header_t) == 36);
 
 
 #undef RPC

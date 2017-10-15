@@ -40,7 +40,8 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_counter_info_t) == 128);
+BSON_STATIC_ASSERT2 (sizeof_counter_info_t,
+                     sizeof (mongoc_counter_info_t) == 128);
 
 
 #pragma pack(1)
@@ -55,7 +56,7 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_counters_t) == 64);
+BSON_STATIC_ASSERT2 (sizeof_counters_t, sizeof (mongoc_counters_t) == 64);
 
 
 typedef struct {
@@ -63,7 +64,8 @@ typedef struct {
 } mongoc_counter_slots_t;
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_counter_slots_t) == 64);
+BSON_STATIC_ASSERT2 (sizeof_counter_slots,
+                     sizeof (mongoc_counter_slots_t) == 64);
 
 
 typedef struct {

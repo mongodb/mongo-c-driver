@@ -45,7 +45,7 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_counter_info_t) == 128);
+BSON_STATIC_ASSERT2 (counter_info_t, sizeof (mongoc_counter_info_t) == 128);
 
 
 #pragma pack(1)
@@ -60,7 +60,7 @@ typedef struct {
 #pragma pack()
 
 
-BSON_STATIC_ASSERT (sizeof (mongoc_counters_t) == 64);
+BSON_STATIC_ASSERT2 (counters_t, sizeof (mongoc_counters_t) == 64);
 
 static void *gCounterFallback = NULL;
 
