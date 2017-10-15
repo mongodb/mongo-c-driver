@@ -41,8 +41,7 @@ if (WIN32 AND ENABLE_SNAPPY STREQUAL "AUTO")
    project (libmongoc C CXX)
    set (ENABLE_SNAPPY "bundled")
 else ()
-   project (libmongoc C)
-   set (ENABLE_SNAPPY "")
+   project (libmongoc C CXX)
 endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
@@ -353,6 +352,50 @@ if (ENABLE_TRACING)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
 endif ()
 
+set (MONGOC_INTERNAL_INCLUDE_DIRS "")
+
+if (ENABLE_SNAPPY STREQUAL "bundled")
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
+   include(FindSnappy)
+endif ()
+
+if (ENABLE_ZLIB STREQUAL "bundled")
+   message (STATUS "Enabling zlib compression (bundled)")
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
+   set (SOURCES ${SOURCES}
+      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
+      )
+   configure_file (
+      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   )
+
+   list (
+      APPEND
+      MONGOC_INTERNAL_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/zlib-1.2.11"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
+   )
+endif ()
+
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -386,7 +429,7 @@ if (APPLE)
    add_definitions(-Wno-deprecated-declarations)
 endif()
 
-set (SOURCES
+set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async.c
@@ -583,50 +626,6 @@ else()
    message (STATUS "SASL disabled")
 endif()
 
-
-set (MONGOC_INTERNAL_INCLUDE_DIRS "")
-
-if (ENABLE_SNAPPY STREQUAL "bundled")
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
-   include(FindSnappy)
-endif ()
-
-if (ENABLE_ZLIB STREQUAL "bundled")
-   message (STATUS "Enabling zlib compression (bundled)")
-   check_include_files ("unistd.h" HAVE_UNISTD_H)
-   check_include_files ("stdarg.h" HAVE_STDARG_H)
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
-   set (SOURCES ${SOURCES}
-      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
-   )
-   configure_file (
-      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
-   )
-
-   list (
-      APPEND
-      MONGOC_INTERNAL_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
-   )
-endif ()
 
 set(THREADS_PREFER_PTHREAD_FLAG 1)
 find_package (Threads REQUIRED)
