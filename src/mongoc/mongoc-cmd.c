@@ -425,8 +425,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       if (parts->session) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (
-            &parts->assembled_body, "lsid", 4, &parts->session->lsid);
+         bson_append_document (&parts->assembled_body,
+                               "lsid",
+                               4,
+                               mongoc_client_session_get_lsid (parts->session));
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {

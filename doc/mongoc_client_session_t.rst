@@ -28,5 +28,5 @@ Example
 
     mongoc_client_session_get_client
     mongoc_client_session_get_opts
-    mongoc_client_session_get_session_id
+    mongoc_client_session_get_lsid
     mongoc_client_session_destroy

@@ -98,6 +98,8 @@ test_framework_is_replset (void);
 bool
 test_framework_server_is_secondary (mongoc_client_t *client,
                                     uint32_t server_id);
+int64_t
+test_framework_session_timeout_minutes (void);
 bool
 test_framework_clustertime_supported (void);
 bool
@@ -109,6 +111,12 @@ int
 test_framework_skip_if_auth (void);
 int
 test_framework_skip_if_no_auth (void);
+int
+test_framework_skip_if_no_sessions (void);
+int
+test_framework_skip_if_crypto (void);
+int
+test_framework_skip_if_no_crypto (void);
 int
 test_framework_skip_if_max_wire_version_less_than_4 (void);
 int

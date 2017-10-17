@@ -1614,6 +1614,28 @@ test_framework_clustertime_supported (void)
 }
 
 
+int64_t
+test_framework_session_timeout_minutes (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   int64_t timeout = -1;
+
+   if (!TestSuite_CheckLive ()) {
+      return -1;
+   }
+
+   call_ismaster (&reply);
+   if (bson_iter_init_find (&iter, &reply, "logicalSessionTimeoutMinutes")) {
+      timeout = bson_iter_as_int64 (&iter);
+   }
+
+   bson_destroy (&reply);
+
+   return timeout;
+}
+
+
 int
 test_framework_skip_if_auth (void)
 {
@@ -1650,6 +1672,34 @@ test_framework_skip_if_no_auth (void)
    user = test_framework_get_admin_user ();
    bson_free (user);
    return user ? 1 : 0;
+}
+
+
+int
+test_framework_skip_if_no_sessions (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   return -1 != test_framework_session_timeout_minutes ();
+}
+
+
+int
+test_framework_skip_if_crypto (void)
+{
+#ifdef MONGOC_ENABLE_CRYPTO
+   return 0;
+#else
+   return 1;
+#endif
+}
+
+int
+test_framework_skip_if_no_crypto (void)
+{
+   return test_framework_skip_if_crypto () ? 0 : 1;
 }
 
 

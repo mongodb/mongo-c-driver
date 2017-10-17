@@ -51,7 +51,7 @@ MONGOC_EXPORT (const mongoc_session_opt_t *)
 mongoc_client_session_get_opts (const mongoc_client_session_t *session);
 
 MONGOC_EXPORT (const bson_t *)
-mongoc_client_session_get_session_id (const mongoc_client_session_t *session);
+mongoc_client_session_get_lsid (const mongoc_client_session_t *session);
 
 
 /* There is no mongoc_client_session_end, only mongoc_client_session_destroy.
