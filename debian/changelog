@@ -2,6 +2,7 @@ libmongoc (1.8.1-1) unstable; urgency=low
 
   * New upstream release
   * Update to Standards-Version 4.1.1 (no changes)
+  * Add zlib1g-dev, libsnappy-dev to libmongoc-dev deps (Closes #878343)
 
  -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Thu, 12 Oct 2017 16:09:27 +0000
 
