@@ -147,7 +147,7 @@ test:
 	./test-libmongoc $(TEST_ARGS) -F test-results.json
 
 valgrind: test-libmongoc
-	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
+	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all --num-callers=32 --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
 
 local-check: test-libmongoc
 	@ export MONGOC_TEST_SKIP_LIVE=on
