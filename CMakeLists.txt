@@ -733,6 +733,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
+   ${SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-sample-commands.c
    ${SOURCE_DIR}/tests/test-mongoc-scram.c
