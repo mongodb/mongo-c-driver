@@ -90,28 +90,28 @@ For example, if :symbol:`mongoc_collection_update` sets the error's domain to ``
 
 To fix this flaw while preserving backward compatibility, the C Driver 1.4 introduces "Error API Versions". Version 1, the default Error API Version, maintains the flawed behavior. Version 2 adds a new error domain, ``MONGOC_ERROR_SERVER``. In Version 2, error codes originating on the server always have error domain ``MONGOC_ERROR_SERVER`` or ``MONGOC_ERROR_WRITE_CONCERN``. When the driver uses Version 2 the application can always determine the origin and meaning of error codes. New applications should use Version 2, and existing applications should be updated to use Version 2 as well.
 
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| Error Source                                | API Version 1                          |  API Version 2                         |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| :symbol:`mongoc_cursor_error`               | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| :symbol:`mongoc_client_command`,            | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
-| :symbol:`mongoc_database_command`, and      |                                        |                                        |
-| other command functions                     |                                        |                                        |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| :symbol:`mongoc_collection_count_with_opts`,| ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
-| :symbol:`mongoc_client_get_database_names`, |                                        |                                        |
-| and other command helper functions          |                                        |                                        |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| :symbol:`mongoc_collection_insert`          | ``MONGOC_ERROR_COMMAND``               | ``MONGOC_ERROR_SERVER``                |
-| :symbol:`mongoc_collection_insert_bulk`     |                                        |                                        |
-| :symbol:`mongoc_collection_update`          |                                        |                                        |
-| :symbol:`mongoc_collection_remove`          |                                        |                                        |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| :symbol:`mongoc_bulk_operation_execute`     | ``MONGOC_ERROR_COMMAND``               | ``MONGOC_ERROR_SERVER``                |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
-| Write-concern timeout                       | ``MONGOC_ERROR_WRITE_CONCERN``         | ``MONGOC_ERROR_WRITE_CONCERN``         |
-+---------------------------------------------+----------------------------------------+----------------------------------------+
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| Error Source                                         | API Version 1                          |  API Version 2                         |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| :symbol:`mongoc_cursor_error`                        | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| :symbol:`mongoc_client_command`,                     | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
+| :symbol:`mongoc_database_command`, and               |                                        |                                        |
+| other command functions                              |                                        |                                        |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| :symbol:`mongoc_collection_count_with_opts`          | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
+| :symbol:`mongoc_client_get_database_names_with_opts`,|                                        |                                        |
+| and other command helper functions                   |                                        |                                        |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| :symbol:`mongoc_collection_insert`                   | ``MONGOC_ERROR_COMMAND``               | ``MONGOC_ERROR_SERVER``                |
+| :symbol:`mongoc_collection_insert_bulk`              |                                        |                                        |
+| :symbol:`mongoc_collection_update`                   |                                        |                                        |
+| :symbol:`mongoc_collection_remove`                   |                                        |                                        |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| :symbol:`mongoc_bulk_operation_execute`              | ``MONGOC_ERROR_COMMAND``               | ``MONGOC_ERROR_SERVER``                |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
+| Write-concern timeout                                | ``MONGOC_ERROR_WRITE_CONCERN``         | ``MONGOC_ERROR_WRITE_CONCERN``         |
++------------------------------------------------------+----------------------------------------+----------------------------------------+
 
 The Error API Versions are defined with ``MONGOC_ERROR_API_VERSION_LEGACY`` and ``MONGOC_ERROR_API_VERSION_2``. Set the version with :symbol:`mongoc_client_set_error_api` or :symbol:`mongoc_client_pool_set_error_api`.
 

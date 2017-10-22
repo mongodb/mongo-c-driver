@@ -239,9 +239,10 @@ future_cursor_next (
 
 
 future_t *
-future_client_get_database_names (
+future_client_get_database_names_with_opts (
 
    mongoc_client_ptr client,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 

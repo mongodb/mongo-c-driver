@@ -392,9 +392,7 @@ started (const mongoc_apm_command_started_t *event)
    test->n_started++;
 
    if (!bson_iter_init_find (&iter, cmd, "lsid")) {
-      fprintf (stderr,
-               "no lsid sent with command %s\n",
-               cmd_name);
+      fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
       abort ();
    }
 
@@ -780,6 +778,22 @@ test_create (session_test_t *test)
 
 
 static void
+test_database_names (session_test_t *test)
+{
+   char **names;
+
+   names = mongoc_client_get_database_names_with_opts (
+      test->client, &test->opts, &test->error);
+
+   test->succeeded = (names != NULL);
+
+   if (names) {
+      bson_strfreev (names);
+   }
+}
+
+
+static void
 add_session_test (TestSuite *suite, const char *name, session_test_fn_t test_fn)
 {
    TestSuite_AddFull (suite,
@@ -875,4 +889,5 @@ test_session_install (TestSuite *suite)
                         test_framework_skip_if_not_rs_version_6);
    add_session_test (suite, "/Session/aggregate", test_aggregate);
    add_session_test (suite, "/Session/create", test_create);
+   add_session_test (suite, "/Session/database_names", test_database_names);
 }

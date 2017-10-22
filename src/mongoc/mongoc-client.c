@@ -2157,6 +2157,15 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
 char **
 mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
 {
+   return mongoc_client_get_database_names_with_opts (client, NULL, error);
+}
+
+
+char **
+mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
+                                            const bson_t *opts,
+                                            bson_error_t *error)
+{
    bson_iter_t iter;
    const char *name;
    char **ret = NULL;
@@ -2171,7 +2180,7 @@ mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", false /* is_find */, NULL, NULL, NULL, NULL);
+      client, "admin", false /* is_find */, NULL, opts, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
    bson_destroy (&cmd);

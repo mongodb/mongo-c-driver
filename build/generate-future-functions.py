@@ -271,8 +271,9 @@ future_functions = [
                      param("const_bson_ptr_ptr", "doc")]),
 
     future_function("char_ptr_ptr",
-                    "mongoc_client_get_database_names",
+                    "mongoc_client_get_database_names_with_opts",
                     [param("mongoc_client_ptr", "client"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_server_description_ptr",

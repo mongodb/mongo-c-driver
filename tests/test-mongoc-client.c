@@ -1783,7 +1783,7 @@ test_get_database_names (void)
 
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   future = future_client_get_database_names (client, &error);
+   future = future_client_get_database_names_with_opts (client, NULL, &error);
    request =
       mock_server_receives_command (server,
                                     "admin",
@@ -1805,7 +1805,7 @@ test_get_database_names (void)
    request_destroy (request);
    future_destroy (future);
 
-   future = future_client_get_database_names (client, &error);
+   future = future_client_get_database_names_with_opts (client, NULL, &error);
    request =
       mock_server_receives_command (server,
                                     "admin",

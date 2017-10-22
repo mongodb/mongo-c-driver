@@ -55,6 +55,7 @@ Example
     mongoc_client_get_collection
     mongoc_client_get_database
     mongoc_client_get_database_names
+    mongoc_client_get_database_names_with_opts
     mongoc_client_get_default_database
     mongoc_client_get_gridfs
     mongoc_client_get_max_bson_size

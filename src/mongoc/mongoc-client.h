@@ -183,7 +183,12 @@ mongoc_client_get_collection (mongoc_client_t *client,
                               const char *db,
                               const char *collection);
 MONGOC_EXPORT (char **)
-mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error);
+mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_client_get_database_names_with_opts);
+MONGOC_EXPORT (char **)
+mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
+                                            const bson_t *opts,
+                                            bson_error_t *error);
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error);
 MONGOC_EXPORT (bool)

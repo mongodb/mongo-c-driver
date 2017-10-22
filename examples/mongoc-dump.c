@@ -151,7 +151,8 @@ mongoc_dump (mongoc_client_t *client,
       return mongoc_dump_database (client, database, collection);
    }
 
-   if (!(str = mongoc_client_get_database_names (client, &error))) {
+   if (!(str = mongoc_client_get_database_names_with_opts (
+            client, NULL, &error))) {
       fprintf (stderr, "Failed to fetch database names: %s\n", error.message);
       return EXIT_FAILURE;
    }
