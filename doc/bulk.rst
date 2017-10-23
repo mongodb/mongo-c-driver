@@ -8,12 +8,12 @@ This tutorial explains how to take advantage of MongoDB C driver bulk write oper
 Bulk Insert
 -----------
 
-First we need to fetch a bulk operation handle from the :symbol:`mongoc_collection_t`. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.
+First we need to fetch a bulk operation handle from the :symbol:`mongoc_collection_t`.
 
 .. code-block:: c
 
   mongoc_bulk_operation_t *bulk =
-     mongoc_collection_create_bulk_operation (collection, true, write_concern);
+     mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
 We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.
 
@@ -140,7 +140,7 @@ The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_COMMAND``.
 Bulk Operation Write Concerns
 -----------------------------
 
-By default bulk operations are executed with the :symbol:`write_concern <mongoc_write_concern_t>` of the collection they are executed against. A custom write concern can be passed to the :symbol:`mongoc_collection_create_bulk_operation()` method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.
+By default bulk operations are executed with the :symbol:`write_concern <mongoc_write_concern_t>` of the collection they are executed against. A custom write concern can be passed to the :symbol:`mongoc_collection_create_bulk_operation_with_opts()` method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.
 
 .. literalinclude:: ../examples/bulk/bulk4.c
    :language: c

@@ -288,7 +288,7 @@ test_exhaust_cursor_multi_batch (void *context)
    ASSERT_OR_PRINT (collection, error);
 
    BSON_APPEND_UTF8 (&doc, "key", "value");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    /* enough to require more than initial batch */
    for (i = 0; i < 1000; i++) {

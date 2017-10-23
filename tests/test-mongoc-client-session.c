@@ -469,6 +469,26 @@ session_test_destroy (session_test_t *test)
 }
 
 
+static void
+check_session_test_error (session_test_t *test,
+                          bool succeeded,
+                          const bson_error_t *error)
+{
+   bson_error_t error_local;
+
+   if (test->session_client == test->client) {
+      BSON_ASSERT (succeeded);
+   } else {
+      BSON_ASSERT (!succeeded);
+      error_local = *error;
+      ASSERT_ERROR_CONTAINS (error_local,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid sessionId");
+   }
+}
+
+
 typedef void (*session_test_fn_t) (session_test_t *);
 
 
@@ -477,7 +497,6 @@ run_session_test (void *ctx)
 {
    session_test_fn_t test_fn = (session_test_fn_t) ctx;
    session_test_t *test;
-   bson_error_t error;
    bson_t opts = BSON_INITIALIZER;
 
    /*
@@ -485,8 +504,8 @@ run_session_test (void *ctx)
     */
    test = session_test_new (true);
    test_fn (test);
-   ASSERT_OR_PRINT (test->succeeded, test->error);
    ASSERT_CMPINT (test->n_started, >, 0);
+   check_session_test_error (test, test->succeeded, &test->error);
    session_test_destroy (test);
 
    /*
@@ -494,12 +513,7 @@ run_session_test (void *ctx)
     */
    test = session_test_new (false);
    test_fn (test);
-   BSON_ASSERT (!test->succeeded);
-   error = test->error;
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid sessionId");
+   check_session_test_error (test, test->succeeded, &test->error);
 
    mongoc_client_session_append (test->cs, &opts, NULL);
    mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
@@ -794,16 +808,53 @@ test_database_names (session_test_t *test)
 
 
 static void
-add_session_test (TestSuite *suite, const char *name, session_test_fn_t test_fn)
+test_bulk (session_test_t *test)
 {
-   TestSuite_AddFull (suite,
-                      name,
-                      run_session_test,
-                      NULL,
-                      (void *) test_fn,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_crypto);
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   bool r;
+   uint32_t i;
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (test->collection,
+                                                             &test->opts);
+
+   r = mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &error);
+   check_session_test_error (test, r, &error);
+
+   r = mongoc_bulk_operation_update_one_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{'$set': {'x': 1}}"), NULL, &error);
+   check_session_test_error (test, r, &error);
+
+   r = mongoc_bulk_operation_remove_one_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &error);
+   check_session_test_error (test, r, &error);
+
+   i = mongoc_bulk_operation_execute (bulk, NULL, &test->error);
+   test->succeeded = (i != 0);
+
+   mongoc_bulk_operation_destroy (bulk);
 }
+
+
+#define add_session_test(_suite, _name, _test_fn)         \
+   TestSuite_AddFull (_suite,                             \
+                      _name,                              \
+                      run_session_test,                   \
+                      NULL,                               \
+                      (void *) _test_fn,                  \
+                      test_framework_skip_if_no_sessions, \
+                      test_framework_skip_if_no_crypto)
+
+#define add_session_test_wc(_suite, _name, _test_fn, ...) \
+   TestSuite_AddFull (_suite,                             \
+                      _name,                              \
+                      run_session_test,                   \
+                      NULL,                               \
+                      (void *) _test_fn,                  \
+                      test_framework_skip_if_no_sessions, \
+                      test_framework_skip_if_no_crypto,   \
+                      __VA_ARGS__)
 
 
 void
@@ -890,4 +941,5 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/aggregate", test_aggregate);
    add_session_test (suite, "/Session/create", test_create);
    add_session_test (suite, "/Session/database_names", test_database_names);
+   add_session_test (suite, "/Session/bulk", test_bulk);
 }

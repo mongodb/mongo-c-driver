@@ -383,6 +383,7 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    bson_t q = BSON_INITIALIZER;
    bson_t fields = BSON_INITIALIZER;
    bson_t ar = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
 
    BSON_ASSERT (gridfs);
 
@@ -429,10 +430,13 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
       goto failure;
    }
 
+   bson_append_bool (&opts, "ordered", 7, false);
    bulk_files =
-      mongoc_collection_create_bulk_operation (gridfs->files, false, NULL);
+      mongoc_collection_create_bulk_operation_with_opts (gridfs->files, &opts);
    bulk_chunks =
-      mongoc_collection_create_bulk_operation (gridfs->chunks, false, NULL);
+      mongoc_collection_create_bulk_operation_with_opts (gridfs->chunks, &opts);
+
+   bson_destroy (&opts);
 
    files_q = BCON_NEW ("_id", "{", "$in", BCON_ARRAY (&ar), "}");
    chunks_q = BCON_NEW ("files_id", "{", "$in", BCON_ARRAY (&ar), "}");

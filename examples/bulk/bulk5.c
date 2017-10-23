@@ -13,7 +13,7 @@ bulk5_fail (mongoc_collection_t *collection)
    char *str;
    bool ret;
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    /* Two inserts */
    doc = BCON_NEW ("_id", BCON_INT32 (31));
@@ -50,7 +50,7 @@ bulk5_success (mongoc_collection_t *collection)
    char *str;
    bool ret;
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    /* Allow this document to bypass document validation.
     * NOTE: When authentication is enabled, the authenticated user must have

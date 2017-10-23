@@ -128,7 +128,7 @@ test_example_3 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "qty", BCON_INT64 (25),
@@ -214,7 +214,7 @@ test_example_6 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "qty", BCON_INT64 (25),
@@ -482,7 +482,7 @@ test_example_14 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "qty", BCON_INT64 (25),
@@ -719,7 +719,7 @@ test_example_20 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "qty", BCON_INT64 (25),
@@ -1028,7 +1028,7 @@ test_example_29 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "instock", "[",
@@ -1351,7 +1351,7 @@ test_example_38 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "_id", BCON_INT64 (1),
       "item", BCON_NULL);
@@ -1469,7 +1469,7 @@ test_example_42 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "status", BCON_UTF8 ("A"),
@@ -1910,7 +1910,7 @@ test_example_51 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("canvas"),
       "qty", BCON_INT64 (100),
@@ -2284,7 +2284,7 @@ test_example_55 (mongoc_database_t *db)
    bson_t reply;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    doc = BCON_NEW (
       "item", BCON_UTF8 ("journal"),
       "qty", BCON_INT64 (25),

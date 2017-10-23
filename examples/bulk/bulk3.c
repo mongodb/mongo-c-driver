@@ -6,6 +6,7 @@
 static void
 bulk3 (mongoc_collection_t *collection)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_t *query;
@@ -15,7 +16,9 @@ bulk3 (mongoc_collection_t *collection)
    bool ret;
 
    /* false indicates unordered */
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   BSON_APPEND_BOOL (&opts, "ordered", false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   bson_destroy (&opts);
 
    /* Add a document */
    doc = BCON_NEW ("_id", BCON_INT32 (1));
@@ -51,6 +54,7 @@ bulk3 (mongoc_collection_t *collection)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
 }
 
 int

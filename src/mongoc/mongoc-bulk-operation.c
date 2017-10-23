@@ -65,7 +65,6 @@ _mongoc_bulk_operation_new (
    mongoc_client_t *client,                     /* IN */
    const char *database,                        /* IN */
    const char *collection,                      /* IN */
-   mongoc_client_session_t *session,            /* IN */
    mongoc_bulk_write_flags_t flags,             /* IN */
    const mongoc_write_concern_t *write_concern) /* IN */
 {
@@ -78,7 +77,6 @@ _mongoc_bulk_operation_new (
    bulk->client = client;
    bulk->database = bson_strdup (database);
    bulk->collection = bson_strdup (collection);
-   bulk->session = session;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
    bulk->executed = false;
    bulk->flags = flags;
@@ -843,7 +841,8 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
    bulk->client = (mongoc_client_t *) client;
 
    /* if you call set_client, bulk was likely made by mongoc_bulk_operation_new,
-    * not mongoc_collection_create_bulk_operation(), so operation_id is 0. */
+    * not mongoc_collection_create_bulk_operation_with_opts(), so operation_id
+    * is 0. */
    if (!bulk->operation_id) {
       bulk->operation_id = ++bulk->client->cluster.operation_id;
    }

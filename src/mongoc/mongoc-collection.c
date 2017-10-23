@@ -2444,21 +2444,62 @@ mongoc_collection_create_bulk_operation (
    bool ordered,
    const mongoc_write_concern_t *write_concern)
 {
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   BSON_ASSERT (collection);
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   bool wc_ok = true;
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   if (write_concern) {
+      wc_ok = mongoc_write_concern_append (
+         (mongoc_write_concern_t *) write_concern, &opts);
    }
 
-   write_flags.ordered = ordered;
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
-   return _mongoc_bulk_operation_new (collection->client,
+   bson_destroy (&opts);
+
+   if (!wc_ok) {
+      bson_set_error (&bulk->result.error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "invalid write concern");
+   }
+
+   return bulk;
+}
+
+
+mongoc_bulk_operation_t *
+mongoc_collection_create_bulk_operation_with_opts (
+   mongoc_collection_t *collection, const bson_t *opts)
+{
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_iter_t iter;
+   mongoc_write_concern_t *wc = NULL;
+   mongoc_bulk_operation_t *bulk;
+
+   BSON_ASSERT (collection);
+
+   if (opts && bson_iter_init_find (&iter, opts, "writeConcern")) {
+      wc = _mongoc_write_concern_new_from_iter (&iter);
+   }
+
+   write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
+
+   bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
-                                      NULL /* session */,
                                       write_flags,
-                                      write_concern);
+                                      wc ? wc : collection->write_concern);
+
+   mongoc_write_concern_destroy (wc); /* NULL is ok */
+
+   if (opts && bson_iter_init_find (&iter, opts, "sessionId")) {
+      _mongoc_client_session_from_iter (
+         collection->client, &iter, &bulk->session, &bulk->result.error);
+   }
+
+   return bulk;
 }
 
 /*

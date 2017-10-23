@@ -259,7 +259,12 @@ MONGOC_EXPORT (mongoc_bulk_operation_t *)
 mongoc_collection_create_bulk_operation (
    mongoc_collection_t *collection,
    bool ordered,
-   const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT;
+   const mongoc_write_concern_t *write_concern) BSON_GNUC_WARN_UNUSED_RESULT
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_bulk_operation_with_opts);
+MONGOC_EXPORT (mongoc_bulk_operation_t *)
+mongoc_collection_create_bulk_operation_with_opts (
+   mongoc_collection_t *collection,
+   const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (const mongoc_read_prefs_t *)
 mongoc_collection_get_read_prefs (const mongoc_collection_t *collection);
 MONGOC_EXPORT (void)

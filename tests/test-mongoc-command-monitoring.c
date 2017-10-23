@@ -134,7 +134,7 @@ insert_data (mongoc_collection_t *collection, const bson_t *test)
       }
    }
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (bson_iter_init_find (&iter, test, "data"));
    BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
@@ -479,6 +479,7 @@ test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
 {
    bool ordered;
    mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_iter_t requests_iter;
    bson_t requests;
@@ -494,11 +495,14 @@ test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
       wc = mongoc_write_concern_new ();
    }
 
+   mongoc_write_concern_append (wc, &opts);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+
    if (bson_has_field (arguments, "requests")) {
       bson_lookup_doc (arguments, "requests", &requests);
    }
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    bson_iter_init (&requests_iter, &requests);
    while (bson_iter_next (&requests_iter)) {
       bson_iter_bson (&requests_iter, &request);
@@ -509,6 +513,7 @@ test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
    ASSERT_OR_PRINT (r, error);
 
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
 }
 
@@ -616,13 +621,15 @@ static void
 test_insert_many (mongoc_collection_t *collection, const bson_t *arguments)
 {
    bool ordered;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t documents;
    bson_iter_t iter;
    bson_t doc;
 
    ordered = bson_lookup_bool (arguments, "ordered", true);
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    bson_lookup_doc (arguments, "documents", &documents);
    bson_iter_init (&iter, &documents);
@@ -634,6 +641,7 @@ test_insert_many (mongoc_collection_t *collection, const bson_t *arguments)
    mongoc_bulk_operation_execute (bulk, NULL, NULL);
 
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
 }
 
 
@@ -1227,6 +1235,7 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
    mongoc_client_pool_t *pool = NULL;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    op_id_test_t test;
@@ -1257,7 +1266,9 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
       mongoc_bulk_operation_set_database (bulk, collection->db);
       mongoc_bulk_operation_set_collection (bulk, collection->collection);
    } else {
-      bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+      bson_append_bool (&opts, "ordered", 7, false);
+      bulk =
+         mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    }
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
@@ -1305,6 +1316,7 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
       mongoc_client_destroy (client);
    }
 
+   bson_destroy (&opts);
    op_id_test_cleanup (&test);
    mongoc_apm_callbacks_destroy (callbacks);
 }

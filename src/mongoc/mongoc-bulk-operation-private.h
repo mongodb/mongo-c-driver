@@ -47,7 +47,6 @@ mongoc_bulk_operation_t *
 _mongoc_bulk_operation_new (mongoc_client_t *client,
                             const char *database,
                             const char *collection,
-                            mongoc_client_session_t *session,
                             mongoc_bulk_write_flags_t flags,
                             const mongoc_write_concern_t *write_concern);
 

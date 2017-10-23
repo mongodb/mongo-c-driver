@@ -119,6 +119,21 @@ _mongoc_get_command_name (const bson_t *command)
    return name;
 }
 
+bool
+_mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value)
+{
+   bson_iter_t iter;
+
+   if (!bson) {
+      return default_value;
+   }
+
+   if (!bson_iter_init_find (&iter, bson, key)) {
+      return default_value;
+   }
+
+   return bson_iter_as_bool (&iter);
+}
 
 void
 _mongoc_get_db_name (const char *ns, char *db /* OUT */)

@@ -172,7 +172,7 @@ test_bulk (void)
    collection = get_test_collection (client, "test_bulk");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, &doc);
@@ -248,6 +248,7 @@ test_bulk_error_unordered (void)
    mock_server_t *mock_server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -268,7 +269,8 @@ test_bulk_error_unordered (void)
    mongoc_uri_destroy (uri);
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    for (i = 0; i <= 2048; i++) {
       mongoc_bulk_operation_update_many_with_opts (
          bulk,
@@ -315,6 +317,7 @@ test_bulk_error_unordered (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -327,6 +330,7 @@ test_insert (bool ordered)
    mongoc_client_t *client;
    bson_error_t error;
    bson_t reply;
+   bson_t opts = BSON_INITIALIZER;
    bson_t doc = BSON_INITIALIZER;
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
@@ -338,7 +342,8 @@ test_insert (bool ordered)
    collection = get_test_collection (client, "test_insert");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
    BSON_ASSERT (bulk->flags.ordered == ordered);
 
@@ -369,6 +374,7 @@ test_insert (bool ordered)
 
    mongoc_cursor_destroy (cursor);
    bson_destroy (&query);
+   bson_destroy (&opts);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -408,7 +414,7 @@ test_insert_check_keys (void)
    BSON_ASSERT (collection);
 
    /* keys can't start with "$" */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
@@ -426,7 +432,7 @@ test_insert_check_keys (void)
    mongoc_bulk_operation_destroy (bulk);
 
    /* valid, then invalid */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson (NULL));
@@ -445,7 +451,7 @@ test_insert_check_keys (void)
    mongoc_bulk_operation_destroy (bulk);
 
    /* keys can't contain "." */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a.b': 1}"));
@@ -469,6 +475,7 @@ test_insert_check_keys (void)
 static void
 test_upsert (bool ordered)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -484,7 +491,8 @@ test_upsert (bool ordered)
    collection = get_test_collection (client, "test_upsert");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{'_id': 1234}");
@@ -509,7 +517,7 @@ test_upsert (bool ordered)
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    /* non-upsert, no matches */
@@ -535,6 +543,7 @@ test_upsert (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -559,6 +568,7 @@ test_upsert_unordered_oversized (void *ctx)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t *u;
    bool r;
@@ -567,8 +577,8 @@ test_upsert_unordered_oversized (void *ctx)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "upsert_oversized");
-   bulk = mongoc_collection_create_bulk_operation (
-      collection, false /* ordered */, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* much too large */
    u = tmp_bson ("{'$set': {'x': '%s', 'y': '%s'}}",
@@ -595,6 +605,7 @@ test_upsert_unordered_oversized (void *ctx)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -603,6 +614,7 @@ test_upsert_unordered_oversized (void *ctx)
 static void
 test_upserted_index (bool ordered)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -619,7 +631,7 @@ test_upserted_index (bool ordered)
    collection = get_test_collection (client, "test_upserted_index");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, emp);
@@ -704,6 +716,7 @@ test_upserted_index (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -726,6 +739,7 @@ test_upserted_index_unordered (void)
 static void
 test_update_one (bool ordered)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -751,7 +765,8 @@ test_update_one (bool ordered)
    BSON_ASSERT (r);
    bson_destroy (doc);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{}");
@@ -775,6 +790,7 @@ test_update_one (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -797,6 +813,7 @@ test_update_one_unordered (void)
 static void
 test_replace_one (bool ordered)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
@@ -822,7 +839,8 @@ test_replace_one (bool ordered)
    BSON_ASSERT (r);
    bson_destroy (doc);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{}");
@@ -846,6 +864,7 @@ test_replace_one (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -864,7 +883,7 @@ _test_replace_one_check_keys (bool with_opts)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_replace_one_check_keys");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    if (with_opts) {
       /* rejected immediately */
@@ -944,7 +963,7 @@ test_upsert_large (void *ctx)
    large_str[sz - 1] = '\0';
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_upsert_large");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    bson_append_document_begin (&update, "$set", 4, &child);
    bson_append_utf8 (&child, "big", 3, large_str, (int) sz - 1);
@@ -1001,7 +1020,7 @@ test_upsert_huge (void *ctx)
    collection = get_test_collection (client, "test_upsert_huge");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    bson_append_document_begin (&doc, "$set", -1, &child);
@@ -1066,6 +1085,7 @@ test_update (bool ordered)
       tmp_bson ("{'a': 3, 'foo': 'bar'}"),
    };
    unsigned int i;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_t reply;
@@ -1084,7 +1104,8 @@ test_update (bool ordered)
          collection, MONGOC_INSERT_NONE, docs_inserted[i], NULL, NULL));
    }
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    /* an update doc without $-operators is rejected */
@@ -1103,7 +1124,7 @@ test_update (bool ordered)
    mongoc_bulk_operation_destroy (bulk);
    bson_destroy (&reply);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    update_doc = tmp_bson ("{'$set': {'foo': 'bar'}}");
    mongoc_bulk_operation_update (bulk, sel, update_doc, false);
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, &reply, &error),
@@ -1124,6 +1145,7 @@ test_update (bool ordered)
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1162,7 +1184,7 @@ _test_update_check_keys (bool many, bool with_opts)
    collection = get_test_collection (client, "test_update_check_keys");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    capture_logs (true);
@@ -1281,7 +1303,7 @@ _test_update_validate (update_validate_test_t *test)
    collection = get_test_collection (client, "test_update_invalid_first");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    capture_logs (true);
@@ -1555,7 +1577,7 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_insert_validate");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (mongoc_collection_remove (
       collection, MONGOC_REMOVE_NONE, tmp_bson (NULL), NULL, NULL));
 
@@ -1692,7 +1714,7 @@ _test_remove_validate (remove_validate_test_t *test)
    collection = get_test_collection (client, "test_update_invalid_first");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    capture_logs (true);
@@ -1790,7 +1812,7 @@ test_index_offset (void)
       collection, MONGOC_INSERT_NONE, doc, NULL, &error);
    BSON_ASSERT (r);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    sel = tmp_bson ("{'_id': 1234}");
@@ -1838,7 +1860,7 @@ test_single_ordered_bulk (void)
    collection = get_test_collection (client, "test_single_ordered_bulk");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
@@ -1874,6 +1896,7 @@ test_insert_continue_on_error (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t *doc0 = tmp_bson ("{'a': 1}");
    bson_t *doc1 = tmp_bson ("{'a': 2}");
@@ -1889,7 +1912,8 @@ test_insert_continue_on_error (void)
 
    create_unique_index (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, doc0);
    mongoc_bulk_operation_insert (bulk, doc0);
    mongoc_bulk_operation_insert (bulk, doc1);
@@ -1910,6 +1934,7 @@ test_insert_continue_on_error (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1920,6 +1945,7 @@ test_update_continue_on_error (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t *doc0 = tmp_bson ("{'a': 1}");
    bson_t *doc1 = tmp_bson ("{'a': 2}");
@@ -1937,7 +1963,8 @@ test_update_continue_on_error (void)
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc0, NULL, NULL);
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc1, NULL, NULL);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* succeeds */
    mongoc_bulk_operation_update (
       bulk, doc0, tmp_bson ("{'$inc': {'b': 1}}"), false);
@@ -1973,6 +2000,7 @@ test_update_continue_on_error (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1983,6 +2011,7 @@ test_remove_continue_on_error (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t *doc0 = tmp_bson ("{'a': 1}");
    bson_t *doc1 = tmp_bson ("{'a': 2}");
@@ -2001,7 +2030,8 @@ test_remove_continue_on_error (void)
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc1, NULL, NULL);
    mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc2, NULL, NULL);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* succeeds */
    mongoc_bulk_operation_remove_one (bulk, doc0);
    /* fails */
@@ -2025,6 +2055,7 @@ test_remove_continue_on_error (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2048,7 +2079,7 @@ test_single_error_ordered_bulk (void)
 
    create_unique_index (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
    mongoc_bulk_operation_update (
@@ -2103,7 +2134,7 @@ test_multiple_error_ordered_bulk (void)
 
    create_unique_index (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    /* 0 succeeds */
@@ -2152,6 +2183,7 @@ test_single_unordered_bulk (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2162,7 +2194,8 @@ test_single_unordered_bulk (void)
    collection = get_test_collection (client, "test_single_unordered_bulk");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
    mongoc_bulk_operation_update (
       bulk, tmp_bson ("{'a': 1}"), tmp_bson ("{'$set': {'b': 1}}"), false);
@@ -2186,6 +2219,7 @@ test_single_unordered_bulk (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2196,6 +2230,7 @@ test_single_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2210,7 +2245,8 @@ test_single_error_unordered_bulk (void)
 
    create_unique_index (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* 0 succeeds */
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
@@ -2240,6 +2276,7 @@ test_single_error_unordered_bulk (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2252,6 +2289,7 @@ _test_write_concern (bool ordered, bool multi_err)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2268,7 +2306,9 @@ _test_write_concern (bool ordered, bool multi_err)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 2);
    mongoc_write_concern_set_wtimeout (wc, 100);
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, wc);
+   mongoc_write_concern_append (wc, &opts);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 2}"));
 
@@ -2354,6 +2394,7 @@ _test_write_concern (bool ordered, bool multi_err)
    future_destroy (future);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -2407,7 +2448,7 @@ _test_write_concern_err_api (int32_t error_api_version)
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    ASSERT (mongoc_client_set_error_api (client, error_api_version));
    collection = mongoc_client_get_collection (client, "test", "test");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
@@ -2455,6 +2496,7 @@ test_multiple_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2469,7 +2511,8 @@ test_multiple_error_unordered_bulk (void)
 
    create_unique_index (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
    mongoc_bulk_operation_update (
       bulk, tmp_bson ("{'b': 2}"), tmp_bson ("{'$set': {'a': 3}}"), true);
@@ -2513,6 +2556,7 @@ test_multiple_error_unordered_bulk (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2524,6 +2568,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
    mock_server_t *mock_server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2537,7 +2582,8 @@ _test_wtimeout_plus_duplicate_key_err (void)
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* unordered bulk */
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 2}"));
    mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 3}"));
@@ -2604,6 +2650,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
    future_destroy (future);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (mock_server);
@@ -2647,7 +2694,7 @@ test_large_inserts_ordered (void *ctx)
    collection = get_test_collection (client, "test_large_inserts_ordered");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
    mongoc_bulk_operation_insert (bulk, huge_doc);
@@ -2676,7 +2723,7 @@ test_large_inserts_ordered (void *ctx)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
@@ -2708,6 +2755,7 @@ test_large_inserts_unordered (void *ctx)
    mongoc_client_t *client;
    bson_t *huge_doc;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2732,7 +2780,8 @@ test_large_inserts_unordered (void *ctx)
    collection = get_test_collection (client, "test_large_inserts_unordered");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
 
@@ -2767,7 +2816,7 @@ test_large_inserts_unordered (void *ctx)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
@@ -2788,6 +2837,7 @@ test_large_inserts_unordered (void *ctx)
    bson_destroy (&reply);
    mongoc_cursor_destroy (cursor);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2798,6 +2848,7 @@ _test_numerous (bool ordered)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -2814,7 +2865,8 @@ _test_numerous (bool ordered)
    collection = get_test_collection (client, "test_numerous_inserts");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* insert docs {_id: 0} through {_id: n_docs-1} */
    bson_init (&doc);
@@ -2834,7 +2886,7 @@ _test_numerous (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* use remove_one for docs {_id: 0}, {_id: 2}, ..., {_id: n_docs-2} */
    for (i = 0; i < n_docs; i += 2) {
@@ -2850,7 +2902,7 @@ _test_numerous (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* use remove for docs {_id: 1}, {_id: 3}, ..., {_id: n_docs-1} */
    for (i = 1; i < n_docs; i += 2) {
@@ -2866,6 +2918,7 @@ _test_numerous (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -2890,6 +2943,7 @@ test_bulk_split (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk_op;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_iter_t iter, error_iter, indexnum;
@@ -2910,7 +2964,9 @@ test_bulk_split (void)
 
    mongoc_write_concern_set_w (wc, 1);
 
-   bulk_op = mongoc_collection_create_bulk_operation (collection, false, wc);
+   mongoc_write_concern_append (wc, &opts);
+   bson_append_bool (&opts, "ordered", 7, false);
+   bulk_op = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* if n_docs is 100,010 insert 3337 docs with _ids 0, 3, 6, ..., 100,008 */
    for (i = 0; i < n_docs; i += 3) {
@@ -2928,7 +2984,7 @@ test_bulk_split (void)
    mongoc_bulk_operation_destroy (bulk_op);
 
    /* ordered false so we continue on error */
-   bulk_op = mongoc_collection_create_bulk_operation (collection, false, wc);
+   bulk_op = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* insert n_docs documents with _ids 0, 1, 2, 3, ..., 100,008 */
    for (i = 0; i < n_docs; i++) {
       bson_init (&doc);
@@ -2967,6 +3023,7 @@ test_bulk_split (void)
    }
 
    mongoc_bulk_operation_destroy (bulk_op);
+   bson_destroy (&opts);
    bson_destroy (&result);
 
    mongoc_write_concern_destroy (wc);
@@ -2981,6 +3038,7 @@ test_bulk_edge_case_372 (bool ordered)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_iter_t iter;
@@ -2995,7 +3053,8 @@ test_bulk_edge_case_372 (bool ordered)
    collection = get_test_collection (client, "CDRIVER_372");
    BSON_ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    BSON_ASSERT (bulk);
 
    selector = tmp_bson ("{'_id': 0}");
@@ -3036,6 +3095,7 @@ test_bulk_edge_case_372 (bool ordered)
    mongoc_collection_drop (collection, NULL);
 
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -3078,6 +3138,7 @@ static void
 test_bulk_max_msg_size (void)
 {
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_write_concern_t *wc;
    mongoc_client_t *client;
@@ -3100,13 +3161,14 @@ test_bulk_max_msg_size (void)
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
+   mongoc_write_concern_append (wc, &opts);
+
    client = test_framework_client_new ();
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &stats);
    collection = mongoc_client_get_collection (client, "test", "max_msg_size");
    mongoc_collection_drop (collection, NULL);
-
 
    /* Cluster time document argument is injected sometimes */
    if (!bson_empty (&client->topology->description.cluster_time)) {
@@ -3115,7 +3177,7 @@ test_bulk_max_msg_size (void)
    }
 
    /* {{{ Exactly 48 000 000 bytes (not to be confused with 48mb!) */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* 16 mb doc */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 1);
@@ -3148,7 +3210,7 @@ test_bulk_max_msg_size (void)
    /* }}} */
 
    /* {{{ 48 000 001 byte */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* 16 mb doc */
    bson_init (&doc);
    bson_append_int32 (&doc, "_id", -1, 1);
@@ -3186,6 +3248,7 @@ test_bulk_max_msg_size (void)
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_destroy (client);
    bson_free (msg);
+   bson_destroy (&opts);
 }
 
 
@@ -3194,6 +3257,7 @@ test_bulk_max_batch_size (void)
 {
    int64_t max_batch;
    mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    mongoc_write_concern_t *wc;
    mongoc_client_t *client;
@@ -3213,6 +3277,7 @@ test_bulk_max_batch_size (void)
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
+   mongoc_write_concern_append (wc, &opts);
    client = test_framework_client_new ();
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
@@ -3221,7 +3286,7 @@ test_bulk_max_batch_size (void)
 
 
    /* {{{ Insert 100 000 documents, in one bulk */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    for (i = 1; i <= max_batch; i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
@@ -3239,7 +3304,7 @@ test_bulk_max_batch_size (void)
    /* }}} */
 
    /* {{{ Insert 100 001 documents, in two bulks */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    for (i = 1; i <= (max_batch + 1); i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
@@ -3257,7 +3322,7 @@ test_bulk_max_batch_size (void)
    /* }}} */
 
    /* {{{ Insert 200 000 documents, in two bulks */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    for (i = 1; i <= 2 * max_batch; i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
@@ -3275,7 +3340,7 @@ test_bulk_max_batch_size (void)
    /* }}} */
 
    /* {{{ Insert 200 001 documents, in 3 bulks */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    for (i = 1; i <= (2 * max_batch + 1); i++) {
       bson_init (&doc);
       bson_append_int32 (&doc, "_id", -1, i);
@@ -3292,7 +3357,7 @@ test_bulk_max_batch_size (void)
    mongoc_collection_drop (collection, NULL);
    /* }}} */
 
-
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_apm_callbacks_destroy (callbacks);
@@ -3477,7 +3542,7 @@ _test_bulk_hint (bool pooled, bool use_primary)
    ASSERT_OR_PRINT (ret, error);
 
    collection = mongoc_client_get_collection (client, "test", "test");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_hint (bulk));
    if (use_primary) {
       server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
@@ -3551,6 +3616,7 @@ test_bulk_reply_w0 (void)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_t reply;
@@ -3559,7 +3625,8 @@ test_bulk_reply_w0 (void)
    collection = get_test_collection (client, "test_insert_w0");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   mongoc_write_concern_append (wc, &opts);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
    mongoc_bulk_operation_update (
       bulk, tmp_bson ("{}"), tmp_bson ("{'$set': {'x': 1}}"), false);
@@ -3572,6 +3639,7 @@ test_bulk_reply_w0 (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -3618,7 +3686,8 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
                     BCON_UTF8 ("lower"),
                     "}");
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   mongoc_write_concern_append (wc, opts);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
    switch (op) {
    case BULK_REMOVE:
       mongoc_bulk_operation_remove_many_with_opts (
@@ -3763,8 +3832,9 @@ _test_bulk_collation_multi (int w, int wire_version)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, w);
    mongoc_write_concern_set_wtimeout (wc, 100);
+   mongoc_write_concern_append (wc, opts);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
    mongoc_bulk_operation_remove_many_with_opts (
       bulk, tmp_bson ("{'_id': 1}"), NULL, &error);
    mongoc_bulk_operation_remove_many_with_opts (
@@ -3891,7 +3961,7 @@ test_bulk_update_one_error_message (void)
    client = mongoc_client_new ("mongodb://server");
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_update_many_with_opts (
       bulk,
       tmp_bson ("{'_id': 5}"),

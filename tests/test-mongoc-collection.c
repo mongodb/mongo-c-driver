@@ -522,7 +522,7 @@ test_insert_null (void)
       collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
    ASSERT_OR_PRINT (ret, error);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_insert (bulk, &doc);
    ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (ret, error);
@@ -550,7 +550,7 @@ test_insert_null (void)
    mongoc_cursor_destroy (cursor);
    mongoc_bulk_operation_destroy (bulk);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_remove_one (bulk, &doc);
    ret = mongoc_bulk_operation_update_one_with_opts (
       bulk, &doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, &error);
@@ -905,7 +905,7 @@ test_insert_command_keys (void)
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "test", "test");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    for (i = 0; i < 3; i++) {
       doc = BCON_NEW ("_id", BCON_INT32 (i));
@@ -2514,7 +2514,9 @@ test_aggregate_bypass (void *context)
    bson_free (collname);
 
    /* Generate some example data */
-   bulk = mongoc_collection_create_bulk_operation (data_collection, true, NULL);
+   bulk =
+      mongoc_collection_create_bulk_operation_with_opts (data_collection, NULL);
+
    for (i = 0; i < 3; i++) {
       bson_t *document;
       json = bson_strdup_printf ("{'number': 3, 'high': %d }", i);
@@ -2730,7 +2732,7 @@ test_aggregate_large (void)
    collection = get_test_collection (client, "test_aggregate_large");
    ASSERT (collection);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    /* ensure a few batches */
    inserted_doc = tmp_bson ("{'_id': 0}");

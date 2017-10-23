@@ -156,7 +156,7 @@ test_limit (void)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_limit");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    b = tmp_bson ("{}");
    for (i = 0; i < 10; ++i) {
       mongoc_bulk_operation_insert (bulk, b);
@@ -234,7 +234,7 @@ test_kill_cursor_live (void)
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test");
    b = tmp_bson ("{}");
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    for (i = 0; i < 200; i++) {
       mongoc_bulk_operation_insert (bulk, b);
    }
@@ -546,7 +546,7 @@ _test_cursor_new_from_command (const char *cmd_json,
    mongoc_collection_remove (
       collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'a'}"));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'b'}"));
    r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));

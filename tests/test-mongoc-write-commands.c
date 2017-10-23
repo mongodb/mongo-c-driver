@@ -187,7 +187,7 @@ test_bypass_validation (void *context)
    mongoc_collection_destroy (collection2);
 
    /* {{{ Default fails validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
@@ -203,7 +203,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ bypass_document_validation=false Fails validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, false);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
@@ -220,7 +220,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ bypass_document_validation=true ignores validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, true);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
@@ -234,7 +234,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ w=0 and bypass_document_validation=set fails */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    wr = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wr, 0);
    mongoc_bulk_operation_set_write_concern (bulk, wr);
