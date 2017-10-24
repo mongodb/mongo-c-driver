@@ -1,5 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-client-private.h>
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -1486,6 +1487,7 @@ test_error_document_command (void)
 
    client = test_framework_client_new ();
    mongoc_client_set_error_api (client, 2);
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "test",
                                    MONGOC_QUERY_NONE,

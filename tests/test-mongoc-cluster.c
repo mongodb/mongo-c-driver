@@ -563,6 +563,7 @@ client_command (mongoc_client_t *client, bson_error_t *error)
    const bson_t *doc;
    bool r;
 
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "test",
                                    MONGOC_QUERY_NONE,
@@ -572,6 +573,7 @@ client_command (mongoc_client_t *client, bson_error_t *error)
                                    tmp_bson ("{'ping': 1}"),
                                    NULL,
                                    NULL);
+   END_IGNORE_DEPRECATIONS
 
    mongoc_cursor_next (cursor, &doc);
    r = !mongoc_cursor_error (cursor, error);

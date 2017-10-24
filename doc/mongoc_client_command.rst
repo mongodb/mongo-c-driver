@@ -17,9 +17,18 @@ Synopsis
                          uint32_t batch_size,
                          const bson_t *query,
                          const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs);
+                         const mongoc_read_prefs_t *read_prefs)
+     BSON_GNUC_DEPRECATED_FOR (mongoc_client_command_with_opts);
 
-Superseded by :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, and :symbol:`mongoc_client_read_write_command_with_opts()`.
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :symbol:`mongoc_client_command_with_opts()`, :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, or :symbol:`mongoc_client_read_write_command_with_opts()`.
+
+Description
+-----------
 
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next` is called on it. The client's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next` will not check the server response for a write concern error or write concern timeout.
 

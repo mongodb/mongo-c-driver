@@ -3712,6 +3712,7 @@ test_command_fq (void *context)
 
    cmd = tmp_bson ("{ 'dbstats': 1}");
 
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "sometest.$cmd",
                                    MONGOC_QUERY_SLAVE_OK,
@@ -3721,6 +3722,8 @@ test_command_fq (void *context)
                                    cmd,
                                    NULL,
                                    NULL);
+   END_IGNORE_DEPRECATIONS
+
    r = mongoc_cursor_next (cursor, &doc);
    BSON_ASSERT (r);
 

@@ -752,6 +752,7 @@ test_mongoc_client_command_defaults (void)
    mongoc_client_set_read_prefs (client, read_prefs);
    mongoc_client_set_read_concern (client, read_concern);
 
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "admin",
                                    MONGOC_QUERY_NONE,
@@ -761,6 +762,7 @@ test_mongoc_client_command_defaults (void)
                                    tmp_bson ("{'ping': 1}"),
                                    NULL,
                                    NULL);
+   END_IGNORE_DEPRECATIONS
 
    /* Read and Write Concern spec: "If your driver offers a generic RunCommand
     * method on your database object, ReadConcern MUST NOT be applied
@@ -798,8 +800,10 @@ test_mongoc_client_command_secondary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (
       client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
+   END_IGNORE_DEPRECATIONS
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
@@ -880,6 +884,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       request_destroy (request);
    } else {
       /* not simple, no read preference */
+      BEGIN_IGNORE_DEPRECATIONS
       cursor = mongoc_client_command (
          client, "db", MONGOC_QUERY_NONE, 0, 0, 0, cmd, NULL, NULL);
       future = future_cursor_next (cursor, &reply);
@@ -908,6 +913,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       future_destroy (future);
       request_destroy (request);
       mongoc_cursor_destroy (cursor);
+      END_IGNORE_DEPRECATIONS
    }
 
    mongoc_uri_destroy (uri);
@@ -961,6 +967,7 @@ test_command_not_found (void)
    mongoc_cursor_t *cursor;
 
    client = test_framework_client_new ();
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "test",
                                    MONGOC_QUERY_NONE,
@@ -970,6 +977,7 @@ test_command_not_found (void)
                                    tmp_bson ("{'foo': 1}"),
                                    NULL,
                                    NULL);
+   END_IGNORE_DEPRECATIONS
 
    ASSERT (!mongoc_cursor_next (cursor, &doc));
    ASSERT (mongoc_cursor_error (cursor, &error));
