@@ -293,6 +293,28 @@ mongoc_database_read_write_command_with_opts (
 }
 
 
+bool
+mongoc_database_command_with_opts (mongoc_database_t *database,
+                                   const bson_t *command,
+                                   const mongoc_read_prefs_t *read_prefs,
+                                   const bson_t *opts,
+                                   bson_t *reply,
+                                   bson_error_t *error)
+{
+   return _mongoc_client_command_with_opts (database->client,
+                                            database->name,
+                                            command,
+                                            MONGOC_CMD_RAW,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            database->read_concern,
+                                            database->write_concern,
+                                            reply,
+                                            error);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *

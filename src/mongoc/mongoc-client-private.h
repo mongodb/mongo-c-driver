@@ -105,6 +105,7 @@ struct _mongoc_client_t {
  * a command like "createRole", or both, like "aggregate" with "$out".
  */
 typedef enum {
+   MONGOC_CMD_RAW = 0,
    MONGOC_CMD_READ = 1,
    MONGOC_CMD_WRITE = 2,
    MONGOC_CMD_RW = 3,

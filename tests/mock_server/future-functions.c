@@ -72,6 +72,31 @@ background_mongoc_client_command_simple (void *data)
 }
 
 static void *
+background_mongoc_client_command_with_opts (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_client_command_with_opts (
+         future_value_get_mongoc_client_ptr (future_get_param (future, 0)),
+         future_value_get_const_char_ptr (future_get_param (future, 1)),
+         future_value_get_const_bson_ptr (future_get_param (future, 2)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 3)),
+         future_value_get_const_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bson_ptr (future_get_param (future, 5)),
+         future_value_get_bson_error_ptr (future_get_param (future, 6))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_client_read_command_with_opts (void *data)
 {
    future_t *future = (future_t *) data;
@@ -854,6 +879,44 @@ future_client_command_simple (
       future_get_param (future, 5), error);
    
    future_start (future, background_mongoc_client_command_simple);
+   return future;
+}
+
+future_t *
+future_client_command_with_opts (
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  7);
+   
+   future_value_set_mongoc_client_ptr (
+      future_get_param (future, 0), client);
+   
+   future_value_set_const_char_ptr (
+      future_get_param (future, 1), db_name);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 2), command);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 3), read_prefs);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 4), opts);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 5), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 6), error);
+   
+   future_start (future, background_mongoc_client_command_with_opts);
    return future;
 }
 

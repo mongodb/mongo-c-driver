@@ -31,6 +31,7 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_aggregate
     mongoc_collection_command
     mongoc_collection_command_simple
+    mongoc_collection_command_with_opts
     mongoc_collection_copy
     mongoc_collection_count
     mongoc_collection_count_with_opts

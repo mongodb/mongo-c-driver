@@ -37,6 +37,19 @@ future_client_command_simple (
 
 
 future_t *
+future_client_command_with_opts (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_client_read_command_with_opts (
 
    mongoc_client_ptr client,

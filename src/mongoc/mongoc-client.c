@@ -1556,6 +1556,10 @@ mongoc_client_command_simple (mongoc_client_t *client,
  *       If mode is MONGOC_CMD_WRITE or MONGOC_CMD_RW, then write concern is
  *       applied from @opts if present, or else from @default_wc.
  *
+ *       If mode is MONGOC_CMD_RAW, then read concern and write concern are
+ *       applied from @opts only. Read preferences are applied from
+ *       @read_prefs.
+ *
  *       The mongoc_client_t's read preference, read concern, and write concern
  *       are *NOT* applied.
  *
@@ -1601,7 +1605,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
    reply_ptr = reply ? reply : &reply_local;
 
-   if (mode == MONGOC_CMD_READ) {
+   if (mode == MONGOC_CMD_READ || mode == MONGOC_CMD_RAW) {
       /* NULL read pref is ok */
       if (!_mongoc_read_prefs_validate (default_prefs, error)) {
          GOTO (err);
@@ -1767,6 +1771,29 @@ mongoc_client_read_write_command_with_opts (
       client->write_concern,
       reply,
       error);
+}
+
+
+bool
+mongoc_client_command_with_opts (mongoc_client_t *client,
+                                 const char *db_name,
+                                 const bson_t *command,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 const bson_t *opts,
+                                 bson_t *reply,
+                                 bson_error_t *error)
+{
+   return _mongoc_client_command_with_opts (client,
+                                            db_name,
+                                            command,
+                                            MONGOC_CMD_RAW,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            client->read_concern,
+                                            client->write_concern,
+                                            reply,
+                                            error);
 }
 
 

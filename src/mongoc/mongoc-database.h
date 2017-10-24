@@ -87,6 +87,13 @@ mongoc_database_read_write_command_with_opts (
    bson_t *reply,
    bson_error_t *error);
 MONGOC_EXPORT (bool)
+mongoc_database_command_with_opts (mongoc_database_t *database,
+                                   const bson_t *command,
+                                   const mongoc_read_prefs_t *read_prefs,
+                                   const bson_t *opts,
+                                   bson_t *reply,
+                                   bson_error_t *error);
+MONGOC_EXPORT (bool)
 mongoc_database_command_simple (mongoc_database_t *database,
                                 const bson_t *command,
                                 const mongoc_read_prefs_t *read_prefs,

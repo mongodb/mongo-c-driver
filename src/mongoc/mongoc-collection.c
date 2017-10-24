@@ -728,6 +728,30 @@ mongoc_collection_read_write_command_with_opts (
 
 
 bool
+mongoc_collection_command_with_opts (mongoc_collection_t *collection,
+                                     const bson_t *command,
+                                     const mongoc_read_prefs_t *read_prefs,
+                                     const bson_t *opts,
+                                     bson_t *reply,
+                                     bson_error_t *error)
+{
+   BSON_ASSERT (collection);
+
+   return _mongoc_client_command_with_opts (collection->client,
+                                            collection->db,
+                                            command,
+                                            MONGOC_CMD_RAW,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            collection->read_concern,
+                                            collection->write_concern,
+                                            reply,
+                                            error);
+}
+
+
+bool
 mongoc_collection_command_simple (mongoc_collection_t *collection,
                                   const bson_t *command,
                                   const mongoc_read_prefs_t *read_prefs,

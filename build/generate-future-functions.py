@@ -123,6 +123,16 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
+                    "mongoc_client_command_with_opts",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
                     "mongoc_client_read_command_with_opts",
                     [param("mongoc_client_ptr", "client"),
                      param("const_char_ptr", "db_name"),

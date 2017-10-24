@@ -1179,7 +1179,7 @@ test_command_with_opts_legacy (void)
 
 
 static void
-test_command_with_opts_modern (void)
+test_read_command_with_opts (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -1297,6 +1297,87 @@ test_command_with_opts_modern (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_command_with_opts (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_t *cmd;
+   mongoc_write_concern_t *wc;
+   mongoc_read_concern_t *read_concern;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   bson_t opts = BSON_INITIALIZER;
+
+   server = mock_mongos_new (5);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* client's write concern, read concern, read prefs are ignored */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_client_set_write_concern (client, wc);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "majority");
+   mongoc_client_set_read_concern (client, read_concern);
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, prefs);
+
+   cmd = tmp_bson ("{'create': 'db'}");
+   future = future_client_command_with_opts (
+      client, "admin", cmd, NULL, NULL, NULL, &error);
+
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_NONE,
+                                    "{"
+                                    "   'create': 'db',"
+                                    "   'readConcern': {'$exists': false},"
+                                    "   'writeConcern': {'$exists': false}"
+                                    "}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* write concern, read concern, and read preference passed in explicitly */
+   mongoc_write_concern_append (wc, &opts);
+   mongoc_read_concern_append (read_concern, &opts);
+   future = future_client_command_with_opts (
+      client, "admin", cmd, prefs, &opts, NULL, &error);
+
+   request =
+      mock_server_receives_command (server,
+                                    "admin",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{"
+                                    "   '$query': {"
+                                    "      'create':'db',"
+                                    "      'writeConcern': {'w': 2},"
+                                    "      'readConcern': {'level':'majority'}"
+                                    "   },"
+                                    "   '$readPreference': {"
+                                    "      'mode':'secondary'"
+                                    "   }"
+                                    "}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_read_prefs_destroy (prefs);
    mongoc_read_concern_destroy (read_concern);
    mongoc_write_concern_destroy (wc);
    mongoc_client_destroy (client);
@@ -3226,7 +3307,9 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_with_opts/modern", test_command_with_opts_modern);
+      suite, "/Client/command_with_opts", test_command_with_opts);
+   TestSuite_AddMockServerTest (
+      suite, "/Client/command_with_opts/read", test_read_command_with_opts);
    TestSuite_AddLive (suite, "/Client/command/empty", test_command_empty);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/no_errmsg", test_command_no_errmsg);

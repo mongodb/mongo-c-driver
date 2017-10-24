@@ -524,6 +524,19 @@ run_session_test (void *ctx)
 
 /* "session argument is for right client" tests from Driver Sessions Spec */
 static void
+test_session_cmd (session_test_t *test)
+{
+   test->succeeded = mongoc_client_command_with_opts (test->client,
+                                                      "db",
+                                                      tmp_bson ("{'ping': 1}"),
+                                                      NULL,
+                                                      &test->opts,
+                                                      NULL,
+                                                      &test->error);
+}
+
+
+static void
 test_session_read_cmd (session_test_t *test)
 {
    test->succeeded =
@@ -843,8 +856,8 @@ test_find_indexes (session_test_t *test)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   cursor = mongoc_collection_find_indexes_with_opts (test->collection,
-                                                      &test->opts);
+   cursor =
+      mongoc_collection_find_indexes_with_opts (test->collection, &test->opts);
 
    mongoc_cursor_next (cursor, &doc);
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
@@ -937,6 +950,7 @@ test_session_install (TestSuite *suite)
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto);
    add_session_test (suite, "/Session/read_cmd", test_session_read_cmd);
+   add_session_test (suite, "/Session/cmd", test_session_cmd);
    add_session_test (suite, "/Session/count", test_session_count);
    add_session_test (suite, "/Session/cursor", test_session_cursor);
    add_session_test (suite, "/Session/drop", test_session_drop);
