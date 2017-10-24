@@ -3770,13 +3770,10 @@ test_get_index_info (void)
    /*
     * Try it on a collection that doesn't exist.
     */
-   cursor = mongoc_collection_find_indexes (collection, &error);
-
-   ASSERT (cursor);
-   ASSERT (!error.domain);
-   ASSERT (!error.code);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
    ASSERT (!mongoc_cursor_next (cursor, &indexinfo));
+   ASSERT (!mongoc_cursor_error (cursor, &error));
 
    mongoc_cursor_destroy (cursor);
 
@@ -3788,10 +3785,8 @@ test_get_index_info (void)
    /* Try it on a collection with no secondary indexes.
     * We should just get back the index on _id.
     */
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT (cursor);
-   ASSERT (!error.domain);
-   ASSERT (!error.code);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
 
    while (mongoc_cursor_next (cursor, &indexinfo)) {
       if (bson_iter_init (&idx_spec_iter, indexinfo) &&
@@ -3833,10 +3828,8 @@ test_get_index_info (void)
    /*
     * Now we try again after creating two indexes.
     */
-   cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT (cursor);
-   ASSERT (!error.domain);
-   ASSERT (!error.code);
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
 
    while (mongoc_cursor_next (cursor, &indexinfo)) {
       if (bson_iter_init (&idx_spec_iter, indexinfo) &&
@@ -3886,6 +3879,7 @@ test_find_indexes_err (void)
    mongoc_collection_t *collection;
    future_t *future;
    request_t *request;
+   mongoc_cursor_t *cursor;
    bson_error_t error;
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
@@ -3894,13 +3888,17 @@ test_find_indexes_err (void)
    mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   future = future_collection_find_indexes (collection, &error);
+   future = future_collection_find_indexes_with_opts (collection, NULL);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listIndexes': 'collection'}");
 
-   mock_server_replies_simple (request, "{'ok': 0, 'code': 1234567}");
-   BSON_ASSERT (NULL == future_get_mongoc_cursor_ptr (future));
+   mock_server_replies_simple (request,
+                               "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
+   cursor = future_get_mongoc_cursor_ptr (future);
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 1234567, "foo");
 
+   mongoc_cursor_destroy (cursor);
    request_destroy (request);
    future_destroy (future);
    mongoc_collection_destroy (collection);

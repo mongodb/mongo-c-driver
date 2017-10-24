@@ -49,6 +49,7 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_collection_find_and_modify
     mongoc_collection_find_and_modify_with_opts
     mongoc_collection_find_indexes
+    mongoc_collection_find_indexes_with_opts
     mongoc_collection_find_with_opts
     mongoc_collection_get_last_error
     mongoc_collection_get_name

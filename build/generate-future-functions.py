@@ -216,9 +216,9 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_cursor_ptr",
-                    "mongoc_collection_find_indexes",
+                    "mongoc_collection_find_indexes_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("bson_error_ptr", "error")]),
+                     param("const_bson_ptr", "opts")]),
 
     future_function("bool",
                     "mongoc_collection_stats",

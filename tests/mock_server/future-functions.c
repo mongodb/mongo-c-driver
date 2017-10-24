@@ -312,7 +312,7 @@ background_mongoc_collection_find_and_modify (void *data)
 }
 
 static void *
-background_mongoc_collection_find_indexes (void *data)
+background_mongoc_collection_find_indexes_with_opts (void *data)
 {
    future_t *future = (future_t *) data;
    future_value_t return_value;
@@ -321,9 +321,9 @@ background_mongoc_collection_find_indexes (void *data)
 
    future_value_set_mongoc_cursor_ptr (
       &return_value,
-      mongoc_collection_find_indexes (
+      mongoc_collection_find_indexes_with_opts (
          future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
-         future_value_get_bson_error_ptr (future_get_param (future, 1))
+         future_value_get_const_bson_ptr (future_get_param (future, 1))
       ));
 
    future_resolve (future, return_value);
@@ -1210,9 +1210,9 @@ future_collection_find_and_modify (
 }
 
 future_t *
-future_collection_find_indexes (
+future_collection_find_indexes_with_opts (
    mongoc_collection_ptr collection,
-   bson_error_ptr error)
+   const_bson_ptr opts)
 {
    future_t *future = future_new (future_value_mongoc_cursor_ptr_type,
                                   2);
@@ -1220,10 +1220,10 @@ future_collection_find_indexes (
    future_value_set_mongoc_collection_ptr (
       future_get_param (future, 0), collection);
    
-   future_value_set_bson_error_ptr (
-      future_get_param (future, 1), error);
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), opts);
    
-   future_start (future, background_mongoc_collection_find_indexes);
+   future_start (future, background_mongoc_collection_find_indexes_with_opts);
    return future;
 }
 

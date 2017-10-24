@@ -139,7 +139,11 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
                                 bson_error_t *error) BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes (mongoc_collection_t *collection,
-                                bson_error_t *error);
+                                bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts);
+MONGOC_EXPORT (mongoc_cursor_t *)
+mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
+                                          const bson_t *opts);
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find (mongoc_collection_t *collection,
                         mongoc_query_flags_t flags,

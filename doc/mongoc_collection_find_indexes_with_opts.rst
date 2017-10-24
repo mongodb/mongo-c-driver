@@ -1,0 +1,32 @@
+:man_page: mongoc_collection_find_indexes_with_opts
+
+mongoc_collection_find_indexes_with_opts()
+==========================================
+
+Synopsis
+--------
+
+.. code-block:: c
+
+  mongoc_cursor_t *
+  mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
+                                            const bson_t *opts);
+
+Fetches a cursor containing documents, each corresponding to an index on this collection.
+
+Parameters
+----------
+
+* ``collection``: A :symbol:`mongoc_collection_t`.
+* ``opts``: A :symbol:`bson:bson_t` containing additional options.
+
+Errors
+------
+
+Use :symbol:`mongoc_cursor_error` on the returned cursor to check for errors.
+
+Returns
+-------
+
+A cursor where each result corresponds to the server's representation of an index on this collection. If the collection does not exist on the server, the cursor will be empty.
+

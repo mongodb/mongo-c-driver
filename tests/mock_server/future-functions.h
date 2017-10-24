@@ -160,10 +160,10 @@ future_collection_find_and_modify (
 
 
 future_t *
-future_collection_find_indexes (
+future_collection_find_indexes_with_opts (
 
    mongoc_collection_ptr collection,
-   bson_error_ptr error
+   const_bson_ptr opts
 );
 
 

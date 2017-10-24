@@ -1258,8 +1258,7 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
 }
 
 mongoc_cursor_t *
-_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
-                                        bson_error_t *error)
+_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection)
 {
    mongoc_database_t *db;
    mongoc_collection_t *idx_collection;
@@ -1295,8 +1294,27 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                 bson_error_t *error)
 {
    mongoc_cursor_t *cursor;
+
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
+
+   if (mongoc_cursor_error (cursor, error)) {
+      /* conform to deprecated API: unhandled errors cause a NULL return */
+      mongoc_cursor_destroy (cursor);
+      return NULL;
+   }
+
+   return cursor;
+}
+
+
+mongoc_cursor_t *
+mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
+                                          const bson_t *opts)
+{
+   mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
    bson_t child;
+   bson_error_t error;
 
    BSON_ASSERT (collection);
 
@@ -1309,39 +1327,41 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
    BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
    bson_append_document_end (&cmd, &child);
 
-   /* Set slaveOk but no read preference: Index Enumeration Spec says
-    * "listIndexes can be run on a secondary" when directly connected but
-    * "run listIndexes on the primary node in replicaSet mode". */
-   cursor = _mongoc_collection_cursor_new (
-      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
+   /* No read preference. Index Enumeration Spec: "run listIndexes on the
+    * primary node in replicaSet mode". */
+   cursor = _mongoc_cursor_new_with_opts (collection->client,
+                                          collection->ns,
+                                          false /* is_find */,
+                                          &cmd,
+                                          opts,
+                                          NULL /* read prefs */,
+                                          NULL /* read concern */);
+
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
       /* intentionally empty */
    } else {
-      if (mongoc_cursor_error (cursor, error)) {
-         mongoc_cursor_destroy (cursor);
-
-         if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+      if (mongoc_cursor_error (cursor, &error)) {
+         if (error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
             bson_t empty_arr = BSON_INITIALIZER;
             /* collection does not exist. in accordance with the spec we return
              * an empty array. Also we need to clear out the error. */
-            error->code = 0;
-            error->domain = 0;
+            error.code = 0;
+            error.domain = 0;
+            mongoc_cursor_destroy (cursor);
             cursor = _mongoc_collection_cursor_new (
                collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
-         } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+         } else if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
             /* talking to an old server. */
             /* clear out error. */
-            error->code = 0;
-            error->domain = 0;
-            cursor = _mongoc_collection_find_indexes_legacy (collection, error);
-         } else {
-            /* other error, to be handled by caller */
-            cursor = NULL;
+            error.code = 0;
+            error.domain = 0;
+            mongoc_cursor_destroy (cursor);
+            cursor = _mongoc_collection_find_indexes_legacy (collection);
          }
       }
    }
