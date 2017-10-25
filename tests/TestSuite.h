@@ -495,7 +495,9 @@ TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
 int
 TestSuite_CheckMockServerAllowed (void);
 void
-TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func);
+_TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func, ...);
+#define TestSuite_AddMockServerTest(_suite, _name, ...) \
+   _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
 void
 TestSuite_AddWC (TestSuite *suite,
                  const char *name,

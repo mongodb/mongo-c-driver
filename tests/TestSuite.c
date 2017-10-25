@@ -369,11 +369,74 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
 }
 
 
-void
-TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func)
+static void
+_TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 {
-   TestSuite_AddFull (
-      suite, name, (void *) func, NULL, NULL, TestSuite_CheckMockServerAllowed);
+   test->checks[test->num_checks] = check;
+   if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
+      fprintf (stderr,
+               "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
+               "to more than %d\n",
+               name,
+               MAX_TEST_CHECK_FUNCS);
+      abort ();
+   }
+}
+
+
+static Test *
+_V_TestSuite_AddFull (TestSuite *suite,
+                      const char *name,
+                      TestFuncWC func,
+                      TestFuncDtor dtor,
+                      void *ctx,
+                      va_list ap)
+{
+   CheckFunc check;
+   Test *test;
+   Test *iter;
+
+   test = (Test *) calloc (1, sizeof *test);
+   test->name = bson_strdup (name);
+   test->func = func;
+   test->num_checks = 0;
+
+   while ((check = va_arg (ap, CheckFunc))) {
+      _TestSuite_AddCheck (test, check, name);
+   }
+
+   test->next = NULL;
+   test->dtor = dtor;
+   test->ctx = ctx;
+   TestSuite_SeedRand (suite, test);
+
+   if (!suite->tests) {
+      suite->tests = test;
+      return test;
+   }
+
+   for (iter = suite->tests; iter->next; iter = iter->next) {
+   }
+
+   iter->next = test;
+   return test;
+}
+
+
+void
+_TestSuite_AddMockServerTest (TestSuite *suite,
+                              const char *name,
+                              TestFunc func,
+                              ...)
+{
+   Test* test;
+   va_list ap;
+
+   va_start (ap, func);
+   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   va_end (ap);
+
+   _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
 }
 
 
@@ -397,43 +460,10 @@ _TestSuite_AddFull (TestSuite *suite,  /* IN */
                     ...) /* IN */
 {
    va_list ap;
-   CheckFunc check;
-   Test *test;
-   Test *iter;
-
-   test = (Test *) calloc (1, sizeof *test);
-   test->name = bson_strdup (name);
-   test->func = func;
 
    va_start (ap, ctx);
-   test->num_checks = 0;
-   while ((check = va_arg (ap, CheckFunc))) {
-      test->checks[test->num_checks] = check;
-      if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
-         fprintf (stderr,
-                  "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
-                  "to more than %d\n",
-                  name,
-                  MAX_TEST_CHECK_FUNCS);
-         abort ();
-      }
-   }
+   _V_TestSuite_AddFull (suite, name, func, dtor, ctx, ap);
    va_end (ap);
-
-   test->next = NULL;
-   test->dtor = dtor;
-   test->ctx = ctx;
-   TestSuite_SeedRand (suite, test);
-
-   if (!suite->tests) {
-      suite->tests = test;
-      return;
-   }
-
-   for (iter = suite->tests; iter->next; iter = iter->next) {
-   }
-
-   iter->next = test;
 }
 
 
