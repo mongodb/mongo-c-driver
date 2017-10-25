@@ -131,14 +131,6 @@ mongoc_client_command_simple (mongoc_client_t *client,
                               bson_t *reply,
                               bson_error_t *error);
 MONGOC_EXPORT (bool)
-mongoc_client_command_opmsg (mongoc_client_t *client,
-                             const bson_t *command,
-                             const char *identifier,
-                             bson_t *documents,
-                             bson_t *reply,
-                             bson_error_t *error);
-
-MONGOC_EXPORT (bool)
 mongoc_client_read_command_with_opts (mongoc_client_t *client,
                                       const char *db_name,
                                       const bson_t *command,

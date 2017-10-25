@@ -1389,51 +1389,6 @@ mongoc_client_command_simple (mongoc_client_t *client,
 }
 
 
-bool
-mongoc_client_command_opmsg (mongoc_client_t *client,
-                             const bson_t *command,
-                             const char *identifier,
-                             bson_t *documents,
-                             bson_t *reply,
-                             bson_error_t *error)
-{
-   mongoc_cluster_t *cluster;
-   mongoc_server_stream_t *server_stream = NULL;
-   mongoc_cmd_parts_t parts;
-   bool ret;
-
-   ENTRY;
-
-   BSON_ASSERT (client);
-   BSON_ASSERT (command);
-   cluster = &client->cluster;
-
-   mongoc_cmd_parts_init (&parts, "admin", MONGOC_QUERY_NONE, command);
-
-   server_stream = mongoc_cluster_stream_for_reads (cluster, NULL, error);
-
-   if (server_stream) {
-      if (mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
-         parts.assembled.payload = bson_get_data (documents);
-         parts.assembled.payload_size = documents->len;
-         parts.assembled.payload_identifier = identifier;
-         mongoc_cluster_run_opmsg (cluster, &parts.assembled, reply, error);
-         ret = true;
-      } else {
-         _mongoc_bson_init_if_set (reply);
-         ret = false;
-      }
-   } else {
-      ret = false;
-   }
-
-   mongoc_cmd_parts_cleanup (&parts);
-   mongoc_server_stream_cleanup (server_stream);
-
-   RETURN (ret);
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
