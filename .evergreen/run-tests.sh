@@ -86,7 +86,14 @@ case "$OS" in
 
    *)
       ulimit -c unlimited || true
-      make -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
+
+      if [ "$VALGRIND" = "on" ]; then
+         export MONGOC_TEST_SKIP_SLOW="on";
+         make valgrind;
+      else
+         make -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
+      fi
+
       ;;
 esac
 

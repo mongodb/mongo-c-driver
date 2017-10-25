@@ -34,7 +34,6 @@ Parameters
 ``opts`` may be ``NULL`` or a document consisting of the following optional
 fields:
 
-* ``arrayFilters`` An array of filters specifying to which array elements an update should apply.
 * ``bypassDocumentValidation`` A ``boolean``, if true, allows the write to opt-out of document level validation.
 * ``collation`` A `Collation Document <https://docs.mongodb.com/manual/reference/collation/>`_.
 * ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
