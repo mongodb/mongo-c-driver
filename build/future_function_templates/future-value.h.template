@@ -6,6 +6,7 @@
 
 
 #include "mongoc-server-description.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-topology-private.h"
 
 

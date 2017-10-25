@@ -896,6 +896,180 @@ test_cluster_time_comparison_pooled (void)
 }
 
 
+typedef future_t *(*run_command_fn_t) (mongoc_client_t *);
+
+
+typedef struct {
+   const char *errmsg;
+   bool is_not_master_err;
+} test_error_t;
+
+
+test_error_t errors[] = {{"not master", true},
+                         {"not master or secondary", true},
+                         {"node is recovering", true},
+                         {"foo", false},
+                         {0}};
+
+/* a "not master" or "node is recovering" error marks server Unknown */
+static void
+_test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
+{
+   test_error_t *test_error;
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   const char *cmd = "{'cmd': 1}";
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   mongoc_topology_description_t *td;
+   mongoc_server_description_t *sd;
+   char *reply;
+
+   server = mock_server_with_autoismaster (use_op_msg ? 6 : 5);
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   td = &client->topology->description;
+   sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, 1);
+
+   for (test_error = errors; test_error->errmsg; test_error++) {
+      /*
+       * successful command results in known server type
+       */
+      future = future_client_command_simple (
+         client, "test", tmp_bson (cmd), NULL, NULL, &error);
+
+      request = mock_server_receives_request (server);
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+
+      BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
+
+      /*
+       * command error marks server Unknown iff it's a "not master" error
+       */
+      future = run_command (client);
+      request = mock_server_receives_request (server);
+
+      reply =
+         bson_strdup_printf ("{'ok': 0, 'errmsg': '%s'}", test_error->errmsg);
+      mock_server_replies_simple (request, reply);
+      BSON_ASSERT (!future_get_bool (future));
+
+      if (test_error->is_not_master_err) {
+         BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
+      } else {
+         BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
+      }
+
+      bson_free (reply);
+      request_destroy (request);
+      future_destroy (future);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_server_destroy (server);
+}
+
+
+static future_t *
+future_command_simple (mongoc_client_t *client)
+{
+   return future_client_command_simple (
+      client, "test", tmp_bson ("{'cmd': 1}"), NULL, NULL, NULL);
+}
+
+
+static void
+test_not_master_single_op_query (void)
+{
+   _test_not_master (false, false, future_command_simple);
+}
+
+
+static void
+test_not_master_pooled_op_query (void)
+{
+   _test_not_master (true, false, future_command_simple);
+}
+
+static void
+test_not_master_single_op_msg (void)
+{
+   _test_not_master (false, true, future_command_simple);
+}
+
+
+static void
+test_not_master_pooled_op_msg (void)
+{
+   _test_not_master (true, true, future_command_simple);
+}
+
+
+/* parts must remain valid after future_command_private exits */
+mongoc_cmd_parts_t parts;
+
+static future_t *
+future_command_private (mongoc_client_t *client)
+{
+   bson_error_t error;
+   mongoc_server_stream_t *server_stream;
+
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+
+   mongoc_cmd_parts_init (
+      &parts, "test", MONGOC_QUERY_NONE, tmp_bson ("{'cmd': 1}"));
+
+   /* mongoc_cluster_run_command_parts will call mongoc_cmd_parts_cleanup */
+   return future_cluster_run_command_parts (
+      &client->cluster, server_stream, &parts, NULL, NULL);
+}
+
+
+static void
+test_not_master_auth_single_op_query (void)
+{
+   _test_not_master (false, false, future_command_private);
+}
+
+
+static void
+test_not_master_auth_pooled_op_query (void)
+{
+   _test_not_master (true, false, future_command_private);
+}
+
+static void
+test_not_master_auth_single_op_msg (void)
+{
+   _test_not_master (false, true, future_command_private);
+}
+
+
+static void
+test_not_master_auth_pooled_op_msg (void)
+{
+   _test_not_master (true, true, future_command_private);
+}
+
+
 typedef struct {
    const char *name;
    const char *q;
@@ -1187,4 +1361,36 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/pooled",
                                 test_cluster_time_comparison_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master/single/op_query",
+                                test_not_master_single_op_query,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master/pooled/op_query",
+                                test_not_master_pooled_op_query,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master/single/op_msg",
+                                test_not_master_single_op_msg,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master/pooled/op_msg",
+                                test_not_master_pooled_op_msg,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master_auth/single/op_query",
+                                test_not_master_auth_single_op_query,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master_auth/pooled/op_query",
+                                test_not_master_auth_pooled_op_query,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master_auth/single/op_msg",
+                                test_not_master_auth_single_op_msg,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/not_master_auth/pooled/op_msg",
+                                test_not_master_auth_pooled_op_msg,
+                                test_framework_skip_if_slow);
 }

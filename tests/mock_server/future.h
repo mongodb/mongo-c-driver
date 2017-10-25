@@ -90,6 +90,12 @@ future_get_mongoc_client_ptr (future_t *future);
 mongoc_collection_ptr
 future_get_mongoc_collection_ptr (future_t *future);
 
+mongoc_cluster_ptr
+future_get_mongoc_cluster_ptr (future_t *future);
+
+mongoc_cmd_parts_ptr
+future_get_mongoc_cmd_parts_ptr (future_t *future);
+
 mongoc_cursor_ptr
 future_get_mongoc_cursor_ptr (future_t *future);
 
@@ -107,6 +113,9 @@ future_get_mongoc_insert_flags_t (future_t *future);
 
 mongoc_iovec_ptr
 future_get_mongoc_iovec_ptr (future_t *future);
+
+mongoc_server_stream_ptr
+future_get_mongoc_server_stream_ptr (future_t *future);
 
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);

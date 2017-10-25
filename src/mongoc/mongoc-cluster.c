@@ -380,6 +380,22 @@ done:
    RETURN (ret);
 }
 
+static void
+handle_not_master_error (mongoc_cluster_t *cluster,
+                         uint32_t server_id,
+                         const bson_error_t *error)
+{
+   if (!strncmp (error->message, "not master", 10) ||
+       !strncmp (error->message, "node is recovering", 18)) {
+      /* Server Discovery and Monitoring Spec: "When the client sees a 'not
+       * master' or 'node is recovering' error it MUST replace the server's
+       * description with a default ServerDescription of type Unknown."
+       */
+      mongoc_topology_invalidate_server (
+         cluster->client->topology, server_id, error);
+   }
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -481,7 +497,9 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       callbacks->failed (&failed_event);
       mongoc_apm_command_failed_cleanup (&failed_event);
    }
-
+   if (!retval) {
+      handle_not_master_error (cluster, server_stream->sd->id, error);
+   }
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
@@ -516,6 +534,11 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    bool retval;
    const mongoc_server_stream_t *server_stream;
    bson_t reply_local;
+   bson_error_t error_local;
+
+   if (!error) {
+      error = &error_local;
+   }
 
    if (!reply) {
       reply = &reply_local;
@@ -530,6 +553,10 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
+   if (!retval) {
+      handle_not_master_error (cluster, server_stream->sd->id, error);
+   }
+
    return retval;
 }
 

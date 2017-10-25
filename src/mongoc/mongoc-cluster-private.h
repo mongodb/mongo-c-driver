@@ -137,6 +137,13 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       bson_error_t *error);
 
 bool
+mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
+                                  mongoc_server_stream_t *server_stream,
+                                  mongoc_cmd_parts_t *parts,
+                                  bson_t *reply,
+                                  bson_error_t *error);
+
+bool
 mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
                                     mongoc_cmd_t *cmd,
                                     bson_t *reply,

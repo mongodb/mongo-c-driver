@@ -6,6 +6,7 @@
 
 
 #include "mongoc-server-description.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-topology-private.h"
 
 
@@ -29,11 +30,14 @@ typedef const bson_t ** const_bson_ptr_ptr;
 typedef mongoc_bulk_operation_t * mongoc_bulk_operation_ptr;
 typedef mongoc_client_t * mongoc_client_ptr;
 typedef mongoc_collection_t * mongoc_collection_ptr;
+typedef mongoc_cluster_t * mongoc_cluster_ptr;
+typedef mongoc_cmd_parts_t * mongoc_cmd_parts_ptr;
 typedef mongoc_cursor_t * mongoc_cursor_ptr;
 typedef mongoc_database_t * mongoc_database_ptr;
 typedef mongoc_gridfs_file_t * mongoc_gridfs_file_ptr;
 typedef mongoc_gridfs_t * mongoc_gridfs_ptr;
 typedef mongoc_iovec_t * mongoc_iovec_ptr;
+typedef mongoc_server_stream_t * mongoc_server_stream_ptr;
 typedef const mongoc_index_opt_t * const_mongoc_index_opt_t;
 typedef mongoc_server_description_t * mongoc_server_description_ptr;
 typedef mongoc_topology_t * mongoc_topology_ptr;
@@ -62,12 +66,15 @@ typedef enum {
    future_value_mongoc_bulk_operation_ptr_type,
    future_value_mongoc_client_ptr_type,
    future_value_mongoc_collection_ptr_type,
+   future_value_mongoc_cluster_ptr_type,
+   future_value_mongoc_cmd_parts_ptr_type,
    future_value_mongoc_cursor_ptr_type,
    future_value_mongoc_database_ptr_type,
    future_value_mongoc_gridfs_file_ptr_type,
    future_value_mongoc_gridfs_ptr_type,
    future_value_mongoc_insert_flags_t_type,
    future_value_mongoc_iovec_ptr_type,
+   future_value_mongoc_server_stream_ptr_type,
    future_value_mongoc_query_flags_t_type,
    future_value_const_mongoc_index_opt_t_type,
    future_value_mongoc_server_description_ptr_type,
@@ -103,12 +110,15 @@ typedef struct _future_value_t
       mongoc_bulk_operation_ptr mongoc_bulk_operation_ptr_value;
       mongoc_client_ptr mongoc_client_ptr_value;
       mongoc_collection_ptr mongoc_collection_ptr_value;
+      mongoc_cluster_ptr mongoc_cluster_ptr_value;
+      mongoc_cmd_parts_ptr mongoc_cmd_parts_ptr_value;
       mongoc_cursor_ptr mongoc_cursor_ptr_value;
       mongoc_database_ptr mongoc_database_ptr_value;
       mongoc_gridfs_file_ptr mongoc_gridfs_file_ptr_value;
       mongoc_gridfs_ptr mongoc_gridfs_ptr_value;
       mongoc_insert_flags_t mongoc_insert_flags_t_value;
       mongoc_iovec_ptr mongoc_iovec_ptr_value;
+      mongoc_server_stream_ptr mongoc_server_stream_ptr_value;
       mongoc_query_flags_t mongoc_query_flags_t_value;
       const_mongoc_index_opt_t const_mongoc_index_opt_t_value;
       mongoc_server_description_ptr mongoc_server_description_ptr_value;
@@ -281,6 +291,24 @@ future_value_get_mongoc_collection_ptr (
    future_value_t *future_value);
 
 void
+future_value_set_mongoc_cluster_ptr(
+   future_value_t *future_value,
+   mongoc_cluster_ptr value);
+
+mongoc_cluster_ptr
+future_value_get_mongoc_cluster_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_cmd_parts_ptr(
+   future_value_t *future_value,
+   mongoc_cmd_parts_ptr value);
+
+mongoc_cmd_parts_ptr
+future_value_get_mongoc_cmd_parts_ptr (
+   future_value_t *future_value);
+
+void
 future_value_set_mongoc_cursor_ptr(
    future_value_t *future_value,
    mongoc_cursor_ptr value);
@@ -332,6 +360,15 @@ future_value_set_mongoc_iovec_ptr(
 
 mongoc_iovec_ptr
 future_value_get_mongoc_iovec_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_server_stream_ptr(
+   future_value_t *future_value,
+   mongoc_server_stream_ptr value);
+
+mongoc_server_stream_ptr
+future_value_get_mongoc_server_stream_ptr (
    future_value_t *future_value);
 
 void

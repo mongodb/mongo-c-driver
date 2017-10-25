@@ -213,6 +213,17 @@ future_collection_insert_bulk (
 
 
 future_t *
+future_cluster_run_command_parts (
+
+   mongoc_cluster_ptr cluster,
+   mongoc_server_stream_ptr server_stream,
+   mongoc_cmd_parts_ptr parts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_cursor_destroy (
 
    mongoc_cursor_ptr cursor
