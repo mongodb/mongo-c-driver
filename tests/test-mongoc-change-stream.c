@@ -577,18 +577,10 @@ test_change_stream_resumable_error ()
    mock_server_replies_simple (
       request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
    request_destroy (request);
-   /* On a resumable error, the change stream will first attempt to kill the
-    * cursor and establish a new one with the same command.
+   /* On a resumable error, the change stream establishes a new cursor with the
+    * same command. No killCursors since "not master" caused the driver to
+    * disconnect from the server.
     */
-
-   /* Kill cursor */
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_SLAVE_OK,
-      "{ 'killCursors': 'coll', 'cursors': [ 123 ] }");
-   mock_server_replies_simple (request, "{ 'cursorsKilled': [123] }");
-   request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_command (
@@ -615,7 +607,7 @@ test_change_stream_resumable_error ()
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
-   /* Test a network timeout also results in a resumable error */
+   /* Test that a network hangup also results in a resumable error */
    future = future_change_stream_next (stream, &next_doc);
    request =
       mock_server_receives_command (server,
@@ -623,8 +615,8 @@ test_change_stream_resumable_error ()
                                     MONGOC_QUERY_SLAVE_OK,
                                     "{ 'getMore': 124, 'collection': 'coll' }");
    mock_server_hangs_up (request);
-   /* No response. */
    request_destroy (request);
+
    /* Retry command */
    request = mock_server_receives_command (
       server,
@@ -662,15 +654,6 @@ test_change_stream_resumable_error ()
 
    request_destroy (request);
 
-   /* Kill cursor */
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_SLAVE_OK,
-      "{ 'killCursors': 'coll', 'cursors': [ 125 ] }");
-   mock_server_replies_simple (request, "{ 'cursorsKilled': [125] }");
-   request_destroy (request);
-
    /* Retry command */
    request = mock_server_receives_command (
       server,
@@ -701,18 +684,7 @@ test_change_stream_resumable_error ()
    ASSERT_MATCH (err_doc, not_master_err);
    future_destroy (future);
 
-   future = future_change_stream_destroy (stream);
-
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_SLAVE_OK,
-      "{ 'killCursors': 'coll', 'cursors': [ 126 ] }");
-   mock_server_replies_simple (request, "{ 'cursorsKilled': [126] }");
-
-   future_wait (future);
-   future_destroy (future);
-   request_destroy (request);
+   mongoc_change_stream_destroy (stream);
    mongoc_uri_destroy (uri);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
