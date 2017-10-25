@@ -198,7 +198,7 @@ mock_mongos_new (int32_t max_wire_version)
    char *cluster_time = "";
    char *ismaster;
 
-   if (max_wire_version >= WIRE_VERSION_CLUSTER_TIME) {
+   if (max_wire_version >= WIRE_VERSION_OP_MSG) {
       cluster_time = ","
                      "'$clusterTime': {"
                      "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"

@@ -68,8 +68,6 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_COLLATION 5
 /* first version to support OP_MSG */
 #define WIRE_VERSION_OP_MSG 6
-/* first version to support $clusterTime and causal consistency */
-#define WIRE_VERSION_CLUSTER_TIME 6
 
 
 struct _mongoc_client_t {
