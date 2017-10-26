@@ -754,7 +754,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
-   ${SOURCE_DIR}/tests/test-mongoc-srv.c
+   ${SOURCE_DIR}/tests/test-mongoc-dns.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-thread.c
    ${SOURCE_DIR}/tests/test-mongoc-topology.c

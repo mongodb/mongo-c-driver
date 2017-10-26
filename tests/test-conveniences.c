@@ -356,10 +356,6 @@ find (bson_value_t *value,
       bool is_command,
       bool is_first);
 
-static bool
-match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern,
-                  match_ctx_t *ctx);
 
 /*--------------------------------------------------------------------------
  *
@@ -907,7 +903,7 @@ bson_value_as_int64 (const bson_value_t *value)
 }
 
 
-static bool
+bool
 match_bson_value (const bson_value_t *doc,
                   const bson_value_t *pattern,
                   match_ctx_t *ctx)

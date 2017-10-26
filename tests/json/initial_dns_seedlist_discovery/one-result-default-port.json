@@ -1,7 +1,7 @@
 {
-  "uri": "mongodb+srv://test3.test.mongodb.com/?replicaSet=repl0",
+  "uri": "mongodb+srv://test3.test.build.10gen.cc/?replicaSet=repl0",
   "seeds": [
-    "localhost:27017"
+    "localhost.build.10gen.cc:27017"
   ],
   "hosts": [
     "localhost:27017",

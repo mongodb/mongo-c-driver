@@ -8,8 +8,9 @@ AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
 URI=${URI:-}
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+DNS=${DNS:-nodns}
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
-
+TEST_ARGS="-d -F test-results.json"
 
 if [ "$COMPRESSORS" != "nocompressors" ]; then
    export MONGOC_TEST_COMPRESSORS="$COMPRESSORS"
@@ -40,7 +41,16 @@ if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"
 fi
 
+if [ "$DNS" != "nodns" ]; then
+   export MONGOC_TEST_DNS=on
+   TEST_ARGS="$TEST_ARGS -l '/initial_dns_seedlist_discovery*'"
+fi
+
 if [ "$CC" = "mingw" ]; then
+   if [ "$DNS" != "nodns" ]; then
+      echo "ERROR - DNS tests not implemented for MinGW yet"
+      exit 1
+   fi
    chmod +x test-libmongoc.exe
    cmd.exe /c .evergreen\\run-tests-mingw.bat
    exit 0
@@ -81,7 +91,7 @@ esac
 
 case "$OS" in
    cygwin*)
-      test-libmongoc.exe -d -F test-results.json
+      test-libmongoc.exe $TEST_ARGS
       ;;
 
    *)
@@ -91,7 +101,8 @@ case "$OS" in
          export MONGOC_TEST_SKIP_SLOW="on";
          make valgrind;
       else
-         make -o test-libmongoc test TEST_ARGS="--no-fork -d -F test-results.json"
+         TEST_ARGS="--no-fork $TEST_ARGS"
+         make -o test-libmongoc test TEST_ARGS="$TEST_ARGS"
       fi
 
       ;;

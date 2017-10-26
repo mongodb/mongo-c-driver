@@ -81,6 +81,11 @@ bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
 
 bool
+match_bson_value (const bson_value_t *doc,
+                  const bson_value_t *pattern,
+                  match_ctx_t *ctx);
+
+bool
 match_bson_with_ctx (const bson_t *doc,
                      const bson_t *pattern,
                      bool is_command,

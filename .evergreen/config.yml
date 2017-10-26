@@ -898,22 +898,22 @@ tasks:
               BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
               BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
-    - name: test-srv
+    - name: test-dns
       depends_on:
         - name: "make-release-archive"
           variant: releng
       commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        # The Initial DNS Seedlist Discovery Spec's tests use 3-node replica set
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
             TOPOLOGY: "replica_set"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              sh .evergreen/run-srv-tests.sh
+        - func: "run tests"
+          vars:
+            DNS: on
 
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
@@ -6362,7 +6362,7 @@ buildvariants:
       - ubuntu1604-test
       - ubuntu1404-build
       - ubuntu1404-test
-    - name: "test-srv"
+    - name: "test-dns"
       distros:
       - ubuntu1604-build
       - ubuntu1604-test
@@ -6651,6 +6651,7 @@ buildvariants:
     - ".3.2 .darwinssl !.nosasl .server"
     - ".3.2 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
+    - "test-dns"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
@@ -6681,6 +6682,7 @@ buildvariants:
     - ".3.2 .nossl !.nosasl"
     - ".3.0 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl"
+    - "test-dns"
 
 - name: windows-2015-32
   display_name: "Windows (i386) (VS 2015)"
@@ -6820,6 +6822,7 @@ buildvariants:
     - ".3.2 .nossl .nosasl"
     - ".3.0 .nossl .nosasl"
     - ".2.6 .nossl .nosasl"
+    - "test-dns"
 
 - name: mingw
   display_name: "MinGW-W64"
@@ -6879,6 +6882,7 @@ buildvariants:
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # Ubuntu16.04 ppc64le is only supported by MongoDB 3.4+
+    - "test-dns"
 
 - name: arm-ubuntu1604
   display_name: "*ARM (aarch64) (Ubuntu 16.04)"
@@ -6903,6 +6907,7 @@ buildvariants:
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # Ubuntu16.04 aarch64 is only supported by MongoDB 3.4+
+    - "test-dns"
 
 - name: zseries-rhel72
   display_name: "*zSeries (s390x) (RHEL 7.2)"
@@ -6946,6 +6951,7 @@ buildvariants:
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
+    - "test-dns"
 
 - name: zseries-suse12
   display_name: "zSeries (s390x) SUSE12"

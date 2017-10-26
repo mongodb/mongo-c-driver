@@ -102,7 +102,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-client-session.c \
 	tests/test-mongoc-set.c \
-	tests/test-mongoc-srv.c \
+	tests/test-mongoc-dns.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \
 	tests/test-mongoc-topology-reconcile.c \
@@ -190,6 +190,7 @@ EXTRA_DIST += \
 	$(wildcard tests/json/auth/*.json) \
 	$(wildcard tests/json/connection_uri/*.json) \
 	$(wildcard tests/json/command_monitoring/*.json) \
+	$(wildcard tests/json/initial_dns_seedlist_discovery/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
 	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \

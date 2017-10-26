@@ -67,6 +67,8 @@ test_cursor_install (TestSuite *suite);
 extern void
 test_database_install (TestSuite *suite);
 extern void
+test_dns_install (TestSuite *suite);
+extern void
 test_error_install (TestSuite *suite);
 extern void
 test_exhaust_install (TestSuite *suite);
@@ -100,8 +102,6 @@ extern void
 test_sdam_monitoring_install (TestSuite *suite);
 extern void
 test_server_selection_install (TestSuite *suite);
-extern void
-test_srv_install (TestSuite *suite);
 extern void
 test_session_install (TestSuite *suite);
 #if 0
@@ -2117,7 +2117,7 @@ main (int argc, char *argv[])
    test_sdam_install (&suite);
    test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);
-   test_srv_install (&suite);
+   test_dns_install (&suite);
 #if 0
    test_server_selection_errors_install (&suite);
 #endif

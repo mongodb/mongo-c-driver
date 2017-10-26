@@ -167,6 +167,12 @@ If you have started with MongoDB with `--ipv6`, you can test IPv6 with:
 
 * `MONGOC_CHECK_IPV6=on`
 
+The tests for mongodb+srv:// connection strings require some setup, see the
+Initial DNS Seedlist Discovery Spec. By default these connection strings are
+NOT tested, enable them with:
+
+* `MONGOC_TEST_DNS=on`
+
 The mock server timeout threshold for future functions can be set with:
 
 * `MONGOC_TEST_FUTURE_TIMEOUT_MS=<int>`
