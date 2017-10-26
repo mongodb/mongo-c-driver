@@ -210,6 +210,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    const char *service;
    char *prefixed_service;
    uint32_t id;
+   mongoc_host_list_t *srvs = NULL;
    const mongoc_host_list_t *hl;
 
    BSON_ASSERT (uri);
@@ -281,7 +282,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    if (service) {
       /* a mongodb+srv URI. on error, hl is NULL and error is set. */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      hl = _mongoc_client_get_srv (prefixed_service, &topology->scanner->error);
+      hl = srvs =
+         _mongoc_client_get_srv (prefixed_service, &topology->scanner->error);
       bson_free (prefixed_service);
    } else {
       hl = mongoc_uri_get_hosts (uri);
@@ -313,8 +315,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       hl = hl->next;
    }
 
-   if (service) {
-      _mongoc_host_list_destroy_all ((mongoc_host_list_t *) hl);
+   if (srvs) {
+      _mongoc_host_list_destroy_all (srvs);
    }
 
    return topology;
