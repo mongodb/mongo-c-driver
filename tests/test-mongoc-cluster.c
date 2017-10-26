@@ -902,20 +902,20 @@ typedef future_t *(*run_command_fn_t) (mongoc_client_t *);
 typedef struct {
    const char *errmsg;
    bool is_not_master_err;
-} test_error_t;
+} test_error_msg_t;
 
 
-test_error_t errors[] = {{"not master", true},
-                         {"not master or secondary", true},
-                         {"node is recovering", true},
-                         {"foo", false},
-                         {0}};
+test_error_msg_t errors[] = {{"not master", true},
+                             {"not master or secondary", true},
+                             {"node is recovering", true},
+                             {"foo", false},
+                             {0}};
 
 /* a "not master" or "node is recovering" error marks server Unknown */
 static void
 _test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
 {
-   test_error_t *test_error;
+   test_error_msg_t *test_error_msg;
    mock_server_t *server;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
@@ -940,7 +940,7 @@ _test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
    td = &client->topology->description;
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, 1);
 
-   for (test_error = errors; test_error->errmsg; test_error++) {
+   for (test_error_msg = errors; test_error_msg->errmsg; test_error_msg++) {
       /*
        * successful command results in known server type
        */
@@ -960,12 +960,12 @@ _test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
       future = run_command (client);
       request = mock_server_receives_request (server);
 
-      reply =
-         bson_strdup_printf ("{'ok': 0, 'errmsg': '%s'}", test_error->errmsg);
+      reply = bson_strdup_printf ("{'ok': 0, 'errmsg': '%s'}",
+                                  test_error_msg->errmsg);
       mock_server_replies_simple (request, reply);
       BSON_ASSERT (!future_get_bool (future));
 
-      if (test_error->is_not_master_err) {
+      if (test_error_msg->is_not_master_err) {
          BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
       } else {
          BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
