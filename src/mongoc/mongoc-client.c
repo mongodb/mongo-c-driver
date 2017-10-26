@@ -25,7 +25,7 @@
 #else
 #include <netdb.h>
 #include <netinet/tcp.h>
-#if defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY)
+#if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
 #include <arpa/nameser.h>
 #include <resolv.h>
 #endif
@@ -168,12 +168,12 @@ done:
    return h;
 }
 
-#elif (defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY))
+#elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
 
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_get_srv_query --
+ * _mongoc_get_srv_search --
  *
  *       Fetch an SRV resource record using libresolv.
  *
@@ -188,14 +188,14 @@ done:
  */
 
 static mongoc_host_list_t *
-_mongoc_get_srv_query (const char *service, bson_error_t *error)
+_mongoc_get_srv_search (const char *service, bson_error_t *error)
 {
-#ifdef MONGOC_HAVE_RES_NQUERY
+#ifdef MONGOC_HAVE_RES_NSEARCH
    struct __res_state state = {0};
 #endif
    mongoc_host_list_t *h = NULL;
    int size;
-   unsigned char query_buffer[1024];
+   unsigned char search_buf[1024];
    ns_msg ns_answer;
    int n;
    int i;
@@ -206,14 +206,14 @@ _mongoc_get_srv_query (const char *service, bson_error_t *error)
 
    ENTRY;
 
-#ifdef MONGOC_HAVE_RES_NQUERY
+#ifdef MONGOC_HAVE_RES_NSEARCH
    /* thread-safe */
    res_ninit (&state);
-   size = res_nquery (
-      &state, service, ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer));
-#elif defined(MONGOC_HAVE_RES_QUERY)
-   size = res_query (
-      service, ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer));
+   size = res_nsearch (
+      &state, service, ns_c_in, ns_t_srv, search_buf, sizeof (search_buf));
+#elif defined(MONGOC_HAVE_RES_SEARCH)
+   size = res_search (
+      service, ns_c_in, ns_t_srv, search_buf, sizeof (search_buf));
 #endif
 
    if (size < 0) {
@@ -221,7 +221,7 @@ _mongoc_get_srv_query (const char *service, bson_error_t *error)
          "Failed to look up service \"%s\": %s", service, strerror (h_errno));
    }
 
-   if (ns_initparse (query_buffer, size, &ns_answer)) {
+   if (ns_initparse (search_buf, size, &ns_answer)) {
       RR_ERR ("Invalid SRV answer for \"%s\"", service);
    }
 
@@ -259,10 +259,10 @@ _mongoc_get_srv_query (const char *service, bson_error_t *error)
 done:
 
 #ifdef MONGOC_HAVE_RES_NDESTROY
-   /* defined on BSD/Darwin, and only if MONGOC_HAVE_RES_NQUERY is defined */
+   /* defined on BSD/Darwin, and only if MONGOC_HAVE_RES_NSEARCH is defined */
    res_ndestroy (&state);
 #elif defined(MONGOC_HAVE_RES_NCLOSE)
-   /* defined on Linux, and only if MONGOC_HAVE_RES_NQUERY is defined */
+   /* defined on Linux, and only if MONGOC_HAVE_RES_NSEARCH is defined */
    res_nclose (&state);
 #endif
    return h;
@@ -291,8 +291,8 @@ _mongoc_client_get_srv (const char *service, bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_DNSAPI
    return _mongoc_get_srv_dnsapi (service, error);
-#elif (defined(MONGOC_HAVE_RES_NQUERY) || defined(MONGOC_HAVE_RES_QUERY))
-   return _mongoc_get_srv_query (service, error);
+#elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
+   return _mongoc_get_srv_search (service, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,

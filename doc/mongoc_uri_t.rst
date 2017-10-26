@@ -78,7 +78,7 @@ If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ w
 
 The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames.
 
-On Unix, the MongoDB C Driver relies on libresolv to look up SRV records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nquery`` then the driver will fall back to ``res_query``, which is not thread-safe.
+On Unix, the MongoDB C Driver relies on libresolv to look up SRV records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
 
 Connection Options
 ------------------

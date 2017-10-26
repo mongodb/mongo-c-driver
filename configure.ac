@@ -53,7 +53,7 @@ else
 fi
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
-m4_include([build/autotools/FindResQuery.m4])
+m4_include([build/autotools/FindResSearch.m4])
 m4_include([build/autotools/MaintainerFlags.m4])
 m4_include([build/autotools/PlatformFlags.m4])
 m4_include([build/autotools/Optimizations.m4])

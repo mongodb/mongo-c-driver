@@ -248,13 +248,13 @@
 
 
 /*
- * MONGOC_HAVE_RES_NQUERY is set from configure to determine if we
- * have thread-safe res_nquery().
+ * MONGOC_HAVE_RES_NSEARCH is set from configure to determine if we
+ * have thread-safe res_nsearch().
  */
-#define MONGOC_HAVE_RES_NQUERY @MONGOC_HAVE_RES_NQUERY@
+#define MONGOC_HAVE_RES_NSEARCH @MONGOC_HAVE_RES_NSEARCH@
 
-#if MONGOC_HAVE_RES_NQUERY != 1
-#  undef MONGOC_HAVE_RES_NQUERY
+#if MONGOC_HAVE_RES_NSEARCH != 1
+#  undef MONGOC_HAVE_RES_NSEARCH
 #endif
 
 
@@ -281,13 +281,14 @@
 
 
 /*
- * MONGOC_HAVE_RES_QUERY is set from configure to determine if we
- * have thread-unsafe res_query().
+ * MONGOC_HAVE_RES_SEARCH is set from configure to determine if we
+ * have thread-unsafe res_search(). It's unset if we have the preferred
+ * res_nsearch().
  */
-#define MONGOC_HAVE_RES_QUERY @MONGOC_HAVE_RES_QUERY@
+#define MONGOC_HAVE_RES_SEARCH @MONGOC_HAVE_RES_SEARCH@
 
-#if MONGOC_HAVE_RES_QUERY != 1
-#  undef MONGOC_HAVE_RES_QUERY
+#if MONGOC_HAVE_RES_SEARCH != 1
+#  undef MONGOC_HAVE_RES_SEARCH
 #endif
 
 

@@ -137,8 +137,8 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI;
 #endif
 
-#ifdef MONGOC_HAVE_RES_NQUERY
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_NQUERY;
+#ifdef MONGOC_HAVE_RES_NSEARCH
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_NSEARCH;
 #endif
 
 #ifdef MONGOC_HAVE_RES_NDESTROY
@@ -149,8 +149,8 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_RES_NCLOSE;
 #endif
 
-#ifdef MONGOC_HAVE_RES_QUERY
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_QUERY;
+#ifdef MONGOC_HAVE_RES_SEARCH
+   bf |= MONGOC_MD_FLAG_ENABLE_RES_SEARCH;
 #endif
 
 #ifdef MONGOC_HAVE_DNSAPI

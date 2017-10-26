@@ -279,7 +279,7 @@ else()
    set (MONGOC_SOCKET_ARG3 "int")
 endif()
 
-include (FindResQuery)
+include (FindResSearch)
 
 function (mongoc_get_accept_args ARG2 ARG3)
    SET (VAR 0)
