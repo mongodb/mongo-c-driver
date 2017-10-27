@@ -82,48 +82,104 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     const char *db,
                                     const char *collection);
 
-
-#define RR_ERR(_msg, ...)                                  \
+#define DNS_ERROR(_msg, ...)                               \
    do {                                                    \
       bson_set_error (error,                               \
                       MONGOC_ERROR_STREAM,                 \
                       MONGOC_ERROR_STREAM_NAME_RESOLUTION, \
                       _msg,                                \
                       __VA_ARGS__);                        \
-      _mongoc_host_list_destroy_all (h);                   \
-      h = NULL;                                            \
       GOTO (done);                                         \
    } while (0)
 
 
+#ifdef MONGOC_HAVE_DNSAPI
+
+typedef bool (*mongoc_rr_callback_t) (const char *service,
+                                      PDNS_RECORD pdns,
+                                      mongoc_uri_t *uri,
+                                      bson_error_t *error);
+
+static bool
+srv_callback (const char *service,
+              PDNS_RECORD pdns,
+              mongoc_uri_t *uri,
+              bson_error_t *error)
+{
+   mongoc_uri_append_host (
+      uri, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
+
+   return true;
+}
+
+static bool
+txt_callback (const char *service,
+              PDNS_RECORD pdns,
+              mongoc_uri_t *uri,
+              bson_error_t *error)
+{
+   DWORD i;
+
+   for (i = 0; i < pdns->Data.TXT.dwStringCount; i++) {
+      /* Initial DNS Seedlist Discovery Spec: "Client MUST use options specified
+       * in the Connection String to override options provided through TXT
+       * records." So, do NOT override existing options with TXT options. */
+      if (!mongoc_uri_parse_options (uri,
+                                     pdns->Data.TXT.pStringArray[i],
+                                     false /* override */,
+                                     error)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_get_srv_dnsapi --
+ * _mongoc_get_rr_dnsapi --
  *
- *       Fetch an SRV resource record with the Windows DNS API.
+ *       Fetch SRV or TXT resource records using the Windows DNS API and
+ *       update @uri.
  *
  * Returns:
- *       A newly allocated host list that must be freed with
- *       _mongoc_host_list_destroy_all.
+ *       Success or failure.
  *
  * Side effects:
- *       @error is set if return value is NULL.
+ *       @error is set if there is a failure.
  *
  *--------------------------------------------------------------------------
  */
 
-#ifdef MONGOC_HAVE_DNSAPI
-static mongoc_host_list_t *
-_mongoc_get_srv_dnsapi (const char *service, bson_error_t *error)
+static bool
+_mongoc_get_rr_dnsapi (const char *service,
+                       mongoc_rr_type_t rr_type,
+                       mongoc_uri_t *uri,
+                       bson_error_t *error)
 {
-   mongoc_host_list_t *h = NULL;
-   PDNS_RECORD pdns;
+   const char *rr_type_name;
+   WORD nst;
+   mongoc_rr_callback_t callback;
+   PDNS_RECORD pdns = NULL;
    DNS_STATUS res;
    LPVOID lpMsgBuf = NULL;
+   bool ret = false;
+
+   ENTRY;
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_type_name = "SRV";
+      nst = DNS_TYPE_SRV;
+      callback = srv_callback;
+   } else {
+      rr_type_name = "TXT";
+      nst = DNS_TYPE_TEXT;
+      callback = txt_callback;
+   }
 
    res = DnsQuery_UTF8 (service,
-                        DNS_TYPE_SRV,
+                        nst,
                         DNS_QUERY_BYPASS_CACHE,
                         NULL /* IP Address */,
                         &pdns,
@@ -140,121 +196,197 @@ _mongoc_get_srv_dnsapi (const char *service, bson_error_t *error)
                          (LPTSTR) &lpMsgBuf,
                          0,
                          0)) {
-         RR_ERR (
-            "Failed to look up service \"%s\": %s", service, (char *) lpMsgBuf);
+         DNS_ERROR ("Failed to look up %s record \"%s\": %s",
+                    rr_type_name,
+                    service,
+                    (char *) lpMsgBuf);
       }
 
-      RR_ERR ("Failed to look up service \"%s\": Unknown error", service);
+      DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error",
+                 rr_type_name,
+                 service);
    }
 
    if (!pdns) {
-      RR_ERR ("No SRV records for [%s]", service);
+      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
    }
 
    do {
-      h = _mongoc_host_list_push (
-         pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, AF_UNSPEC, h);
-
+      if (!callback (service, pdns, uri, error)) {
+         GOTO (done);
+      }
       pdns = pdns->pNext;
    } while (pdns);
 
-   DnsRecordListFree (pdns, DnsFreeRecordList);
-
+   ret = true;
 done:
+   if (pdns) {
+      DnsRecordListFree (pdns, DnsFreeRecordList);
+   }
+
    if (lpMsgBuf) {
       LocalFree (lpMsgBuf);
    }
 
-   return h;
+   RETURN (ret);
 }
 
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
 
+typedef bool (*mongoc_rr_callback_t) (const char *service,
+                                      ns_msg *ns_answer,
+                                      ns_rr *rr,
+                                      mongoc_uri_t *uri,
+                                      bson_error_t *error);
+
+static bool
+srv_callback (const char *service,
+              ns_msg *ns_answer,
+              ns_rr *rr,
+              mongoc_uri_t *uri,
+              bson_error_t *error)
+{
+   const uint8_t *data;
+   char name[1024];
+   uint16_t port;
+   int size;
+   bool ret = false;
+
+   data = ns_rr_rdata (*rr);
+   port = ntohs (*(short *) (data + 4));
+   size = dn_expand (ns_msg_base (*ns_answer),
+                     ns_msg_end (*ns_answer),
+                     data + 6,
+                     name,
+                     sizeof (name));
+
+   if (size < 1) {
+      DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"",
+                 service,
+                 strerror (h_errno));
+   }
+
+   mongoc_uri_append_host (uri, name, port);
+   ret = true;
+
+done:
+   return ret;
+}
+
+static bool
+txt_callback (const char *service,
+              ns_msg *ns_answer,
+              ns_rr *rr,
+              mongoc_uri_t *uri,
+              bson_error_t *error)
+{
+   char txt[256];
+   uint16_t size;
+
+   size = (uint16_t) ns_rr_rdlen (*rr);
+   if (size < 1 || size > 255) {
+      DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", size, service);
+   }
+
+   bson_strncpy (txt, (const char *) ns_rr_rdata (*rr) + 1, (size_t) size);
+
+   /* Initial DNS Seedlist Discovery Spec: "Client MUST use options specified in
+    * the Connection String to override options provided through TXT records."
+    * so do NOT override existing options with TXT options. */
+   return mongoc_uri_parse_options (uri, txt, false /* override */, error);
+
+done:
+   return false;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_get_srv_search --
+ * _mongoc_get_rr_search --
  *
- *       Fetch an SRV resource record using libresolv.
+ *       Fetch SRV or TXT resource records using libresolv and update @uri.
  *
  * Returns:
- *       A newly allocated host list that must be freed with
- *       _mongoc_host_list_destroy_all.
+ *       Success or failure.
  *
  * Side effects:
- *       @error is set if return value is NULL.
+ *       @error is set if there is a failure.
  *
  *--------------------------------------------------------------------------
  */
 
-static mongoc_host_list_t *
-_mongoc_get_srv_search (const char *service, bson_error_t *error)
+static bool
+_mongoc_get_rr_search (const char *service,
+                       mongoc_rr_type_t rr_type,
+                       mongoc_uri_t *uri,
+                       bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_RES_NSEARCH
    struct __res_state state = {0};
 #endif
-   mongoc_host_list_t *h = NULL;
    int size;
    unsigned char search_buf[1024];
    ns_msg ns_answer;
    int n;
    int i;
-   char name[1024];
-   uint16_t port;
+   const char *rr_type_name;
+   ns_type nst;
+   mongoc_rr_callback_t callback;
    ns_rr resource_record;
-   const uint8_t *data;
+   bool ret = false;
 
    ENTRY;
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_type_name = "SRV";
+      nst = ns_t_srv;
+      callback = srv_callback;
+   } else {
+      rr_type_name = "TXT";
+      nst = ns_t_txt;
+      callback = txt_callback;
+   }
 
 #ifdef MONGOC_HAVE_RES_NSEARCH
    /* thread-safe */
    res_ninit (&state);
    size = res_nsearch (
-      &state, service, ns_c_in, ns_t_srv, search_buf, sizeof (search_buf));
+      &state, service, ns_c_in, nst, search_buf, sizeof (search_buf));
 #elif defined(MONGOC_HAVE_RES_SEARCH)
-   size = res_search (
-      service, ns_c_in, ns_t_srv, search_buf, sizeof (search_buf));
+   size = res_search (service, ns_c_in, nst, search_buf, sizeof (search_buf));
 #endif
 
    if (size < 0) {
-      RR_ERR (
-         "Failed to look up service \"%s\": %s", service, strerror (h_errno));
+      DNS_ERROR ("Failed to look up %s record \"%s\": %s",
+                 rr_type_name,
+                 service,
+                 strerror (h_errno));
    }
 
    if (ns_initparse (search_buf, size, &ns_answer)) {
-      RR_ERR ("Invalid SRV answer for \"%s\"", service);
+      DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, service);
    }
 
    n = ns_msg_count (ns_answer, ns_s_an);
    if (!n) {
-      RR_ERR ("No SRV records for \"%s\"", service);
+      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
    }
 
    for (i = 0; i < n; i++) {
       if (ns_parserr (&ns_answer, ns_s_an, i, &resource_record)) {
-         RR_ERR ("Invalid record %d of SRV answer for \"%s\": \"%s\"",
-                 i,
-                 service,
-                 strerror (h_errno));
+         DNS_ERROR ("Invalid record %d of %s answer for \"%s\": \"%s\"",
+                    i,
+                    rr_type_name,
+                    service,
+                    strerror (h_errno));
       }
 
-      data = ns_rr_rdata (resource_record);
-      port = ntohs (*(short *) (data + 4));
-      size = dn_expand (ns_msg_base (ns_answer),
-                        ns_msg_end (ns_answer),
-                        data + 6,
-                        name,
-                        sizeof (name));
-
-      if (size < 1) {
-         RR_ERR ("Invalid record %d of SRV answer for \"%s\": \"%s\"",
-                 i,
-                 service,
-                 strerror (h_errno));
+      if (!callback (service, &ns_answer, &resource_record, uri, error)) {
+         GOTO (done);
       }
-
-      h = _mongoc_host_list_push (name, port, AF_UNSPEC, h);
    }
+
+   ret = true;
 
 done:
 
@@ -265,45 +397,47 @@ done:
    /* defined on Linux, and only if MONGOC_HAVE_RES_NSEARCH is defined */
    res_nclose (&state);
 #endif
-   return h;
+   RETURN (ret);
 }
 #endif
 
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_client_get_srv --
+ * _mongoc_client_get_rr --
  *
- *       Fetch an SRV resource record. See RFC 2782.
+ *       Fetch an SRV or TXT resource record and update @uri. See RFCs 1464
+ *       and 2782, and MongoDB's Initial DNS Seedlist Discovery Spec.
  *
  * Returns:
- *       A newly allocated host list that must be freed with
- *       _mongoc_host_list_destroy_all.
+ *       Success or failure.
  *
  * Side effects:
- *       @error is set if return value is NULL.
+ *       @error is set if there is a failure.
  *
  *--------------------------------------------------------------------------
  */
 
-mongoc_host_list_t *
-_mongoc_client_get_srv (const char *service, bson_error_t *error)
+bool
+_mongoc_client_get_rr (const char *service,
+                       mongoc_rr_type_t rr_type,
+                       mongoc_uri_t *uri,
+                       bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_DNSAPI
-   return _mongoc_get_srv_dnsapi (service, error);
+   return _mongoc_get_rr_dnsapi (service, rr_type, uri, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_srv_search (service, error);
+   return _mongoc_get_rr_search (service, rr_type, uri, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
                    MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                    "libresolv unavailable, cannot use mongodb+srv URI");
-
-   RETURN (NULL);
+   return false;
 #endif
 }
 
-#undef RR_ERR
+#undef DNS_ERROR
 
 /*
  *--------------------------------------------------------------------------

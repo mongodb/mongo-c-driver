@@ -76,9 +76,9 @@ If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ w
 
   uri = mongoc_uri_new ("mongodb+srv://example.com/?replicaSet=rs&appName=applicationName");
 
-The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames.
+The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames. If this query succeeds, the driver performs a DNS TXT query on the service name (without the "_mongodb._tcp" prefix) for additional URI options configured as TXT records.
 
-On Unix, the MongoDB C Driver relies on libresolv to look up SRV records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
+On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
 
 Connection Options
 ------------------

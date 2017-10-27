@@ -210,7 +210,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    const char *service;
    char *prefixed_service;
    uint32_t id;
-   mongoc_host_list_t *srvs = NULL;
    const mongoc_host_list_t *hl;
 
    BSON_ASSERT (uri);
@@ -280,13 +279,17 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    service = mongoc_uri_get_service (uri);
    if (service) {
-      /* a mongodb+srv URI. on error, hl is NULL and error is set. */
+      /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      hl = srvs =
-         _mongoc_client_get_srv (prefixed_service, &topology->scanner->error);
+      if (_mongoc_client_get_rr (prefixed_service,
+                                 MONGOC_RR_SRV,
+                                 topology->uri,
+                                 &topology->scanner->error)) {
+         _mongoc_client_get_rr (
+            service, MONGOC_RR_TXT, topology->uri, &topology->scanner->error);
+      }
+
       bson_free (prefixed_service);
-   } else {
-      hl = mongoc_uri_get_hosts (uri);
    }
 
    /*
@@ -295,6 +298,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
     *   - otherwise, if the seed list has a single host, initialize to SINGLE
     *   - everything else gets initialized to UNKNOWN
     */
+   hl = mongoc_uri_get_hosts (topology->uri);
    if (mongoc_uri_get_replica_set (uri)) {
       init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
    } else {
@@ -313,10 +317,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_topology_scanner_add (topology->scanner, hl, id);
 
       hl = hl->next;
-   }
-
-   if (srvs) {
-      _mongoc_host_list_destroy_all (srvs);
    }
 
    return topology;
@@ -1008,6 +1008,10 @@ _mongoc_topology_run_background (void *data)
    for (;;) {
       /* unlocked after starting a scan or after breaking out of the loop */
       mongoc_mutex_lock (&topology->mutex);
+      if (!mongoc_topology_scanner_valid (topology->scanner)) {
+         mongoc_mutex_unlock (&topology->mutex);
+         goto DONE;
+      }
 
       /* we exit this loop on error, or when we should scan immediately */
       for (;;) {

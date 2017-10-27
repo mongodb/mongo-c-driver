@@ -697,8 +697,16 @@ mongoc_uri_parse_int32 (const char *key, const char *value, int32_t *result)
    return true;
 }
 
+#define MAYBE_OVERRIDE(_msg, _key) \
+   if (!override) {                \
+      ret = true;                  \
+      goto CLEANUP;                \
+   }                               \
+   MONGOC_WARNING (_msg, _key)
+
+
 static bool
-mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
+mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str, bool override)
 {
    int32_t v_int;
    const char *end_key;
@@ -722,7 +730,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
    mongoc_lowercase (key, lkey);
 
    if (bson_has_field (&uri->options, lkey)) {
-      MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+      MAYBE_OVERRIDE ("Overwriting previously provided value for '%s'", key);
    }
 
    if (mongoc_uri_option_is_int32 (lkey)) {
@@ -778,12 +786,12 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
    } else if (!strcmp (lkey, MONGOC_URI_AUTHMECHANISM) ||
               !strcmp (lkey, MONGOC_URI_AUTHSOURCE)) {
       if (bson_has_field (&uri->credentials, lkey)) {
-         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+         MAYBE_OVERRIDE ("Overwriting previously provided value for '%s'", key);
       }
       mongoc_uri_bson_append_or_replace_key (&uri->credentials, lkey, value);
    } else if (!strcmp (lkey, MONGOC_URI_READCONCERNLEVEL)) {
       if (!mongoc_read_concern_is_default (uri->read_concern)) {
-         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+         MAYBE_OVERRIDE ("Overwriting previously provided value for '%s'", key);
       }
       mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcmp (lkey, MONGOC_URI_GSSAPISERVICENAME)) {
@@ -800,7 +808,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str)
       bson_free (tmp);
    } else if (!strcmp (lkey, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
       if (bson_has_field (&uri->credentials, lkey)) {
-         MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
+         MAYBE_OVERRIDE ("Overwriting previously provided value for '%s'", key);
       }
       if (!mongoc_uri_parse_auth_mechanism_properties (uri, value)) {
          goto UNSUPPORTED_VALUE;
@@ -842,9 +850,10 @@ CLEANUP:
 }
 
 
-static bool
+bool
 mongoc_uri_parse_options (mongoc_uri_t *uri,
                           const char *str,
+                          bool override,
                           bson_error_t *error)
 {
    const char *end_option;
@@ -852,7 +861,7 @@ mongoc_uri_parse_options (mongoc_uri_t *uri,
 
 again:
    if ((option = scan_to_unichar (str, '&', "", &end_option))) {
-      if (!mongoc_uri_parse_option (uri, option)) {
+      if (!mongoc_uri_parse_option (uri, option, override)) {
          MONGOC_URI_ERROR (error, "Unknown option or value for '%s'", option);
          bson_free (option);
          return false;
@@ -861,7 +870,7 @@ again:
       str = end_option + 1;
       goto again;
    } else if (*str) {
-      if (!mongoc_uri_parse_option (uri, str)) {
+      if (!mongoc_uri_parse_option (uri, str, override)) {
          MONGOC_URI_ERROR (error, "Unknown option or value for '%s'", str);
          return false;
       }
@@ -998,7 +1007,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
          if (*str == '?') {
             str++;
             if (*str) {
-               if (!mongoc_uri_parse_options (uri, str, error)) {
+               if (!mongoc_uri_parse_options (uri, str, true, error)) {
                   goto error;
                }
             }
@@ -1195,8 +1204,7 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
 
 
 static bool
-_mongoc_uri_build_write_concern (mongoc_uri_t *uri,
-                                 bson_error_t *error)
+_mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
 {
    mongoc_write_concern_t *write_concern;
    const char *str;

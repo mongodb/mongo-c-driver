@@ -31,7 +31,11 @@ bool
 mongoc_uri_append_host (mongoc_uri_t *uri, const char *host, uint16_t port);
 bool
 mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase);
-
+bool
+mongoc_uri_parse_options (mongoc_uri_t *uri,
+                          const char *str,
+                          bool override,
+                          bson_error_t *error);
 int32_t
 mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
 
