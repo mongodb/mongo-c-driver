@@ -554,23 +554,22 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         int max_paths)
 {
 #ifdef _MSC_VER
+   char *dir_path_plus_star;
    intptr_t handle;
    struct _finddata_t info;
 
    char child_path[MAX_TEST_NAME_LENGTH];
 
-   handle = _findfirst (dir_path, &info);
+   dir_path_plus_star = bson_strdup_printf ("%s/*", dir_path);
+   handle = _findfirst (dir_path_plus_star, &info);
 
    if (handle == -1) {
+      bson_free (dir_path_plus_star);
       return 0;
    }
 
    while (1) {
       BSON_ASSERT (paths_index < max_paths);
-
-      if (_findnext (handle, &info) == -1) {
-         break;
-      }
 
       if (info.attrib & _A_SUBDIR) {
          /* recursively call on child directories */
@@ -583,8 +582,13 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
          /* if this is a JSON test, collect its path */
          assemble_path (dir_path, info.name, paths[paths_index++]);
       }
+
+      if (_findnext (handle, &info) == -1) {
+         break;
+      }
    }
 
+   bson_free (dir_path_plus_star);
    _findclose (handle);
 
    return paths_index;
