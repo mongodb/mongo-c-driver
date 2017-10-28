@@ -38,7 +38,7 @@ test_session_no_crypto (void *ctx)
    BSON_ASSERT (!mongoc_client_start_session (client, NULL, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          MONGOC_ERROR_CLIENT_SESSION_FAILURE,
                           "need a cryptography library");
 
    mongoc_client_destroy (client);
