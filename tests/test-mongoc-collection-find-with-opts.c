@@ -258,8 +258,7 @@ test_find_cmd_subdoc_named_filter_with_option (void)
    _test_collection_find_with_opts (&test_data);
 }
 
-/* this can't work until later in CDRIVER-1522 implementation */
-/* test future-compatibility with a new server's find command options */
+
 static void
 test_newoption (void)
 {
