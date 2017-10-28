@@ -576,6 +576,7 @@ tasks:
             TOPOLOGY: "server"
             AUTH: "noauth"
             SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy-zlib"
         - func: "run tests"
           vars:
             AUTH: "noauth"
@@ -597,7 +598,7 @@ tasks:
             TOPOLOGY: "server"
             AUTH: "noauth"
             SSL: "nossl"
-            ORCHESTRATION_FILE: "experimental"
+            ORCHESTRATION_FILE: "zlib"
         - func: "run tests"
           vars:
             AUTH: "noauth"
@@ -6973,14 +6974,6 @@ buildvariants:
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
       # SUSE12 s390x is only supported by MongoDB 3.4+
-
-
-- name: experimental
-  display_name: "Experimental 3.6 Implementations"
-  run_on:
-    - archlinux-build
-  tasks:
-    - ".compression"
 
 - name: valgrind-ubuntu
   display_name: "Valgrind Tests (Ubuntu 14.04)"
