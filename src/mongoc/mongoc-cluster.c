@@ -176,7 +176,6 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
                                     mongoc_cmd_t *cmd,
                                     mongoc_stream_t *stream,
                                     int32_t compressor_id,
-                                    const mongoc_host_list_t *host,
                                     bson_t *reply,
                                     bson_error_t *error)
 {
@@ -465,7 +464,6 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                                    cmd,
                                                    server_stream->stream,
                                                    compressor_id,
-                                                   &server_stream->sd->host,
                                                    reply,
                                                    error);
    }
@@ -548,7 +546,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
       retval = mongoc_cluster_run_command_opquery (
-         cluster, cmd, cmd->server_stream->stream, -1, NULL, reply, error);
+         cluster, cmd, cmd->server_stream->stream, -1, reply, error);
    }
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
