@@ -11,7 +11,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
 
 
-C_TIMEOUT="connectTimeoutMS=30000"
+C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
