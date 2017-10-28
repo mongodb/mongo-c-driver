@@ -157,7 +157,7 @@ _mongoc_cursor_get_opt_bool (const mongoc_cursor_t *cursor, const char *option);
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const char *db_and_collection,
-                              bool is_command,
+                              bool is_find,
                               const bson_t *filter,
                               const bson_t *opts,
                               const mongoc_read_prefs_t *read_prefs,
