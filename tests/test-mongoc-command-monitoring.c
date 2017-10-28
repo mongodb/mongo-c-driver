@@ -488,7 +488,7 @@ test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
    uint32_t r;
    bson_error_t error;
 
-   ordered = bson_lookup_bool (arguments, "ordered", true);
+   ordered = _mongoc_lookup_bool (arguments, "ordered", true);
 
    if (bson_has_field (arguments, "writeConcern")) {
       wc = bson_lookup_write_concern (arguments, "writeConcern");
@@ -628,7 +628,7 @@ test_insert_many (mongoc_collection_t *collection, const bson_t *arguments)
    bson_iter_t iter;
    bson_t doc;
 
-   ordered = bson_lookup_bool (arguments, "ordered", true);
+   ordered = _mongoc_lookup_bool (arguments, "ordered", true);
    bson_append_bool (&opts, "ordered", 7, ordered);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
@@ -670,7 +670,7 @@ test_update (mongoc_collection_t *collection,
       flags |= MONGOC_UPDATE_MULTI_UPDATE;
    }
 
-   if (bson_lookup_bool (arguments, "upsert", false)) {
+   if (_mongoc_lookup_bool (arguments, "upsert", false)) {
       flags |= MONGOC_UPDATE_UPSERT;
    }
 

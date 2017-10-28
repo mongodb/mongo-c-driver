@@ -43,12 +43,6 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
 const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
 
-bool
-bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value);
-
-bool
-bson_lookup_bool (const bson_t *b, const char *key, bool default_value);
-
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
 

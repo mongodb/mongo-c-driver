@@ -162,46 +162,6 @@ bson_lookup_utf8 (const bson_t *b, const char *key)
 
 /*--------------------------------------------------------------------------
  *
- * bson_lookup_bool --
- *
- *       Return a boolean by key, or return the default value.
- *       Asserts and aborts if the key is present but not boolean.
- *
- *--------------------------------------------------------------------------
- */
-bool
-bson_lookup_bool (const bson_t *b, const char *key, bool default_value)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-
-   if (bson_iter_find_descendant (&iter, key, &descendent)) {
-      BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&descendent));
-      return bson_iter_bool (&descendent);
-   }
-
-   return default_value;
-}
-
-bool
-bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-
-   if (bson_iter_find_descendant (&iter, key, &descendent)) {
-      return bson_iter_as_bool (&descendent);
-   }
-
-   return default_value;
-}
-
-/*--------------------------------------------------------------------------
- *
  * bson_lookup_doc --
  *
  *       Find a subdocument by key and return it by static-initializing

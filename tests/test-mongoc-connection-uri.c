@@ -1,5 +1,5 @@
 #include <mongoc.h>
-#include <mongoc-uri-private.h>
+#include <mongoc-util-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -159,7 +159,7 @@ test_connection_uri_cb (bson_t *scenario)
       bson_lookup_doc_null_ok (&test_case, "auth", &auth);
       bson_lookup_doc_null_ok (&test_case, "options", &options);
 
-      valid = bson_lookup_bool (&test_case, "valid", true);
+      valid = _mongoc_lookup_bool (&test_case, "valid", true);
       capture_logs (true);
       run_uri_test (uri_string, valid, &hosts, &auth, &options);
 
