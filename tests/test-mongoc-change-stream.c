@@ -974,15 +974,6 @@ test_change_stream_live_read_prefs (void *test_ctx)
 }
 
 
-static int
-skip_if_not_3_5_12 (void)
-{
-   /* first version that understands $changeStream: {fullDocument: "default"} */
-   return test_framework_get_server_version () >=
-          test_framework_str_to_version ("3.5.12");
-}
-
-
 void
 test_change_stream_install (TestSuite *suite)
 {
@@ -994,32 +985,28 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_single_server,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_single_version_5,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_single_version_5);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/track_resume_token",
                       test_change_stream_live_track_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_rs_version_6);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/batch_size",
                       test_change_stream_live_batch_size,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_rs_version_6);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/missing_resume_token",
                       test_change_stream_live_missing_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_rs_version_6);
 
    TestSuite_AddMockServerTest (suite,
                                 "/change_stream/resumable_error",
@@ -1037,14 +1024,12 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_rs_version_6);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/read_prefs",
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      skip_if_not_3_5_12);
+                      test_framework_skip_if_not_rs_version_6);
 }
