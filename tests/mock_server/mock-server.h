@@ -109,9 +109,6 @@ request_t *
 mock_server_receives_ismaster (mock_server_t *server);
 
 request_t *
-mock_server_receives_gle (mock_server_t *server, const char *database_name);
-
-request_t *
 mock_server_receives_query (mock_server_t *server,
                             const char *ns,
                             mongoc_query_flags_t flags,

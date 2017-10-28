@@ -894,30 +894,6 @@ mock_server_receives_ismaster (mock_server_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_gle --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not getLastError.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_gle (mock_server_t *server, const char *database_name)
-{
-   return mock_server_receives_command (
-      server, database_name, MONGOC_QUERY_NONE, "{'getLastError': 1}");
-}
-
-/*--------------------------------------------------------------------------
- *
  * mock_server_receives_query --
  *
  *       Pop a client request if one is enqueued, or wait up to
