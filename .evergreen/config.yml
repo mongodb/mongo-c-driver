@@ -900,8 +900,7 @@ tasks:
 
     - name: test-dns
       depends_on:
-        - name: "make-release-archive"
-          variant: releng
+        - name: "debug-compile-nosasl-nossl"
       commands:
         - func: "fetch build"
           vars:
