@@ -583,30 +583,6 @@ tasks:
             SSL: "nossl"
             COMPRESSORS: zlib,snappy
 
-
-    - name: test-3.4-server-compression
-      tags: ["zlib", "snappy", "compression"]
-      depends_on:
-        - name: "debug-compile-compression"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib,snappy
-
-
-
     - name: debug-compile
       tags: ["debug-compile"]
       commands:
