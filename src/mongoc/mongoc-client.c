@@ -2235,6 +2235,15 @@ mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
 mongoc_cursor_t *
 mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 {
+   /* existing bug in this deprecated API: error pointer is unused */
+   return mongoc_client_find_databases_with_opts (client, NULL);
+}
+
+
+mongoc_cursor_t *
+mongoc_client_find_databases_with_opts (mongoc_client_t *client,
+                                        const bson_t *opts)
+{
    bson_t cmd = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
@@ -2244,7 +2253,7 @@ mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
 
    /* ignore client read prefs */
    cursor = _mongoc_cursor_new_with_opts (
-      client, "admin", false /* is_find */, NULL, NULL, NULL, NULL);
+      client, "admin", false /* is_find */, NULL, opts, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 

@@ -1,0 +1,31 @@
+:man_page: mongoc_client_find_databases_with_opts
+
+mongoc_client_find_databases_with_opts()
+========================================
+
+Synopsis
+--------
+
+.. code-block:: c
+
+  mongoc_cursor_t *
+  mongoc_client_find_databases_with_opts (mongoc_client_t *client,
+                                          const bson_t *opts);
+
+Fetches a cursor containing documents, each corresponding to a database on this MongoDB server.
+
+Parameters
+----------
+
+* ``client``: A :symbol:`mongoc_client_t`.
+* ``opts``: A :symbol:`bson:bson_t` containing additional options.
+
+Errors
+------
+
+Use :symbol:`mongoc_cursor_error` on the returned cursor to check for errors.
+
+Returns
+-------
+
+A cursor where each result corresponds to the server's representation of a database.

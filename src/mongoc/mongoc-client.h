@@ -199,7 +199,11 @@ mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
                                             const bson_t *opts,
                                             bson_error_t *error);
 MONGOC_EXPORT (mongoc_cursor_t *)
-mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error);
+mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_client_find_databases_with_opts);
+MONGOC_EXPORT (mongoc_cursor_t *)
+mongoc_client_find_databases_with_opts (mongoc_client_t *client,
+                                        const bson_t *opts);
 MONGOC_EXPORT (bool)
 mongoc_client_get_server_status (mongoc_client_t *client,
                                  mongoc_read_prefs_t *read_prefs,
