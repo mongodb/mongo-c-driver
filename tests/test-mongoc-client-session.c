@@ -509,7 +509,8 @@ run_session_test (void *ctx)
    session_test_destroy (test);
 
    /*
-    * use a session from the wrong client, expect failure
+    * use a session from the wrong client, expect failure. this is the
+    * "session argument is for right client" test from Driver Sessions Spec
     */
    test = session_test_new (false);
    test_fn (test);
@@ -522,9 +523,8 @@ run_session_test (void *ctx)
 }
 
 
-/* "session argument is for right client" tests from Driver Sessions Spec */
 static void
-test_session_cmd (session_test_t *test)
+test_cmd (session_test_t *test)
 {
    test->succeeded = mongoc_client_command_with_opts (test->client,
                                                       "db",
@@ -537,7 +537,7 @@ test_session_cmd (session_test_t *test)
 
 
 static void
-test_session_read_cmd (session_test_t *test)
+test_read_cmd (session_test_t *test)
 {
    test->succeeded =
       mongoc_client_read_command_with_opts (test->client,
@@ -551,7 +551,7 @@ test_session_read_cmd (session_test_t *test)
 
 
 static void
-test_session_count (session_test_t *test)
+test_count (session_test_t *test)
 {
    test->succeeded =
       (-1 != mongoc_collection_count_with_opts (test->collection,
@@ -566,7 +566,7 @@ test_session_count (session_test_t *test)
 
 
 static void
-test_session_cursor (session_test_t *test)
+test_cursor (session_test_t *test)
 {
    mongoc_cursor_t *cursor;
    const bson_t *doc;
@@ -582,7 +582,7 @@ test_session_cursor (session_test_t *test)
 
 
 static void
-test_session_drop (session_test_t *test)
+test_drop (session_test_t *test)
 {
    bson_error_t error;
    bool r;
@@ -607,7 +607,7 @@ test_session_drop (session_test_t *test)
 
 
 static void
-test_session_drop_index (session_test_t *test)
+test_drop_index (session_test_t *test)
 {
    bson_error_t error;
    bool r;
@@ -629,7 +629,7 @@ test_session_drop_index (session_test_t *test)
 }
 
 static void
-test_session_create_index (session_test_t *test)
+test_create_index (session_test_t *test)
 {
    BEGIN_IGNORE_DEPRECATIONS
    test->succeeded =
@@ -643,7 +643,7 @@ test_session_create_index (session_test_t *test)
 }
 
 static void
-test_session_replace_one (session_test_t *test)
+test_replace_one (session_test_t *test)
 {
    test->succeeded = mongoc_collection_replace_one_with_opts (test->collection,
                                                               tmp_bson ("{}"),
@@ -654,7 +654,7 @@ test_session_replace_one (session_test_t *test)
 }
 
 static void
-test_session_rename (session_test_t *test)
+test_rename (session_test_t *test)
 {
    bson_error_t error;
    bool r;
@@ -679,7 +679,7 @@ test_session_rename (session_test_t *test)
 }
 
 static void
-test_session_fam (session_test_t *test)
+test_fam (session_test_t *test)
 {
    mongoc_find_and_modify_opts_t *fam_opts;
 
@@ -694,14 +694,14 @@ test_session_fam (session_test_t *test)
 }
 
 static void
-test_session_db_drop (session_test_t *test)
+test_db_drop (session_test_t *test)
 {
    test->succeeded =
       mongoc_database_drop_with_opts (test->db, &test->opts, &test->error);
 }
 
 static void
-test_session_gridfs_find (session_test_t *test)
+test_gridfs_find (session_test_t *test)
 {
    mongoc_gridfs_t *gfs;
    bson_error_t error;
@@ -727,7 +727,7 @@ test_session_gridfs_find (session_test_t *test)
 }
 
 static void
-test_session_gridfs_find_one (session_test_t *test)
+test_gridfs_find_one (session_test_t *test)
 {
    mongoc_gridfs_t *gfs;
    bson_error_t error;
@@ -826,8 +826,7 @@ test_find_databases (session_test_t *test)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   cursor = mongoc_client_find_databases_with_opts (
-      test->client, &test->opts);
+   cursor = mongoc_client_find_databases_with_opts (test->client, &test->opts);
 
    mongoc_cursor_next (cursor, &doc);
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
@@ -964,20 +963,19 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto);
-   add_session_test (suite, "/Session/read_cmd", test_session_read_cmd);
-   add_session_test (suite, "/Session/cmd", test_session_cmd);
-   add_session_test (suite, "/Session/count", test_session_count);
-   add_session_test (suite, "/Session/cursor", test_session_cursor);
-   add_session_test (suite, "/Session/drop", test_session_drop);
-   add_session_test (suite, "/Session/drop_index", test_session_drop_index);
-   add_session_test (suite, "/Session/create_index", test_session_create_index);
-   add_session_test (suite, "/Session/replace_one", test_session_replace_one);
-   add_session_test (suite, "/Session/rename", test_session_rename);
-   add_session_test (suite, "/Session/fam", test_session_fam);
-   add_session_test (suite, "/Session/db_drop", test_session_db_drop);
-   add_session_test (suite, "/Session/gridfs_find", test_session_gridfs_find);
-   add_session_test (
-      suite, "/Session/gridfs_find_one", test_session_gridfs_find_one);
+   add_session_test (suite, "/Session/read_cmd", test_read_cmd);
+   add_session_test (suite, "/Session/cmd", test_cmd);
+   add_session_test (suite, "/Session/count", test_count);
+   add_session_test (suite, "/Session/cursor", test_cursor);
+   add_session_test (suite, "/Session/drop", test_drop);
+   add_session_test (suite, "/Session/drop_index", test_drop_index);
+   add_session_test (suite, "/Session/create_index", test_create_index);
+   add_session_test (suite, "/Session/replace_one", test_replace_one);
+   add_session_test (suite, "/Session/rename", test_rename);
+   add_session_test (suite, "/Session/fam", test_fam);
+   add_session_test (suite, "/Session/db_drop", test_db_drop);
+   add_session_test (suite, "/Session/gridfs_find", test_gridfs_find);
+   add_session_test (suite, "/Session/gridfs_find_one", test_gridfs_find_one);
    add_session_test_wc (suite,
                         "/Session/watch",
                         test_watch,
