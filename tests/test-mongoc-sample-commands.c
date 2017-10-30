@@ -25,6 +25,8 @@
 
 /* clang-format off */
 #include <mongoc.h>
+#include <mongoc-util-private.h>
+#include <mongoc-database-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -2472,6 +2474,138 @@ done:
 }
 
 
+typedef struct {
+   mongoc_mutex_t lock;
+   mongoc_collection_t *collection;
+   bool done;
+} change_stream_ctx_t;
+
+
+static void *
+insert_docs (void *p)
+{
+   change_stream_ctx_t *ctx = (change_stream_ctx_t *) p;
+   bson_t doc = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
+
+   while (true) {
+      mongoc_mutex_lock (&ctx->lock);
+      r = mongoc_collection_insert (
+         ctx->collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+      ASSERT_OR_PRINT (r, error);
+      if (ctx->done) {
+         mongoc_mutex_unlock (&ctx->lock);
+         return 0;
+      }
+
+      mongoc_mutex_unlock (&ctx->lock);
+      _mongoc_usleep (100 * 1000);  /* 100 ms */
+   }
+}
+
+
+static void
+test_sample_change_stream_command (sample_command_fn_t fn,
+                                   mongoc_database_t *db)
+{
+   mongoc_client_t *client;
+   change_stream_ctx_t ctx;
+   mongoc_thread_t thread;
+   int r;
+
+   /* change streams require a replica set running MongoDB 3.6+ */
+   if (test_framework_skip_if_not_rs_version_6 () &&
+       test_framework_skip_if_slow ()) {
+
+      /* separate client for the background thread */
+      client = test_framework_client_new ();
+
+      mongoc_mutex_init (&ctx.lock);
+      ctx.collection = mongoc_client_get_collection (
+         client, db->name, "inventory");
+      ctx.done = false;
+
+      r = mongoc_thread_create (&thread, insert_docs, (void *) &ctx);
+      ASSERT_OR_PRINT_ERRNO (r == 0, r);
+
+      capture_logs (true);
+      fn (db);
+      ASSERT_NO_CAPTURED_LOGS ("change stream examples");
+
+      mongoc_mutex_lock (&ctx.lock);
+      ctx.done = true;
+      mongoc_mutex_unlock (&ctx.lock);
+      mongoc_thread_join (thread);
+
+      mongoc_collection_destroy (ctx.collection);
+      mongoc_client_destroy (client);
+   }
+}
+
+
+
+static void
+test_example_change_stream (mongoc_database_t *db)
+{
+   /* Start Changestream Example 1 */
+   mongoc_collection_t *collection;
+   bson_t pipeline = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_change_stream_t *stream;
+   const bson_t *change;
+   bson_iter_t iter;
+   bson_error_t error;
+
+   collection = mongoc_database_get_collection (db, "inventory");
+   stream = mongoc_collection_watch (collection, &pipeline, NULL /* opts */);
+   mongoc_change_stream_next (stream, &change);
+   if (mongoc_change_stream_error_document (stream, &error, NULL)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_change_stream_destroy (stream);
+   /* End Changestream Example 1 */
+
+   /* Start Changestream Example 2 */
+   BSON_APPEND_UTF8 (&opts, "fullDocument", "updateLookup");
+   stream = mongoc_collection_watch (collection, &pipeline, &opts);
+   mongoc_change_stream_next (stream, &change);
+   if (mongoc_change_stream_error_document (stream, &error, NULL)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_change_stream_destroy (stream);
+   /* End Changestream Example 2 */
+
+   bson_reinit (&opts);
+
+   /* Start Changestream Example 3 */
+   stream = mongoc_collection_watch (collection, &pipeline, NULL);
+   if (mongoc_change_stream_next (stream, &change)) {
+      bson_iter_init_find (&iter, change, "_id");
+      BSON_APPEND_VALUE (&opts, "resumeAfter", bson_iter_value (&iter));
+
+      mongoc_change_stream_destroy (stream);
+      stream = mongoc_collection_watch (collection, &pipeline, &opts);
+      mongoc_change_stream_next (stream, &change);
+      mongoc_change_stream_destroy (stream);
+   } else {
+      if (mongoc_change_stream_error_document (stream, &error, NULL)) {
+         MONGOC_ERROR ("%s\n", error.message);
+      }
+
+      mongoc_change_stream_destroy (stream);
+   }
+
+   /* End Changestream Example 3 */
+   bson_destroy (&opts);
+   bson_destroy (&pipeline);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+}
+
+
 static void
 test_sample_commands (void)
 {
@@ -2539,6 +2673,7 @@ test_sample_commands (void)
    test_sample_command (test_example_57, 57, db, collection, false);
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
+   test_sample_change_stream_command (test_example_change_stream, db);
 
    mongoc_collection_drop (collection, NULL);
 
