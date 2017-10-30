@@ -2283,6 +2283,85 @@ test_single_error_unordered_bulk (void)
 
 
 static void
+_test_oversized_bulk_op (bool ordered)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *opts = NULL;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *huge_doc;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_oversized_bulk");
+   mongoc_collection_drop_with_opts (collection, NULL, NULL);
+
+   if (!ordered) {
+      opts = tmp_bson ("{'ordered': false}");
+   }
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
+
+   /* this fails, aborting bulk, even if it's unordered */
+   huge_doc = BCON_NEW ("a", BCON_INT32 (1));
+   bson_append_utf8 (huge_doc,
+                     "b",
+                     -1,
+                     huge_string (client),
+                     (int) huge_string_length (client));
+   bson_append_utf8 (huge_doc,
+                     "c",
+                     -1,
+                     huge_string (client),
+                     (int) huge_string_length (client));
+   mongoc_bulk_operation_insert (bulk, huge_doc);
+
+   /* would succeed if it ran */
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
+
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_BSON,
+                          MONGOC_ERROR_BSON_INVALID,
+                          "Document 0 is too large");
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 0,"
+                 " 'nMatched':  0,"
+                 " 'nModified': 0,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': []}");
+
+   /* second document was *not* inserted */
+   ASSERT_COUNT (0, collection);
+
+   bson_destroy (&reply);
+   bson_destroy (huge_doc);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_oversized_bulk_op_ordered (void *ctx)
+{
+   _test_oversized_bulk_op (true);
+}
+
+
+static void
+test_oversized_bulk_op_unordered (void *ctx)
+{
+   _test_oversized_bulk_op (false);
+}
+
+
+static void
 _test_write_concern (bool ordered, bool multi_err)
 {
    mock_server_t *mock_server;
@@ -2966,7 +3045,8 @@ test_bulk_split (void)
 
    mongoc_write_concern_append (wc, &opts);
    bson_append_bool (&opts, "ordered", 7, false);
-   bulk_op = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   bulk_op =
+      mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* if n_docs is 100,010 insert 3337 docs with _ids 0, 3, 6, ..., 100,008 */
    for (i = 0; i < n_docs; i += 3) {
@@ -2984,7 +3064,8 @@ test_bulk_split (void)
    mongoc_bulk_operation_destroy (bulk_op);
 
    /* ordered false so we continue on error */
-   bulk_op = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   bulk_op =
+      mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
    /* insert n_docs documents with _ids 0, 1, 2, 3, ..., 100,008 */
    for (i = 0; i < n_docs; i++) {
       bson_init (&doc);
@@ -4133,6 +4214,18 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_error_unordered_bulk",
                       test_single_error_unordered_bulk);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/oversized/ordered",
+                      test_oversized_bulk_op_ordered,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/oversized/unordered",
+                      test_oversized_bulk_op_unordered,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered",

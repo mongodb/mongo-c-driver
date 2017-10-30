@@ -435,20 +435,15 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
               4);
       len = BSON_UINT32_FROM_LE (len);
 
-      /* Skip the document if it's too large */
       if (len > max_bson_obj_size + BSON_OBJECT_ALLOWANCE) {
+         /* Quit if the document is too large */
          _mongoc_write_command_too_large_error (
             error, index_offset, len, max_bson_obj_size);
          result->failed = true;
+         break;
 
-         /* skip this document */
-         payload_batch_size = 0;
-         document_count = 0;
-         payload_total_offset += len;
-         ship_it = false;
-         /* Does adding this document to our current batch keep us under
-          * the maximum batch size in bytes */
       } else if ((payload_batch_size + header) + len <= max_msg_size) {
+         /* The current batch is still under max batch size in bytes */
          payload_batch_size += len;
 
          /* If this document filled the maximum document count */
@@ -617,6 +612,7 @@ again:
    if (!i) {
       _mongoc_write_command_too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
+      result->must_stop = true;
       ret = false;
       if (bson) {
          data_offset += len;
