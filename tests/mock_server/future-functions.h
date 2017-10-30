@@ -191,12 +191,12 @@ future_collection_stats (
 
 
 future_t *
-future_collection_insert (
+future_collection_insert_one_with_opts (
 
    mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
    const_bson_ptr document,
-   const_mongoc_write_concern_ptr write_concern,
+   const_bson_ptr opts,
+   bson_ptr reply,
    bson_error_ptr error
 );
 

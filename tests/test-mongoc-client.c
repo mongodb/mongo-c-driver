@@ -440,8 +440,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
-   mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, &insert, NULL, &error);
+   mongoc_collection_insert_one_with_opts (
+      collection, &insert, NULL, NULL, &error);
    for (i = 0; i < 10; i++) {
       mongoc_topology_scanner_node_t *scanner_node;
 
@@ -544,8 +544,8 @@ test_mongoc_client_authenticate_failure (void *context)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, &empty, NULL, &error);
+   r = mongoc_collection_insert_one_with_opts (
+      collection, &empty, NULL, NULL, &error);
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);

@@ -291,6 +291,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
    bson_t doc0_rt, doc1_rt, doc2_rt;
 
    client = test_framework_client_new ();
@@ -314,14 +315,18 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
    mongoc_write_concern_set_wmajority (wc, 1000);
-   ASSERT_OR_PRINT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 0}"), wc, &error), error);
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+                       coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
+                    error);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), wc, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+                       coll, tmp_bson ("{'_id': 1}"), &opts, NULL, &error),
+                    error);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+                       coll, tmp_bson ("{'_id': 2}"), &opts, NULL, &error),
+                    error);
 
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
@@ -366,6 +371,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    bson_destroy (&doc0_rt);
    bson_destroy (&doc1_rt);
    bson_destroy (&doc2_rt);
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_change_stream_destroy (stream);
@@ -414,6 +420,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    const bson_t *next_doc = NULL;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
    uint32_t i;
 
    client = test_framework_client_new ();
@@ -441,10 +448,11 @@ test_change_stream_live_batch_size (void *test_ctx)
    ctx.expected_getmore_batch_size = 1;
 
    mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_append (wc, &opts);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW ("_id", BCON_INT32 (i));
       ASSERT (
-         mongoc_collection_insert (coll, MONGOC_INSERT_NONE, doc, wc, NULL));
+         mongoc_collection_insert_one_with_opts (coll, doc, &opts, NULL, NULL));
       bson_free (doc);
    }
 
@@ -461,6 +469,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    /* 10 getMores for results, 1 for initial next, 1 for last empty next */
    ASSERT (ctx.num_get_mores == 12);
 
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_change_stream_destroy (stream);
@@ -482,6 +491,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
    mongoc_change_stream_t *stream;
    bson_error_t err;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -496,8 +506,9 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
 
    mongoc_write_concern_set_wmajority (wc, 1000);
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 2}"), wc, NULL));
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT (mongoc_collection_insert_one_with_opts (
+      coll, tmp_bson ("{'_id': 2}"), &opts, NULL, NULL));
 
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (mongoc_change_stream_error_document (stream, &err, NULL));
@@ -506,6 +517,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
                           MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                           "Cannot provide resume functionality");
 
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
@@ -852,6 +864,7 @@ test_change_stream_live_watch (void *test_ctx)
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
 
    mongoc_write_concern_set_wmajority (wc, 1000);
 
@@ -863,8 +876,9 @@ test_change_stream_live_watch (void *test_ctx)
    ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
 
    /* Test that inserting a doc produces the expected change stream doc */
-   ASSERT (mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, inserted_doc, wc, NULL));
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT (mongoc_collection_insert_one_with_opts (
+      coll, inserted_doc, &opts, NULL, NULL));
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
@@ -900,6 +914,7 @@ test_change_stream_live_watch (void *test_ctx)
       "true }, 'updateDescription': { 'updatedFields': { 'x': 'z' } "
       "}, 'fullDocument': { '$exists': false }}");
 
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_change_stream_destroy (stream);
    mongoc_collection_destroy (coll);

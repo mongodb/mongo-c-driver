@@ -80,8 +80,8 @@ test_example_1 (mongoc_database_t *db)
       "uom", BCON_UTF8 ("cm"),
       "}");
 
-   /* MONGOC_INSERT_NONE means "no special options" */
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error);
+   r = mongoc_collection_insert_one_with_opts (
+      collection, doc, NULL, NULL, &error);
    bson_destroy (doc);
 
    if (!r) {

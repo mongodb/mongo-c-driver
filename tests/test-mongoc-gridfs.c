@@ -447,11 +447,8 @@ test_properties (void)
                       "chunkSize",
                       BCON_INT32 (100));
 
-   ASSERT (mongoc_collection_insert (mongoc_gridfs_get_files (gridfs),
-                                     MONGOC_INSERT_NONE,
-                                     doc_in,
-                                     NULL,
-                                     NULL));
+   ASSERT (mongoc_collection_insert_one_with_opts (
+      mongoc_gridfs_get_files (gridfs), doc_in, NULL, NULL, NULL));
 
    list = mongoc_gridfs_find (gridfs, &query);
    file = mongoc_gridfs_file_list_next (list);

@@ -364,8 +364,8 @@ _test_write_disconnect (void)
     */
    collection = mongoc_client_get_collection (client, "db", "collection");
    future_destroy (future);
-   future = future_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{'_id': 1}"), NULL, &error);
+   future = future_collection_insert_one_with_opts (
+      collection, tmp_bson ("{'_id': 1}"), NULL, NULL, &error);
 
    ASSERT (!future_get_bool (future));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
@@ -702,8 +702,8 @@ insert (mongoc_client_t *client, bson_error_t *error)
    bool r;
 
    collection = get_test_collection (client, "test_cluster_time_cursor");
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, error);
+   r = mongoc_collection_insert_one_with_opts (
+      collection, tmp_bson ("{}"), NULL, NULL, error);
 
    mongoc_collection_destroy (collection);
 

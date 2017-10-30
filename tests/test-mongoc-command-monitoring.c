@@ -652,8 +652,8 @@ test_insert_one (mongoc_collection_t *collection, const bson_t *arguments)
    bson_t document;
 
    bson_lookup_doc (arguments, "document", &document);
-   mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, &document, NULL, NULL);
+   mongoc_collection_insert_one_with_opts (
+      collection, &document, NULL, NULL, NULL);
 }
 
 
@@ -887,8 +887,8 @@ insert_200_docs (mongoc_collection_t *collection)
    /* insert 200 docs so we have a couple batches */
    doc = tmp_bson (NULL);
    for (i = 0; i < 200; i++) {
-      r = mongoc_collection_insert (
-         collection, MONGOC_INSERT_NONE, doc, NULL, &error);
+      r = mongoc_collection_insert_one_with_opts (
+         collection, doc, NULL, NULL, &error);
 
       ASSERT_OR_PRINT (r, error);
    }

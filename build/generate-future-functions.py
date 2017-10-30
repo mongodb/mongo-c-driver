@@ -239,11 +239,11 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
-                    "mongoc_collection_insert",
+                    "mongoc_collection_insert_one_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("mongoc_insert_flags_t", "flags"),
                      param("const_bson_ptr", "document"),
-                     param("const_mongoc_write_concern_ptr", "write_concern"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
