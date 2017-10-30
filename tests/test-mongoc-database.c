@@ -608,6 +608,67 @@ test_get_collection_info (void)
 }
 
 static void
+test_get_collection_info_regex (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   bson_iter_t col_iter;
+   bson_t name_filter = BSON_INITIALIZER;
+   const bson_t *doc;
+   char *dbname;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+
+   dbname = gen_collection_name ("test_get_collection_info_regex");
+   database = mongoc_client_get_database (client, dbname);
+   mongoc_database_drop_with_opts (database, NULL, NULL);
+
+   collection =
+      mongoc_database_create_collection (database, "abbbc", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+   mongoc_collection_destroy (collection);
+
+   collection =
+      mongoc_database_create_collection (database, "foo", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+
+   BSON_APPEND_REGEX (&name_filter, "name", "ab+c", NULL);
+
+   cursor = mongoc_database_find_collections (database, &name_filter, &error);
+
+   if (test_framework_max_wire_version_at_least (3)) {
+      BSON_ASSERT (cursor);
+      BSON_ASSERT (!error.domain);
+      BSON_ASSERT (!error.code);
+
+      BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
+      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
+
+      /* only one match */
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_cursor_destroy (cursor);
+   } else {
+      BSON_ASSERT (!cursor);
+      /* MongoDB 2.6 doesn't allow regex */
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_NAMESPACE,
+                             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
+                             "filter on name can only be a string");
+   }
+
+   mongoc_collection_destroy (collection);
+   bson_free (dbname);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+static void
 _test_get_collection_info_getmore ()
 {
    mock_server_t *server;
@@ -894,6 +955,9 @@ test_database_install (TestSuite *suite)
       suite, "/Database/create_collection", test_create_collection);
    TestSuite_AddLive (
       suite, "/Database/get_collection_info", test_get_collection_info);
+   TestSuite_AddLive (suite,
+                      "/Database/get_collection_info_regex",
+                      test_get_collection_info_regex);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/get_collection/getmore_cmd",
                                 test_get_collection_info_getmore_cmd);
