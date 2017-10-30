@@ -341,7 +341,7 @@ This section demonstrates the basics of using the C Driver to interact with Mong
 Inserting a Document
 ^^^^^^^^^^^^^^^^^^^^
 
-To insert documents into a collection, first obtain a handle to a ``mongoc_collection_t`` via a ``mongoc_client_t``. Then, use :doc:`mongoc_collection_insert() <mongoc_collection_insert>` to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".
+To insert documents into a collection, first obtain a handle to a ``mongoc_collection_t`` via a ``mongoc_client_t``. Then, use :symbol:`mongoc_collection_insert_one_with_opts` to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".
 
 When finished, ensure that allocated structures are freed by using their respective destroy functions.
 
@@ -371,7 +371,8 @@ When finished, ensure that allocated structures are freed by using their respect
       BSON_APPEND_OID (doc, "_id", &oid);
       BSON_APPEND_UTF8 (doc, "hello", "world");
 
-      if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+      if (!mongoc_collection_insert_one_with_opts (
+             collection, doc, NULL, NULL, &error)) {
           fprintf (stderr, "%s\n", error.message);
       }
 
@@ -571,8 +572,8 @@ Using the "mydb" database, the following example inserts an example document int
      bson_oid_init (&oid, NULL);
      doc = BCON_NEW ("_id", BCON_OID (&oid), "key", BCON_UTF8 ("old_value"));
 
-     if (!mongoc_collection_insert (
-            collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+     if (!mongoc_collection_insert_one_with_opts (
+            collection, doc, NULL, &error)) {
         fprintf (stderr, "%s\n", error.message);
         goto fail;
      }
@@ -668,8 +669,8 @@ The following code inserts a sample document into the database "mydb" and collec
      BSON_APPEND_OID (doc, "_id", &oid);
      BSON_APPEND_UTF8 (doc, "hello", "world");
 
-     if (!mongoc_collection_insert (
-            collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
+     if (!mongoc_collection_insert_one_with_opts (
+            collection, doc, NULL, &error)) {
         fprintf (stderr, "Insert failed: %s\n", error.message);
      }
 

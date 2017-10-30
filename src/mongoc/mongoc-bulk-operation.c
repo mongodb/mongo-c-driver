@@ -372,6 +372,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
    _mongoc_write_command_init_insert (
       &command,
       document,
+      opts,
       bulk->flags,
       bulk->operation_id,
       !mongoc_write_concern_is_acknowledged (bulk->write_concern));
@@ -768,12 +769,12 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    }
 
 cleanup:
-   ret = _mongoc_write_result_complete (&bulk->result,
-                                        bulk->client->error_api_version,
-                                        bulk->write_concern,
-                                        MONGOC_ERROR_COMMAND /* err domain */,
-                                        reply,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&bulk->result,
+                                       bulk->client->error_api_version,
+                                       bulk->write_concern,
+                                       MONGOC_ERROR_COMMAND /* err domain */,
+                                       reply,
+                                       error);
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret ? bulk->server_id : 0);

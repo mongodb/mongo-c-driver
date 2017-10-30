@@ -75,8 +75,8 @@ main (int argc, char *argv[])
 
    insert = BCON_NEW ("hello", BCON_UTF8 ("world"));
 
-   if (!mongoc_collection_insert (
-          collection, MONGOC_INSERT_NONE, insert, NULL, &error)) {
+   if (!mongoc_collection_insert_one_with_opts (
+          collection, insert, NULL, NULL, &error)) {
       fprintf (stderr, "%s\n", error.message);
    }
 

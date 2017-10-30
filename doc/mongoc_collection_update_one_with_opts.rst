@@ -46,6 +46,7 @@ This function shall update documents in ``collection`` that match ``selector``.
 
 By default, updates only a single document. Use :symbol:`mongoc_collection_update_many_with_opts` to update multiple documents.
 
+If you pass a non-NULL ``reply``, it is filled out with fields "modifiedCount" and "matchedCount". If a document was upserted, ``reply`` contains an "upsertedId" field. If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
 
 See Also
 --------

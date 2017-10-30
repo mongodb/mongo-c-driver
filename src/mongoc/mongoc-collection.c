@@ -1462,6 +1462,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert (
       &command,
       NULL,
+      NULL,
       write_flags,
       ++collection->client->cluster.operation_id,
       true);
@@ -1474,13 +1475,13 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
       &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
@@ -1489,33 +1490,116 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_insert --
- *
- *       Insert a document into a MongoDB collection.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: flags for the insert or 0.
- *       @document: The document to insert.
- *       @write_concern: A write concern or NULL.
- *       @error: a location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- *       If the write concern does not dictate checking the result of the
- *       insert, then true may be returned even though the document was
- *       not actually inserted on the MongoDB server or cluster.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error may be set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
+typedef struct {
+   mongoc_bulk_write_flags_t write_flags;
+   mongoc_write_concern_t *write_concern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bool client_validation;
+   bson_t copied_opts;
+} mongoc_write_opts_parsed_t;
+
+
+static bool
+_mongoc_write_opts_parse (const bson_t *opts,
+                          mongoc_collection_t *collection,
+                          mongoc_write_opts_parsed_t *parsed,
+                          bson_error_t *error)
+{
+   mongoc_bulk_write_flags_t default_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_iter_t iter;
+
+   bson_clear (&collection->gle);
+
+   parsed->write_flags = default_flags;
+   bson_init (&parsed->copied_opts);
+   parsed->write_concern = collection->write_concern;
+   parsed->write_concern_owned = false;
+   parsed->client_session = NULL;
+   parsed->client_validation = true;
+
+   if (opts) {
+      if (!bson_iter_init (&iter, opts)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid 'opts' parameter.");
+         return false;
+      }
+
+      while (bson_iter_next (&iter)) {
+         if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+            parsed->write_concern = _mongoc_write_concern_new_from_iter (&iter);
+            parsed->write_concern_owned = true;
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
+            parsed->write_flags.bypass_document_validation =
+               bson_iter_as_bool (&iter)
+                  ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
+                  : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+            if (!_mongoc_client_session_from_iter (
+                   collection->client, &iter, &parsed->client_session, error)) {
+               return false;
+            }
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "validate")) {
+            parsed->client_validation = bson_iter_as_bool (&iter);
+            if (parsed->client_validation && !BSON_ITER_HOLDS_BOOL (&iter)) {
+               /* reserve truthy values besides boolean "true" for future
+                * fine-grained validation control, see CDRIVER-2296
+                */
+               bson_set_error (
+                  error,
+                  MONGOC_ERROR_COMMAND,
+                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                  "Invalid type for option \"validate\", \"%s\":"
+                  " \"validate\" must be a boolean.",
+                  _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+               return false;
+            }
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "collation")) {
+            parsed->write_flags.has_collation = true;
+            /* FALL THROUGH */
+         }
+
+         if (!bson_append_value (&parsed->copied_opts,
+                                 bson_iter_key (&iter),
+                                 -1,
+                                 bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+
+static void
+_mongoc_write_opts_cleanup (mongoc_write_opts_parsed_t *parsed)
+{
+   if (parsed->write_concern_owned) {
+      mongoc_write_concern_destroy (parsed->write_concern);
+   }
+
+   bson_destroy (&parsed->copied_opts);
+}
+
 
 bool
 mongoc_collection_insert (mongoc_collection_t *collection,
@@ -1524,7 +1608,64 @@ mongoc_collection_insert (mongoc_collection_t *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error)
 {
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t reply;
+   bool r;
+
+   bson_clear (&collection->gle);
+
+   if (flags & MONGOC_INSERT_NO_VALIDATE) {
+      bson_append_bool (&opts, "validate", 8, false);
+   }
+
+   if (write_concern) {
+      mongoc_write_concern_append ((mongoc_write_concern_t *) write_concern,
+                                   &opts);
+   }
+
+   r = mongoc_collection_insert_one_with_opts (
+      collection, document, &opts, &reply, error);
+
+   collection->gle = bson_copy (&reply);
+   bson_destroy (&reply);
+   bson_destroy (&opts);
+
+   return r;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert_one_with_opts --
+ *
+ *       Insert a document into a MongoDB collection.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @document: The document to insert.
+ *       @opts: Standard command options.
+ *       @reply: Optional. Uninitialized doc to receive the update result.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then true may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_insert_one_with_opts (mongoc_collection_t *collection,
+                                        const bson_t *document,
+                                        const bson_t *opts,
+                                        bson_t *reply,
+                                        bson_error_t *error)
+{
+   mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
@@ -1534,13 +1675,14 @@ mongoc_collection_insert (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (document);
 
-   bson_clear (&collection->gle);
+   _mongoc_bson_init_if_set (reply);
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
    }
 
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE) &&
+   if (parsed.client_validation &&
        !_mongoc_validate_new_document (document, error)) {
       RETURN (false);
    }
@@ -1549,24 +1691,29 @@ mongoc_collection_insert (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert (
       &command,
       document,
-      write_flags,
+      &parsed.copied_opts,
+      parsed.write_flags,
       ++collection->client->cluster.operation_id,
       false);
 
-   _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, NULL, &result);
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
 
-   collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "insertedCount");
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
 
    RETURN (ret);
 }
@@ -1657,13 +1804,13 @@ mongoc_collection_update (mongoc_collection_t *collection,
       &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
@@ -1681,14 +1828,10 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
                                                 bool is_multi,
                                                 bool is_update)
 {
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bson_iter_t iter;
    bool ret;
-   mongoc_write_concern_t *write_concern;
-   mongoc_client_session_t *cs = NULL;
-   bson_t copied_opts;
 
    ENTRY;
 
@@ -1697,8 +1840,6 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
    BSON_ASSERT (update);
 
    _mongoc_bson_init_if_set (reply);
-
-   write_concern = collection->write_concern;
 
    /* update document, all keys must be $-operators */
    if (is_update) {
@@ -1709,46 +1850,13 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
       return false;
    }
 
-   bson_init (&copied_opts);
-
-   if (opts) {
-      if (!bson_iter_init (&iter, opts)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Invalid 'opts' parameter.");
-         bson_destroy (&copied_opts);
-         return false;
-      }
-
-      if (bson_iter_find (&iter, "writeConcern")) {
-         write_concern = _mongoc_write_concern_new_from_iter (&iter);
-      }
-
-      if (bson_iter_init_find (&iter, opts, "bypassDocumentValidation") &&
-          BSON_ITER_HOLDS_BOOL (&iter)) {
-         write_flags.bypass_document_validation = bson_iter_as_bool (&iter);
-      }
-
-      if (bson_iter_init_find (&iter, opts, "sessionId") &&
-          BSON_ITER_HOLDS_INT64 (&iter)) {
-         if (!_mongoc_client_session_from_iter (
-                collection->client, &iter, &cs, error)) {
-            bson_destroy (&copied_opts);
-            return false;
-         }
-      }
-
-      bson_copy_to_excluding_noinit (opts,
-                                     &copied_opts,
-                                     "bypassDocumentValidation",
-                                     "writeConcern",
-                                     "sessionId",
-                                     NULL);
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
    }
 
    if (is_multi) {
-      bson_append_bool (&copied_opts, "multi", 5, true);
+      bson_append_bool (&parsed.copied_opts, "multi", 5, true);
    }
 
    _mongoc_write_result_init (&result);
@@ -1757,44 +1865,32 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
       &command,
       selector,
       update,
-      &copied_opts,
-      write_flags,
+      &parsed.copied_opts,
+      parsed.write_flags,
       ++collection->client->cluster.operation_id);
 
-   _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, cs, &result);
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
 
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        NULL,
-                                        error);
-
-   if (reply && mongoc_write_concern_is_acknowledged (write_concern)) {
-      /* set fields described in CRUD spec for the UpdateResult */
-      bson_append_int64 (reply, "matchedCount", 12, result.nMatched);
-      bson_append_int64 (reply, "modifiedCount", 13, result.nModified);
-      /* result.upserted is an array because this is a bulk update (of one) */
-      if (bson_iter_init_find (&iter, &result.upserted, "0")) {
-         bson_iter_t child;
-         bson_iter_recurse (&iter, &child);
-         if (bson_iter_find (&child, "_id")) {
-            bson_append_value (
-               reply, "upsertedId", 10, bson_iter_value (&child));
-         }
-      }
-   }
+   /* set fields described in CRUD spec for the UpdateResult */
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "modifiedCount",
+                                       "matchedCount",
+                                       "upsertedId");
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
 
-   bson_destroy (&copied_opts);
-   if (write_concern != collection->write_concern) {
-      /* write_concern was created from opts */
-      mongoc_write_concern_destroy (write_concern);
-   }
    RETURN (ret);
 }
 
@@ -1886,6 +1982,7 @@ mongoc_collection_save (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (document);
 
+   BEGIN_IGNORE_DEPRECATIONS
    if (!bson_iter_init_find (&iter, document, "_id")) {
       return mongoc_collection_insert (
          collection, MONGOC_INSERT_NONE, document, write_concern, error);
@@ -1913,6 +2010,7 @@ mongoc_collection_save (mongoc_collection_t *collection,
                                    document,
                                    write_concern,
                                    error);
+   END_IGNORE_DEPRECATIONS
 
    bson_destroy (&selector);
 
@@ -1990,12 +2088,12 @@ mongoc_collection_remove (mongoc_collection_t *collection,
       &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        0 /* no error domain override */,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       0 /* no error domain override */,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);

@@ -57,6 +57,7 @@ typedef struct {
    uint32_t n_documents;
    mongoc_bulk_write_flags_t flags;
    int64_t operation_id;
+   bson_t cmd_opts;
    union {
       struct {
          bool allow_bulk_op_insert;
@@ -100,6 +101,7 @@ _mongoc_write_command_init (bson_t *doc,
 void
 _mongoc_write_command_init_insert (mongoc_write_command_t *command,
                                    const bson_t *document,
+                                   const bson_t *cmd_opts,
                                    mongoc_bulk_write_flags_t flags,
                                    int64_t operation_id,
                                    bool allow_bulk_op_insert);
@@ -161,13 +163,16 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,
                             mongoc_write_command_t *command,
                             const bson_t *reply,
                             uint32_t offset);
+#define MONGOC_WRITE_RESULT_COMPLETE(_result, ...) \
+   _mongoc_write_result_complete (_result, __VA_ARGS__, NULL)
 bool
 _mongoc_write_result_complete (mongoc_write_result_t *result,
                                int32_t error_api_version,
                                const mongoc_write_concern_t *wc,
                                mongoc_error_domain_t err_domain_override,
                                bson_t *reply,
-                               bson_error_t *error);
+                               bson_error_t *error,
+                               ...);
 void
 _mongoc_write_result_destroy (mongoc_write_result_t *result);
 

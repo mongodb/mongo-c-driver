@@ -17,8 +17,8 @@ main (int argc, char **argv)
 
    mongoc_client_set_error_api (client, 2);
    /* insert a document */
-   if (!mongoc_collection_insert (
-      coll, MONGOC_INSERT_NONE, to_insert, NULL, &err)) {
+   if (!mongoc_collection_insert_one_with_opts (
+          coll, to_insert, NULL, NULL, &err)) {
       fprintf (stderr, "insert failed: %s\n", err.message);
       return EXIT_FAILURE;
    }

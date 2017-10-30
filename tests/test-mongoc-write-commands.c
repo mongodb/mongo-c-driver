@@ -44,8 +44,12 @@ test_split_insert (void)
 
    _mongoc_write_result_init (&result);
 
-   _mongoc_write_command_init_insert (
-      &command, docs[0], write_flags, ++client->cluster.operation_id, true);
+   _mongoc_write_command_init_insert (&command,
+                                      docs[0],
+                                      NULL,
+                                      write_flags,
+                                      ++client->cluster.operation_id,
+                                      true);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
@@ -63,12 +67,12 @@ test_split_insert (void)
                                   NULL,
                                   &result);
 
-   r = _mongoc_write_result_complete (&result,
-                                      2,
-                                      collection->write_concern,
-                                      (mongoc_error_domain_t) 0,
-                                      &reply,
-                                      &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                     2,
+                                     collection->write_concern,
+                                     (mongoc_error_domain_t) 0,
+                                     &reply,
+                                     &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (result.nInserted == 3000);
 
@@ -118,7 +122,7 @@ test_invalid_write_concern (void)
    doc = BCON_NEW ("_id", BCON_INT32 (0));
 
    _mongoc_write_command_init_insert (
-      &command, doc, write_flags, ++client->cluster.operation_id, true);
+      &command, doc, NULL, write_flags, ++client->cluster.operation_id, true);
    _mongoc_write_result_init (&result);
    server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
    ASSERT_OR_PRINT (server_stream, error);
@@ -132,12 +136,12 @@ test_invalid_write_concern (void)
                                   NULL,
                                   &result);
 
-   r = _mongoc_write_result_complete (&result,
-                                      2,
-                                      collection->write_concern,
-                                      (mongoc_error_domain_t) 0,
-                                      &reply,
-                                      &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                     2,
+                                     collection->write_concern,
+                                     (mongoc_error_domain_t) 0,
+                                     &reply,
+                                     &error);
 
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);

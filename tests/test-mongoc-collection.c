@@ -3555,6 +3555,47 @@ test_many_return (void)
 }
 
 
+static void
+test_insert_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_insert_validate");
+   BSON_ASSERT (!mongoc_collection_insert_one_with_opts (
+      collection, tmp_bson ("{'$': 1}"), NULL, NULL, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "document to insert contains invalid key");
+
+   BSON_ASSERT (
+      !mongoc_collection_insert_one_with_opts (collection,
+                                               tmp_bson ("{'$': 1}"),
+                                               tmp_bson ("{'validate': false}"),
+                                               NULL,
+                                               &error));
+   ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
+
+   BSON_ASSERT (
+      !mongoc_collection_insert_one_with_opts (collection,
+                                               tmp_bson ("{'$': 1}"),
+                                               tmp_bson ("{'validate': 'foo'}"),
+                                               NULL,
+                                               &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid type for option \"validate\", \"UTF8\"");
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 /* use a mock server to test the "limit" parameter */
 static void
 test_find_limit (void)
@@ -4573,13 +4614,6 @@ test_create_index_fail (void *context)
    mongoc_client_destroy (client);
 }
 
-typedef bool (*update_fn_t) (mongoc_collection_t *,
-                             const bson_t *,
-                             const bson_t *,
-                             const bson_t *,
-                             bson_t *,
-                             bson_error_t *);
-
 /* Tests that documents in `coll` found with `selector` all match `match` */
 static void
 _test_docs_in_coll_matches (mongoc_collection_t *coll,
@@ -4592,16 +4626,20 @@ _test_docs_in_coll_matches (mongoc_collection_t *coll,
       mongoc_collection_find_with_opts (coll, selector, NULL, NULL);
    while (expected_count > 0) {
       ASSERT (mongoc_cursor_next (cursor, &next_doc));
-      ASSERT_MATCH (next_doc, match);
+      if (match) {
+         ASSERT_MATCH (next_doc, match);
+      }
       --expected_count;
    }
    ASSERT (expected_count == 0);
    mongoc_cursor_destroy (cursor);
 }
 
-typedef struct _test_update_and_replace_ctx_t {
+typedef struct {
+   const char *command_under_test;
+   int commands_tested;
    const char *expected_command;
-} test_update_and_replace_ctx_t;
+} test_crud_ctx_t;
 
 /* Tests that update commands match the `expected_command` in the update ctx */
 void
@@ -4611,14 +4649,140 @@ _test_update_and_replace_command_start (
    const bson_t *cmd = mongoc_apm_command_started_get_command (event);
    const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
 
-   test_update_and_replace_ctx_t *ctx =
-      (test_update_and_replace_ctx_t *) mongoc_apm_command_started_get_context (
-         event);
+   test_crud_ctx_t *ctx =
+      (test_crud_ctx_t *) mongoc_apm_command_started_get_context (event);
 
-   if (strcmp (cmd_name, "update") == 0) {
+   if (!strcmp (cmd_name, ctx->command_under_test)) {
+      ctx->commands_tested++;
       ASSERT_MATCH (cmd, ctx->expected_command);
    }
 }
+
+static void
+test_insert_one (void)
+{
+   bson_error_t err = {0};
+   bson_t reply;
+   bson_t opts_with_wc = BSON_INITIALIZER;
+   bool ret;
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_database_t *db = get_test_database (client);
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, "coll");
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   mongoc_write_concern_t *wc2 = mongoc_write_concern_new ();
+   test_crud_ctx_t ctx;
+   mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+
+   ctx.command_under_test = "insert";
+   ctx.commands_tested = 0;
+
+   /* Give wc and wc2 different j values so we can distinguish them but make
+    * sure they have w:1 so the writes are committed when we check results */
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_set_w (wc2, 1);
+   mongoc_write_concern_set_journal (wc2, true);
+
+   mongoc_collection_set_write_concern (coll, wc);
+   mongoc_apm_set_command_started_cb (callbacks,
+                                      _test_update_and_replace_command_start);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   mongoc_collection_drop (coll, NULL);
+
+   /* Test a simple insert with bypassDocumentValidation */
+   ctx.expected_command = "{'insert': 'coll', 'bypassDocumentValidation': "
+                          "true, 'writeConcern': {'w': 1, 'j': false}}";
+   ret = mongoc_collection_insert_one_with_opts (
+      coll,
+      tmp_bson ("{'_id': 1}"),
+      tmp_bson ("{'bypassDocumentValidation': true}"),
+      &reply,
+      &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply, "{'insertedCount': 1}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id': 1}"), NULL, 1);
+
+   /* Test maxTimeMS */
+   ctx.expected_command = "{'insert': 'coll', 'maxTimeMS': 9999, "
+                          " 'writeConcern': {'w': 1, 'j': false}}";
+   ret =
+      mongoc_collection_insert_one_with_opts (coll,
+                                              tmp_bson ("{'_id': 2}"),
+                                              tmp_bson ("{'maxTimeMS': 9999}"),
+                                              &reply,
+                                              &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply, "{'insertedCount': 1}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id': 2}"), NULL, 1);
+
+   /* Test passing write concern through the options */
+   mongoc_write_concern_append (wc2, &opts_with_wc);
+   ctx.expected_command =
+      "{'insert': 'coll', 'writeConcern': {'w': 1, 'j': true}}";
+   ret = mongoc_collection_insert_one_with_opts (
+      coll, tmp_bson ("{'_id': 3}"), &opts_with_wc, &reply, &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply, "{'insertedCount': 1}");
+   bson_destroy (&reply);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id':3}"), NULL, 1);
+
+   /* Test passing NULL for opts, reply, and error */
+   ctx.expected_command =
+      "{'insert': 'coll', 'writeConcern': {'w': 1, 'j': false}}";
+   ret = mongoc_collection_insert_one_with_opts (
+      coll, tmp_bson ("{'_id': 4}"), NULL, NULL, NULL);
+   ASSERT (ret);
+   _test_docs_in_coll_matches (coll, tmp_bson ("{'_id': 4}"), NULL, 1);
+
+   /* Duplicate key error */
+   ret = mongoc_collection_insert_one_with_opts (
+      coll, tmp_bson ("{'_id': 4}"), NULL, &reply, &err);
+   ASSERT (!ret);
+   ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_COLLECTION);
+   ASSERT_MATCH (&reply,
+                 "{'insertedCount': 0,"
+                 " 'writeErrors': ["
+                 "    {'index': 0, 'code': 11000, 'errmsg': {'$exists': true}}"
+                 "]}");
+   bson_destroy (&reply);
+   ASSERT_CMPINT (ctx.commands_tested, ==, 5);
+
+   if (test_framework_is_replset ()) {
+      /* Write concern error */
+      ctx.expected_command = "{'insert': 'coll', 'writeConcern': {'w': 99}}";
+      ret = mongoc_collection_insert_one_with_opts (
+         coll,
+         tmp_bson ("{}"),
+         tmp_bson ("{'writeConcern': {'w': 99}}"),
+         &reply,
+         &err);
+      ASSERT (!ret);
+      ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_WRITE_CONCERN);
+      ASSERT_MATCH (&reply,
+                    "{'insertedCount': 1,"
+                    " 'writeErrors': {'$exists': false},"
+                    " 'writeConcernErrors': {'$exists': true}"
+                    "}");
+      bson_destroy (&reply);
+   }
+
+   bson_destroy (&opts_with_wc);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_write_concern_destroy (wc);
+   mongoc_write_concern_destroy (wc2);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+typedef bool (*update_fn_t) (mongoc_collection_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             bson_t *,
+                             bson_error_t *);
 
 /* Tests `update_one`, `update_many`, and `replace_one` */
 static void
@@ -4635,8 +4799,11 @@ _test_update_and_replace (bool is_replace, bool is_multi)
    mongoc_collection_t *coll = mongoc_database_get_collection (db, "coll");
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    mongoc_write_concern_t *wc2 = mongoc_write_concern_new ();
-   test_update_and_replace_ctx_t ctx;
+   test_crud_ctx_t ctx;
    mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+
+   ctx.command_under_test = "update";
+   ctx.commands_tested = 0;
 
    /* Give wc and wc2 different j values so we can distinguish them but make
     * sure they have w:1 so the writes are committed when we check results */
@@ -4771,6 +4938,37 @@ _test_update_and_replace (bool is_replace, bool is_multi)
       /* omit testing collection since not sure which was updated */
    }
 
+   ctx.expected_command = "{'update': 'coll'}";
+   ret = fn (coll, tmp_bson ("{'$badOp': 1}"), update, NULL, &reply, &err);
+   ASSERT (!ret);
+   ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_COLLECTION);
+   ASSERT_MATCH (&reply,
+                 "{'modifiedCount': 0,"
+                 " 'matchedCount': 0,"
+                 " 'writeErrors': ["
+                 "    {'index': 0, 'code': 2, 'errmsg': {'$exists': true}}"
+                 "]}");
+   bson_destroy (&reply);
+
+   if (test_framework_is_replset ()) {
+      ret = fn (coll,
+                tmp_bson ("{'_id': 3}"),
+                is_replace ? tmp_bson ("{'a': 3}")
+                           : tmp_bson ("{'$set': {'a': 3}}"),
+                tmp_bson ("{'writeConcern': {'w': 99}}"),
+                &reply,
+                &err);
+      ASSERT (!ret);
+      ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_WRITE_CONCERN);
+      ASSERT_MATCH (&reply,
+                    "{'modifiedCount': 1,"
+                    " 'matchedCount': 1,"
+                    " 'writeErrors': {'$exists': false},"
+                    " 'writeConcernErrors': {'$exists': true}"
+                    "}");
+      bson_destroy (&reply);
+   }
+
    /* Test function specific behavior */
    if (is_replace) {
       /* Test that replace really does replace */
@@ -4831,14 +5029,20 @@ _test_update_and_replace (bool is_replace, bool is_multi)
             coll, tmp_bson ("{'_id':6}"), "{'a': [{'x':1},{'x':3}]}", 1);
       }
 
-      /* Test that a replace fails */
-      ret = fn (coll, tmp_bson ("{}"), tmp_bson ("{'a': 1}"), NULL, NULL, &err);
+      /* Test update that fails */
+      ctx.expected_command = "{'update': 'coll'}";
+      ret =
+         fn (coll, tmp_bson ("{}"), tmp_bson ("{'a': 1}"), NULL, &reply, &err);
       ASSERT (!ret);
       ASSERT_ERROR_CONTAINS (err,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Invalid key");
+      ASSERT (bson_empty (&reply));
+      bson_destroy (&reply);
    }
+
+   ASSERT_CMPINT (ctx.commands_tested, >, 0);
 
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_write_concern_destroy (wc);
@@ -5007,6 +5211,8 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_validate", test_insert_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (
       suite, "/Collection/batch_size", test_find_batch_size);
@@ -5027,6 +5233,7 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_offline);
+   TestSuite_AddLive (suite, "/Collection/insert_one", test_insert_one);
    TestSuite_AddLive (
       suite, "/Collection/update_and_replace", test_update_and_replace);
 }

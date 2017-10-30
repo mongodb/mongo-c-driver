@@ -779,60 +779,6 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
 }
 
 
-static const char *
-bson_type_to_str (bson_type_t t)
-{
-   switch (t) {
-   case BSON_TYPE_EOD:
-      return "EOD";
-   case BSON_TYPE_DOUBLE:
-      return "DOUBLE";
-   case BSON_TYPE_UTF8:
-      return "UTF8";
-   case BSON_TYPE_DOCUMENT:
-      return "DOCUMENT";
-   case BSON_TYPE_ARRAY:
-      return "ARRAY";
-   case BSON_TYPE_BINARY:
-      return "BINARY";
-   case BSON_TYPE_UNDEFINED:
-      return "UNDEFINED";
-   case BSON_TYPE_OID:
-      return "OID";
-   case BSON_TYPE_BOOL:
-      return "BOOL";
-   case BSON_TYPE_DATE_TIME:
-      return "DATE_TIME";
-   case BSON_TYPE_NULL:
-      return "NULL";
-   case BSON_TYPE_REGEX:
-      return "REGEX";
-   case BSON_TYPE_DBPOINTER:
-      return "DBPOINTER";
-   case BSON_TYPE_CODE:
-      return "CODE";
-   case BSON_TYPE_SYMBOL:
-      return "SYMBOL";
-   case BSON_TYPE_CODEWSCOPE:
-      return "CODEWSCOPE";
-   case BSON_TYPE_INT32:
-      return "INT32";
-   case BSON_TYPE_TIMESTAMP:
-      return "TIMESTAMP";
-   case BSON_TYPE_INT64:
-      return "INT64";
-   case BSON_TYPE_MAXKEY:
-      return "MAXKEY";
-   case BSON_TYPE_MINKEY:
-      return "MINKEY";
-   case BSON_TYPE_DECIMAL128:
-      return "DECIMAL128";
-   default:
-      return "Unknown";
-   }
-}
-
-
 static bool
 is_number_type (bson_type_t t)
 {
@@ -891,8 +837,8 @@ match_bson_value (const bson_value_t *doc,
    if (doc->value_type != pattern->value_type) {
       match_err (ctx,
                  "expected type %s, got %s",
-                 bson_type_to_str (pattern->value_type),
-                 bson_type_to_str (doc->value_type));
+                 _mongoc_bson_type_to_str (pattern->value_type),
+                 _mongoc_bson_type_to_str (doc->value_type));
       return false;
    }
 
@@ -1069,13 +1015,14 @@ match_bson_value (const bson_value_t *doc,
    default:
       test_error ("unexpected value type %d: %s",
                   doc->value_type,
-                  bson_type_to_str (doc->value_type));
+                  _mongoc_bson_type_to_str (doc->value_type));
       abort ();
    }
 
    if (!ret) {
-      match_err (
-         ctx, "%s values mismatch", bson_type_to_str (pattern->value_type));
+      match_err (ctx,
+                 "%s values mismatch",
+                 _mongoc_bson_type_to_str (pattern->value_type));
    }
 
    return ret;

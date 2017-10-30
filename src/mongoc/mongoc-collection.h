@@ -175,6 +175,12 @@ mongoc_collection_insert (mongoc_collection_t *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error);
 MONGOC_EXPORT (bool)
+mongoc_collection_insert_one_with_opts (mongoc_collection_t *collection,
+                                        const bson_t *document,
+                                        const bson_t *opts,
+                                        bson_t *reply,
+                                        bson_error_t *error);
+MONGOC_EXPORT (bool)
 mongoc_collection_insert_bulk (mongoc_collection_t *collection,
                                mongoc_insert_flags_t flags,
                                const bson_t **documents,
@@ -222,8 +228,8 @@ mongoc_collection_save (mongoc_collection_t *collection,
                         const bson_t *document,
                         const mongoc_write_concern_t *write_concern,
                         bson_error_t *error)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert or
-                             mongoc_collection_update);
+   BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert_one_with_opts or
+                             mongoc_collection_replace_one_with_opts);
 MONGOC_EXPORT (bool)
 mongoc_collection_remove (mongoc_collection_t *collection,
                           mongoc_remove_flags_t flags,

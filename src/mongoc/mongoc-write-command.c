@@ -172,7 +172,8 @@ void
 _mongoc_write_command_init_bulk (mongoc_write_command_t *command,
                                  int type,
                                  mongoc_bulk_write_flags_t flags,
-                                 int64_t operation_id)
+                                 int64_t operation_id,
+                                 const bson_t *opts)
 {
    ENTRY;
 
@@ -181,6 +182,11 @@ _mongoc_write_command_init_bulk (mongoc_write_command_t *command,
    command->type = type;
    command->flags = flags;
    command->operation_id = operation_id;
+   if (!bson_empty0 (opts)) {
+      bson_copy_to (opts, &command->cmd_opts);
+   } else {
+      bson_init (&command->cmd_opts);
+   }
 
    _mongoc_buffer_init (&command->payload, NULL, 0, NULL, NULL);
    command->n_documents = 0;
@@ -192,6 +198,7 @@ _mongoc_write_command_init_bulk (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
                                    const bson_t *document,          /* IN */
+                                   const bson_t *cmd_opts,          /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
                                    int64_t operation_id,            /* IN */
                                    bool allow_bulk_op_insert)       /* IN */
@@ -201,7 +208,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (command);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id);
+      command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
    command->u.insert.allow_bulk_op_insert = (uint8_t) allow_bulk_op_insert;
    /* must handle NULL document from mongoc_collection_insert_bulk */
@@ -226,7 +233,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (selector);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_DELETE, flags, operation_id);
+      command, MONGOC_WRITE_COMMAND_DELETE, flags, operation_id, NULL);
    _mongoc_write_command_delete_append (command, selector, opts);
 
    EXIT;
@@ -248,7 +255,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (update);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id);
+      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
    _mongoc_write_command_update_append (command, selector, update, opts);
 
    EXIT;
@@ -374,6 +381,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                      bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
+   bson_iter_t iter;
    bson_t cmd;
    bson_t reply;
    bool ret = false;
@@ -409,6 +417,15 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
    parts.session = cs;
    parts.assembled.operation_id = command->operation_id;
+
+   bson_iter_init (&iter, &command->cmd_opts);
+   if (!mongoc_cmd_parts_append_opts (
+          &parts, &iter, server_stream->sd->max_wire_version, error)) {
+      bson_destroy (&cmd);
+      mongoc_cmd_parts_cleanup (&parts);
+      EXIT;
+   }
+
    if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
       bson_destroy (&cmd);
       mongoc_cmd_parts_cleanup (&parts);
@@ -541,6 +558,7 @@ _mongoc_write_opquery (mongoc_write_command_t *command,
                        bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
+   bson_iter_t iter;
    const char *key;
    uint32_t len = 0;
    bson_t ar;
@@ -622,6 +640,14 @@ again:
       parts.is_write_command = true;
       parts.session = session;
       parts.assembled.operation_id = command->operation_id;
+      bson_iter_init (&iter, &command->cmd_opts);
+      if (!mongoc_cmd_parts_append_opts (
+             &parts, &iter, server_stream->sd->max_wire_version, error)) {
+         bson_destroy (&cmd);
+         mongoc_cmd_parts_cleanup (&parts);
+         EXIT;
+      }
+
       ret = mongoc_cmd_parts_assemble (&parts, server_stream, error);
       if (ret) {
          ret = mongoc_cluster_run_command_monitored (
@@ -771,6 +797,7 @@ _mongoc_write_command_destroy (mongoc_write_command_t *command)
    ENTRY;
 
    if (command) {
+      bson_destroy (&command->cmd_opts);
       _mongoc_buffer_destroy (&command->payload);
    }
 
@@ -1066,6 +1093,7 @@ _set_error_from_response (bson_t *bson_array,
 }
 
 
+/* complete a write result, including only certain fields */
 bool
 _mongoc_write_result_complete (
    mongoc_write_result_t *result,             /* IN */
@@ -1073,9 +1101,15 @@ _mongoc_write_result_complete (
    const mongoc_write_concern_t *wc,          /* IN */
    mongoc_error_domain_t err_domain_override, /* IN */
    bson_t *bson,                              /* OUT */
-   bson_error_t *error)                       /* OUT */
+   bson_error_t *error,                       /* OUT */
+   ...)
 {
    mongoc_error_domain_t domain;
+   va_list args;
+   const char *field;
+   int n_args;
+   bson_iter_t iter;
+   bson_iter_t child;
 
    ENTRY;
 
@@ -1091,16 +1125,67 @@ _mongoc_write_result_complete (
       domain = MONGOC_ERROR_COLLECTION;
    }
 
+   /* produce either old fields like nModified from the deprecated Bulk API Spec
+    * or new fields like modifiedCount from the CRUD Spec, which we partly obey
+    */
    if (bson && mongoc_write_concern_is_acknowledged (wc)) {
-      BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
-      BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
-      BSON_APPEND_INT32 (bson, "nModified", result->nModified);
-      BSON_APPEND_INT32 (bson, "nRemoved", result->nRemoved);
-      BSON_APPEND_INT32 (bson, "nUpserted", result->nUpserted);
-      if (!bson_empty0 (&result->upserted)) {
-         BSON_APPEND_ARRAY (bson, "upserted", &result->upserted);
+      n_args = 0;
+      va_start (args, error);
+      while ((field = va_arg (args, const char *))) {
+         n_args++;
+
+         if (!strcmp (field, "nInserted")) {
+            BSON_APPEND_INT32 (bson, field, result->nInserted);
+         } else if (!strcmp (field, "insertedCount")) {
+            BSON_APPEND_INT32 (bson, field, result->nInserted);
+         } else if (!strcmp (field, "nMatched")) {
+            BSON_APPEND_INT32 (bson, field, result->nMatched);
+         } else if (!strcmp (field, "matchedCount")) {
+            BSON_APPEND_INT32 (bson, field, result->nMatched);
+         } else if (!strcmp (field, "nModified")) {
+            BSON_APPEND_INT32 (bson, field, result->nModified);
+         } else if (!strcmp (field, "modifiedCount")) {
+            BSON_APPEND_INT32 (bson, field, result->nModified);
+         } else if (!strcmp (field, "nRemoved")) {
+            BSON_APPEND_INT32 (bson, field, result->nRemoved);
+         } else if (!strcmp (field, "deletedCount")) {
+            BSON_APPEND_INT32 (bson, field, result->nRemoved);
+         } else if (!strcmp (field, "nUpserted")) {
+            BSON_APPEND_INT32 (bson, field, result->nUpserted);
+         } else if (!strcmp (field, "upsertedCount")) {
+            BSON_APPEND_INT32 (bson, field, result->nUpserted);
+         } else if (!strcmp (field, "upserted") &&
+                    !bson_empty0 (&result->upserted)) {
+            BSON_APPEND_ARRAY (bson, field, &result->upserted);
+         } else if (!strcmp (field, "upsertedId") &&
+                    !bson_empty0 (&result->upserted) &&
+                    bson_iter_init_find (&iter, &result->upserted, "0") &&
+                    bson_iter_recurse (&iter, &child) &&
+                    bson_iter_find (&child, "_id")) {
+            /* "upsertedId", singular, for update_one() */
+            BSON_APPEND_VALUE (bson, "upsertedId", bson_iter_value (&child));
+         }
       }
-      BSON_APPEND_ARRAY (bson, "writeErrors", &result->writeErrors);
+
+      va_end (args);
+
+      /* default: a standard result includes all Bulk API fields */
+      if (!n_args) {
+         BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
+         BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
+         BSON_APPEND_INT32 (bson, "nModified", result->nModified);
+         BSON_APPEND_INT32 (bson, "nRemoved", result->nRemoved);
+         BSON_APPEND_INT32 (bson, "nUpserted", result->nUpserted);
+         if (!bson_empty0 (&result->upserted)) {
+            BSON_APPEND_ARRAY (bson, "upserted", &result->upserted);
+         }
+      }
+
+      /* always append errors if there are any */
+      if (!n_args || !bson_empty (&result->writeErrors)) {
+         BSON_APPEND_ARRAY (bson, "writeErrors", &result->writeErrors);
+      }
+
       if (result->n_writeConcernErrors) {
          BSON_APPEND_ARRAY (
             bson, "writeConcernErrors", &result->writeConcernErrors);

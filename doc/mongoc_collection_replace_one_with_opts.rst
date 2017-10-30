@@ -43,6 +43,8 @@ Description
 
 This function shall replace documents in ``collection`` that match ``selector`` with ``replacement``.
 
+If you pass a non-NULL ``reply``, it is filled out with fields "modifiedCount" and "matchedCount". If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
+
 See Also
 --------
 

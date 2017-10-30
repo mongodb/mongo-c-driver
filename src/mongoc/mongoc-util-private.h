@@ -96,6 +96,9 @@ _mongoc_bson_init_if_set (bson_t *bson);
 void
 _mongoc_bson_destroy_if_set (bson_t *bson);
 
+const char *
+_mongoc_bson_type_to_str (bson_type_t t);
+
 size_t
 _mongoc_strlen_or_zero (const char *s);
 
