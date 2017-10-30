@@ -117,7 +117,7 @@ mongoc_dump_database (mongoc_client_t *client,
    }
 
    db = mongoc_client_get_database (client, database);
-   str = mongoc_database_get_collection_names (db, &error);
+   str = mongoc_database_get_collection_names_with_opts (db, NULL, &error);
    for (i = 0; str[i]; i++) {
       if (EXIT_SUCCESS != mongoc_dump_collection (client, database, str[i])) {
          ret = EXIT_FAILURE;

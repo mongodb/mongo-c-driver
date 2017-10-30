@@ -751,7 +751,8 @@ _test_get_collection_info_getmore ()
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "db");
-   future = future_database_get_collection_names (database, NULL);
+   future =
+      future_database_get_collection_names_with_opts (database, NULL, NULL);
 
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
@@ -898,7 +899,8 @@ test_get_collection_names (void)
    BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
-   names = mongoc_database_get_collection_names (database, &error);
+   names =
+      mongoc_database_get_collection_names_with_opts (database, NULL, &error);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
 
@@ -960,7 +962,8 @@ test_get_collection_names_error (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
-   future = future_database_get_collection_names (database, &error);
+   future =
+      future_database_get_collection_names_with_opts (database, NULL, &error);
    request = mock_server_receives_command (
       server, "test", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
    mock_server_hangs_up (request);

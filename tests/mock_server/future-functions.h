@@ -282,9 +282,10 @@ future_database_command_simple (
 
 
 future_t *
-future_database_get_collection_names (
+future_database_get_collection_names_with_opts (
 
    mongoc_database_ptr database,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 

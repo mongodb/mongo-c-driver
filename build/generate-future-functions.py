@@ -302,8 +302,9 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("char_ptr_ptr",
-                    "mongoc_database_get_collection_names",
+                    "mongoc_database_get_collection_names_with_opts",
                     [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("ssize_t",

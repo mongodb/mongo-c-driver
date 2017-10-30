@@ -12,6 +12,16 @@ Synopsis
   mongoc_database_get_collection_names (mongoc_database_t *database,
                                         bson_error_t *error);
 
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :symbol:`mongoc_database_get_collection_names_with_opts()` instead.
+
+Description
+-----------
+
 Fetches a ``NULL`` terminated array of ``NULL-byte`` terminated ``char*`` strings containing the names of all of the collections in ``database``.
 
 Parameters
@@ -29,23 +39,3 @@ Returns
 -------
 
 A ``NULL`` terminated array of ``NULL`` terminated ``char*`` strings that should be freed with :symbol:`bson:bson_strfreev()`. Upon failure, ``NULL`` is returned and ``error`` is set.
-
-Examples
---------
-
-.. code-block:: c
-
-  {
-     bson_error_t error;
-     char **strv;
-     unsigned i;
-
-     if ((strv = mongoc_database_get_collection_names (database, &error))) {
-        for (i = 0; strv[i]; i++)
-           printf ("%s\n", strv[i]);
-        bson_strfreev (strv);
-     } else {
-        fprintf (stderr, "Command failed: %s\n", error.message);
-     }
-  }
-

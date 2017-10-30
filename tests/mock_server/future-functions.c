@@ -575,7 +575,7 @@ background_mongoc_database_command_simple (void *data)
 }
 
 static void *
-background_mongoc_database_get_collection_names (void *data)
+background_mongoc_database_get_collection_names_with_opts (void *data)
 {
    future_t *future = (future_t *) data;
    future_value_t return_value;
@@ -584,9 +584,10 @@ background_mongoc_database_get_collection_names (void *data)
 
    future_value_set_char_ptr_ptr (
       &return_value,
-      mongoc_database_get_collection_names (
+      mongoc_database_get_collection_names_with_opts (
          future_value_get_mongoc_database_ptr (future_get_param (future, 0)),
-         future_value_get_bson_error_ptr (future_get_param (future, 1))
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_bson_error_ptr (future_get_param (future, 2))
       ));
 
    future_resolve (future, return_value);
@@ -1555,20 +1556,24 @@ future_database_command_simple (
 }
 
 future_t *
-future_database_get_collection_names (
+future_database_get_collection_names_with_opts (
    mongoc_database_ptr database,
+   const_bson_ptr opts,
    bson_error_ptr error)
 {
    future_t *future = future_new (future_value_char_ptr_ptr_type,
-                                  2);
+                                  3);
    
    future_value_set_mongoc_database_ptr (
       future_get_param (future, 0), database);
    
-   future_value_set_bson_error_ptr (
-      future_get_param (future, 1), error);
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), opts);
    
-   future_start (future, background_mongoc_database_get_collection_names);
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 2), error);
+   
+   future_start (future, background_mongoc_database_get_collection_names_with_opts);
    return future;
 }
 

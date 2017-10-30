@@ -917,6 +917,15 @@ char **
 mongoc_database_get_collection_names (mongoc_database_t *database,
                                       bson_error_t *error)
 {
+   return mongoc_database_get_collection_names_with_opts (database, NULL, error);
+}
+
+
+char **
+mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
+                                                const bson_t *opts,
+                                                bson_error_t *error)
+{
    bson_iter_t col;
    const char *name;
    char *namecopy;
@@ -927,11 +936,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 
    BSON_ASSERT (database);
 
-   cursor = mongoc_database_find_collections (database, NULL, error);
-
-   if (!cursor) {
-      return NULL;
-   }
+   cursor = mongoc_database_find_collections_with_opts (database, opts);
 
    _mongoc_array_init (&strv_buf, sizeof (char *));
 

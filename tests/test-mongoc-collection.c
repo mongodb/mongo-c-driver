@@ -3103,7 +3103,7 @@ test_rename (void)
                        collection, dbname, "test_rename.2", false, &error),
                     error);
 
-   names = mongoc_database_get_collection_names (database, &error);
+   names = mongoc_database_get_collection_names_with_opts (database, NULL, &error);
    ASSERT_OR_PRINT (names, error);
    found = false;
    for (name = names; *name; ++name) {
