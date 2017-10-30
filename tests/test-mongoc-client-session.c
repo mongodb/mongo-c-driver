@@ -835,6 +835,20 @@ test_find_databases (session_test_t *test)
 
 
 static void
+test_find_collections (session_test_t *test)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   cursor = mongoc_database_find_collections_with_opts (test->db, &test->opts);
+
+   mongoc_cursor_next (cursor, &doc);
+   test->succeeded = !mongoc_cursor_error (cursor, &test->error);
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
 test_bulk (session_test_t *test)
 {
    mongoc_bulk_operation_t *bulk;
@@ -984,6 +998,7 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/create", test_create);
    add_session_test (suite, "/Session/database_names", test_database_names);
    add_session_test (suite, "/Session/find_databases", test_find_databases);
+   add_session_test (suite, "/Session/find_collections", test_find_collections);
    add_session_test (suite, "/Session/bulk", test_bulk);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes);
 }

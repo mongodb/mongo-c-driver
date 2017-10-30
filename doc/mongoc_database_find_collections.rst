@@ -11,7 +11,18 @@ Synopsis
   mongoc_cursor_t *
   mongoc_database_find_collections (mongoc_database_t *database,
                                     const bson_t *filter,
-                                    bson_error_t *error);
+                                    bson_error_t *error)
+     BSON_GNUC_DEPRECATED_FOR (mongoc_database_find_collections_with_opts);
+
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :symbol:`mongoc_database_find_collections_with_opts()` instead.
+
+Description
+-----------
 
 Fetches a cursor containing documents, each corresponding to a collection on this database.
 

@@ -672,7 +672,8 @@ mongoc_database_has_collection (mongoc_database_t *database,
    bson_iter_t col_iter;
    bool ret = false;
    const char *cur_name;
-   bson_t filter = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t filter;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
@@ -685,18 +686,11 @@ mongoc_database_has_collection (mongoc_database_t *database,
       memset (error, 0, sizeof *error);
    }
 
+   BSON_APPEND_DOCUMENT_BEGIN (&opts, "filter", &filter);
    BSON_APPEND_UTF8 (&filter, "name", name);
+   bson_append_document_end (&opts, &filter);
 
-   cursor = mongoc_database_find_collections (database, &filter, error);
-
-   if (!cursor) {
-      return ret;
-   }
-
-   if (error && ((error->domain != 0) || (error->code != 0))) {
-      GOTO (cleanup);
-   }
-
+   cursor = mongoc_database_find_collections_with_opts (database, &opts);
    while (mongoc_cursor_next (cursor, &doc)) {
       if (bson_iter_init (&col_iter, doc) &&
           bson_iter_find (&col_iter, "name") &&
@@ -709,8 +703,11 @@ mongoc_database_has_collection (mongoc_database_t *database,
       }
    }
 
+   mongoc_cursor_error (cursor, error);
+
 cleanup:
    mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts);
 
    RETURN (ret);
 }
@@ -754,10 +751,9 @@ _mongoc_database_find_collections_legacy_mutate (const bson_t *bson,
 }
 
 /* Uses old way of querying system.namespaces. */
-mongoc_cursor_t *
+static mongoc_cursor_t *
 _mongoc_database_find_collections_legacy (mongoc_database_t *database,
-                                          const bson_t *filter,
-                                          bson_error_t *error)
+                                          const bson_t *filter)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor = NULL;
@@ -789,8 +785,10 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
       bson_string_t *buf;
       /* on legacy servers, this must be a string (i.e. not a regex) */
       if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         cursor = _mongoc_cursor_new_with_opts (
+            col->client, col->ns, false, filter, NULL, NULL, NULL);
          bson_set_error (
-            error,
+            &cursor->error,
             MONGOC_ERROR_NAMESPACE,
             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
             "On legacy servers, a filter on name can only be a string.");
@@ -837,20 +835,48 @@ mongoc_database_find_collections (mongoc_database_t *database,
                                   const bson_t *filter,
                                   bson_error_t *error)
 {
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+
+   BSON_ASSERT (database);
+
+   if (filter) {
+      if (!BSON_APPEND_DOCUMENT (&opts, "filter", filter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid 'filter' parameter.");
+         return NULL;
+      }
+   }
+
+   cursor = mongoc_database_find_collections_with_opts (database, &opts);
+
+   /* this deprecated API returns NULL on error */
+   if (mongoc_cursor_error (cursor, error)) {
+      mongoc_cursor_destroy (cursor);
+      return NULL;
+   }
+
+   return cursor;
+}
+
+
+mongoc_cursor_t *
+mongoc_database_find_collections_with_opts (mongoc_database_t *database,
+                                            const bson_t *opts)
+{
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
-   bson_t child;
-   bson_error_t lerror;
+   bson_iter_t iter;
+   bson_t filter;
+   bson_error_t error;
+   uint32_t len;
+   const uint8_t *data;
 
    BSON_ASSERT (database);
 
    BSON_APPEND_INT32 (&cmd, "listCollections", 1);
-
-   if (filter) {
-      BSON_APPEND_DOCUMENT (&cmd, "filter", filter);
-      BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
-      bson_append_document_end (&cmd, &child);
-   }
 
    /* Enumerate Collections Spec: "run listCollections on the primary node in
     * replicaset mode" */
@@ -858,27 +884,26 @@ mongoc_database_find_collections (mongoc_database_t *database,
                                           database->name,
                                           false /* is_find */,
                                           NULL,
-                                          NULL,
+                                          opts,
                                           NULL,
                                           NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
-   if (_mongoc_cursor_cursorid_prime (cursor)) {
-      /* intentionally empty */
-   } else {
-      if (mongoc_cursor_error (cursor, &lerror)) {
-         if (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-            /* We are talking to a server that doesn' support listCollections.
-             */
-            /* clear out the error. */
-            memset (&lerror, 0, sizeof lerror);
-            /* try again with using system.namespaces */
-            mongoc_cursor_destroy (cursor);
-            cursor = _mongoc_database_find_collections_legacy (
-               database, filter, error);
-         } else if (error) {
-            memcpy (error, &lerror, sizeof *error);
+   if (!_mongoc_cursor_cursorid_prime (cursor)) {
+      mongoc_cursor_error (cursor, &error);
+      if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+         /* old server doesn't have listCollections, use system.namespaces */
+         memset (&error, 0, sizeof error);
+         mongoc_cursor_destroy (cursor);
+
+         if (bson_iter_init_find (&iter, opts, "filter")) {
+            bson_iter_document (&iter, &len, &data);
+            bson_init_static (&filter, data, len);
+            cursor =
+               _mongoc_database_find_collections_legacy (database, &filter);
+         } else {
+            cursor = _mongoc_database_find_collections_legacy (database, NULL);
          }
       }
    }
