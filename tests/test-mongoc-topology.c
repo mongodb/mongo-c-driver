@@ -1383,10 +1383,8 @@ test_compatible_null_error_pointer (void)
    ASSERT (!mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
 
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_PROTOCOL,
-                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
 
    /* null error pointer is ok */
    ASSERT (!mongoc_topology_compatible (
@@ -1481,29 +1479,38 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/hangup",
-                                test_ismaster_retry_single_hangup);
+                                test_ismaster_retry_single_hangup,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/timeout",
-                                test_ismaster_retry_single_timeout);
+                                test_ismaster_retry_single_timeout,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/hangup/fail",
-                                test_ismaster_retry_single_hangup_fail);
+                                test_ismaster_retry_single_hangup_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/timeout/fail",
-                                test_ismaster_retry_single_timeout_fail);
+                                test_ismaster_retry_single_timeout_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/hangup",
-                                test_ismaster_retry_pooled_hangup);
+                                test_ismaster_retry_pooled_hangup,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout",
-                                test_ismaster_retry_pooled_timeout);
+                                test_ismaster_retry_pooled_timeout,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/hangup/fail",
-                                test_ismaster_retry_pooled_hangup_fail);
+                                test_ismaster_retry_pooled_hangup_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout/fail",
-                                test_ismaster_retry_pooled_timeout_fail);
+                                test_ismaster_retry_pooled_timeout_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/compatible_null_error_pointer",
-                                test_compatible_null_error_pointer);
+                                test_compatible_null_error_pointer,
+                                test_framework_skip_if_slow);
 }
