@@ -4219,13 +4219,13 @@ test_bulk_install (TestSuite *suite)
                       test_oversized_bulk_op_ordered,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow);
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/oversized/unordered",
                       test_oversized_bulk_op_unordered,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow);
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered",
