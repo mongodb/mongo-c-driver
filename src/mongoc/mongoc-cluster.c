@@ -1256,7 +1256,6 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
-   /* Use cached max_wire_version, not value from sd */
    if (!mechanism) {
       if (sd->max_wire_version < WIRE_VERSION_SCRAM_DEFAULT) {
          mechanism = "MONGODB-CR";
