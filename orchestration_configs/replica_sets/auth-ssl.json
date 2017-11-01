@@ -12,6 +12,7 @@
         "noprealloc": true,
         "nssize": 1,
         "port": 27017,
+        "setParameter" : { "enableTestCommands": 1 },
         "smallfiles": true
       },
       "rsParams": {
@@ -29,6 +30,7 @@
         "noprealloc": true,
         "nssize": 1,
         "port": 27018,
+        "setParameter" : { "enableTestCommands": 1 },
         "smallfiles": true
       },
       "rsParams": {
@@ -46,6 +48,7 @@
         "noprealloc": true,
         "nssize": 1,
         "port": 27019,
+        "setParameter" : { "enableTestCommands": 1 },
         "smallfiles": true
       },
       "rsParams": {
