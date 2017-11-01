@@ -897,7 +897,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
          memset (&error, 0, sizeof error);
          mongoc_cursor_destroy (cursor);
 
-         if (bson_iter_init_find (&iter, opts, "filter")) {
+         if (opts && bson_iter_init_find (&iter, opts, "filter")) {
             bson_iter_document (&iter, &len, &data);
             bson_init_static (&filter, data, len);
             cursor =
