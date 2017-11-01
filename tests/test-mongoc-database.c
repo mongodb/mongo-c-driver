@@ -731,6 +731,7 @@ test_get_collection_info_with_opts_regex (void)
    }
 
    mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    bson_free (dbname);
    mongoc_database_destroy (database);
