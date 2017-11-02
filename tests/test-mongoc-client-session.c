@@ -949,6 +949,37 @@ test_replace_one (session_test_t *test)
 }
 
 static void
+test_update_one (session_test_t *test)
+{
+   test->succeeded =
+      mongoc_collection_update_one_with_opts (test->collection,
+                                              tmp_bson ("{}"),
+                                              tmp_bson ("{'$set': {'x': 1}}"),
+                                              &test->opts,
+                                              NULL,
+                                              &test->error);
+}
+
+static void
+test_update_many (session_test_t *test)
+{
+   test->succeeded =
+      mongoc_collection_update_many_with_opts (test->collection,
+                                               tmp_bson ("{}"),
+                                               tmp_bson ("{'$set': {'x': 1}}"),
+                                               &test->opts,
+                                               NULL,
+                                               &test->error);
+}
+
+static void
+test_insert_one (session_test_t *test)
+{
+   test->succeeded = mongoc_collection_insert_one_with_opts (
+      test->collection, tmp_bson ("{}"), &test->opts, NULL, &test->error);
+}
+
+static void
 test_rename (session_test_t *test)
 {
    bson_error_t error;
@@ -1329,6 +1360,9 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/drop_index", test_drop_index);
    add_session_test (suite, "/Session/create_index", test_create_index);
    add_session_test (suite, "/Session/replace_one", test_replace_one);
+   add_session_test (suite, "/Session/update_one", test_update_one);
+   add_session_test (suite, "/Session/update_many", test_update_many);
+   add_session_test (suite, "/Session/insert_one", test_insert_one);
    add_session_test (suite, "/Session/rename", test_rename);
    add_session_test (suite, "/Session/fam", test_fam);
    add_session_test (suite, "/Session/db_drop", test_db_drop);
