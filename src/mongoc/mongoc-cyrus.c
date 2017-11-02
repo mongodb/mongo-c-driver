@@ -28,13 +28,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
-int
-_mongoc_cyrus_log (mongoc_cyrus_t *sasl, int level, const char *message)
-{
-   TRACE ("SASL Log; level=%d: message=%s", level, message);
-   return SASL_OK;
-}
-
 bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
                              const char *mechanism,
