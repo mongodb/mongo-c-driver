@@ -4136,6 +4136,8 @@ test_getmore_read_concern_live (void *ctx)
    mongoc_client_t *client;
    mongoc_read_concern_t *rc;
    mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *insert_doc;
    mongoc_cursor_t *cursor;
    mongoc_write_concern_t *wc;
    const bson_t *doc;
@@ -4153,11 +4155,16 @@ test_getmore_read_concern_live (void *ctx)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
    mongoc_collection_set_write_concern (collection, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   insert_doc = tmp_bson ("{'a': 1}");
 
    for (i = 5000; i > 0; i--) {
-      mongoc_collection_insert (
-         collection, MONGOC_INSERT_NONE, tmp_bson ("{'a': 1}"), NULL, NULL);
+      mongoc_bulk_operation_insert_with_opts (bulk, insert_doc, NULL, NULL);
    }
+
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   mongoc_bulk_operation_destroy (bulk);
+
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{}"), NULL, NULL);
 
