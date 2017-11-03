@@ -142,8 +142,10 @@ mongoc_set_destroy (mongoc_set_t *set)
 {
    int i;
 
-   for (i = 0; i < set->items_len; i++) {
-      set->dtor (set->items[i].item, set->dtor_ctx);
+   if (set->dtor) {
+      for (i = 0; i < set->items_len; i++) {
+         set->dtor (set->items[i].item, set->dtor_ctx);
+      }
    }
 
    bson_free (set->items);
