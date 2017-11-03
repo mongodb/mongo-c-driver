@@ -35,7 +35,6 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
    parts->is_write_command = false;
-   parts->is_find = false;
    parts->session = NULL;
    parts->client = client;
    bson_init (&parts->extra);
