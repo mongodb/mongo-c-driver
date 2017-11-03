@@ -4,6 +4,8 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future-functions.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
@@ -108,6 +110,9 @@ _test_session_pool_lifo (bool pooled)
    mongoc_client_session_destroy (d);
 
    if (pooled) {
+      /* the pooled client never needed to connect, so it warns that
+       * it isn't connecting in order to send endSessions */
+      capture_logs (true);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
    } else {
@@ -384,6 +389,9 @@ _test_session_supported (bool pooled)
    }
 
    if (pooled) {
+      /* the pooled client never needed to connect, so it warns that
+       * it isn't connecting in order to send endSessions */
+      capture_logs (true);
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
    } else {
@@ -392,15 +400,251 @@ _test_session_supported (bool pooled)
 }
 
 static void
-test_session_supported_single (void)
+test_session_supported_single (void *ctx)
 {
    _test_session_supported (false);
 }
 
 static void
-test_session_supported_pooled (void)
+test_session_supported_pooled (void *ctx)
 {
    _test_session_supported (true);
+}
+
+static void
+_test_mock_end_sessions (bool pooled)
+{
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *session;
+   bson_t lsid = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t *expected_cmd;
+   future_t *future;
+   request_t *request;
+   bool r;
+
+   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   bson_copy_to (mongoc_client_session_get_lsid (session), &lsid);
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   future = future_client_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, &error);
+
+   request = mock_server_receives_msg (
+      server, 0, tmp_bson ("{'ping': 1, 'lsid': {'$exists': true}}"));
+   mock_server_replies_ok_and_destroys (request);
+
+   BSON_ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   /* before destroying the session, construct the expected endSessions cmd */
+   expected_cmd =
+      BCON_NEW ("endSessions",
+                "[",
+                BCON_DOCUMENT (mongoc_client_session_get_lsid (session)),
+                "]");
+
+   mongoc_client_session_destroy (session);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      future = future_client_pool_destroy (pool);
+   } else {
+      future = future_client_destroy (client);
+   }
+
+   /* check that we got the expected endSessions cmd */
+   request = mock_server_receives_msg (server, 0, expected_cmd);
+   mock_server_replies_ok_and_destroys (request);
+   future_wait (future);
+
+   mock_server_destroy (server);
+   bson_destroy (expected_cmd);
+   bson_destroy (&lsid);
+   bson_destroy (&opts);
+}
+
+static void
+test_mock_end_sessions_single (void)
+{
+   _test_mock_end_sessions (false);
+}
+
+static void
+test_mock_end_sessions_pooled (void)
+{
+   _test_mock_end_sessions (true);
+}
+
+typedef struct {
+   int started_calls;
+   int succeeded_calls;
+   bson_t cmd;
+} endsessions_test_t;
+
+static void
+endsessions_started_cb (const mongoc_apm_command_started_t *event)
+{
+   endsessions_test_t *test;
+
+   if (strcmp (mongoc_apm_command_started_get_command_name (event),
+               "endSessions") != 0) {
+      return;
+   }
+
+   test = (endsessions_test_t *) mongoc_apm_command_started_get_context (event);
+   test->started_calls++;
+   bson_destroy (&test->cmd);
+   bson_copy_to (mongoc_apm_command_started_get_command (event), &test->cmd);
+}
+
+static void
+endsessions_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
+{
+   endsessions_test_t *test;
+
+   if (strcmp (mongoc_apm_command_succeeded_get_command_name (event),
+               "endSessions") != 0) {
+      return;
+   }
+
+   test =
+      (endsessions_test_t *) mongoc_apm_command_succeeded_get_context (event);
+   test->succeeded_calls++;
+}
+
+static void
+_test_end_sessions (bool pooled)
+{
+   endsessions_test_t test;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *cs1;
+   mongoc_client_session_t *cs2;
+   bson_t lsid1 = BSON_INITIALIZER;
+   bson_t lsid2 = BSON_INITIALIZER;
+   bson_t opts1 = BSON_INITIALIZER;
+   bson_t opts2 = BSON_INITIALIZER;
+   bool lsid1_ended = false;
+   bool lsid2_ended = false;
+   bson_iter_t iter;
+   bson_iter_t ended_lsids;
+   bson_t ended_lsid;
+   char errmsg[1000];
+   match_ctx_t ctx = {0};
+   bool r;
+
+   bson_init (&test.cmd);
+   test.started_calls = test.succeeded_calls = 0;
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, endsessions_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks, endsessions_succeeded_cb);
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks, &test));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, &test));
+   }
+
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   /*
+    * create and use sessions 1 and 2
+    */
+   cs1 = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs1, error);
+   bson_copy_to (mongoc_client_session_get_lsid (cs1), &lsid1);
+   r = mongoc_client_session_append (cs1, &opts1, &error);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_client_command_with_opts (
+      client, "admin", tmp_bson ("{'count': 'c'}"), NULL, &opts1, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   cs2 = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs2, error);
+   bson_copy_to (mongoc_client_session_get_lsid (cs2), &lsid2);
+   r = mongoc_client_session_append (cs2, &opts2, &error);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_client_command_with_opts (
+      client, "admin", tmp_bson ("{'count': 'c'}"), NULL, &opts2, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /*
+    * return server sessions to the pool
+    */
+   mongoc_client_session_destroy (cs1);
+   mongoc_client_session_destroy (cs2);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   /*
+    * sessions were ended on server
+    */
+   ASSERT_CMPINT (test.started_calls, ==, 1);
+   ASSERT_CMPINT (test.succeeded_calls, ==, 1);
+
+   BSON_ASSERT (bson_iter_init_find (&iter, &test.cmd, "endSessions"));
+   BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+   BSON_ASSERT (bson_iter_recurse (&iter, &ended_lsids));
+
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof errmsg;
+
+   while (bson_iter_next (&ended_lsids)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&ended_lsids));
+      bson_iter_bson (&ended_lsids, &ended_lsid);
+      if (match_bson_with_ctx (&ended_lsid, &lsid1, false, &ctx)) {
+         lsid1_ended = true;
+      } else if (match_bson_with_ctx (&ended_lsid, &lsid2, false, &ctx)) {
+         lsid2_ended = true;
+      }
+   }
+
+   BSON_ASSERT (lsid1_ended);
+   BSON_ASSERT (lsid2_ended);
+
+   bson_destroy (&test.cmd);
+   bson_destroy (&lsid1);
+   bson_destroy (&opts1);
+   bson_destroy (&lsid2);
+   bson_destroy (&opts2);
+}
+
+static void
+test_end_sessions_single (void *ctx)
+{
+   _test_end_sessions (false);
+}
+
+static void
+test_end_sessions_pooled (void *ctx)
+{
+   _test_end_sessions (true);
 }
 
 typedef struct {
@@ -432,6 +676,11 @@ started (const mongoc_apm_command_started_t *event)
 
    if (strcmp (cmd_name, "killCursors") == 0) {
       /* we omit lsid from killCursors, as permitted by Driver Sessions Spec */
+      return;
+   }
+
+   if (strcmp (cmd_name, "endSessions") == 0) {
+      BSON_ASSERT (!bson_has_field (cmd, "lsid"));
       return;
    }
 
@@ -981,6 +1230,7 @@ test_session_install (TestSuite *suite)
                       NULL,
                       NULL,
                       TestSuite_CheckLive,
+                      test_framework_skip_if_no_sessions,
                       test_framework_skip_if_crypto);
    TestSuite_AddFull (suite,
                       "/Session/lifo/single",
@@ -1035,10 +1285,44 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto);
-   TestSuite_AddLive (
-      suite, "/Session/supported/single", test_session_supported_single);
-   TestSuite_AddLive (
-      suite, "/Session/supported/pooled", test_session_supported_pooled);
+   TestSuite_AddFull (suite,
+                      "/Session/supported/single",
+                      test_session_supported_single,
+                      NULL,
+                      NULL,
+                      TestSuite_CheckLive,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/supported/pooled",
+                      test_session_supported_pooled,
+                      NULL,
+                      NULL,
+                      TestSuite_CheckLive,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/Session/end/mock/single",
+                                test_mock_end_sessions_single,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/Session/end/mock/pooled",
+                                test_mock_end_sessions_pooled,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/end/single",
+                      test_end_sessions_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_mongos,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_6);
+   TestSuite_AddFull (suite,
+                      "/Session/end/pooled",
+                      test_end_sessions_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_mongos,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_6);
    add_session_test (suite, "/Session/read_cmd", test_read_cmd);
    add_session_test (suite, "/Session/cmd", test_cmd);
    add_session_test (suite, "/Session/count", test_count);

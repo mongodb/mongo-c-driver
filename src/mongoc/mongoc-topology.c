@@ -1222,6 +1222,7 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
    mongoc_mutex_unlock (&topology->mutex);
 }
 
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1239,19 +1240,36 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
 {
    int64_t timeout;
    mongoc_server_session_t *ss = NULL;
+   mongoc_topology_description_t *td;
 
    ENTRY;
 
    mongoc_mutex_lock (&topology->mutex);
 
-   timeout = topology->description.session_timeout_minutes;
+   td = &topology->description;
+   timeout = td->session_timeout_minutes;
+
    if (timeout == MONGOC_NO_SESSIONS) {
-      mongoc_mutex_unlock (&topology->mutex);
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
-                      "Server does not support sessions");
-      RETURN (NULL);
+      /* if needed, connect and check for session timeout again */
+      if (!mongoc_topology_description_has_known_server (td)) {
+         mongoc_mutex_unlock (&topology->mutex);
+         if (!mongoc_topology_select_server_id (
+                topology, MONGOC_SS_READ, NULL, error)) {
+            RETURN (NULL);
+         }
+
+         mongoc_mutex_lock (&topology->mutex);
+         timeout = td->session_timeout_minutes;
+      }
+
+      if (timeout == MONGOC_NO_SESSIONS) {
+         mongoc_mutex_unlock (&topology->mutex);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                         "Server does not support sessions");
+         RETURN (NULL);
+      }
    }
 
    while (topology->session_pool) {

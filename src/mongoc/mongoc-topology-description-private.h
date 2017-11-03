@@ -117,6 +117,10 @@ mongoc_topology_description_suitable_servers (
    const mongoc_read_prefs_t *read_pref,
    size_t local_threshold_ms);
 
+bool
+mongoc_topology_description_has_known_server (
+   mongoc_topology_description_t *td);
+
 void
 mongoc_topology_description_invalidate_server (
    mongoc_topology_description_t *topology,

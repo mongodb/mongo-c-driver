@@ -720,6 +720,30 @@ DONE:
    return;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_has_known_server --
+ *
+ *      Internal method: are any servers not MONGOC_SERVER_UNKNOWN?
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_description_has_known_server (mongoc_topology_description_t *td)
+{
+   int i;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; i < (int) td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+      if (sd->type != MONGOC_SERVER_UNKNOWN) {
+         return true;
+      }
+   }
+
+   return false;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -2042,6 +2066,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
 
    return NULL;
 }
+
 /*
  *--------------------------------------------------------------------------
  *
