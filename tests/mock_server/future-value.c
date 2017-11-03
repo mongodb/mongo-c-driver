@@ -239,6 +239,20 @@ future_value_get_mongoc_client_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_client_pool_ptr (future_value_t *future_value, mongoc_client_pool_ptr value)
+{
+   future_value->type = future_value_mongoc_client_pool_ptr_type;
+   future_value->mongoc_client_pool_ptr_value = value;
+}
+
+mongoc_client_pool_ptr
+future_value_get_mongoc_client_pool_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_client_pool_ptr_type);
+   return future_value->mongoc_client_pool_ptr_value;
+}
+
+void
 future_value_set_mongoc_collection_ptr (future_value_t *future_value, mongoc_collection_ptr value)
 {
    future_value->type = future_value_mongoc_collection_ptr_type;

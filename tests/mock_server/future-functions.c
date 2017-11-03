@@ -552,6 +552,38 @@ background_mongoc_client_select_server (void *data)
 }
 
 static void *
+background_mongoc_client_destroy (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_void_type;
+
+   mongoc_client_destroy (
+      future_value_get_mongoc_client_ptr (future_get_param (future, 0)));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
+background_mongoc_client_pool_destroy (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_void_type;
+
+   mongoc_client_pool_destroy (
+      future_value_get_mongoc_client_pool_ptr (future_get_param (future, 0)));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_database_command_simple (void *data)
 {
    future_t *future = (future_t *) data;
@@ -1522,6 +1554,34 @@ future_client_select_server (
       future_get_param (future, 3), error);
    
    future_start (future, background_mongoc_client_select_server);
+   return future;
+}
+
+future_t *
+future_client_destroy (
+   mongoc_client_ptr client)
+{
+   future_t *future = future_new (future_value_void_type,
+                                  1);
+   
+   future_value_set_mongoc_client_ptr (
+      future_get_param (future, 0), client);
+   
+   future_start (future, background_mongoc_client_destroy);
+   return future;
+}
+
+future_t *
+future_client_pool_destroy (
+   mongoc_client_pool_ptr pool)
+{
+   future_t *future = future_new (future_value_void_type,
+                                  1);
+   
+   future_value_set_mongoc_client_pool_ptr (
+      future_get_param (future, 0), pool);
+   
+   future_start (future, background_mongoc_client_pool_destroy);
    return future;
 }
 

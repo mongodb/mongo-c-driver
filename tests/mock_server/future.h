@@ -87,6 +87,9 @@ future_get_mongoc_bulk_operation_ptr (future_t *future);
 mongoc_client_ptr
 future_get_mongoc_client_ptr (future_t *future);
 
+mongoc_client_pool_ptr
+future_get_mongoc_client_pool_ptr (future_t *future);
+
 mongoc_collection_ptr
 future_get_mongoc_collection_ptr (future_t *future);
 

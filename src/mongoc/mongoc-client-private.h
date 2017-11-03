@@ -111,7 +111,8 @@ typedef enum {
    MONGOC_CMD_RW = 3,
 } mongoc_command_mode_t;
 
-BSON_STATIC_ASSERT2 (mongoc_cmd_rw, MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
+BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
+                     MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
 
@@ -185,7 +186,8 @@ _mongoc_client_unregister_session (mongoc_client_t *client,
 void
 _mongoc_client_push_server_session (mongoc_client_t *client,
                                     mongoc_server_session_t *server_session);
-
+void
+_mongoc_client_end_sessions (mongoc_client_t *client);
 BSON_END_DECLS
 
 

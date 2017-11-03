@@ -29,6 +29,7 @@ typedef const bson_t * const_bson_ptr;
 typedef const bson_t ** const_bson_ptr_ptr;
 typedef mongoc_bulk_operation_t * mongoc_bulk_operation_ptr;
 typedef mongoc_client_t * mongoc_client_ptr;
+typedef mongoc_client_pool_t * mongoc_client_pool_ptr;
 typedef mongoc_collection_t * mongoc_collection_ptr;
 typedef mongoc_cluster_t * mongoc_cluster_ptr;
 typedef mongoc_cmd_parts_t * mongoc_cmd_parts_ptr;
@@ -65,6 +66,7 @@ typedef enum {
    future_value_const_bson_ptr_ptr_type,
    future_value_mongoc_bulk_operation_ptr_type,
    future_value_mongoc_client_ptr_type,
+   future_value_mongoc_client_pool_ptr_type,
    future_value_mongoc_collection_ptr_type,
    future_value_mongoc_cluster_ptr_type,
    future_value_mongoc_cmd_parts_ptr_type,
@@ -109,6 +111,7 @@ typedef struct _future_value_t
       const_bson_ptr_ptr const_bson_ptr_ptr_value;
       mongoc_bulk_operation_ptr mongoc_bulk_operation_ptr_value;
       mongoc_client_ptr mongoc_client_ptr_value;
+      mongoc_client_pool_ptr mongoc_client_pool_ptr_value;
       mongoc_collection_ptr mongoc_collection_ptr_value;
       mongoc_cluster_ptr mongoc_cluster_ptr_value;
       mongoc_cmd_parts_ptr mongoc_cmd_parts_ptr_value;
@@ -279,6 +282,15 @@ future_value_set_mongoc_client_ptr(
 
 mongoc_client_ptr
 future_value_get_mongoc_client_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_client_pool_ptr(
+   future_value_t *future_value,
+   mongoc_client_pool_ptr value);
+
+mongoc_client_pool_ptr
+future_value_get_mongoc_client_pool_ptr (
    future_value_t *future_value);
 
 void

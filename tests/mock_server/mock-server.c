@@ -195,19 +195,21 @@ mock_server_t *
 mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
-   char *cluster_time = "";
+   char *mongos_36_fields = "";
    char *ismaster;
 
    if (max_wire_version >= WIRE_VERSION_OP_MSG) {
-      cluster_time = ","
-                     "'$clusterTime': {"
-                     "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-                     "  'signature': {"
-                     "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-                     "    'keyId': {'$numberLong': '6446735049323708417'}"
-                     "  },"
-                     "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
-                     "}";
+      mongos_36_fields =
+         ","
+         "'$clusterTime': {"
+         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+         "  'signature': {"
+         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+         "    'keyId': {'$numberLong': '6446735049323708417'}"
+         "  },"
+         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+         "},"
+         "'logicalSessionTimeoutMinutes': 30";
    }
 
    ismaster = bson_strdup_printf ("{'ok': 1.0,"
@@ -217,7 +219,7 @@ mock_mongos_new (int32_t max_wire_version)
                                   " 'maxWireVersion': %d"
                                   " %s}",
                                   max_wire_version,
-                                  cluster_time);
+                                  mongos_36_fields);
 
    BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);

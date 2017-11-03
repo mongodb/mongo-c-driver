@@ -1341,3 +1341,38 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 
    EXIT;
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_end_sessions --
+ *
+ *       Internal function. End all server sessions. @cmd is an
+ *       uninitialized document.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
+{
+   char buf[16];
+   const char *key;
+   uint32_t i;
+   mongoc_server_session_t *ss;
+   bson_t ar;
+
+   bson_init (cmd);
+   BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
+
+   i = 0;
+   CDL_FOREACH (topology->session_pool, ss)
+   {
+      bson_uint32_to_string (i, &key, buf, sizeof buf);
+      BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
+      i++;
+   }
+
+   bson_append_array_end (cmd, &ar);
+}

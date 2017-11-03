@@ -71,6 +71,7 @@ typedef_list = [
     # libmongoc.
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
+    typedef("mongoc_client_pool_ptr", "mongoc_client_pool_t *"),
     typedef("mongoc_collection_ptr", "mongoc_collection_t *"),
     typedef("mongoc_cluster_ptr", "mongoc_cluster_t *"),
     typedef("mongoc_cmd_parts_ptr", "mongoc_cmd_parts_t *"),
@@ -292,6 +293,14 @@ future_functions = [
                      param("bool", "for_writes"),
                      param("const_mongoc_read_prefs_ptr", "prefs"),
                      param("bson_error_ptr", "error")]),
+
+    future_function("void",
+                    "mongoc_client_destroy",
+                    [param("mongoc_client_ptr", "client")]),
+
+    future_function("void",
+                    "mongoc_client_pool_destroy",
+                    [param("mongoc_client_pool_ptr", "pool")]),
 
     future_function("bool",
                     "mongoc_database_command_simple",

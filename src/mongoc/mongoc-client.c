@@ -1015,6 +1015,7 @@ mongoc_client_destroy (mongoc_client_t *client)
 {
    if (client) {
       if (client->topology->single_threaded) {
+         _mongoc_client_end_sessions (client);
          mongoc_topology_destroy (client->topology);
       }
 
@@ -2541,4 +2542,73 @@ _mongoc_client_push_server_session (mongoc_client_t *client,
 {
    return _mongoc_topology_push_server_session (client->topology,
                                                 server_session);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_end_sessions --
+ *
+ *       End all server sessions in the topology's server session pool.
+ *       Don't block long: if server selection or connecting fails, quit.
+ *
+ *       The server session pool becomes invalid, but it's *not* cleared.
+ *       Destroy the topology after this without using any sessions.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_client_end_sessions (mongoc_client_t *client)
+{
+   mongoc_topology_t *t = client->topology;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+   uint32_t server_id;
+   bson_t cmd = BSON_INITIALIZER;
+   mongoc_server_stream_t *stream;
+   mongoc_cmd_parts_t parts;
+   mongoc_cluster_t *cluster = &client->cluster;
+   bool r;
+
+   if (t->session_pool) {
+      prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+      server_id =
+         mongoc_topology_select_server_id (t, MONGOC_SS_READ, prefs, &error);
+
+      mongoc_read_prefs_destroy (prefs);
+      if (!server_id) {
+         MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
+         return;
+      }
+
+      stream = mongoc_cluster_stream_for_server (
+         cluster, server_id, false /* reconnect_ok */, &error);
+
+      if (!stream) {
+         MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
+         return;
+      }
+
+      _mongoc_topology_end_sessions_cmd (t, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, client, "admin", MONGOC_QUERY_SLAVE_OK, &cmd);
+      parts.assembled.operation_id = ++cluster->operation_id;
+
+      r = mongoc_cmd_parts_assemble (&parts, stream, &error);
+      if (!r) {
+         MONGOC_WARNING ("Couldn't construct \"endSessions\" command: %s",
+                         error.message);
+      } else {
+         r = mongoc_cluster_run_command_monitored (
+            cluster, &parts.assembled, NULL, NULL);
+
+         if (!r) {
+            MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
+         }
+      }
+
+      bson_destroy (&cmd);
+      mongoc_server_stream_cleanup (stream);
+   }
 }

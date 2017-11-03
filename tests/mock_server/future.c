@@ -205,6 +205,18 @@ future_get_mongoc_client_ptr (future_t *future)
    abort ();
 }
 
+mongoc_client_pool_ptr
+future_get_mongoc_client_pool_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_client_pool_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
+   abort ();
+}
+
 mongoc_collection_ptr
 future_get_mongoc_collection_ptr (future_t *future)
 {

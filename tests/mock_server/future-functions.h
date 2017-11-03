@@ -271,6 +271,20 @@ future_client_select_server (
 
 
 future_t *
+future_client_destroy (
+
+   mongoc_client_ptr client
+);
+
+
+future_t *
+future_client_pool_destroy (
+
+   mongoc_client_pool_ptr pool
+);
+
+
+future_t *
 future_database_command_simple (
 
    mongoc_database_ptr database,
