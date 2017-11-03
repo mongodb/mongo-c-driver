@@ -356,6 +356,52 @@ test_session_id_bad (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+_test_session_supported (bool pooled)
+{
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *session;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   if (test_framework_session_timeout_minutes () == -1) {
+      BSON_ASSERT (!mongoc_client_start_session (client, NULL, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                             "Server does not support sessions");
+   } else {
+      session = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (session, error);
+      mongoc_client_session_destroy (session);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+test_session_supported_single (void)
+{
+   _test_session_supported (false);
+}
+
+static void
+test_session_supported_pooled (void)
+{
+   _test_session_supported (true);
+}
 
 typedef struct {
    mongoc_client_t *session_client, *client;
@@ -989,6 +1035,10 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto);
+   TestSuite_AddLive (
+      suite, "/Session/supported/single", test_session_supported_single);
+   TestSuite_AddLive (
+      suite, "/Session/supported/pooled", test_session_supported_pooled);
    add_session_test (suite, "/Session/read_cmd", test_read_cmd);
    add_session_test (suite, "/Session/cmd", test_cmd);
    add_session_test (suite, "/Session/count", test_count);

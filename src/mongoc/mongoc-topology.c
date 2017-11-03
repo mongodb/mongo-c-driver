@@ -1245,6 +1245,14 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    mongoc_mutex_lock (&topology->mutex);
 
    timeout = topology->description.session_timeout_minutes;
+   if (timeout == MONGOC_NO_SESSIONS) {
+      mongoc_mutex_unlock (&topology->mutex);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+                      "Server does not support sessions");
+      RETURN (NULL);
+   }
 
    while (topology->session_pool) {
       ss = topology->session_pool;
