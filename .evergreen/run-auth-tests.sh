@@ -64,20 +64,19 @@ export PATH=install-dir/bin:$PATH
 openssl version || true
 ulimit -c unlimited || true
 
-# CDRIVER-2337, reenable this once the Atlas instance is back
-#if [ $SSL -eq 1 ]; then
-#   # FIXME: CDRIVER-2008
-#   if [ "${OS%_*}" != "cygwin" ]; then
-#      echo "Authenticating using X.509"
-#      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
-#   fi
-#   echo "Connecting to Atlas Free Tier"
-#   $PING "$ATLAS_FREE&${C_TIMEOUT}"
-#   echo "Connecting to Atlas Replica Set"
-#   $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
-#   echo "Connecting to Atlas Sharded Cluster"
-#   $PING "$ATLAS_SHARD&${C_TIMEOUT}"
-#fi
+if [ $SSL -eq 1 ]; then
+   # FIXME: CDRIVER-2008
+   if [ "${OS%_*}" != "cygwin" ]; then
+      echo "Authenticating using X.509"
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
+   fi
+   echo "Connecting to Atlas Free Tier"
+   $PING "$ATLAS_FREE&${C_TIMEOUT}"
+   echo "Connecting to Atlas Replica Set"
+   $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
+   echo "Connecting to Atlas Sharded Cluster"
+   $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+fi
 
 echo "Authenticating using PLAIN"
 $PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN&${C_TIMEOUT}"
