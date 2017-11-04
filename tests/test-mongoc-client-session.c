@@ -992,14 +992,10 @@ test_rename (session_test_t *test)
                                             NULL,
                                             NULL);
 
-   r = mongoc_database_write_command_with_opts (
-      test->session_db,
-      tmp_bson ("{'insert': 'collection', 'documents': [{}]}"),
-      &test->opts,
-      NULL,
-      NULL);
-
+   r = mongoc_collection_insert_one_with_opts (
+      test->session_collection, tmp_bson ("{}"), &test->opts, NULL, &error);
    ASSERT_OR_PRINT (r, error);
+
    test->succeeded = mongoc_collection_rename_with_opts (
       test->collection, "db", "newname", true, &test->opts, &test->error);
 }
