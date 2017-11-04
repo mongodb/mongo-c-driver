@@ -98,7 +98,7 @@ To fix this flaw while preserving backward compatibility, the C Driver 1.4 intro
 | :symbol:`mongoc_cursor_error`                        | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
 +------------------------------------------------------+----------------------------------------+----------------------------------------+
 | :symbol:`mongoc_client_command`,                     | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
-| :symbol:`mongoc_database_command`, and               |                                        |                                        |
+| :symbol:`mongoc_database_command_with_opts`, and     |                                        |                                        |
 | other command functions                              |                                        |                                        |
 +------------------------------------------------------+----------------------------------------+----------------------------------------+
 | :symbol:`mongoc_collection_count_with_opts`          | ``MONGOC_ERROR_QUERY``                 | ``MONGOC_ERROR_SERVER``                |
