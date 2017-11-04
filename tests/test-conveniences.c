@@ -538,7 +538,7 @@ match_bson_with_ctx (const bson_t *doc,
    bool is_empty_operator;
    bool exists;
    bool empty;
-   bool found;
+   bool found = false;
    bson_value_t doc_value;
    match_ctx_t derived;
 
@@ -571,18 +571,18 @@ match_bson_with_ctx (const bson_t *doc,
       if (is_exists_operator) {
          if (exists != found) {
             match_err (&derived, "%s found", found ? "" : "not");
-            return false;
+            goto fail;
          }
       } else if (!found) {
          match_err (&derived, "not found");
-         return false;
+         goto fail;
       } else if (is_empty_operator) {
          if (empty != is_empty_doc_or_array (&doc_value)) {
             match_err (&derived, "%s found", empty ? "" : " not");
-            return false;
+            goto fail;
          }
       } else if (!match_bson_value (&doc_value, value, &derived)) {
-         return false;
+         goto fail;
       }
 
       is_first = false;
@@ -592,6 +592,13 @@ match_bson_with_ctx (const bson_t *doc,
    }
 
    return true;
+
+fail:
+   if (found) {
+      bson_value_destroy (&doc_value);
+   }
+
+   return false;
 }
 
 
