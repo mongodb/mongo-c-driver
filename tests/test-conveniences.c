@@ -310,7 +310,7 @@ static bool
 is_empty_doc_or_array (const bson_value_t *value);
 
 static bool
-find (bson_value_t *value,
+find (const bson_value_t **value,
       const bson_t *doc,
       const char *key,
       bool is_command,
@@ -539,7 +539,7 @@ match_bson_with_ctx (const bson_t *doc,
    bool exists;
    bool empty;
    bool found;
-   bson_value_t doc_value;
+   const bson_value_t *doc_value;
    match_ctx_t derived;
 
    if (bson_empty0 (pattern)) {
@@ -577,18 +577,15 @@ match_bson_with_ctx (const bson_t *doc,
          match_err (&derived, "not found");
          return false;
       } else if (is_empty_operator) {
-         if (empty != is_empty_doc_or_array (&doc_value)) {
+         if (empty != is_empty_doc_or_array (doc_value)) {
             match_err (&derived, "%s found", empty ? "" : " not");
             return false;
          }
-      } else if (!match_bson_value (&doc_value, value, &derived)) {
+      } else if (!match_bson_value (doc_value, value, &derived)) {
          return false;
       }
 
       is_first = false;
-      if (found) {
-         bson_value_destroy (&doc_value);
-      }
    }
 
    return true;
@@ -605,13 +602,13 @@ match_bson_with_ctx (const bson_t *doc,
  *       Whether the key was found.
  *
  * Side effects:
- *       Copies the found value into "value".
+ *       Sets the "value" pointer.
  *
  *--------------------------------------------------------------------------
  */
 
 static bool
-find (bson_value_t *value,
+find (const bson_value_t **value,
       const bson_t *doc,
       const char *key,
       bool is_command,
@@ -620,6 +617,7 @@ find (bson_value_t *value,
    bson_iter_t iter;
    bson_iter_t descendent;
 
+   *value = NULL;
    bson_iter_init (&iter, doc);
 
    if (strchr (key, '.')) {
@@ -627,7 +625,7 @@ find (bson_value_t *value,
          return false;
       }
 
-      bson_value_copy (bson_iter_value (&descendent), value);
+      *value = bson_iter_value (&descendent);
       return true;
    } else if (is_command && is_first) {
       if (!bson_iter_find_case (&iter, key)) {
@@ -637,7 +635,7 @@ find (bson_value_t *value,
       return false;
    }
 
-   bson_value_copy (bson_iter_value (&iter), value);
+   *value = bson_iter_value (&iter);
    return true;
 }
 
