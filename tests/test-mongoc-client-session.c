@@ -846,6 +846,19 @@ test_read_cmd (session_test_t *test)
 
 
 static void
+test_db_cmd (session_test_t *test)
+{
+   test->succeeded =
+      mongoc_database_command_with_opts (test->db,
+                                         tmp_bson ("{'ping': 1}"),
+                                         NULL,
+                                         &test->opts,
+                                         NULL,
+                                         &test->error);
+}
+
+
+static void
 test_count (session_test_t *test)
 {
    test->succeeded =
@@ -1349,6 +1362,7 @@ test_session_install (TestSuite *suite)
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_max_wire_version_less_than_6);
    add_session_test (suite, "/Session/read_cmd", test_read_cmd);
+   add_session_test (suite, "/Session/db_cmd", test_db_cmd);
    add_session_test (suite, "/Session/cmd", test_cmd);
    add_session_test (suite, "/Session/count", test_count);
    add_session_test (suite, "/Session/cursor", test_cursor);
