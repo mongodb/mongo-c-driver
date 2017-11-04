@@ -1312,7 +1312,6 @@ test_session_install (TestSuite *suite)
                       test_end_sessions_single,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_mongos,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_max_wire_version_less_than_6);
    TestSuite_AddFull (suite,
@@ -1320,7 +1319,6 @@ test_session_install (TestSuite *suite)
                       test_end_sessions_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_mongos,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_max_wire_version_less_than_6);
    add_session_test (suite, "/Session/read_cmd", test_read_cmd);
