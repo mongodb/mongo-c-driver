@@ -72,6 +72,10 @@ if [ $SSL -eq 1 ]; then
    fi
    echo "Connecting to Atlas Free Tier"
    $PING "$ATLAS_FREE&${C_TIMEOUT}"
+   echo "Connecting to Atlas Replica Set"
+   $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
+   echo "Connecting to Atlas Sharded Cluster"
+   $PING "$ATLAS_SHARD&${C_TIMEOUT}"
 fi
 
 echo "Authenticating using PLAIN"
