@@ -4760,11 +4760,12 @@ test_insert_one (void)
 
    if (test_framework_is_replset ()) {
       /* Write concern error */
-      ctx.expected_command = "{'insert': 'coll', 'writeConcern': {'w': 99}}";
+      ctx.expected_command =
+         "{'insert': 'coll', 'writeConcern': {'w': 99, 'wtimeout': 100}}";
       ret = mongoc_collection_insert_one_with_opts (
          coll,
          tmp_bson ("{}"),
-         tmp_bson ("{'writeConcern': {'w': 99}}"),
+         tmp_bson ("{'writeConcern': {'w': 99, 'wtimeout': 100}}"),
          &reply,
          &err);
       ASSERT (!ret);
@@ -4964,7 +4965,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
                 tmp_bson ("{'_id': 3}"),
                 is_replace ? tmp_bson ("{'a': 3}")
                            : tmp_bson ("{'$set': {'a': 3}}"),
-                tmp_bson ("{'writeConcern': {'w': 99}}"),
+                tmp_bson ("{'writeConcern': {'w': 99, 'wtimeout': 100}}"),
                 &reply,
                 &err);
       ASSERT (!ret);
