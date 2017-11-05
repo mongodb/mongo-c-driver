@@ -131,25 +131,30 @@ _begin_ismaster_cmd (mongoc_topology_scanner_t *ts,
                      mongoc_topology_scanner_node_t *node,
                      int64_t timeout_msec)
 {
-   const bson_t *command;
+   bson_t cmd;
 
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
-      command = &ts->ismaster_cmd;
+      bson_copy_to (&ts->ismaster_cmd, &cmd);
    } else {
-      command = _mongoc_topology_scanner_get_ismaster (ts);
+      bson_copy_to (_mongoc_topology_scanner_get_ismaster (ts), &cmd);
    }
 
+   if (!bson_empty (&ts->cluster_time)) {
+      bson_append_document (&cmd, "$clusterTime", 12, &ts->cluster_time);
+   }
 
    node->cmd = mongoc_async_cmd_new (ts->async,
                                      node->stream,
                                      ts->setup,
                                      node->host.host,
                                      "admin",
-                                     command,
+                                     &cmd,
                                      &mongoc_topology_scanner_ismaster_handler,
                                      node,
                                      timeout_msec);
+
+   bson_destroy (&cmd);
 }
 
 
@@ -168,6 +173,7 @@ mongoc_topology_scanner_new (
    bson_init (&ts->ismaster_cmd);
    _add_ismaster (&ts->ismaster_cmd);
    bson_init (&ts->ismaster_cmd_with_handshake);
+   bson_init (&ts->cluster_time);
 
    ts->setup_err_cb = setup_err_cb;
    ts->cb = cb;
@@ -212,6 +218,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->ismaster_cmd);
    bson_destroy (&ts->ismaster_cmd_with_handshake);
+   bson_destroy (&ts->cluster_time);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -821,6 +828,18 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
 
    ts->appname = bson_strdup (appname);
    return true;
+}
+
+/*
+ * Set the scanner's clusterTime unconditionally: don't compare with prior
+ * @cluster_time is like {clusterTime: <timestamp>}
+ */
+void
+_mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts,
+                                           const bson_t *cluster_time)
+{
+   bson_destroy (&ts->cluster_time);
+   bson_copy_to (cluster_time, &ts->cluster_time);
 }
 
 /* SDAM Monitoring Spec: send HeartbeatStartedEvent */

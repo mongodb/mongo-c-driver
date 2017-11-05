@@ -811,12 +811,21 @@ assert_ok (future_t *future, const bson_error_t *error)
 }
 
 
+static future_t *
+future_ping (mongoc_client_t *client, bson_error_t *error)
+{
+   return future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, error);
+}
+
+
 static void
 _test_cluster_time_comparison (bool pooled)
 {
    const char *ismaster =
       "{'ok': 1.0, 'ismaster': true, 'msg': 'isdbgrid', 'maxWireVersion': 6}";
    mock_server_t *server;
+   mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
@@ -826,16 +835,17 @@ _test_cluster_time_comparison (bool pooled)
 
    server = mock_server_new ();
    mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client = mongoc_client_new_from_uri (uri);
    }
 
-   future = future_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   future = future_ping (client, &error);
 
    /* timestamp is 1 */
    request = mock_server_receives_ismaster (server);
@@ -854,32 +864,53 @@ _test_cluster_time_comparison (bool pooled)
    replies_with_cluster_time (request, 2, 2, "{'ok': 1.0}");
    assert_ok (future, &error);
 
-   future = future_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-
+   future = future_ping (client, &error);
    request = receives_with_cluster_time (server, 2, 2, ping);
 
    /* timestamp is 2, increment is only 1 */
    replies_with_cluster_time (request, 2, 1, "{'ok': 1.0}");
    assert_ok (future, &error);
 
-   future = future_client_command_simple (
-      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   future = future_ping (client, &error);
 
    /* client doesn't update cluster time, since new value is less than old */
    request = receives_with_cluster_time (server, 2, 2, ping);
-
-   /* timestamp is 2, increment is only 1 */
    mock_server_replies_ok_and_destroys (request);
    assert_ok (future, &error);
 
    if (pooled) {
+      /* wait for next heartbeat, it should contain newest cluster time */
+      request = mock_server_receives_command (server,
+                                              "admin",
+                                              MONGOC_QUERY_SLAVE_OK,
+                                              "{'isMaster': 1, '$clusterTime': "
+                                              "{'clusterTime': {'$timestamp': "
+                                              "{'t': 2, 'i': 2}}}}");
+
+      replies_with_cluster_time (request, 2, 1, ismaster);
+
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
    } else {
+      /* trigger next heartbeat, it should contain newest cluster time */
+      _mongoc_usleep (750 * 1000); /* 750 ms */
+      future = future_ping (client, &error);
+      request = mock_server_receives_command (server,
+                                              "admin",
+                                              MONGOC_QUERY_SLAVE_OK,
+                                              "{'isMaster': 1, '$clusterTime': "
+                                              "{'clusterTime': {'$timestamp': "
+                                              "{'t': 2, 'i': 2}}}}");
+
+      replies_with_cluster_time (request, 2, 1, ismaster);
+      request = receives_with_cluster_time (server, 2, 2, ping);
+      mock_server_replies_ok_and_destroys (request);
+      assert_ok (future, &error);
+
       mongoc_client_destroy (client);
    }
 
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
 
@@ -1359,10 +1390,12 @@ test_cluster_install (TestSuite *suite)
                       test_cluster_time_insert_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/single",
-                                test_cluster_time_comparison_single);
+                                test_cluster_time_comparison_single,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/cluster_time/comparison/pooled",
-                                test_cluster_time_comparison_pooled);
+                                test_cluster_time_comparison_pooled,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/single/op_query",
                                 test_not_master_single_op_query,

@@ -904,6 +904,9 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
                                                 sd->round_trip_time_msec,
                                                 NULL);
 
+   _mongoc_topology_scanner_set_cluster_time (
+      topology->scanner, &topology->description.cluster_time);
+
    /* return false if server was removed from topology */
    has_server = mongoc_topology_description_server_by_id (
                    &topology->description, sd->id, NULL) != NULL;
@@ -1219,6 +1222,8 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
    mongoc_mutex_lock (&topology->mutex);
    mongoc_topology_description_update_cluster_time (&topology->description,
                                                     reply);
+   _mongoc_topology_scanner_set_cluster_time (
+      topology->scanner, &topology->description.cluster_time);
    mongoc_mutex_unlock (&topology->mutex);
 }
 
