@@ -27,8 +27,10 @@ Example
     :titlesonly:
     :maxdepth: 1
 
+    mongoc_client_session_advance_cluster_time
     mongoc_client_session_append
     mongoc_client_session_get_client
+    mongoc_client_session_get_cluster_time
     mongoc_client_session_get_opts
     mongoc_client_session_get_lsid
     mongoc_client_session_destroy

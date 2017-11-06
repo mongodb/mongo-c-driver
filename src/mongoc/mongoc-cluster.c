@@ -460,12 +460,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
    } else {
-      retval = mongoc_cluster_run_command_opquery (cluster,
-                                                   cmd,
-                                                   server_stream->stream,
-                                                   compressor_id,
-                                                   reply,
-                                                   error);
+      retval = mongoc_cluster_run_command_opquery (
+         cluster, cmd, server_stream->stream, compressor_id, reply, error);
    }
    if (retval && callbacks->succeeded) {
       mongoc_apm_command_succeeded_init (&succeeded_event,
@@ -2656,6 +2652,10 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                          &reply_local);
    ok = _mongoc_cmd_check_ok (
       &reply_local, cluster->client->error_api_version, error);
+
+   if (cmd->session) {
+      _mongoc_client_session_handle_reply (cmd->session, &reply_local);
+   }
 
    if (reply) {
       bson_copy_to (&reply_local, reply);

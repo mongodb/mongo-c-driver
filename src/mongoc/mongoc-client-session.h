@@ -53,6 +53,13 @@ mongoc_client_session_get_opts (const mongoc_client_session_t *session);
 MONGOC_EXPORT (const bson_t *)
 mongoc_client_session_get_lsid (const mongoc_client_session_t *session);
 
+MONGOC_EXPORT (const bson_t *)
+mongoc_client_session_get_cluster_time (const mongoc_client_session_t *session);
+
+MONGOC_EXPORT (void)
+mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
+                                            const bson_t *cluster_time);
+
 MONGOC_EXPORT (bool)
 mongoc_client_session_append (mongoc_client_session_t *client_session,
                               bson_t *opts,

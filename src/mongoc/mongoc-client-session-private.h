@@ -44,7 +44,20 @@ struct _mongoc_client_session_t {
    mongoc_session_opt_t opts;
    mongoc_server_session_t *server_session;
    uint32_t client_session_id;
+   bson_t cluster_time;
 };
+
+bool
+_mongoc_parse_cluster_time (const bson_t *cluster_time,
+                            uint32_t *timestamp,
+                            uint32_t *increment);
+
+bool
+_mongoc_cluster_time_greater (const bson_t *new, const bson_t *old);
+
+void
+_mongoc_client_session_handle_reply (mongoc_client_session_t *session,
+                                     const bson_t *reply);
 
 mongoc_server_session_t *
 _mongoc_server_session_new (bson_error_t *error);

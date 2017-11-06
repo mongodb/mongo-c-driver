@@ -67,8 +67,6 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->max_set_version = MONGOC_NO_SET_VERSION;
    description->stale = true;
    description->rand_seed = (unsigned int) bson_get_monotonic_time ();
-   description->cluster_time_t = 0;
-   description->cluster_time_i = 0;
    bson_init (&description->cluster_time);
    description->session_timeout_minutes = MONGOC_NO_SESSIONS;
 
@@ -134,8 +132,6 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 
    dst->apm_context = src->apm_context;
 
-   dst->cluster_time_t = src->cluster_time_t;
-   dst->cluster_time_i = src->cluster_time_i;
    bson_copy_to (&src->cluster_time, &dst->cluster_time);
 
    dst->session_timeout_minutes = src->session_timeout_minutes;
@@ -1205,8 +1201,6 @@ mongoc_topology_description_update_cluster_time (
 {
    bson_iter_t iter;
    bson_iter_t child;
-   uint32_t timestamp;
-   uint32_t increment;
    const uint8_t *data;
    uint32_t size;
    bson_t cluster_time;
@@ -1216,22 +1210,17 @@ mongoc_topology_description_update_cluster_time (
    }
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
-       !bson_iter_recurse (&iter, &child) ||
-       !bson_iter_find (&child, "clusterTime") ||
-       !BSON_ITER_HOLDS_TIMESTAMP (&child)) {
+       !bson_iter_recurse (&iter, &child)) {
       MONGOC_ERROR ("Can't parse $clusterTime");
       return;
    }
 
-   bson_iter_timestamp (&child, &timestamp, &increment);
+   bson_iter_document (&iter, &size, &data);
+   bson_init_static (&cluster_time, data, (size_t) size);
 
-   if (timestamp > td->cluster_time_t ||
-       (timestamp == td->cluster_time_t && increment > td->cluster_time_i)) {
-      td->cluster_time_t = timestamp;
-      td->cluster_time_i = increment;
+   if (bson_empty (&td->cluster_time) ||
+       _mongoc_cluster_time_greater (&cluster_time, &td->cluster_time)) {
       bson_destroy (&td->cluster_time);
-      bson_iter_document (&iter, &size, &data);
-      bson_init_static (&cluster_time, data, (size_t) size);
       bson_copy_to (&cluster_time, &td->cluster_time);
    }
 }

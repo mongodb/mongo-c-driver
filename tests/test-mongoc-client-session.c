@@ -647,6 +647,72 @@ test_end_sessions_pooled (void *ctx)
    _test_end_sessions (true);
 }
 
+static void
+_test_advance (mongoc_client_session_t *cs,
+               int new_timestamp,
+               int new_increment,
+               bool should_advance)
+{
+   bson_t *old_cluster_time;
+   bson_t *new_cluster_time;
+
+   old_cluster_time = bson_copy (mongoc_client_session_get_cluster_time (cs));
+   new_cluster_time =
+      tmp_bson ("{'clusterTime': {'$timestamp': {'t': %d, 'i': %d}}}",
+                new_timestamp,
+                new_increment);
+
+   mongoc_client_session_advance_cluster_time (cs, new_cluster_time);
+
+   if (should_advance) {
+      BSON_ASSERT (match_bson (
+         mongoc_client_session_get_cluster_time (cs), new_cluster_time, false));
+   } else {
+      BSON_ASSERT (match_bson (
+         mongoc_client_session_get_cluster_time (cs), old_cluster_time, false));
+   }
+
+   bson_destroy (old_cluster_time);
+}
+
+static void
+test_session_advance_cluster_time (void *ctx)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *cs;
+
+   client = test_framework_client_new ();
+   cs = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+   BSON_ASSERT (!mongoc_client_session_get_cluster_time (cs));
+
+   capture_logs (true);
+   mongoc_client_session_advance_cluster_time (cs, tmp_bson ("{'foo': 1}"));
+   ASSERT_CAPTURED_LOG ("mongoc_client_session_advance_cluster_time",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot parse cluster time");
+
+   capture_logs (true);
+   mongoc_client_session_advance_cluster_time (cs,
+                                               tmp_bson ("{'clusterTime': 1}"));
+   ASSERT_CAPTURED_LOG ("mongoc_client_session_advance_cluster_time",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Cannot parse cluster time");
+
+   mongoc_client_session_advance_cluster_time (
+      cs, tmp_bson ("{'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}"));
+
+   _test_advance (cs, 1, 0, false);
+   _test_advance (cs, 2, 2, true);
+   _test_advance (cs, 2, 1, false);
+   _test_advance (cs, 3, 1, true);
+
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+}
+
+
 typedef struct {
    mongoc_client_t *session_client, *client;
    mongoc_database_t *session_db, *db;
@@ -655,8 +721,11 @@ typedef struct {
    bson_t opts;
    bson_error_t error;
    int n_started;
-   bool monitor;
+   int n_succeeded;
+   bool expect_lsid;
    bool succeeded;
+   bson_t sent_cluster_time;
+   bson_t received_cluster_time;
 } session_test_t;
 
 
@@ -664,15 +733,12 @@ static void
 started (const mongoc_apm_command_started_t *event)
 {
    bson_iter_t iter;
+   bson_t cluster_time;
    bson_t lsid;
    const bson_t *cmd = mongoc_apm_command_started_get_command (event);
    const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
    session_test_t *test =
       (session_test_t *) mongoc_apm_command_started_get_context (event);
-
-   if (!test->monitor) {
-      return;
-   }
 
    if (strcmp (cmd_name, "killCursors") == 0) {
       /* we omit lsid from killCursors, as permitted by Driver Sessions Spec */
@@ -686,13 +752,53 @@ started (const mongoc_apm_command_started_t *event)
 
    test->n_started++;
 
-   if (!bson_iter_init_find (&iter, cmd, "lsid")) {
-      fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
+   if (test->expect_lsid) {
+      if (!bson_iter_init_find (&iter, cmd, "lsid")) {
+         fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
+         abort ();
+      }
+
+      bson_iter_bson (&iter, &lsid);
+      match_bson (&lsid, &test->cs->server_session->lsid, false);
+   }
+
+   if (!bson_iter_init_find (&iter, cmd, "$clusterTime")) {
+      fprintf (stderr, "no $clusterTime sent with command %s\n", cmd_name);
       abort ();
    }
 
-   bson_iter_bson (&iter, &lsid);
-   match_bson (&lsid, &test->cs->server_session->lsid, false);
+   /* like $clusterTime: {clusterTime: <timestamp>} */
+   bson_iter_bson (&iter, &cluster_time);
+   bson_destroy (&test->sent_cluster_time);
+   bson_copy_to (&cluster_time, &test->sent_cluster_time);
+}
+
+
+static void
+succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   bson_iter_t iter;
+   bson_t cluster_time;
+   const bson_t *reply = mongoc_apm_command_succeeded_get_reply (event);
+   const char *cmd_name = mongoc_apm_command_succeeded_get_command_name (event);
+   session_test_t *test =
+      (session_test_t *) mongoc_apm_command_succeeded_get_context (event);
+
+   if (!bson_iter_init_find (&iter, reply, "$clusterTime")) {
+      fprintf (stderr, "no $clusterTime in reply to command %s\n", cmd_name);
+      abort ();
+   }
+
+   if (strcmp (cmd_name, "endSessions") == 0) {
+      return;
+   }
+
+   test->n_succeeded++;
+
+   /* like $clusterTime: {clusterTime: <timestamp>} */
+   bson_iter_bson (&iter, &cluster_time);
+   bson_destroy (&test->received_cluster_time);
+   bson_copy_to (&cluster_time, &test->received_cluster_time);
 }
 
 
@@ -706,8 +812,10 @@ session_test_new (bool correct_client)
    test = bson_malloc0 (sizeof (session_test_t));
 
    test->n_started = 0;
-   test->monitor = true;
+   test->expect_lsid = true;
    test->succeeded = false;
+   bson_init (&test->sent_cluster_time);
+   bson_init (&test->received_cluster_time);
 
    test->session_client = test_framework_client_new ();
    mongoc_client_set_error_api (test->session_client, 2);
@@ -731,6 +839,7 @@ session_test_new (bool correct_client)
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started);
+   mongoc_apm_set_command_succeeded_cb (callbacks, succeeded);
    mongoc_client_set_apm_callbacks (test->client, callbacks, test);
 
    /* test each function with a session from the correct client and a session
@@ -760,27 +869,47 @@ session_test_destroy (session_test_t *test)
    mongoc_database_destroy (test->session_db);
    mongoc_client_destroy (test->session_client);
    bson_destroy (&test->opts);
+   bson_destroy (&test->sent_cluster_time);
+   bson_destroy (&test->received_cluster_time);
    bson_free (test);
 }
 
 
 static void
-check_session_test_error (session_test_t *test,
-                          bool succeeded,
-                          const bson_error_t *error)
+check_session_test (session_test_t *test)
 {
-   bson_error_t error_local;
-
-   if (test->session_client == test->client) {
-      BSON_ASSERT (succeeded);
-   } else {
-      BSON_ASSERT (!succeeded);
-      error_local = *error;
-      ASSERT_ERROR_CONTAINS (error_local,
+   if (test->session_client != test->client) {
+      BSON_ASSERT (!test->succeeded);
+      ASSERT_ERROR_CONTAINS (test->error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Invalid sessionId");
+
+      return;
    }
+
+   ASSERT_OR_PRINT (test->succeeded, test->error);
+}
+
+
+static void
+check_cluster_time (session_test_t *test)
+{
+   const bson_t *session_time;
+
+   session_time = mongoc_client_session_get_cluster_time (test->cs);
+   BSON_ASSERT (session_time); /* should be set during handshake */
+
+   /* fail if cluster_time_greater logs an error */
+   capture_logs (true);
+   if (_mongoc_cluster_time_greater (&test->received_cluster_time,
+                                     session_time)) {
+      fprintf (stderr, "client session's cluster time is outdated\n");
+      abort ();
+   }
+
+   ASSERT_NO_CAPTURED_LOGS ("_mongoc_cluster_time_greater");
+   capture_logs (false);
 }
 
 
@@ -793,6 +922,8 @@ run_session_test (void *ctx)
    session_test_fn_t test_fn = (session_test_fn_t) ctx;
    session_test_t *test;
    bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
 
    /*
     * use the same client for the session and the operation, expect success
@@ -800,16 +931,49 @@ run_session_test (void *ctx)
    test = session_test_new (true);
    test_fn (test);
    ASSERT_CMPINT (test->n_started, >, 0);
-   check_session_test_error (test, test->succeeded, &test->error);
-   session_test_destroy (test);
+   ASSERT_CMPINT (test->n_succeeded, >, 0);
+   check_session_test (test);
+   check_cluster_time (test);
+
+   /*
+    * advance server's time by inserting & dropping without a session,
+    * pass new time with advance_cluster_time, ensure it's sent
+    */
+   test->expect_lsid = false;
+   r = mongoc_collection_insert_one (
+      test->session_collection, tmp_bson ("{}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
+   BSON_ASSERT (_mongoc_cluster_time_greater (
+      &test->received_cluster_time,
+      mongoc_client_session_get_cluster_time (test->cs)));
+
+   capture_logs (true);
+   mongoc_client_session_advance_cluster_time (test->cs,
+                                               &test->received_cluster_time);
+   ASSERT_NO_CAPTURED_LOGS ("_mongoc_cluster_time_greater");
+   capture_logs (false);
+   match_bson (&test->received_cluster_time,
+               mongoc_client_session_get_cluster_time (test->cs),
+               false);
+
+   test->expect_lsid = true;
+   test->n_started = 0;
+   test->n_succeeded = 0;
+   test_fn (test);
+   ASSERT_CMPINT (test->n_started, >, 0);
+   ASSERT_CMPINT (test->n_succeeded, >, 0);
+   check_session_test (test);
+   check_cluster_time (test);
 
    /*
     * use a session from the wrong client, expect failure. this is the
     * "session argument is for right client" test from Driver Sessions Spec
     */
-   test = session_test_new (false);
+   session_test_destroy (test);
+   test = session_test_new (false /* correct_client */);
    test_fn (test);
-   check_session_test_error (test, test->succeeded, &test->error);
+   check_session_test (test);
 
    mongoc_client_session_append (test->cs, &opts, NULL);
    mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
@@ -997,20 +1161,19 @@ test_rename (session_test_t *test)
 {
    bson_error_t error;
    bool r;
+   mongoc_collection_t *collection;
 
    /* ensure "rename" can succeed */
-   mongoc_database_write_command_with_opts (test->session_db,
-                                            tmp_bson ("{'drop': 'newname'}"),
-                                            &test->opts,
-                                            NULL,
-                                            NULL);
-
    r = mongoc_collection_insert_one (
       test->session_collection, tmp_bson ("{}"), &test->opts, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
+   /* mongoc_collection_rename_with_opts mutates the struct! */
+   collection = mongoc_collection_copy (test->collection);
    test->succeeded = mongoc_collection_rename_with_opts (
-      test->collection, "db", "newname", true, &test->opts, &test->error);
+      collection, "db", "newname", true, &test->opts, &test->error);
+
+   mongoc_collection_destroy (collection);
 }
 
 static void
@@ -1045,10 +1208,10 @@ test_gridfs_find (session_test_t *test)
 
    /* work around lack of mongoc_client_get_gridfs_with_opts for now, can't yet
     * include lsid with the GridFS createIndexes command */
-   test->monitor = false;
+   test->expect_lsid = false;
    gfs = mongoc_client_get_gridfs (test->client, "test", NULL, &error);
    ASSERT_OR_PRINT (gfs, error);
-   test->monitor = true;
+   test->expect_lsid = true;
    list = mongoc_gridfs_find_with_opts (gfs, tmp_bson ("{}"), &test->opts);
    f = mongoc_gridfs_file_list_next (list);
    test->succeeded = !mongoc_gridfs_file_list_error (list, &test->error);
@@ -1070,10 +1233,10 @@ test_gridfs_find_one (session_test_t *test)
 
    /* work around lack of mongoc_client_get_gridfs_with_opts for now, can't yet
     * include lsid with the GridFS createIndexes command */
-   test->monitor = false;
+   test->expect_lsid = false;
    gfs = mongoc_client_get_gridfs (test->client, "test", NULL, &error);
    ASSERT_OR_PRINT (gfs, error);
-   test->monitor = true;
+   test->expect_lsid = true;
    f = mongoc_gridfs_find_one_with_opts (
       gfs, tmp_bson ("{}"), &test->opts, &test->error);
 
@@ -1199,24 +1362,26 @@ static void
 test_bulk (session_test_t *test)
 {
    mongoc_bulk_operation_t *bulk;
-   bson_error_t error;
-   bool r;
    uint32_t i;
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (test->collection,
                                                              &test->opts);
 
-   r = mongoc_bulk_operation_insert_with_opts (
-      bulk, tmp_bson ("{}"), NULL, &error);
-   check_session_test_error (test, r, &error);
+   test->succeeded = mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &test->error);
+   check_session_test (test);
 
-   r = mongoc_bulk_operation_update_one_with_opts (
-      bulk, tmp_bson ("{}"), tmp_bson ("{'$set': {'x': 1}}"), NULL, &error);
-   check_session_test_error (test, r, &error);
+   test->succeeded = mongoc_bulk_operation_update_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'$set': {'x': 1}}"),
+      NULL,
+      &test->error);
+   check_session_test (test);
 
-   r = mongoc_bulk_operation_remove_one_with_opts (
-      bulk, tmp_bson ("{}"), NULL, &error);
-   check_session_test_error (test, r, &error);
+   test->succeeded = mongoc_bulk_operation_remove_one_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &test->error);
+   check_session_test (test);
 
    i = mongoc_bulk_operation_execute (bulk, NULL, &test->error);
    test->succeeded = (i != 0);
@@ -1230,6 +1395,13 @@ test_find_indexes (session_test_t *test)
 {
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+   bson_error_t error;
+   bool r;
+
+   /* ensure the collection exists so the listIndexes command succeeds */
+   r = mongoc_collection_insert_one (
+      test->session_collection, tmp_bson ("{}"), &test->opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
 
    cursor =
       mongoc_collection_find_indexes_with_opts (test->collection, &test->opts);
@@ -1361,6 +1533,13 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_max_wire_version_less_than_6);
+   TestSuite_AddFull (suite,
+                      "/Session/advance_cluster_time",
+                      test_session_advance_cluster_time,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_no_sessions);
    add_session_test (suite, "/Session/read_cmd", test_read_cmd);
    add_session_test (suite, "/Session/db_cmd", test_db_cmd);
    add_session_test (suite, "/Session/cmd", test_cmd);

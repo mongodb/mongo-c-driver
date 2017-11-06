@@ -137,6 +137,66 @@ _mongoc_server_session_uuid (uint8_t *data /* OUT */, bson_error_t *error)
 }
 
 
+bool
+_mongoc_parse_cluster_time (const bson_t *cluster_time,
+                            uint32_t *timestamp,
+                            uint32_t *increment)
+{
+   bson_iter_t iter;
+   char *s;
+
+   if (!cluster_time ||
+       !bson_iter_init_find (&iter, cluster_time, "clusterTime") ||
+       !BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
+      s = bson_as_json (cluster_time, NULL);
+      MONGOC_ERROR ("Cannot parse cluster time from %s\n", s);
+      bson_free (s);
+      return false;
+   }
+
+   bson_iter_timestamp (&iter, timestamp, increment);
+
+   return true;
+}
+
+
+bool
+_mongoc_cluster_time_greater (const bson_t *new, const bson_t *old)
+{
+   uint32_t new_t, new_i, old_t, old_i;
+
+   if (!_mongoc_parse_cluster_time (new, &new_t, &new_i) ||
+       !_mongoc_parse_cluster_time (old, &old_t, &old_i)) {
+      return false;
+   }
+
+   return (new_t > old_t) || (new_t == old_t && new_i > old_i);
+}
+
+
+void
+_mongoc_client_session_handle_reply (mongoc_client_session_t *session,
+                                     const bson_t *reply)
+{
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+   bson_t cluster_time;
+
+   BSON_ASSERT (session);
+
+   if (!reply || !bson_iter_init_find (&iter, reply, "$clusterTime") ||
+       !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      return;
+   }
+
+   bson_iter_document (&iter, &len, &data);
+   bson_init_static (&cluster_time, data, (size_t) len);
+
+   mongoc_client_session_advance_cluster_time (session, &cluster_time);
+}
+
+
 mongoc_server_session_t *
 _mongoc_server_session_new (bson_error_t *error)
 {
@@ -216,6 +276,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
    session->client = client;
    session->server_session = server_session;
    session->client_session_id = client_session_id;
+   bson_init (&session->cluster_time);
 
    if (opts) {
       _mongoc_session_opts_copy (opts, &session->opts);
@@ -253,6 +314,40 @@ mongoc_client_session_get_lsid (const mongoc_client_session_t *session)
    return &session->server_session->lsid;
 }
 
+const bson_t *
+mongoc_client_session_get_cluster_time (const mongoc_client_session_t *session)
+{
+   BSON_ASSERT (session);
+
+   if (bson_empty (&session->cluster_time)) {
+      return NULL;
+   }
+
+   return &session->cluster_time;
+}
+
+void
+mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
+                                            const bson_t *cluster_time)
+{
+   uint32_t t, i;
+
+   ENTRY;
+
+   if (bson_empty (&session->cluster_time) &&
+       _mongoc_parse_cluster_time (cluster_time, &t, &i)) {
+      bson_destroy (&session->cluster_time);
+      bson_copy_to (cluster_time, &session->cluster_time);
+      EXIT;
+   }
+
+   if (_mongoc_cluster_time_greater (cluster_time, &session->cluster_time)) {
+      bson_destroy (&session->cluster_time);
+      bson_copy_to (cluster_time, &session->cluster_time);
+   }
+
+   EXIT;
+}
 
 bool
 _mongoc_client_session_from_iter (mongoc_client_t *client,
@@ -309,6 +404,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    _mongoc_client_push_server_session (session->client,
                                        session->server_session);
 
+   bson_destroy (&session->cluster_time);
    bson_free (session);
 
    EXIT;

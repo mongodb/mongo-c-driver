@@ -35,7 +35,6 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
    parts->is_write_command = false;
-   parts->session = NULL;
    parts->client = client;
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
@@ -45,6 +44,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.query_flags = MONGOC_QUERY_NONE;
    parts->assembled.payload_identifier = NULL;
    parts->assembled.payload = NULL;
+   parts->assembled.session = NULL;
 }
 
 
@@ -118,7 +118,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          }
       } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
          if (!_mongoc_client_session_from_iter (
-                parts->client, iter, &parts->session, error)) {
+                parts->client, iter, &parts->assembled.session, error)) {
             RETURN (false);
          }
 
@@ -430,12 +430,13 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          _mongoc_cmd_parts_ensure_copied (parts);
       }
 
-      if (parts->session) {
+      if (parts->assembled.session) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (&parts->assembled_body,
-                               "lsid",
-                               4,
-                               mongoc_client_session_get_lsid (parts->session));
+         bson_append_document (
+            &parts->assembled_body,
+            "lsid",
+            4,
+            mongoc_client_session_get_lsid (parts->assembled.session));
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {

@@ -415,7 +415,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    bson_init (&cmd);
    _mongoc_write_command_init (&cmd, command, collection, write_concern);
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
-   parts.session = cs;
+   parts.assembled.session = cs;
    parts.assembled.operation_id = command->operation_id;
 
    bson_iter_init (&iter, &command->cmd_opts);
@@ -638,7 +638,7 @@ again:
    } else {
       mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
       parts.is_write_command = true;
-      parts.session = session;
+      parts.assembled.session = session;
       parts.assembled.operation_id = command->operation_id;
       bson_iter_init (&iter, &command->cmd_opts);
       if (!mongoc_cmd_parts_append_opts (
@@ -664,6 +664,10 @@ again:
             /* assembling failed, or a network error running the command */
             result->must_stop = true;
          }
+      }
+
+      if (session) {
+         _mongoc_client_session_handle_reply (session, &reply);
       }
 
       _mongoc_write_result_merge (result, command, &reply, offset);

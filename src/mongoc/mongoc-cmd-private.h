@@ -47,6 +47,7 @@ typedef struct _mongoc_cmd_t {
    const char *payload_identifier;
    const mongoc_server_stream_t *server_stream;
    int64_t operation_id;
+   mongoc_client_session_t *session;
 } mongoc_cmd_t;
 
 
@@ -58,7 +59,6 @@ typedef struct _mongoc_cmd_parts_t {
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;
    bool is_write_command;
-   mongoc_client_session_t *session;
    mongoc_client_t *client;
 } mongoc_cmd_parts_t;
 

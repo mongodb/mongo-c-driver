@@ -49,8 +49,6 @@ struct _mongoc_topology_description_t {
 
    /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
     * see Driver Sessions Spec. */
-   uint32_t cluster_time_t;
-   uint32_t cluster_time_i;
    bson_t cluster_time;
 
    /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
