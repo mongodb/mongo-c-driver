@@ -1412,23 +1412,23 @@ test_find_indexes (session_test_t *test)
 }
 
 
-#define add_session_test(_suite, _name, _test_fn)         \
-   TestSuite_AddFull (_suite,                             \
-                      _name,                              \
-                      run_session_test,                   \
-                      NULL,                               \
-                      (void *) _test_fn,                  \
-                      test_framework_skip_if_no_sessions, \
+#define add_session_test(_suite, _name, _test_fn)             \
+   TestSuite_AddFull (_suite,                                 \
+                      _name,                                  \
+                      run_session_test,                       \
+                      NULL,                                   \
+                      (void *) (_test_fn),                    \
+                      test_framework_skip_if_no_cluster_time, \
                       test_framework_skip_if_no_crypto)
 
-#define add_session_test_wc(_suite, _name, _test_fn, ...) \
-   TestSuite_AddFull (_suite,                             \
-                      _name,                              \
-                      run_session_test,                   \
-                      NULL,                               \
-                      (void *) _test_fn,                  \
-                      test_framework_skip_if_no_sessions, \
-                      test_framework_skip_if_no_crypto,   \
+#define add_session_test_wc(_suite, _name, _test_fn, ...)     \
+   TestSuite_AddFull (_suite,                                 \
+                      _name,                                  \
+                      run_session_test,                       \
+                      NULL,                                   \
+                      (void *) (_test_fn),                    \
+                      test_framework_skip_if_no_cluster_time, \
+                      test_framework_skip_if_no_crypto,       \
                       __VA_ARGS__)
 
 

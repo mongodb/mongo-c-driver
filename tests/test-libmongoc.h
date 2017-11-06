@@ -114,6 +114,8 @@ test_framework_skip_if_no_auth (void);
 int
 test_framework_skip_if_no_sessions (void);
 int
+test_framework_skip_if_no_cluster_time (void);
+int
 test_framework_skip_if_crypto (void);
 int
 test_framework_skip_if_no_crypto (void);

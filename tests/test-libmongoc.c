@@ -43,7 +43,7 @@ test_buffer_install (TestSuite *suite);
 extern void
 test_bulk_install (TestSuite *suite);
 extern void
-test_change_stream_install (TestSuite* suite);
+test_change_stream_install (TestSuite *suite);
 extern void
 test_client_install (TestSuite *suite);
 extern void
@@ -1687,6 +1687,17 @@ test_framework_skip_if_no_sessions (void)
 
 
 int
+test_framework_skip_if_no_cluster_time (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   return test_framework_clustertime_supported () ? 1 : 0;
+}
+
+
+int
 test_framework_skip_if_crypto (void)
 {
 #ifdef MONGOC_ENABLE_CRYPTO
@@ -2036,8 +2047,8 @@ test_framework_skip_if_not_rs_version_6 (void)
    }
    return (test_framework_max_wire_version_at_least (6) &&
            test_framework_is_replset ())
-          ? 1
-          : 0;
+             ? 1
+             : 0;
 }
 
 int
@@ -2048,8 +2059,8 @@ test_framework_skip_if_rs_version_6 (void)
    }
    return (test_framework_max_wire_version_at_least (6) &&
            test_framework_is_replset ())
-          ? 0
-          : 1;
+             ? 0
+             : 1;
 }
 
 static char MONGOC_TEST_UNIQUE[32];
