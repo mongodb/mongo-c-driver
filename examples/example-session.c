@@ -62,7 +62,7 @@ main (int argc, char *argv[])
       goto done;
    }
 
-   r = mongoc_collection_update_one_with_opts (
+   r = mongoc_collection_update_one (
       collection, selector, update, update_opts, NULL /* reply */, &error);
 
    if (!r) {

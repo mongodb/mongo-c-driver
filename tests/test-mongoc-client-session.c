@@ -953,42 +953,42 @@ test_create_index (session_test_t *test)
 static void
 test_replace_one (session_test_t *test)
 {
-   test->succeeded = mongoc_collection_replace_one_with_opts (test->collection,
-                                                              tmp_bson ("{}"),
-                                                              tmp_bson ("{}"),
-                                                              &test->opts,
-                                                              NULL,
-                                                              &test->error);
+   test->succeeded = mongoc_collection_replace_one (test->collection,
+                                                    tmp_bson ("{}"),
+                                                    tmp_bson ("{}"),
+                                                    &test->opts,
+                                                    NULL,
+                                                    &test->error);
 }
 
 static void
 test_update_one (session_test_t *test)
 {
    test->succeeded =
-      mongoc_collection_update_one_with_opts (test->collection,
-                                              tmp_bson ("{}"),
-                                              tmp_bson ("{'$set': {'x': 1}}"),
-                                              &test->opts,
-                                              NULL,
-                                              &test->error);
+      mongoc_collection_update_one (test->collection,
+                                    tmp_bson ("{}"),
+                                    tmp_bson ("{'$set': {'x': 1}}"),
+                                    &test->opts,
+                                    NULL,
+                                    &test->error);
 }
 
 static void
 test_update_many (session_test_t *test)
 {
    test->succeeded =
-      mongoc_collection_update_many_with_opts (test->collection,
-                                               tmp_bson ("{}"),
-                                               tmp_bson ("{'$set': {'x': 1}}"),
-                                               &test->opts,
-                                               NULL,
-                                               &test->error);
+      mongoc_collection_update_many (test->collection,
+                                     tmp_bson ("{}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"),
+                                     &test->opts,
+                                     NULL,
+                                     &test->error);
 }
 
 static void
 test_insert_one (session_test_t *test)
 {
-   test->succeeded = mongoc_collection_insert_one_with_opts (
+   test->succeeded = mongoc_collection_insert_one (
       test->collection, tmp_bson ("{}"), &test->opts, NULL, &test->error);
 }
 
@@ -1005,7 +1005,7 @@ test_rename (session_test_t *test)
                                             NULL,
                                             NULL);
 
-   r = mongoc_collection_insert_one_with_opts (
+   r = mongoc_collection_insert_one (
       test->session_collection, tmp_bson ("{}"), &test->opts, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 

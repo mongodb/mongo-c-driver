@@ -379,7 +379,7 @@ background_mongoc_collection_stats (void *data)
 }
 
 static void *
-background_mongoc_collection_insert_one_with_opts (void *data)
+background_mongoc_collection_insert_one (void *data)
 {
    future_t *future = (future_t *) data;
    future_value_t return_value;
@@ -388,7 +388,7 @@ background_mongoc_collection_insert_one_with_opts (void *data)
 
    future_value_set_bool (
       &return_value,
-      mongoc_collection_insert_one_with_opts (
+      mongoc_collection_insert_one (
          future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
          future_value_get_const_bson_ptr (future_get_param (future, 1)),
          future_value_get_const_bson_ptr (future_get_param (future, 2)),
@@ -1350,7 +1350,7 @@ future_collection_stats (
 }
 
 future_t *
-future_collection_insert_one_with_opts (
+future_collection_insert_one (
    mongoc_collection_ptr collection,
    const_bson_ptr document,
    const_bson_ptr opts,
@@ -1375,7 +1375,7 @@ future_collection_insert_one_with_opts (
    future_value_set_bson_error_ptr (
       future_get_param (future, 4), error);
    
-   future_start (future, background_mongoc_collection_insert_one_with_opts);
+   future_start (future, background_mongoc_collection_insert_one);
    return future;
 }
 

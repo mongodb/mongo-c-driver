@@ -193,7 +193,7 @@ _test_last_write_date (bool pooled)
    mongoc_uri_destroy (uri);
 
    collection = get_test_collection (client, "test_last_write_date");
-   r = mongoc_collection_insert_one_with_opts (
+   r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
@@ -201,7 +201,7 @@ _test_last_write_date (bool pooled)
    s0 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
-   r = mongoc_collection_insert_one_with_opts (
+   r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 

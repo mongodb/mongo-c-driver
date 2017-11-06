@@ -100,9 +100,9 @@ main (int argc, char *argv[])
 
    collection = mongoc_client_get_collection (client, "test", collection_name);
    mongoc_collection_drop (collection, NULL);
-   mongoc_collection_insert_one_with_opts (collection, &doc, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
    /* duplicate key error on the second insert */
-   mongoc_collection_insert_one_with_opts (collection, &doc, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
 
    printf ("started: %d\nsucceeded: %d\nfailed: %d\n",
            stats.started,

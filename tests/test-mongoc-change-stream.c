@@ -316,15 +316,15 @@ test_change_stream_live_track_resume_token (void *test_ctx)
     * call to watch will be guaranteed to retrieve them. */
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_write_concern_append (wc, &opts);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
                     error);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 1}"), &opts, NULL, &error),
                     error);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 2}"), &opts, NULL, &error),
                     error);
 
@@ -451,8 +451,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    mongoc_write_concern_append (wc, &opts);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW ("_id", BCON_INT32 (i));
-      ASSERT (
-         mongoc_collection_insert_one_with_opts (coll, doc, &opts, NULL, NULL));
+      ASSERT (mongoc_collection_insert_one (coll, doc, &opts, NULL, NULL));
       bson_free (doc);
    }
 
@@ -507,7 +506,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
 
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_write_concern_append (wc, &opts);
-   ASSERT (mongoc_collection_insert_one_with_opts (
+   ASSERT (mongoc_collection_insert_one (
       coll, tmp_bson ("{'_id': 2}"), &opts, NULL, NULL));
 
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
@@ -877,8 +876,8 @@ test_change_stream_live_watch (void *test_ctx)
 
    /* Test that inserting a doc produces the expected change stream doc */
    mongoc_write_concern_append (wc, &opts);
-   ASSERT (mongoc_collection_insert_one_with_opts (
-      coll, inserted_doc, &opts, NULL, NULL));
+   ASSERT (
+      mongoc_collection_insert_one (coll, inserted_doc, &opts, NULL, NULL));
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 

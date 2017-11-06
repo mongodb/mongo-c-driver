@@ -98,7 +98,7 @@ test_clone (void)
       mongoc_collection_t *col;
 
       col = mongoc_client_get_collection (client, "test", "test");
-      r = mongoc_collection_insert_one_with_opts (col, &q, NULL, NULL, &error);
+      r = mongoc_collection_insert_one (col, &q, NULL, NULL, &error);
       ASSERT (r);
 
       mongoc_collection_destroy (col);
@@ -1143,7 +1143,7 @@ test_tailable_alive (void)
 
    ASSERT_OR_PRINT (collection, error);
 
-   r = mongoc_collection_insert_one_with_opts (
+   r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
@@ -1529,7 +1529,7 @@ test_error_document_getmore (void)
    mongoc_collection_drop (collection, NULL);
 
    for (i = 0; i < 10; i++) {
-      r = mongoc_collection_insert_one_with_opts (
+      r = mongoc_collection_insert_one (
          collection, tmp_bson ("{'i': %d}", i), NULL, NULL, &error);
 
       ASSERT_OR_PRINT (r, error);

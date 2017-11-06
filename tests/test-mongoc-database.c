@@ -159,9 +159,8 @@ test_has_collection (void)
    bson_oid_init (&oid, NULL);
    bson_append_oid (&b, "_id", 3, &oid);
    bson_append_utf8 (&b, "hello", 5, "world", 5);
-   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
-                       collection, &b, NULL, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (collection, &b, NULL, NULL, &error), error);
    bson_destroy (&b);
 
    r = mongoc_database_has_collection (database, name, &error);
@@ -391,7 +390,7 @@ test_drop (void)
    /* MongoDB 3.2+ must create at least one replicated database before
     * dropDatabase will check writeConcern, see SERVER-25601 */
    collection = mongoc_database_get_collection (database, "collection");
-   r = mongoc_collection_insert_one_with_opts (
+   r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);

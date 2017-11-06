@@ -318,9 +318,9 @@ test_find_and_modify (void)
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert_one_with_opts (
-                       collection, &doc, NULL, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error),
+      error);
 
    update = BCON_NEW ("$set", "{", "superduper", BCON_INT32 (1234), "}");
 

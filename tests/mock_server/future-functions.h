@@ -191,7 +191,7 @@ future_collection_stats (
 
 
 future_t *
-future_collection_insert_one_with_opts (
+future_collection_insert_one (
 
    mongoc_collection_ptr collection,
    const_bson_ptr document,

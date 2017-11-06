@@ -30,8 +30,7 @@ main ()
 
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_write_concern_append (wc, &opts);
-   r = mongoc_collection_insert_one_with_opts (
-      coll, to_insert, &opts, NULL, &err);
+   r = mongoc_collection_insert_one (coll, to_insert, &opts, NULL, &err);
    if (!r) {
       fprintf (stderr, "Error: %s\n", err.message);
       return 1;

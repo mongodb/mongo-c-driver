@@ -757,11 +757,9 @@ test_update_one (bool ordered)
    BSON_ASSERT (collection);
 
    doc = bson_new ();
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, NULL);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, NULL);
    BSON_ASSERT (r);
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, NULL);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, NULL);
    BSON_ASSERT (r);
    bson_destroy (doc);
 
@@ -831,11 +829,9 @@ test_replace_one (bool ordered)
    BSON_ASSERT (collection);
 
    doc = bson_new ();
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, NULL);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, NULL);
    BSON_ASSERT (r);
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, NULL);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, NULL);
    BSON_ASSERT (r);
    bson_destroy (doc);
 
@@ -1100,7 +1096,7 @@ test_update (bool ordered)
    BSON_ASSERT (collection);
 
    for (i = 0; i < sizeof docs_inserted / sizeof (bson_t *); i++) {
-      BSON_ASSERT (mongoc_collection_insert_one_with_opts (
+      BSON_ASSERT (mongoc_collection_insert_one (
          collection, docs_inserted[i], NULL, NULL, NULL));
    }
 
@@ -1808,8 +1804,7 @@ test_index_offset (void)
 
    doc = tmp_bson ("{}");
    BSON_APPEND_INT32 (doc, "_id", 1234);
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, &error);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
    BSON_ASSERT (r);
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -1960,8 +1955,8 @@ test_update_continue_on_error (void)
    BSON_ASSERT (collection);
 
    create_unique_index (collection);
-   mongoc_collection_insert_one_with_opts (collection, doc0, NULL, NULL, NULL);
-   mongoc_collection_insert_one_with_opts (collection, doc1, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, doc0, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, doc1, NULL, NULL, NULL);
 
    bson_append_bool (&opts, "ordered", 7, false);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
@@ -2026,9 +2021,9 @@ test_remove_continue_on_error (void)
    collection = get_test_collection (client, "test_remove_continue_on_error");
    BSON_ASSERT (collection);
 
-   mongoc_collection_insert_one_with_opts (collection, doc0, NULL, NULL, NULL);
-   mongoc_collection_insert_one_with_opts (collection, doc1, NULL, NULL, NULL);
-   mongoc_collection_insert_one_with_opts (collection, doc2, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, doc0, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, doc1, NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, doc2, NULL, NULL, NULL);
 
    bson_append_bool (&opts, "ordered", 7, false);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);

@@ -1,7 +1,7 @@
-:man_page: mongoc_collection_replace_one_with_opts
+:man_page: mongoc_collection_replace_one
 
-mongoc_collection_replace_one_with_opts()
-=========================================
+mongoc_collection_replace_one()
+===============================
 
 Synopsis
 --------
@@ -9,13 +9,12 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_collection_replace_one_with_opts (
-     mongoc_collection_t *collection,
-     const bson_t *selector,
-     const bson_t *replacement,
-     const bson_t *opts,
-     bson_t *reply,
-     bson_error_t *error);
+  mongoc_collection_replace_one (mongoc_collection_t *collection,
+                                 const bson_t *selector,
+                                 const bson_t *replacement,
+                                 const bson_t *opts,
+                                 bson_t *reply,
+                                 bson_error_t *error);
 
 .. warning::
 
@@ -50,7 +49,8 @@ See Also
 
 `MongoDB update command documentation <https://docs.mongodb.com/master/reference/command/update/>`_ for more information on the update options.
 
-:symbol:`mongoc_collection_update_one_with_opts`
+:symbol:`mongoc_collection_update_one`
+:symbol:`mongoc_collection_update_many`
 
 Errors
 ------

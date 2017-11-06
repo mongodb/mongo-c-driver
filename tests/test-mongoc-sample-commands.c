@@ -80,8 +80,7 @@ test_example_1 (mongoc_database_t *db)
       "uom", BCON_UTF8 ("cm"),
       "}");
 
-   r = mongoc_collection_insert_one_with_opts (
-      collection, doc, NULL, NULL, &error);
+   r = mongoc_collection_insert_one (collection, doc, NULL, NULL, &error);
    bson_destroy (doc);
 
    if (!r) {

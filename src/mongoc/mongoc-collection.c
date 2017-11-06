@@ -1623,8 +1623,8 @@ mongoc_collection_insert (mongoc_collection_t *collection,
                                    &opts);
    }
 
-   r = mongoc_collection_insert_one_with_opts (
-      collection, document, &opts, &reply, error);
+   r =
+      mongoc_collection_insert_one (collection, document, &opts, &reply, error);
 
    collection->gle = bson_copy (&reply);
    bson_destroy (&reply);
@@ -1637,7 +1637,7 @@ mongoc_collection_insert (mongoc_collection_t *collection,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_collection_insert_one_with_opts --
+ * mongoc_collection_insert_one --
  *
  *       Insert a document into a MongoDB collection.
  *
@@ -1659,11 +1659,11 @@ mongoc_collection_insert (mongoc_collection_t *collection,
  */
 
 bool
-mongoc_collection_insert_one_with_opts (mongoc_collection_t *collection,
-                                        const bson_t *document,
-                                        const bson_t *opts,
-                                        bson_t *reply,
-                                        bson_error_t *error)
+mongoc_collection_insert_one (mongoc_collection_t *collection,
+                              const bson_t *document,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
 {
    mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
@@ -1819,14 +1819,14 @@ mongoc_collection_update (mongoc_collection_t *collection,
 }
 
 static bool
-_mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
-                                                const bson_t *selector,
-                                                const bson_t *update,
-                                                const bson_t *opts,
-                                                bson_t *reply,
-                                                bson_error_t *error,
-                                                bool is_multi,
-                                                bool is_update)
+_mongoc_collection_update_or_replace (mongoc_collection_t *collection,
+                                      const bson_t *selector,
+                                      const bson_t *update,
+                                      const bson_t *opts,
+                                      bson_t *reply,
+                                      bson_error_t *error,
+                                      bool is_multi,
+                                      bool is_update)
 {
    mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
@@ -1895,58 +1895,57 @@ _mongoc_collection_update_or_replace_with_opts (mongoc_collection_t *collection,
 }
 
 bool
-mongoc_collection_update_one_with_opts (mongoc_collection_t *collection,
-                                        const bson_t *selector,
-                                        const bson_t *update,
-                                        const bson_t *opts,
-                                        bson_t *reply,
-                                        bson_error_t *error)
+mongoc_collection_update_one (mongoc_collection_t *collection,
+                              const bson_t *selector,
+                              const bson_t *update,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace_with_opts (collection,
-                                                          selector,
-                                                          update,
-                                                          opts,
-                                                          reply,
-                                                          error,
-                                                          false /* is_multi */,
-                                                          true /* is_update */);
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                update,
+                                                opts,
+                                                reply,
+                                                error,
+                                                false /* is_multi */,
+                                                true /* is_update */);
 }
 
 bool
-mongoc_collection_update_many_with_opts (mongoc_collection_t *collection,
-                                         const bson_t *selector,
-                                         const bson_t *update,
-                                         const bson_t *opts,
-                                         bson_t *reply,
-                                         bson_error_t *error)
+mongoc_collection_update_many (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *update,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace_with_opts (collection,
-                                                          selector,
-                                                          update,
-                                                          opts,
-                                                          reply,
-                                                          error,
-                                                          true /* is_multi */,
-                                                          true /* is_update */);
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                update,
+                                                opts,
+                                                reply,
+                                                error,
+                                                true /* is_multi */,
+                                                true /* is_update */);
 }
 
 bool
-mongoc_collection_replace_one_with_opts (mongoc_collection_t *collection,
-                                         const bson_t *selector,
-                                         const bson_t *replacement,
-                                         const bson_t *opts,
-                                         bson_t *reply,
-                                         bson_error_t *error)
+mongoc_collection_replace_one (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *replacement,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace_with_opts (
-      collection,
-      selector,
-      replacement,
-      opts,
-      reply,
-      error,
-      false /* is_multi */,
-      false /* is_update */);
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                replacement,
+                                                opts,
+                                                reply,
+                                                error,
+                                                false /* is_multi */,
+                                                false /* is_update */);
 }
 
 

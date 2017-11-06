@@ -17,13 +17,12 @@ main (int argc, char **argv)
 
    mongoc_client_set_error_api (client, 2);
    /* insert a document */
-   if (!mongoc_collection_insert_one_with_opts (
-          coll, to_insert, NULL, NULL, &err)) {
+   if (!mongoc_collection_insert_one (coll, to_insert, NULL, NULL, &err)) {
       fprintf (stderr, "insert failed: %s\n", err.message);
       return EXIT_FAILURE;
    }
 
-   if (!mongoc_collection_update_one_with_opts (
+   if (!mongoc_collection_update_one (
           coll, selector, update, NULL, NULL, &err)) {
       fprintf (stderr, "update failed %s\n", err.message);
       return EXIT_FAILURE;
