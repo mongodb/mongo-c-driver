@@ -4752,8 +4752,8 @@ test_insert_one (void)
 
    if (test_framework_is_replset ()) {
       /* Write concern error */
-      ctx.expected_command =
-         "{'insert': 'coll', 'writeConcern': {'w': 99, 'wtimeout': 100}}";
+      ctx.expected_command = "{'insert': 'coll',"
+                             " 'writeConcern': {'w': 99, 'wtimeout': 100}}";
       ret = mongoc_collection_insert_one (
          coll,
          tmp_bson ("{}"),
