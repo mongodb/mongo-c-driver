@@ -2999,14 +2999,14 @@ _test_numerous (bool ordered)
 
 
 static void
-test_numerous_ordered (void)
+test_numerous_ordered (void *ctx)
 {
    _test_numerous (true);
 }
 
 
 static void
-test_numerous_unordered (void)
+test_numerous_unordered (void *ctx)
 {
    _test_numerous (false);
 }
@@ -4264,10 +4264,18 @@ test_bulk_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/numerous_ordered", test_numerous_ordered);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/numerous_unordered", test_numerous_unordered);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/numerous_ordered",
+                      test_numerous_ordered,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/numerous_unordered",
+                      test_numerous_unordered,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite,
                       "/BulkOperation/CDRIVER-372_ordered",
                       test_bulk_edge_case_372_ordered);
