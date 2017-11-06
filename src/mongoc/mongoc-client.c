@@ -2609,6 +2609,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
       }
 
       bson_destroy (&cmd);
+      mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (stream);
    }
 }
