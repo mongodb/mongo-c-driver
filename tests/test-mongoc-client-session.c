@@ -980,6 +980,7 @@ run_session_test (void *ctx)
    mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
    session_test_destroy (test);
    bson_destroy (&opts);
+   bson_destroy (&cluster_time);
 }
 
 
