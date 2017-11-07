@@ -2601,7 +2601,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
                          error.message);
       } else {
          r = mongoc_cluster_run_command_monitored (
-            cluster, &parts.assembled, NULL, NULL);
+            cluster, &parts.assembled, NULL, &error);
 
          if (!r) {
             MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
