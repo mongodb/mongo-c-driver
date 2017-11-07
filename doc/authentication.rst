@@ -40,7 +40,7 @@ The default authentication mechanism when talking to MongoDB 3.0 and later is ``
 
 .. note::
 
-  ``SCRAM-SHA-1`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required. 
+  ``SCRAM-SHA-1`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required.
 
 
 .. _authentication_mongodbcr:
@@ -53,7 +53,7 @@ The MONGODB-CR authMechanism is a challenge response authentication mechanism. I
 
 .. note::
 
-  ``MONGODB-CR`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required. 
+  ``MONGODB-CR`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required.
 
 
 .. _authentication_kerberos:
@@ -65,13 +65,14 @@ GSSAPI (Kerberos) Authentication
 
   Kerberos support requires compiling the driver against ``cyrus-sasl`` on UNIX-like environments. On Windows, configure the driver to build against the Windows Native SSPI.
 
-``GSSAPI`` (Kerberos) authentication is available in the Enterprise Edition of MongoDB. To authenticate using ``GSSAPI``, the MongoDB C driver must be installed with SASL support. 
+``GSSAPI`` (Kerberos) authentication is available in the Enterprise Edition of MongoDB. To authenticate using ``GSSAPI``, the MongoDB C driver must be installed with SASL support.
 
 On UNIX-like environments, run the ``kinit`` command before using the following authentication methods:
 
 .. code-block:: none
 
-  $ kinit mongodbuser@EXAMPLE.COMmongodbuser@EXAMPLE.COM's Password:
+  $ kinit mongodbuser@EXAMPLE.COM
+  mongodbuser@EXAMPLE.COM's Password:
   $ klistCredentials cache: FILE:/tmp/krb5cc_1000
           Principal: mongodbuser@EXAMPLE.COM
 
@@ -84,11 +85,11 @@ Now authenticate using the MongoDB URI. ``GSSAPI`` authenticates against the ``$
 
   mongoc_client_t *client;
 
-  client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI");
+  client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@mongo-server.example.com/?authMechanism=GSSAPI");
 
 .. note::
 
-  ``GSSAPI`` authenticates against the ``$external`` database, so specifying the authSource database is not required. 
+  ``GSSAPI`` authenticates against the ``$external`` database, so specifying the authSource database is not required.
 
 The driver supports these GSSAPI properties:
 
@@ -101,7 +102,7 @@ Set properties in the URL:
 
   mongoc_client_t *client;
 
-  client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI&"
+  client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@mongo-server.example.com/?authMechanism=GSSAPI&"
                               "authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
 
 If you encounter errors such as ``Invalid net address``, check if the application is behind a NAT (Network Address Translation) firewall. If so, create a ticket that uses ``forwardable`` and ``addressless`` Kerberos tickets. This can be done by passing ``-f -A`` to ``kinit``.
@@ -142,7 +143,7 @@ X.509 Certificate Authentication
 
 .. note::
 
-  The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options: 
+  The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options:
 
   .. code-block:: none
 
