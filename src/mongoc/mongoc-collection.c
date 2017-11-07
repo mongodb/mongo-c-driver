@@ -1568,6 +1568,11 @@ _mongoc_write_opts_parse (const bson_t *opts,
             continue;
          }
 
+         if (!strcmp (bson_iter_key (&iter), "ordered")) {
+            parsed->write_flags.ordered = bson_iter_as_bool (&iter);
+            continue;
+         }
+
          if (!strcmp (bson_iter_key (&iter), "collation")) {
             parsed->write_flags.has_collation = true;
             /* FALL THROUGH */
@@ -1711,6 +1716,101 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
                                        error,
                                        "insertedCount");
 
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
+
+   RETURN (ret);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert_many --
+ *
+ *       Insert documents into a MongoDB collection. Replaces
+ *       mongoc_collection_insert_bulk.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @documents: The documents to insert.
+ *       @n_documents: Length of @documents array.
+ *       @opts: Standard command options.
+ *       @reply: Optional. Uninitialized doc to receive the update result.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then true may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_insert_many (mongoc_collection_t *collection,
+                               const bson_t **documents,
+                               size_t n_documents,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   mongoc_write_opts_parsed_t parsed;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   size_t i;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (documents);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
+   }
+
+   _mongoc_write_result_init (&result);
+   _mongoc_write_command_init_insert (
+      &command,
+      NULL,
+      &parsed.copied_opts,
+      parsed.write_flags,
+      ++collection->client->cluster.operation_id,
+      false);
+
+   for (i = 0; i < n_documents; i++) {
+      if (parsed.client_validation &&
+          !_mongoc_validate_new_document (documents[i], error)) {
+         ret = false;
+         GOTO (done);
+      }
+
+      _mongoc_write_command_insert_append (&command, documents[i]);
+   }
+
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
+
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "insertedCount");
+
+done:
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
    _mongoc_write_opts_cleanup (&parsed);

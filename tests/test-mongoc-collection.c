@@ -605,7 +605,7 @@ test_insert_oversize (void *ctx)
 
 
 static void
-test_insert_bulk (void)
+test_insert_many (void)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
@@ -618,6 +618,7 @@ test_insert_bulk (void)
    bson_t q;
    bson_t b[10];
    bson_t *bptr[10];
+   bson_t reply;
    int64_t count;
 
    client = test_framework_client_new ();
@@ -626,7 +627,7 @@ test_insert_bulk (void)
    database = get_test_database (client);
    ASSERT (database);
 
-   collection = get_test_collection (client, "test_insert_bulk");
+   collection = get_test_collection (client, "test_insert_many");
    ASSERT (collection);
 
    mongoc_collection_drop (collection, &error);
@@ -645,16 +646,13 @@ test_insert_bulk (void)
       bptr[i] = &b[i];
    }
 
-   BEGIN_IGNORE_DEPRECATIONS;
-   ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
-                                                   MONGOC_INSERT_NONE,
-                                                   (const bson_t **) bptr,
-                                                   10,
-                                                   NULL,
-                                                   &error),
-                    error);
-   END_IGNORE_DEPRECATIONS;
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_many (
+         collection, (const bson_t **) bptr, 10, NULL, &reply, &error),
+      error);
 
+   ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 10);
+   bson_destroy (&reply);
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
    ASSERT (count == 5);
@@ -668,28 +666,28 @@ test_insert_bulk (void)
       bptr[i] = &b[i];
    }
 
-   BEGIN_IGNORE_DEPRECATIONS;
-   r = mongoc_collection_insert_bulk (
-      collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, NULL, &error);
-   END_IGNORE_DEPRECATIONS;
+   r = mongoc_collection_insert_many (
+      collection, (const bson_t **) bptr, 10, NULL, &reply, &error);
 
    ASSERT (!r);
    ASSERT (error.code == 11000);
+   ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 0);
+   bson_destroy (&reply);
 
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
    ASSERT (count == 5);
 
-   BEGIN_IGNORE_DEPRECATIONS;
-   r = mongoc_collection_insert_bulk (collection,
-                                      MONGOC_INSERT_CONTINUE_ON_ERROR,
+   r = mongoc_collection_insert_many (collection,
                                       (const bson_t **) bptr,
                                       10,
-                                      NULL,
+                                      tmp_bson ("{'ordered': false}"),
+                                      &reply,
                                       &error);
-   END_IGNORE_DEPRECATIONS;
    ASSERT (!r);
    ASSERT (error.code == 11000);
+   ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 2);
+   bson_destroy (&reply);
 
    count = mongoc_collection_count (
       collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
@@ -702,10 +700,12 @@ test_insert_bulk (void)
       BSON_APPEND_INT32 (&b[i], "$invalid_dollar_prefixed_name", i);
       bptr[i] = &b[i];
    }
-   BEGIN_IGNORE_DEPRECATIONS;
-   r = mongoc_collection_insert_bulk (
-      collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, NULL, &error);
-   END_IGNORE_DEPRECATIONS;
+   r = mongoc_collection_insert_many (collection,
+                                      (const bson_t **) bptr,
+                                      10,
+                                      tmp_bson ("{'ordered': false}"),
+                                      NULL,
+                                      &error);
    ASSERT (!r);
    ASSERT (error.domain == MONGOC_ERROR_COMMAND);
    ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
@@ -721,10 +721,9 @@ test_insert_bulk (void)
       BSON_APPEND_INT32 (&b[i], "a.b", i);
       bptr[i] = &b[i];
    }
-   BEGIN_IGNORE_DEPRECATIONS;
-   r = mongoc_collection_insert_bulk (
-      collection, MONGOC_INSERT_NONE, (const bson_t **) bptr, 10, NULL, &error);
-   END_IGNORE_DEPRECATIONS;
+
+   r = mongoc_collection_insert_many (
+      collection, (const bson_t **) bptr, 10, NULL, NULL, &error);
    ASSERT (!r);
    ASSERT (error.domain == MONGOC_ERROR_COMMAND);
    ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
@@ -3511,20 +3510,15 @@ test_many_return (void)
       BSON_APPEND_OID (docs[i], "_id", &oid);
    }
 
-   BEGIN_IGNORE_DEPRECATIONS;
-
-   ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
-                                                   MONGOC_INSERT_NONE,
+   ASSERT_OR_PRINT (mongoc_collection_insert_many (collection,
                                                    (const bson_t **) docs,
                                                    (uint32_t) N_BSONS,
+                                                   NULL,
                                                    NULL,
                                                    &error),
                     error);
 
-   END_IGNORE_DEPRECATIONS;
-
-   cursor = mongoc_collection_find (
-      collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    BSON_ASSERT (cursor);
    BSON_ASSERT (mongoc_cursor_is_alive (cursor));
    bson_destroy (&query);
@@ -3560,8 +3554,35 @@ test_many_return (void)
 }
 
 
+static bool
+insert_one (mongoc_collection_t *collection,
+            const bson_t *doc,
+            const bson_t *opts,
+            bson_error_t *error)
+{
+   return mongoc_collection_insert_one (collection, doc, opts, NULL, error);
+}
+
+
+static bool
+insert_many (mongoc_collection_t *collection,
+             const bson_t *doc,
+             const bson_t *opts,
+             bson_error_t *error)
+{
+   return mongoc_collection_insert_many (
+      collection, &doc, 1, opts, NULL, error);
+}
+
+
+typedef bool (*insert_fn_t) (mongoc_collection_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             bson_error_t *);
+
+
 static void
-test_insert_validate (void)
+_test_insert_validate (insert_fn_t insert_fn)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -3570,25 +3591,23 @@ test_insert_validate (void)
    client = test_framework_client_new ();
    mongoc_client_set_error_api (client, 2);
    collection = get_test_collection (client, "test_insert_validate");
-   BSON_ASSERT (!mongoc_collection_insert_one (
-      collection, tmp_bson ("{'$': 1}"), NULL, NULL, &error));
+
+   BSON_ASSERT (!insert_fn (collection, tmp_bson ("{'$': 1}"), NULL, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "document to insert contains invalid key");
 
-   BSON_ASSERT (!mongoc_collection_insert_one (collection,
-                                               tmp_bson ("{'$': 1}"),
-                                               tmp_bson ("{'validate': false}"),
-                                               NULL,
-                                               &error));
+   BSON_ASSERT (!insert_fn (collection,
+                            tmp_bson ("{'$': 1}"),
+                            tmp_bson ("{'validate': false}"),
+                            &error));
    ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
 
-   BSON_ASSERT (!mongoc_collection_insert_one (collection,
-                                               tmp_bson ("{'$': 1}"),
-                                               tmp_bson ("{'validate': 'foo'}"),
-                                               NULL,
-                                               &error));
+   BSON_ASSERT (!insert_fn (collection,
+                            tmp_bson ("{'$': 1}"),
+                            tmp_bson ("{'validate': 'foo'}"),
+                            &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -3596,6 +3615,20 @@ test_insert_validate (void)
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+}
+
+
+static void
+test_insert_one_validate (void)
+{
+   _test_insert_validate (insert_one);
+}
+
+
+static void
+test_insert_many_validate (void)
+{
+   _test_insert_validate (insert_many);
 }
 
 
@@ -4752,8 +4785,7 @@ test_insert_one (void)
 
    if (test_framework_is_replset ()) {
       /* Write concern error */
-      ctx.expected_command =
-         "{'insert': 'coll',"
+      ctx.expected_command = "{'insert': 'coll',"
                              " 'writeConcern': {'w': 99, 'wtimeout': 100}}";
       ret = mongoc_collection_insert_one (
          coll,
@@ -5077,7 +5109,7 @@ test_collection_install (TestSuite *suite)
                       test_aggregate_w_write_concern);
    TestSuite_AddLive (
       suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid);
-   TestSuite_AddLive (suite, "/Collection/insert_bulk", test_insert_bulk);
+   TestSuite_AddLive (suite, "/Collection/insert_many", test_insert_many);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
    TestSuite_AddLive (suite, "/Collection/copy", test_copy);
@@ -5218,7 +5250,9 @@ test_collection_install (TestSuite *suite)
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
    TestSuite_AddLive (
-      suite, "/Collection/insert_validate", test_insert_validate);
+      suite, "/Collection/insert_one_validate", test_insert_one_validate);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_many_validate", test_insert_many_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (
       suite, "/Collection/batch_size", test_find_batch_size);

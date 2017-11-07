@@ -1282,6 +1282,18 @@ test_insert_one (session_test_t *test)
 }
 
 static void
+test_insert_many (session_test_t *test)
+{
+   bson_t *docs[2] = {tmp_bson ("{}"), tmp_bson ("{}")};
+   test->succeeded = mongoc_collection_insert_many (test->collection,
+                                                    (const bson_t **) docs,
+                                                    2,
+                                                    &test->opts,
+                                                    NULL,
+                                                    &test->error);
+}
+
+static void
 test_rename (session_test_t *test)
 {
    mongoc_collection_t *collection;
@@ -1680,6 +1692,7 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/update_one", test_update_one);
    add_session_test (suite, "/Session/update_many", test_update_many);
    add_session_test (suite, "/Session/insert_one", test_insert_one);
+   add_session_test (suite, "/Session/insert_many", test_insert_many);
    add_session_test (suite, "/Session/rename", test_rename);
    add_session_test (suite, "/Session/fam", test_fam);
    add_session_test (suite, "/Session/db_drop", test_db_drop);
