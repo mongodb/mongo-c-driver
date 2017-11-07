@@ -244,14 +244,12 @@ mongoc_collection_remove (mongoc_collection_t *collection,
                           const bson_t *selector,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error);
-/* TODO */
 MONGOC_EXPORT (bool)
 mongoc_collection_delete_one (mongoc_collection_t *collection,
                               const bson_t *selector,
                               const bson_t *opts,
                               bson_t *reply,
                               bson_error_t *error);
-/* TODO */
 MONGOC_EXPORT (bool)
 mongoc_collection_delete_many (mongoc_collection_t *collection,
                                const bson_t *selector,

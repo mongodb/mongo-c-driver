@@ -544,8 +544,8 @@ _test_cursor_new_from_command (const char *cmd_json,
 
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (client, "test", collection_name);
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL);
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'a'}"));
@@ -584,8 +584,8 @@ test_cursor_empty_collection (void)
    client = test_framework_client_new ();
    collection = mongoc_client_get_collection (
       client, "test", "test_cursor_empty_collection");
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL);
 
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson ("{}"), NULL, NULL);

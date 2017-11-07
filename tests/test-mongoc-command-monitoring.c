@@ -602,8 +602,7 @@ test_delete_many (mongoc_collection_t *collection, const bson_t *arguments)
    bson_t filter;
 
    bson_lookup_doc (arguments, "filter", &filter);
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, &filter, NULL, NULL);
+   mongoc_collection_delete_many (collection, &filter, NULL, NULL, NULL);
 }
 
 
@@ -613,8 +612,7 @@ test_delete_one (mongoc_collection_t *collection, const bson_t *arguments)
    bson_t filter;
 
    bson_lookup_doc (arguments, "filter", &filter);
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_SINGLE_REMOVE, &filter, NULL, NULL);
+   mongoc_collection_delete_one (collection, &filter, NULL, NULL, NULL);
 }
 
 

@@ -638,7 +638,7 @@ To verify that the update succeeded, connect with the MongoDB shell.
 Deleting a Document
 ^^^^^^^^^^^^^^^^^^^
 
-This example illustrates the use of :doc:`mongoc_collection_remove() <mongoc_collection_remove>` to delete documents.
+This example illustrates the use of :symbol:`mongoc_collection_delete_one()` to delete a document.
 
 The following code inserts a sample document into the database "mydb" and collection "mycoll". Then, it deletes all documents matching ``{"hello" : "world"}``.
 
@@ -677,8 +677,8 @@ The following code inserts a sample document into the database "mydb" and collec
      doc = bson_new ();
      BSON_APPEND_OID (doc, "_id", &oid);
 
-     if (!mongoc_collection_remove (
-            collection, MONGOC_REMOVE_SINGLE_REMOVE, doc, NULL, &error)) {
+     if (!mongoc_collection_delete_one (
+            collection, doc, NULL, NULL, &error)) {
         fprintf (stderr, "Delete failed: %s\n", error.message);
      }
 

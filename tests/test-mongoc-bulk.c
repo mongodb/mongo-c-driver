@@ -1574,8 +1574,8 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_insert_validate");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
-   BSON_ASSERT (mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson (NULL), NULL, NULL));
+   BSON_ASSERT (mongoc_collection_delete_many (
+      collection, tmp_bson (NULL), NULL, NULL, NULL));
 
    capture_logs (true);
 
@@ -2792,8 +2792,8 @@ test_large_inserts_ordered (void *ctx)
    ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&query);
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -2885,8 +2885,8 @@ test_large_inserts_unordered (void *ctx)
    ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&query);
-   mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), NULL, NULL);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);

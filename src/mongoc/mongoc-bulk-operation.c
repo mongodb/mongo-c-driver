@@ -162,7 +162,7 @@ _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_delete (
-      &command, selector, opts, bulk->flags, bulk->operation_id);
+      &command, selector, NULL, opts, bulk->flags, bulk->operation_id);
 
    _mongoc_array_append_val (&bulk->commands, command);
 

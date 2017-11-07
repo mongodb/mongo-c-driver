@@ -1294,6 +1294,20 @@ test_insert_many (session_test_t *test)
 }
 
 static void
+test_delete_one (session_test_t *test)
+{
+   test->succeeded = mongoc_collection_delete_one (
+      test->collection, tmp_bson ("{}"), &test->opts, NULL, &test->error);
+}
+
+static void
+test_delete_many (session_test_t *test)
+{
+   test->succeeded = mongoc_collection_delete_many (
+      test->collection, tmp_bson ("{}"), &test->opts, NULL, &test->error);
+}
+
+static void
 test_rename (session_test_t *test)
 {
    mongoc_collection_t *collection;
@@ -1693,6 +1707,8 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/update_many", test_update_many);
    add_session_test (suite, "/Session/insert_one", test_insert_one);
    add_session_test (suite, "/Session/insert_many", test_insert_many);
+   add_session_test (suite, "/Session/delete_one", test_delete_one);
+   add_session_test (suite, "/Session/delete_many", test_delete_many);
    add_session_test (suite, "/Session/rename", test_rename);
    add_session_test (suite, "/Session/fam", test_fam);
    add_session_test (suite, "/Session/db_drop", test_db_drop);

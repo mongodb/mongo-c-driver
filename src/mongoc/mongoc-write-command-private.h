@@ -108,6 +108,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_delete (mongoc_write_command_t *command,
                                    const bson_t *selectors,
+                                   const bson_t *cmd_opts,
                                    const bson_t *opts,
                                    mongoc_bulk_write_flags_t flags,
                                    int64_t operation_id);

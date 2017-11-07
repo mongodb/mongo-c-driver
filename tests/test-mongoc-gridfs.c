@@ -1125,8 +1125,8 @@ test_missing_chunk (void *ctx)
 
    /* chunks have n=0, 1, 2; remove the middle one */
    chunks = mongoc_gridfs_get_chunks (gridfs);
-   ret = mongoc_collection_remove (
-      chunks, MONGOC_REMOVE_NONE, tmp_bson ("{'n': 1}"), NULL, &error);
+   ret = mongoc_collection_delete_many (
+      chunks, tmp_bson ("{'n': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (ret, error);
 

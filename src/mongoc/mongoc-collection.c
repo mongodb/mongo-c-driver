@@ -2126,6 +2126,8 @@ mongoc_collection_save (mongoc_collection_t *collection,
  *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
  *       for @flags.
  *
+ *       Superseded by mongoc_collection_delete_one/many.
+ *
  * Parameters:
  *       @collection: A mongoc_collection_t.
  *       @flags: the delete flags or 0.
@@ -2178,6 +2180,7 @@ mongoc_collection_remove (mongoc_collection_t *collection,
    ++collection->client->cluster.operation_id;
    _mongoc_write_command_init_delete (&command,
                                       selector,
+                                      NULL,
                                       &opts,
                                       write_flags,
                                       collection->client->cluster.operation_id);
@@ -2213,6 +2216,94 @@ mongoc_collection_delete (mongoc_collection_t *collection,
                                     selector,
                                     write_concern,
                                     error);
+}
+
+
+static bool
+_mongoc_delete_one_or_many (mongoc_collection_t *collection,
+                            const bson_t *selector,
+                            const bson_t *opts,
+                            bson_t *reply,
+                            bson_error_t *error,
+                            bool is_multi)
+{
+   mongoc_write_opts_parsed_t parsed;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   bson_t limit_opt = BSON_INITIALIZER;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
+   }
+
+   /* limit of 0 or 1 is required for each delete operation */
+   bson_append_int32 (&limit_opt, "limit", 5, is_multi ? 0 : 1);
+
+   _mongoc_write_result_init (&result);
+
+   _mongoc_write_command_init_delete (
+      &command,
+      selector,
+      &parsed.copied_opts,
+      &limit_opt,
+      parsed.write_flags,
+      ++collection->client->cluster.operation_id);
+
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
+
+   /* set field described in CRUD spec for the DeleteResult */
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "deletedCount");
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
+   bson_destroy (&limit_opt);
+
+   RETURN (ret);
+}
+
+
+bool
+mongoc_collection_delete_one (mongoc_collection_t *collection,
+                              const bson_t *selector,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
+{
+   return _mongoc_delete_one_or_many (
+      collection, selector, opts, reply, error, false /* is_multi */);
+}
+
+
+bool
+mongoc_collection_delete_many (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   return _mongoc_delete_one_or_many (
+      collection, selector, opts, reply, error, true /* is_multi */);
 }
 
 

@@ -223,6 +223,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 void
 _mongoc_write_command_init_delete (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
+                                   const bson_t *cmd_opts,          /* IN */
                                    const bson_t *opts,              /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
                                    int64_t operation_id)            /* IN */
@@ -233,7 +234,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (selector);
 
    _mongoc_write_command_init_bulk (
-      command, MONGOC_WRITE_COMMAND_DELETE, flags, operation_id, NULL);
+      command, MONGOC_WRITE_COMMAND_DELETE, flags, operation_id, cmd_opts);
    _mongoc_write_command_delete_append (command, selector, opts);
 
    EXIT;

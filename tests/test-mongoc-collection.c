@@ -1338,8 +1338,7 @@ test_remove (void)
 
       bson_init (&b);
       bson_append_oid (&b, "_id", 3, &oid);
-      r = mongoc_collection_remove (
-         collection, MONGOC_REMOVE_NONE, &b, NULL, &error);
+      r = mongoc_collection_delete_many (collection, &b, NULL, NULL, &error);
       if (!r) {
          MONGOC_WARNING ("%s\n", error.message);
       }
@@ -1375,8 +1374,7 @@ test_remove_oversize (void *ctx)
    BSON_ASSERT (bson_append_utf8 (
       &doc, "y", 1, huge_string (client), (int) huge_string_length (client)));
 
-   r = mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, &doc, NULL, &error);
+   r = mongoc_collection_delete_many (collection, &doc, NULL, NULL, &error);
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_BSON, MONGOC_ERROR_BSON_INVALID, "too large");
@@ -1448,6 +1446,8 @@ test_remove_w0 (void)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t reply;
    bson_error_t error;
    bool r;
 
@@ -1455,11 +1455,14 @@ test_remove_w0 (void)
    collection = get_test_collection (client, "test_remove_w0");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
-   r = mongoc_collection_remove (
-      collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"), wc, &error);
+   mongoc_write_concern_append (wc, &opts);
+   r = mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), &opts, &reply, &error);
    ASSERT_OR_PRINT (r, error);
-   ASSERT (bson_empty (mongoc_collection_get_last_error (collection)));
+   ASSERT (bson_empty (&reply));
 
+   bson_destroy (&reply);
+   bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -4670,16 +4673,27 @@ _test_docs_in_coll_matches (mongoc_collection_t *coll,
    mongoc_cursor_destroy (cursor);
 }
 
+static void
+_test_no_docs_match (mongoc_collection_t *coll, const char *selector)
+{
+   bson_error_t error;
+   int64_t ret;
+
+   ret = mongoc_collection_count_with_opts (
+      coll, MONGOC_QUERY_NONE, tmp_bson (selector), 0, 0, NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret != -1, error);
+   ASSERT_CMPINT64 (ret, ==, (int64_t) 0);
+}
+
 typedef struct {
    const char *command_under_test;
    int commands_tested;
    const char *expected_command;
 } test_crud_ctx_t;
 
-/* Tests that update commands match the `expected_command` in the update ctx */
+/* Tests that commands match the `expected_command` in the update ctx */
 void
-_test_update_and_replace_command_start (
-   const mongoc_apm_command_started_t *event)
+_test_crud_command_start (const mongoc_apm_command_started_t *event)
 {
    const bson_t *cmd = mongoc_apm_command_started_get_command (event);
    const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
@@ -4719,8 +4733,7 @@ test_insert_one (void)
    mongoc_write_concern_set_journal (wc2, true);
 
    mongoc_collection_set_write_concern (coll, wc);
-   mongoc_apm_set_command_started_cb (callbacks,
-                                      _test_update_and_replace_command_start);
+   mongoc_apm_set_command_started_cb (callbacks, _test_crud_command_start);
    mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    mongoc_collection_drop (coll, NULL);
 
@@ -4852,8 +4865,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
    mongoc_write_concern_set_journal (wc2, true);
    mongoc_write_concern_append (wc2, &opts_with_wc2);
 
-   mongoc_apm_set_command_started_cb (callbacks,
-                                      _test_update_and_replace_command_start);
+   mongoc_apm_set_command_started_cb (callbacks, _test_crud_command_start);
    mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    mongoc_collection_drop (coll, NULL);
 
@@ -5099,6 +5111,131 @@ test_update_and_replace (void)
    /* Note, there is no multi replace */
 }
 
+typedef bool (*delete_fn_t) (mongoc_collection_t *,
+                             const bson_t *,
+                             const bson_t *,
+                             bson_t *,
+                             bson_error_t *);
+
+static void
+_test_delete_one_or_many (bool is_multi)
+{
+   delete_fn_t fn =
+      is_multi ? mongoc_collection_delete_many : mongoc_collection_delete_one;
+   bson_error_t err = {0};
+   bson_t reply;
+   bson_t opts_with_wc = BSON_INITIALIZER;
+   bool ret;
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_database_t *db = get_test_database (client);
+   mongoc_collection_t *coll = mongoc_database_get_collection (db, "coll");
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   mongoc_write_concern_t *wc2 = mongoc_write_concern_new ();
+   test_crud_ctx_t ctx;
+   mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+   int i;
+
+   ctx.command_under_test = "delete";
+   ctx.commands_tested = 0;
+
+   /* Give wc and wc2 different j values so we can distinguish them but make
+    * sure they have w:1 so the writes are committed when we check results */
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_set_w (wc2, 1);
+   mongoc_write_concern_set_journal (wc2, true);
+
+   mongoc_collection_set_write_concern (coll, wc);
+   mongoc_apm_set_command_started_cb (callbacks, _test_crud_command_start);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   mongoc_collection_drop (coll, NULL);
+
+   for (i = 0; i < 3; i++) {
+      ret = mongoc_collection_insert_one (
+         coll, tmp_bson ("{'_id': %d}", i), NULL, NULL, &err);
+      ASSERT_OR_PRINT (ret, err);
+   }
+
+   /* Test maxTimeMS */
+   ctx.expected_command = "{'delete': 'coll', 'maxTimeMS': 9999, "
+                          " 'writeConcern': {'w': 1, 'j': false}}";
+   ret = fn (coll,
+             tmp_bson ("{'_id': 1}"),
+             tmp_bson ("{'maxTimeMS': 9999}"),
+             &reply,
+             &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply, "{'deletedCount': 1}");
+   bson_destroy (&reply);
+   _test_no_docs_match (coll, "{'_id': 1}");
+
+   /* Test passing write concern through the options */
+   mongoc_write_concern_append (wc2, &opts_with_wc);
+   ctx.expected_command =
+      "{'delete': 'coll', 'writeConcern': {'w': 1, 'j': true}}";
+   ret = fn (coll, tmp_bson ("{'_id': 2}"), &opts_with_wc, &reply, &err);
+   ASSERT_OR_PRINT (ret, err);
+   ASSERT_MATCH (&reply, "{'deletedCount': 1}");
+   bson_destroy (&reply);
+   _test_no_docs_match (coll, "{'_id': 2}");
+
+   /* Test passing NULL for opts, reply, and error */
+   ctx.expected_command =
+      "{'delete': 'coll', 'writeConcern': {'w': 1, 'j': false}}";
+   ret = fn (coll, tmp_bson ("{'_id': 3}"), NULL, NULL, NULL);
+   ASSERT (ret);
+   _test_no_docs_match (coll, "{'_id': 3}");
+
+   /* Server error */
+   ret = fn (coll, tmp_bson ("{'_id': {'$foo': 1}}"), NULL, &reply, &err);
+   ASSERT (!ret);
+   ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_COLLECTION);
+   ASSERT_MATCH (&reply,
+                 "{'deletedCount': 0,"
+                 " 'writeErrors': ["
+                 "    {'index': 0,"
+                 "     'code': {'$exists': true},"
+                 "     'errmsg': {'$exists': true}}"
+                 "]}");
+   bson_destroy (&reply);
+   ASSERT_CMPINT (ctx.commands_tested, ==, 4);
+
+   if (test_framework_is_replset ()) {
+      /* Write concern error */
+      ctx.expected_command = "{'delete': 'coll',"
+                             " 'writeConcern': {'w': 99, 'wtimeout': 100}}";
+      ret = fn (coll,
+                tmp_bson ("{}"),
+                tmp_bson ("{'writeConcern': {'w': 99, 'wtimeout': 100}}"),
+                &reply,
+                &err);
+      ASSERT (!ret);
+      ASSERT_CMPUINT32 (err.domain, ==, (uint32_t) MONGOC_ERROR_WRITE_CONCERN);
+      ASSERT_MATCH (&reply,
+                    "{'deletedCount': 1,"
+                    " 'writeErrors': {'$exists': false},"
+                    " 'writeConcernErrors': {'$exists': true}"
+                    "}");
+      bson_destroy (&reply);
+      ASSERT_CMPINT (ctx.commands_tested, ==, 5);
+   }
+
+   bson_destroy (&opts_with_wc);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_write_concern_destroy (wc);
+   mongoc_write_concern_destroy (wc2);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_delete_one_or_many (void)
+{
+   _test_delete_one_or_many (true);
+   _test_delete_one_or_many (false);
+}
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -5276,4 +5413,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_one", test_insert_one);
    TestSuite_AddLive (
       suite, "/Collection/update_and_replace", test_update_and_replace);
+   TestSuite_AddLive (
+      suite, "/Collection/delete_one_or_many", test_delete_one_or_many);
 }

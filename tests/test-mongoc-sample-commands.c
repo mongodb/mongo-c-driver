@@ -2399,8 +2399,7 @@ test_example_57 (mongoc_database_t *db)
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW ("status", BCON_UTF8 ("A"));
 
-   /* MONGOC_REMOVE_NONE means "no special options" */
-   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
+   r = mongoc_collection_delete_many (collection, selector, NULL, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
@@ -2428,7 +2427,7 @@ test_example_58 (mongoc_database_t *db)
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW ("status", BCON_UTF8 ("D"));
 
-   r = mongoc_collection_remove (collection, MONGOC_REMOVE_SINGLE_REMOVE, selector, NULL, &error);
+   r = mongoc_collection_delete_one (collection, selector, NULL, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
@@ -2456,8 +2455,7 @@ test_example_56 (mongoc_database_t *db)
    collection = mongoc_database_get_collection (db, "inventory");
    selector = BCON_NEW (NULL);
 
-   /* MONGOC_REMOVE_NONE means "no special options" */
-   r = mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, selector, NULL, &error);
+   r = mongoc_collection_delete_many (collection, selector, NULL, NULL, &error);
    bson_destroy (selector);
 
    if (!r) {
