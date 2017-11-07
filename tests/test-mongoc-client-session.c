@@ -923,6 +923,7 @@ run_session_test (void *ctx)
    session_test_t *test;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
+   bson_t cluster_time;
    bool r;
 
    /*
@@ -944,18 +945,17 @@ run_session_test (void *ctx)
       test->session_collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
    mongoc_collection_drop_with_opts (test->session_collection, &opts, NULL);
+   bson_copy_to (&test->received_cluster_time, &cluster_time);
    BSON_ASSERT (_mongoc_cluster_time_greater (
-      &test->received_cluster_time,
-      mongoc_client_session_get_cluster_time (test->cs)));
+      &cluster_time, mongoc_client_session_get_cluster_time (test->cs)));
 
    capture_logs (true);
-   mongoc_client_session_advance_cluster_time (test->cs,
-                                               &test->received_cluster_time);
+   mongoc_client_session_advance_cluster_time (test->cs, &cluster_time);
    ASSERT_NO_CAPTURED_LOGS ("_mongoc_cluster_time_greater");
    capture_logs (false);
-   match_bson (&test->received_cluster_time,
-               mongoc_client_session_get_cluster_time (test->cs),
-               false);
+   /* successfully set, not yet sent to server */
+   match_bson (
+      &cluster_time, mongoc_client_session_get_cluster_time (test->cs), false);
 
    test->expect_lsid = true;
    test->n_started = 0;
@@ -964,6 +964,7 @@ run_session_test (void *ctx)
    ASSERT_CMPINT (test->n_started, >, 0);
    ASSERT_CMPINT (test->n_succeeded, >, 0);
    check_session_test (test);
+   match_bson (&cluster_time, &test->sent_cluster_time, false);
    check_cluster_time (test);
 
    /*

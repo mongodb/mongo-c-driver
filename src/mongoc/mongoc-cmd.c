@@ -338,6 +338,24 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
 }
 
 
+static const bson_t *
+_largest_cluster_time (const bson_t *a, const bson_t *b)
+{
+   if (!a) {
+      return b;
+   }
+
+   if (!b) {
+      return a;
+   }
+
+   if (_mongoc_cluster_time_greater (a, b)) {
+      return a;
+   }
+
+   return b;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -364,6 +382,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
+   const bson_t *cluster_time = NULL;
 
    ENTRY;
 
@@ -437,14 +456,20 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             "lsid",
             4,
             mongoc_client_session_get_lsid (parts->assembled.session));
+
+         cluster_time =
+            mongoc_client_session_get_cluster_time (parts->assembled.session);
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {
+         cluster_time =
+            _largest_cluster_time (&server_stream->cluster_time, cluster_time);
+      }
+
+      if (cluster_time) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (&parts->assembled_body,
-                               "$clusterTime",
-                               12,
-                               &server_stream->cluster_time);
+         bson_append_document (
+            &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
       RETURN (true);
