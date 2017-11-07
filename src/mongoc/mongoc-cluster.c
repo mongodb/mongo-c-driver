@@ -641,6 +641,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    mongoc_cmd_parts_init (
       &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, command);
+   parts.prohibit_lsid = true;
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, &error)) {
       mongoc_server_stream_cleanup (server_stream);

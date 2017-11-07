@@ -19,6 +19,7 @@
 #include "mongoc-error.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-client-session-private.h"
 
 #define CHANGE_STREAM_ERR(_str)         \
    bson_set_error (&stream->err,        \
@@ -37,6 +38,7 @@
 static void
 _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
 {
+   mongoc_client_session_t *cs = NULL;
    bson_t change_stream_stage; /* { $changeStream: <change_stream_doc> } */
    bson_t change_stream_doc;
    bson_t pipeline;
@@ -113,6 +115,13 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
       goto cleanup;
    }
 
+   if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
+      if (!_mongoc_client_session_from_iter (
+             stream->coll->client, &iter, &cs, &stream->err)) {
+         goto cleanup;
+      }
+   }
+
    server_id = mongoc_server_description_id (sd);
    bson_append_int32 (&command_opts, "serverId", 8, server_id);
 
@@ -128,6 +137,11 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
 
    stream->cursor = mongoc_cursor_new_from_command_reply (
       stream->coll->client, &reply, server_id); /* steals reply */
+
+   if (cs) {
+      stream->cursor->client_session = cs;
+      stream->cursor->explicit_session = 1;
+   }
 
    /* maxTimeMS is only appended to getMores if these are set in cursor opts */
    bson_append_bool (&stream->cursor->opts,

@@ -345,7 +345,8 @@ test_change_stream_live_track_resume_token (void *test_ctx)
                                mongoc_cursor_get_id (stream->cursor),
                                1 /* operation id */,
                                "db",
-                               "coll_resume");
+                               "coll_resume",
+                               NULL /* session */);
 
    /* Now that the cursor has been killed, the next call to next will have to
     * resume, forcing it to send the resumeAfter token in the aggregate cmd. */
@@ -971,7 +972,8 @@ test_change_stream_live_read_prefs (void *test_ctx)
                                mongoc_cursor_get_id (raw_cursor),
                                1 /* operation_id */,
                                "db",
-                               "coll_read_prefs");
+                               "coll_read_prefs",
+                               NULL /* session */);
 
    /* Change stream client will resume with another cursor. */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));

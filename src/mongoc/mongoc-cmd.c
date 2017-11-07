@@ -35,6 +35,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
    parts->is_write_command = false;
+   parts->prohibit_lsid = false;
    parts->client = client;
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
@@ -382,6 +383,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
+   mongoc_server_session_t *server_session;
    const bson_t *cluster_time = NULL;
 
    ENTRY;
@@ -459,6 +461,16 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
          cluster_time =
             mongoc_client_session_get_cluster_time (parts->assembled.session);
+      } else if (!parts->prohibit_lsid) {
+         /* try to use implicit session, but ignore errors */
+         server_session =
+            _mongoc_client_pop_server_session (parts->client, NULL);
+
+         if (server_session) {
+            bson_append_document (
+               &parts->assembled_body, "lsid", 4, &server_session->lsid);
+            _mongoc_client_push_server_session (parts->client, server_session);
+         }
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {

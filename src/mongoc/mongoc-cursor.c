@@ -223,6 +223,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    uint32_t server_id;
    bson_error_t validate_err;
    const char *dollar_field;
+   bson_iter_t iter;
 
    ENTRY;
 
@@ -275,7 +276,18 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          GOTO (finish);
       }
 
-      bson_copy_to_excluding_noinit (opts, &cursor->opts, "serverId", NULL);
+      if (bson_iter_init_find (&iter, opts, "sessionId")) {
+         if (!_mongoc_client_session_from_iter (
+                client, &iter, &cursor->client_session, &cursor->error)) {
+            MARK_FAILED (cursor);
+            GOTO (finish);
+         }
+
+         cursor->explicit_session = 1;
+      }
+
+      bson_copy_to_excluding_noinit (
+         opts, &cursor->opts, "serverId", "sessionId", NULL);
 
       /* true if there's a valid serverId or no serverId, false on err */
       if (!_mongoc_get_server_id_from_opts (opts,
@@ -538,12 +550,17 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
                                   cursor->rpc.reply.cursor_id,
                                   cursor->operation_id,
                                   db,
-                                  cursor->ns + cursor->dblen + 1);
+                                  cursor->ns + cursor->dblen + 1,
+                                  cursor->client_session);
    }
 
    if (cursor->reader) {
       bson_reader_destroy (cursor->reader);
       cursor->reader = NULL;
+   }
+
+   if (cursor->client_session && !cursor->explicit_session) {
+      mongoc_client_session_destroy (cursor->client_session);
    }
 
    _mongoc_buffer_destroy (&cursor->buffer);
@@ -1313,6 +1330,15 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       }
    }
 
+   if (!parts.assembled.session) {
+      /* no "sessionId" in opts, use the cursor's explicit session if any */
+      parts.assembled.session = cursor->client_session;
+   } else if (!cursor->client_session && parts.assembled.session) {
+      /* opts contains "sessionId" */
+      cursor->client_session = parts.assembled.session;
+      cursor->explicit_session = 1;
+   }
+
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
    parts.assembled.db_name = db;
 
@@ -1969,6 +1995,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    _clone->nslen = cursor->nslen;
    _clone->dblen = cursor->dblen;
    _clone->has_fields = cursor->has_fields;
+   _clone->explicit_session = cursor->explicit_session;
 
    if (cursor->read_prefs) {
       _clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
@@ -1978,6 +2005,9 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
       _clone->read_concern = mongoc_read_concern_copy (cursor->read_concern);
    }
 
+   if (cursor->explicit_session) {
+      _clone->client_session = cursor->client_session;
+   }
 
    bson_copy_to (&cursor->filter, &_clone->filter);
    bson_copy_to (&cursor->opts, &_clone->opts);

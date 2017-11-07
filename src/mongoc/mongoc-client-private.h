@@ -155,7 +155,8 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
                             int64_t cursor_id,
                             int64_t operation_id,
                             const char *db,
-                            const char *collection);
+                            const char *collection,
+                            mongoc_client_session_t *cs);
 bool
 _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   const char *db_name,

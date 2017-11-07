@@ -117,6 +117,7 @@ struct _mongoc_cursor_t {
    unsigned end_of_event : 1;
    unsigned has_fields : 1;
    unsigned in_exhaust : 1;
+   unsigned explicit_session : 1;
 
    bson_t filter;
    bson_t opts;
@@ -124,8 +125,8 @@ struct _mongoc_cursor_t {
 
    mongoc_read_concern_t *read_concern;
    mongoc_read_prefs_t *read_prefs;
-
    mongoc_write_concern_t *write_concern;
+   mongoc_client_session_t *client_session;
 
    uint32_t count;
 

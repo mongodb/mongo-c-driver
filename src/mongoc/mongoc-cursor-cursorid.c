@@ -170,6 +170,10 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 {
+   if (cursor->error.domain != 0) {
+      return false;
+   }
+
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
    return _mongoc_cursor_cursorid_refresh_from_command (

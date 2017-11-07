@@ -80,7 +80,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     mongoc_server_stream_t *server_stream,
                                     int64_t cursor_id,
                                     const char *db,
-                                    const char *collection);
+                                    const char *collection,
+                                    mongoc_client_session_t *cs);
 
 #define DNS_ERROR(_msg, ...)                               \
    do {                                                    \
@@ -1866,7 +1867,8 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
                             int64_t cursor_id,
                             int64_t operation_id,
                             const char *db,
-                            const char *collection)
+                            const char *collection,
+                            mongoc_client_session_t *cs)
 {
    mongoc_server_stream_t *server_stream;
 
@@ -1886,7 +1888,7 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    if (db && collection &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_KILLCURSORS_CMD) {
       _mongoc_client_killcursors_command (
-         &client->cluster, server_stream, cursor_id, db, collection);
+         &client->cluster, server_stream, cursor_id, db, collection, cs);
    } else {
       _mongoc_client_op_killcursors (&client->cluster,
                                      server_stream,
@@ -2083,7 +2085,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
                                     mongoc_server_stream_t *server_stream,
                                     int64_t cursor_id,
                                     const char *db,
-                                    const char *collection)
+                                    const char *collection,
+                                    mongoc_client_session_t *cs)
 {
    bson_t command = BSON_INITIALIZER;
    mongoc_cmd_parts_t parts;
@@ -2094,6 +2097,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (
       &parts, cluster->client, db, MONGOC_QUERY_SLAVE_OK, &command);
    parts.assembled.operation_id = ++cluster->operation_id;
+   parts.assembled.session = cs;
 
    if (mongoc_cmd_parts_assemble (&parts, server_stream, NULL)) {
       /* Find, getMore And killCursors Commands Spec: "The result from the
@@ -2173,7 +2177,8 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
                                   cursor_id,
                                   0 /* operation_id */,
                                   NULL /* db */,
-                                  NULL /* collection */);
+                                  NULL /* collection */,
+                                  NULL /* session */);
    } else {
       MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
    }
@@ -2594,6 +2599,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
       mongoc_cmd_parts_init (
          &parts, client, "admin", MONGOC_QUERY_SLAVE_OK, &cmd);
       parts.assembled.operation_id = ++cluster->operation_id;
+      parts.prohibit_lsid = true;
 
       r = mongoc_cmd_parts_assemble (&parts, stream, &error);
       if (!r) {
