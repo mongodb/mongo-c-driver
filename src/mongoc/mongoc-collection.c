@@ -2772,7 +2772,6 @@ mongoc_collection_find_and_modify_with_opts (
 
    parts.assembled.operation_id = ++cluster->operation_id;
    if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
-      bson_init (reply_ptr);
       bson_destroy (&command);
       mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (server_stream);
