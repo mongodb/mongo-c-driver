@@ -104,15 +104,15 @@ main (int argc, char *argv[])
    /* duplicate key error on the second insert */
    mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
 
-   printf ("started: %d\nsucceeded: %d\nfailed: %d\n",
-           stats.started,
-           stats.succeeded,
-           stats.failed);
-
    bson_destroy (&doc);
    mongoc_collection_destroy (collection);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_destroy (client);
+
+   printf ("started: %d\nsucceeded: %d\nfailed: %d\n",
+           stats.started,
+           stats.succeeded,
+           stats.failed);
 
    mongoc_cleanup ();
 

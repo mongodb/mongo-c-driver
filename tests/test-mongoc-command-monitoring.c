@@ -760,6 +760,7 @@ one_test (mongoc_collection_t *collection, bson_t *test)
 
 done:
    mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    context_destroy (&context);
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -1433,7 +1434,7 @@ _test_query_operation_id (bool pooled)
 
    mock_server_destroy (server);
 
-   /* client logs warning because it can't send killCursors */
+   /* client logs warning because it can't send killCursors or endSessions */
    capture_logs (true);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -1493,6 +1494,12 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
 {
    cmd_test_t *test;
 
+   if (!strcmp (mongoc_apm_command_started_get_command_name (event),
+                "endSessions")) {
+      /* the test is ending */
+      return;
+   }
+
    test = (cmd_test_t *) mongoc_apm_command_started_get_context (event);
    test->started_calls++;
    bson_destroy (&test->cmd);
@@ -1510,6 +1517,11 @@ static void
 cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
    cmd_test_t *test;
+
+   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
+                "endSessions")) {
+      return;
+   }
 
    test = (cmd_test_t *) mongoc_apm_command_succeeded_get_context (event);
    test->succeeded_calls++;
@@ -1597,9 +1609,9 @@ test_client_cmd (void)
    ASSERT_CMPINT (0, ==, test.succeeded_calls);
    ASSERT_CMPINT (1, ==, test.failed_calls);
 
-   cmd_test_cleanup (&test);
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
+   cmd_test_cleanup (&test);
 }
 
 
