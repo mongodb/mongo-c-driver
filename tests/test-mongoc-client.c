@@ -399,6 +399,10 @@ test_mongoc_client_authenticate (void *context)
       BSON_ASSERT (!r);
    }
 
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (auth_client);
+
    /*
     * Remove all test users.
     */
@@ -406,11 +410,8 @@ test_mongoc_client_authenticate (void *context)
    r = mongoc_database_remove_all_users (database, &error);
    BSON_ASSERT (r);
 
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
    bson_free (uri_str_no_auth);
    bson_free (uri_str_auth);
-   mongoc_client_destroy (auth_client);
    bson_destroy (&roles);
    bson_free (uri);
    bson_free (username);
