@@ -462,7 +462,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
          scanner_node->stream = NULL;
       }
    }
-   // Screw up the cache
+
+   /* screw up the cache */
    memcpy (client->cluster.scram_client_key, "foo", 3);
    cursor = mongoc_collection_find_with_opts (collection, &insert, NULL, NULL);
    capture_logs (true);
