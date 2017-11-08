@@ -958,7 +958,7 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    client->error_api_version = MONGOC_ERROR_API_VERSION_LEGACY;
    client->error_api_set = false;
    client->client_sessions = mongoc_set_new (8, NULL, NULL);
-   client->client_session_id_counter = 0;
+   client->csid_rand_seed = (unsigned int) bson_get_monotonic_time ();
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -1089,6 +1089,7 @@ mongoc_client_start_session (mongoc_client_t *client,
 {
    mongoc_server_session_t *ss;
    mongoc_client_session_t *cs;
+   uint32_t csid;
 
    ENTRY;
 
@@ -1097,16 +1098,16 @@ mongoc_client_start_session (mongoc_client_t *client,
       RETURN (NULL);
    }
 
-   cs = _mongoc_client_session_new (
-      client, ss, opts, client->client_session_id_counter++);
+   /* get a random internal id for the session, retrying on collision */
+   do {
+      csid = (uint32_t) _mongoc_rand_simple (&client->csid_rand_seed);
+   } while (mongoc_set_get (client->client_sessions, csid));
 
-   /* by the time counter wraps around, session id 0 should be long dead */
-   BSON_ASSERT (
-      !mongoc_set_get (client->client_sessions, cs->client_session_id));
+   cs = _mongoc_client_session_new (client, ss, opts, csid);
 
    /* remember session so if we see its client_session_id in a command, we can
     * find its lsid and clusterTime */
-   mongoc_set_add (client->client_sessions, cs->client_session_id, cs);
+   mongoc_set_add (client->client_sessions, csid, cs);
 
    RETURN (cs);
 }

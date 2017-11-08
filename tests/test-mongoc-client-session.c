@@ -722,6 +722,7 @@ typedef struct {
    mongoc_database_t *session_db, *db;
    mongoc_collection_t *session_collection, *collection;
    mongoc_client_session_t *cs;
+   mongoc_client_session_t *wrong_cs;
    bson_t opts;
    bson_error_t error;
    int n_started;
@@ -873,8 +874,12 @@ session_test_new (bool correct_client)
       test->db = test->session_db;
       test->collection = test->session_collection;
    } else {
+      /* test each function with a session from the correct client and a session
+       * from the wrong client */
       test->client = test_framework_client_new ();
       mongoc_client_set_error_api (test->client, 2);
+      test->wrong_cs = mongoc_client_start_session (test->client, NULL, &error);
+      ASSERT_OR_PRINT (test->wrong_cs, error);
       test->db = mongoc_client_get_database (test->client, "db");
       test->collection =
          mongoc_database_get_collection (test->db, "collection");
@@ -882,8 +887,6 @@ session_test_new (bool correct_client)
 
    set_session_test_callbacks (test);
 
-   /* test each function with a session from the correct client and a session
-    * from the wrong client */
    test->cs = mongoc_client_start_session (test->session_client, NULL, &error);
    ASSERT_OR_PRINT (test->cs, error);
 
@@ -933,6 +936,7 @@ session_test_destroy (session_test_t *test)
    check_session_returned (test, &test->sent_lsid);
 
    if (test->client != test->session_client) {
+      mongoc_client_session_destroy (test->wrong_cs);
       mongoc_collection_destroy (test->collection);
       mongoc_database_destroy (test->db);
       mongoc_client_destroy (test->client);

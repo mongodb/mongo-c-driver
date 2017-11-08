@@ -96,7 +96,7 @@ struct _mongoc_client_t {
 
    /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
    mongoc_set_t *client_sessions;
-   uint32_t client_session_id_counter;
+   unsigned int csid_rand_seed;
 };
 
 
