@@ -1001,6 +1001,7 @@ run_session_test (void *ctx)
    session_test_fn_t test_fn = (session_test_fn_t) ctx;
    session_test_t *test;
    bson_error_t error;
+   int64_t start;
    bson_t cluster_time;
    bool r;
 
@@ -1009,14 +1010,17 @@ run_session_test (void *ctx)
     *
     */
    test = session_test_new (true);
+   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, ==, (int64_t) -1);
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
 
+   start = bson_get_monotonic_time ();
    test_fn (test);
    ASSERT_CMPINT (test->n_started, >, 0);
    ASSERT_CMPINT (test->n_succeeded, >, 0);
    check_success (test);
    check_cluster_time (test);
+   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >, start);
 
    /*
     * disable monitoring, advance server's time with a write, set session's
@@ -1043,6 +1047,7 @@ run_session_test (void *ctx)
    set_session_test_callbacks (test);
    test->n_started = 0;
    test->n_succeeded = 0;
+   start = bson_get_monotonic_time ();
    test_fn (test);
    ASSERT_CMPINT (test->n_started, >, 0);
    ASSERT_CMPINT (test->n_succeeded, >, 0);
@@ -1055,6 +1060,7 @@ run_session_test (void *ctx)
    }
 
    check_cluster_time (test);
+   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >, start);
    session_test_destroy (test);
 
    /*
@@ -1075,9 +1081,13 @@ run_session_test (void *ctx)
     */
    test = session_test_new (true /* correct_client */);
    test->expect_explicit_lsid = false;
+   start = bson_get_monotonic_time ();
    test_fn (test);
    check_success (test);
    mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
+   BSON_ASSERT (test->client->topology->session_pool);
+   ASSERT_CMPINT64 (
+      test->client->topology->session_pool->last_used_usec, >, start);
    session_test_destroy (test);
    bson_destroy (&cluster_time);
 }

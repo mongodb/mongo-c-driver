@@ -459,6 +459,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             4,
             mongoc_client_session_get_lsid (parts->assembled.session));
 
+         parts->assembled.session->server_session->last_used_usec =
+            bson_get_monotonic_time ();
+
          cluster_time =
             mongoc_client_session_get_cluster_time (parts->assembled.session);
       } else if (!parts->prohibit_lsid) {
@@ -469,6 +472,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          if (server_session) {
             bson_append_document (
                &parts->assembled_body, "lsid", 4, &server_session->lsid);
+            server_session->last_used_usec = bson_get_monotonic_time ();
             _mongoc_client_push_server_session (parts->client, server_session);
          }
       }
