@@ -973,15 +973,30 @@ test_framework_get_unix_domain_socket_uri_str ()
 static void
 call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 {
+   char *user;
+   char *password;
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
-                                 host,
-                                 port,
-                                 test_framework_get_ssl () ? "/?ssl=true" : "");
+   if (test_framework_get_user_password (&user, &password)) {
+      uri_str =
+         bson_strdup_printf ("mongodb://%s:%s@%s:%hu%s",
+                             user,
+                             password,
+                             host,
+                             port,
+                             test_framework_get_ssl () ? "/?ssl=true" : "");
+      bson_free (user);
+      bson_free (password);
+   } else {
+      uri_str =
+         bson_strdup_printf ("mongodb://%s:%hu%s",
+                             host,
+                             port,
+                             test_framework_get_ssl () ? "/?ssl=true" : "");
+   }
 
    uri = mongoc_uri_new (uri_str);
    BSON_ASSERT (uri);
