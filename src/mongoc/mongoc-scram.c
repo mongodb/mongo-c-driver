@@ -172,6 +172,14 @@ _mongoc_scram_start (mongoc_scram_t *scram,
    BSON_ASSERT (outbufmax);
    BSON_ASSERT (outbuflen);
 
+   if (!scram->user) {
+      bson_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: username is not set");
+      goto FAIL;
+   }
+
    /* auth message is as big as the outbuf just because */
    scram->auth_message = (uint8_t *) bson_malloc (outbufmax);
    scram->auth_messagemax = outbufmax;

@@ -93,6 +93,8 @@ test_rpc_install (TestSuite *suite);
 extern void
 test_samples_install (TestSuite *suite);
 extern void
+test_scram_install (TestSuite *suite);
+extern void
 test_sdam_install (TestSuite *suite);
 extern void
 test_sdam_monitoring_install (TestSuite *suite);
@@ -2003,6 +2005,7 @@ main (int argc, char *argv[])
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
    test_samples_install (&suite);
+   test_scram_install (&suite);
    test_sdam_install (&suite);
    test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);

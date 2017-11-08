@@ -94,6 +94,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sample-commands.c \
+	tests/test-mongoc-scram.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
