@@ -1020,7 +1020,7 @@ run_session_test (void *ctx)
    ASSERT_CMPINT (test->n_succeeded, >, 0);
    check_success (test);
    check_cluster_time (test);
-   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >, start);
+   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >=, start);
 
    /*
     * disable monitoring, advance server's time with a write, set session's
@@ -1060,7 +1060,7 @@ run_session_test (void *ctx)
    }
 
    check_cluster_time (test);
-   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >, start);
+   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >=, start);
    session_test_destroy (test);
 
    /*
@@ -1087,7 +1087,7 @@ run_session_test (void *ctx)
    mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
    BSON_ASSERT (test->client->topology->session_pool);
    ASSERT_CMPINT64 (
-      test->client->topology->session_pool->last_used_usec, >, start);
+      test->client->topology->session_pool->last_used_usec, >=, start);
    session_test_destroy (test);
    bson_destroy (&cluster_time);
 }
