@@ -3227,6 +3227,7 @@ test_bulk_max_msg_size (void)
    int str_size = 16 * 1024 * 1024 - 24;
    char *msg = bson_malloc (str_size + 1);
    int filler_string = 14445428;
+   mongoc_client_session_t *cs;
 
    memset (msg, 'a', str_size);
    msg[str_size] = '\0';
@@ -3250,6 +3251,14 @@ test_bulk_max_msg_size (void)
    if (!bson_empty (&client->topology->description.cluster_time)) {
       filler_string -= client->topology->description.cluster_time.len +
                        strlen ("$clusterTime") + 2;
+   }
+
+   cs = mongoc_client_start_session (client, NULL, NULL);
+   if (cs) {
+      /* sessions are supported */
+      filler_string -=
+         mongoc_client_session_get_lsid (cs)->len + strlen ("lsid") + 2;
+      ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
    }
 
    /* {{{ Exactly 48 000 000 bytes (not to be confused with 48mb!) */
@@ -3318,6 +3327,9 @@ test_bulk_max_msg_size (void)
    mongoc_collection_drop (collection, NULL);
    /* }}} */
 
+   if (cs) {
+      mongoc_client_session_destroy (cs);
+   }
 
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
