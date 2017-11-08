@@ -2544,12 +2544,12 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
-   if (mongoc_cmd_is_compressable (cmd)) {
+   if (mongoc_cmd_is_compressible (cmd)) {
       int32_t compressor_id =
          mongoc_server_description_compressor_id (server_stream->sd);
 
       TRACE (
-         "Function '%s' is compressable: %d", cmd->command_name, compressor_id);
+         "Function '%s' is compressible: %d", cmd->command_name, compressor_id);
       if (compressor_id != -1) {
          output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
          if (output == NULL) {

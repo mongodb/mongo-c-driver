@@ -84,7 +84,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error);
 
 bool
-mongoc_cmd_is_compressable (mongoc_cmd_t *cmd);
+mongoc_cmd_is_compressible (mongoc_cmd_t *cmd);
 
 void
 mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *op);
