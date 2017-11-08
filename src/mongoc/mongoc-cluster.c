@@ -82,6 +82,12 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
+static bool
+mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
+                          mongoc_cmd_t *cmd,
+                          bson_t *reply,
+                          bson_error_t *error);
+
 static void
 _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
@@ -2477,7 +2483,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    RETURN (true);
 }
 
-bool
+static bool
 mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                           mongoc_cmd_t *cmd,
                           bson_t *reply,

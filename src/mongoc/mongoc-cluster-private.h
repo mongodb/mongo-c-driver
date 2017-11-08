@@ -164,12 +164,6 @@ _mongoc_cluster_build_sasl_continue (bson_t *cmd,
 int
 _mongoc_cluster_get_conversation_id (const bson_t *reply);
 
-bool
-mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
-                          mongoc_cmd_t *cmd,
-                          bson_t *reply,
-                          bson_error_t *error);
-
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
                                       uint32_t server_id,
