@@ -6516,6 +6516,8 @@ buildvariants:
     - ".3.2 .nossl !.nosasl"
     - ".3.0 .openssl !.nosasl !.auth"
     - ".2.6 .openssl !.nosasl !.auth"
+    - ".latest .openssl .nosasl .replica-set"
+    - ".latest .openssl !.nosasl .replica-set"
       # Ubuntu 14.04 only supports 2.6+ with SSL
 
 - name: gcc48rhel
