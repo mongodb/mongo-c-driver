@@ -1453,6 +1453,7 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 {
    const char *collection;
    int collection_len;
+   bool is_primary;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command,
@@ -1471,6 +1472,22 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
                             MONGOC_CURSOR_READ_CONCERN,
                             MONGOC_CURSOR_READ_CONCERN_LEN,
                             read_concern_bson);
+   }
+
+   is_primary =
+      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
+
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
+       cursor->server_id_set && is_primary) {
+      bson_t prefs;
+
+      /* we might use mongoc_cursor_set_hint to target a secondary but have no
+       * read preference, so the secondary rejects the read. with OP_QUERY we
+       * handle this by setting slaveOk, here we must use $readPreference.
+       */
+      BSON_APPEND_DOCUMENT_BEGIN (command, "$readPreference", &prefs);
+      BSON_APPEND_UTF8 (&prefs, "mode", "primaryPreferred");
+      bson_append_document_end (command, &prefs);
    }
 
    return true;
