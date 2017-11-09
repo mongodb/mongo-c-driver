@@ -197,7 +197,7 @@ _test_last_write_date (bool pooled)
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (1000 * 1000);
+   _mongoc_usleep (2000 * 1000);
    s0 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
@@ -205,7 +205,7 @@ _test_last_write_date (bool pooled)
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (1000 * 1000);
+   _mongoc_usleep (2000 * 1000);
    s1 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
@@ -313,13 +313,15 @@ test_client_max_staleness_install (TestSuite *suite)
                       test_last_write_date,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_5);
+                      test_framework_skip_if_not_rs_version_5,
+                      test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date/pooled",
                       test_last_write_date_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_5);
+                      test_framework_skip_if_not_rs_version_5,
+                      test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent",
                       test_last_write_date_absent,
