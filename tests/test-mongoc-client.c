@@ -432,6 +432,7 @@ test_mongoc_client_authenticate_cached (bool pooled)
    bson_error_t error;
    bool r;
    int i = 0;
+   uint32_t server_id;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
@@ -450,14 +451,15 @@ test_mongoc_client_authenticate_cached (bool pooled)
       r = mongoc_cursor_next (cursor, &doc);
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
       ASSERT (r);
+      server_id = mongoc_cursor_get_hint (cursor);
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
          mongoc_cluster_disconnect_node (
-            &client->cluster, 1, false /* invalidate */, NULL);
+            &client->cluster, server_id, false /* invalidate */, NULL);
       } else {
-         scanner_node =
-            mongoc_topology_scanner_get_node (client->topology->scanner, 1);
+         scanner_node = mongoc_topology_scanner_get_node (
+            client->topology->scanner, server_id);
          mongoc_stream_destroy (scanner_node->stream);
          scanner_node->stream = NULL;
       }
