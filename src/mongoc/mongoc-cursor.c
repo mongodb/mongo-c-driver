@@ -2225,16 +2225,21 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
 {
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
 
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
+   bson_copy_to_excluding_noinit (
+      reply, &opts, "cursor", "ok", "operationTime", "$clusterTime", NULL);
+
    cursor = _mongoc_cursor_new_with_opts (
-      client, NULL, true /* is_find */, NULL, NULL, NULL, NULL);
+      client, NULL, true /* is_find */, NULL, &opts, NULL, NULL);
 
    _mongoc_cursor_cursorid_init (cursor, &cmd);
    _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);
    bson_destroy (&cmd);
+   bson_destroy (&opts);
 
    return cursor;
 }

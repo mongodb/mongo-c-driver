@@ -671,6 +671,64 @@ test_cursor_new_invalid (void)
 
 
 static void
+test_cursor_new_tailable_await (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   cursor = mongoc_cursor_new_from_command_reply (
+      client,
+      bson_copy (tmp_bson ("{'ok': 1,"
+                           " 'cursor': {"
+                           "    'id': {'$numberLong': '123'},"
+                           "    'ns': 'db.collection',"
+                           "    'firstBatch': []"
+                           " },"
+                           " 'tailable': true,"
+                           " 'awaitData': true,"
+                           " 'maxAwaitTimeMS': 100"
+                           "}")),
+      0);
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (server,
+                                           "db",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           "{'getMore': {'$numberLong': '123'},"
+                                           " 'collection': 'collection',"
+                                           " 'maxTimeMS': 100"
+                                           "}");
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_SLAVE_OK,
+                                0 /* cursor id */,
+                                1 /* number returned */,
+                                "db.collection",
+                                "{'_id': 1}",
+                                true);
+
+   BSON_ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 1}");
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_cursor_new_invalid_filter (void)
 {
    mongoc_client_t *client;
@@ -1615,6 +1673,8 @@ test_cursor_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
    TestSuite_AddLive (
       suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
    TestSuite_AddLive (
