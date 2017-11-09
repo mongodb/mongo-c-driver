@@ -314,7 +314,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
 
    /* Insert a few docs to listen for. Use write concern majority, so subsequent
     * call to watch will be guaranteed to retrieve them. */
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 30000);
    mongoc_write_concern_append (wc, &opts);
    ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
@@ -422,6 +422,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    mongoc_apm_callbacks_t *callbacks;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_t opts = BSON_INITIALIZER;
+   bson_error_t err;
    uint32_t i;
 
    client = test_framework_client_new ();
@@ -448,11 +449,12 @@ test_change_stream_live_batch_size (void *test_ctx)
 
    ctx.expected_getmore_batch_size = 1;
 
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 30000);
    mongoc_write_concern_append (wc, &opts);
    for (i = 0; i < 10; i++) {
       bson_t *doc = BCON_NEW ("_id", BCON_INT32 (i));
-      ASSERT (mongoc_collection_insert_one (coll, doc, &opts, NULL, NULL));
+      ASSERT_OR_PRINT (
+         mongoc_collection_insert_one (coll, doc, &opts, NULL, &err), err);
       bson_free (doc);
    }
 
@@ -463,7 +465,8 @@ test_change_stream_live_batch_size (void *test_ctx)
 
    ctx.expected_getmore_batch_size = 0;
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
    ASSERT (next_doc == NULL);
 
    /* 10 getMores for results, 1 for initial next, 1 for last empty next */
@@ -503,9 +506,10 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
       coll, tmp_bson ("{'pipeline': [{'$project': {'_id': 0 }}]}"), NULL);
 
    ASSERT (stream);
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
 
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 30000);
    mongoc_write_concern_append (wc, &opts);
    ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 2}"), &opts, NULL, &err),
@@ -616,7 +620,8 @@ test_change_stream_resumable_error ()
                                "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    request_destroy (request);
    ASSERT (!future_get_bool (future));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
@@ -651,7 +656,8 @@ test_change_stream_resumable_error ()
                                "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    request_destroy (request);
    ASSERT (!future_get_bool (future));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
@@ -780,7 +786,7 @@ test_change_stream_options (void)
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *next_doc = NULL;
-
+   bson_error_t err;
 
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
@@ -844,7 +850,8 @@ test_change_stream_options (void)
                                "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
    request_destroy (request);
    ASSERT (!future_get_bool (future));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
@@ -866,20 +873,23 @@ test_change_stream_live_watch (void *test_ctx)
    mongoc_change_stream_t *stream;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_t opts = BSON_INITIALIZER;
+   bson_error_t err;
 
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 30000);
 
    coll = drop_and_get_coll (client, "db", "coll_watch");
    ASSERT (coll);
 
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
 
    /* Test that inserting a doc produces the expected change stream doc */
    mongoc_write_concern_append (wc, &opts);
-   ASSERT (
-      mongoc_collection_insert_one (coll, inserted_doc, &opts, NULL, NULL));
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, inserted_doc, &opts, NULL, &err),
+      err);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
@@ -899,12 +909,14 @@ test_change_stream_live_watch (void *test_ctx)
       "'fullDocument': { '_id': { '$exists': true }, 'x': 'y' }}");
 
    /* Test updating a doc */
-   ASSERT (mongoc_collection_update (coll,
-                                     MONGOC_UPDATE_NONE,
-                                     tmp_bson ("{}"),
-                                     tmp_bson ("{'$set': {'x': 'z'} }"),
-                                     wc,
-                                     NULL));
+   ASSERT_OR_PRINT (
+      mongoc_collection_update (coll,
+                                MONGOC_UPDATE_NONE,
+                                tmp_bson ("{}"),
+                                tmp_bson ("{'$set': {'x': 'z'} }"),
+                                wc,
+                                &err),
+      err);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
@@ -966,7 +978,8 @@ test_change_stream_live_read_prefs (void *test_ctx)
 
    /* Call next to create the cursor, should return no documents. */
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
-   ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
 
    _mongoc_client_kill_cursor (client,
                                raw_cursor->server_id,

@@ -28,7 +28,7 @@ main ()
    coll = mongoc_client_get_collection (client, "db", "coll");
    stream = mongoc_collection_watch (coll, &empty, NULL);
 
-   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_write_concern_set_wmajority (wc, 10000);
    mongoc_write_concern_append (wc, &opts);
    r = mongoc_collection_insert_one (coll, to_insert, &opts, NULL, &err);
    if (!r) {
