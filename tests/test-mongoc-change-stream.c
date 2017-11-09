@@ -507,8 +507,9 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
 
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_write_concern_append (wc, &opts);
-   ASSERT (mongoc_collection_insert_one (
-      coll, tmp_bson ("{'_id': 2}"), &opts, NULL, NULL));
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 2}"), &opts, NULL, &err),
+                    err);
 
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (mongoc_change_stream_error_document (stream, &err, NULL));
