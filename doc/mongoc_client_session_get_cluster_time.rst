@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const bson_t *
-  mongoc_client_session_get_cluster_time (mongoc_client_session_t *session);
+  mongoc_client_session_get_cluster_time (const mongoc_client_session_t *session);
 
 Get the session's clusterTime, as a BSON document.
 

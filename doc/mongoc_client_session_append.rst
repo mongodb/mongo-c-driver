@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_client_session_append (mongoc_client_session_t *client_session,
+  mongoc_client_session_append (const mongoc_client_session_t *client_session,
                                 bson_t *opts,
                                 bson_error_t *error);
 
