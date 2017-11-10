@@ -11,7 +11,7 @@ Synopsis
   bool
   mongoc_session_opts_get_causal_consistency (mongoc_session_opt_t *opts);
 
-Return true if this session is configured for causal consistency, else false (the default). See :symbol:`mongoc_session_opts_set_causal_consistency()`.
+Return true if this session is configured for causal consistency (the default), else false. See :symbol:`mongoc_session_opts_set_causal_consistency()`.
 
 Parameters
 ----------

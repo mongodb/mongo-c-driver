@@ -20,14 +20,15 @@ test_session_opts_clone (void)
 
    opts = mongoc_session_opts_new ();
    clone = mongoc_session_opts_clone (opts);
-   BSON_ASSERT (!mongoc_session_opts_get_causal_consistency (clone));
-   mongoc_session_opts_destroy (clone);
-
-   mongoc_session_opts_set_causal_consistency (opts, true);
-   clone = mongoc_session_opts_clone (opts);
+   /* causal is enabled by default */
    BSON_ASSERT (mongoc_session_opts_get_causal_consistency (clone));
    mongoc_session_opts_destroy (clone);
 
+   mongoc_session_opts_set_causal_consistency (opts, false);
+   clone = mongoc_session_opts_clone (opts);
+   BSON_ASSERT (!mongoc_session_opts_get_causal_consistency (clone));
+
+   mongoc_session_opts_destroy (clone);
    mongoc_session_opts_destroy (opts);
 }
 
@@ -652,10 +653,10 @@ test_end_sessions_pooled (void *ctx)
 }
 
 static void
-_test_advance (mongoc_client_session_t *cs,
-               int new_timestamp,
-               int new_increment,
-               bool should_advance)
+_test_advance_cluster_time (mongoc_client_session_t *cs,
+                            int new_timestamp,
+                            int new_increment,
+                            bool should_advance)
 {
    bson_t *old_cluster_time;
    bson_t *new_cluster_time;
@@ -707,10 +708,68 @@ test_session_advance_cluster_time (void *ctx)
    mongoc_client_session_advance_cluster_time (
       cs, tmp_bson ("{'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}"));
 
-   _test_advance (cs, 1, 0, false);
-   _test_advance (cs, 2, 2, true);
-   _test_advance (cs, 2, 1, false);
-   _test_advance (cs, 3, 1, true);
+   _test_advance_cluster_time (cs, 1, 0, false);
+   _test_advance_cluster_time (cs, 2, 2, true);
+   _test_advance_cluster_time (cs, 2, 1, false);
+   _test_advance_cluster_time (cs, 3, 1, true);
+
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+_test_advance_operation_time (mongoc_client_session_t *cs,
+                              uint32_t t,
+                              uint32_t i,
+                              bool should_advance)
+{
+   uint32_t old_t, old_i;
+   uint32_t new_t, new_i;
+
+   mongoc_client_session_get_operation_time (cs, &old_t, &old_i);
+   mongoc_client_session_advance_operation_time (cs, t, i);
+   mongoc_client_session_get_operation_time (cs, &new_t, &new_i);
+
+   if (should_advance) {
+      ASSERT_CMPUINT32 (new_t, ==, t);
+      ASSERT_CMPUINT32 (new_i, ==, i);
+   } else if (new_t == t && new_i == i) {
+      fprintf (stderr,
+               "Shouldn't have advanced from operationTime %" PRIu32
+               ", %" PRIu32 " to %" PRIu32 ", %" PRIu32 "\n",
+               old_t,
+               old_i,
+               t,
+               i);
+      abort ();
+   }
+}
+
+
+static void
+test_session_advance_operation_time (void *ctx)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *cs;
+   uint32_t t, i;
+
+   client = test_framework_client_new ();
+   cs = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+   mongoc_client_session_get_operation_time (cs, &t, &i);
+
+   ASSERT_CMPUINT32 (t, ==, 0);
+   ASSERT_CMPUINT32 (t, ==, 0);
+
+
+   mongoc_client_session_advance_operation_time (cs, 1, 1);
+
+   _test_advance_operation_time (cs, 1, 0, false);
+   _test_advance_operation_time (cs, 2, 2, true);
+   _test_advance_operation_time (cs, 2, 1, false);
+   _test_advance_operation_time (cs, 3, 1, true);
 
    mongoc_client_session_destroy (cs);
    mongoc_client_destroy (client);
@@ -1690,6 +1749,13 @@ test_session_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Session/advance_cluster_time",
                       test_session_advance_cluster_time,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_no_sessions);
+   TestSuite_AddFull (suite,
+                      "/Session/advance_operation_time",
+                      test_session_advance_operation_time,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,

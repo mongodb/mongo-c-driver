@@ -13,7 +13,6 @@ main (int argc, char *argv[])
    int exit_code = EXIT_FAILURE;
 
    mongoc_client_t *client;
-   mongoc_session_opt_t *opts = NULL;
    mongoc_client_session_t *client_session = NULL;
    mongoc_collection_t *collection = NULL;
    const char *uristr = "mongodb://127.0.0.1/?appname=session-example";
@@ -43,11 +42,8 @@ main (int argc, char *argv[])
 
    mongoc_client_set_error_api (client, 2);
 
-   opts = mongoc_session_opts_new ();
-   mongoc_session_opts_set_causal_consistency (opts, true);
-   client_session = mongoc_client_start_session (client, opts, &error);
-   mongoc_session_opts_destroy (opts);
-
+   /* pass NULL for options - by default the session is causally consistent */
+   client_session = mongoc_client_start_session (client, NULL, &error);
    if (!client_session) {
       fprintf (stderr, "Failed to start session: %s\n", error.message);
       goto done;

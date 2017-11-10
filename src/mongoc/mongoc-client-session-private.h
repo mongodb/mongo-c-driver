@@ -26,7 +26,7 @@
 
 typedef enum {
    MONGOC_SESSION_NO_OPTS = 0,
-   MONGOC_SESSION_CAUSALLY_CONSISTENT_READS = (1 << 0),
+   MONGOC_SESSION_CAUSAL_CONSISTENCY = (1 << 0),
 } mongoc_session_flag_t;
 
 struct _mongoc_session_opt_t {
@@ -45,6 +45,8 @@ struct _mongoc_client_session_t {
    mongoc_server_session_t *server_session;
    uint32_t client_session_id;
    bson_t cluster_time;
+   uint32_t operation_timestamp;
+   uint32_t operation_increment;
 };
 
 bool

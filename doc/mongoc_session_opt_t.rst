@@ -3,12 +3,18 @@
 mongoc_session_opt_t
 ====================
 
+.. code-block:: c
+
+  #include <mongoc.h>
+
+  typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
+
 Synopsis
 --------
 
 .. include:: includes/session-lifecycle.txt
 
-See the example code for :symbol:`mongoc_client_session_t`.
+See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
 
 .. only:: html
 

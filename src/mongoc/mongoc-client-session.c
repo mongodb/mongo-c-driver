@@ -182,18 +182,28 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
    uint32_t len;
    const uint8_t *data;
    bson_t cluster_time;
+   uint32_t t;
+   uint32_t i;
 
    BSON_ASSERT (session);
 
-   if (!reply || !bson_iter_init_find (&iter, reply, "$clusterTime") ||
-       !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+   if (!reply || !bson_iter_init (&iter, reply)) {
       return;
    }
 
-   bson_iter_document (&iter, &len, &data);
-   bson_init_static (&cluster_time, data, (size_t) len);
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "$clusterTime") &&
+          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_iter_document (&iter, &len, &data);
+         bson_init_static (&cluster_time, data, (size_t) len);
 
-   mongoc_client_session_advance_cluster_time (session, &cluster_time);
+         mongoc_client_session_advance_cluster_time (session, &cluster_time);
+      } else if (!strcmp (bson_iter_key (&iter), "operationTime") &&
+                 BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
+         bson_iter_timestamp (&iter, &t, &i);
+         mongoc_client_session_advance_operation_time (session, t, i);
+      }
+   }
 }
 
 
@@ -281,7 +291,8 @@ _mongoc_client_session_new (mongoc_client_t *client,
    if (opts) {
       _mongoc_session_opts_copy (opts, &session->opts);
    } else {
-      session->opts.flags = MONGOC_SESSION_NO_OPTS;
+      /* sessions are causally consistent by default */
+      session->opts.flags = MONGOC_SESSION_CAUSAL_CONSISTENCY;
    }
 
    RETURN (session);
