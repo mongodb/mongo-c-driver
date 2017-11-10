@@ -25,7 +25,12 @@
 mongoc_session_opt_t *
 mongoc_session_opts_new (void)
 {
-   return bson_malloc0 (sizeof (mongoc_session_opt_t));
+   mongoc_session_opt_t *opts = bson_malloc0 (sizeof (mongoc_session_opt_t));
+
+   /* Driver Sessions Spec: causal consistency is true by default */
+   mongoc_session_opts_set_causal_consistency (opts, true);
+
+   return opts;
 }
 
 
@@ -38,9 +43,9 @@ mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
    BSON_ASSERT (opts);
 
    if (causal_consistency) {
-      opts->flags |= MONGOC_SESSION_CAUSALLY_CONSISTENT_READS;
+      opts->flags |= MONGOC_SESSION_CAUSAL_CONSISTENCY;
    } else {
-      opts->flags &= ~MONGOC_SESSION_CAUSALLY_CONSISTENT_READS;
+      opts->flags &= ~MONGOC_SESSION_CAUSAL_CONSISTENCY;
    }
 
    EXIT;
@@ -53,7 +58,7 @@ mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
 
    BSON_ASSERT (opts);
 
-   RETURN (!!(opts->flags & MONGOC_SESSION_CAUSALLY_CONSISTENT_READS));
+   RETURN (!!(opts->flags & MONGOC_SESSION_CAUSAL_CONSISTENCY));
 }
 
 
@@ -360,6 +365,37 @@ mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
    EXIT;
 }
 
+void
+mongoc_client_session_get_operation_time (
+   const mongoc_client_session_t *session,
+   uint32_t *timestamp,
+   uint32_t *increment)
+{
+   BSON_ASSERT (session);
+   BSON_ASSERT (timestamp);
+   BSON_ASSERT (increment);
+
+   *timestamp = session->operation_timestamp;
+   *increment = session->operation_increment;
+}
+
+void
+mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
+                                              uint32_t timestamp,
+                                              uint32_t increment)
+{
+   BSON_ASSERT (session);
+
+   if (timestamp > session->operation_timestamp ||
+       (timestamp == session->operation_timestamp &&
+        increment > session->operation_increment)) {
+      session->operation_timestamp = timestamp;
+      session->operation_increment = increment;
+   }
+
+   EXIT;
+}
+
 bool
 _mongoc_client_session_from_iter (mongoc_client_t *client,
                                   bson_iter_t *iter,
@@ -383,7 +419,7 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
 
 
 bool
-mongoc_client_session_append (mongoc_client_session_t *client_session,
+mongoc_client_session_append (const mongoc_client_session_t *client_session,
                               bson_t *opts,
                               bson_error_t *error)
 {

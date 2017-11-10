@@ -14,6 +14,8 @@ Synopsis
 
 Advance the cluster time for a session. Has an effect only if the new cluster time is greater than the session's current cluster time.
 
+Use :symbol:`mongoc_client_session_advance_operation_time` and :symbol:`mongoc_client_session_advance_cluster_time` to copy the operationTime and clusterTime from another session, ensuring subsequent operations in this session are causally consistent with the last operation in the other session
+
 Parameters
 ----------
 

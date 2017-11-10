@@ -60,8 +60,19 @@ MONGOC_EXPORT (void)
 mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
                                             const bson_t *cluster_time);
 
+MONGOC_EXPORT (void)
+mongoc_client_session_get_operation_time (
+   const mongoc_client_session_t *session,
+   uint32_t *timestamp,
+   uint32_t *increment);
+
+MONGOC_EXPORT (void)
+mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
+                                              uint32_t timestamp,
+                                              uint32_t increment);
+
 MONGOC_EXPORT (bool)
-mongoc_client_session_append (mongoc_client_session_t *client_session,
+mongoc_client_session_append (const mongoc_client_session_t *client_session,
                               bson_t *opts,
                               bson_error_t *error);
 
