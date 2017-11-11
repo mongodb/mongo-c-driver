@@ -56,6 +56,7 @@ typedef struct _mongoc_cmd_parts_t {
    mongoc_cmd_t assembled;
    mongoc_query_flags_t user_query_flags;
    const bson_t *body;
+   bson_t read_concern_document;
    bson_t extra;
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;

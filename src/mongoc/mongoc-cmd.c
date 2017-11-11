@@ -37,6 +37,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
    parts->client = client;
+   bson_init (&parts->read_concern_document);
    bson_init (&parts->extra);
    bson_init (&parts->assembled_body);
 
@@ -106,14 +107,9 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
    bool is_fam;
    mongoc_client_session_t *cs = NULL;
    mongoc_write_concern_t *wc;
-   /* operationTime timestamp and increment */
-   uint32_t op_t = 0;
-   uint32_t op_i = 0;
-   bool has_read_concern = false;
    uint32_t len;
    const uint8_t *data;
    bson_t read_concern;
-   bson_t child;
 
    ENTRY;
 
@@ -141,6 +137,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 
          if ((is_fam && max_wire_version < WIRE_VERSION_FAM_WRITE_CONCERN) ||
              (!is_fam && max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN)) {
+            mongoc_write_concern_destroy (wc);
             continue;
          }
 
@@ -165,9 +162,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          }
 
          /* add readConcern later, once we know about causal consistency */
-         has_read_concern = true;
          bson_iter_document (iter, &len, &data);
          bson_init_static (&read_concern, data, (size_t) len);
+         bson_destroy (&parts->read_concern_document);
+         bson_copy_to (&read_concern, &parts->read_concern_document);
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
          BSON_ASSERT (!parts->assembled.session);
@@ -185,22 +183,6 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       }
 
       bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter);
-   }
-
-   if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts)) {
-      mongoc_client_session_get_operation_time (cs, &op_t, &op_i);
-      if (op_t || op_i) {
-         bson_append_document_begin (&parts->extra, "readConcern", 11, &child);
-         if (has_read_concern) {
-            /* combine user's readConcern with afterClusterTime */
-            bson_concat (&child, &read_concern);
-         }
-
-         bson_append_timestamp (&child, "afterClusterTime", 16, op_t, op_i);
-         bson_append_document_end (&parts->extra, &child);
-      }
-   } else if (has_read_concern) {
-      bson_append_document (&parts->extra, "readConcern", 11, &read_concern);
    }
 
    RETURN (true);
@@ -317,7 +299,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    }
 
    if (add_read_prefs) {
-      /* produce {$query: {user query}, $readPreference: ... } */
+      /* produce {$query: {user query, readConcern}, $readPreference: ... } */
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
 
       if (bson_iter_init_find (&dollar_query, parts->body, "$query")) {
@@ -329,6 +311,11 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       }
 
       bson_concat (&query, &parts->extra);
+      if (!bson_empty (&parts->read_concern_document)) {
+         bson_append_document (
+            &query, "readConcern", 11, &parts->read_concern_document);
+      }
+
       bson_append_document_end (&parts->assembled_body, &query);
       _mongoc_cmd_parts_add_read_prefs (
          &parts->assembled_body, parts->read_prefs, server_stream);
@@ -345,12 +332,25 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
       _iter_concat (&query, &dollar_query);
       bson_concat (&query, &parts->extra);
+      if (!bson_empty (&parts->read_concern_document)) {
+         bson_append_document (
+            &query, "readConcern", 11, &parts->read_concern_document);
+      }
+
       bson_append_document_end (&parts->assembled_body, &query);
       /* copy anything that isn't in user's $query */
       bson_copy_to_excluding_noinit (
          parts->body, &parts->assembled_body, "$query", NULL);
 
       parts->assembled.command = &parts->assembled_body;
+   }
+
+   if (!bson_empty (&parts->read_concern_document)) {
+      _mongoc_cmd_parts_ensure_copied (parts);
+      bson_append_document (&parts->assembled_body,
+                            "readConcern",
+                            11,
+                            &parts->read_concern_document);
    }
 
    if (!bson_empty (&parts->extra)) {
@@ -406,6 +406,14 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       _mongoc_cmd_parts_ensure_copied (parts);
    }
 
+   if (!bson_empty (&parts->read_concern_document)) {
+      _mongoc_cmd_parts_ensure_copied (parts);
+      bson_append_document (&parts->assembled_body,
+                            "readConcern",
+                            11,
+                            &parts->read_concern_document);
+   }
+
    EXIT;
 }
 
@@ -457,6 +465,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    mongoc_client_session_t *cs;
    mongoc_server_session_t *server_session;
    const bson_t *cluster_time = NULL;
+   bson_t child;
 
    ENTRY;
 
@@ -494,7 +503,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       if (parts->read_prefs &&
           !bson_has_field (parts->body, "$readPreference")) {
-         bson_t child;
          const bson_t *tags = NULL;
          const char *mode_str;
          int64_t stale;
@@ -557,6 +565,31 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
+      if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
+          cs->operation_timestamp &&
+          strcmp (parts->assembled.command_name, "getMore") != 0) {
+         _mongoc_cmd_parts_ensure_copied (parts);
+         bson_append_document_begin (
+            &parts->assembled_body, "readConcern", 11, &child);
+
+         if (!bson_empty (&parts->read_concern_document)) {
+            /* combine user's readConcern with afterClusterTime */
+            bson_concat (&child, &parts->read_concern_document);
+         }
+
+         bson_append_timestamp (&child,
+                                "afterClusterTime",
+                                16,
+                                cs->operation_timestamp,
+                                cs->operation_increment);
+         bson_append_document_end (&parts->assembled_body, &child);
+      } else if (!bson_empty (&parts->read_concern_document)) {
+         bson_append_document (&parts->assembled_body,
+                               "readConcern",
+                               11,
+                               &parts->read_concern_document);
+      }
+
       RETURN (true);
    }
 
@@ -585,6 +618,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 void
 mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
 {
+   bson_destroy (&parts->read_concern_document);
    bson_destroy (&parts->extra);
    bson_destroy (&parts->assembled_body);
 }
