@@ -3733,6 +3733,41 @@ test_bulk_reply_w0 (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_bulk_invalid_write_concern (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_bulk_invalid_write_concern");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': 0, 'j': true}}"));
+   BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Bulk operation is invalid from prior error");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid writeConcern");
+
+   ASSERT (bson_empty (&reply));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 typedef enum {
    BULK_REMOVE,
    BULK_REMOVE_ONE,
@@ -4316,6 +4351,9 @@ test_bulk_install (TestSuite *suite)
                                 "/BulkOperation/hint/pooled/command/primary",
                                 test_hint_pooled_command_primary);
    TestSuite_AddLive (suite, "/BulkOperation/reply_w0", test_bulk_reply_w0);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/invalid_write_concern",
+                      test_bulk_invalid_write_concern);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/w0/wire5",
                                 test_bulk_collation_w0_wire5);

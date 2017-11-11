@@ -1537,7 +1537,12 @@ _mongoc_write_opts_parse (const bson_t *opts,
 
       while (bson_iter_next (&iter)) {
          if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
-            parsed->write_concern = _mongoc_write_concern_new_from_iter (&iter);
+            parsed->write_concern =
+               _mongoc_write_concern_new_from_iter (&iter, error);
+            if (!parsed->write_concern) {
+               return false;
+            }
+
             parsed->write_concern_owned = true;
             continue;
          }
@@ -2802,7 +2807,7 @@ mongoc_collection_create_bulk_operation (
       bson_set_error (&bulk->result.error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "invalid write concern");
+                      "invalid writeConcern");
    }
 
    return bulk;
@@ -2817,11 +2822,12 @@ mongoc_collection_create_bulk_operation_with_opts (
    bson_iter_t iter;
    mongoc_write_concern_t *wc = NULL;
    mongoc_bulk_operation_t *bulk;
+   bson_error_t wc_invalid = {0};
 
    BSON_ASSERT (collection);
 
    if (opts && bson_iter_init_find (&iter, opts, "writeConcern")) {
-      wc = _mongoc_write_concern_new_from_iter (&iter);
+      wc = _mongoc_write_concern_new_from_iter (&iter, &wc_invalid);
    }
 
    write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
@@ -2837,6 +2843,11 @@ mongoc_collection_create_bulk_operation_with_opts (
    if (opts && bson_iter_init_find (&iter, opts, "sessionId")) {
       _mongoc_client_session_from_iter (
          collection->client, &iter, &bulk->session, &bulk->result.error);
+   }
+
+   if (wc_invalid.domain) {
+      /* _mongoc_write_concern_new_from_iter failed, above */
+      memcpy (&bulk->result.error, &wc_invalid, sizeof (bson_error_t));
    }
 
    return bulk;

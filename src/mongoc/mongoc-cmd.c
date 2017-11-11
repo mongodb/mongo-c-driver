@@ -46,6 +46,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.payload_identifier = NULL;
    parts->assembled.payload = NULL;
    parts->assembled.session = NULL;
+   parts->assembled.is_acknowledged = true;
 }
 
 
@@ -104,6 +105,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 {
    bool is_fam;
    mongoc_client_session_t *cs = NULL;
+   mongoc_write_concern_t *wc;
    /* operationTime timestamp and increment */
    uint32_t op_t = 0;
    uint32_t op_i = 0;
@@ -132,11 +134,8 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          }
 
       } else if (BSON_ITER_IS_KEY (iter, "writeConcern")) {
-         if (!_mongoc_write_concern_iter_is_valid (iter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid writeConcern");
+         wc = _mongoc_write_concern_new_from_iter (iter, error);
+         if (!wc) {
             RETURN (false);
          }
 
@@ -145,6 +144,9 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
             continue;
          }
 
+         parts->assembled.is_acknowledged =
+            mongoc_write_concern_is_acknowledged (wc);
+         mongoc_write_concern_destroy (wc);
       } else if (BSON_ITER_IS_KEY (iter, "readConcern")) {
          if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
             bson_set_error (error,

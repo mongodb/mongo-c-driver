@@ -276,6 +276,7 @@ _test_write_concern_from_iterator (const char *swc, bool ok)
    const bson_t *bson2;
    mongoc_write_concern_t *wc;
    bson_iter_t iter;
+   bson_error_t error;
 
    if (test_suite_debug_output ()) {
       fprintf (stdout, "  - %s\n", swc);
@@ -283,13 +284,19 @@ _test_write_concern_from_iterator (const char *swc, bool ok)
    }
 
    bson_iter_init_find (&iter, bson, "writeConcern");
-   ASSERT_CMPINT (
-      (int) _mongoc_write_concern_iter_is_valid (&iter), ==, (int) ok);
-
-   wc = _mongoc_write_concern_new_from_iter (&iter);
-   bson2 = _mongoc_write_concern_get_bson (wc);
-   ASSERT (bson_compare (bson, bson2));
-   mongoc_write_concern_destroy (wc);
+   wc = _mongoc_write_concern_new_from_iter (&iter, &error);
+   if (ok) {
+      BSON_ASSERT (wc);
+      bson2 = _mongoc_write_concern_get_bson (wc);
+      ASSERT (bson_compare (bson, bson2));
+      mongoc_write_concern_destroy (wc);
+   } else {
+      BSON_ASSERT (!wc);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid writeConcern");
+   }
 }
 
 static void

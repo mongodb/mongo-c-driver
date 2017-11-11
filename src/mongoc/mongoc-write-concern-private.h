@@ -44,14 +44,9 @@ struct _mongoc_write_concern_t {
 
 
 mongoc_write_concern_t *
-_mongoc_write_concern_new_from_iter (bson_iter_t *iter);
-bool
-_mongoc_write_concern_iter_is_valid (bson_iter_t *iter);
+_mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error);
 const bson_t *
 _mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern);
-bool
-_mongoc_write_concern_validate (const mongoc_write_concern_t *write_concern,
-                                bson_error_t *error);
 bool
 _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error);
 
