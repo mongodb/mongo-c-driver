@@ -11,8 +11,6 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 echo "BUILD_MONGOC_WITH_CMAKE=$BUILD_MONGOC_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
-CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
-
 if command -v gtar 2>/dev/null; then
   TAR=gtar
 else
@@ -20,10 +18,12 @@ else
 fi
 
 if [ $(uname) = "Darwin" ]; then
+  CMAKE=${CMAKE:-/Applications/Cmake.app/Contents/bin/cmake}
   SO=dylib
   LIB_SO=libmongoc-1.0.0.dylib
   LDD="otool -L"
 else
+  CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
   SO=so
   LIB_SO=libmongoc-1.0.so.0
   LDD=ldd
