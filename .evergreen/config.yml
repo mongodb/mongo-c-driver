@@ -365,6 +365,24 @@ functions:
               cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
            fi
 
+  "link sample program" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with the Autotools or CMake and compile a program
+          # that links dynamically or statically to libmongoc, using
+          # variables from CMake's find_package command.
+          export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
+          export ENABLE_SSL=${ENABLE_SSL}
+          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+          BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
+          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+          BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
+
 pre:
   - func: "fetch source"
   - func: "windows fix"
@@ -727,21 +745,21 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with the Autotools or CMake and compile a program
-              # that links dynamically or statically to libmongoc, using
-              # variables from CMake's find_package command.
-              export BUILD_SAMPLE_WITH_CMAKE=1
-              export ENABLE_SSL=
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        - func: "link sample program"
+          vars:
+            BUILD_SAMPLE_WITH_CMAKE: "1"
+
+    - name: link-with-cmake-mac
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - func: "link sample program"
+          vars:
+            BUILD_SAMPLE_WITH_CMAKE: "1"
 
     - name: link-with-cmake-ssl
       depends_on:
@@ -751,21 +769,10 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with the Autotools or CMake and compile a program
-              # that links dynamically or statically to libmongoc, using
-              # variables from CMake's find_package command.
-              export BUILD_SAMPLE_WITH_CMAKE=1
-              export ENABLE_SSL=1
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        - func: "link sample program"
+          vars:
+            BUILD_SAMPLE_WITH_CMAKE: "1"
+            ENABLE_SSL: "1"
 
     - name: link-with-cmake-windows
       depends_on:
@@ -835,21 +842,17 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with the Autotools or CMake and compile a program
-              # that links dynamically or statically to libmongoc, using
-              # variables from "pkg-config".
-              export BUILD_SAMPLE_WITH_CMAKE=
-              export ENABLE_SSL=
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        - func: "link sample program"
+
+    - name: link-with-pkg-config-mac
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+        - func: "link sample program"
 
     - name: link-with-pkg-config-ssl
       depends_on:
@@ -859,21 +862,9 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with the Autotools or CMake and compile a program
-              # that links dynamically or statically to libmongoc, using
-              # variables from "pkg-config".
-              export BUILD_SAMPLE_WITH_CMAKE=
-              export ENABLE_SSL=1
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-              BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+        - func: "link sample program"
+          vars:
+            ENABLE_SSL: "1"
 
     - name: test-dns
       depends_on:
@@ -6321,6 +6312,9 @@ buildvariants:
       - ubuntu1604-test
       - ubuntu1404-build
       - ubuntu1404-test
+    - name: "link-with-cmake-mac"
+      distros:
+      - macos-1012
     - name: "link-with-cmake-windows"
       distros:
       - windows-64-vs2015-compile
@@ -6338,6 +6332,9 @@ buildvariants:
       - ubuntu1604-test
       - ubuntu1404-build
       - ubuntu1404-test
+    - name: "link-with-pkg-config-mac"
+      distros:
+      - macos-1012
     - name: "test-dns"
       distros:
       - ubuntu1604-build

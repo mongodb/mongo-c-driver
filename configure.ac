@@ -69,14 +69,20 @@ AC_SUBST(MONGOC_CC)
 AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
 m4_include([build/autotools/SetupAutomake.m4])
 
-# Substitute our dependencies into the pkg-config files.
+# Substitute our dependencies into the pkg-config and CMake config files.
 MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS}"
-if test "x$with_zlib" != "xbundled"; then
+if test "x$with_zlib" = "xbundled"; then
+   AC_SUBST(MONGOC_ZLIB_BUNDLED, 1)
+else
    MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
 fi
-if test "x$with_snappy" != "xbundled"; then
+
+if test "x$with_snappy" = "xbundled"; then
+   AC_SUBST(MONGOC_SNAPPY_BUNDLED, 1)
+else
    MONGOC_LIBS="${MONGOC_LIBS} ${SNAPPY_LIBS}"
 fi
+
 AC_SUBST(MONGOC_LIBS)
 
 AC_CONFIG_FILES([
