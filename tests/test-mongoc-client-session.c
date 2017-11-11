@@ -763,7 +763,6 @@ test_session_advance_operation_time (void *ctx)
    ASSERT_CMPUINT32 (t, ==, 0);
    ASSERT_CMPUINT32 (t, ==, 0);
 
-
    mongoc_client_session_advance_operation_time (cs, 1, 1);
 
    _test_advance_operation_time (cs, 1, 0, false);
@@ -776,7 +775,19 @@ test_session_advance_operation_time (void *ctx)
 }
 
 
+typedef enum {
+   CORRECT_CLIENT,
+   INCORRECT_CLIENT,
+} session_test_correct_t;
+
+
+typedef enum {
+   CAUSAL,
+   NOT_CAUSAL,
+} session_test_causal_t;
+
 typedef struct {
+   bool verbose;
    mongoc_client_t *session_client, *client;
    mongoc_database_t *session_db, *db;
    mongoc_collection_t *session_collection, *collection;
@@ -788,6 +799,8 @@ typedef struct {
    int n_succeeded;
    bool expect_explicit_lsid;
    bool succeeded;
+   mongoc_array_t cmds;
+   mongoc_array_t replies;
    bson_t sent_lsid;
    bson_t sent_cluster_time;
    bson_t received_cluster_time;
@@ -803,13 +816,20 @@ started (const mongoc_apm_command_started_t *event)
    bson_t cluster_time;
    bson_t lsid;
    const bson_t *client_session_lsid;
-   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   bson_t *cmd = bson_copy (mongoc_apm_command_started_get_command (event));
    const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
    session_test_t *test =
       (session_test_t *) mongoc_apm_command_started_get_context (event);
 
+   if (test->verbose) {
+      char *s = bson_as_json (cmd, NULL);
+      printf ("%s\n", s);
+      bson_free (s);
+   }
+
    if (!strcmp (cmd_name, "endSessions")) {
       BSON_ASSERT (!bson_has_field (cmd, "lsid"));
+      bson_destroy (cmd);
       return;
    }
 
@@ -858,6 +878,7 @@ started (const mongoc_apm_command_started_t *event)
    bson_iter_bson (&iter, &cluster_time);
    bson_destroy (&test->sent_cluster_time);
    bson_copy_to (&cluster_time, &test->sent_cluster_time);
+   _mongoc_array_append_vals (&test->cmds, &cmd, 1);
 
    test->n_started++;
 }
@@ -868,10 +889,16 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
 {
    bson_iter_t iter;
    bson_t cluster_time;
-   const bson_t *reply = mongoc_apm_command_succeeded_get_reply (event);
+   bson_t *reply = bson_copy (mongoc_apm_command_succeeded_get_reply (event));
    const char *cmd_name = mongoc_apm_command_succeeded_get_command_name (event);
    session_test_t *test =
       (session_test_t *) mongoc_apm_command_succeeded_get_context (event);
+
+   if (test->verbose) {
+      char *s = bson_as_json (reply, NULL);
+      printf ("<--  %s\n", s);
+      bson_free (s);
+   }
 
    if (!bson_iter_init_find (&iter, reply, "$clusterTime")) {
       fprintf (stderr, "no $clusterTime in reply to command %s\n", cmd_name);
@@ -879,6 +906,7 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
    }
 
    if (strcmp (cmd_name, "endSessions") == 0) {
+      bson_destroy (reply);
       return;
    }
 
@@ -886,6 +914,7 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
    bson_iter_bson (&iter, &cluster_time);
    bson_destroy (&test->received_cluster_time);
    bson_copy_to (&cluster_time, &test->received_cluster_time);
+   _mongoc_array_append_vals (&test->replies, &reply, 1);
 
    test->n_succeeded++;
 }
@@ -906,16 +935,22 @@ set_session_test_callbacks (session_test_t *test)
 
 
 static session_test_t *
-session_test_new (bool correct_client)
+session_test_new (session_test_correct_t correct_client,
+                  session_test_causal_t causal)
 {
    session_test_t *test;
+   mongoc_session_opt_t *cs_opts;
    bson_error_t error;
 
    test = bson_malloc0 (sizeof (session_test_t));
 
+   test->verbose = test_framework_getenv_bool ("MONGOC_TEST_SESSION_VERBOSE");
+
    test->n_started = 0;
    test->expect_explicit_lsid = true;
    test->succeeded = false;
+   _mongoc_array_init (&test->cmds, sizeof (bson_t *));
+   _mongoc_array_init (&test->replies, sizeof (bson_t *));
    bson_init (&test->sent_cluster_time);
    bson_init (&test->received_cluster_time);
    bson_init (&test->sent_lsid);
@@ -928,7 +963,7 @@ session_test_new (bool correct_client)
 
    bson_init (&test->opts);
 
-   if (correct_client) {
+   if (correct_client == CORRECT_CLIENT) {
       test->client = test->session_client;
       test->db = test->session_db;
       test->collection = test->session_collection;
@@ -946,8 +981,13 @@ session_test_new (bool correct_client)
 
    set_session_test_callbacks (test);
 
-   test->cs = mongoc_client_start_session (test->session_client, NULL, &error);
+   cs_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (cs_opts, causal == CAUSAL);
+   test->cs =
+      mongoc_client_start_session (test->session_client, cs_opts, &error);
    ASSERT_OR_PRINT (test->cs, error);
+
+   mongoc_session_opts_destroy (cs_opts);
 
    return test;
 }
@@ -978,11 +1018,65 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
    }
 }
 
+static const bson_t *
+first_cmd (session_test_t *test)
+{
+   ASSERT_CMPSIZE_T (test->cmds.len, >, (size_t) 0);
+   return _mongoc_array_index (&test->cmds, bson_t *, 0);
+}
+
+
+static const bson_t *
+last_non_getmore_cmd (session_test_t *test)
+{
+   ssize_t i;
+   const bson_t *cmd;
+
+   ASSERT_CMPSIZE_T (test->cmds.len, >, (size_t) 0);
+
+   for (i = test->replies.len - 1; i >= 0; i--) {
+      cmd = _mongoc_array_index (&test->cmds, bson_t *, i);
+      if (strcmp (_mongoc_get_command_name (cmd), "getMore") != 0) {
+         return cmd;
+      }
+   }
+
+   fprintf (stderr, "No commands besides getMore were recorded\n");
+   abort ();
+}
+
+
+static const bson_t *
+last_reply (session_test_t *test)
+{
+   ASSERT_CMPSIZE_T (test->replies.len, >, (size_t) 0);
+   return _mongoc_array_index (&test->replies, bson_t *, test->replies.len - 1);
+}
+
+
+static void
+clear_history (session_test_t *test)
+{
+   size_t i;
+
+   for (i = 0; i < test->cmds.len; i++) {
+      bson_destroy (_mongoc_array_index (&test->cmds, bson_t *, i));
+   }
+
+   for (i = 0; i < test->replies.len; i++) {
+      bson_destroy (_mongoc_array_index (&test->replies, bson_t *, i));
+   }
+
+   test->cmds.len = 0;
+   test->replies.len = 0;
+}
+
 
 static void
 session_test_destroy (session_test_t *test)
 {
    bson_t session_lsid;
+   size_t i;
 
    bson_copy_to (mongoc_client_session_get_lsid (test->cs), &session_lsid);
 
@@ -1009,12 +1103,24 @@ session_test_destroy (session_test_t *test)
    bson_destroy (&test->received_cluster_time);
    bson_destroy (&test->sent_lsid);
 
+   for (i = 0; i < test->cmds.len; i++) {
+      bson_destroy (_mongoc_array_index (&test->cmds, bson_t *, i));
+   }
+
+   _mongoc_array_destroy (&test->cmds);
+
+   for (i = 0; i < test->replies.len; i++) {
+      bson_destroy (_mongoc_array_index (&test->replies, bson_t *, i));
+   }
+
+   _mongoc_array_destroy (&test->replies);
+
    bson_free (test);
 }
 
 
 static void
-check_success (session_test_t *test)
+check_success_no_commands (session_test_t *test)
 {
    if (test->session_client != test->client) {
       BSON_ASSERT (!test->succeeded);
@@ -1027,6 +1133,18 @@ check_success (session_test_t *test)
    }
 
    ASSERT_OR_PRINT (test->succeeded, test->error);
+}
+
+
+static void
+check_success (session_test_t *test)
+{
+   check_success_no_commands (test);
+
+   if (test->session_client == test->client) {
+      ASSERT_CMPINT (test->n_started, >, 0);
+      ASSERT_CMPINT (test->n_succeeded, >, 0);
+   }
 }
 
 
@@ -1055,9 +1173,8 @@ typedef void (*session_test_fn_t) (session_test_t *);
 
 
 static void
-run_session_test (void *ctx)
+lsid_test (session_test_fn_t test_fn)
 {
-   session_test_fn_t test_fn = (session_test_fn_t) ctx;
    session_test_t *test;
    bson_error_t error;
    int64_t start;
@@ -1068,7 +1185,7 @@ run_session_test (void *ctx)
     * use the same client for the session and the operation, expect success
     *
     */
-   test = session_test_new (true);
+   test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, ==, (int64_t) -1);
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
@@ -1108,8 +1225,6 @@ run_session_test (void *ctx)
    test->n_succeeded = 0;
    start = bson_get_monotonic_time ();
    test_fn (test);
-   ASSERT_CMPINT (test->n_started, >, 0);
-   ASSERT_CMPINT (test->n_succeeded, >, 0);
    check_success (test);
    if (_mongoc_cluster_time_greater (&cluster_time, &test->sent_cluster_time)) {
       fprintf (stderr,
@@ -1126,7 +1241,7 @@ run_session_test (void *ctx)
     * use a session from the wrong client, expect failure. this is the
     * "session argument is for right client" test from Driver Sessions Spec
     */
-   test = session_test_new (false /* correct_client */);
+   test = session_test_new (INCORRECT_CLIENT, NOT_CAUSAL);
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
 
@@ -1138,7 +1253,7 @@ run_session_test (void *ctx)
    /*
     * implicit session - all commands should use an internally-acquired lsid
     */
-   test = session_test_new (true /* correct_client */);
+   test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
    start = bson_get_monotonic_time ();
    test_fn (test);
@@ -1149,6 +1264,99 @@ run_session_test (void *ctx)
       test->client->topology->session_pool->last_used_usec, >=, start);
    session_test_destroy (test);
    bson_destroy (&cluster_time);
+}
+
+
+typedef struct {
+   uint32_t t;
+   uint32_t i;
+} op_time_t;
+
+
+static void
+parse_read_concern_time (const bson_t *cmd, op_time_t *op_time)
+{
+   bson_iter_t iter;
+   bson_iter_t rc;
+
+   BSON_ASSERT (bson_iter_init_find (&iter, cmd, "readConcern"));
+   BSON_ASSERT (bson_iter_recurse (&iter, &rc));
+   BSON_ASSERT (bson_iter_find (&rc, "afterClusterTime"));
+   BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&rc));
+   bson_iter_timestamp (&rc, &op_time->t, &op_time->i);
+}
+
+
+static void
+parse_reply_time (const bson_t *reply, op_time_t *op_time)
+{
+   bson_iter_t iter;
+
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, "operationTime"));
+   BSON_ASSERT (BSON_ITER_HOLDS_TIMESTAMP (&iter));
+   bson_iter_timestamp (&iter, &op_time->t, &op_time->i);
+}
+
+
+#define ASSERT_OP_TIMES_EQUAL(_a, _b)                             \
+   if ((_a).t != (_b).t || (_a).i != (_b).i) {                    \
+      fprintf (stderr,                                            \
+               #_a " (%d, %d) does not match " #_b " (%d, %d)\n", \
+               (_a).t,                                            \
+               (_a).i,                                            \
+               (_b).t,                                            \
+               (_b).i);                                           \
+      abort ();                                                   \
+   }
+
+
+static void
+causal_test (session_test_fn_t test_fn)
+{
+   session_test_t *test;
+   op_time_t session_time, read_concern_time, reply_time;
+   bson_error_t error;
+
+   /*
+    * first causal exchange: don't send readConcern, receive opTime
+    */
+   test = session_test_new (CORRECT_CLIENT, CAUSAL);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+
+   test_fn (test);
+   check_success (test);
+   BSON_ASSERT (!bson_has_field (first_cmd (test), "readConcern"));
+   mongoc_client_session_get_operation_time (
+      test->cs, &session_time.t, &session_time.i);
+   BSON_ASSERT (session_time.t != 0);
+   parse_reply_time (last_reply (test), &reply_time);
+   ASSERT_OP_TIMES_EQUAL (session_time, reply_time);
+
+   /*
+    * second exchange: send previous opTime in readConcern, receive opTime
+    */
+   clear_history (test);
+   test_fn (test);
+   check_success (test);
+   parse_read_concern_time (first_cmd (test), &read_concern_time);
+   ASSERT_OP_TIMES_EQUAL (reply_time, read_concern_time);
+   mongoc_client_session_get_operation_time (
+      test->cs, &session_time.t, &session_time.i);
+   BSON_ASSERT (session_time.t != 0);
+   parse_reply_time (last_reply (test), &reply_time);
+   ASSERT_OP_TIMES_EQUAL (session_time, reply_time);
+
+   session_test_destroy (test);
+}
+
+
+static void
+run_session_test (void *ctx)
+{
+   session_test_fn_t test_fn = (session_test_fn_t) ctx;
+   lsid_test (test_fn);
+   causal_test (test_fn);
 }
 
 
@@ -1177,13 +1385,14 @@ insert_10_docs (session_test_t *test)
 static void
 test_cmd (session_test_t *test)
 {
-   test->succeeded = mongoc_client_command_with_opts (test->client,
-                                                      "db",
-                                                      tmp_bson ("{'ping': 1}"),
-                                                      NULL,
-                                                      &test->opts,
-                                                      NULL,
-                                                      &test->error);
+   test->succeeded =
+      mongoc_client_command_with_opts (test->client,
+                                       "db",
+                                       tmp_bson ("{'listCollections': 1}"),
+                                       NULL,
+                                       &test->opts,
+                                       NULL,
+                                       &test->error);
 }
 
 
@@ -1193,7 +1402,7 @@ test_read_cmd (session_test_t *test)
    test->succeeded =
       mongoc_client_read_command_with_opts (test->client,
                                             "db",
-                                            tmp_bson ("{'ping': 1}"),
+                                            tmp_bson ("{'listCollections': 1}"),
                                             NULL,
                                             &test->opts,
                                             NULL,
@@ -1206,7 +1415,7 @@ test_db_cmd (session_test_t *test)
 {
    test->succeeded =
       mongoc_database_command_with_opts (test->db,
-                                         tmp_bson ("{'ping': 1}"),
+                                         tmp_bson ("{'listCollections': 1}"),
                                          NULL,
                                          &test->opts,
                                          NULL,
@@ -1586,7 +1795,7 @@ test_bulk (session_test_t *test)
 
    test->succeeded = mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{}"), NULL, &test->error);
-   check_success (test);
+   check_success_no_commands (test);
 
    test->succeeded = mongoc_bulk_operation_update_one_with_opts (
       bulk,
@@ -1594,11 +1803,11 @@ test_bulk (session_test_t *test)
       tmp_bson ("{'$set': {'x': 1}}"),
       NULL,
       &test->error);
-   check_success (test);
+   check_success_no_commands (test);
 
    test->succeeded = mongoc_bulk_operation_remove_one_with_opts (
       bulk, tmp_bson ("{}"), NULL, &test->error);
-   check_success (test);
+   check_success_no_commands (test);
 
    i = mongoc_bulk_operation_execute (bulk, NULL, &test->error);
    test->succeeded = (i != 0);
@@ -1622,6 +1831,128 @@ test_find_indexes (session_test_t *test)
    mongoc_cursor_next (cursor, &doc);
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
    mongoc_cursor_destroy (cursor);
+}
+
+
+static void
+test_cmd_error (void *ctx)
+{
+   session_test_t *test;
+   bson_error_t error;
+
+   test = session_test_new (CORRECT_CLIENT, CAUSAL);
+
+   /*
+    * explicit session. command error still updates operation time
+    */
+   test->expect_explicit_lsid = true;
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+
+   BSON_ASSERT (test->cs->operation_timestamp == 0);
+   BSON_ASSERT (!mongoc_client_command_with_opts (test->session_client,
+                                                  "db",
+                                                  tmp_bson ("{'bad': 1}"),
+                                                  NULL,
+                                                  &test->opts,
+                                                  NULL,
+                                                  NULL));
+
+   BSON_ASSERT (test->cs->operation_timestamp != 0);
+
+   session_test_destroy (test);
+}
+
+
+static void
+test_read_concern (void *ctx)
+{
+   session_test_t *test;
+   mongoc_read_concern_t *rc;
+   mongoc_session_opt_t *cs_opts;
+   bson_error_t error;
+
+   test = session_test_new (CORRECT_CLIENT, CAUSAL);
+   test->expect_explicit_lsid = true;
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+
+   /* first exchange sets session's operationTime */
+   test_cmd (test);
+   check_success (test);
+   BSON_ASSERT (!bson_has_field (last_non_getmore_cmd (test), "readConcern"));
+
+   /*
+    * default: no explicit read concern, driver sends afterClusterTime
+    */
+   test_cmd (test);
+   check_success (test);
+   ASSERT_MATCH (last_non_getmore_cmd (test),
+                 "{"
+                 "   'readConcern': {"
+                 "      'level': {'$exists': false},"
+                 "      'afterClusterTime': {'$exists': true}"
+                 "   }"
+                 "}");
+
+   /*
+    * explicit read concern
+    */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   BSON_ASSERT (mongoc_read_concern_append (rc, &test->opts));
+   test_cmd (test);
+   check_success (test);
+   ASSERT_MATCH (last_non_getmore_cmd (test),
+                 "{"
+                 "   'readConcern': {"
+                 "      'level': 'local',"
+                 "      'afterClusterTime': {'$exists': true}"
+                 "   }"
+                 "}");
+
+   /*
+    * explicit read concern, not causal
+    */
+   cs_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (cs_opts, false);
+   mongoc_client_session_destroy (test->cs);
+   test->cs = mongoc_client_start_session (test->client, cs_opts, &error);
+   ASSERT_OR_PRINT (test->cs, error);
+   bson_reinit (&test->opts);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+   BSON_ASSERT (mongoc_read_concern_append (rc, &test->opts));
+   /* set new session's operationTime */
+   test_cmd (test);
+   check_success (test);
+   ASSERT_CMPUINT32 (test->cs->operation_timestamp, >, (uint32_t) 0);
+   /* afterClusterTime is not sent */
+   test_cmd (test);
+   check_success (test);
+   ASSERT_MATCH (last_non_getmore_cmd (test),
+                 "{"
+                 "   'readConcern': {"
+                 "      'level': 'local',"
+                 "      'afterClusterTime': {'$exists': false}"
+                 "   }"
+                 "}");
+
+   /*
+    * no read concern, not causal
+    */
+   bson_reinit (&test->opts);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+   /* afterClusterTime is not sent */
+   test_cmd (test);
+   check_success (test);
+   ASSERT_MATCH (last_non_getmore_cmd (test),
+                 "{'readConcern': {'$exists': false}}");
+
+   mongoc_session_opts_destroy (cs_opts);
+   mongoc_read_concern_destroy (rc);
+   session_test_destroy (test);
 }
 
 
@@ -1792,4 +2123,18 @@ test_session_install (TestSuite *suite)
    add_session_test (suite, "/Session/collection_names", test_collection_names);
    add_session_test (suite, "/Session/bulk", test_bulk);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes);
+   TestSuite_AddFull (suite,
+                      "/Session/cmd_error",
+                      test_cmd_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/read_concern",
+                      test_read_concern,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
 }
