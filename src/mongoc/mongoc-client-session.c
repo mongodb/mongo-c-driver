@@ -181,6 +181,7 @@ _mongoc_cluster_time_greater (const bson_t *new, const bson_t *old)
 
 void
 _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
+                                     bool is_acknowledged,
                                      const bson_t *reply)
 {
    bson_iter_t iter;
@@ -204,7 +205,7 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
 
          mongoc_client_session_advance_cluster_time (session, &cluster_time);
       } else if (!strcmp (bson_iter_key (&iter), "operationTime") &&
-                 BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
+                 BSON_ITER_HOLDS_TIMESTAMP (&iter) && is_acknowledged) {
          bson_iter_timestamp (&iter, &t, &i);
          mongoc_client_session_advance_operation_time (session, t, i);
       }

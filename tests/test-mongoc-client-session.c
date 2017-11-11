@@ -1955,6 +1955,33 @@ test_read_concern (void *ctx)
    session_test_destroy (test);
 }
 
+static void
+test_unacknowledged (void *ctx)
+{
+   session_test_t *test;
+   mongoc_write_concern_t *wc;
+   bson_error_t error;
+
+   test = session_test_new (CORRECT_CLIENT, CAUSAL);
+   test->expect_explicit_lsid = true;
+   ASSERT_OR_PRINT (
+      mongoc_client_session_append (test->cs, &test->opts, &error), error);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   BSON_ASSERT (mongoc_write_concern_append_bad (wc, &test->opts));
+
+   /* unacknowledged exchange does NOT set operationTime */
+   test_insert_one (test);
+   check_success (test);
+   ASSERT_MATCH (last_non_getmore_cmd (test), "{'writeConcern': {'w': 0}}");
+   BSON_ASSERT (!bson_has_field (last_non_getmore_cmd (test), "readConcern"));
+   ASSERT_CMPUINT32 (test->cs->operation_timestamp, ==, (uint32_t) 0);
+
+   mongoc_write_concern_destroy (wc);
+   session_test_destroy (test);
+}
+
 
 #define add_session_test(_suite, _name, _test_fn)             \
    TestSuite_AddFull (_suite,                                 \
@@ -2133,6 +2160,13 @@ test_session_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Session/read_concern",
                       test_read_concern,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/unacknowledged",
+                      test_unacknowledged,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_cluster_time,

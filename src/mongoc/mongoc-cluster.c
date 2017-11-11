@@ -2659,7 +2659,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       &reply_local, cluster->client->error_api_version, error);
 
    if (cmd->session) {
-      _mongoc_client_session_handle_reply (cmd->session, &reply_local);
+      _mongoc_client_session_handle_reply (
+         cmd->session, cmd->is_acknowledged, &reply_local);
    }
 
    if (reply) {

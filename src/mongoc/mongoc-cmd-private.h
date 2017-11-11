@@ -48,6 +48,7 @@ typedef struct _mongoc_cmd_t {
    const mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;
+   bool is_acknowledged;
 } mongoc_cmd_t;
 
 

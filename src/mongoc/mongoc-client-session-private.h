@@ -59,6 +59,7 @@ _mongoc_cluster_time_greater (const bson_t *new, const bson_t *old);
 
 void
 _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
+                                     bool is_acknowledged,
                                      const bson_t *reply);
 
 mongoc_server_session_t *

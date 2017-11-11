@@ -418,6 +418,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
    mongoc_cmd_parts_set_session (&parts, cs);
    parts.assembled.operation_id = command->operation_id;
+   parts.assembled.is_acknowledged =
+      mongoc_write_concern_is_acknowledged (write_concern);
 
    bson_iter_init (&iter, &command->cmd_opts);
    if (!mongoc_cmd_parts_append_opts (
@@ -641,6 +643,8 @@ again:
       mongoc_cmd_parts_set_session (&parts, session);
       parts.is_write_command = true;
       parts.assembled.operation_id = command->operation_id;
+      parts.assembled.is_acknowledged =
+         mongoc_write_concern_is_acknowledged (write_concern);
       bson_iter_init (&iter, &command->cmd_opts);
       if (!mongoc_cmd_parts_append_opts (
              &parts, &iter, server_stream->sd->max_wire_version, error)) {
@@ -668,7 +672,10 @@ again:
       }
 
       if (session) {
-         _mongoc_client_session_handle_reply (session, &reply);
+         _mongoc_client_session_handle_reply (
+            session,
+            mongoc_write_concern_is_acknowledged (write_concern),
+            &reply);
       }
 
       _mongoc_write_result_merge (result, command, &reply, offset);
