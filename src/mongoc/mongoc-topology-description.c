@@ -1803,7 +1803,8 @@ _mongoc_topology_description_update_session_timeout (
    for (i = 0; i < set->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
       if (sd->type == MONGOC_SERVER_UNKNOWN ||
-          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
+          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY ||
+          sd->type == MONGOC_SERVER_RS_ARBITER) {
          continue;
       }
 
