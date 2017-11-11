@@ -324,15 +324,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
    bson_init (&command);
 
-   if (!read_prefs) {
-      read_prefs = collection->read_prefs;
-   }
-
    cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs, true);
-
-   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
-      GOTO (done);
-   }
 
    if (!_mongoc_get_server_id_from_opts (opts,
                                          MONGOC_ERROR_COMMAND,
@@ -356,6 +348,13 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       if (!server_stream) {
          GOTO (done);
       }
+
+      if (!read_prefs &&
+          server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+         mongoc_read_prefs_destroy (cursor->read_prefs);
+         cursor->read_prefs =
+            mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+      }
    } else {
       server_stream = mongoc_cluster_stream_for_reads (
          &collection->client->cluster, read_prefs, &cursor->error);
@@ -366,6 +365,15 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
       /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
       cursor->server_id = server_stream->sd->id;
+   }
+
+   if (!read_prefs && !server_id) {
+      mongoc_read_prefs_destroy (cursor->read_prefs);
+      cursor->read_prefs = mongoc_read_prefs_copy (collection->read_prefs);
+   }
+
+   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
+      GOTO (done);
    }
 
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);

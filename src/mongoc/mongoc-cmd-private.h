@@ -71,6 +71,9 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *op,
                        mongoc_query_flags_t user_query_flags,
                        const bson_t *command_body);
 
+void
+mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
+                              mongoc_client_session_t *cs);
 
 bool
 mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,

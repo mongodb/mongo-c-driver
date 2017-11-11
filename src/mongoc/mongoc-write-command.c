@@ -416,7 +416,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    bson_init (&cmd);
    _mongoc_write_command_init (&cmd, command, collection, write_concern);
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
-   parts.assembled.session = cs;
+   mongoc_cmd_parts_set_session (&parts, cs);
    parts.assembled.operation_id = command->operation_id;
 
    bson_iter_init (&iter, &command->cmd_opts);
@@ -638,8 +638,8 @@ again:
       }
    } else {
       mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
+      mongoc_cmd_parts_set_session (&parts, session);
       parts.is_write_command = true;
-      parts.assembled.session = session;
       parts.assembled.operation_id = command->operation_id;
       bson_iter_init (&iter, &command->cmd_opts);
       if (!mongoc_cmd_parts_append_opts (

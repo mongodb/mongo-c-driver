@@ -1300,6 +1300,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *opts,
                             bson_t *reply)
 {
+   const char *cmd_name;
+   bool is_primary;
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
@@ -1320,6 +1322,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
+   if (!opts || !bson_has_field (opts, "sessionId")) {
+      /* use the cursor's explicit session if any */
+      mongoc_cmd_parts_set_session (&parts, cursor->client_session);
+   }
+
    if (opts) {
       bson_iter_init (&iter, opts);
       if (!mongoc_cmd_parts_append_opts (&parts,
@@ -1330,10 +1337,24 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       }
    }
 
-   if (!parts.assembled.session) {
-      /* no "sessionId" in opts, use the cursor's explicit session if any */
-      parts.assembled.session = cursor->client_session;
-   } else if (!cursor->client_session && parts.assembled.session) {
+   cmd_name = _mongoc_get_command_name (command);
+   is_primary =
+      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
+   if (strcmp (cmd_name, "getMore") != 0 &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
+       cursor->server_id_set && is_primary) {
+      bson_t prefs;
+
+      /* we might use mongoc_cursor_set_hint to target a secondary but have no
+       * read preference, so the secondary rejects the read. with OP_QUERY we
+       * handle this by setting slaveOk, here we must use $readPreference.
+       */
+      BSON_APPEND_DOCUMENT_BEGIN (&parts.extra, "$readPreference", &prefs);
+      BSON_APPEND_UTF8 (&prefs, "mode", "primaryPreferred");
+      bson_append_document_end (&parts.extra, &prefs);
+   }
+
+   if (!cursor->client_session && parts.assembled.session) {
       /* opts contains "sessionId" */
       cursor->client_session = parts.assembled.session;
       cursor->explicit_session = 1;

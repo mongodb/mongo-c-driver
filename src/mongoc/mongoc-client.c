@@ -2098,7 +2098,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (
       &parts, cluster->client, db, MONGOC_QUERY_SLAVE_OK, &command);
    parts.assembled.operation_id = ++cluster->operation_id;
-   parts.assembled.session = cs;
+   mongoc_cmd_parts_set_session (&parts, cs);
 
    if (mongoc_cmd_parts_assemble (&parts, server_stream, NULL)) {
       /* Find, getMore And killCursors Commands Spec: "The result from the

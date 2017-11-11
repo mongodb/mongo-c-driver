@@ -52,6 +52,33 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cmd_parts_set_session --
+ *
+ *       Set the client session field.
+ *
+ * Side effects:
+ *       Aborts if the command is assembled or if mongoc_cmd_parts_append_opts
+ *       was called before.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
+                              mongoc_client_session_t *cs)
+{
+   BSON_ASSERT (parts);
+   BSON_ASSERT (!parts->assembled.command);
+   BSON_ASSERT (!parts->assembled.session);
+   BSON_ASSERT (bson_empty (&parts->extra));
+
+   parts->assembled.session = cs;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cmd_parts_append_opts --
  *
  *       Take an iterator over user-supplied options document and append the
@@ -76,6 +103,15 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               bson_error_t *error)
 {
    bool is_fam;
+   mongoc_client_session_t *cs = NULL;
+   /* operationTime timestamp and increment */
+   uint32_t op_t = 0;
+   uint32_t op_i = 0;
+   bool has_read_concern = false;
+   uint32_t len;
+   const uint8_t *data;
+   bson_t read_concern;
+   bson_t child;
 
    ENTRY;
 
@@ -117,12 +153,29 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                             "The selected server does not support readConcern");
             RETURN (false);
          }
-      } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
-         if (!_mongoc_client_session_from_iter (
-                parts->client, iter, &parts->assembled.session, error)) {
+
+         if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "Invalid readConcern");
             RETURN (false);
          }
 
+         /* add readConcern later, once we know about causal consistency */
+         has_read_concern = true;
+         bson_iter_document (iter, &len, &data);
+         bson_init_static (&read_concern, data, (size_t) len);
+         continue;
+      } else if (BSON_ITER_IS_KEY (iter, "sessionId")) {
+         BSON_ASSERT (!parts->assembled.session);
+
+         if (!_mongoc_client_session_from_iter (
+                parts->client, iter, &cs, error)) {
+            RETURN (false);
+         }
+
+         parts->assembled.session = cs;
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
@@ -130,6 +183,22 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       }
 
       bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter);
+   }
+
+   if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts)) {
+      mongoc_client_session_get_operation_time (cs, &op_t, &op_i);
+      if (op_t || op_i) {
+         bson_append_document_begin (&parts->extra, "readConcern", 11, &child);
+         if (has_read_concern) {
+            /* combine user's readConcern with afterClusterTime */
+            bson_concat (&child, &read_concern);
+         }
+
+         bson_append_timestamp (&child, "afterClusterTime", 16, op_t, op_i);
+         bson_append_document_end (&parts->extra, &child);
+      }
+   } else if (has_read_concern) {
+      bson_append_document (&parts->extra, "readConcern", 11, &read_concern);
    }
 
    RETURN (true);
@@ -383,6 +452,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
+   mongoc_client_session_t *cs;
    mongoc_server_session_t *server_session;
    const bson_t *cluster_time = NULL;
 
@@ -392,6 +462,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    BSON_ASSERT (server_stream);
 
    server_type = server_stream->sd->type;
+   cs = parts->assembled.session;
 
    /* must not be assembled already */
    BSON_ASSERT (!parts->assembled.command);
@@ -451,19 +522,15 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          _mongoc_cmd_parts_ensure_copied (parts);
       }
 
-      if (parts->assembled.session) {
+      if (cs) {
          _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document (
-            &parts->assembled_body,
-            "lsid",
-            4,
-            mongoc_client_session_get_lsid (parts->assembled.session));
+         bson_append_document (&parts->assembled_body,
+                               "lsid",
+                               4,
+                               mongoc_client_session_get_lsid (cs));
 
-         parts->assembled.session->server_session->last_used_usec =
-            bson_get_monotonic_time ();
-
-         cluster_time =
-            mongoc_client_session_get_cluster_time (parts->assembled.session);
+         cs->server_session->last_used_usec = bson_get_monotonic_time ();
+         cluster_time = mongoc_client_session_get_cluster_time (cs);
       } else if (!parts->prohibit_lsid) {
          /* try to use implicit session, but ignore errors */
          server_session =
