@@ -45,9 +45,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t *cursor,
                          mongoc_server_stream_t *server_stream);
 
 static bool
-_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
-                                     bson_t *command,
-                                     mongoc_server_stream_t *server_stream);
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor, bson_t *command);
 
 static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor,
@@ -286,9 +284,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          cursor->explicit_session = 1;
       }
 
-      bson_copy_to_excluding_noinit (
-         opts, &cursor->opts, "serverId", "sessionId", NULL);
-
       /* true if there's a valid serverId or no serverId, false on err */
       if (!_mongoc_get_server_id_from_opts (opts,
                                             MONGOC_ERROR_CURSOR,
@@ -302,6 +297,9 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       if (server_id) {
          mongoc_cursor_set_hint (cursor, server_id);
       }
+
+      bson_copy_to_excluding_noinit (
+         opts, &cursor->opts, "serverId", "sessionId", NULL);
    }
 
    cursor->read_prefs = read_prefs
@@ -742,7 +740,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
    /* simulate a MongoDB 3.2+ "find" command */
-   if (!_mongoc_cursor_prepare_find_command (cursor, &doc, server_stream)) {
+   if (!_mongoc_cursor_prepare_find_command (cursor, &doc)) {
       /* cursor->error is set */
       bson_destroy (&doc);
       RETURN (false);
@@ -1300,12 +1298,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *opts,
                             bson_t *reply)
 {
-   const char *cmd_name;
-   bool is_primary;
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
    bson_iter_t iter;
    mongoc_cmd_parts_t parts;
+   const char *cmd_name;
+   bool is_primary;
+   mongoc_read_prefs_t *prefs = NULL;
    char db[MONGOC_NAMESPACE_MAX];
    bool ret = false;
 
@@ -1337,27 +1336,32 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       }
    }
 
-   cmd_name = _mongoc_get_command_name (command);
-   is_primary =
-      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
-   if (strcmp (cmd_name, "getMore") != 0 &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       cursor->server_id_set && is_primary) {
-      bson_t prefs;
-
-      /* we might use mongoc_cursor_set_hint to target a secondary but have no
-       * read preference, so the secondary rejects the read. with OP_QUERY we
-       * handle this by setting slaveOk, here we must use $readPreference.
-       */
-      BSON_APPEND_DOCUMENT_BEGIN (&parts.extra, "$readPreference", &prefs);
-      BSON_APPEND_UTF8 (&prefs, "mode", "primaryPreferred");
-      bson_append_document_end (&parts.extra, &prefs);
-   }
-
    if (!cursor->client_session && parts.assembled.session) {
       /* opts contains "sessionId" */
       cursor->client_session = parts.assembled.session;
       cursor->explicit_session = 1;
+   }
+
+   cmd_name = _mongoc_get_command_name (command);
+   is_primary =
+      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
+
+   if (strcmp (cmd_name, "getMore") != 0 &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
+       cursor->server_id_set && is_primary) {
+      /* we might use mongoc_cursor_set_hint to target a secondary but have no
+       * read preference, so the secondary rejects the read. with OP_QUERY we
+       * handle this by setting slaveOk. here we use $readPreference.
+       */
+      parts.read_prefs = prefs =
+         mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   } else {
+      parts.read_prefs = cursor->read_prefs;
+   }
+
+   if (cursor->read_concern->level) {
+      bson_concat (&parts.read_concern_document,
+                   _mongoc_read_concern_get_bson (cursor->read_concern));
    }
 
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
@@ -1396,6 +1400,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 done:
    mongoc_server_stream_cleanup (server_stream);
    mongoc_cmd_parts_cleanup (&parts);
+   mongoc_read_prefs_destroy (prefs);
 
    return ret;
 }
@@ -1468,13 +1473,10 @@ _mongoc_cursor_collection (const mongoc_cursor_t *cursor,
 
 
 static bool
-_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
-                                     bson_t *command,
-                                     mongoc_server_stream_t *server_stream)
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor, bson_t *command)
 {
    const char *collection;
    int collection_len;
-   bool is_primary;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command,
@@ -1484,32 +1486,6 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
                      collection_len);
    bson_append_document (
       command, MONGOC_CURSOR_FILTER, MONGOC_CURSOR_FILTER_LEN, &cursor->filter);
-
-   if (cursor->read_concern->level != NULL) {
-      const bson_t *read_concern_bson;
-
-      read_concern_bson = _mongoc_read_concern_get_bson (cursor->read_concern);
-      bson_append_document (command,
-                            MONGOC_CURSOR_READ_CONCERN,
-                            MONGOC_CURSOR_READ_CONCERN_LEN,
-                            read_concern_bson);
-   }
-
-   is_primary =
-      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
-
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       cursor->server_id_set && is_primary) {
-      bson_t prefs;
-
-      /* we might use mongoc_cursor_set_hint to target a secondary but have no
-       * read preference, so the secondary rejects the read. with OP_QUERY we
-       * handle this by setting slaveOk, here we must use $readPreference.
-       */
-      BSON_APPEND_DOCUMENT_BEGIN (command, "$readPreference", &prefs);
-      BSON_APPEND_UTF8 (&prefs, "mode", "primaryPreferred");
-      bson_append_document_end (command, &prefs);
-   }
 
    return true;
 }
@@ -1527,7 +1503,7 @@ _mongoc_cursor_find_command (mongoc_cursor_t *cursor,
    /* cursors created by mongoc_client_command don't use this function */
    BSON_ASSERT (cursor->is_find);
 
-   if (!_mongoc_cursor_prepare_find_command (cursor, &command, server_stream)) {
+   if (!_mongoc_cursor_prepare_find_command (cursor, &command)) {
       RETURN (NULL);
    }
 

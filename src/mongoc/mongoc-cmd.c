@@ -254,6 +254,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    bson_t query;
    bson_iter_t dollar_query;
    bool has_dollar_query = false;
+   bool requires_read_concern;
 
    ENTRY;
 
@@ -298,6 +299,10 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       add_read_prefs = true;
    }
 
+   requires_read_concern =
+      !bson_empty (&parts->read_concern_document) &&
+      strcmp (parts->assembled.command_name, "getMore") != 0;
+
    if (add_read_prefs) {
       /* produce {$query: {user query, readConcern}, $readPreference: ... } */
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
@@ -311,7 +316,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       }
 
       bson_concat (&query, &parts->extra);
-      if (!bson_empty (&parts->read_concern_document)) {
+      if (requires_read_concern) {
          bson_append_document (
             &query, "readConcern", 11, &parts->read_concern_document);
       }
@@ -332,7 +337,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       bson_append_document_begin (&parts->assembled_body, "$query", 6, &query);
       _iter_concat (&query, &dollar_query);
       bson_concat (&query, &parts->extra);
-      if (!bson_empty (&parts->read_concern_document)) {
+      if (requires_read_concern) {
          bson_append_document (
             &query, "readConcern", 11, &parts->read_concern_document);
       }
@@ -345,7 +350,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       parts->assembled.command = &parts->assembled_body;
    }
 
-   if (!bson_empty (&parts->read_concern_document)) {
+   if (requires_read_concern) {
       _mongoc_cmd_parts_ensure_copied (parts);
       bson_append_document (&parts->assembled_body,
                             "readConcern",
@@ -406,7 +411,8 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       _mongoc_cmd_parts_ensure_copied (parts);
    }
 
-   if (!bson_empty (&parts->read_concern_document)) {
+   if (!bson_empty (&parts->read_concern_document) &&
+       strcmp (parts->assembled.command_name, "getMore") != 0) {
       _mongoc_cmd_parts_ensure_copied (parts);
       bson_append_document (&parts->assembled_body,
                             "readConcern",
@@ -565,9 +571,13 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
+      if (!strcmp (parts->assembled.command_name, "getMore")) {
+         /* skip readConcern */
+         RETURN (true);
+      }
+
       if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
-          cs->operation_timestamp &&
-          strcmp (parts->assembled.command_name, "getMore") != 0) {
+          cs->operation_timestamp) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document_begin (
             &parts->assembled_body, "readConcern", 11, &child);
