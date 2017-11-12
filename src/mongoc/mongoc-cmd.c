@@ -200,11 +200,10 @@ _mongoc_cmd_parts_ensure_copied (mongoc_cmd_parts_t *parts)
 }
 
 
-/* The server type must be mongos. */
+/* The server type must be mongos, or message must be OP_MSG. */
 static void
 _mongoc_cmd_parts_add_read_prefs (bson_t *query,
-                                  const mongoc_read_prefs_t *prefs,
-                                  const mongoc_server_stream_t *server_stream)
+                                  const mongoc_read_prefs_t *prefs)
 {
    bson_t child;
    const char *mode_str;
@@ -322,8 +321,8 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       }
 
       bson_append_document_end (&parts->assembled_body, &query);
-      _mongoc_cmd_parts_add_read_prefs (
-         &parts->assembled_body, parts->read_prefs, server_stream);
+      _mongoc_cmd_parts_add_read_prefs (&parts->assembled_body,
+                                        parts->read_prefs);
 
       if (has_dollar_query) {
          /* copy anything that isn't in user's $query */
@@ -507,31 +506,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }
 
-      if (parts->read_prefs &&
-          !bson_has_field (parts->body, "$readPreference")) {
-         const bson_t *tags = NULL;
-         const char *mode_str;
-         int64_t stale;
-
-         bson_append_document_begin (
-            &parts->extra, "$readPreference", 15, &child);
-
-         mode_str = _mongoc_read_mode_as_str (
-            mongoc_read_prefs_get_mode (parts->read_prefs));
-         bson_append_utf8 (&child, "mode", 4, mode_str, -1);
-
-         tags = mongoc_read_prefs_get_tags (parts->read_prefs);
-         if (!bson_empty0 (tags)) {
-            bson_append_array (&child, "tags", 4, tags);
-         }
-
-         stale =
-            mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
-         if (stale != MONGOC_NO_MAX_STALENESS) {
-            bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
-         }
-
-         bson_append_document_end (&parts->extra, &child);
+      if (parts->read_prefs && parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
+         _mongoc_cmd_parts_add_read_prefs (&parts->extra, parts->read_prefs);
       }
 
       if (!bson_empty (&parts->extra)) {
