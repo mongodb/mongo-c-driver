@@ -389,7 +389,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_document_count;
-   uint32_t header = 16 * 1024;
+   uint32_t header;
    uint32_t payload_batch_size = 0;
    uint32_t payload_total_offset = 0;
    bool ship_it = false;
@@ -418,6 +418,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
    mongoc_cmd_parts_set_session (&parts, cs);
    parts.assembled.operation_id = command->operation_id;
+   parts.is_write_command = true;
    parts.assembled.is_acknowledged =
       mongoc_write_concern_is_acknowledged (write_concern);
 
