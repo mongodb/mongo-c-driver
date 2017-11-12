@@ -764,105 +764,127 @@ test_read_prefs_mongos_tags (void)
 }
 
 
+typedef mongoc_cursor_t *(*test_op_msg_direct_fn_t) (mongoc_collection_t *,
+                                                     mongoc_read_prefs_t *);
+
+
 /* direct connection to a secondary requires read pref primaryPreferred to
  * avoid "not master" error from server */
 static void
-test_op_msg_direct_connection (void)
+_test_op_msg_direct_connection (bool is_mongos,
+                                test_op_msg_direct_fn_t fn,
+                                const char *expected_cmd)
 {
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   mongoc_read_prefs_t *prefs;
+   mongoc_read_prefs_t *prefs = NULL;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+   bson_t *cmd;
    future_t *future;
    request_t *request;
-   bson_t *find;
-   bson_t *aggregate;
    const char *reply;
+   int i;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   if (is_mongos) {
+      server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   } else {
+      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   }
+
+   mock_server_auto_endsessions (server);
+
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   /*
-    * no read prefs
-    * primaryPreferred is injected to allow querying secondaries
-    */
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), NULL, NULL /* read prefs */);
-   future = future_cursor_next (cursor, &doc);
-   find = tmp_bson ("{"
-                    "   'find': 'collection',"
-                    "   '$readPreference': {'mode': 'primaryPreferred'}"
-                    "}");
+   for (i = 0; i < 2; i++) {
+      if (i == 1) {
+         /* user-supplied read preference primary makes no difference */
+         prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+      }
 
-   request = mock_server_receives_msg (server, 0, find);
-   reply = "{'ok': 1,"
-           " 'cursor': {"
-           "    'id': 0,"
-           "    'ns': 'db.collection',"
-           "    'firstBatch': [{'a': 1}]}}";
+      cursor = fn (collection, prefs);
+      future = future_cursor_next (cursor, &doc);
+      cmd = tmp_bson (expected_cmd);
+      request = mock_server_receives_msg (server, 0, cmd);
+      reply = "{'ok': 1,"
+              " 'cursor': {"
+              "    'id': 0,"
+              "    'ns': 'db.collection',"
+              "    'firstBatch': [{'a': 1}]}}";
 
-   mock_server_replies_simple (request, reply);
-   BSON_ASSERT (future_get_bool (future));
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
-   /*
-    * user-supplied primary read pref
-    */
-   prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{}"), NULL, prefs);
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (server, 0, find);
-   mock_server_replies_simple (request, reply);
-   BSON_ASSERT (future_get_bool (future));
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
-   /*
-    * aggregate with no read prefs
-    */
-   cursor = mongoc_collection_aggregate (collection,
-                                         MONGOC_QUERY_NONE,
-                                         tmp_bson ("{}"),
-                                         NULL,
-                                         NULL /* read prefs */);
-   future = future_cursor_next (cursor, &doc);
-   aggregate = tmp_bson ("{"
-                         "   'aggregate': 'collection',"
-                         "   '$readPreference': {'mode': 'primaryPreferred'}"
-                         "}");
-
-   request = mock_server_receives_msg (server, 0, aggregate);
-   mock_server_replies_simple (request, reply);
-   BSON_ASSERT (future_get_bool (future));
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
-   /*
-    * aggregate with user-supplied primary pref
-    */
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL, prefs);
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_msg (server, 0, aggregate);
-   mock_server_replies_simple (request, reply);
-   BSON_ASSERT (future_get_bool (future));
-   future_destroy (future);
-   request_destroy (request);
-   mongoc_cursor_destroy (cursor);
-
+      mock_server_replies_simple (request, reply);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+      mongoc_read_prefs_destroy (prefs); /* null ok */
+   }
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+
+static mongoc_cursor_t *
+find (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
+{
+   return mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), NULL /* opts */, prefs);
+}
+
+
+static mongoc_cursor_t *
+aggregate (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
+{
+   return mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL /* opts */, prefs);
+}
+
+
+/* direct connection to a secondary requires read pref primaryPreferred to
+ * avoid "not master" error from server */
+static void
+test_op_msg_direct_secondary ()
+{
+   _test_op_msg_direct_connection (
+      false /* is_mongos */,
+      find,
+      "{"
+      "   'find': 'collection',"
+      "   '$readPreference': {'mode': 'primaryPreferred'}"
+      "}");
+
+   _test_op_msg_direct_connection (
+      false /* is_mongos */,
+      aggregate,
+      "{"
+      "   'aggregate': 'collection',"
+      "   '$readPreference': {'mode': 'primaryPreferred'}"
+      "}");
+}
+
+
+/* direct connection to mongos must not auto-add read pref primaryPreferred */
+static void
+test_op_msg_direct_mongos ()
+{
+   _test_op_msg_direct_connection (true /* is_mongos */,
+                                   find,
+                                   "{"
+                                   "   'find': 'collection',"
+                                   "   '$readPreference': {'$exists': false}"
+                                   "}");
+
+   _test_op_msg_direct_connection (true /* is_mongos */,
+                                   aggregate,
+                                   "{"
+                                   "   'aggregate': 'collection',"
+                                   "   '$readPreference': {'$exists': false}"
+                                   "}");
 }
 
 
@@ -896,5 +918,7 @@ test_read_prefs_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
    TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/OP_MSG/direct", test_op_msg_direct_connection);
+      suite, "/ReadPrefs/OP_MSG/secondary", test_op_msg_direct_secondary);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/OP_MSG/mongos", test_op_msg_direct_mongos);
 }

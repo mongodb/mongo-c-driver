@@ -471,6 +471,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    mongoc_server_session_t *server_session;
    const bson_t *cluster_time = NULL;
    bson_t child;
+   mongoc_read_prefs_t *prefs = NULL;
+   bool is_get_more;
+   const mongoc_read_prefs_t *prefs_ptr;
 
    ENTRY;
 
@@ -486,6 +489,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    /* begin with raw flags/cmd as assembled flags/cmd, might change below */
    parts->assembled.command = parts->body;
+   /* unused in OP_MSG: */
    parts->assembled.query_flags = parts->user_query_flags;
    parts->assembled.server_stream = server_stream;
    parts->assembled.command_name =
@@ -501,13 +505,24 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    TRACE ("Preparing '%s'", parts->assembled.command_name);
 
+   is_get_more = !strcmp (parts->assembled.command_name, "getMore");
+
+   if (!parts->is_write_command && IS_PREF_PRIMARY (parts->read_prefs) &&
+       server_stream->topology_type == MONGOC_TOPOLOGY_SINGLE &&
+       server_stream->sd->type != MONGOC_SERVER_MONGOS && !is_get_more) {
+      prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+      prefs_ptr = prefs;
+   } else {
+      prefs_ptr = parts->read_prefs;
+   }
+
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
       if (!bson_has_field (parts->body, "$db")) {
          BSON_APPEND_UTF8 (&parts->extra, "$db", parts->assembled.db_name);
       }
 
-      if (parts->read_prefs && parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
-         _mongoc_cmd_parts_add_read_prefs (&parts->extra, parts->read_prefs);
+      if (!IS_PREF_PRIMARY (prefs_ptr)) {
+         _mongoc_cmd_parts_add_read_prefs (&parts->extra, prefs_ptr);
       }
 
       if (!bson_empty (&parts->extra)) {
@@ -547,44 +562,38 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
-      if (!strcmp (parts->assembled.command_name, "getMore")) {
-         /* skip readConcern */
-         RETURN (true);
-      }
+      if (!is_get_more) {
+         if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
+             cs->operation_timestamp) {
+            _mongoc_cmd_parts_ensure_copied (parts);
+            bson_append_document_begin (
+               &parts->assembled_body, "readConcern", 11, &child);
 
-      if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
-          cs->operation_timestamp) {
-         _mongoc_cmd_parts_ensure_copied (parts);
-         bson_append_document_begin (
-            &parts->assembled_body, "readConcern", 11, &child);
+            if (!bson_empty (&parts->read_concern_document)) {
+               /* combine user's readConcern with afterClusterTime */
+               bson_concat (&child, &parts->read_concern_document);
+            }
 
-         if (!bson_empty (&parts->read_concern_document)) {
-            /* combine user's readConcern with afterClusterTime */
-            bson_concat (&child, &parts->read_concern_document);
+            bson_append_timestamp (&child,
+                                   "afterClusterTime",
+                                   16,
+                                   cs->operation_timestamp,
+                                   cs->operation_increment);
+            bson_append_document_end (&parts->assembled_body, &child);
+         } else if (!bson_empty (&parts->read_concern_document)) {
+            bson_append_document (&parts->assembled_body,
+                                  "readConcern",
+                                  11,
+                                  &parts->read_concern_document);
          }
-
-         bson_append_timestamp (&child,
-                                "afterClusterTime",
-                                16,
-                                cs->operation_timestamp,
-                                cs->operation_increment);
-         bson_append_document_end (&parts->assembled_body, &child);
-      } else if (!bson_empty (&parts->read_concern_document)) {
-         bson_append_document (&parts->assembled_body,
-                               "readConcern",
-                               11,
-                               &parts->read_concern_document);
       }
-
-      RETURN (true);
-   }
-
-   if (server_type == MONGOC_SERVER_MONGOS) {
+   } else if (server_type == MONGOC_SERVER_MONGOS) {
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
-      RETURN (true);
+   } else {
+      _mongoc_cmd_parts_assemble_mongod (parts, server_stream);
    }
 
-   _mongoc_cmd_parts_assemble_mongod (parts, server_stream);
+   mongoc_read_prefs_destroy (prefs); /* NULL ok */
    RETURN (true);
 }
 

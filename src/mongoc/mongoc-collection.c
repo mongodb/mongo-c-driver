@@ -348,13 +348,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       if (!server_stream) {
          GOTO (done);
       }
-
-      if (!read_prefs &&
-          server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
-         mongoc_read_prefs_destroy (cursor->read_prefs);
-         cursor->read_prefs =
-            mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      }
    } else {
       server_stream = mongoc_cluster_stream_for_reads (
          &collection->client->cluster, read_prefs, &cursor->error);

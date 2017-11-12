@@ -1342,23 +1342,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       cursor->explicit_session = 1;
    }
 
-   cmd_name = _mongoc_get_command_name (command);
-   is_primary =
-      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
-
-   if (strcmp (cmd_name, "getMore") != 0 &&
-       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       cursor->server_id_set && is_primary) {
-      /* we might use mongoc_cursor_set_hint to target a secondary but have no
-       * read preference, so the secondary rejects the read. with OP_QUERY we
-       * handle this by setting slaveOk. here we use $readPreference.
-       */
-      parts.read_prefs = prefs =
-         mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-   } else {
-      parts.read_prefs = cursor->read_prefs;
-   }
-
    if (cursor->read_concern->level) {
       bson_concat (&parts.read_concern_document,
                    _mongoc_read_concern_get_bson (cursor->read_concern));
@@ -1369,6 +1352,24 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (!_mongoc_cursor_flags (cursor, server_stream, &parts.user_query_flags)) {
       GOTO (done);
+   }
+
+   /* we might use mongoc_cursor_set_hint to target a secondary but have no
+    * read preference, so the secondary rejects the read. same if we have a
+    * direct connection to a secondary (topology type "single"). with
+    * OP_QUERY we handle this by setting slaveOk. here we use $readPreference.
+    */
+   cmd_name = _mongoc_get_command_name (command);
+   is_primary =
+      !cursor->read_prefs || cursor->read_prefs->mode == MONGOC_READ_PRIMARY;
+
+   if (strcmp (cmd_name, "getMore") != 0 &&
+       server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
+       is_primary && parts.user_query_flags & MONGOC_QUERY_SLAVE_OK) {
+      parts.read_prefs = prefs =
+         mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   } else {
+      parts.read_prefs = cursor->read_prefs;
    }
 
    if (cursor->write_concern &&

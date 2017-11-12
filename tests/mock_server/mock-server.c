@@ -542,6 +542,41 @@ mock_server_auto_ismaster (mock_server_t *server,
 }
 
 
+static bool
+auto_endsessions (request_t *request, void *data)
+{
+   if (!request->is_command ||
+       strcasecmp (request->command_name, "endSessions") != 0) {
+      return false;
+   }
+
+   mock_server_replies_ok_and_destroys (request);
+   return true;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_auto_endsessions --
+ *
+ *       Autorespond to "endSessions".
+ *
+ * Returns:
+ *       An id for mock_server_remove_autoresponder.
+ *
+ * Side effects:
+ *       If a matching request is enqueued, pop it and respond.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int
+mock_server_auto_endsessions (mock_server_t *server)
+{
+   return mock_server_autoresponds (server, auto_endsessions, NULL, NULL);
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_get_uri --
