@@ -892,6 +892,11 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    i = 0;
    va_start (args, flags);
    while ((pattern = va_arg (args, const bson_t *))) {
+      /* make sure the pattern is reasonable, e.g. that we didn't pass a string
+       * instead of a bson_t* by mistake */
+      BSON_ASSERT (bson_validate (
+         pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, NULL));
+
       if (i > request->docs.len) {
          test_error ("Expected at least %d documents in request, got %zu\n",
                      i,
