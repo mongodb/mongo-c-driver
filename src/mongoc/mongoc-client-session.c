@@ -260,7 +260,7 @@ _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
    timeout_usec =
       server_session->last_used_usec + session_timeout_minutes * minute_to_usec;
 
-   RETURN (timeout_usec - bson_get_monotonic_time ()) < 1 * minute_to_usec;
+   RETURN (timeout_usec - bson_get_monotonic_time () < 1 * minute_to_usec);
 }
 
 
