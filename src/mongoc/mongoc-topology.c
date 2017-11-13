@@ -1256,7 +1256,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
 
    if (timeout == MONGOC_NO_SESSIONS) {
       /* if needed, connect and check for session timeout again */
-      if (!mongoc_topology_description_has_known_server (td)) {
+      if (!mongoc_topology_description_has_data_node (td)) {
          mongoc_mutex_unlock (&topology->mutex);
          if (!mongoc_topology_select_server_id (
                 topology, MONGOC_SS_READ, NULL, error)) {

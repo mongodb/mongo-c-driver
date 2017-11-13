@@ -116,8 +116,7 @@ mongoc_topology_description_suitable_servers (
    size_t local_threshold_ms);
 
 bool
-mongoc_topology_description_has_known_server (
-   mongoc_topology_description_t *td);
+mongoc_topology_description_has_data_node (mongoc_topology_description_t *td);
 
 void
 mongoc_topology_description_invalidate_server (

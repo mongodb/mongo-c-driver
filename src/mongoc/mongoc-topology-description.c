@@ -26,6 +26,27 @@
 #include "mongoc-thread-private.h"
 
 
+static bool
+_is_data_node (mongoc_server_description_t *sd)
+{
+   switch (sd->type) {
+   case MONGOC_SERVER_MONGOS:
+   case MONGOC_SERVER_STANDALONE:
+   case MONGOC_SERVER_RS_SECONDARY:
+   case MONGOC_SERVER_RS_PRIMARY:
+      return true;
+   case MONGOC_SERVER_RS_OTHER:
+   case MONGOC_SERVER_RS_ARBITER:
+   case MONGOC_SERVER_UNKNOWN:
+   case MONGOC_SERVER_POSSIBLE_PRIMARY:
+   case MONGOC_SERVER_RS_GHOST:
+   case MONGOC_SERVER_DESCRIPTION_TYPES:
+   default:
+      return false;
+   }
+}
+
+
 static void
 _mongoc_topology_server_dtor (void *server_, void *ctx_)
 {
@@ -719,21 +740,21 @@ DONE:
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_topology_description_has_known_server --
+ * mongoc_topology_description_has_data_node --
  *
- *      Internal method: are any servers not MONGOC_SERVER_UNKNOWN?
+ *      Internal method: are any servers not Arbiter, Ghost, or Unknown?
  *
  *--------------------------------------------------------------------------
  */
 bool
-mongoc_topology_description_has_known_server (mongoc_topology_description_t *td)
+mongoc_topology_description_has_data_node (mongoc_topology_description_t *td)
 {
    int i;
    mongoc_server_description_t *sd;
 
    for (i = 0; i < (int) td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
-      if (sd->type != MONGOC_SERVER_UNKNOWN) {
+      if (_is_data_node (sd)) {
          return true;
       }
    }
@@ -1802,9 +1823,7 @@ _mongoc_topology_description_update_session_timeout (
 
    for (i = 0; i < set->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
-      if (sd->type == MONGOC_SERVER_UNKNOWN ||
-          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY ||
-          sd->type == MONGOC_SERVER_RS_ARBITER) {
+      if (!_is_data_node (sd)) {
          continue;
       }
 
