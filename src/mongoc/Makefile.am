@@ -299,7 +299,6 @@ libmongoc_la_CFLAGS = \
 	$(COVERAGE_CFLAGS) \
 	$(PTHREAD_CFLAGS) \
 	$(SSL_CFLAGS) \
-	$(SNAPPY_CFLAGS) \
 	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS)
 
@@ -319,27 +318,6 @@ libmongoc_la_LIBADD = \
 
 if OS_WIN32
 libmongoc_la_LIBADD += -lws2_32
-endif
-
-if WITH_SNAPPY
-libmongoc_la_LIBADD += libsnappy.la
-libsnappy_la_CPPFLAGS = $(BSON_CFLAGS)
-libsnappy_la_SOURCES = \
-                        src/snappy-1.1.3/snappy.cc \
-                        src/snappy-1.1.3/snappy-sinksource.cc \
-                        src/snappy-1.1.3/snappy-stubs-internal.cc \
-                        src/snappy-1.1.3/snappy-c.cc
-
-noinst_HEADERS += \
-                  src/snappy-1.1.3/snappy-internal.h \
-                  src/snappy-1.1.3/snappy-stubs-internal.h \
-                  src/snappy-1.1.3/snappy-test.h \
-                  src/snappy-1.1.3/snappy.h \
-                  src/snappy-1.1.3/snappy-sinksource.h \
-                  src/snappy-1.1.3/snappy-stubs-public.h \
-                  src/snappy-1.1.3/snappy-c.h
-
-dist_doc_DATA = src/snappy-1.1.3/COPYING
 endif
 
 if WITH_ZLIB

@@ -21,7 +21,7 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
-SNAPPY=${SNAPPY:-bundled}
+SNAPPY=${SNAPPY:-auto}
 ZLIB=${ZLIB:-bundled}
 INSTALL_DIR=$(pwd)/install-dir
 
@@ -129,7 +129,7 @@ case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
       CXXFLAGS="$CXXFLAGS -m32 -march=i386"
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=bundled --with-zlib=bundled"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=auto --with-zlib=bundled"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"

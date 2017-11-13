@@ -99,12 +99,12 @@ AS_IF([test "x$with_libbson" != xbundled -a "x$with_libbson" != xsystem -a "x$wi
       [AC_MSG_ERROR([Invalid --with-libbson option: must be system, bundled, or auto])])
 
 AC_ARG_WITH(snappy,
-    AC_HELP_STRING([--with-snappy=@<:@auto/system/bundled/no@:>@],
-                   [use system installed snappy or bundled snappy. default=auto]),
+    AC_HELP_STRING([--with-snappy=@<:@auto/yes/no@:>@],
+                   [use system installed snappy. default=auto]),
     [],
     [with_snappy=auto])
-AS_IF([test "x$with_snappy" != xbundled -a "x$with_snappy" != xsystem -a "x$with_snappy" != xauto -a "x$with_snappy" != xno],
-      [AC_MSG_ERROR([Invalid --with-snappy option: must be system, bundled, auto, no])])
+AS_IF([test "x$with_snappy" != xyes -a "x$with_snappy" != xsystem -a "x$with_snappy" != xauto -a "x$with_snappy" != xno],
+      [AC_MSG_ERROR([Invalid --with-snappy option: must be auto, yes, or no])])
 
 AC_ARG_WITH(zlib,
     AC_HELP_STRING([--with-zlib=@<:@auto/system/bundled/no@:>@],

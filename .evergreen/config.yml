@@ -521,7 +521,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=no sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=system ZLIB=no sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -534,7 +534,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=bundled ZLIB=bundled sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=system ZLIB=bundled sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-compression-zlib
@@ -749,18 +749,6 @@ tasks:
           vars:
             BUILD_SAMPLE_WITH_CMAKE: "1"
 
-    - name: link-with-cmake-mac
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-        - func: "link sample program"
-          vars:
-            BUILD_SAMPLE_WITH_CMAKE: "1"
-
     - name: link-with-cmake-ssl
       depends_on:
         - name: "make-release-archive"
@@ -773,6 +761,19 @@ tasks:
           vars:
             BUILD_SAMPLE_WITH_CMAKE: "1"
             ENABLE_SSL: "1"
+
+    - name: link-with-cmake-snappy
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+        - func: "link sample program"
+          vars:
+            BUILD_SAMPLE_WITH_CMAKE: "1"
+            ENABLE_SNAPPY: "1"
 
     - name: link-with-cmake-windows
       depends_on:
@@ -788,9 +789,9 @@ tasks:
             working_dir: "mongoc"
             script: |
               set -o errexit
-              # Build libmongoc with CMake (not Autotools) and compile a program
-              # that links dynamically or statically to it, using variables from
-              # CMake's find_package command.
+              # Build libmongoc with CMake and compile a program that links
+              # dynamically or statically to it, using variables from CMake's
+              # find_package command.
               LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
               LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
@@ -809,10 +810,31 @@ tasks:
             working_dir: "mongoc"
             script: |
               set -o errexit
-              # Build libmongoc with CMake (not Autotools) and compile a program
-              # that links dynamically or statically to it, using variables from
-              # CMake's find_package command.
+              # Build libmongoc with CMake and compile a program that links
+              # dynamically or statically to it, using variables from CMake's
+              # find_package command.
               export ENABLE_SSL=1
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+
+    - name: link-with-cmake-windows-snappy
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libmongoc with CMake and compile a program that links
+              # dynamically or statically to it, using variables from CMake's
+              # find_package command.
+              export ENABLE_SNAPPY=1
               LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
               LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
@@ -824,15 +846,7 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              # Build libmongoc with CMake (not Autotools) and compile a program
-              # that links dynamically or statically to it, using variables from
-              # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+        - func: "link sample program"
 
     - name: link-with-pkg-config
       depends_on:
@@ -6312,9 +6326,18 @@ buildvariants:
       - ubuntu1604-test
       - ubuntu1404-build
       - ubuntu1404-test
-    - name: "link-with-cmake-mac"
+    - name: "link-with-cmake-ssl"
       distros:
-      - macos-1012
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "link-with-cmake-snappy"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
     - name: "link-with-cmake-windows"
       distros:
       - windows-64-vs2015-compile
@@ -6323,10 +6346,20 @@ buildvariants:
       distros:
       - windows-64-vs2015-compile
       - windows-64-vs2015-test
+    - name: "link-with-cmake-windows-snappy"
+      distros:
+      - windows-64-vs2015-compile
+      - windows-64-vs2015-test
     - name: "link-with-cmake-mingw"
       distros:
       - windows-64-vs2013-compile
     - name: "link-with-pkg-config"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "link-with-pkg-config-ssl"
       distros:
       - ubuntu1604-build
       - ubuntu1604-test

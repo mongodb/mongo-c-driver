@@ -77,7 +77,7 @@ else
    MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
 fi
 
-if test "x$with_snappy" = "xbundled"; then
+if test "x$with_snappy" = "xno"; then
    AC_SUBST(MONGOC_SNAPPY_BUNDLED, 1)
 else
    MONGOC_LIBS="${MONGOC_LIBS} ${SNAPPY_LIBS}"
@@ -96,7 +96,6 @@ AC_CONFIG_FILES([
     build/cmake/libmongoc-static-1.0-config-version.cmake
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
-    src/snappy-1.1.3/snappy-stubs-public.h
     src/zlib-1.2.11/zconf.h
 ])
 

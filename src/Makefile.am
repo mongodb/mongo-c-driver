@@ -1,6 +1,3 @@
-if WITH_SNAPPY
-lib_LTLIBRARIES += libsnappy.la
-endif
 lib_LTLIBRARIES += libmongoc-1.0.la
 
 libmongoc_1_0_la_SOURCES =
