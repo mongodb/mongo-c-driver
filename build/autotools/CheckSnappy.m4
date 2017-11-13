@@ -88,7 +88,7 @@ AS_IF([test "x${with_snappy}" = xbundled],[
    fi
    # end of vendored configure.ac checks from snappy
 
-   SNAPPY_LIBS=
+   SNAPPY_LIBS="-lsnappy"
    SNAPPY_CFLAGS="-Isrc/snappy-1.1.3"
 ])
 
