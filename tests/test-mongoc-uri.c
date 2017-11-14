@@ -739,7 +739,7 @@ test_mongoc_uri_new_with_error (void)
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Incorrect URI escapes in username. Percent-encode "
-                          "username and password according to RFC 3986.");
+                          "username and password according to RFC 3986");
 
    memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
@@ -783,7 +783,7 @@ test_mongoc_uri_new_with_error (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Unsupported w value [w=-5].");
+                          "Unsupported w value [w=-5]");
 }
 
 
