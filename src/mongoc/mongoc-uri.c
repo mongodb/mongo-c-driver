@@ -62,7 +62,7 @@ struct _mongoc_uri_t {
 
 
 static const char *escape_instructions = "Percent-encode username and password"
-                                         " according to RFC 3986.";
+                                         " according to RFC 3986";
 
 bool
 _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
@@ -300,7 +300,7 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri,
 
       mongoc_uri_do_unescape (&uri->password);
       if (!uri->password) {
-         MONGOC_URI_ERROR (error, "%s", "Incorrect URI escapes in password.");
+         MONGOC_URI_ERROR (error, "%s", "Incorrect URI escapes in password");
          return false;
       }
    }
@@ -1240,7 +1240,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
          case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
             if (mongoc_write_concern_get_journal (write_concern)) {
                MONGOC_URI_ERROR (
-                  error, "Journal conflicts with w value [w=%d].", value);
+                  error, "Journal conflicts with w value [w=%d]", value);
                return false;
             }
             mongoc_write_concern_set_w (write_concern, value);
@@ -1253,7 +1253,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
                }
                break;
             }
-            MONGOC_URI_ERROR (error, "Unsupported w value [w=%d].", value);
+            MONGOC_URI_ERROR (error, "Unsupported w value [w=%d]", value);
             return false;
          }
       } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
