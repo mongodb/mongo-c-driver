@@ -284,7 +284,7 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *                  bypassDocumentValidation (used with $out pipeline),
  *                  maxTimeMS (declaring maximum server execution time) and
  *                  explain (return information on the processing of the
- *pipeline).
+ *                  pipeline).
  *       @read_prefs: Optional read preferences for the command.
  *
  * Returns:

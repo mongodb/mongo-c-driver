@@ -20,8 +20,6 @@ Execute a command on the server, applying logic that is specific to commands tha
 
 Use this function for commands that write such as "drop" or "createRole" (but not for "insert", "update", or "delete", see `Basic Write Operations`_). Write concern is applied from ``opts``, or else from ``client``. The write concern is omitted for MongoDB before 3.2. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Collation requires MongoDB 3.2 or later, otherwise an error is returned. No read concern or read preferences are applied.
 
-To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
-
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
 Parameters
@@ -33,6 +31,8 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``reply``: A location for the resulting document.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
+
+.. include:: includes/write-opts.txt
 
 Errors
 ------
@@ -54,5 +54,7 @@ Do not use this function to call the basic write commands "insert", "update", an
 Example
 -------
 
-See the example code for :symbol:`mongoc_client_read_command_with_opts`.
+.. literalinclude:: ../examples/example-command-with-opts.c
+   :language: c
+   :caption: example-command-with-opts.c
 

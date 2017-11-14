@@ -165,6 +165,8 @@ Example ``reply`` document and error message:
 
 The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_WRITE_CONCERN`` if there are write concern errors and no write errors. Write errors indicate failed operations, so they take precedence over write concern errors, which mean merely that the write concern is not satisfied *yet*.
 
+.. _setting_collation_order:
+
 Setting Collation Order
 -----------------------
 

@@ -16,10 +16,6 @@ Synopsis
                                  bson_t *reply,
                                  bson_error_t *error);
 
-.. warning::
-
-  If not ``NULL``, ``reply`` is always initialized, even upon failure. Callers *must* call :symbol:`bson:bson_destroy()` to release this potential allocation.
-
 Parameters
 ----------
 
@@ -27,21 +23,19 @@ Parameters
 * ``selector``: A :symbol:`bson:bson_t` containing the query to match documents for updating.
 * ``update``: A :symbol:`bson:bson_t` containing the update to perform.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options or ``NULL``.
-* ``reply`` An uninitialized :symbol:`bson:bson_t` populated with the update result or ``NULL``.
+* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-``opts`` may be ``NULL`` or a document consisting of the following optional
-fields:
-
+.. include:: includes/crud-opts.txt
 * ``arrayFilters`` An array of filters specifying to which array elements an update should apply.
-* ``bypassDocumentValidation`` A ``boolean``, if true, allows the write to opt-out of document level validation.
-* ``collation`` A `Collation Document <https://docs.mongodb.com/manual/reference/collation/>`_.
 * ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
 
 Description
 -----------
 
-This function shall update all documents in ``collection`` that match ``selector``.
+This function updates all documents in ``collection`` that match ``selector``.
+
+To update at most one document see :symbol:`mongoc_collection_update_one`.
 
 If you pass a non-NULL ``reply``, it is filled out with fields "modifiedCount" and "matchedCount". If a document was upserted, ``reply`` contains an "upsertedId" field. If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
 

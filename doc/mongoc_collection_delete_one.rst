@@ -21,8 +21,10 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``selector``: A :symbol:`bson:bson_t` containing the query to match documents.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
-* ``reply`` An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
+* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the delete result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
+
+.. include:: includes/crud-opts.txt
 
 Description
 -----------
@@ -30,6 +32,8 @@ Description
 This function removes at most one document in the given ``collection`` that matches ``selector``.
 
 To delete all matching documents, use :symbol:`mongoc_collection_delete_many`.
+
+If you pass a non-NULL ``reply``, it is filled out with the field "deletedCount". If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
 
 Errors
 ------

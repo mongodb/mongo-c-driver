@@ -27,14 +27,10 @@ Parameters
 * ``selector``: A :symbol:`bson:bson_t` containing the query to match the document for updating.
 * ``replacement``: A :symbol:`bson:bson_t` containing the replacement document.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options or ``NULL``.
-* ``reply`` An uninitialized :symbol:`bson:bson_t` populated with the update result or ``NULL``.
+* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-``opts`` may be ``NULL`` or a document consisting of the following optional
-fields:
-
-* ``bypassDocumentValidation`` A ``boolean``, if true, allows the write to opt-out of document level validation.
-* ``collation`` A `Collation Document <https://docs.mongodb.com/manual/reference/collation/>`_.
+.. include:: includes/crud-opts.txt
 * ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
 
 Description

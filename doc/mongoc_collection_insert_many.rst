@@ -1,7 +1,7 @@
-:man_page: mongoc_collection_insert_one
+:man_page: mongoc_collection_insert_many
 
-mongoc_collection_insert_one()
-==============================
+mongoc_collection_insert_many()
+===============================
 
 Synopsis
 --------
@@ -23,14 +23,19 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``documents``: An array of pointers to :symbol:`bson:bson_t`.
 * ``n_documents``: The length of ``documents``.
-* ``opts``: An optional :symbol:`bson:bson_t` containing additional options. Include "ordered: false" to attempt to insert all documents, continuing after errors.
-* ``reply`` An optional uninitialized :symbol:`bson:bson_t` populated with the insert result.
+* ``opts``: An optional :symbol:`bson:bson_t` containing additional options.
+* ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the insert result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
+
+.. include:: includes/crud-opts.txt
+* ``ordered``: set to ``false`` to attempt to insert all documents, continuing after errors.
 
 Description
 -----------
 
 Insert ``documents`` into ``collection``.
+
+To insert a single document, see :symbol:`mongoc_collection_insert_one`.
 
 For any document that does not have an "_id" field, a :symbol:`bson:bson_oid_t` will be generated locally and added to the document. If you must know the inserted document's ``_id``, generate it in your code and include it in the ``document``. The ``_id`` you generate can be a :symbol:`bson:bson_oid_t` or any other non-array BSON type.
 

@@ -25,22 +25,29 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing options for the command, or ``NULL``.
 * ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL``.
 
+``opts`` may be NULL or a BSON document with additional command options:
+
+* ``readConcern``: Construct a :symbol:`mongoc_read_concern_t` and use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``. See the example code for :symbol:`mongoc_client_read_command_with_opts`.
+* ``writeConcern``: For aggregations that include "$out", you can construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.
+* ``sessionId``: Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.
+* ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.
+* ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.
+* ``serverId``: To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
+
+For a list of all options, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
+
 Description
 -----------
 
 This function shall execute an aggregation query on the underlying 'collection'. The bson 'pipeline' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.
 
-In the case of older server versions, < v2.5, the returned cursor is a synthetic iterator over the result set. This provides a limitation insofar as returned documents can be no larger than 16MB. When connecting to newer servers this limitation doesn't exist. The specific test is for wire_version > 0.
-
-For more information on building MongoDB pipelines, see `MongoDB Aggregation Command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_ on the MongoDB website.
+For more information on building MongoDB pipelines, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
 
 .. note::
 
   The ``pipeline`` parameter should contain a field named ``pipeline`` containing a BSON array of pipeline stages.
 
-To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
-
-The :symbol:`mongoc_read_concern_t` and the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
+Read concern is applied from ``opts`` or else from ``collection``. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Read concern and collation both require MongoDB 3.2 or later, otherwise an error is returned. Read preferences are applied from ``read_prefs`` or else from ``collection``. Write concern is applied from ``opts``, or if ``opts`` has no write concern and the aggregation pipeline includes "$out", the write concern is applied from ``collection``. The write concern is omitted for MongoDB before 3.2.
 
 Returns
 -------
