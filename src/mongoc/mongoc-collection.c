@@ -1947,18 +1947,20 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   /* update document, all keys must be $-operators */
-   if (is_update) {
-      if (!_mongoc_validate_update (update, error)) {
-         return false;
-      }
-   } else if (!_mongoc_validate_replace (update, error)) {
-      return false;
-   }
-
    if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
       _mongoc_write_opts_cleanup (&parsed);
       return false;
+   }
+
+   if (parsed.client_validation) {
+      /* update document, all keys must be $-operators */
+      if (is_update) {
+         if (!_mongoc_validate_update (update, error)) {
+            return false;
+         }
+      } else if (!_mongoc_validate_replace (update, error)) {
+         return false;
+      }
    }
 
    if (is_multi) {

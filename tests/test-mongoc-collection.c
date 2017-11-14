@@ -5111,6 +5111,86 @@ test_update_and_replace (void)
    /* Note, there is no multi replace */
 }
 
+
+static void
+_test_update_validate (update_fn_t update_fn)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *selector;
+   bson_t *update;
+   const char *msg;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_update_validate");
+   selector = tmp_bson ("{}");
+
+   if (update_fn == mongoc_collection_replace_one) {
+      /* prohibited for replace */
+      update = tmp_bson ("{'$set': {'x': 1}}");
+      msg = "replacement document contains invalid key";
+   } else {
+      /* prohibited for update */
+      update = tmp_bson ("{'x': 1}");
+      msg = "only works with $ operators";
+   }
+
+   BSON_ASSERT (!update_fn (collection, selector, update, NULL, NULL, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
+
+   r = update_fn (collection,
+                  selector,
+                  update,
+                  tmp_bson ("{'validate': false}"),
+                  NULL,
+                  &error);
+
+   /* server may or may not error */
+   if (!r) {
+      ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
+   }
+
+   BSON_ASSERT (!update_fn (collection,
+                            selector,
+                            update,
+                            tmp_bson ("{'validate': 'foo'}"),
+                            NULL,
+                            &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid type for option \"validate\", \"UTF8\"");
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_replace_one_validate (void)
+{
+   _test_update_validate (mongoc_collection_replace_one);
+}
+
+
+static void
+test_update_one_validate (void)
+{
+   _test_update_validate (mongoc_collection_update_one);
+}
+
+
+static void
+test_update_many_validate (void)
+{
+   _test_update_validate (mongoc_collection_update_many);
+}
+
+
 typedef bool (*delete_fn_t) (mongoc_collection_t *,
                              const bson_t *,
                              const bson_t *,
@@ -5413,6 +5493,12 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_one", test_insert_one);
    TestSuite_AddLive (
       suite, "/Collection/update_and_replace", test_update_and_replace);
+   TestSuite_AddLive (
+      suite, "/Collection/replace_one_validate", test_replace_one_validate);
+   TestSuite_AddLive (
+      suite, "/Collection/update_one_validate", test_update_one_validate);
+   TestSuite_AddLive (
+      suite, "/Collection/update_many_validate", test_update_many_validate);
    TestSuite_AddLive (
       suite, "/Collection/delete_one_or_many", test_delete_one_or_many);
 }
