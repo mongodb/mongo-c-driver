@@ -228,25 +228,34 @@ convert_spec_result_to_bulk_write_result (const bson_t *spec_result)
          uint32_t i = 0;
 
          ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+
+         /* include the "upserted" field if upsertedIds isn't empty */
          ASSERT (bson_iter_recurse (&iter, &inner));
-
-         BSON_APPEND_ARRAY_BEGIN (result, "upserted", &upserted);
-
          while (bson_iter_next (&inner)) {
-            bson_t upsert;
-            const char *keyptr = NULL;
-            char key[12];
-            int len;
-
-            len = (int) bson_uint32_to_string (i++, &keyptr, key, sizeof key);
-
-            bson_append_document_begin (&upserted, keyptr, len, &upsert);
-            BSON_APPEND_INT32 (&upsert, "index", atoi (bson_iter_key (&inner)));
-            BSON_APPEND_VALUE (&upsert, "_id", bson_iter_value (&inner));
-            bson_append_document_end (&upserted, &upsert);
+            i++;
          }
 
-         bson_append_array_end (result, &upserted);
+         if (i) {
+            i = 0;
+            ASSERT (bson_iter_recurse (&iter, &inner));
+            BSON_APPEND_ARRAY_BEGIN (result, "upserted", &upserted);
+
+            while (bson_iter_next (&inner)) {
+               bson_t upsert;
+               const char *keyptr = NULL;
+               char key[12];
+
+               bson_uint32_to_string (i++, &keyptr, key, sizeof key);
+
+               BSON_APPEND_DOCUMENT_BEGIN (&upserted, keyptr, &upsert);
+               BSON_APPEND_INT32 (
+                  &upsert, "index", atoi (bson_iter_key (&inner)));
+               BSON_APPEND_VALUE (&upsert, "_id", bson_iter_value (&inner));
+               bson_append_document_end (&upserted, &upsert);
+            }
+
+            bson_append_array_end (result, &upserted);
+         }
       }
    }
 
