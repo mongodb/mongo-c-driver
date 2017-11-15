@@ -733,18 +733,18 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
       RETURN (false);
    }
 
-   if (bulk->server_id) {
-      server_stream = mongoc_cluster_stream_for_server (
-         cluster, bulk->server_id, true /* reconnect_ok */, error);
-   } else {
-      server_stream = mongoc_cluster_stream_for_writes (cluster, error);
-   }
-
-   if (!server_stream) {
-      RETURN (false);
-   }
-
    for (i = 0; i < bulk->commands.len; i++) {
+      if (bulk->server_id) {
+         server_stream = mongoc_cluster_stream_for_server (
+            cluster, bulk->server_id, true /* reconnect_ok */, error);
+      } else {
+         server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+      }
+
+      if (!server_stream) {
+         RETURN (false);
+      }
+
       command =
          &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
 
@@ -766,6 +766,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
       }
 
       offset += command->n_documents;
+      mongoc_server_stream_cleanup (server_stream);
    }
 
 cleanup:
@@ -775,7 +776,6 @@ cleanup:
                                        MONGOC_ERROR_COMMAND /* err domain */,
                                        reply,
                                        error);
-   mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret ? bulk->server_id : 0);
 }
