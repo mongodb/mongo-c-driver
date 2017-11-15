@@ -553,14 +553,12 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          }
       }
 
-      /* Append the transaction number field and initialize a bson_iter_t
-       * to it so that _mongoc_write_opmsg can later increment and update
-       * the value for each command after possible batch splitting. */
+      /* Append the transaction number field so that _mongoc_write_opmsg can
+       * later increment and update the value for each command after possible
+       * batch splitting. */
       if (parts->is_retryable_write) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_int64 (&parts->assembled_body, "txnNumber", 9, 0);
-         BSON_ASSERT (bson_iter_init_find (
-            &parts->txn_number_iter, &parts->assembled_body, "txnNumber"));
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {

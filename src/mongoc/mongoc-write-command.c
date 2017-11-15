@@ -497,8 +497,11 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          /* increment the transaction number for the first attempt of each
           * retryable write command */
          if (is_retryable) {
+            bson_iter_t txn_number_iter;
+            BSON_ASSERT (bson_iter_init_find (
+               &txn_number_iter, parts.assembled.command, "txnNumber"));
             bson_iter_overwrite_int64 (
-               &parts.txn_number_iter,
+               &txn_number_iter,
                ++parts.assembled.session->server_session->txn_number);
          }
       retry:
