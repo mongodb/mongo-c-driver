@@ -910,51 +910,18 @@ request_t *
 _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 {
    request_t *request;
-   const bson_t *doc;
-   const bson_t *pattern;
-   bool is_command_doc;
    va_list args;
-   int i;
+   bool r;
 
    request = mock_server_receives_request (server);
-   BSON_ASSERT (request);
-   if (request->opcode != MONGOC_OPCODE_MSG) {
-      test_error ("%s", "request's opcode does not match OP_MSG");
-   }
 
-   BSON_ASSERT (request->docs.len >= 1);
-
-   i = 0;
    va_start (args, flags);
-   while ((pattern = va_arg (args, const bson_t *))) {
-      /* make sure the pattern is reasonable, e.g. that we didn't pass a string
-       * instead of a bson_t* by mistake */
-      BSON_ASSERT (bson_validate (
-         pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, NULL));
-
-      if (i > request->docs.len) {
-         test_error ("Expected at least %d documents in request, got %zu\n",
-                     i,
-                     request->docs.len);
-      }
-
-      doc = request_get_doc (request, i);
-      /* pass is_command=true for first doc, including "find" command */
-      is_command_doc = (i == 0);
-      match_bson (doc, pattern, is_command_doc);
-      i++;
-   }
+   r = request_matches_msgv (request, flags, &args);
    va_end (args);
 
-   if (i < request->docs.len) {
-      test_error (
-         "Expected %d documents in request, got %zu\n", i, request->docs.len);
-   }
-
-   if (flags != request->request_rpc.msg.flags) {
-      test_error ("Expected OP_MSG flags %u, got %u\n",
-                  flags,
-                  request->request_rpc.msg.flags);
+   if (!r) {
+      request_destroy (request);
+      return NULL;
    }
 
    return request;

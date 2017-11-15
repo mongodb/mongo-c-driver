@@ -513,6 +513,64 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
 }
 
 
+bool
+request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
+{
+   const bson_t *doc;
+   const bson_t *pattern;
+   bool is_command_doc;
+   int i;
+
+   BSON_ASSERT (request);
+   if (request->opcode != MONGOC_OPCODE_MSG) {
+      test_error ("%s", "request's opcode does not match OP_MSG");
+   }
+
+   BSON_ASSERT (request->docs.len >= 1);
+
+   i = 0;
+   while ((pattern = va_arg (*args, const bson_t *))) {
+      /* make sure the pattern is reasonable, e.g. that we didn't pass a string
+       * instead of a bson_t* by mistake */
+      BSON_ASSERT (bson_validate (
+         pattern, BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_UTF8, NULL));
+
+      if (i > request->docs.len) {
+         fprintf (stderr,
+                  "Expected at least %d documents in request, got %zu\n",
+                  i,
+                  request->docs.len);
+         return false;
+      }
+
+      doc = request_get_doc (request, i);
+      /* pass is_command=true for first doc, including "find" command */
+      is_command_doc = (i == 0);
+      match_bson (doc, pattern, is_command_doc);
+      i++;
+   }
+
+   if (i < request->docs.len) {
+      fprintf (stderr,
+               "Expected %d documents in request, got %zu\n",
+               i,
+               request->docs.len);
+      return false;
+   }
+
+
+   if (flags != request->request_rpc.msg.flags) {
+      fprintf (stderr,
+               "Expected OP_MSG flags %u, got %u\n",
+               flags,
+               request->request_rpc.msg.flags);
+      return false;
+   }
+
+   return true;
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * request_get_server_port --

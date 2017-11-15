@@ -75,6 +75,12 @@ mock_rs_receives_getmore (mock_rs_t *rs,
 request_t *
 mock_rs_receives_kill_cursors (mock_rs_t *rs, int64_t cursor_id);
 
+request_t *
+_mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...);
+
+#define mock_rs_receives_msg(_rs, _flags, ...) \
+   _mock_rs_receives_msg (_rs, _flags, __VA_ARGS__, NULL)
+
 void
 mock_rs_replies (request_t *request,
                  uint32_t flags,
@@ -104,6 +110,12 @@ mock_rs_request_is_to_primary (mock_rs_t *rs, request_t *request);
 
 bool
 mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request);
+
+void
+mock_rs_stepdown (mock_rs_t *rs);
+
+void
+mock_rs_elect (mock_rs_t *rs, int id);
 
 void
 mock_rs_destroy (mock_rs_t *rs);

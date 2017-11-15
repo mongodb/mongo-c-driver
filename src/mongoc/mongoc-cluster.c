@@ -383,13 +383,21 @@ done:
    RETURN (ret);
 }
 
+
+bool
+mongoc_cluster_is_not_master_error (const bson_error_t *error)
+{
+   return !strncmp (error->message, "not master", 10) ||
+          !strncmp (error->message, "node is recovering", 18);
+}
+
+
 static void
 handle_not_master_error (mongoc_cluster_t *cluster,
                          uint32_t server_id,
                          const bson_error_t *error)
 {
-   if (!strncmp (error->message, "not master", 10) ||
-       !strncmp (error->message, "node is recovering", 18)) {
+   if (mongoc_cluster_is_not_master_error (error)) {
       /* Server Discovery and Monitoring Spec: "When the client sees a 'not
        * master' or 'node is recovering' error it MUST replace the server's
        * description with a default ServerDescription of type Unknown."

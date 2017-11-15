@@ -72,6 +72,9 @@ typedef struct _mongoc_cluster_t {
    mongoc_array_t iov;
 } mongoc_cluster_t;
 
+bool
+mongoc_cluster_is_not_master_error (const bson_error_t *error);
+
 void
 mongoc_cluster_init (mongoc_cluster_t *cluster,
                      const mongoc_uri_t *uri,

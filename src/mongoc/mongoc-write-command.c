@@ -514,7 +514,10 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * its error in place of the original network error. If the selected
           * server does not support retryable writes, fall through and allow the
           * original network error to be reported. */
-         if (!ret && error->domain == MONGOC_ERROR_STREAM && is_retryable) {
+         if (!ret &&
+             (error->domain == MONGOC_ERROR_STREAM ||
+              mongoc_cluster_is_not_master_error (error)) &&
+             is_retryable) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -560,6 +563,11 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
    if (retry_server_stream) {
       mongoc_server_stream_cleanup (retry_server_stream);
+   }
+
+   if (ret) {
+      /* if a retry succeeded, clear the initial error */
+      memset (&result->error, 0, sizeof (bson_error_t));
    }
 
    EXIT;
