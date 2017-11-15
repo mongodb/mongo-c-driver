@@ -762,6 +762,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
 
       if (bulk->result.failed &&
           (bulk->flags.ordered || bulk->result.must_stop)) {
+         mongoc_server_stream_cleanup (server_stream);
          GOTO (cleanup);
       }
 
