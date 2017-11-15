@@ -191,7 +191,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->has_primary = has_primary;
    rs->n_secondaries = n_secondaries;
    rs->n_arbiters = n_arbiters;
-   rs->request_timeout_msec = 10 * 1000;
+   rs->request_timeout_msec = get_future_timeout_ms ();
    rs->q = q_new ();
 
    return rs;
