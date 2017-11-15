@@ -610,7 +610,7 @@ test_retryable_writes_cb (bson_t *scenario)
       bson_iter_bson (&tests_iter, &test);
 
       uri = test_framework_get_uri ();
-      mongoc_uri_set_option_as_bool (uri, "retryWrites", false);
+      mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
 
       client = mongoc_client_new_from_uri (uri);
       test_framework_set_ssl_opts (client);
