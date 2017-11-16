@@ -7,6 +7,8 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #   LINK_STATIC                Whether to statically link to libmongoc
 #   BUILD_SAMPLE_WITH_CMAKE    Link program w/ CMake. Default: use pkg-config.
 #   ENABLE_SSL                 Set -DENABLE_SSL or --enable-ssl.
+#   ENABLE_SNAPPY              Set -DENABLE_SNAPPY or --with-snappy.
+#   CMAKE                      Path to cmake executable.
 
 
 echo "BUILD_MONGOC_WITH_CMAKE=$BUILD_MONGOC_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
@@ -18,7 +20,15 @@ else
 fi
 
 if [ $(uname) = "Darwin" ]; then
-  CMAKE=${CMAKE:-/Applications/Cmake.app/Contents/bin/cmake}
+  if [ ! "$CMAKE" ]; then
+    if [ -f ""/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
+      CMAKE="/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake"
+    elif [ -f ""/Applications/Cmake.app/Contents/bin/cmake" ]; then
+      CMAKE="/Applications/Cmake.app/Contents/bin/cmake"
+    else
+      CMAKE=cmake
+    fi
+  fi
   SO=dylib
   LIB_SO=libmongoc-1.0.0.dylib
   LDD="otool -L"
@@ -41,6 +51,14 @@ mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
 $TAR xf ../../mongoc.tar.gz -C . --strip-components=1
+
+if [ "$ENABLE_SNAPPY" ]; then
+  SNAPPY_CONFIGURE_OPTION="--with-snappy=system"
+  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=ON"
+else
+  SNAPPY_CONFIGURE_OPTION="--with-snappy=no"
+  SNAPPY_CMAKE_OPTION="-DENABLE_SNAPPY=OFF"
+fi
 
 if [ "$ENABLE_SSL" ]; then
   SSL_CONFIGURE_OPTION="--enable-ssl"
@@ -67,11 +85,11 @@ if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
   make install
   cd ../..
 
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $STATIC_CMAKE_OPTION .
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION .
   make
   make install
 else
-  ./configure --prefix=$INSTALL_DIR --disable-examples $SSL_CONFIGURE_OPTION $STATIC_CONFIGURE_OPTION --with-libbson=bundled
+  ./configure --prefix=$INSTALL_DIR --disable-examples $SSL_CONFIGURE_OPTION $SNAPPY_CONFIGURE_OPTION $STATIC_CONFIGURE_OPTION --with-libbson=bundled
   make
   make install
 fi

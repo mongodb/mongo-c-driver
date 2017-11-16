@@ -14,7 +14,7 @@ esac
 which sphinx-build
 sphinx-build --version
 
-./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=bundled --with-zlib=bundled --with-libbson=bundled
+./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=auto --with-zlib=bundled --with-libbson=bundled
 make distcheck
 
 # Check that docs were included, but sphinx temp files weren't.

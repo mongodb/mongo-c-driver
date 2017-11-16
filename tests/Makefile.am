@@ -10,7 +10,6 @@ TEST_CFLAGS = $(MAINTAINER_CFLAGS) \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
-	$(SNAPPY_CFLAGS) \
 	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \

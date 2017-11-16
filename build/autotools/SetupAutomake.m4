@@ -27,9 +27,6 @@ AM_CONDITIONAL([ENABLE_PTHREADS],[test "$enable_pthreads" = "yes"])
 # Should we compile the bundled libbson
 AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])
 
-# Should we compile the bundled snappy
-AM_CONDITIONAL([WITH_SNAPPY],[test "$with_snappy" = "bundled"])
-
 # Should we compile the bundled zlib
 AM_CONDITIONAL([WITH_ZLIB],[test "$with_zlib" = "bundled"])
 
