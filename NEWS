@@ -1,3 +1,28 @@
+mongo-c-driver 1.8.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.8.2. This release fixes the
+following bugs:
+
+  * Remove option to bundle the Snappy compression library, it caused issues
+    for programs linking to libmongoc
+  * Fix pkg-config and CMake config file flags for programs that statically
+    link to libmongoc when libmongoc is statically linked to zLib
+  * The configure flag "--with-zlib=no" was ignored
+    Crash in authentication when username is NULL
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Derick Rethans
+  * Hannes Magnusson
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.8.1
 ====================
 
