@@ -2889,6 +2889,7 @@ mongoc_collection_find_and_modify_with_opts (
    mongoc_cluster_t *cluster;
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
+   bool is_retryable;
    bson_iter_t iter;
    bson_iter_t inner;
    const char *name;
@@ -2896,6 +2897,7 @@ mongoc_collection_find_and_modify_with_opts (
    bson_t *reply_ptr;
    bool ret;
    bson_t command = BSON_INITIALIZER;
+   mongoc_server_stream_t *retry_server_stream = NULL;
 
    ENTRY;
 
@@ -2969,9 +2971,14 @@ mongoc_collection_find_and_modify_with_opts (
       }
    }
 
+   /* retryable writes option is inherited from the client */
+   is_retryable = mongoc_uri_get_option_as_bool (
+      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
+
    mongoc_cmd_parts_init (
       &parts, collection->client, collection->db, MONGOC_QUERY_NONE, &command);
    parts.is_write_command = true;
+   parts.is_retryable_write = is_retryable;
 
    if (bson_iter_init (&iter, &opts->extra)) {
       bool ok = mongoc_cmd_parts_append_opts (
@@ -2991,8 +2998,47 @@ mongoc_collection_find_and_modify_with_opts (
       RETURN (false);
    }
 
+   is_retryable = (parts.is_retryable_write && parts.assembled.session);
+
+   /* increment the transaction number for the first attempt of each retryable
+    * write command */
+   if (is_retryable) {
+      bson_iter_t txn_number_iter;
+      BSON_ASSERT (bson_iter_init_find (
+         &txn_number_iter, parts.assembled.command, "txnNumber"));
+      bson_iter_overwrite_int64 (
+         &txn_number_iter,
+         ++parts.assembled.session->server_session->txn_number);
+   }
+retry:
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply_ptr, error);
+
+   /* If a retryable error is encountered and the write is retryable, select
+    * a new writable stream and retry. If server selection fails or the selected
+    * server does not support retryable writes, fall through and allow the
+    * original error to be reported. */
+   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                mongoc_cluster_is_not_master_error (error))) {
+      bson_error_t ignored_error;
+
+      /* each write command may be retried at most once */
+      is_retryable = false;
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+      }
+
+      retry_server_stream =
+         mongoc_cluster_stream_for_writes (cluster, &ignored_error);
+
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
+         parts.assembled.server_stream = retry_server_stream;
+         GOTO (retry);
+      }
+   }
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -3021,6 +3067,10 @@ mongoc_collection_find_and_modify_with_opts (
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    mongoc_server_stream_cleanup (server_stream);
+
+   if (retry_server_stream) {
+      mongoc_server_stream_cleanup (retry_server_stream);
+   }
 
    RETURN (ret);
 }
