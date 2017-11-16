@@ -512,15 +512,13 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          payload_total_offset += payload_batch_size;
          payload_batch_size = 0;
 
-         /* If a network error is encountered and the write is retryable, select
-          * a new writable stream and retry. If server selection fails, report
-          * its error in place of the original network error. If the selected
-          * server does not support retryable writes, fall through and allow the
-          * original network error to be reported. */
-         if (!ret &&
+         /* If a retryable error is encountered and the write is retryable,
+          * select a new writable stream and retry. If server selection fails or
+          * the selected server does not support retryable writes, fall through
+          * and allow the original error to be reported. */
+         if (!ret && is_retryable &&
              (error->domain == MONGOC_ERROR_STREAM ||
-              mongoc_cluster_is_not_master_error (error)) &&
-             is_retryable) {
+              mongoc_cluster_is_not_master_error (error))) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -533,17 +531,14 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             retry_server_stream = mongoc_cluster_stream_for_writes (
                &client->cluster, &ignored_error);
 
-            if (!retry_server_stream ||
-                retry_server_stream->sd->max_wire_version <
+            if (retry_server_stream &&
+                retry_server_stream->sd->max_wire_version >=
                    WIRE_VERSION_RETRY_WRITES) {
-               ret = false;
-               GOTO (cannot_retry);
+               parts.assembled.server_stream = retry_server_stream;
+               GOTO (retry);
             }
-
-            parts.assembled.server_stream = retry_server_stream;
-            GOTO (retry);
          }
-      cannot_retry:
+
          if (!ret) {
             result->failed = true;
             result->must_stop = true;
