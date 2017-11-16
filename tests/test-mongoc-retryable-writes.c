@@ -516,7 +516,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
       ASSERT (match_bson (actual_doc, &expected_doc, false));
    }
 
-   // ASSERT_CURSOR_DONE (cursor);
+   ASSERT_CURSOR_DONE (cursor);
 }
 
 
