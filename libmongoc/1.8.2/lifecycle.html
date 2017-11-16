@@ -1,0 +1,174 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script>
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push(
+      {'gtm.start': new Date().getTime(),event:'gtm.js'}
+    );var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    '//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-JQHP');
+</script><link rel="canonical" href="http://mongoc.org/libbson/current/lifecycle.html"/>
+    <title>Object Lifecycle &#8212; MongoDB C Driver 1.8.2</title>
+    
+    <link rel="stylesheet" href="_static/mongoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.8.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  false,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Version Checks" href="mongoc_version.html" />
+    <link rel="prev" title="Error Reporting" href="errors.html" />
+   
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+  <div class="documentwrapper">
+    <div class="bodywrapper" id="lifecycle">
+      <div class="body" role="main">
+        
+            <div class="related">
+              <ul>
+                <li class="nav-item nav-item-0"><a href="index.html">MongoDB C Driver 1.8.2</a> &#187;</li>
+                
+                  <li class="nav-item nav-item-1"><a href="api.html">API Reference</a></li>
+                
+              </ul>
+            </div>
+          
+        
+  <div class="section" id="object-lifecycle">
+<h1>Object Lifecycle<a class="headerlink" href="#object-lifecycle" title="Permalink to this headline">¶</a></h1>
+<p>This page documents the order of creation and destruction for libmongoc’s main struct types.</p>
+<div class="section" id="clients-and-pools">
+<h2>Clients and pools<a class="headerlink" href="#clients-and-pools" title="Permalink to this headline">¶</a></h2>
+<p>Call <a class="symbol reference internal" href="mongoc_init.html"><span class="doc">mongoc_init()</span></a> once, before calling any other libmongoc functions, and call <a class="symbol reference internal" href="mongoc_cleanup.html"><span class="doc">mongoc_cleanup()</span></a> once before your program exits.</p>
+<p>A program that uses libmongoc from multiple threads should create a <a class="symbol reference internal" href="mongoc_client_pool_t.html"><span class="doc">mongoc_client_pool_t</span></a> with <a class="symbol reference internal" href="mongoc_client_pool_new.html"><span class="doc">mongoc_client_pool_new()</span></a>. Each thread acquires a <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a> from the pool with <a class="symbol reference internal" href="mongoc_client_pool_pop.html"><span class="doc">mongoc_client_pool_pop()</span></a> and returns it with <a class="symbol reference internal" href="mongoc_client_pool_push.html"><span class="doc">mongoc_client_pool_push()</span></a> when the thread is finished using it. To destroy the pool, first return all clients, then call <a class="symbol reference internal" href="mongoc_client_pool_destroy.html"><span class="doc">mongoc_client_pool_destroy()</span></a>.</p>
+<p>If your program uses libmongoc from only one thread, create a <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a> directly with <a class="symbol reference internal" href="mongoc_client_new.html"><span class="doc">mongoc_client_new()</span></a> or <a class="symbol reference internal" href="mongoc_client_new_from_uri.html"><span class="doc">mongoc_client_new_from_uri()</span></a>. Destroy it with <a class="symbol reference internal" href="mongoc_client_destroy.html"><span class="doc">mongoc_client_destroy()</span></a>.</p>
+</div>
+<div class="section" id="databases-collections-and-related-objects">
+<h2>Databases, collections, and related objects<a class="headerlink" href="#databases-collections-and-related-objects" title="Permalink to this headline">¶</a></h2>
+<p>You can create a <a class="symbol reference internal" href="mongoc_database_t.html"><span class="doc">mongoc_database_t</span></a> or <a class="symbol reference internal" href="mongoc_collection_t.html"><span class="doc">mongoc_collection_t</span></a> from a <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>, and create a <a class="symbol reference internal" href="mongoc_cursor_t.html"><span class="doc">mongoc_cursor_t</span></a> or <a class="symbol reference internal" href="mongoc_bulk_operation_t.html"><span class="doc">mongoc_bulk_operation_t</span></a> from a <a class="symbol reference internal" href="mongoc_collection_t.html"><span class="doc">mongoc_collection_t</span></a>.</p>
+<p>Each of these objects must be destroyed before the client they were created from, but their lifetimes are otherwise independent.</p>
+</div>
+<div class="section" id="gridfs-objects">
+<h2>GridFS objects<a class="headerlink" href="#gridfs-objects" title="Permalink to this headline">¶</a></h2>
+<p>You can create a <a class="symbol reference internal" href="mongoc_gridfs_t.html"><span class="doc">mongoc_gridfs_t</span></a> from a <a class="symbol reference internal" href="mongoc_client_t.html"><span class="doc">mongoc_client_t</span></a>, create a <a class="symbol reference internal" href="mongoc_gridfs_file_t.html"><span class="doc">mongoc_gridfs_file_t</span></a> or <a class="symbol reference internal" href="mongoc_gridfs_file_list_t.html"><span class="doc">mongoc_gridfs_file_list_t</span></a> from a <a class="symbol reference internal" href="mongoc_gridfs_t.html"><span class="doc">mongoc_gridfs_t</span></a>, create a <a class="symbol reference internal" href="mongoc_gridfs_file_t.html"><span class="doc">mongoc_gridfs_file_t</span></a> from a <a class="symbol reference internal" href="mongoc_gridfs_file_list_t.html"><span class="doc">mongoc_gridfs_file_list_t</span></a>, and create a <a class="symbol reference internal" href="mongoc_stream_t.html"><span class="doc">mongoc_stream_t</span></a> from a <a class="symbol reference internal" href="mongoc_gridfs_file_t.html"><span class="doc">mongoc_gridfs_file_t</span></a>.</p>
+<p>Each of these objects depends on the object it was created from. Always destroy GridFS objects in the reverse of the order they were created. The sole exception is that a <a class="symbol reference internal" href="mongoc_gridfs_file_t.html"><span class="doc">mongoc_gridfs_file_t</span></a> need not be destroyed before the <a class="symbol reference internal" href="mongoc_gridfs_file_list_t.html"><span class="doc">mongoc_gridfs_file_list_t</span></a> it was created from.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="footer">
+        <div class="footer-nav">
+          <a class="footer-nav-button footer-nav-button-prev" title="Error Reporting" href="errors.html">&laquo; Previous: Error Reporting</a>
+          <a class="footer-nav-button footer-nav-button-next" title="Version Checks" href="mongoc_version.html">Next: Version Checks &raquo;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3><a href="index.html">MongoDB C Driver 1.8.2</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing the MongoDB C Driver</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basic-troubleshooting.html">Basic Troubleshooting</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides.html">Guides</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="init-cleanup.html">Initialization and cleanup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errors.html">Error Reporting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Object Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_version.html">Version Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_bulk_operation_t.html">mongoc_bulk_operation_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_pool_t.html">mongoc_client_pool_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_client_t.html">mongoc_client_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_collection_t.html">mongoc_collection_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_cursor_t.html">mongoc_cursor_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_database_t.html">mongoc_database_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_delete_flags_t.html">mongoc_delete_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_find_and_modify_opts_t.html">mongoc_find_and_modify_opts_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_list_t.html">mongoc_gridfs_file_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_opt_t.html">mongoc_gridfs_file_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_file_t.html">mongoc_gridfs_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_gridfs_t.html">mongoc_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_host_list_t.html">mongoc_host_list_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_geo_t.html">mongoc_index_opt_geo_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_t.html">mongoc_index_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_index_opt_wt_t.html">mongoc_index_opt_wt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_insert_flags_t.html">mongoc_insert_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_iovec_t.html">mongoc_iovec_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_matcher_t.html">mongoc_matcher_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_query_flags_t.html">mongoc_query_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_rand.html">mongoc_rand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_concern_t.html">mongoc_read_concern_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_mode_t.html">mongoc_read_mode_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_read_prefs_t.html">mongoc_read_prefs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_remove_flags_t.html">mongoc_remove_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_reply_flags_t.html">mongoc_reply_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_server_description_t.html">mongoc_server_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_socket_t.html">mongoc_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_ssl_opt_t.html">mongoc_ssl_opt_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_buffered_t.html">mongoc_stream_buffered_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_file_t.html">mongoc_stream_file_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_gridfs_t.html">mongoc_stream_gridfs_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_socket_t.html">mongoc_stream_socket_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_t.html">mongoc_stream_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_stream_tls_t.html">mongoc_stream_tls_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_topology_description_t.html">mongoc_topology_description_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_update_flags_t.html">mongoc_update_flags_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_uri_t.html">mongoc_uri_t</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mongoc_write_concern_t.html">mongoc_write_concern_t</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="application-performance-monitoring.html">Application Performance Monitoring (APM)</a></li>
+</ul>
+
+<ul>
+  <li class="toctree-l1 ">
+    <a href="full_index.html">Index</a>
+  </li>
+</ul>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <div class="colophon">
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.1, based on <a href="https://sphinx-readable-theme.readthedocs.io/en/latest/">Sphinx Readable Theme</a>.
+  </div>
+
+  </body>
+</html>
