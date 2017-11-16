@@ -525,7 +525,7 @@ execute_test (mongoc_collection_t *collection,
               bson_t *test,
               mongoc_client_session_t *session)
 {
-   mongoc_server_description_t *sd = NULL;
+   uint32_t server_id = 0;
    bson_error_t error;
    const char *op_name;
 
@@ -546,12 +546,12 @@ execute_test (mongoc_collection_t *collection,
    }
 
    /* Select a primary for testing */
-   sd = mongoc_client_select_server (
-      collection->client, true /* for writes */, NULL, &error);
-   ASSERT_OR_PRINT (sd, error);
+   server_id = mongoc_topology_select_server_id (
+      collection->client->topology, MONGOC_SS_WRITE, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
 
    if (bson_has_field (test, "failPoint")) {
-      activate_fail_point (collection->client, sd->id, test);
+      activate_fail_point (collection->client, server_id, test);
    }
 
    op_name = bson_lookup_utf8 (test, "operation.name");
@@ -579,8 +579,8 @@ execute_test (mongoc_collection_t *collection,
    }
 
 done:
-   if (sd) {
-      deactivate_fail_point (collection->client, sd->id);
+   if (server_id) {
+      deactivate_fail_point (collection->client, server_id);
    }
 }
 
@@ -610,6 +610,7 @@ test_retryable_writes_cb (bson_t *scenario)
    while (bson_iter_next (&tests_iter)) {
       mongoc_uri_t *uri;
       mongoc_client_t *client;
+      uint32_t server_id;
       mongoc_client_session_t *session;
       mongoc_collection_t *collection;
       bson_t test;
@@ -625,14 +626,11 @@ test_retryable_writes_cb (bson_t *scenario)
       test_framework_set_ssl_opts (client);
       mongoc_uri_destroy (uri);
 
-      /* TODO: Remove this once start_session initializes the topology */
-      {
-         bool success;
-
-         success = mongoc_client_command_simple (
-            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-         ASSERT_OR_PRINT (success, error);
-      }
+      /* clean up in case a previous test aborted */
+      server_id = mongoc_topology_select_server_id (
+         client->topology, MONGOC_SS_WRITE, NULL, &error);
+      ASSERT_OR_PRINT (server_id, error);
+      deactivate_fail_point (client, server_id);
 
       session = mongoc_client_start_session (client, NULL, &error);
       ASSERT_OR_PRINT (session, error);
