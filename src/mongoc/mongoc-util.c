@@ -123,16 +123,18 @@ bool
 _mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value)
 {
    bson_iter_t iter;
+   bson_iter_t child;
 
    if (!bson) {
       return default_value;
    }
 
-   if (!bson_iter_init_find (&iter, bson, key)) {
+   BSON_ASSERT (bson_iter_init (&iter, bson));
+   if (!bson_iter_find_descendant (&iter, key, &child)) {
       return default_value;
    }
 
-   return bson_iter_as_bool (&iter);
+   return bson_iter_as_bool (&child);
 }
 
 void
