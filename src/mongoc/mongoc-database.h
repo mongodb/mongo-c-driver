@@ -64,8 +64,7 @@ mongoc_database_command (mongoc_database_t *database,
                          uint32_t batch_size,
                          const bson_t *command,
                          const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_database_command_with_opts);
+                         const mongoc_read_prefs_t *read_prefs);
 MONGOC_EXPORT (bool)
 mongoc_database_read_command_with_opts (mongoc_database_t *database,
                                         const bson_t *command,

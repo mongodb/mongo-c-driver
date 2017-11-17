@@ -23,14 +23,14 @@ int
 main (int argc, char *argv[])
 {
    mongoc_database_t *database;
+   mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   bson_t reply;
+   const bson_t *reply;
    uint16_t port;
    bson_error_t error;
    bson_t ping;
    char *host_and_port;
    char *str;
-   bool r;
 
    if (argc < 2 || argc > 3) {
       fprintf (stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
@@ -41,8 +41,8 @@ main (int argc, char *argv[])
 
    port = (argc == 3) ? atoi (argv[2]) : 27017;
 
-   if (!strncmp (argv[1], "mongodb://", 10) ||
-       !strncmp (argv[1], "mongodb+srv://", 14)) {
+   if (!strncmp (argv[1], "mongodb://", 10)
+       || !strncmp (argv[1], "mongodb+srv://", 14)) {
       host_and_port = bson_strdup (argv[1]);
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s:%hu", argv[1], port);
@@ -62,21 +62,24 @@ main (int argc, char *argv[])
    bson_init (&ping);
    bson_append_int32 (&ping, "ping", 4, 1);
    database = mongoc_client_get_database (client, "test");
-   r = mongoc_database_command_with_opts (
-      database, &ping, NULL, NULL, &reply, &error);
-
-   if (r) {
-      str = bson_as_canonical_extended_json (&reply, NULL);
+   cursor = mongoc_database_command (
+      database, (mongoc_query_flags_t) 0, 0, 1, 0, &ping, NULL, NULL);
+   if (mongoc_cursor_next (cursor, &reply)) {
+      str = bson_as_canonical_extended_json (reply, NULL);
       fprintf (stdout, "%s\n", str);
       bson_free (str);
-   } else {
+   } else if (mongoc_cursor_error (cursor, &error)) {
       fprintf (stderr, "Ping failure: %s\n", error.message);
+      mongoc_cursor_destroy (cursor);
+      mongoc_database_destroy (database);
+      mongoc_client_destroy (client);
+      return 3;
    }
 
    bson_destroy (&ping);
-   bson_destroy (&reply);
+   mongoc_cursor_destroy (cursor);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 
-   return r ? 0 : 3;
+   return 0;
 }
