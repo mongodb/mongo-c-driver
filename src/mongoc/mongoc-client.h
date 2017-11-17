@@ -119,8 +119,7 @@ mongoc_client_command (mongoc_client_t *client,
                        uint32_t batch_size,
                        const bson_t *query,
                        const bson_t *fields,
-                       const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_client_command_with_opts);
+                       const mongoc_read_prefs_t *read_prefs);
 MONGOC_EXPORT (void)
 mongoc_client_kill_cursor (mongoc_client_t *client,
                            int64_t cursor_id) BSON_GNUC_DEPRECATED;

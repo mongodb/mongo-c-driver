@@ -5,7 +5,7 @@
 #include <mongoc-cursor-private.h>
 #include <mongoc-bulk-operation-private.h>
 #include <mongoc-client-private.h>
-#include "mongoc-util-private.h"
+#include <mongoc-util-private.h>
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -1565,7 +1565,6 @@ test_client_cmd (void)
    cmd_test_init (&test);
    client = test_framework_client_new ();
    set_cmd_test_callbacks (client, (void *) &test);
-   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_client_command (client,
                                    "admin",
                                    MONGOC_QUERY_SLAVE_OK,
@@ -1597,7 +1596,6 @@ test_client_cmd (void)
                                    tmp_bson ("{'foo': 1}"),
                                    NULL,
                                    NULL);
-   END_IGNORE_DEPRECATIONS
 
    ASSERT (!mongoc_cursor_next (cursor, &reply));
    ASSERT_CMPSTR (test.cmd_name, "foo");
