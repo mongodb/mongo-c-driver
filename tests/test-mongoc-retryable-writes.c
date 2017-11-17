@@ -84,18 +84,14 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 static void
 activate_fail_point (mongoc_client_t *client,
                      uint32_t server_id,
-                     const bson_t *test)
+                     const bson_t *opts)
 {
    bson_t *command;
-   bson_t fail_point;
    bool success;
    bson_error_t error;
 
-   bson_lookup_doc (test, "failPoint", &fail_point);
-
    command = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite'}");
-   bson_copy_to_excluding_noinit (
-      &fail_point, command, "configureFailPoint", NULL);
+   bson_copy_to_excluding_noinit (opts, command, "configureFailPoint", NULL);
 
    success = mongoc_client_command_simple_with_server_id (
       client, "admin", command, NULL, server_id, NULL, &error);
@@ -531,7 +527,9 @@ execute_test (mongoc_collection_t *collection,
 
    if (test_suite_debug_output ()) {
       const char *description = bson_lookup_utf8 (test, "description");
-      printf ("  - %s\n", description);
+      printf ("  - %s (%s session)\n",
+              description,
+              session ? "explicit" : "implicit");
       fflush (stdout);
    }
 
@@ -551,7 +549,10 @@ execute_test (mongoc_collection_t *collection,
    ASSERT_OR_PRINT (server_id, error);
 
    if (bson_has_field (test, "failPoint")) {
-      activate_fail_point (collection->client, server_id, test);
+      bson_t opts;
+
+      bson_lookup_doc (test, "failPoint", &opts);
+      activate_fail_point (collection->client, server_id, &opts);
    }
 
    op_name = bson_lookup_utf8 (test, "operation.name");
@@ -585,18 +586,8 @@ done:
 }
 
 
-/*
- *-----------------------------------------------------------------------
- *
- * test_retryable_writes_cb --
- *
- *       Runs the JSON tests included with the Retryable Writes spec.
- *
- *-----------------------------------------------------------------------
- */
-
 static void
-test_retryable_writes_cb (bson_t *scenario)
+_test_retryable_writes_cb (bson_t *scenario, bool explicit_session)
 {
    bson_iter_t scenario_iter;
    bson_iter_t tests_iter;
@@ -611,8 +602,8 @@ test_retryable_writes_cb (bson_t *scenario)
       mongoc_uri_t *uri;
       mongoc_client_t *client;
       uint32_t server_id;
-      mongoc_client_session_t *session;
       mongoc_collection_t *collection;
+      mongoc_client_session_t *session = NULL;
       bson_t test;
       bson_error_t error;
 
@@ -632,10 +623,12 @@ test_retryable_writes_cb (bson_t *scenario)
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_point (client, server_id);
 
-      session = mongoc_client_start_session (client, NULL, &error);
-      ASSERT_OR_PRINT (session, error);
-
       collection = get_test_collection (client, "retryable_writes");
+
+      if (explicit_session) {
+         session = mongoc_client_start_session (client, NULL, &error);
+         ASSERT_OR_PRINT (session, error);
+      }
 
       insert_data (collection, scenario);
       execute_test (collection, &test, session);
@@ -647,10 +640,22 @@ test_retryable_writes_cb (bson_t *scenario)
          }
       }
 
+      if (session) {
+         mongoc_client_session_destroy (session);
+      }
+
       mongoc_collection_destroy (collection);
-      mongoc_client_session_destroy (session);
       mongoc_client_destroy (client);
    }
+}
+
+
+/* Callback for JSON tests from Retryable Writes Spec */
+static void
+test_retryable_writes_cb (bson_t *scenario)
+{
+   _test_retryable_writes_cb (scenario, true /* explicit_session */);
+   _test_retryable_writes_cb (scenario, false /* implicit_session */);
 }
 
 
@@ -720,6 +725,72 @@ test_rs_failover (void)
    mock_rs_destroy (rs);
 }
 
+
+/* Test code paths for _mongoc_client_command_with_opts */
+static void
+test_command_with_opts (void *ctx)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   uint32_t server_id;
+   mongoc_collection_t *collection;
+   bson_t *cmd;
+   bson_t reply;
+   bson_t reply_result;
+   bson_error_t error;
+
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+
+   client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+   mongoc_uri_destroy (uri);
+
+   /* clean up in case a previous test aborted */
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
+   deactivate_fail_point (client, server_id);
+
+   collection = get_test_collection (client, "retryable_writes");
+
+   if (!mongoc_collection_drop (collection, &error)) {
+      if (strcmp (error.message, "ns not found")) {
+         /* an error besides ns not found */
+         ASSERT_OR_PRINT (false, error);
+      }
+   }
+
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (
+         collection, tmp_bson ("{'_id':1, 'x': 1}"), NULL, NULL, &error),
+      error);
+
+   activate_fail_point (client,
+                        server_id,
+                        tmp_bson ("{'mode': {'times': 1}, 'data': "
+                                  "{'failBeforeCommitExceptionCode': 1}}"));
+
+   cmd = tmp_bson ("{'findAndModify': '%s', 'query': {'_id': 1}, 'update': "
+                   "{'$inc': {'x': 1}}, 'new': true}",
+                   collection->collection);
+
+   ASSERT_OR_PRINT (mongoc_collection_read_write_command_with_opts (
+                       collection, cmd, NULL, NULL, &reply, &error),
+                    error);
+
+   bson_lookup_doc (&reply, "value", &reply_result);
+   ASSERT (match_bson (&reply_result, tmp_bson ("{'_id': 1, 'x': 2}"), false));
+
+   deactivate_fail_point (client, server_id);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -745,4 +816,10 @@ test_retryable_writes_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_AddMockServerTest (
       suite, "/retryable_writes/failover", test_rs_failover);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/command_with_opts",
+                      test_command_with_opts,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6);
 }
