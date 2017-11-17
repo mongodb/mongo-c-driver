@@ -28,6 +28,8 @@
 #if defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH)
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <bson-string.h>
+
 #endif
 #endif
 
@@ -281,23 +283,40 @@ txt_callback (const char *service,
               mongoc_uri_t *uri,
               bson_error_t *error)
 {
-   char txt[256];
-   uint16_t size;
+   char s[256];
+   const uint8_t *data;
+   bson_string_t *txt;
+   uint16_t pos, total;
+   uint8_t len;
+   bool r = false;
 
-   size = (uint16_t) ns_rr_rdlen (*rr);
-   if (size < 1 || size > 255) {
-      DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", size, service);
+   total = (uint16_t) ns_rr_rdlen (*rr);
+   if (total < 1 || total > 255) {
+      DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", total, service);
    }
 
-   bson_strncpy (txt, (const char *) ns_rr_rdata (*rr) + 1, (size_t) size);
+   /* a TXT record has one or more strings, each up to 255 chars, each is
+    * prefixed by its length as 1 byte. thus endianness doesn't matter. */
+   txt = bson_string_new (NULL);
+   pos = 0;
+   data = ns_rr_rdata (*rr);
+
+   while (pos < total) {
+      memcpy (&len, data + pos, sizeof (uint8_t));
+      pos++;
+      bson_strncpy (s, (const char *) (data + pos), (size_t) len + 1);
+      bson_string_append (txt, s);
+      pos += len;
+   }
 
    /* Initial DNS Seedlist Discovery Spec: "Client MUST use options specified in
     * the Connection String to override options provided through TXT records."
-    * so do NOT override existing options with TXT options. */
-   return mongoc_uri_parse_options (uri, txt, false /* override */, error);
+    * So, do NOT override existing options with TXT options. */
+   r = mongoc_uri_parse_options (uri, txt->str, false /* override */, error);
+   bson_string_free (txt, true);
 
 done:
-   return false;
+   return r;
 }
 
 /*
