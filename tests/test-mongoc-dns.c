@@ -1,4 +1,5 @@
 #include <mongoc-util-private.h>
+#include <mongoc-client-pool-private.h>
 #include "mongoc.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-thread-private.h"
@@ -15,6 +16,8 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
    bson_iter_t iter;
    bson_t opts_from_test;
    const bson_t *opts_from_uri;
+   const bson_t *creds_from_uri;
+   const bson_t *opts_or_creds;
    bson_iter_t test_opts_iter;
    bson_iter_t uri_opts_iter;
    const char *opt_name;
@@ -33,10 +36,13 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
 
    /* the client's URI is not updated from TXT, but the topology's copy is */
    opts_from_uri = mongoc_uri_get_options (client->topology->uri);
+   creds_from_uri = mongoc_uri_get_credentials (client->topology->uri);
 
    while (bson_iter_next (&test_opts_iter)) {
       opt_name = bson_iter_key (&test_opts_iter);
-      if (!bson_iter_init_find_case (&uri_opts_iter, opts_from_uri, opt_name)) {
+      opts_or_creds = !bson_strcasecmp (opt_name, "authSource") ? creds_from_uri
+                                                                : opts_from_uri;
+      if (!bson_iter_init_find_case (&uri_opts_iter, opts_or_creds, opt_name)) {
          fprintf (stderr,
                   "URI options incorrectly set from TXT record: "
                   "no option named \"%s\"\n"
@@ -44,7 +50,7 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
                   "actual: %s\n",
                   opt_name,
                   bson_as_json (&opts_from_test, NULL),
-                  bson_as_json (opts_from_uri, NULL));
+                  bson_as_json (opts_or_creds, NULL));
          abort ();
       }
 
@@ -86,6 +92,8 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    sds = mongoc_topology_description_get_servers (td, &n);
 
    mongoc_mutex_lock (&ctx->mutex);
+   _mongoc_host_list_destroy_all (ctx->hosts);
+   ctx->hosts = NULL;
    for (i = 0; i < n; i++) {
       ctx->hosts = _mongoc_host_list_push (
          sds[i]->host.host, sds[i]->host.port, AF_UNSPEC, ctx->hosts);
@@ -129,21 +137,15 @@ hosts_count (const bson_t *test)
 
 
 static bool
-_host_list_matches (const bson_t *test, mongoc_client_t *client, context_t *ctx)
+_host_list_matches (const bson_t *test, context_t *ctx)
 {
    bson_iter_t iter;
    bson_iter_t hosts;
-   bool r;
-   bson_error_t error;
    const char *host_and_port;
    bool ret = true;
 
    BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
    BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
-
-   r = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   ASSERT_OR_PRINT (r, error);
 
    mongoc_mutex_lock (&ctx->mutex);
    BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
@@ -167,8 +169,10 @@ static void
 _test_dns_maybe_pooled (bson_t *test, bool pooled)
 {
    context_t ctx;
+   bool expect_ssl;
    bool expect_error;
    mongoc_uri_t *uri;
+   const bson_t *uri_opts;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
@@ -176,9 +180,17 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    bson_error_t error;
    bool r;
 
+   if (!test_framework_get_ssl ()) {
+      fprintf (stderr,
+               "Must configure an SSL replica set and set MONGOC_TEST_SSL=on "
+               "and other ssl options to test DNS\n");
+      abort ();
+   }
+
    mongoc_mutex_init (&ctx.mutex);
    ctx.hosts = NULL;
-   expect_error = _mongoc_lookup_bool (test, "error", true /* default */);
+   expect_ssl = strstr (bson_lookup_utf8 (test, "uri"), "ssl=false") == NULL;
+   expect_error = _mongoc_lookup_bool (test, "error", false /* default */);
 
    uri = mongoc_uri_new_with_error (bson_lookup_utf8 (test, "uri"), &error);
    if (!expect_error) {
@@ -193,26 +205,38 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
 
+   /* suppress "cannot override URI option" messages */
+   capture_logs (true);
+
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
+
+      /* before we set SSL on so that we can connect to the test replica set,
+       * assert that the URI has SSL on by default, and SSL off if "ssl=false"
+       * is in the URI string */
+      uri_opts =
+         mongoc_uri_get_options (_mongoc_client_pool_get_topology (pool)->uri);
+      BSON_ASSERT (_mongoc_lookup_bool (uri_opts, "ssl", !expect_ssl) ==
+                   expect_ssl);
       test_framework_set_pool_ssl_opts (pool);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
+      uri_opts = mongoc_uri_get_options (client->uri);
+      BSON_ASSERT (_mongoc_lookup_bool (uri_opts, "ssl", !expect_ssl) ==
+                   expect_ssl);
       test_framework_set_ssl_opts (client);
       mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    }
 
-   _assert_options_match (test, client);
-
    n_hosts = hosts_count (test);
 
-   if (n_hosts) {
+   if (n_hosts && !expect_error) {
       r = mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
       ASSERT_OR_PRINT (r, error);
-      WAIT_UNTIL (_host_list_matches (test, client, &ctx));
+      WAIT_UNTIL (_host_list_matches (test, &ctx));
    } else {
       r = mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -220,8 +244,10 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_SERVER_SELECTION,
                              MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                             mongoc_uri_get_service (uri));
+                             "");
    }
+
+   _assert_options_match (test, client);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -253,11 +279,11 @@ test_dns_check (void)
 /* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
  * code path it follows when the topology scanner is invalid */
 static void
-test_null_error_pointer (void)
+test_null_error_pointer (void *ctx)
 {
    mongoc_client_t *client;
 
-   client = mongoc_client_new ("mongodb+srv://doesntexist");
+   client = mongoc_client_new ("mongodb+srv://doesntexist.example.com");
    ASSERT (!mongoc_topology_select_server_id (client->topology,
                                               MONGOC_SS_READ,
                                               NULL /* read prefs */,
@@ -280,8 +306,11 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    ASSERT (realpath (JSON_DIR "/initial_dns_seedlist_discovery", resolved));
-   install_json_test_suite_with_check (
-      suite, resolved, test_dns, test_dns_check);
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       test_dns,
+                                       test_dns_check,
+                                       test_framework_skip_if_no_crypto);
 }
 
 
@@ -289,7 +318,10 @@ void
 test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_Add (suite,
-                  "/initial_dns_seedlist_discovery/null_error_pointer",
-                  test_null_error_pointer);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/null_error_pointer",
+                      test_null_error_pointer,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_crypto);
 }

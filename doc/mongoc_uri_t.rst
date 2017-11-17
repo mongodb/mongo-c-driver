@@ -70,11 +70,11 @@ You would use a connection string that resembles the following.
 SRV Example
 -----------
 
-If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ with a name like "_mongodb._tcp.example.com" whose records are a list of one or more MongoDB server hostnames, use a connection string like this:
+If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ with a name like "_mongodb._tcp.server.example.com" whose records are a list of one or more MongoDB server hostnames, use a connection string like this:
 
 .. code-block:: c
 
-  uri = mongoc_uri_new ("mongodb+srv://example.com/?replicaSet=rs&appName=applicationName");
+  uri = mongoc_uri_new ("mongodb+srv://server.example.com/?replicaSet=rs&appName=applicationName");
 
 The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames. If this query succeeds, the driver performs a DNS TXT query on the service name (without the "_mongodb._tcp" prefix) for additional URI options configured as TXT records.
 

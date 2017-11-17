@@ -296,7 +296,7 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${URI} sh .evergreen/run-tests.sh
+          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${URI} DNS=${DNS} sh .evergreen/run-tests.sh
 
   "run auth tests":
     - command: shell.exec
@@ -912,21 +912,56 @@ tasks:
           vars:
             ENABLE_SSL: "1"
 
-    - name: test-dns
+    - name: test-dns-openssl
       depends_on:
-        - name: "debug-compile-nosasl-nossl"
+        - name: "debug-compile-sasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-nosasl-nossl"
-        # The Initial DNS Seedlist Discovery Spec's tests use 3-node replica set
+            BUILD_NAME: "debug-compile-sasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.4"
+            VERSION: "latest"
             TOPOLOGY: "replica_set"
+            SSL: "ssl"
         - func: "run tests"
           vars:
             DNS: on
+            SSL: "ssl"
+
+    - name: test-dns-winssl
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            DNS: on
+            SSL: "winssl"
+
+    - name: test-dns-darwinssl
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            DNS: on
+            SSL: "darwinssl"
 
     - name: debug-compile-nosasl-nossl
       tags: ["debug-compile", "nosasl", "nossl"]
@@ -7271,12 +7306,6 @@ buildvariants:
     - name: "link-with-pkg-config-mac"
       distros:
       - macos-1012
-    - name: "test-dns"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
 
 
 - name: clang34ubuntu
@@ -7532,6 +7561,7 @@ buildvariants:
     - "retry-true-latest-server"
     # Ubuntu16.04 only supports MongoDB 3.4+
     - ".3.6 .openssl !.nosasl .server"
+    - "test-dns-openssl"
 
 - name: darwin
   display_name: "*Darwin, macOS (Apple LLVM)"
@@ -7556,7 +7586,7 @@ buildvariants:
     - ".3.2 .darwinssl !.nosasl .server"
     - ".3.2 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
-    - "test-dns"
+    - "test-dns-darwinssl"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
@@ -7584,7 +7614,7 @@ buildvariants:
     - ".3.2 .winssl !.nosasl .server"
     - ".3.0 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl"
-    - "test-dns"
+    - "test-dns-winssl"
 
 - name: windows-2015-32
   display_name: "Windows (i386) (VS 2015)"
@@ -7696,7 +7726,6 @@ buildvariants:
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
     - ".3.6 .winssl .nosasl .server"
-    - "test-dns"
 
 - name: mingw
   display_name: "MinGW-W64"
@@ -7752,7 +7781,7 @@ buildvariants:
     - ".latest .nossl !.nosasl"
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 ppc64le is only supported by MongoDB 3.4+
-    - "test-dns"
+    - "test-dns-openssl"
 
 - name: arm-ubuntu1604
   display_name: "*ARM (aarch64) (Ubuntu 16.04)"
@@ -7776,7 +7805,7 @@ buildvariants:
     - ".latest .nossl !.nosasl"
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 aarch64 is only supported by MongoDB 3.4+
-    - "test-dns"
+    - "test-dns-openssl"
 
 - name: zseries-rhel72
   display_name: "*zSeries (s390x) (RHEL 7.2)"
@@ -7818,7 +7847,7 @@ buildvariants:
     - ".latest .nossl !.nosasl"
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
-    - "test-dns"
+    - "test-dns-openssl"
 
 - name: zseries-suse12
   display_name: "zSeries (s390x) SUSE12"

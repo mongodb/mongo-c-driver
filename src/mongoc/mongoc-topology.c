@@ -206,6 +206,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    int64_t heartbeat_default;
    int64_t heartbeat;
    mongoc_topology_t *topology;
+   bool topology_valid;
    mongoc_topology_description_type_t init_type;
    const char *service;
    char *prefixed_service;
@@ -277,16 +278,20 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_cond_init (&topology->cond_client);
    mongoc_cond_init (&topology->cond_server);
 
+   topology_valid = true;
    service = mongoc_uri_get_service (uri);
    if (service) {
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      if (_mongoc_client_get_rr (prefixed_service,
-                                 MONGOC_RR_SRV,
-                                 topology->uri,
-                                 &topology->scanner->error)) {
-         _mongoc_client_get_rr (
-            service, MONGOC_RR_TXT, topology->uri, &topology->scanner->error);
+      if (!_mongoc_client_get_rr (prefixed_service,
+                                  MONGOC_RR_SRV,
+                                  topology->uri,
+                                  &topology->scanner->error) ||
+          !_mongoc_client_get_rr (service,
+                                  MONGOC_RR_TXT,
+                                  topology->uri,
+                                  &topology->scanner->error)) {
+         topology_valid = false;
       }
 
       bson_free (prefixed_service);
@@ -299,7 +304,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
     *   - everything else gets initialized to UNKNOWN
     */
    hl = mongoc_uri_get_hosts (topology->uri);
-   if (mongoc_uri_get_replica_set (uri)) {
+   if (mongoc_uri_get_replica_set (topology->uri)) {
       init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
    } else {
       if (hl && hl->next) {
@@ -310,6 +315,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    }
 
    topology->description.type = init_type;
+
+   if (!topology_valid) {
+      /* add no nodes */
+      return topology;
+   }
 
    while (hl) {
       mongoc_topology_description_add_server (

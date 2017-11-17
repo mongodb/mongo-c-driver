@@ -46,7 +46,7 @@ fi
 
 if [ "$DNS" != "nodns" ]; then
    export MONGOC_TEST_DNS=on
-   TEST_ARGS="$TEST_ARGS -l '/initial_dns_seedlist_discovery*'"
+   TEST_ARGS="$TEST_ARGS -l /initial_dns_seedlist_discovery*"
 fi
 
 if [ "$CC" = "mingw" ]; then
