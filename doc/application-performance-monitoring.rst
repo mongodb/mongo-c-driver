@@ -22,33 +22,37 @@ This example program prints:
 .. code-block:: none
 
   Command drop started on 127.0.0.1:
-  { "drop" : "test" }
+  { "drop" : "test", "$db" : "test" }
 
-  Command drop failed:
-  "ns not found"
-
-  Command insert started on 127.0.0.1:
-  { "insert" : "test", "documents" : [ { "_id" : 1 } ] }
-
-  Command insert succeeded:
-  { "ok" : 1, "n" : 1 }
+  Command drop succeeded:
+  { "ns" : "test.test", "nIndexesWas" : 1, "ok" : 1.0 }
 
   Command insert started on 127.0.0.1:
-  { "insert" : "test", "documents" : [ { "_id" : 1 } ] }
+  { "insert" : "test", "ordered" : true, "$db" : "test" }
+      document 0 { "_id" : 0 }
+      document 1 { "_id" : 1 }
 
   Command insert succeeded:
-  { "ok" : 1,
+  { "n" : 1, "ok" : 1.0 }
+
+  Command insert started on 127.0.0.1:
+  { "insert" : "test", "ordered" : true, "$db" : "test" }
+      document 0: { "_id" : 1 }
+
+  Command insert succeeded:
+  {
     "n" : 0,
-    "writeErrors" : [ {
-       "index" : 0, "code" : 11000,
-       "errmsg" : "E11000 duplicate key error"
-  } ] }
+    "writeErrors" : [
+      { "index" : 0, "code" : 11000, "errmsg" : "duplicate key" }
+    ],
+    "ok" : 1.0
+  }
 
-  started: 3
-  succeeded: 2
-  failed: 1
+  started: 4
+  succeeded: 4
+  failed: 0
 
-In older versions of the MongoDB wire protocol, queries and write operations are sent to the server with special `opcodes <https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/#request-opcodes>`_, not as commands. To provide consistent event notifications with any MongoDB version, these legacy opcodes are reported as if they had used modern commands.
+(Depending on your server configuration, messages may include metadata like logical session ids or cluster times that are not shown here.)
 
 The final "insert" command is considered successful, despite the writeError, because the server replied to the overall command with ``"ok": 1``.
 
@@ -126,6 +130,7 @@ The driver discovers the third member, "localhost:27019", and adds it to the top
     :maxdepth: 1
 
     mongoc_apm_callbacks_t
+    mongoc_apm_document_sequence_t
     mongoc_apm_command_failed_t
     mongoc_apm_command_started_t
     mongoc_apm_command_succeeded_t

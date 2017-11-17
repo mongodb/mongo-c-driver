@@ -59,6 +59,17 @@ typedef struct _mongoc_apm_command_failed_t mongoc_apm_command_failed_t;
 
 
 /*
+ * document sequences
+ */
+
+typedef struct {
+   int32_t size;
+   const char *identifier;
+   bson_t **documents;
+} mongoc_apm_document_sequence_t;
+
+
+/*
  * SDAM monitoring events
  */
 
@@ -84,6 +95,11 @@ typedef struct _mongoc_apm_server_heartbeat_failed_t
 MONGOC_EXPORT (const bson_t *)
 mongoc_apm_command_started_get_command (
    const mongoc_apm_command_started_t *event);
+MONGOC_EXPORT (void)
+mongoc_apm_command_started_get_document_sequences (
+   const mongoc_apm_command_started_t *event,
+   const mongoc_apm_document_sequence_t **sequences,
+   size_t *n_sequences);
 MONGOC_EXPORT (const char *)
 mongoc_apm_command_started_get_database_name (
    const mongoc_apm_command_started_t *event);
@@ -113,6 +129,11 @@ mongoc_apm_command_succeeded_get_duration (
 MONGOC_EXPORT (const bson_t *)
 mongoc_apm_command_succeeded_get_reply (
    const mongoc_apm_command_succeeded_t *event);
+MONGOC_EXPORT (void)
+mongoc_apm_command_succeeded_get_document_sequences (
+   const mongoc_apm_command_succeeded_t *event,
+   const mongoc_apm_document_sequence_t **sequences,
+   size_t *n_sequences);
 MONGOC_EXPORT (const char *)
 mongoc_apm_command_succeeded_get_command_name (
    const mongoc_apm_command_succeeded_t *event);

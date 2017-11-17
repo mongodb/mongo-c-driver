@@ -455,15 +455,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    }
 
    if (callbacks->started) {
-      mongoc_apm_command_started_init (&started_event,
-                                       cmd->command,
-                                       cmd->db_name,
-                                       cmd->command_name,
-                                       request_id,
-                                       cmd->operation_id,
-                                       &server_stream->sd->host,
-                                       server_stream->sd->id,
-                                       cluster->client->apm_context);
+      mongoc_apm_command_started_init_with_cmd (
+         &started_event, cmd, request_id, cluster->client->apm_context);
 
       callbacks->started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);

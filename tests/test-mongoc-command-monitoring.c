@@ -200,6 +200,49 @@ fake_cursor_id (const bson_iter_t *iter)
    return bson_iter_as_int64 (iter) ? 42 : 0;
 }
 
+
+static void
+append_document_sequence (const mongoc_apm_command_started_t *event,
+                          bson_t *dst)
+{
+   const char *cmd_name;
+   const char *field_name;
+   const char *key;
+   const mongoc_apm_document_sequence_t *sequence[1];
+   size_t n, i;
+   char buf[16];
+   bson_t child;
+
+   cmd_name = mongoc_apm_command_started_get_command_name (event);
+   field_name = _mongoc_get_documents_field_name (cmd_name);
+   if (!field_name) {
+      /* not an insert, update, or delete command */
+      return;
+   }
+
+   if (bson_has_field (dst, field_name)) {
+      /* OP_QUERY command already contains documents as a BSON array:
+       * {'insert': 'collection', 'documents': [{}}} */
+      return;
+   }
+
+   mongoc_apm_command_started_get_document_sequences (event, sequence, &n);
+
+   if (n) {
+      /* OP_MSG document sequence, convert to what the test expects */
+      ASSERT_CMPSIZE_T (n, ==, (size_t) 1);
+      BSON_APPEND_ARRAY_BEGIN (dst, field_name, &child);
+
+      for (i = 0; i < sequence[0]->size; i++) {
+         bson_uint32_to_string ((uint32_t) i, &key, buf, sizeof buf);
+         BSON_APPEND_DOCUMENT (&child, key, sequence[0]->documents[i]);
+      }
+
+      bson_append_array_end (dst, &child);
+   }
+}
+
+
 /* Convert "ok" values to doubles, cursor ids and error codes to 42, and
  * error messages to "". See README at
  * github.com/mongodb/specifications/tree/master/source/command-monitoring/tests
@@ -339,6 +382,8 @@ started_cb (const mongoc_apm_command_started_t *event)
    }
 
    convert_command_for_test (context, event->command, &cmd, NULL);
+   append_document_sequence (event, &cmd);
+
    new_event = BCON_NEW ("command_started_event",
                          "{",
                          "command",
@@ -786,11 +831,6 @@ test_command_monitoring_cb (bson_t *scenario)
    mongoc_collection_t *collection;
 
    BSON_ASSERT (scenario);
-
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
-      /* Skip OP_MSG & APM tests */
-      return;
-   }
 
    db_name = bson_lookup_utf8 (scenario, "database_name");
    collection_name = bson_lookup_utf8 (scenario, "collection_name");
@@ -1737,6 +1777,212 @@ test_killcursors_deprecated (void)
 }
 
 
+typedef struct {
+   const char **docs_expected;
+   int32_t n_docs_expected;
+} test_cmd_started_docs_t;
+
+
+static void
+test_documents_started_cb (const mongoc_apm_command_started_t *event)
+{
+   test_cmd_started_docs_t *ctx;
+   const mongoc_apm_document_sequence_t *sequence[1];
+   size_t n, i;
+
+   if (!strcmp (mongoc_apm_command_started_get_command_name (event),
+                "endSessions")) {
+      /* test is ending */
+      return;
+   }
+
+   ctx = (test_cmd_started_docs_t *) mongoc_apm_command_started_get_context (
+      event);
+   mongoc_apm_command_started_get_document_sequences (event, sequence, &n);
+   ASSERT_CMPSIZE_T (n, ==, (size_t) 1);
+   ASSERT_CMPINT32 (sequence[0]->size, ==, ctx->n_docs_expected);
+
+   for (i = 0; i < sequence[0]->size; i++) {
+      ASSERT_MATCH (sequence[0]->documents[i], ctx->docs_expected[i]);
+   }
+}
+
+
+static void
+_test_cmd_started_docs (bool acknowledged)
+{
+   const bson_t *bsons[] = {tmp_bson ("{'_id': 0}"),
+                            tmp_bson ("{'_id': 1}"),
+                            tmp_bson ("{'_id': 2}")};
+   const char *inserts[] = {"{'_id': 0}", "{'_id': 1}", "{'_id': 2}"};
+   const char *updates[] = {"{'q': {'_id': 0}, 'u': {'$set': {'x': 1}}}"};
+   const char *deletes[] = {"{'q': {'_id': 0}, 'limit': 1}"};
+
+   test_cmd_started_docs_t ctx;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_collection_t *collection;
+   bson_t *opts = NULL;
+   bool r;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, test_documents_started_cb);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   collection = get_test_collection (client, "test_documents");
+
+   if (!acknowledged) {
+      opts = tmp_bson ("{'writeConcern': {'w': 0}}");
+   }
+
+   /*
+    * insert
+    */
+   ctx.docs_expected = inserts;
+   ctx.n_docs_expected = 3;
+   r = mongoc_collection_insert_many (collection, bsons, 3, opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /*
+    * update
+    */
+   ctx.docs_expected = updates;
+   ctx.n_docs_expected = 1;
+   r = mongoc_collection_update_one (collection,
+                                     tmp_bson ("{'_id': 0}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"),
+                                     opts,
+                                     NULL,
+                                     &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /*
+    * delete
+    */
+   ctx.docs_expected = deletes;
+   ctx.n_docs_expected = 1;
+   r = mongoc_collection_delete_one (
+      collection, tmp_bson ("{'_id': 0}"), opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cmd_started_docs (void)
+{
+   _test_cmd_started_docs (true /* acknowledged */);
+}
+
+
+static void
+test_cmd_started_docs_w0 (void)
+{
+   _test_cmd_started_docs (false /* acknowledged */);
+}
+
+
+static void
+test_documents_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
+{
+   const char *name;
+   int *n_succeeded;
+   const mongoc_apm_document_sequence_t *sequence[1];
+   size_t n;
+
+   name = mongoc_apm_command_succeeded_get_command_name (event);
+   if (!strcmp (name, "insert") || !strcmp (name, "endSessions")) {
+      /* test is starting or ending */
+      return;
+   }
+
+   mongoc_apm_command_succeeded_get_document_sequences (event, sequence, &n);
+   ASSERT_CMPSIZE_T (n, ==, (size_t) 1);
+   if (!strcmp (name, "find") || !strcmp (name, "aggregate")) {
+      ASSERT_CMPINT32 (sequence[0]->size, ==, 2);
+      ASSERT_MATCH (sequence[0]->documents[0], "{'_id': 0}");
+      ASSERT_MATCH (sequence[0]->documents[1], "{'_id': 1}");
+   } else {
+      ASSERT_CMPINT32 (sequence[0]->size, ==, 1);
+      ASSERT_CMPSTR (name, "getMore");
+      ASSERT_MATCH (sequence[0]->documents[0], "{'_id': 2}");
+   }
+
+   n_succeeded = (int *) mongoc_apm_command_succeeded_get_context (event);
+   (*n_succeeded)++;
+}
+
+
+static void
+test_cmd_succeeded_docs (void)
+{
+   const bson_t *bsons[] = {tmp_bson ("{'_id': 0}"),
+                            tmp_bson ("{'_id': 1}"),
+                            tmp_bson ("{'_id': 2}")};
+
+   int n_succeeded = 0;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bool r;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks, test_documents_succeeded_cb);
+   mongoc_client_set_apm_callbacks (client, callbacks, &n_succeeded);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   collection = get_test_collection (client, "test_documents");
+
+   /*
+    * setup
+    */
+   mongoc_collection_drop (collection, NULL);
+   r = mongoc_collection_insert_many (collection, bsons, 3, NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /*
+    * find
+    */
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (NULL), tmp_bson ("{'batchSize': 2}"), NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
+   ASSERT_CMPINT (n_succeeded, ==, 2);
+
+   /*
+    * aggregate
+    */
+   cursor = mongoc_collection_aggregate (collection,
+                                         MONGOC_QUERY_NONE,
+                                         tmp_bson ("[]"),
+                                         tmp_bson ("{'batchSize': 2}"),
+                                         NULL);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (n_succeeded, ==, 4);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -1782,4 +2028,12 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/command_monitoring/killcursors_deprecated",
                       test_killcursors_deprecated);
+   TestSuite_AddLive (
+      suite, "/command_monitoring/documents/started", test_cmd_started_docs);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/documents/started/w0",
+                      test_cmd_started_docs_w0);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/documents/succeeded",
+                      test_cmd_succeeded_docs);
 }

@@ -26,6 +26,7 @@ See Also
 
     mongoc_apm_command_succeeded_get_command_name
     mongoc_apm_command_succeeded_get_context
+    mongoc_apm_command_succeeded_get_document_sequences
     mongoc_apm_command_succeeded_get_duration
     mongoc_apm_command_succeeded_get_host
     mongoc_apm_command_succeeded_get_operation_id
