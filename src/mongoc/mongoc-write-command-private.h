@@ -48,7 +48,7 @@ struct _mongoc_bulk_write_flags_t {
    bool ordered;
    mongoc_write_bypass_document_validation_t bypass_document_validation;
    bool has_collation;
-   bool is_retryable;
+   bool has_multi_write;
 };
 
 

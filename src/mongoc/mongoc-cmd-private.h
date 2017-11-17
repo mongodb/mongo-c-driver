@@ -37,6 +37,12 @@
 
 BSON_BEGIN_DECLS
 
+typedef enum {
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN,
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES,
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
+} mongoc_cmd_parts_allow_txn_number_t;
+
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
@@ -62,6 +68,7 @@ typedef struct _mongoc_cmd_parts_t {
    bson_t assembled_body;
    bool is_write_command;
    bool prohibit_lsid;
+   mongoc_cmd_parts_allow_txn_number_t allow_txn_number;
    bool is_retryable_write;
    bool has_implicit_session;
    mongoc_client_t *client;

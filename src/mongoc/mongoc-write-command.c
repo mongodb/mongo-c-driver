@@ -125,8 +125,15 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    BSON_APPEND_DOCUMENT (&document, "q", selector);
    BSON_APPEND_DOCUMENT (&document, "u", update);
    if (opts) {
+      bson_iter_t iter;
+
       bson_concat (&document, opts);
       command->flags.has_collation |= bson_has_field (opts, "collation");
+
+      if (bson_iter_init_find (&iter, opts, "multi") &&
+          bson_iter_as_bool (&iter)) {
+         command->flags.has_multi_write = true;
+      }
    }
 
    _mongoc_buffer_append (
@@ -156,8 +163,15 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
    if (opts) {
+      bson_iter_t iter;
+
       bson_concat (&document, opts);
       command->flags.has_collation |= bson_has_field (opts, "collation");
+
+      if (bson_iter_init_find (&iter, opts, "limit") &&
+          bson_iter_as_int64 (&iter) != 1) {
+         command->flags.has_multi_write = true;
+      }
    }
 
    _mongoc_buffer_append (
@@ -423,7 +437,13 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    parts.is_write_command = true;
    parts.assembled.is_acknowledged =
       mongoc_write_concern_is_acknowledged (write_concern);
-   parts.is_retryable_write = command->flags.is_retryable;
+
+   /* Write commands that include multi-document operations are not retryable.
+    * Set this explicitly so that mongoc_cmd_parts_assemble does not need to
+    * inspect the command body later. */
+   parts.allow_txn_number = command->flags.has_multi_write
+                               ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
+                               : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
 
    bson_iter_init (&iter, &command->cmd_opts);
    if (!mongoc_cmd_parts_append_opts (
@@ -485,8 +505,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       }
 
       if (ship_it) {
-         bool is_retryable =
-            (parts.is_retryable_write && parts.assembled.session);
+         bool is_retryable = parts.is_retryable_write;
 
          /* Seek past the document offset we have already sent */
          parts.assembled.payload = command->payload.data + payload_total_offset;

@@ -100,10 +100,6 @@ _mongoc_collection_write_command_execute (
       EXIT;
    }
 
-   /* retryable writes option is inherited from the client */
-   command->flags.is_retryable = mongoc_uri_get_option_as_bool (
-      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
-
    _mongoc_write_command_execute (command,
                                   collection->client,
                                   server_stream,
@@ -2831,10 +2827,6 @@ mongoc_collection_create_bulk_operation_with_opts (
 
    write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
 
-   /* retryable writes option is inherited from the client */
-   write_flags.is_retryable = mongoc_uri_get_option_as_bool (
-      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
-
    bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
@@ -2971,14 +2963,9 @@ mongoc_collection_find_and_modify_with_opts (
       }
    }
 
-   /* retryable writes option is inherited from the client */
-   is_retryable = mongoc_uri_get_option_as_bool (
-      collection->client->uri, MONGOC_URI_RETRYWRITES, false);
-
    mongoc_cmd_parts_init (
       &parts, collection->client, collection->db, MONGOC_QUERY_NONE, &command);
    parts.is_write_command = true;
-   parts.is_retryable_write = is_retryable;
 
    if (bson_iter_init (&iter, &opts->extra)) {
       bool ok = mongoc_cmd_parts_append_opts (
@@ -2998,7 +2985,7 @@ mongoc_collection_find_and_modify_with_opts (
       RETURN (false);
    }
 
-   is_retryable = (parts.is_retryable_write && parts.assembled.session);
+   is_retryable = parts.is_retryable_write;
 
    /* increment the transaction number for the first attempt of each retryable
     * write command */

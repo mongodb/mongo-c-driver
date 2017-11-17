@@ -1495,6 +1495,68 @@ mongoc_client_command (mongoc_client_t *client,
 
 
 static bool
+_mongoc_client_retryable_write_command_with_stream (
+   mongoc_client_t *client,
+   mongoc_cmd_parts_t *parts,
+   mongoc_server_stream_t *server_stream,
+   bson_t *reply,
+   bson_error_t *error)
+{
+   mongoc_server_stream_t *retry_server_stream = NULL;
+   bson_iter_t txn_number_iter;
+   bool is_retryable = true;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (parts->is_retryable_write);
+
+   /* increment the transaction number for the first attempt of each retryable
+    * write command */
+   BSON_ASSERT (bson_iter_init_find (
+      &txn_number_iter, parts->assembled.command, "txnNumber"));
+   bson_iter_overwrite_int64 (
+      &txn_number_iter, ++parts->assembled.session->server_session->txn_number);
+
+retry:
+   ret = mongoc_cluster_run_command_monitored (
+      &client->cluster, &parts->assembled, reply, error);
+
+   /* If a retryable error is encountered and the write is retryable, select
+    * a new writable stream and retry. If server selection fails or the selected
+    * server does not support retryable writes, fall through and allow the
+    * original error to be reported. */
+   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                mongoc_cluster_is_not_master_error (error))) {
+      bson_error_t ignored_error;
+
+      /* each write command may be retried at most once */
+      is_retryable = false;
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+      }
+
+      retry_server_stream =
+         mongoc_cluster_stream_for_writes (&client->cluster, &ignored_error);
+
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
+         parts->assembled.server_stream = retry_server_stream;
+         GOTO (retry);
+      }
+   }
+
+   if (retry_server_stream) {
+      mongoc_server_stream_cleanup (retry_server_stream);
+   }
+
+   RETURN (ret);
+}
+
+
+static bool
 _mongoc_client_command_with_stream (mongoc_client_t *client,
                                     mongoc_cmd_parts_t *parts,
                                     mongoc_server_stream_t *server_stream,
@@ -1508,6 +1570,11 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
       _mongoc_bson_init_if_set (reply);
       return false;
    };
+
+   if (parts->is_retryable_write) {
+      RETURN (_mongoc_client_retryable_write_command_with_stream (
+         client, parts, server_stream, reply, error));
+   }
 
    RETURN (mongoc_cluster_run_command_monitored (
       &client->cluster, &parts->assembled, reply, error));

@@ -36,6 +36,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->read_prefs = NULL;
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
+   parts->allow_txn_number = MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN;
    parts->is_retryable_write = false;
    parts->has_implicit_session = false;
    parts->client = client;
@@ -443,6 +444,79 @@ _largest_cluster_time (const bson_t *a, const bson_t *b)
    return b;
 }
 
+
+/* Check if the command should allow a transaction number if that has not
+ * already been determined.
+ *
+ * This should only return true for write commands that are always retryable for
+ * the server stream's wire version.
+ *
+ * The basic write commands (i.e. insert, update, delete) are intentionally
+ * excluded here. While insert is always retryable, update and delete are only
+ * retryable if they include no multi-document writes. Since it would be costly
+ * to inspect the command document here, the bulk operation API explicitly sets
+ * allow_txn_number for us. This means that insert, update, and delete are not
+ * retryable if executed via mongoc_client_write_command_with_opts(); however,
+ * documentation already instructs users not to use that for basic writes.
+ */
+static bool
+_allow_txn_number (const mongoc_cmd_parts_t *parts,
+                   const mongoc_server_stream_t *server_stream)
+{
+   /* There is no reason to call this function if allow_txn_number is set */
+   BSON_ASSERT (parts->allow_txn_number ==
+                MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN);
+
+   if (!parts->is_write_command) {
+      return false;
+   }
+
+   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
+      return false;
+   }
+
+   if (!strcasecmp (parts->assembled.command_name, "findandmodify")) {
+      return true;
+   }
+
+   return false;
+}
+
+
+/* Check if the write command should support retryable behavior. */
+static bool
+_is_retryable_write (const mongoc_cmd_parts_t *parts,
+                     const mongoc_server_stream_t *server_stream)
+{
+   if (!parts->assembled.session) {
+      return false;
+   }
+
+   if (!parts->is_write_command) {
+      return false;
+   }
+
+   if (parts->allow_txn_number != MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES) {
+      return false;
+   }
+
+   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_WRITES) {
+      return false;
+   }
+
+   if (server_stream->sd->type == MONGOC_SERVER_STANDALONE) {
+      return false;
+   }
+
+   if (!mongoc_uri_get_option_as_bool (
+          parts->client->uri, MONGOC_URI_RETRYWRITES, false)) {
+      return false;
+   }
+
+   return true;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -552,12 +626,19 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          cluster_time = mongoc_client_session_get_cluster_time (cs);
       }
 
-      /* Append the transaction number field so that _mongoc_write_opmsg can
-       * later increment and update the value for each command after possible
-       * batch splitting. */
-      if (parts->is_retryable_write) {
+      /* Ensure we know if the write command allows a transaction number */
+      if (parts->is_write_command &&
+          parts->allow_txn_number ==
+             MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN) {
+         parts->allow_txn_number = _allow_txn_number (parts, server_stream);
+      }
+
+      /* Determine if the command is a retryable. If so, append txnNumber now
+       * for future use and mark the command as such. */
+      if (_is_retryable_write (parts, server_stream)) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_int64 (&parts->assembled_body, "txnNumber", 9, 0);
+         parts->is_retryable_write = true;
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {
