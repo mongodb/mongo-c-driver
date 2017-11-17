@@ -1,3 +1,4 @@
+#include <mongoc-util-private.h>
 #include "mongoc.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-thread-private.h"
@@ -166,6 +167,7 @@ static void
 _test_dns_maybe_pooled (bson_t *test, bool pooled)
 {
    context_t ctx;
+   bool expect_error;
    mongoc_uri_t *uri;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_client_pool_t *pool = NULL;
@@ -176,9 +178,17 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 
    mongoc_mutex_init (&ctx.mutex);
    ctx.hosts = NULL;
+   expect_error = _mongoc_lookup_bool (test, "error", true /* default */);
 
    uri = mongoc_uri_new_with_error (bson_lookup_utf8 (test, "uri"), &error);
-   ASSERT_OR_PRINT (uri, error);
+   if (!expect_error) {
+      ASSERT_OR_PRINT (uri, error);
+   }
+
+   if (!uri) {
+      /* expected failure, e.g. we're testing an invalid URI */
+      return;
+   }
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, topology_changed);
