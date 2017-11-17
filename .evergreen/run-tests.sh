@@ -9,6 +9,9 @@ SSL=${SSL:-nossl}
 URI=${URI:-}
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
+
+echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
+
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 TEST_ARGS="-d -F test-results.json"
 

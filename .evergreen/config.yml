@@ -296,7 +296,7 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} sh .evergreen/run-tests.sh
+          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${URI} sh .evergreen/run-tests.sh
 
   "run auth tests":
     - command: shell.exec
@@ -1061,6 +1061,40 @@ tasks:
               set -o xtrace
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=winssl sh .evergreen/compile.sh
         - func: "upload build"
+
+    # Verify that retryWrites=true is ignored with standalone
+    - name: retry-true-latest-server
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            URI: "mongodb://localhost/?retryWrites=true"
+
+    # Verify that retryWrites=true is ignored with old server
+    - name: retry-true-3.4-replica-set
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "replica_set"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
 
 # }}}
 
@@ -6655,9 +6689,11 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - "retry-true-3.4-replica-set"
+    - "retry-true-latest-server"
+    # Ubuntu16.04 only supports MongoDB 3.4+
     - ".3.4 .openssl !.nosasl .server"
     - ".3.4 .nossl !.nosasl"
-      # Ubuntu16.04 only supports MongoDB 3.4+
 
 - name: darwin
   display_name: "*Darwin, macOS (Apple LLVM)"
