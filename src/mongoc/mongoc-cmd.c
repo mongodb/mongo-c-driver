@@ -37,6 +37,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
    parts->is_retryable_write = false;
+   parts->has_implicit_session = false;
    parts->client = client;
    bson_init (&parts->read_concern_document);
    bson_init (&parts->extra);
@@ -469,7 +470,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 {
    mongoc_server_description_type_t server_type;
    mongoc_client_session_t *cs;
-   mongoc_server_session_t *server_session;
    const bson_t *cluster_time = NULL;
    bson_t child;
    mongoc_read_prefs_t *prefs = NULL;
@@ -530,6 +530,17 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          _mongoc_cmd_parts_ensure_copied (parts);
       }
 
+      /* If an explicit session was not provided and lsid is not prohibited,
+       * attempt to create an implicit session (ignoring any errors). */
+      if (!cs && !parts->prohibit_lsid) {
+         cs = mongoc_client_start_session (parts->client, NULL, NULL);
+
+         if (cs) {
+            parts->assembled.session = cs;
+            parts->has_implicit_session = true;
+         }
+      }
+
       if (cs) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (&parts->assembled_body,
@@ -539,18 +550,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
          cs->server_session->last_used_usec = bson_get_monotonic_time ();
          cluster_time = mongoc_client_session_get_cluster_time (cs);
-      } else if (!parts->prohibit_lsid) {
-         /* try to use implicit session, but ignore errors */
-         server_session =
-            _mongoc_client_pop_server_session (parts->client, NULL);
-
-         if (server_session) {
-            _mongoc_cmd_parts_ensure_copied (parts);
-            bson_append_document (
-               &parts->assembled_body, "lsid", 4, &server_session->lsid);
-            server_session->last_used_usec = bson_get_monotonic_time ();
-            _mongoc_client_push_server_session (parts->client, server_session);
-         }
       }
 
       /* Append the transaction number field so that _mongoc_write_opmsg can
@@ -573,6 +572,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       if (!is_get_more) {
+         /* This condition should never trigger for an implicit client session.
+          * Even though the causal consistency option may default to true, an
+          * implicit client session will have no previous operation time. */
          if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
              cs->operation_timestamp) {
             _mongoc_cmd_parts_ensure_copied (parts);
@@ -626,6 +628,10 @@ mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
    bson_destroy (&parts->read_concern_document);
    bson_destroy (&parts->extra);
    bson_destroy (&parts->assembled_body);
+
+   if (parts->has_implicit_session) {
+      mongoc_client_session_destroy (parts->assembled.session);
+   }
 }
 
 bool
