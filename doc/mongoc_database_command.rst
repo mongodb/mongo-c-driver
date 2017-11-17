@@ -18,6 +18,11 @@ Synopsis
                            const bson_t *fields,
                            const mongoc_read_prefs_t *read_prefs);
 
+This function is superseded by :symbol:`mongoc_database_command_with_opts()`, :symbol:`mongoc_database_read_command_with_opts()`, :symbol:`mongoc_database_write_command_with_opts()`, and :symbol:`mongoc_database_read_write_command_with_opts()`.
+
+Description
+-----------
+
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next` is called on it. The database's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next` will not check the server response for a write concern error or write concern timeout.
 
 Parameters
