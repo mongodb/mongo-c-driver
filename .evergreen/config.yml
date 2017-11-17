@@ -860,7 +860,15 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - func: "link sample program"
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libmongoc with CMake (not Autotools) and compile a program
+              # that links dynamically or statically to it, using variables from
+              # pkg-config.exe.
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
 
     - name: link-with-pkg-config
       depends_on:
