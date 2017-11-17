@@ -365,6 +365,20 @@ functions:
               cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
            fi
 
+  "link sample program autotools" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with the Autotools and compile a program
+          # that links dynamically or statically to libmongoc, using
+          # variables from pkg-config.
+          export ENABLE_SSL=${ENABLE_SSL}
+          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
+          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+
   "link sample program" :
     - command: shell.exec
       type: test
@@ -866,7 +880,8 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
-        - func: "link sample program"
+        # No CMake on Mac in Evergreen yet, BUILD-3995
+        - func: "link sample program autotools"
 
     - name: link-with-pkg-config-ssl
       depends_on:
@@ -6558,7 +6573,7 @@ buildvariants:
     - rhel70
   tasks:
     - ".hardened"
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6643,7 +6658,7 @@ buildvariants:
   run_on:
     - macos-1012
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
@@ -6668,7 +6683,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6699,7 +6714,7 @@ buildvariants:
   run_on:
     - windows-64-vs2015-compile
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
       # No 32bit OpenSSL builds
@@ -6726,7 +6741,7 @@ buildvariants:
   run_on:
     - windows-64-vs2013-compile
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6781,7 +6796,7 @@ buildvariants:
   run_on:
     - windows-64-vs2010-compile
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .winssl"
@@ -6853,7 +6868,7 @@ buildvariants:
   - rhel71-power8-build
   - rhel71-power8-test
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -6901,7 +6916,7 @@ buildvariants:
   - ubuntu1604-arm64-large
   - ubuntu1604-arm64-small
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
@@ -6970,7 +6985,7 @@ buildvariants:
   - suse12-zseries-build
   - suse12-zseries-test
   tasks:
-    - ".compression"
+    - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"

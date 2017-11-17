@@ -19,7 +19,11 @@ else
   TAR=tar
 fi
 
-if [ $(uname) = "Darwin" ]; then
+# Get the kernel name, lowercased
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+echo "OS: $OS"
+
+if [ "$OS" = "darwin" ]; then
   if [ ! "$CMAKE" ]; then
     if [ -f ""/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake" ]; then
       CMAKE="/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake"
@@ -62,7 +66,11 @@ fi
 
 if [ "$ENABLE_SSL" ]; then
   SSL_CONFIGURE_OPTION="--enable-ssl"
-  SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=ON"
+  if [ "$OS" = "darwin" ]; then
+     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=DARWIN"
+  else
+     SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OPENSSL"
+  fi
 else
   SSL_CONFIGURE_OPTION="--disable-ssl"
   SSL_CMAKE_OPTION="-DENABLE_SSL:BOOL=OFF"
