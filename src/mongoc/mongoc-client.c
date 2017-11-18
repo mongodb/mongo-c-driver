@@ -2632,8 +2632,7 @@ void
 _mongoc_client_push_server_session (mongoc_client_t *client,
                                     mongoc_server_session_t *server_session)
 {
-   return _mongoc_topology_push_server_session (client->topology,
-                                                server_session);
+   _mongoc_topology_push_server_session (client->topology, server_session);
 }
 
 /*
