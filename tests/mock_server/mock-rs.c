@@ -275,7 +275,7 @@ mock_rs_run (mock_rs_t *rs)
    int i;
    mock_server_t *server;
    char *hosts_str;
-   char *ismaster_json;
+   char *ismaster_reply;
 
    if (rs->has_primary) {
       /* start primary */
@@ -327,29 +327,29 @@ mock_rs_run (mock_rs_t *rs)
    BSON_ASSERT (rs->max_wire_version > 0);
    if (rs->has_primary) {
       /* primary's ismaster response */
-      ismaster_json = primary_json (rs);
-      mock_server_auto_ismaster (rs->primary, ismaster_json);
-      bson_free (ismaster_json);
+      ismaster_reply = primary_json (rs);
+      mock_server_auto_ismaster (rs->primary, ismaster_reply);
+      bson_free (ismaster_reply);
    }
 
    /* secondaries' ismaster response */
-   ismaster_json = secondary_json (rs);
+   ismaster_reply = secondary_json (rs);
 
    for (i = 0; i < rs->n_secondaries; i++) {
       mock_server_auto_ismaster (get_server (&rs->secondaries, i),
-                                 ismaster_json);
+                                 ismaster_reply);
    }
 
-   bson_free (ismaster_json);
+   bson_free (ismaster_reply);
 
    /* arbiters' ismaster response */
-   ismaster_json = arbiter_json (rs);
+   ismaster_reply = arbiter_json (rs);
 
    for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_json);
+      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_reply);
    }
 
-   bson_free (ismaster_json);
+   bson_free (ismaster_reply);
 
    if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
       mock_rs_auto_endsessions (rs);
