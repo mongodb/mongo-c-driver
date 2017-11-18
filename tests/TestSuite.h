@@ -51,7 +51,7 @@ extern "C" {
 #define CERT_CLIENT CERT_TEST_DIR "/client.pem"
 #define CERT_ALTNAME                                                   \
    CERT_TEST_DIR "/altname.pem"             /* alternative.mongodb.org \
-                                               */
+                                             */
 #define CERT_WILD CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
 #define CERT_COMMONNAME \
    CERT_TEST_DIR "/commonName.pem"                /* 127.0.0.1 & localhost */
@@ -282,29 +282,33 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                            \
    } while (0)
 
-#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)               \
-   do {                                                                      \
-      if (error.domain != _domain) {                                         \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): error domain %d doesn't match expected %d\n", \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  BSON_FUNC,                                                 \
-                  error.domain,                                              \
-                  _domain);                                                  \
-         abort ();                                                           \
-      };                                                                     \
-      if (error.code != _code) {                                             \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): error code %d doesn't match expected %d\n",   \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  BSON_FUNC,                                                 \
-                  error.code,                                                \
-                  _code);                                                    \
-         abort ();                                                           \
-      };                                                                     \
-      ASSERT_CONTAINS (error.message, _message);                             \
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)              \
+   do {                                                                     \
+      if (error.domain != _domain) {                                        \
+         fprintf (stderr,                                                   \
+                  "%s:%d %s(): error domain %d doesn't match expected %d\n" \
+                  "error: \"%s\"",                                          \
+                  __FILE__,                                                 \
+                  __LINE__,                                                 \
+                  BSON_FUNC,                                                \
+                  error.domain,                                             \
+                  _domain,                                                  \
+                  error.message);                                           \
+         abort ();                                                          \
+      };                                                                    \
+      if (error.code != _code) {                                            \
+         fprintf (stderr,                                                   \
+                  "%s:%d %s(): error code %d doesn't match expected %d\n"   \
+                  "error: \"%s\"",                                          \
+                  __FILE__,                                                 \
+                  __LINE__,                                                 \
+                  BSON_FUNC,                                                \
+                  error.code,                                               \
+                  _code,                                                    \
+                  error.message);                                           \
+         abort ();                                                          \
+      };                                                                    \
+      ASSERT_CONTAINS (error.message, _message);                            \
    } while (0);
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                \
@@ -495,7 +499,10 @@ TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
 int
 TestSuite_CheckMockServerAllowed (void);
 void
-_TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func, ...);
+_TestSuite_AddMockServerTest (TestSuite *suite,
+                              const char *name,
+                              TestFunc func,
+                              ...);
 #define TestSuite_AddMockServerTest(_suite, _name, ...) \
    _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
 void
