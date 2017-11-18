@@ -511,6 +511,13 @@ TestSuite_AddWC (TestSuite *suite,
                  TestFuncWC func,
                  TestFuncDtor dtor,
                  void *ctx);
+Test *
+_V_TestSuite_AddFull (TestSuite *suite,
+                      const char *name,
+                      TestFuncWC func,
+                      TestFuncDtor dtor,
+                      void *ctx,
+                      va_list ap);
 void
 _TestSuite_AddFull (TestSuite *suite,
                     const char *name,

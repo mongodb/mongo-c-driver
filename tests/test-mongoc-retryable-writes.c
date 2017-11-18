@@ -807,6 +807,7 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_retryable_writes_cb,
+                                       test_framework_skip_if_no_crypto,
                                        test_framework_skip_if_not_rs_version_6);
 }
 

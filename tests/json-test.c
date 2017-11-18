@@ -698,10 +698,10 @@ get_bson_from_json_file (char *filename)
  *-----------------------------------------------------------------------
  */
 void
-install_json_test_suite_with_check (TestSuite *suite,
-                                    const char *dir_path,
-                                    test_hook callback,
-                                    int (*check) (void))
+_install_json_test_suite_with_check (TestSuite *suite,
+                                     const char *dir_path,
+                                     test_hook callback,
+                                     ...)
 {
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
@@ -709,6 +709,7 @@ install_json_test_suite_with_check (TestSuite *suite,
    bson_t *test;
    char *skip_json;
    char *ext;
+   va_list ap;
 
    num_tests =
       collect_tests_from_dir (&test_paths[0], dir_path, 0, MAX_NUM_TESTS);
@@ -723,12 +724,16 @@ install_json_test_suite_with_check (TestSuite *suite,
       BSON_ASSERT (ext);
       ext[0] = '\0';
 
-      TestSuite_AddFull (suite,
-                         skip_json,
-                         (void (*) (void *)) callback,
-                         (void (*) (void *)) bson_destroy,
-                         test,
-                         check);
+      /* list of "check" functions that decide whether to skip the test */
+      va_start (ap, callback);
+      _V_TestSuite_AddFull (suite,
+                            skip_json,
+                            (void (*) (void *)) callback,
+                            (void (*) (void *)) bson_destroy,
+                            test,
+                            ap);
+
+      va_end (ap);
    }
 }
 

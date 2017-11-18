@@ -384,7 +384,7 @@ _TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 }
 
 
-static Test *
+Test *
 _V_TestSuite_AddFull (TestSuite *suite,
                       const char *name,
                       TestFuncWC func,
@@ -429,7 +429,7 @@ _TestSuite_AddMockServerTest (TestSuite *suite,
                               TestFunc func,
                               ...)
 {
-   Test* test;
+   Test *test;
    va_list ap;
 
    va_start (ap, func);
