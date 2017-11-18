@@ -4105,6 +4105,27 @@ test_bulk_update_one_error_message (void)
 }
 
 
+static void
+test_bulk_no_client (void)
+{
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+
+   bulk = mongoc_bulk_operation_new (true /* ordered */);
+   BSON_ASSERT (!mongoc_bulk_operation_execute (bulk, &reply, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "requires a client");
+
+   /* reply was initialized */
+   BSON_ASSERT (bson_empty (&reply));
+
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&reply);
+}
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4381,4 +4402,5 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
                   test_bulk_update_one_error_message);
+   TestSuite_Add (suite, "/BulkOperation/no_client", test_bulk_no_client);
 }
