@@ -630,7 +630,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       if (parts->is_write_command &&
           parts->allow_txn_number ==
              MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN) {
-         parts->allow_txn_number = _allow_txn_number (parts, server_stream);
+         parts->allow_txn_number = _allow_txn_number (parts, server_stream)
+                                      ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES
+                                      : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO;
       }
 
       /* Determine if the command is a retryable. If so, append txnNumber now
