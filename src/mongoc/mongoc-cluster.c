@@ -121,7 +121,7 @@ _mongoc_cluster_buffer_iovec (mongoc_iovec_t *iov,
       }
 
       memcpy (buffer + buffer_offset,
-              iov[n].iov_base + difference,
+              ((char *) iov[n].iov_base) + difference,
               iov[n].iov_len - difference);
       buffer_offset += iov[n].iov_len - difference;
    }
