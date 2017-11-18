@@ -878,13 +878,13 @@ mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request)
 void
 mock_rs_stepdown (mock_rs_t *rs)
 {
-   char *ismaster_json;
+   char *json;
 
    BSON_ASSERT (rs->primary);
 
-   ismaster_json = secondary_json (rs);
-   mock_server_auto_ismaster (rs->primary, ismaster_json);
-   bson_free (ismaster_json);
+   json = secondary_json (rs);
+   mock_server_auto_ismaster (rs->primary, json);
+   bson_free (json);
 
    _mongoc_array_append_val (&rs->secondaries, rs->primary);
    rs->primary = NULL;
@@ -903,7 +903,7 @@ mock_rs_stepdown (mock_rs_t *rs)
 void
 mock_rs_elect (mock_rs_t *rs, int id)
 {
-   char *ismaster_json;
+   char *json;
    size_t i;
    mock_server_t **ptrs;
 
@@ -913,9 +913,9 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    rs->primary = get_server (&rs->secondaries, id);
 
-   ismaster_json = primary_json (rs);
-   mock_server_auto_ismaster (rs->primary, ismaster_json);
-   bson_free (ismaster_json);
+   json = primary_json (rs);
+   mock_server_auto_ismaster (rs->primary, json);
+   bson_free (json);
 
    ptrs = (mock_server_t **) rs->secondaries.data;
 
