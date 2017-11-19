@@ -786,6 +786,7 @@ test_command_with_opts (void *ctx)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
