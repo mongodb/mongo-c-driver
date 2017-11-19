@@ -4,7 +4,7 @@
 mongoc_client_session_t
 =======================
 
-Use a session for a sequence of operations, optionally with causal consistency.
+Use a session for a sequence of operations, optionally with causal consistency. See `the MongoDB Manual Entry for Causal Consistency <http://dochub.mongodb.org/core/causal-consistency>`_.
 
 Synopsis
 --------

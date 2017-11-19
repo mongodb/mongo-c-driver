@@ -12,7 +12,7 @@ Synopsis
   mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
                                               bool causal_consistency);
 
-Configure causal consistency in a session. If true (the default), each operation in the session will be causally ordered after the previous read or write operation. Set to false to disable causal consistency.
+Configure causal consistency in a session. If true (the default), each operation in the session will be causally ordered after the previous read or write operation. Set to false to disable causal consistency. See `the MongoDB Manual Entry for Causal Consistency <http://dochub.mongodb.org/core/causal-consistency>`_.
 
 Unacknowledged writes are not causally consistent. If you execute a write operation with a :symbol:`mongoc_write_concern_t` on which you have called :symbol:`mongoc_write_concern_set_w` with a value of 0, the write does not participate in causal consistency.
 
