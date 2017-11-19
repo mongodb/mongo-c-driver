@@ -149,36 +149,11 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    bson_t cmd;
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
    int step;
-   bool canonicalize = false;
    const bson_t *options;
-   bson_t properties;
-   char real_name[BSON_HOST_NAME_MAX + 1];
    mongoc_server_stream_t *server_stream;
 
    options = mongoc_uri_get_options (cluster->uri);
-
-   if (bson_iter_init_find_case (
-          &iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      canonicalize = bson_iter_bool (&iter);
-   }
-
-   if (mongoc_uri_get_mechanism_properties (cluster->uri, &properties)) {
-      if (bson_iter_init_find_case (
-             &iter, &properties, "CANONICALIZE_HOST_NAME") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         canonicalize = !strcasecmp (bson_iter_utf8 (&iter, NULL), "true");
-      }
-      bson_destroy (&properties);
-   }
-
-   if (canonicalize && _mongoc_sasl_get_canonicalized_name (
-                          stream, real_name, sizeof real_name, error)) {
-      state = _mongoc_cluster_sspi_new (cluster->uri, real_name);
-   } else {
-      state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
-   }
-
+   state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
 
    if (!state) {
       bson_set_error (error,

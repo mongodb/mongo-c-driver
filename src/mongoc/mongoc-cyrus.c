@@ -200,7 +200,7 @@ _mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
     */
    if (sasl->credentials.canonicalize_host_name &&
        _mongoc_sasl_get_canonicalized_name (
-          stream, real_name, sizeof real_name, error)) {
+          stream, real_name, sizeof real_name)) {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, real_name);
    } else {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, hostname);

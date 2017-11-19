@@ -93,7 +93,7 @@ Now authenticate using the MongoDB URI. ``GSSAPI`` authenticates against the ``$
 
 The driver supports these GSSAPI properties:
 
-* ``CANONICALIZE_HOST_NAME``: This might be required when the hosts report different hostnames than what is used in the kerberos database. The default is "false".
+* ``CANONICALIZE_HOST_NAME``: This might be required with Cyrus-SASL when the hosts report different hostnames than what is used in the Kerberos database. The default is "false".
 * ``SERVICE_NAME``: Use a different service name than the default, "mongodb".
 
 Set properties in the URL:

@@ -18,6 +18,8 @@
 #include <mongoc-thread-private.h>
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <mongoc-cyrus-private.h>
+#include <mongoc-client-private.h>
+
 #endif
 
 #include "TestSuite.h"
@@ -179,6 +181,28 @@ test_sasl_properties (void)
    _mongoc_cyrus_destroy (&sasl);
    mongoc_uri_destroy (uri);
 }
+
+
+static void
+test_sasl_canonicalize_hostname (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_server_stream_t *ss;
+   char real_name[BSON_HOST_NAME_MAX + 1] = {'\0'};
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   ss = mongoc_cluster_stream_for_reads (&client->cluster, NULL, &error);
+   ASSERT_OR_PRINT (ss, error);
+
+   BSON_ASSERT (_mongoc_sasl_get_canonicalized_name (
+      ss->stream, real_name, sizeof real_name));
+
+   ASSERT_CMPSIZE_T (strlen (real_name), >, (size_t) 0);
+
+   mongoc_server_stream_cleanup (ss);
+   mongoc_client_destroy (client);
+}
 #endif
 
 
@@ -192,6 +216,13 @@ test_sasl_install (TestSuite *suite)
                       NULL,
                       should_run_gssapi_kerberos);
 #ifdef MONGOC_ENABLE_SASL_CYRUS
+   TestSuite_AddFull (suite,
+                      "/SASL/canonicalize",
+                      test_sasl_canonicalize_hostname,
+                      NULL,
+                      NULL,
+                      TestSuite_CheckLive,
+                      test_framework_skip_if_offline);
    TestSuite_Add (suite, "/SASL/properties", test_sasl_properties);
 #endif
 }
