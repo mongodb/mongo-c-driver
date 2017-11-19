@@ -45,6 +45,8 @@ See also: :symbol:`mongoc_collection_find_and_modify_with_opts`.
 
 As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any.
 
+``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
+
 Errors
 ------
 
