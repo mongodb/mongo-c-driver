@@ -873,10 +873,12 @@ again:
    } else if (*str) {
       if (!mongoc_uri_parse_option (uri, str, override)) {
          MONGOC_URI_ERROR (error, "Unknown option or value for '%s'", str);
+         bson_free (option);
          return false;
       }
    }
 
+   bson_free (option);
    return true;
 }
 
