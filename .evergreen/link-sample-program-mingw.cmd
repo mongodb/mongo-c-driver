@@ -28,9 +28,9 @@ set PATH=%PATH%;%INSTALL_DIR%\bin
 cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
 
-rem Build libbson
+rem Build libbson, with flags that the downstream R driver mongolite uses
 cd src\libbson
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
 %CMAKE_MAKE_PROGRAM%
 if errorlevel 1 (
    exit /B 1
@@ -42,8 +42,8 @@ if errorlevel 1 (
 )
 
 cd ..\..
-rem Build libmongoc
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% .
+rem Build libmongoc, with flags that the downstream R driver mongolite uses
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %CMAKE_FLAGS% .
 %CMAKE_MAKE_PROGRAM%
 if errorlevel 1 (
    exit /B 1

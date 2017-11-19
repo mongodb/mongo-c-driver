@@ -651,7 +651,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c99 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c99 -D_XOPEN_SOURCE=600 -pedantic' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-c89
@@ -664,7 +664,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-               DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic' sh .evergreen/compile.sh
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-valgrind
