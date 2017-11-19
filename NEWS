@@ -1,12 +1,67 @@
-Next Release
-============
+mongo-c-driver 1.9.0
+====================
 
-New features and bug fixes:
+It is my pleasure to announce mongo-c-driver 1.9.0. This version drops support
+for MongoDB 2.4 and adds support for MongoDB 3.6 features:
 
-  * Support for MongoDB 3.6:
-    * Support for mongodb+srv URIs.
-    * New struct mongoc_client_session_t represents a MongoDB 3.6 session,
-      which supports causal consistency.
+  * New struct mongoc_change_stream_t to watch a collection for changes.
+  * New struct mongoc_client_session_t represents a MongoDB 3.6 session,
+    which supports causal consistency: you are guaranteed to read your writes
+    and to perform monotonic reads, even when reading from secondaries or in
+    a sharded cluster.
+  * New functions that accept flexible options as a BSON document. These
+    accept a "sessionId" option and any future options. In addition, the
+    two new "update" functions accept the "arrayFilters" option that is new
+    in MongoDB 3.6:
+      mongoc_collection_insert_one
+      mongoc_collection_insert_many
+      mongoc_collection_update_one
+      mongoc_collection_update_many
+      mongoc_collection_replace_one
+      mongoc_collection_delete_one
+      mongoc_collection_delete_many
+      mongoc_client_command_with_opts
+      mongoc_database_command_with_opts
+      mongoc_collection_command_with_opts
+      mongoc_client_find_databases_with_opts
+      mongoc_client_get_database_names_with_opts
+      mongoc_collection_create_bulk_operation_with_opts
+      mongoc_collection_find_indexes_with_opts
+      mongoc_database_find_collections_with_opts
+      mongoc_database_get_collection_names_with_opts
+  * New URI option "retryWrites=true" safely and automatically retries certain
+    write operations if the server is a MongoDB 3.6 replica set or sharded
+    cluster.
+  * Support for MongoDB OP_MSG wire protocol. New command monitoring functions
+    expose OP_MSG document sequences for event listeners:
+      mongoc_apm_command_started_get_document_sequences
+      mongoc_apm_command_succeeded_get_document_sequences
+
+Additional new features not specific to MongoDB 3.6:
+
+  * Support for mongodb+srv URIs to query DNS for SRV and TXT records that
+    configure the connection to MongoDB.
+  * Support LibreSSL with CMake build
+
+Bug fixes:
+
+  * mongoc_bulk_operation_execute did not always initialize "reply".
+  * Fix C99 pedantic warnings.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Derick Rethans
+  * Graham Whitted
+  * Brian Moss
+  * Alex Masterov
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.8.2
