@@ -430,3 +430,4 @@ for file_name in files:
     with open(joinpath(mock_server_dir, file_name), 'w+') as f:
         t = env.get_template(file_name + ".template")
         f.write(t.render(globals()))
+        f.write('\n')

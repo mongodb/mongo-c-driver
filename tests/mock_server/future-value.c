@@ -545,3 +545,4 @@ future_value_get_const_mongoc_write_concern_ptr (future_value_t *future_value)
    BSON_ASSERT (future_value->type == future_value_const_mongoc_write_concern_ptr_type);
    return future_value->const_mongoc_write_concern_ptr_value;
 }
+

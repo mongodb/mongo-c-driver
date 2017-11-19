@@ -157,3 +157,4 @@ future_get_const_mongoc_write_concern_ptr (future_t *future);
 void future_destroy (future_t *future);
 
 #endif /* FUTURE_H */
+

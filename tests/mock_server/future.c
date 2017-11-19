@@ -559,3 +559,4 @@ future_destroy (future_t *future)
    mongoc_mutex_destroy (&future->mutex);
    bson_free (future);
 }
+

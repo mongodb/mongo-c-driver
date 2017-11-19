@@ -34,19 +34,6 @@
 #define strncasecmp _strnicmp
 #endif
 
-/* Suppress CWE-252 ("Unchecked return value") warnings for things we can't deal
- * with */
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define _ignore_value(x)       \
-   (({                         \
-      __typeof__(x) __x = (x); \
-      (void) __x;              \
-   }))
-#else
-#define _ignore_value(x) ((void) (x))
-#endif
-
-
 #if BSON_GNUC_CHECK_VERSION(4, 6)
 #define BEGIN_IGNORE_DEPRECATIONS  \
    _Pragma ("GCC diagnostic push") \
