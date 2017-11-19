@@ -44,10 +44,6 @@ void
 _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
 void
 _mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user);
-bool
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
-                            const char *mechanism,
-                            bson_error_t *error);
 void
 _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name);
 void
