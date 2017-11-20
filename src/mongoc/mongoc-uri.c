@@ -762,19 +762,21 @@ mongoc_uri_parse_option (mongoc_uri_t *uri, const char *str, bool override)
                  (0 == strcasecmp (value, "yes")) ||
                  (0 == strcasecmp (value, "y")) ||
                  (0 == strcasecmp (value, "t"))) {
-         MONGOC_WARNING ("Deprecated boolean value for \"%1$s\": \"%2$s\", "
-                         "please update to \"%1$s=true\"",
+         MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
+                         "please update to \"%s=true\"",
                          key,
-                         value);
+                         value,
+                         key);
          mongoc_uri_set_option_as_bool (uri, lkey, true);
       } else if ((0 == strcasecmp (value, "0")) ||
                  (0 == strcasecmp (value, "-1")) ||
                  (0 == strcmp (value, "no")) || (0 == strcmp (value, "n")) ||
                  (0 == strcmp (value, "f"))) {
-         MONGOC_WARNING ("Deprecated boolean value for \"%1$s\": \"%2$s\", "
-                         "please update to \"%1$s=false\"",
+         MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
+                         "please update to \"%s=false\"",
                          key,
-                         value);
+                         value,
+                         key);
          mongoc_uri_set_option_as_bool (uri, lkey, false);
       } else {
          goto UNSUPPORTED_VALUE;
