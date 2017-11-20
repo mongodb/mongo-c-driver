@@ -95,6 +95,7 @@ test-mongoc-stream
 test-mongoc-stream-tls
 test-mongoc-uri
 test-mongoc-write-concern
+test-mongoc-gssapi
 # Windows things
 *.dir
 *.vcxproj*

@@ -147,9 +147,9 @@ test_x509_install (TestSuite *suite);
 extern void
 test_stream_tls_error_install (TestSuite *suite);
 #endif
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 extern void
-test_sasl_install (TestSuite *suite);
+test_cyrus_install (TestSuite *suite);
 #endif
 
 
@@ -2169,8 +2169,8 @@ main (int argc, char *argv[])
    test_x509_install (&suite);
    test_stream_tls_error_install (&suite);
 #endif
-#ifdef MONGOC_ENABLE_SASL
-   test_sasl_install (&suite);
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   test_cyrus_install (&suite);
 #endif
 
    ret = TestSuite_Run (&suite);

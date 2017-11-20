@@ -129,7 +129,7 @@ test_libmongoc_SOURCES += \
 	tests/ssl-test.h
 endif
 
-if ENABLE_SASL
+if ENABLE_SASL_CYRUS
 test_libmongoc_SOURCES += \
 	tests/test-mongoc-cyrus.c
 endif
@@ -138,7 +138,12 @@ test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
 test_libmongoc_LDFLAGS = -no-undefined \
                          -rpath $(libdir)
 
-
+noinst_PROGRAMS += test-mongoc-gssapi
+test_mongoc_gssapi_SOURCES = tests/test-mongoc-gssapi.c
+test_mongoc_gssapi_CFLAGS = $(TEST_CFLAGS)
+test_mongoc_gssapi_LDADD = libmongoc.la $(TEST_LIBS)
+test_mongoc_gssapi_LDFLAGS = -no-undefined \
+                             -rpath $(libdir)
 
 check: test
 

@@ -768,13 +768,14 @@ if (MONGOC_ENABLE_SSL)
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
 endif()
 
-if (MONGOC_ENABLE_SASL)
+if (MONGOC_ENABLE_SASL_CYRUS)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-mongoc-cyrus.c
    )
 endif ()
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
+mongoc_add_test (test-mongoc-gssapi TRUE ${SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 
 if (ENABLE_TESTS)
    enable_testing()
