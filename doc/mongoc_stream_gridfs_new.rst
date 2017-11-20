@@ -16,10 +16,11 @@ Parameters
 
 * ``file``: A :symbol:`mongoc_gridfs_file_t`.
 
-This function shall create a new :symbol:`mongoc_gridfs_file_t`. This function does not transfer ownership of ``file``. Therefore, ``file`` must remain valid for the lifetime of this stream.
+This function shall create a new :symbol:`mongoc_stream_t` to read from and write to a GridFS file. GridFS files are created with :symbol:`mongoc_gridfs_create_file` or :symbol:`mongoc_gridfs_create_file_from_stream`.
+
+This function does not transfer ownership of ``file``. Therefore, ``file`` must remain valid for the lifetime of this stream.
 
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_stream_gridfs_t` if successful, otherwise ``NULL``.
-
+A newly allocated :symbol:`mongoc_stream_t` if successful, otherwise ``NULL``.

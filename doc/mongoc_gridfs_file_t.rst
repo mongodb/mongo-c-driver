@@ -56,6 +56,7 @@ This structure is NOT thread-safe and should only be used from one thread at a t
     mongoc_gridfs_file_set_metadata
     mongoc_gridfs_file_tell
     mongoc_gridfs_file_writev
+    mongoc_stream_gridfs_new
 
 Related
 -------

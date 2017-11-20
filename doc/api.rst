@@ -43,7 +43,6 @@ API Reference
    mongoc_ssl_opt_t
    mongoc_stream_buffered_t
    mongoc_stream_file_t
-   mongoc_stream_gridfs_t
    mongoc_stream_socket_t
    mongoc_stream_t
    mongoc_stream_tls_t

@@ -52,6 +52,3 @@ See Also
 :doc:`mongoc_stream_socket_t`
 
 :doc:`mongoc_stream_tls_t`
-
-:doc:`mongoc_stream_gridfs_t`
-
