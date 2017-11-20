@@ -285,6 +285,7 @@ _test_topology_invalidate_server (bool pooled)
    mongoc_server_description_t *fake_sd;
    mongoc_server_description_t *sd;
    mongoc_topology_description_t *td;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
    bson_error_t error;
@@ -293,14 +294,18 @@ _test_topology_invalidate_server (bool pooled)
    uint32_t id;
    mongoc_server_stream_t *server_stream;
 
+   uri = test_framework_get_uri ();
+   /* no auto heartbeat */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
+
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = mongoc_client_pool_new (uri);
       client = mongoc_client_pool_pop (pool);
 
       /* background scanner complains about failed connection */
       capture_logs (true);
    } else {
-      client = test_framework_client_new ();
+      client = mongoc_client_new_from_uri (uri);
    }
 
    td = &client->topology->description;
@@ -309,9 +314,8 @@ _test_topology_invalidate_server (bool pooled)
    server_stream =
       mongoc_cluster_stream_for_reads (&client->cluster, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
+   sd = server_stream->sd;
    id = server_stream->sd->id;
-   sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, id);
-   BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE ||
                 sd->type == MONGOC_SERVER_RS_PRIMARY ||
                 sd->type == MONGOC_SERVER_MONGOS);
@@ -340,6 +344,7 @@ _test_topology_invalidate_server (bool pooled)
       client->topology->scanner, &fake_host_list, fake_id);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
       &client->cluster, fake_id, true, &error));
+   mongoc_mutex_lock (&client->topology->mutex);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, fake_id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
@@ -350,8 +355,10 @@ _test_topology_invalidate_server (bool pooled)
    BSON_ASSERT (bson_empty (&sd->passives));
    BSON_ASSERT (bson_empty (&sd->arbiters));
    BSON_ASSERT (bson_empty (&sd->compressors));
+   mongoc_mutex_unlock (&client->topology->mutex);
 
    mongoc_server_stream_cleanup (server_stream);
+   mongoc_uri_destroy (uri);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
