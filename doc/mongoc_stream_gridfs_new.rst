@@ -24,3 +24,5 @@ Returns
 -------
 
 A newly allocated :symbol:`mongoc_stream_t` if successful, otherwise ``NULL``.
+
+Note, the returned stream ignores read and write timeouts passed to :symbol:`mongoc_stream_readv`, :symbol:`mongoc_stream_writev`, and so on. It uses the "socketTimeoutMS" and "connectTimeoutMS" values from the MongoDB URI.
