@@ -472,7 +472,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid key");
+                          "invalid document");
 
    r = mongoc_collection_insert_one (
       collection, tmp_bson ("{'a.b': 1}"), NULL, NULL, &error);
@@ -480,7 +480,7 @@ test_insert (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid key");
+                          "invalid document");
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -1020,7 +1020,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid key");
+                          "invalid document");
 
    r = mongoc_collection_save (
       collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
@@ -1031,7 +1031,7 @@ test_save (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "contains invalid key");
+                          "invalid document");
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -3599,7 +3599,7 @@ _test_insert_validate (insert_fn_t insert_fn)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "document to insert contains invalid key");
+                          "invalid document");
 
    BSON_ASSERT (!insert_fn (collection,
                             tmp_bson ("{'$': 1}"),
@@ -5047,7 +5047,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
       ASSERT_ERROR_CONTAINS (err,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "invalid key");
+                             "invalid argument for replace");
    } else {
       /* Test arrayFilters if the servers supports it */
       if (test_framework_max_wire_version_at_least (6)) {
@@ -5128,7 +5128,7 @@ _test_update_validate (update_fn_t update_fn)
    if (update_fn == mongoc_collection_replace_one) {
       /* prohibited for replace */
       update = tmp_bson ("{'$set': {'x': 1}}");
-      msg = "replacement document contains invalid key";
+      msg = "invalid argument for replace";
    } else {
       /* prohibited for update */
       update = tmp_bson ("{'x': 1}");

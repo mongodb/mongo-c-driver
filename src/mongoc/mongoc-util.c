@@ -303,7 +303,7 @@ _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "document to insert contains invalid key: %s",
+                      "invalid document for insert: %s",
                       validate_err.message);
       return false;
    }
@@ -321,7 +321,7 @@ _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "replacement document contains invalid key: %s",
+                      "invalid argument for replace: %s",
                       validate_err.message);
       return false;
    }
@@ -344,7 +344,7 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "update document contains invalid key: %s",
+                      "invalid selector for update: %s",
                       validate_err.message);
       return false;
    }
