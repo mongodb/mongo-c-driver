@@ -64,7 +64,7 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
                       str->str);
    }
 
-   bson_string_free (str, 0);
+   bson_string_free (str, true);
    return ok;
 }
 
