@@ -1,4 +1,5 @@
 if (ENABLE_SRV STREQUAL ON OR ENABLE_SRV STREQUAL AUTO)
+include(CheckSymbolExists)
    if (WIN32)
       set (RESOLV_LIBS Dnsapi)
       set (MONGOC_HAVE_DNSAPI 1)
