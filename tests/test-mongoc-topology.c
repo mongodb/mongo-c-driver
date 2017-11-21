@@ -297,15 +297,18 @@ _test_topology_invalidate_server (bool pooled)
    uri = test_framework_get_uri ();
    /* no auto heartbeat */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 2000);
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
 
       /* background scanner complains about failed connection */
       capture_logs (true);
    } else {
       client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
    }
 
    td = &client->topology->description;
@@ -369,13 +372,13 @@ _test_topology_invalidate_server (bool pooled)
 }
 
 static void
-test_topology_invalidate_server_single (void)
+test_topology_invalidate_server_single (void *ctx)
 {
    _test_topology_invalidate_server (false);
 }
 
 static void
-test_topology_invalidate_server_pooled (void)
+test_topology_invalidate_server_pooled (void *ctx)
 {
    _test_topology_invalidate_server (true);
 }
@@ -1428,12 +1431,18 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/single",
-                      test_topology_invalidate_server_single);
-   TestSuite_AddLive (suite,
+                      test_topology_invalidate_server_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/pooled",
-                      test_topology_invalidate_server_pooled);
+                      test_topology_invalidate_server_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/Topology/invalid_cluster_node",
                       test_invalid_cluster_node,
