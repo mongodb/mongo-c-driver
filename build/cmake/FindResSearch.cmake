@@ -1,3 +1,5 @@
+include(CheckSymbolExists)
+
 if (ENABLE_SRV STREQUAL ON OR ENABLE_SRV STREQUAL AUTO)
    if (WIN32)
       set (RESOLV_LIBS Dnsapi)
