@@ -555,7 +555,7 @@ _mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error)
          mongoc_write_concern_set_journal (write_concern,
                                            bson_iter_bool (&inner));
       } else if (BSON_ITER_IS_KEY (&inner, "wtimeout")) {
-         if (!BSON_ITER_HOLDS_INT32 (&inner)) {
+         if (!BSON_ITER_HOLDS_INT32 (&inner) || bson_iter_int32 (&inner) < 0) {
             goto fail;
          }
          mongoc_write_concern_set_wtimeout (write_concern,
