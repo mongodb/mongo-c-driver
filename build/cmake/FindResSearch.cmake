@@ -1,7 +1,6 @@
 include(CheckSymbolExists)
 
 if (ENABLE_SRV STREQUAL ON OR ENABLE_SRV STREQUAL AUTO)
-include(CheckSymbolExists)
    if (WIN32)
       set (RESOLV_LIBS Dnsapi)
       set (MONGOC_HAVE_DNSAPI 1)
@@ -43,6 +42,13 @@ include(CheckSymbolExists)
          endif()
       endif ()
    endif ()
+else()
+   # ENABLE_SRV disabled, set default values for defines.
+   set (MONGOC_HAVE_DNSAPI 0)
+   set (MONGOC_HAVE_RES_NSEARCH 0)
+   set (MONGOC_HAVE_RES_NDESTROY 0)
+   set (MONGOC_HAVE_RES_NCLOSE 0)
+   set (MONGOC_HAVE_RES_SEARCH 0)  
 endif ()
 
 if (ENABLE_SRV STREQUAL ON AND NOT RESOLV_LIBS)
