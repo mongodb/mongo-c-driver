@@ -979,6 +979,11 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    char *before_slash = NULL;
    const char *tmp;
 
+   if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
+      MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
+      goto error;
+   }
+
    if (!mongoc_uri_parse_scheme (uri, str, &str)) {
       MONGOC_URI_ERROR (
          error,

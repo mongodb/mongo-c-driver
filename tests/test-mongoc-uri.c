@@ -1765,6 +1765,36 @@ test_mongoc_uri_srv (void)
 }
 
 
+/* test some invalid accesses and a crash, found with a fuzzer */
+static void
+test_mongoc_uri_utf8 (void)
+{
+   bson_error_t err;
+
+   /* start of 3-byte character, but it's incomplete */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://\xe8\x03", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+
+   /* start of 6-byte CESU-8 character, but it's incomplete */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://\xfa", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+
+
+   /* "a<NIL>z" with NIL expressed as two-byte sequence */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://a\xc0\x80z", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -1790,4 +1820,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
    TestSuite_Add (suite, "/Uri/srv", test_mongoc_uri_srv);
+   TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
 }
