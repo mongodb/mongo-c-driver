@@ -28,7 +28,7 @@
 BSON_BEGIN_DECLS
 
 /* forward decl */
-struct _mongoc_cmd_t;
+typedef struct _mongoc_cmd_t mongoc_cmd_t;
 
 struct _mongoc_apm_callbacks_t {
    mongoc_apm_command_started_cb_t started;
@@ -159,7 +159,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
 
 void
 mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
-                                          struct _mongoc_cmd_t *cmd,
+                                          mongoc_cmd_t *cmd,
                                           int64_t request_id,
                                           void *context);
 
