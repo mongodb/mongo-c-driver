@@ -3,7 +3,7 @@
 found_zlib=no
 
 AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
-   PKG_CHECK_MODULES(zlib, [zlib], [
+   PKG_CHECK_MODULES(ZLIB, [zlib], [
       found_zlib=yes
    ], [
       # If we didn't find zlib with pkgconfig, search manually. If that
@@ -12,6 +12,7 @@ AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
       AC_CHECK_LIB([zlib], [compress2], [
          AC_CHECK_HEADER([zlib.h], [
             found_zlib=yes
+            ZLIB_LIBS=-lz
          ])
       ])
    ])
@@ -23,7 +24,6 @@ AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
 
 AS_IF([test "x${found_zlib}" = "xyes"], [
    with_zlib=system
-   ZLIB_LIBS=-lz
 ], [
    # zlib not found
    AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xbundled], [
