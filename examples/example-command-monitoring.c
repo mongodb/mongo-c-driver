@@ -19,7 +19,7 @@ command_started (const mongoc_apm_command_started_t *event)
 {
    char *s;
 
-   s = bson_as_canonical_extended_json (
+   s = bson_as_relaxed_extended_json (
       mongoc_apm_command_started_get_command (event), NULL);
    printf ("Command %s started on %s:\n%s\n\n",
            mongoc_apm_command_started_get_command_name (event),
@@ -37,7 +37,7 @@ command_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
    char *s;
 
-   s = bson_as_canonical_extended_json (
+   s = bson_as_relaxed_extended_json (
       mongoc_apm_command_succeeded_get_reply (event), NULL);
    printf ("Command %s succeeded:\n%s\n\n",
            mongoc_apm_command_succeeded_get_command_name (event),
@@ -72,7 +72,7 @@ main (int argc, char *argv[])
    mongoc_collection_t *collection;
    const char *uristr = "mongodb://127.0.0.1/?appname=cmd-monitoring-example";
    const char *collection_name = "test";
-   bson_t doc;
+   bson_t *docs[2];
 
    mongoc_init ();
 
@@ -95,16 +95,17 @@ main (int argc, char *argv[])
    mongoc_client_set_apm_callbacks (
       client, callbacks, (void *) &stats /* context pointer */);
 
-   bson_init (&doc);
-   BSON_APPEND_INT32 (&doc, "_id", 1);
-
    collection = mongoc_client_get_collection (client, "test", collection_name);
    mongoc_collection_drop (collection, NULL);
-   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
-   /* duplicate key error on the second insert */
-   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
 
-   bson_destroy (&doc);
+   docs[0] = BCON_NEW ("_id", BCON_INT32 (0));
+   docs[1] = BCON_NEW ("_id", BCON_INT32 (1));
+   mongoc_collection_insert_many (
+      collection, (const bson_t **) docs, 2, NULL, NULL, NULL);
+
+   /* duplicate key error on the second insert */
+   mongoc_collection_insert_one (collection, docs[0], NULL, NULL, NULL);
+
    mongoc_collection_destroy (collection);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_destroy (client);
@@ -113,6 +114,9 @@ main (int argc, char *argv[])
            stats.started,
            stats.succeeded,
            stats.failed);
+
+   bson_destroy (docs[0]);
+   bson_destroy (docs[1]);
 
    mongoc_cleanup ();
 
