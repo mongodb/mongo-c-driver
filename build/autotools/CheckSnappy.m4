@@ -11,6 +11,7 @@ AS_IF([test "x${with_snappy}" = xauto -o "x${with_snappy}" = xsystem], [
       AC_CHECK_LIB([snappy], [snappy_uncompress], [
          AC_CHECK_HEADER([snappy-c.h], [
             found_snappy=yes
+            SNAPPY_LIBS=-lsnappy
          ])
       ])
    ])
@@ -18,7 +19,6 @@ AS_IF([test "x${with_snappy}" = xauto -o "x${with_snappy}" = xsystem], [
 
 AS_IF([test "x${found_snappy}" = xyes], [
    with_snappy=system
-   SNAPPY_LIBS=-lsnappy
 ], [
    # snappy not found
    AS_IF([test "x${with_snappy}" = xsystem], [
