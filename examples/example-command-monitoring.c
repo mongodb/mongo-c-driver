@@ -18,32 +18,17 @@ void
 command_started (const mongoc_apm_command_started_t *event)
 {
    char *s;
-   const mongoc_apm_document_sequence_t *sequences;
-   size_t n_sequences, i, j;
 
-   s = bson_as_relaxed_extended_json (
+   s = bson_as_canonical_extended_json (
       mongoc_apm_command_started_get_command (event), NULL);
-
-   printf ("Command %s started on %s:\n%s\n",
+   printf ("Command %s started on %s:\n%s\n\n",
            mongoc_apm_command_started_get_command_name (event),
            mongoc_apm_command_started_get_host (event)->host,
            s);
 
-   bson_free (s);
-
-   /* insert, update, and delete commands include a document sequence */
-   mongoc_apm_command_started_get_document_sequences (
-      event, &sequences, &n_sequences);
-
-   for (i = 0; i < n_sequences; i++) {
-      for (j = 0; j < sequences[i].size; j++) {
-         s = bson_as_relaxed_extended_json (sequences[i].documents[j], NULL);
-         printf ("    document %zi %s\n", j, s);
-         bson_free (s);
-      }
-   }
-
    ((stats_t *) mongoc_apm_command_started_get_context (event))->started++;
+
+   bson_free (s);
 }
 
 
@@ -51,32 +36,16 @@ void
 command_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
    char *s;
-   const mongoc_apm_document_sequence_t *sequences;
-   size_t n_sequences, i, j;
 
-   s = bson_as_relaxed_extended_json (
+   s = bson_as_canonical_extended_json (
       mongoc_apm_command_succeeded_get_reply (event), NULL);
-
-   printf ("Command %s succeeded on %s:\n%s\n",
+   printf ("Command %s succeeded:\n%s\n\n",
            mongoc_apm_command_succeeded_get_command_name (event),
-           mongoc_apm_command_succeeded_get_host (event)->host,
            s);
 
-   bson_free (s);
-
-   /* replies to "find" or "aggregate" include a document sequence */
-   mongoc_apm_command_succeeded_get_document_sequences (
-      event, &sequences, &n_sequences);
-
-   for (i = 0; i < n_sequences; i++) {
-      for (j = 0; j < sequences[i].size; j++) {
-         s = bson_as_relaxed_extended_json (sequences[i].documents[j], NULL);
-         printf ("    document %zi %s\n", j, s);
-         bson_free (s);
-      }
-   }
-
    ((stats_t *) mongoc_apm_command_succeeded_get_context (event))->succeeded++;
+
+   bson_free (s);
 }
 
 
@@ -103,7 +72,7 @@ main (int argc, char *argv[])
    mongoc_collection_t *collection;
    const char *uristr = "mongodb://127.0.0.1/?appname=cmd-monitoring-example";
    const char *collection_name = "test";
-   bson_t *docs[2];
+   bson_t doc;
 
    mongoc_init ();
 
@@ -126,17 +95,16 @@ main (int argc, char *argv[])
    mongoc_client_set_apm_callbacks (
       client, callbacks, (void *) &stats /* context pointer */);
 
+   bson_init (&doc);
+   BSON_APPEND_INT32 (&doc, "_id", 1);
+
    collection = mongoc_client_get_collection (client, "test", collection_name);
    mongoc_collection_drop (collection, NULL);
-
-   docs[0] = BCON_NEW ("_id", BCON_INT32 (0));
-   docs[1] = BCON_NEW ("_id", BCON_INT32 (1));
-   mongoc_collection_insert_many (
-      collection, (const bson_t **) docs, 2, NULL, NULL, NULL);
-
+   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
    /* duplicate key error on the second insert */
-   mongoc_collection_insert_one (collection, docs[0], NULL, NULL, NULL);
+   mongoc_collection_insert_one (collection, &doc, NULL, NULL, NULL);
 
+   bson_destroy (&doc);
    mongoc_collection_destroy (collection);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_destroy (client);
@@ -145,9 +113,6 @@ main (int argc, char *argv[])
            stats.started,
            stats.succeeded,
            stats.failed);
-
-   bson_destroy (docs[0]);
-   bson_destroy (docs[1]);
 
    mongoc_cleanup ();
 

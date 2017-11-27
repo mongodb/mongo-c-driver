@@ -119,25 +119,6 @@ _mongoc_get_command_name (const bson_t *command)
    return name;
 }
 
-
-const char *
-_mongoc_get_documents_field_name (const char *command_name)
-{
-   if (!strcmp (command_name, "insert")) {
-      return "documents";
-   }
-
-   if (!strcmp (command_name, "update")) {
-      return "updates";
-   }
-
-   if (!strcmp (command_name, "delete")) {
-      return "deletes";
-   }
-
-   return NULL;
-}
-
 bool
 _mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value)
 {

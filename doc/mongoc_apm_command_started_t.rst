@@ -28,7 +28,6 @@ See Also
     mongoc_apm_command_started_get_command_name
     mongoc_apm_command_started_get_context
     mongoc_apm_command_started_get_database_name
-    mongoc_apm_command_started_get_document_sequences
     mongoc_apm_command_started_get_host
     mongoc_apm_command_started_get_operation_id
     mongoc_apm_command_started_get_request_id

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc-util-private.h"
 #include "mongoc-apm-private.h"
-#include "mongoc-cmd-private.h"
 
 /*
  * An Application Performance Management (APM) implementation, complying with
@@ -24,71 +22,6 @@
  *
  * https://github.com/mongodb/specifications/tree/master/source/command-monitoring
  */
-
-static mongoc_apm_document_sequence_t *
-sequence_new_from_cmd (mongoc_cmd_t *cmd)
-{
-   mongoc_array_t array;
-   mongoc_apm_document_sequence_t *sequence;
-   int32_t len;
-   const uint8_t *data;
-   int32_t doc_len;
-   bson_t *doc;
-   const uint8_t *pos;
-
-   if (!cmd->payload) {
-      return NULL;
-   }
-
-   /* create sequence from outgoing OP_MSG payload type 1 on an "insert",
-    * "update", or "delete" command. the sequence documents point into
-    * the OP_MSG buffer's memory, they're only valid until it's sent.
-    */
-   _mongoc_array_init (&array, sizeof (bson_t *));
-   len = cmd->payload_size;
-   data = cmd->payload;
-
-   pos = data;
-   while (pos < data + len) {
-      memcpy (&doc_len, pos, sizeof (doc_len));
-      doc_len = BSON_UINT32_FROM_LE (doc_len);
-      doc = bson_new_from_data (pos, (size_t) doc_len);
-      BSON_ASSERT (doc);
-      _mongoc_array_append_vals (&array, &doc, 1);
-      pos += doc_len;
-   }
-
-   sequence = (mongoc_apm_document_sequence_t *) bson_malloc0 (
-      sizeof (mongoc_apm_document_sequence_t));
-
-   sequence->identifier = _mongoc_get_documents_field_name (cmd->command_name);
-   BSON_ASSERT (sequence->identifier);
-   sequence->size = (int32_t) array.len;
-   sequence->documents = bson_malloc0 (array.len * sizeof (bson_t *));
-   memcpy (sequence->documents, array.data, array.len * sizeof (bson_t *));
-   _mongoc_array_destroy (&array);
-
-   return sequence;
-}
-
-
-static void
-destroy_sequence (mongoc_apm_document_sequence_t *sequence)
-{
-   int32_t i;
-
-   if (!sequence) {
-      return;
-   }
-
-   for (i = 0; i < sequence->size; i++) {
-      bson_destroy (sequence->documents[i]);
-   }
-
-   bson_free (sequence->documents);
-   bson_free (sequence);
-}
-
 
 /*
  * Private initializer / cleanup functions.
@@ -141,29 +74,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
    event->operation_id = operation_id;
    event->host = host;
    event->server_id = server_id;
-   event->sequence = NULL;
    event->context = context;
-}
-
-
-void
-mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
-                                          mongoc_cmd_t *cmd,
-                                          int64_t request_id,
-                                          void *context)
-{
-   mongoc_apm_command_started_init (event,
-                                    cmd->command,
-                                    cmd->db_name,
-                                    cmd->command_name,
-                                    request_id,
-                                    cmd->operation_id,
-                                    &cmd->server_stream->sd->host,
-                                    cmd->server_stream->sd->id,
-                                    context);
-
-   /* OP_MSG document sequence for insert, update, or delete? */
-   event->sequence = sequence_new_from_cmd (cmd);
 }
 
 
@@ -173,8 +84,6 @@ mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event)
    if (event->command_owned) {
       bson_destroy (event->command);
    }
-
-   destroy_sequence (event->sequence);
 }
 
 
@@ -198,7 +107,6 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
    event->operation_id = operation_id;
    event->host = host;
    event->server_id = server_id;
-   event->sequence = NULL;
    event->context = context;
 }
 
@@ -206,7 +114,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 void
 mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event)
 {
-   destroy_sequence (event->sequence);
+   /* no-op */
 }
 
 
@@ -250,78 +158,6 @@ mongoc_apm_command_started_get_command (
    const mongoc_apm_command_started_t *event)
 {
    return event->command;
-}
-
-
-void
-mongoc_apm_command_started_get_document_sequences (
-   const mongoc_apm_command_started_t *event,
-   const mongoc_apm_document_sequence_t **sequences,
-   size_t *n_sequences)
-{
-   mongoc_apm_document_sequence_t *sequence;
-   const char *field_name;
-   mongoc_array_t array;
-   bson_iter_t iter;
-   bson_iter_t child;
-   const uint8_t *data;
-   uint32_t doc_len;
-   bson_t *doc;
-
-   BSON_ASSERT (event);
-   BSON_ASSERT (sequences);
-   BSON_ASSERT (n_sequences);
-
-   _mongoc_array_init (&array, sizeof (bson_t *));
-
-   /* event->documents is initialized from OP_MSG document sequence. if absent,
-    * simulate it from OP_QUERY write command's document array, like
-    * {"insert": "collection", "documents": [{}, {}]}
-    */
-   if (event->sequence) {
-      goto done;
-   }
-
-   field_name = _mongoc_get_documents_field_name (event->command_name);
-   if (!field_name) {
-      /* not an insert, update, or delete */
-      goto done;
-   }
-
-   if (bson_iter_init_find (&iter, event->command, field_name) &&
-       BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &child)) {
-      while (bson_iter_next (&child)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&child)) {
-            bson_iter_document (&child, &doc_len, &data);
-            doc = bson_new_from_data (data, (size_t) doc_len);
-            BSON_ASSERT (doc);
-            _mongoc_array_append_vals (&array, &doc, 1);
-         }
-      }
-   }
-
-   if (array.len) {
-      sequence = (mongoc_apm_document_sequence_t *) bson_malloc0 (
-         sizeof (mongoc_apm_document_sequence_t));
-
-      sequence->identifier = field_name;
-      sequence->size = (int32_t) array.len;
-      sequence->documents = bson_malloc0 (array.len * sizeof (bson_t *));
-      memcpy (sequence->documents, array.data, array.len * sizeof (bson_t *));
-      /* discard const */
-      ((mongoc_apm_command_started_t *) event)->sequence = sequence;
-   }
-
-done:
-   _mongoc_array_destroy (&array);
-
-   if (event->sequence && event->sequence->size) {
-      *sequences = event->sequence;
-      *n_sequences = 1;
-   } else {
-      *sequences = NULL;
-      *n_sequences = 0;
-   }
 }
 
 
@@ -395,91 +231,6 @@ mongoc_apm_command_succeeded_get_reply (
    const mongoc_apm_command_succeeded_t *event)
 {
    return event->reply;
-}
-
-
-void
-mongoc_apm_command_succeeded_get_document_sequences (
-   const mongoc_apm_command_succeeded_t *event,
-   const mongoc_apm_document_sequence_t **sequences,
-   size_t *n_sequences)
-{
-   mongoc_apm_document_sequence_t *sequence;
-   mongoc_array_t array;
-   bson_iter_t iter;
-   bson_iter_t cursor_iter;
-   bson_iter_t docs_iter;
-   const uint8_t *data;
-   uint32_t doc_len;
-   bson_t *doc;
-
-   BSON_ASSERT (event);
-   BSON_ASSERT (sequences);
-   BSON_ASSERT (n_sequences);
-
-   _mongoc_array_init (&array, sizeof (bson_t *));
-
-   /* event->documents will be initialized from OP_MSG document sequence in
-    * reply to "find", "aggregate" etc. in MongoDB 3.8+. try to simulate from
-    * cursor document , like {"cursor": {"firstBatch": [{}, {}]}}
-    */
-   if (event->sequence) {
-      goto done;
-   }
-
-   if (!bson_iter_init (&iter, event->reply)) {
-      /* corrupt? */
-      goto done;
-   }
-
-   if (!bson_iter_find_descendant (&iter, "cursor.firstBatch", &cursor_iter)) {
-      bson_iter_init (&iter, event->reply);
-      if (!bson_iter_find_descendant (
-             &iter, "cursor.nextBatch", &cursor_iter)) {
-         goto done;
-      }
-   }
-
-   if (!BSON_ITER_HOLDS_ARRAY (&cursor_iter)) {
-      goto done;
-   }
-
-   if (!bson_iter_recurse (&cursor_iter, &docs_iter)) {
-      goto done;
-   }
-
-   while (bson_iter_next (&docs_iter)) {
-      if (BSON_ITER_HOLDS_DOCUMENT (&docs_iter)) {
-         bson_iter_document (&docs_iter, &doc_len, &data);
-         doc = bson_new_from_data (data, (size_t) doc_len);
-         BSON_ASSERT (doc);
-         /* discard const */
-         _mongoc_array_append_vals (&array, &doc, 1);
-      }
-   }
-
-   if (array.len) {
-      sequence = (mongoc_apm_document_sequence_t *) bson_malloc0 (
-         sizeof (mongoc_apm_document_sequence_t));
-
-      sequence->identifier = "documents";
-      sequence->size = (int32_t) array.len;
-      sequence->documents = bson_malloc0 (array.len * sizeof (bson_t *));
-      memcpy (sequence->documents, array.data, array.len * sizeof (bson_t *));
-      /* discard const */
-      ((mongoc_apm_command_succeeded_t *) event)->sequence = sequence;
-   }
-
-done:
-   _mongoc_array_destroy (&array);
-
-   if (event->sequence && event->sequence->size) {
-      *sequences = event->sequence;
-      *n_sequences = 1;
-   } else {
-      *sequences = NULL;
-      *n_sequences = 0;
-   }
 }
 
 
