@@ -47,7 +47,7 @@ For more information on building MongoDB pipelines, see `the MongoDB Manual entr
 
   The ``pipeline`` parameter should contain a field named ``pipeline`` containing a BSON array of pipeline stages.
 
-Read concern is applied from ``opts`` or else from ``collection``. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Read preferences are applied from ``read_prefs`` or else from ``collection``. Write concern is applied from ``opts``, or if ``opts`` has no write concern and the aggregation pipeline includes "$out", the write concern is applied from ``collection``. The write concern is omitted for MongoDB before 3.2.
+Read concern is applied from ``opts`` or else from ``collection``. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Read preferences are applied from ``read_prefs`` or else from ``collection``. Write concern is applied from ``opts``, or if ``opts`` has no write concern and the aggregation pipeline includes "$out", the write concern is applied from ``collection``. The write concern is omitted for MongoDB before 3.4.
 
 Returns
 -------
