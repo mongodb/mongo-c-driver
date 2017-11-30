@@ -36,7 +36,7 @@ main (int argc, char *argv[])
 
    /* connect to localhost client */
    client =
-      mongoc_client_new ("mongodb://127.0.0.1:27017?appname=gridfs-example");
+      mongoc_client_new ("mongodb://127.0.0.1:27017/?appname=gridfs-example");
    assert (client);
    mongoc_client_set_error_api (client, 2);
 
