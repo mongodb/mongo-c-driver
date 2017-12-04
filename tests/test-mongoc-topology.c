@@ -1374,6 +1374,58 @@ test_ismaster_retry_pooled_timeout_fail (void)
 }
 
 
+static void
+test_incompatible_error (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   char *msg;
+
+   server = mock_server_with_autoismaster (1); /* incompatible */
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* trigger connection, fails due to incompatibility */
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "reports wire version 1, but this version of"
+                          " libmongoc requires at least 2 (MongoDB 2.6)");
+
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 10,"
+                              " 'maxWireVersion': 11}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   msg = bson_strdup_printf ("requires wire version 10, but this version"
+                             " of libmongoc only supports up to %d",
+                             WIRE_VERSION_MAX);
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          msg);
+
+   bson_free (msg);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
 /* ensure there's no invalid access if a null bson_error_t pointer is passed
  * to mongoc_topology_compatible () */
 static void
@@ -1524,6 +1576,10 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout/fail",
                                 test_ismaster_retry_pooled_timeout_fail,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/incompatible_error",
+                                test_incompatible_error,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/compatible_null_error_pointer",

@@ -1858,8 +1858,6 @@ _mongoc_topology_description_check_compatible (
 {
    size_t i;
    mongoc_server_description_t *sd;
-   bool server_too_new;
-   bool server_too_old;
 
    memset (&td->compatibility_error, 0, sizeof (bson_error_t));
 
@@ -1871,29 +1869,25 @@ _mongoc_topology_description_check_compatible (
          continue;
       }
 
-      /* A server is considered to be incompatible with a driver if its min and
-       * max wire version does not overlap the driver’s. Specifically, a driver
-       * with a min and max range of [a, b] must be considered incompatible
-       * with any server with min and max range of [c, d] where c > b or d < a.
-       * All other servers are considered to be compatible. */
-      server_too_new = sd->min_wire_version > WIRE_VERSION_MAX;
-      server_too_old = sd->max_wire_version < WIRE_VERSION_MIN;
-
-      if (server_too_new || server_too_old) {
-         bson_set_error (&td->compatibility_error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Server at \"%s\" uses wire protocol versions %d"
-                         " through %d, but libmongoc %s only supports %d"
-                         " through %d",
-                         sd->host.host_and_port,
-                         sd->min_wire_version,
-                         sd->max_wire_version,
-                         MONGOC_VERSION_S,
-                         WIRE_VERSION_MIN,
-                         WIRE_VERSION_MAX);
-
-         break;
+      if (sd->min_wire_version > WIRE_VERSION_MAX) {
+         bson_set_error (
+            &td->compatibility_error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Server at %s requires wire version %d,"
+            " but this version of libmongoc only supports up to %d",
+            sd->host.host_and_port,
+            sd->min_wire_version,
+            WIRE_VERSION_MAX);
+      } else if (sd->max_wire_version < WIRE_VERSION_MIN) {
+         bson_set_error (
+            &td->compatibility_error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Server at %s reports wire version %d, but this"
+            " version of libmongoc requires at least 2 (MongoDB 2.6)",
+            sd->host.host_and_port,
+            sd->max_wire_version);
       }
    }
 }
