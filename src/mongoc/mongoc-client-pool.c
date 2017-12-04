@@ -115,6 +115,11 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    b = mongoc_uri_get_options (pool->uri);
 
    if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MINPOOLSIZE)) {
+      MONGOC_WARNING (
+         MONGOC_URI_MINPOOLSIZE
+         " is deprecated; its behavior does not match its name, and its actual"
+         " behavior will likely hurt performance.");
+
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->min_pool_size = BSON_MAX (0, bson_iter_int32 (&iter));
       }
@@ -368,6 +373,10 @@ void
 mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
 {
    ENTRY;
+
+   MONGOC_WARNING (
+      "mongoc_client_pool_min_size is deprecated; its behavior does not match"
+      " its name, and its actual behavior will likely hurt performance.");
 
    mongoc_mutex_lock (&pool->mutex);
    pool->min_pool_size = min_pool_size;

@@ -37,11 +37,12 @@ for MongoDB 2.4 and adds support for MongoDB 3.6 features:
       mongoc_apm_command_started_get_document_sequences
       mongoc_apm_command_succeeded_get_document_sequences
 
-Additional new features not specific to MongoDB 3.6:
+Additional changes not specific to MongoDB 3.6:
 
   * Support for mongodb+srv URIs to query DNS for SRV and TXT records that
     configure the connection to MongoDB.
   * Support LibreSSL with CMake build
+  * The "minPoolSize" URI option is deprecated: it's confusing and not useful.
 
 Bug fixes:
 
