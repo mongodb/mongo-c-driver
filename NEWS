@@ -32,10 +32,7 @@ for MongoDB 2.4 and adds support for MongoDB 3.6 features:
   * New URI option "retryWrites=true" safely and automatically retries certain
     write operations if the server is a MongoDB 3.6 replica set or sharded
     cluster.
-  * Support for MongoDB OP_MSG wire protocol. New command monitoring functions
-    expose OP_MSG document sequences for event listeners:
-      mongoc_apm_command_started_get_document_sequences
-      mongoc_apm_command_succeeded_get_document_sequences
+  * Support for MongoDB OP_MSG wire protocol.
 
 Additional changes not specific to MongoDB 3.6:
 
