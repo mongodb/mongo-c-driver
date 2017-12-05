@@ -318,6 +318,65 @@ test_client_cmd_write_concern (void)
 }
 
 
+static void
+test_client_cmd_write_concern_fam (void)
+{
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   bson_t *fam;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   mock_server_t *server;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_client_set_write_concern (client, wc);
+   fam = tmp_bson ("{'findAndModify': 'collection'}");
+
+   future = future_client_read_write_command_with_opts (
+      client, "test", fam, NULL, NULL, &reply, &error);
+
+   request = mock_server_receives_command (
+      server,
+      "test",
+      MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'writeConcern': {'$exists': false}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
+   future_destroy (future);
+   mock_server_destroy (server);
+   mongoc_client_destroy (client);
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_write_concern (client, wc);
+
+   future = future_client_read_write_command_with_opts (
+      client, "test", fam, NULL, NULL, &reply, &error);
+
+   request = mock_server_receives_command (
+      server,
+      "test",
+      MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   mock_server_destroy (server);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+}
+
+
 static char *
 gen_test_user (void)
 {
@@ -3284,6 +3343,9 @@ test_client_install (TestSuite *suite)
                       test_client_cmd_w_write_concern);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/write_concern_fam",
+                                test_client_cmd_write_concern_fam);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/read_prefs/simple/single",
                                 test_command_simple_read_prefs_single);

@@ -1770,30 +1770,35 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    }
 
    if (server_stream) {
+      int32_t wire_version = server_stream->sd->max_wire_version;
       bson_iter_t iter;
 
       if (opts && bson_iter_init (&iter, opts)) {
          if (!mongoc_cmd_parts_append_opts (
-                &parts, &iter, server_stream->sd->max_wire_version, error)) {
+                &parts, &iter, wire_version, error)) {
             GOTO (err);
          }
       }
 
       /* use default write concern unless it's in opts */
       if ((mode & MONGOC_CMD_WRITE) &&
-          server_stream->sd->max_wire_version >=
-             WIRE_VERSION_CMD_WRITE_CONCERN &&
           !mongoc_write_concern_is_default (default_wc) &&
           (!opts || !bson_has_field (opts, "writeConcern"))) {
-         bson_append_document (&parts.extra,
-                               "writeConcern",
-                               12,
-                               _mongoc_write_concern_get_bson (default_wc));
+         bool is_fam =
+            !strcasecmp (_mongoc_get_command_name (command), "findandmodify");
+
+         if ((is_fam && wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
+             (!is_fam && wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN)) {
+            bson_append_document (&parts.extra,
+                                  "writeConcern",
+                                  12,
+                                  _mongoc_write_concern_get_bson (default_wc));
+         }
       }
 
       /* use read prefs and read concern for read commands, unless in opts */
       if ((mode & MONGOC_CMD_READ) &&
-          server_stream->sd->max_wire_version >= WIRE_VERSION_READ_CONCERN &&
+          wire_version >= WIRE_VERSION_READ_CONCERN &&
           !mongoc_read_concern_is_default (default_rc) &&
           (!opts || !bson_has_field (opts, "readConcern"))) {
          bson_append_document (&parts.extra,
