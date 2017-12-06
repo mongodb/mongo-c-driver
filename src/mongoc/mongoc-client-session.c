@@ -389,6 +389,8 @@ mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
                                               uint32_t timestamp,
                                               uint32_t increment)
 {
+   ENTRY;
+
    BSON_ASSERT (session);
 
    if (timestamp > session->operation_timestamp ||
