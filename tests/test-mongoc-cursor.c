@@ -215,10 +215,57 @@ test_limit (void)
 }
 
 
+typedef struct {
+   int succeeded_count;
+   int64_t cursor_id;
+} killcursors_test_t;
+
+
+static void
+killcursors_succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   killcursors_test_t *ctx;
+   const bson_t *reply;
+   bson_iter_t iter;
+   bson_iter_t array;
+
+   if (bson_strcasecmp (mongoc_apm_command_succeeded_get_command_name (event),
+                        "killcursors") != 0) {
+      return;
+   }
+
+   ctx =
+      (killcursors_test_t *) mongoc_apm_command_succeeded_get_context (event);
+   ctx->succeeded_count++;
+
+   if (!test_framework_max_wire_version_at_least (
+          WIRE_VERSION_KILLCURSORS_CMD)) {
+      return;
+   }
+
+   reply = mongoc_apm_command_succeeded_get_reply (event);
+
+#define ASSERT_EMPTY(_fieldname)                                   \
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, (_fieldname))); \
+   BSON_ASSERT (bson_iter_recurse (&iter, &array));                \
+   BSON_ASSERT (!bson_iter_next (&array));
+
+   ASSERT_EMPTY ("cursorsNotFound");
+   ASSERT_EMPTY ("cursorsAlive");
+   ASSERT_EMPTY ("cursorsUnknown");
+
+   BSON_ASSERT (bson_iter_init_find (&iter, reply, "cursorsKilled"));
+   BSON_ASSERT (bson_iter_recurse (&iter, &array));
+   BSON_ASSERT (bson_iter_next (&array));
+   ASSERT_CMPINT64 (ctx->cursor_id, ==, bson_iter_int64 (&array));
+}
+
+
 /* test killing a cursor with mongo_cursor_destroy and a real server */
 static void
 test_kill_cursor_live (void)
 {
+   mongoc_apm_callbacks_t *callbacks;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t *b;
@@ -229,9 +276,14 @@ test_kill_cursor_live (void)
    bool r;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   int64_t cursor_id;
+   killcursors_test_t ctx;
 
+   ctx.succeeded_count = 0;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks, killcursors_succeeded);
    client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    collection = get_test_collection (client, "test");
    b = tmp_bson ("{}");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -246,18 +298,20 @@ test_kill_cursor_live (void)
                                     MONGOC_QUERY_NONE,
                                     0,
                                     0,
-                                    0, /* batch size 2 */
+                                    2, /* batch size 2 */
                                     b,
                                     NULL,
                                     NULL);
 
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (r);
-   cursor_id = mongoc_cursor_get_id (cursor);
-   ASSERT (cursor_id);
+   ctx.cursor_id = mongoc_cursor_get_id (cursor);
+   ASSERT (ctx.cursor_id);
 
    /* sends OP_KILLCURSORS or killCursors command to server */
    mongoc_cursor_destroy (cursor);
+
+   ASSERT_CMPINT (ctx.succeeded_count, ==, 1);
 
    cursor = _mongoc_cursor_new (client,
                                 collection->ns,
@@ -271,7 +325,7 @@ test_kill_cursor_live (void)
                                 NULL,
                                 NULL);
 
-   cursor->rpc.reply.cursor_id = cursor_id;
+   cursor->rpc.reply.cursor_id = ctx.cursor_id;
    cursor->sent = true;
    cursor->end_of_event = true; /* meaning, "finished reading first batch" */
    r = mongoc_cursor_next (cursor, &doc);
@@ -283,6 +337,7 @@ test_kill_cursor_live (void)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (callbacks);
 }
 
 
