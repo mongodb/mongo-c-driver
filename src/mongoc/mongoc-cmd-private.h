@@ -66,6 +66,7 @@ typedef struct _mongoc_cmd_parts_t {
    bson_t extra;
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;
+   bool is_read_command;
    bool is_write_command;
    bool prohibit_lsid;
    mongoc_cmd_parts_allow_txn_number_t allow_txn_number;

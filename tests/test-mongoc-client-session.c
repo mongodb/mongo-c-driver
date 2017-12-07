@@ -921,6 +921,25 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
 
 
 static void
+failed (const mongoc_apm_command_failed_t *event)
+{
+   const char *cmd_name;
+   bson_error_t error;
+
+   session_test_t *test =
+      (session_test_t *) mongoc_apm_command_failed_get_context (event);
+
+   if (!test->verbose) {
+      return;
+   }
+
+   cmd_name = mongoc_apm_command_failed_get_command_name (event);
+   mongoc_apm_command_failed_get_error (event, &error);
+   printf ("<--  %s: %s\n", cmd_name, error.message);
+}
+
+
+static void
 set_session_test_callbacks (session_test_t *test)
 {
    mongoc_apm_callbacks_t *callbacks;
@@ -928,6 +947,7 @@ set_session_test_callbacks (session_test_t *test)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started);
    mongoc_apm_set_command_succeeded_cb (callbacks, succeeded);
+   mongoc_apm_set_command_failed_cb (callbacks, failed);
    mongoc_client_set_apm_callbacks (test->client, callbacks, test);
 
    mongoc_apm_callbacks_destroy (callbacks);
@@ -1311,11 +1331,13 @@ parse_reply_time (const bson_t *reply, op_time_t *op_time)
 
 
 static void
-causal_test (session_test_fn_t test_fn)
+causal_test (session_test_fn_t test_fn, bool allow_read_concern)
 {
    session_test_t *test;
    op_time_t session_time, read_concern_time, reply_time;
    bson_error_t error;
+   const bson_t *cmd;
+   size_t i;
 
    /*
     * first causal exchange: don't send readConcern, receive opTime
@@ -1334,29 +1356,61 @@ causal_test (session_test_fn_t test_fn)
    ASSERT_OP_TIMES_EQUAL (session_time, reply_time);
 
    /*
-    * second exchange: send previous opTime in readConcern, receive opTime
+    * second exchange: send previous opTime and receive an opTime.
+    * send readConcern if this function supports readConcern, like
+    * mongoc_collection_find_with_opts or mongoc_client_read_command_with_opts.
+    * don't send readConcern for generic command helpers like
+    * mongoc_client_command_with_opts or mongoc_client_command.
     */
    clear_history (test);
    test_fn (test);
    check_success (test);
-   parse_read_concern_time (first_cmd (test), &read_concern_time);
-   ASSERT_OP_TIMES_EQUAL (reply_time, read_concern_time);
-   mongoc_client_session_get_operation_time (
-      test->cs, &session_time.t, &session_time.i);
-   BSON_ASSERT (session_time.t != 0);
-   parse_reply_time (last_reply (test), &reply_time);
-   ASSERT_OP_TIMES_EQUAL (session_time, reply_time);
+
+   if (allow_read_concern) {
+      parse_read_concern_time (first_cmd (test), &read_concern_time);
+      ASSERT_OP_TIMES_EQUAL (reply_time, read_concern_time);
+      mongoc_client_session_get_operation_time (
+         test->cs, &session_time.t, &session_time.i);
+      BSON_ASSERT (session_time.t != 0);
+      parse_reply_time (last_reply (test), &reply_time);
+      ASSERT_OP_TIMES_EQUAL (session_time, reply_time);
+   } else {
+      /* readConcern prohibited */
+      for (i = 0; i < test->cmds.len; i++) {
+         cmd = _mongoc_array_index (&test->cmds, bson_t *, i);
+         if (bson_has_field (cmd, "readConcern")) {
+            fprintf (stderr,
+                     "Command should not have included readConcern: %s\n",
+                     bson_as_json (cmd, NULL));
+            abort ();
+         }
+      }
+   }
 
    session_test_destroy (test);
 }
 
 
 static void
+_run_session_test (session_test_fn_t test_fn, bool allow_read_concern)
+{
+   lsid_test (test_fn);
+   causal_test (test_fn, allow_read_concern);
+}
+
+
+static void
 run_session_test (void *ctx)
 {
-   session_test_fn_t test_fn = (session_test_fn_t) ctx;
-   lsid_test (test_fn);
-   causal_test (test_fn);
+   _run_session_test ((session_test_fn_t) ctx, true);
+}
+
+
+/* test a command that doesn't allow readConcern, and therefore isn't causal */
+static void
+run_session_test_no_rc (void *ctx)
+{
+   _run_session_test ((session_test_fn_t) ctx, false);
 }
 
 
@@ -1368,8 +1422,10 @@ insert_10_docs (session_test_t *test)
    int i;
    bool r;
 
+   /* disable callbacks, we're not testing insert's lsid */
+   mongoc_client_set_apm_callbacks (test->session_client, NULL, NULL);
    bulk = mongoc_collection_create_bulk_operation_with_opts (
-      test->session_collection, &test->opts);
+      test->session_collection, NULL);
 
    for (i = 0; i < 10; i++) {
       mongoc_bulk_operation_insert (bulk, tmp_bson ("{}"));
@@ -1379,6 +1435,8 @@ insert_10_docs (session_test_t *test)
    ASSERT_OR_PRINT (r, error);
 
    mongoc_bulk_operation_destroy (bulk);
+
+   set_session_test_callbacks (test);
 }
 
 
@@ -1407,6 +1465,31 @@ test_read_cmd (session_test_t *test)
                                             &test->opts,
                                             NULL,
                                             &test->error);
+}
+
+
+static void
+test_write_cmd (session_test_t *test)
+{
+   bson_t *cmd =
+      tmp_bson ("{'delete': 'collection', 'deletes': [{'q': {}, 'limit': 1}]}");
+
+   test->succeeded = mongoc_client_write_command_with_opts (
+      test->client, "db", cmd, &test->opts, NULL, &test->error);
+}
+
+
+static void
+test_read_write_cmd (session_test_t *test)
+{
+   bson_t *cmd = tmp_bson ("{"
+                           "   'aggregate': 'collection',"
+                           "   'cursor': {},"
+                           "   'pipeline': [{'$out': 'collection2'}]"
+                           "}");
+
+   test->succeeded = mongoc_client_read_write_command_with_opts (
+      test->client, "db", cmd, NULL, &test->opts, NULL, &test->error);
 }
 
 
@@ -1878,14 +1961,14 @@ test_read_concern (void *ctx)
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
 
    /* first exchange sets session's operationTime */
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    BSON_ASSERT (!bson_has_field (last_non_getmore_cmd (test), "readConcern"));
 
    /*
     * default: no explicit read concern, driver sends afterClusterTime
     */
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test),
                  "{"
@@ -1901,7 +1984,7 @@ test_read_concern (void *ctx)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    BSON_ASSERT (mongoc_read_concern_append (rc, &test->opts));
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test),
                  "{"
@@ -1924,11 +2007,11 @@ test_read_concern (void *ctx)
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
    BSON_ASSERT (mongoc_read_concern_append (rc, &test->opts));
    /* set new session's operationTime */
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    ASSERT_CMPUINT32 (test->cs->operation_timestamp, >, (uint32_t) 0);
    /* afterClusterTime is not sent */
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test),
                  "{"
@@ -1945,7 +2028,7 @@ test_read_concern (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
    /* afterClusterTime is not sent */
-   test_cmd (test);
+   test_read_cmd (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test),
                  "{'readConcern': {'$exists': false}}");
@@ -1983,23 +2066,25 @@ test_unacknowledged (void *ctx)
 }
 
 
-#define add_session_test(_suite, _name, _test_fn)             \
-   TestSuite_AddFull (_suite,                                 \
-                      _name,                                  \
-                      run_session_test,                       \
-                      NULL,                                   \
-                      (void *) (_test_fn),                    \
-                      test_framework_skip_if_no_cluster_time, \
+#define add_session_test(_suite, _name, _test_fn, _allow_read_concern) \
+   TestSuite_AddFull (_suite,                                          \
+                      _name,                                           \
+                      (_allow_read_concern) ? run_session_test         \
+                                            : run_session_test_no_rc,  \
+                      NULL,                                            \
+                      (void *) (_test_fn),                             \
+                      test_framework_skip_if_no_cluster_time,          \
                       test_framework_skip_if_no_crypto)
 
-#define add_session_test_wc(_suite, _name, _test_fn, ...)     \
-   TestSuite_AddFull (_suite,                                 \
-                      _name,                                  \
-                      run_session_test,                       \
-                      NULL,                                   \
-                      (void *) (_test_fn),                    \
-                      test_framework_skip_if_no_cluster_time, \
-                      test_framework_skip_if_no_crypto,       \
+#define add_session_test_wc(_suite, _name, _test_fn, _allow_read_concern, ...) \
+   TestSuite_AddFull (_suite,                                                  \
+                      _name,                                                   \
+                      (_allow_read_concern) ? run_session_test                 \
+                                            : run_session_test_no_rc,          \
+                      NULL,                                                    \
+                      (void *) (_test_fn),                                     \
+                      test_framework_skip_if_no_cluster_time,                  \
+                      test_framework_skip_if_no_crypto,                        \
                       __VA_ARGS__)
 
 
@@ -2118,38 +2203,50 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_no_sessions);
-   add_session_test (suite, "/Session/read_cmd", test_read_cmd);
-   add_session_test (suite, "/Session/db_cmd", test_db_cmd);
-   add_session_test (suite, "/Session/cmd", test_cmd);
-   add_session_test (suite, "/Session/count", test_count);
-   add_session_test (suite, "/Session/cursor", test_cursor);
-   add_session_test (suite, "/Session/drop", test_drop);
-   add_session_test (suite, "/Session/drop_index", test_drop_index);
-   add_session_test (suite, "/Session/create_index", test_create_index);
-   add_session_test (suite, "/Session/replace_one", test_replace_one);
-   add_session_test (suite, "/Session/update_one", test_update_one);
-   add_session_test (suite, "/Session/update_many", test_update_many);
-   add_session_test (suite, "/Session/insert_one", test_insert_one);
-   add_session_test (suite, "/Session/insert_many", test_insert_many);
-   add_session_test (suite, "/Session/delete_one", test_delete_one);
-   add_session_test (suite, "/Session/delete_many", test_delete_many);
-   add_session_test (suite, "/Session/rename", test_rename);
-   add_session_test (suite, "/Session/fam", test_fam);
-   add_session_test (suite, "/Session/db_drop", test_db_drop);
-   add_session_test (suite, "/Session/gridfs_find", test_gridfs_find);
-   add_session_test (suite, "/Session/gridfs_find_one", test_gridfs_find_one);
+
+   /* "true" is for tests that expect readConcern: afterClusterTime for causally
+    * consistent sessions, "false" is for tests that prohibit readConcern */
+   add_session_test (suite, "/Session/cmd", test_cmd, false);
+   add_session_test (suite, "/Session/read_cmd", test_read_cmd, true);
+   add_session_test (suite, "/Session/write_cmd", test_write_cmd, false);
+   add_session_test (
+      suite, "/Session/read_write_cmd", test_read_write_cmd, true);
+   add_session_test (suite, "/Session/db_cmd", test_db_cmd, false);
+   add_session_test (suite, "/Session/count", test_count, true);
+   add_session_test (suite, "/Session/cursor", test_cursor, true);
+   add_session_test (suite, "/Session/drop", test_drop, false);
+   add_session_test (suite, "/Session/drop_index", test_drop_index, false);
+   add_session_test (suite, "/Session/create_index", test_create_index, false);
+   add_session_test (suite, "/Session/replace_one", test_replace_one, false);
+   add_session_test (suite, "/Session/update_one", test_update_one, false);
+   add_session_test (suite, "/Session/update_many", test_update_many, false);
+   add_session_test (suite, "/Session/insert_one", test_insert_one, false);
+   add_session_test (suite, "/Session/insert_many", test_insert_many, false);
+   add_session_test (suite, "/Session/delete_one", test_delete_one, false);
+   add_session_test (suite, "/Session/delete_many", test_delete_many, false);
+   add_session_test (suite, "/Session/rename", test_rename, false);
+   add_session_test (suite, "/Session/fam", test_fam, true);
+   add_session_test (suite, "/Session/db_drop", test_db_drop, false);
+   add_session_test (suite, "/Session/gridfs_find", test_gridfs_find, true);
+   add_session_test (
+      suite, "/Session/gridfs_find_one", test_gridfs_find_one, true);
    add_session_test_wc (suite,
                         "/Session/watch",
                         test_watch,
+                        true,
                         test_framework_skip_if_not_rs_version_6);
-   add_session_test (suite, "/Session/aggregate", test_aggregate);
-   add_session_test (suite, "/Session/create", test_create);
-   add_session_test (suite, "/Session/database_names", test_database_names);
-   add_session_test (suite, "/Session/find_databases", test_find_databases);
-   add_session_test (suite, "/Session/find_collections", test_find_collections);
-   add_session_test (suite, "/Session/collection_names", test_collection_names);
-   add_session_test (suite, "/Session/bulk", test_bulk);
-   add_session_test (suite, "/Session/find_indexes", test_find_indexes);
+   add_session_test (suite, "/Session/aggregate", test_aggregate, true);
+   add_session_test (suite, "/Session/create", test_create, false);
+   add_session_test (
+      suite, "/Session/database_names", test_database_names, true);
+   add_session_test (
+      suite, "/Session/find_databases", test_find_databases, true);
+   add_session_test (
+      suite, "/Session/find_collections", test_find_collections, true);
+   add_session_test (
+      suite, "/Session/collection_names", test_collection_names, true);
+   add_session_test (suite, "/Session/bulk", test_bulk, false);
+   add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
    TestSuite_AddFull (suite,
                       "/Session/cmd_error",
                       test_cmd_error,

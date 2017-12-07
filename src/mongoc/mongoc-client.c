@@ -1729,6 +1729,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    BSON_ASSERT (command);
 
    mongoc_cmd_parts_init (&parts, client, db_name, flags, command);
+   parts.is_read_command = (mode & MONGOC_CMD_READ);
    parts.is_write_command = (mode & MONGOC_CMD_WRITE);
 
    reply_ptr = reply ? reply : &reply_local;
