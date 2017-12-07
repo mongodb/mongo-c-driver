@@ -204,6 +204,7 @@ test_change_stream_live_single_server (void *test_ctx)
 #ifndef __aarch64__
    mongoc_client_t *client = test_framework_client_new ();
    mongoc_collection_t *coll;
+   bson_error_t error;
    mongoc_change_stream_t *stream;
    const bson_t *next_doc = NULL;
    const bson_t *reported_err_doc = NULL;
@@ -218,6 +219,9 @@ test_change_stream_live_single_server (void *test_ctx)
 
    coll = mongoc_client_get_collection (client, "db", "coll");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &error),
+      error);
 
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
