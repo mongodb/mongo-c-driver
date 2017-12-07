@@ -200,8 +200,7 @@ test_change_stream_pipeline (void)
 static void
 test_change_stream_live_single_server (void *test_ctx)
 {
-/* Temporarily skip on arm64 until mongod tested against is updated */
-#ifndef __aarch64__
+   /* Temporarily skip on arm64 until mongod tested against is updated */
    mongoc_client_t *client = test_framework_client_new ();
    mongoc_collection_t *coll;
    bson_error_t error;
@@ -241,7 +240,6 @@ test_change_stream_live_single_server (void *test_ctx)
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
-#endif
 }
 
 
