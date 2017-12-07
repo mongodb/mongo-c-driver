@@ -1313,6 +1313,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    cluster = &cursor->client->cluster;
    mongoc_cmd_parts_init (
       &parts, cursor->client, db, MONGOC_QUERY_NONE, command);
+   parts.is_read_command = true;
    parts.read_prefs = cursor->read_prefs;
    parts.assembled.operation_id = cursor->operation_id;
    server_stream = _mongoc_cursor_fetch_stream (cursor);

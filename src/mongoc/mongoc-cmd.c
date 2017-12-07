@@ -34,6 +34,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->body = command_body;
    parts->user_query_flags = user_query_flags;
    parts->read_prefs = NULL;
+   parts->is_read_command = false;
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
    parts->allow_txn_number = MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN;
@@ -654,7 +655,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
-      if (!is_get_more) {
+      if (parts->is_read_command && !is_get_more) {
          /* This condition should never trigger for an implicit client session.
           * Even though the causal consistency option may default to true, an
           * implicit client session will have no previous operation time. */
