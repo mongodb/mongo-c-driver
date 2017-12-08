@@ -841,6 +841,10 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
    BSON_ASSERT (bulk);
    BSON_ASSERT (client);
 
+   if (bulk->session) {
+      BSON_ASSERT (bulk->session->client == client);
+   }
+
    bulk->client = (mongoc_client_t *) client;
 
    /* if you call set_client, bulk was likely made by mongoc_bulk_operation_new,
@@ -849,6 +853,22 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
    if (!bulk->operation_id) {
       bulk->operation_id = ++bulk->client->cluster.operation_id;
    }
+}
+
+
+void
+mongoc_bulk_operation_set_client_session (
+   mongoc_bulk_operation_t *bulk,
+   struct _mongoc_client_session_t *client_session)
+{
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (client_session);
+
+   if (bulk->client) {
+      BSON_ASSERT (bulk->client == client_session->client);
+   }
+
+   bulk->session = client_session;
 }
 
 
