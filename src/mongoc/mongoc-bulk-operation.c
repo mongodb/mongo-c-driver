@@ -839,6 +839,7 @@ void
 mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk, void *client)
 {
    BSON_ASSERT (bulk);
+   BSON_ASSERT (client);
 
    bulk->client = (mongoc_client_t *) client;
 
