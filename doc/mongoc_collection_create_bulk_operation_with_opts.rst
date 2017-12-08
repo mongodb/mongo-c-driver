@@ -32,6 +32,8 @@ If ``opts`` contains a field "ordered" with a false value, then the bulk operati
 
 All operations in the bulk operation will use the "writeConcern" field specified in ``opts``. If there is none then the collection's write concern is used. The global default is acknowledged writes: MONGOC_WRITE_CONCERN_W_DEFAULT.
 
+If ``opts`` contains a "sessionId" field, which may be added with :symbol:`mongoc_client_session_append`, all operations in the bulk operation will use the corresponding :symbol:`mongoc_client_session_t`. See the example code for :symbol:`mongoc_client_session_t`.
+
 See Also
 --------
 
