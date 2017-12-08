@@ -306,6 +306,9 @@ test_change_stream_live_track_resume_token (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_resume");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &error),
+      error);
 
    /* Set the batch size to 1 so we only get one document per call to next. */
    stream = mongoc_collection_watch (
@@ -437,6 +440,9 @@ test_change_stream_live_batch_size (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_batch");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
+      err);
 
    stream = mongoc_collection_watch (
       coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
@@ -503,6 +509,9 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_missing_resume");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
+      err);
 
    stream = mongoc_collection_watch (
       coll, tmp_bson ("{'pipeline': [{'$project': {'_id': 0 }}]}"), NULL);
@@ -881,6 +890,9 @@ test_change_stream_live_watch (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_watch");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
+      err);
 
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), NULL);
    ASSERT (stream);
@@ -963,6 +975,9 @@ test_change_stream_live_read_prefs (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_read_prefs");
    ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
+      err);
 
    prefs = mongoc_read_prefs_copy (mongoc_collection_get_read_prefs (coll));
    mongoc_read_prefs_set_mode (prefs, MONGOC_READ_SECONDARY);
