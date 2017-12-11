@@ -1423,7 +1423,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
       for (i = 0; i < n_documents; i++) {
-         if (!_mongoc_validate_new_document (documents[i], error)) {
+         if (!_mongoc_validate_new_document (
+                documents[i], _mongoc_default_insert_vflags, error)) {
             RETURN (false);
          }
       }
@@ -1471,7 +1472,7 @@ typedef struct {
    mongoc_write_concern_t *write_concern;
    bool write_concern_owned;
    mongoc_client_session_t *client_session;
-   bool client_validation;
+   bson_validate_flags_t validation_flags;
    bson_t copied_opts;
 } mongoc_write_opts_parsed_t;
 
@@ -1480,6 +1481,7 @@ static bool
 _mongoc_write_opts_parse (const bson_t *opts,
                           mongoc_collection_t *collection,
                           mongoc_write_opts_parsed_t *parsed,
+                          bson_validate_flags_t default_vflags,
                           bson_error_t *error)
 {
    mongoc_bulk_write_flags_t default_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
@@ -1492,7 +1494,7 @@ _mongoc_write_opts_parse (const bson_t *opts,
    parsed->write_concern = collection->write_concern;
    parsed->write_concern_owned = false;
    parsed->client_session = NULL;
-   parsed->client_validation = true;
+   parsed->validation_flags = default_vflags;
 
    if (opts) {
       if (!bson_iter_init (&iter, opts)) {
@@ -1532,21 +1534,24 @@ _mongoc_write_opts_parse (const bson_t *opts,
          }
 
          if (!strcmp (bson_iter_key (&iter), "validate")) {
-            parsed->client_validation = bson_iter_as_bool (&iter);
-            if (parsed->client_validation && !BSON_ITER_HOLDS_BOOL (&iter)) {
-               /* reserve truthy values besides boolean "true" for future
-                * fine-grained validation control, see CDRIVER-2296
-                */
-               bson_set_error (
-                  error,
-                  MONGOC_ERROR_COMMAND,
-                  MONGOC_ERROR_COMMAND_INVALID_ARG,
-                  "Invalid type for option \"validate\", \"%s\":"
-                  " \"validate\" must be a boolean.",
-                  _mongoc_bson_type_to_str (bson_iter_type (&iter)));
-               return false;
+            if (BSON_ITER_HOLDS_BOOL (&iter)) {
+               if (!bson_iter_as_bool (&iter)) {
+                  parsed->validation_flags = 0;
+               }
+               continue;
+            } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+               parsed->validation_flags = bson_iter_int32 (&iter);
+               if (parsed->validation_flags <= 0x1F)
+                  continue;
             }
-            continue;
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid type for option \"validate\", \"%s\":"
+                            " \"validate\" must be a bitwise-or of all desired "
+                            "bson_validate_flags_t.",
+                            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+            return false;
          }
 
          if (!strcmp (bson_iter_key (&iter), "ordered")) {
@@ -1663,13 +1668,15 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+   if (!_mongoc_write_opts_parse (
+          opts, collection, &parsed, _mongoc_default_insert_vflags, error)) {
       _mongoc_write_opts_cleanup (&parsed);
       return false;
    }
 
-   if (parsed.client_validation &&
-       !_mongoc_validate_new_document (document, error)) {
+   if (parsed.validation_flags &&
+       !_mongoc_validate_new_document (
+          document, parsed.validation_flags, error)) {
       RETURN (false);
    }
 
@@ -1752,7 +1759,8 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+   if (!_mongoc_write_opts_parse (
+          opts, collection, &parsed, _mongoc_default_insert_vflags, error)) {
       _mongoc_write_opts_cleanup (&parsed);
       return false;
    }
@@ -1767,8 +1775,9 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
       false);
 
    for (i = 0; i < n_documents; i++) {
-      if (parsed.client_validation &&
-          !_mongoc_validate_new_document (documents[i], error)) {
+      if (parsed.validation_flags &&
+          !_mongoc_validate_new_document (
+             documents[i], parsed.validation_flags, error)) {
          ret = false;
          GOTO (done);
       }
@@ -1857,11 +1866,13 @@ mongoc_collection_update (mongoc_collection_t *collection,
        bson_iter_init (&iter, update) && bson_iter_next (&iter)) {
       if (bson_iter_key (&iter)[0] == '$') {
          /* update document, all keys must be $-operators */
-         if (!_mongoc_validate_update (update, error)) {
+         if (!_mongoc_validate_update (
+                update, _mongoc_default_update_vflags, error)) {
             return false;
          }
       } else {
-         if (!_mongoc_validate_replace (update, error)) {
+         if (!_mongoc_validate_replace (
+                update, _mongoc_default_replace_vflags, error)) {
             return false;
          }
       }
@@ -1922,18 +1933,25 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+   if (!_mongoc_write_opts_parse (opts,
+                                  collection,
+                                  &parsed,
+                                  (is_update ? _mongoc_default_update_vflags
+                                             : _mongoc_default_replace_vflags),
+                                  error)) {
       _mongoc_write_opts_cleanup (&parsed);
       return false;
    }
 
-   if (parsed.client_validation) {
+   if (parsed.validation_flags) {
       /* update document, all keys must be $-operators */
       if (is_update) {
-         if (!_mongoc_validate_update (update, error)) {
+         if (!_mongoc_validate_update (
+                update, parsed.validation_flags, error)) {
             return false;
          }
-      } else if (!_mongoc_validate_replace (update, error)) {
+      } else if (!_mongoc_validate_replace (
+                    update, parsed.validation_flags, error)) {
          return false;
       }
    }
@@ -2081,7 +2099,8 @@ mongoc_collection_save (mongoc_collection_t *collection,
    }
 
    /* this document will be inserted, validate same as for inserts */
-   if (!_mongoc_validate_new_document (document, error)) {
+   if (!_mongoc_validate_new_document (
+          document, _mongoc_default_insert_vflags, error)) {
       return false;
    }
 
@@ -2223,7 +2242,7 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, 0, error)) {
       _mongoc_write_opts_cleanup (&parsed);
       return false;
    }
