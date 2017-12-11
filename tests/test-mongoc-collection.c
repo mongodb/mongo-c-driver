@@ -2827,6 +2827,7 @@ test_aggregate_modern (void *data)
    ASSERT (cursor);
    future = future_cursor_next (cursor, &doc);
 
+
    /* "cursor" argument always sent if wire version >= 1 */
    request = mock_server_receives_command (
       server,
@@ -2841,9 +2842,34 @@ test_aggregate_modern (void *data)
    mock_server_replies_simple (request,
                                "{'ok': 1,"
                                " 'cursor': {"
-                               "    'id': 0,"
+                               "    'id': 42,"
                                "    'ns': 'db.collection',"
                                "    'firstBatch': [{'_id': 123}]"
+                               "}}");
+
+   ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* create a second batch to see if batch size is still 11 */
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'getMore': 42,"
+      "'collection': 'collection',"
+      "'batchSize': %s}",
+      context->with_batch_size ? "11" : "{'$exists': false}");
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               "'cursor': {"
+                               "'id': 0,"
+                               "'ns': 'db.collection',"
+                               "'nextBatch': [{'_id': 123}]"
                                "}}");
 
    ASSERT (future_get_bool (future));

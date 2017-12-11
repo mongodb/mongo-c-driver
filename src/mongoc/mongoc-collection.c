@@ -287,7 +287,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    mongoc_server_stream_t *server_stream = NULL;
-   bool has_batch_size = false;
    bool has_out_key = false;
    bson_iter_t kiter;
    bson_iter_t ar;
@@ -384,16 +383,11 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
        BSON_ITER_HOLDS_NUMBER (&iter)) {
       batch_size = (int32_t) bson_iter_as_int64 (&iter);
       BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-      has_batch_size = true;
    }
    bson_append_document_end (&command, &child);
 
    if (opts) {
-      if (has_batch_size) {
-         bson_copy_to_excluding_noinit (opts, &cursor->opts, "batchSize", NULL);
-      } else {
-         bson_concat (&cursor->opts, opts);
-      }
+      bson_concat (&cursor->opts, opts);
    }
 
    /* Only inherit WriteConcern when for aggregate with $out */
