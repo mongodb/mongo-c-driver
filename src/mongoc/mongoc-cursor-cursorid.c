@@ -170,14 +170,31 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 {
+   bson_t copied_opts;
+   bool return_value;
    if (cursor->error.domain != 0) {
       return false;
    }
 
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
-   return _mongoc_cursor_cursorid_refresh_from_command (
-      cursor, &cursor->filter, &cursor->opts);
+
+   /* `find` does not have a cursor field */
+   if (cursor->is_find) {
+      return _mongoc_cursor_cursorid_refresh_from_command (
+         cursor, &cursor->filter, &cursor->opts);
+   } else {
+      /* commands like `aggregate` have a cursor field so we
+       * have to copy over opts without "batchSize" */
+      bson_init (&copied_opts);
+      bson_copy_to_excluding_noinit (
+         &cursor->opts, &copied_opts, "batchSize", NULL);
+      return_value = _mongoc_cursor_cursorid_refresh_from_command (
+         cursor, &cursor->filter, &copied_opts);
+
+      bson_destroy (&copied_opts);
+      return return_value;
+   }
 }
 
 

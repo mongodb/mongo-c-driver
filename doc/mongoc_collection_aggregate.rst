@@ -33,6 +33,7 @@ Parameters
 * ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.
 * ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.
 * ``serverId``: To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
+* ``batchSize``: To specify the number of documents to return in each batch of a response from the server, include an int "batchSize" field.
 
 For a list of all options, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
 
