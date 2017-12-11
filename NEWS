@@ -1,3 +1,11 @@
+Next Release
+============
+
+New features:
+
+  * Add bson_validate_flags_t to opt for update/insert functions.
+
+
 mongo-c-driver 1.9.0
 ====================
 

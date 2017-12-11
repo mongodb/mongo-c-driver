@@ -21,6 +21,19 @@
 #include "mongoc-client.h"
 #include "mongoc-trace-private.h"
 
+const bson_validate_flags_t _mongoc_default_insert_vflags =
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
+   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
+   BSON_VALIDATE_DOLLAR_KEYS;
+
+const bson_validate_flags_t _mongoc_default_replace_vflags =
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
+   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
+   BSON_VALIDATE_DOLLAR_KEYS;
+
+const bson_validate_flags_t _mongoc_default_update_vflags =
+   BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
+   BSON_VALIDATE_EMPTY_KEYS;
 
 int
 _mongoc_rand_simple (unsigned int *seed)
@@ -289,17 +302,14 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 }
 
 
-const bson_validate_flags_t insert_vflags =
-   (bson_validate_flags_t) BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
-   BSON_VALIDATE_DOLLAR_KEYS;
-
 bool
-_mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
+_mongoc_validate_new_document (const bson_t *doc,
+                               const bson_validate_flags_t vflags,
+                               bson_error_t *error)
 {
    bson_error_t validate_err;
 
-   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
+   if (!bson_validate_with_error (doc, vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -313,11 +323,13 @@ _mongoc_validate_new_document (const bson_t *doc, bson_error_t *error)
 
 
 bool
-_mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
+_mongoc_validate_replace (const bson_t *doc,
+                          const bson_validate_flags_t vflags,
+                          bson_error_t *error)
 {
    bson_error_t validate_err;
 
-   if (!bson_validate_with_error (doc, insert_vflags, &validate_err)) {
+   if (!bson_validate_with_error (doc, vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -331,16 +343,15 @@ _mongoc_validate_replace (const bson_t *doc, bson_error_t *error)
 
 
 bool
-_mongoc_validate_update (const bson_t *update, bson_error_t *error)
+_mongoc_validate_update (const bson_t *update,
+                         const bson_validate_flags_t vflags,
+                         bson_error_t *error)
 {
    bson_error_t validate_err;
    bson_iter_t iter;
    const char *key;
-   int vflags = BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-                BSON_VALIDATE_EMPTY_KEYS;
 
-   if (!bson_validate_with_error (
-          update, (bson_validate_flags_t) vflags, &validate_err)) {
+   if (!bson_validate_with_error (update, vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,

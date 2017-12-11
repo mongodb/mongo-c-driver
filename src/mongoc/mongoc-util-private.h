@@ -59,6 +59,10 @@
 
 BSON_BEGIN_DECLS
 
+extern const bson_validate_flags_t _mongoc_default_insert_vflags;
+extern const bson_validate_flags_t _mongoc_default_replace_vflags;
+extern const bson_validate_flags_t _mongoc_default_update_vflags;
+
 int
 _mongoc_rand_simple (unsigned int *seed);
 
@@ -100,13 +104,19 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  bson_error_t *error);
 
 bool
-_mongoc_validate_new_document (const bson_t *insert, bson_error_t *error);
+_mongoc_validate_new_document (const bson_t *insert,
+                               bson_validate_flags_t vflags,
+                               bson_error_t *error);
 
 bool
-_mongoc_validate_replace (const bson_t *insert, bson_error_t *error);
+_mongoc_validate_replace (const bson_t *insert,
+                          bson_validate_flags_t vflags,
+                          bson_error_t *error);
 
 bool
-_mongoc_validate_update (const bson_t *update, bson_error_t *error);
+_mongoc_validate_update (const bson_t *update,
+                         bson_validate_flags_t vflags,
+                         bson_error_t *error);
 
 void
 mongoc_lowercase (const char *src, char *buf /* OUT */);

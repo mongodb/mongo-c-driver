@@ -3616,6 +3616,46 @@ _test_insert_validate (insert_fn_t insert_fn)
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Invalid type for option \"validate\", \"UTF8\"");
 
+   BSON_ASSERT (insert_fn (
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'validate': 0}"), &error));
+
+   /* BSON_VALIDATE_DOT_KEYS */
+   BSON_ASSERT (!insert_fn (collection,
+                            tmp_bson ("{'a.a': 1}"),
+                            tmp_bson ("{'validate': 4}"),
+                            &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+
+   /* BSON_VALIDATE_DOT_KEYS is set by default */
+   BSON_ASSERT (!insert_fn (
+      collection, tmp_bson ("{'a.a': 1}"), tmp_bson ("{}"), &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+
+   /* {validate: true} is equivalent to setting all the flags */
+   BSON_ASSERT (!insert_fn (collection,
+                            tmp_bson ("{'a.a': 1}"),
+                            tmp_bson ("{'validate': true}"),
+                            &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+
+
+   BSON_ASSERT (insert_fn (collection,
+                           tmp_bson ("{'a.a': 1}"),
+                           tmp_bson ("{'validate': 0}"),
+                           &error));
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -5161,6 +5201,43 @@ _test_update_validate (update_fn_t update_fn)
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Invalid type for option \"validate\", \"UTF8\"");
+
+   /* Set all validation flags */
+   BSON_ASSERT (!update_fn (collection,
+                            selector,
+                            update,
+                            tmp_bson ("{'validate': 31}"),
+                            NULL,
+                            &error));
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
+
+   /* {validate: true} is equivalent to setting all the flags */
+   BSON_ASSERT (!update_fn (collection,
+                            selector,
+                            update,
+                            tmp_bson ("{'validate': true}"),
+                            NULL,
+                            &error));
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
+
+
+   if (update_fn == mongoc_collection_replace_one) {
+      BSON_ASSERT (update_fn (collection,
+                              selector,
+                              tmp_bson ("{'x': 1}"),
+                              tmp_bson ("{'validate': true}"),
+                              NULL,
+                              &error));
+   } else {
+      BSON_ASSERT (update_fn (collection,
+                              selector,
+                              tmp_bson ("{'$set': {'x': 1}}"),
+                              tmp_bson ("{'validate': true}"),
+                              NULL,
+                              &error));
+   }
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

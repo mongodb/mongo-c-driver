@@ -355,7 +355,8 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_validate_new_document (document, error)) {
+   if (!_mongoc_validate_new_document (
+          document, _mongoc_default_insert_vflags, error)) {
       return false;
    }
 
@@ -400,7 +401,8 @@ _mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
    BSON_ASSERT (selector);
    BSON_ASSERT (document);
 
-   if (!_mongoc_validate_replace (document, error)) {
+   if (!_mongoc_validate_replace (
+          document, _mongoc_default_replace_vflags, error)) {
       RETURN (false);
    }
 
@@ -507,7 +509,8 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_validate_update (document, error)) {
+   if (!_mongoc_validate_update (
+          document, _mongoc_default_update_vflags, error)) {
       RETURN (false);
    }
 
