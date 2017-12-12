@@ -2021,6 +2021,10 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
       _clone->read_concern = mongoc_read_concern_copy (cursor->read_concern);
    }
 
+   if (cursor->write_concern) {
+      _clone->write_concern = mongoc_write_concern_copy (cursor->write_concern);
+   }
+
    if (cursor->explicit_session) {
       _clone->client_session = cursor->client_session;
    }

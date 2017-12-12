@@ -7,6 +7,8 @@
 #include "mock_server/future-functions.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-read-concern-private.h"
+#include "mongoc-write-concern-private.h"
 #include "test-conveniences.h"
 
 
@@ -133,6 +135,109 @@ test_clone (void)
    }
    ASSERT (doc);
 
+   mongoc_cursor_destroy (cursor);
+   mongoc_cursor_destroy (cloned);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_clone_with_concerns (void)
+{
+   mongoc_cursor_t *cloned;
+   mongoc_cursor_t *cursor;
+   mongoc_client_t *client;
+   mongoc_read_concern_t *read_concern;
+   mongoc_write_concern_t *write_concern;
+   const bson_t *bson;
+   bson_iter_t iter;
+   bson_error_t error;
+   bool r;
+   bson_t q = BSON_INITIALIZER;
+
+   client = test_framework_client_new ();
+
+   {
+      /*
+       * Ensure test.test has a document.
+       */
+
+      mongoc_collection_t *col;
+
+      col = mongoc_client_get_collection (client, "test", "test");
+      r = mongoc_collection_insert_one (col, &q, NULL, NULL, &error);
+      ASSERT (r);
+
+      mongoc_collection_destroy (col);
+   }
+
+   read_concern = mongoc_read_concern_new ();
+   ASSERT (read_concern);
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+
+   cursor = _mongoc_cursor_new (client,
+                                "test.test",
+                                MONGOC_QUERY_NONE,
+                                0,
+                                1,
+                                1,
+                                true /* is_find */,
+                                &q,
+                                NULL,
+                                NULL,
+                                read_concern);
+   ASSERT (cursor);
+
+   write_concern = mongoc_write_concern_new ();
+   ASSERT (write_concern);
+   mongoc_write_concern_set_fsync (write_concern, true);
+   mongoc_write_concern_set_journal (write_concern, true);
+   mongoc_write_concern_set_wmajority (write_concern, 1000);
+
+   cursor->write_concern = write_concern;
+
+   /*
+    * Don't call mongoc_cursor_next (), since the test may run against a version
+    * of MongoDB that doesn't support read/write concerns, and we are only
+    * interested in testing if the clone process works.
+    */
+
+   cloned = mongoc_cursor_clone (cursor);
+   ASSERT (cursor);
+
+   /*
+    * Test cloned read_concern.
+    */
+   ASSERT (!mongoc_read_concern_is_default (cloned->read_concern));
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (cloned->read_concern),
+                  MONGOC_READ_CONCERN_LEVEL_LOCAL);
+
+   /*
+    * Test cloned write_concern.
+    */
+   ASSERT (mongoc_write_concern_get_wmajority (cloned->write_concern));
+   ASSERT (mongoc_write_concern_get_wtimeout (cloned->write_concern) == 1000);
+   ASSERT (mongoc_write_concern_get_w (cloned->write_concern) ==
+           MONGOC_WRITE_CONCERN_W_MAJORITY);
+
+   /*
+    * Check generated bson in cloned cursor.
+    */
+   ASSERT_MATCH (_mongoc_read_concern_get_bson (cloned->read_concern),
+                 "{'level': 'local'}");
+
+   bson = _mongoc_write_concern_get_bson (cloned->write_concern);
+   ASSERT (bson);
+   ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
+           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "j") &&
+           BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+   ASSERT (bson_iter_init_find (&iter, bson, "w") &&
+           BSON_ITER_HOLDS_UTF8 (&iter));
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "majority");
+
+   mongoc_read_concern_destroy (read_concern);
    mongoc_cursor_destroy (cursor);
    mongoc_cursor_destroy (cloned);
    mongoc_client_destroy (client);
@@ -1682,6 +1787,8 @@ test_cursor_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Cursor/get_host", test_get_host);
    TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
+   TestSuite_AddLive (
+      suite, "/Cursor/clone_with_concerns", test_clone_with_concerns);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
    TestSuite_AddMockServerTest (
