@@ -655,11 +655,12 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
-      if (parts->is_read_command && !is_get_more) {
+      if (!is_get_more) {
          /* This condition should never trigger for an implicit client session.
           * Even though the causal consistency option may default to true, an
           * implicit client session will have no previous operation time. */
-         if (cs && mongoc_session_opts_get_causal_consistency (&cs->opts) &&
+         if (parts->is_read_command && cs &&
+             mongoc_session_opts_get_causal_consistency (&cs->opts) &&
              cs->operation_timestamp) {
             _mongoc_cmd_parts_ensure_copied (parts);
             bson_append_document_begin (
