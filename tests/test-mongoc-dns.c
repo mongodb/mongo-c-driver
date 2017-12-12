@@ -249,6 +249,18 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 
    _assert_options_match (test, client);
 
+   /* the client has a copy of the topology's URI, assert they're the same */
+   ASSERT (bson_equal (mongoc_uri_get_options (client->uri),
+                       mongoc_uri_get_options (client->topology->uri)));
+   ASSERT (bson_equal (mongoc_uri_get_credentials (client->uri),
+                       mongoc_uri_get_credentials (client->topology->uri)));
+   if (!mongoc_uri_get_hosts (client->uri)) {
+      ASSERT (!mongoc_uri_get_hosts (client->topology->uri));
+   } else {
+      _mongoc_host_list_equal (mongoc_uri_get_hosts (client->uri),
+                               mongoc_uri_get_hosts (client->topology->uri));
+   }
+
    if (pooled) {
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
