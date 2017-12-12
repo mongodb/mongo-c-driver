@@ -771,9 +771,9 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 
    BSON_ASSERT (sock);
 
-   owned = (sock->pid == (int) getpid ());
-
 #ifdef _WIN32
+   owned = (sock->pid == (int) _getpid ());
+
    if (sock->sd != INVALID_SOCKET) {
       if (owned) {
          shutdown (sock->sd, SD_BOTH);
@@ -788,6 +788,8 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    }
    RETURN (0);
 #else
+   owned = (sock->pid == (int) getpid ());
+
    if (sock->sd != -1) {
       if (owned) {
          shutdown (sock->sd, SHUT_RDWR);
