@@ -895,7 +895,7 @@ mongoc_client_new (const char *uri_string)
 
    topology = mongoc_topology_new (uri, true);
 
-   client = _mongoc_client_new_from_uri (uri, topology);
+   client = _mongoc_client_new_from_uri (topology);
    if (!client) {
       mongoc_topology_destroy (topology);
    }
@@ -969,7 +969,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
     * then mongoc_topology_new has fetched SRV and TXT records and updated its
     * uri from them.
     */
-   return _mongoc_client_new_from_uri (topology->uri, topology);
+   return _mongoc_client_new_from_uri (topology);
 }
 
 /*
@@ -977,8 +977,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
  *
  * _mongoc_client_new_from_uri --
  *
- *       Create a new mongoc_client_t for a mongoc_uri_t and a given
- *       topology object.
+ *       Create a new mongoc_client_t for a given topology object.
  *
  * Returns:
  *       A newly allocated mongoc_client_t.
@@ -990,8 +989,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
  */
 
 mongoc_client_t *
-_mongoc_client_new_from_uri (const mongoc_uri_t *uri,
-                             mongoc_topology_t *topology)
+_mongoc_client_new_from_uri (mongoc_topology_t *topology)
 {
    mongoc_client_t *client;
    const mongoc_read_prefs_t *read_prefs;
@@ -999,17 +997,17 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
    const mongoc_write_concern_t *write_concern;
    const char *appname;
 
-   BSON_ASSERT (uri);
+   BSON_ASSERT (topology);
 
 #ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_ssl (uri)) {
+   if (mongoc_uri_get_ssl (topology->uri)) {
       MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
       return NULL;
    }
 #endif
 
    client = (mongoc_client_t *) bson_malloc0 (sizeof *client);
-   client->uri = mongoc_uri_copy (uri);
+   client->uri = mongoc_uri_copy (topology->uri);
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
    client->topology = topology;
