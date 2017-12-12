@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifdef _WIN32
+#define _CRT_RAND_S
+#endif
 
 #include <string.h>
 
