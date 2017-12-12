@@ -344,7 +344,7 @@ _mongoc_validate_update (const bson_t *update, bson_error_t *error)
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "invalid selector for update: %s",
+                      "invalid argument for update: %s",
                       validate_err.message);
       return false;
    }
