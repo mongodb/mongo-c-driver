@@ -47,7 +47,7 @@ typedef struct {
    ULONG flags;
    UCHAR haveCred;
    UCHAR haveCtx;
-   INT qop;
+   ULONG qop;
 } mongoc_sspi_client_state_t;
 
 void
