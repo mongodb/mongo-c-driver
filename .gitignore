@@ -19,7 +19,6 @@ compile
 config.*
 !config.yml
 configure
-COPYING
 data
 depcomp
 .deps
