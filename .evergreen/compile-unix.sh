@@ -44,6 +44,7 @@ echo "OS: $OS"
 
 # Default configure flags for debug builds and release builds
 DEBUG_FLAGS="\
+   --with-libbson=bundled \
    --enable-html-docs=no \
    --enable-man-pages=no \
    --enable-optimizations=no \
@@ -56,6 +57,7 @@ DEBUG_FLAGS="\
 "
 
 RELEASE_FLAGS="\
+   --with-libbson=bundled \
    --enable-man-pages=no \
    --enable-html-docs=no \
    --enable-extra-align=no \
@@ -63,13 +65,6 @@ RELEASE_FLAGS="\
    --disable-automatic-init-and-cleanup \
    --prefix=$INSTALL_DIR \
 "
-if [ "$LIBBSON" = "external" ]; then
-   RELEASE_FLAGS="$RELEASE_FLAGS --with-libbson=system"
-   DEBUG_FLAGS="$DEBUG_FLAGS --with-libbson=system"
-else
-   RELEASE_FLAGS="$RELEASE_FLAGS --with-libbson=bundled"
-   DEBUG_FLAGS="$DEBUG_FLAGS --with-libbson=bundled"
-fi
 if [ ! -z "$ZLIB" ]; then
    RELEASE_FLAGS="$RELEASE_FLAGS --with-zlib=${ZLIB}"
    DEBUG_FLAGS="$DEBUG_FLAGS --with-zlib=${ZLIB}"
@@ -182,16 +177,6 @@ export CXXFLAGS="$CXXFLAGS"
 export CC="$CC"
 export CXX="$CXX"
 
-if [ "$LIBBSON" = "external" ]; then
-   # This usually happens in mongoc ./autogen.sh, but since we are compiling against
-   # external libbson we need to install libbson before running mongoc ./autogen.sh
-   git submodule update --init
-   cd src/libbson
-   ./autogen.sh $CONFIGURE_FLAGS
-   make all
-   make install
-   cd ../../
-fi
 export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
 
 export PATH=$INSTALL_DIR/bin:$PATH
@@ -199,9 +184,6 @@ echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
 
 $SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
-# This needs to be exported _after_ running autogen as the $CONFIGURE_SCRIPT might
-# use git to fetch the submodules, which uses libcurl which is linked against
-# the system openssl which isn't abi compatible with our custom openssl/libressl
 export LD_LIBRARY_PATH=$EXTRA_LIB_PATH:$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=$EXTRA_LIB_PATH:$DYLD_LIBRARY_PATH
 openssl version

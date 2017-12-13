@@ -89,7 +89,7 @@ AC_ARG_ENABLE([maintainer-flags],
               [],
               enable_maintainer_flags=$maintainer_flags_default)
 
-# Check if we should use the bundled (git submodule) libbson
+# Check if we should use the bundled libbson
 AC_ARG_WITH(libbson,
     AC_HELP_STRING([--with-libbson=@<:@auto/system/bundled@:>@],
                    [use system installed libbson or bundled libbson. default=auto]),

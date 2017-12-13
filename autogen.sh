@@ -24,9 +24,6 @@ if test -z "$(which libtoolize)" && test -z "$(which glibtoolize)"; then
 fi
 
 if [ -d .git ]; then
-    git submodule init
-    git submodule update
-
     cd src/libbson
     NOCONFIGURE=1 ./autogen.sh
     cd ../../

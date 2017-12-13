@@ -24,8 +24,6 @@ if [ "$RELEASE" ]; then
    mkdir build-dir
    tar xf ../mongoc.tar.gz -C build-dir --strip-components=1
    cd build-dir
-else
-   git submodule update --init
 fi
 
 case "$SASL" in
