@@ -250,12 +250,6 @@ endif ()
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 
-if (MINGW)
-   # Define _CRT_RAND_S, so that MinGW's stdlib.h declares Microsoft's rand_s().
-   message (" MinGW: define _CRT_RAND_S")
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_RAND_S")
-endif ()
-
 include(CheckTypeSize)
 if (WIN32)
    SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
