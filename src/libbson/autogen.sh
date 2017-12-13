@@ -9,7 +9,7 @@ ORIGDIR=`pwd`
 cd "$srcdir" || exit 1
 
 if [ ! -f README ]; then
-    ln -s README.md README
+    ln -s README.rst README
 fi
 
 touch ChangeLog
