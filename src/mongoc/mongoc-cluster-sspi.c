@@ -140,11 +140,11 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 {
    mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
-   uint8_t buf[4096] = {0};
+   SEC_CHAR buf[4096] = {0};
    bson_iter_t iter;
    uint32_t buflen;
    bson_t reply;
-   char *tmpstr;
+   const char *tmpstr;
    int conv_id;
    bson_t cmd;
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
@@ -178,7 +178,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          res = _mongoc_sspi_auth_sspi_client_unwrap (state, buf);
          response = bson_strdup (state->response);
          _mongoc_sspi_auth_sspi_client_wrap (
-            state, response, tmp_creds, tmp_creds_len, 0);
+            state, response, (SEC_CHAR*) tmp_creds, tmp_creds_len, 0);
          bson_free (response);
       }
 
