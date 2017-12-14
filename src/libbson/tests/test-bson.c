@@ -389,6 +389,35 @@ test_bson_append_regex (void)
 
 
 static void
+test_bson_append_regex_w_len (void)
+{
+   bson_t *b;
+   bson_t *b2;
+
+   b = bson_new ();
+   BSON_ASSERT (bson_append_regex_w_len (b, "regex", -1, "^abcd", 5, "ilx"));
+   b2 = get_bson ("test27.bson");
+   BSON_ASSERT_BSON_EQUAL (b, b2);
+   bson_destroy (b);
+   bson_destroy (b2);
+
+   b = bson_new ();
+   BSON_ASSERT (bson_append_regex_w_len (b, "regex", -1, "^abcd", -1, "ilx"));
+   b2 = get_bson ("test27.bson");
+   BSON_ASSERT_BSON_EQUAL (b, b2);
+   bson_destroy (b);
+   bson_destroy (b2);
+
+   b = bson_new ();
+   BSON_ASSERT (bson_append_regex_w_len (b, "regex", -1, "^abcd    ", 5, "ilx"));
+   b2 = get_bson ("test27.bson");
+   BSON_ASSERT_BSON_EQUAL (b, b2);
+   bson_destroy (b);
+   bson_destroy (b2);
+}
+
+
+static void
 test_bson_append_code (void)
 {
    bson_t *b;
@@ -1186,11 +1215,8 @@ test_bson_validate (void)
       "test42.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
    VALIDATE_TEST (
       "test43.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
-   VALIDATE_TEST ("test44.bson",
-                  BSON_VALIDATE_NONE,
-                  6,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
+   VALIDATE_TEST (
+      "test44.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
    VALIDATE_TEST (
       "test45.bson", BSON_VALIDATE_NONE, 6, BSON_VALIDATE_NONE, "corrupt BSON");
    VALIDATE_TEST (
@@ -2265,6 +2291,8 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/append_null", test_bson_append_null);
    TestSuite_Add (suite, "/bson/append_oid", test_bson_append_oid);
    TestSuite_Add (suite, "/bson/append_regex", test_bson_append_regex);
+   TestSuite_Add (
+      suite, "/bson/append_regex_w_len", test_bson_append_regex_w_len);
    TestSuite_Add (suite, "/bson/append_utf8", test_bson_append_utf8);
    TestSuite_Add (suite, "/bson/append_symbol", test_bson_append_symbol);
    TestSuite_Add (suite, "/bson/append_time_t", test_bson_append_time_t);

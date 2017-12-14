@@ -949,6 +949,37 @@ bson_append_regex (bson_t *bson,
 
 
 /**
+ * bson_append_regex:
+ * @bson: A bson_t.
+ * @key: The key of the field.
+ * @key_length: The length of the key string.
+ * @regex: The regex to append to the bson.
+ * @regex_length: The length of the regex string.
+ * @options: Options for @regex.
+ *
+ * Appends a new field to @bson of type BSON_TYPE_REGEX. @regex should
+ * be the regex string. @options should contain the options for the regex.
+ *
+ * Valid options for @options are:
+ *
+ *   'i' for case-insensitive.
+ *   'm' for multiple matching.
+ *   'x' for verbose mode.
+ *   'l' to make \w and \W locale dependent.
+ *   's' for dotall mode ('.' matches everything)
+ *   'u' to make \w and \W match unicode.
+ *
+ * For more information on what comprimises a BSON regex, see bsonspec.org.
+ *
+ * Returns: true if successful; false if append would overflow max size.
+ */
+BSON_EXPORT (bool)
+bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
+                         const char *regex, int regex_length,
+                         const char *options);
+
+
+/**
  * bson_append_utf8:
  * @bson: A bson_t.
  * @key: The key for the field.

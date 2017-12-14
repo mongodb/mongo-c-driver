@@ -42,6 +42,7 @@ represents the IEEE-754 Decimal128 data type.
     :maxdepth: 1
 
     bson_decimal128_from_string
+    bson_decimal128_from_string_w_len
     bson_decimal128_to_string
 
 Example

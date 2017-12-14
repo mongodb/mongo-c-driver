@@ -173,6 +173,7 @@ The :symbol:`bson_t` structure attempts to use an inline allocation within the s
     bson_append_null
     bson_append_oid
     bson_append_regex
+    bson_append_regex_w_len
     bson_append_symbol
     bson_append_time_t
     bson_append_timestamp

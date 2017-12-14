@@ -1547,8 +1547,16 @@ bson_append_regex (bson_t *bson,
                    const char *regex,
                    const char *options)
 {
+   return bson_append_regex_w_len (bson, key, key_length, regex, -1, options);
+}
+
+
+bool
+bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
+                         const char *regex, int regex_length,
+                         const char *options)
+{
    static const uint8_t type = BSON_TYPE_REGEX;
-   uint32_t regex_len;
    bson_string_t *options_sorted;
    bool r;
 
@@ -1559,6 +1567,10 @@ bson_append_regex (bson_t *bson,
       key_length = (int) strlen (key);
    }
 
+   if (regex_length < 0) {
+      regex_length = (int) strlen (regex);
+   }
+
    if (!regex) {
       regex = "";
    }
@@ -1567,24 +1579,25 @@ bson_append_regex (bson_t *bson,
       options = "";
    }
 
-   regex_len = (int) strlen (regex) + 1;
    options_sorted = bson_string_new (NULL);
 
    _bson_append_regex_options_sorted (options_sorted, options);
 
-   r =  _bson_append (bson,
-                      5,
-                      (1 + key_length + 1 + regex_len + options_sorted->len),
-                      1,
-                      &type,
-                      key_length,
-                      key,
-                      1,
-                      &gZero,
-                      regex_len,
-                      regex,
-                      options_sorted->len + 1,
-                      options_sorted->str);
+   r = _bson_append (bson,
+                     6,
+                     (1 + key_length + 1 + regex_length + 1 + options_sorted->len),
+                     1,
+                     &type,
+                     key_length,
+                     key,
+                     1,
+                     &gZero,
+                     regex_length,
+                     regex,
+                     1,
+                     &gZero,
+                     options_sorted->len + 1,
+                     options_sorted->str);
 
    bson_string_free (options_sorted, true);
 
