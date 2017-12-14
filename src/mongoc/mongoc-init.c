@@ -23,17 +23,13 @@
 
 #include "mongoc-handshake-private.h"
 
-#ifdef MONGOC_ENABLE_SSL
-#include "mongoc-scram-private.h"
-#include "mongoc-ssl.h"
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include "mongoc-openssl-private.h"
 #elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
 #include "tls.h"
 #endif
-#endif
 #include "mongoc-thread-private.h"
-
+#include "mongoc-b64-private.h"
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
@@ -96,9 +92,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
    tls_init ();
 #endif
 
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_scram_startup ();
-#endif
+   mongoc_b64_initialize_rmap ();
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked

@@ -251,7 +251,6 @@ mongoc_b64_ntop (uint8_t const *src,
    it returns the number of data bytes stored at the target, or -1 on error.
  */
 
-static int mongoc_b64rmap_initialized = 0;
 static uint8_t mongoc_b64rmap[256];
 
 static const uint8_t mongoc_b64rmap_special = 0xf0;
@@ -260,8 +259,7 @@ static const uint8_t mongoc_b64rmap_space = 0xfe;
 static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
 /**
- * Initializing the reverse map is not thread safe.
- * Which is fine for NSD. For now...
+ * Initializing the reverse map is not thread safe, do it at startup.
  **/
 void
 mongoc_b64_initialize_rmap (void)
@@ -288,8 +286,6 @@ mongoc_b64_initialize_rmap (void)
    /* Fill reverse mapping for base64 chars */
    for (i = 0; Base64[i] != '\0'; ++i)
       mongoc_b64rmap[(uint8_t) Base64[i]] = i;
-
-   mongoc_b64rmap_initialized = 1;
 }
 
 static int
@@ -505,9 +501,6 @@ mongoc_b64_pton_len (char const *src)
 int
 mongoc_b64_pton (char const *src, uint8_t *target, size_t targsize)
 {
-   if (!mongoc_b64rmap_initialized)
-      mongoc_b64_initialize_rmap ();
-
    if (target)
       return mongoc_b64_pton_do (src, target, targsize);
    else

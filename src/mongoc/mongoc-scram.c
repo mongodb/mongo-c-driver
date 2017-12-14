@@ -40,13 +40,6 @@
 
 
 void
-_mongoc_scram_startup ()
-{
-   mongoc_b64_initialize_rmap ();
-}
-
-
-void
 _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass)
 {
    BSON_ASSERT (scram);

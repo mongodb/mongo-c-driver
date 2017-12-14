@@ -51,9 +51,6 @@ typedef struct _mongoc_scram_t {
 } mongoc_scram_t;
 
 void
-_mongoc_scram_startup ();
-
-void
 _mongoc_scram_init (mongoc_scram_t *scram);
 
 void
