@@ -149,10 +149,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    bson_t cmd;
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
    int step;
-   const bson_t *options;
    mongoc_server_stream_t *server_stream;
 
-   options = mongoc_uri_get_options (cluster->uri);
    state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
 
    if (!state) {
