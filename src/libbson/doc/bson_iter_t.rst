@@ -100,9 +100,11 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_find
     bson_iter_find_case
     bson_iter_find_descendant
+    bson_iter_find_w_len
     bson_iter_init
     bson_iter_init_find
     bson_iter_init_find_case
+    bson_iter_init_find_w_len
     bson_iter_init_from_data
     bson_iter_int32
     bson_iter_int64

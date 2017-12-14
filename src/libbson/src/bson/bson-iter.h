@@ -212,6 +212,13 @@ bson_iter_init_find (bson_iter_t *iter, const bson_t *bson, const char *key);
 
 
 BSON_EXPORT (bool)
+bson_iter_init_find_w_len (bson_iter_t *iter,
+                           const bson_t *bson,
+                           const char *key,
+                           int keylen);
+
+
+BSON_EXPORT (bool)
 bson_iter_init_find_case (bson_iter_t *iter,
                           const bson_t *bson,
                           const char *key);
@@ -267,6 +274,10 @@ bson_iter_int64_unsafe (const bson_iter_t *iter)
 
 BSON_EXPORT (bool)
 bson_iter_find (bson_iter_t *iter, const char *key);
+
+
+BSON_EXPORT (bool)
+bson_iter_find_w_len (bson_iter_t *iter, const char *key, int keylen);
 
 
 BSON_EXPORT (bool)

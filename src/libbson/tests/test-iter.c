@@ -359,6 +359,47 @@ test_bson_iter_find_case (void)
 
 
 static void
+test_bson_iter_find_w_len (void)
+{
+   bson_t b;
+   bson_iter_t iter;
+
+   bson_init (&b);
+   BSON_ASSERT (bson_append_utf8 (&b, "key", -1, "value", -1));
+   BSON_ASSERT (bson_iter_init (&iter, &b));
+   BSON_ASSERT (bson_iter_find_w_len (&iter, "key", 3));
+   bson_destroy (&b);
+
+   bson_init (&b);
+   BSON_ASSERT (bson_append_utf8 (&b, "key", -1, "value", -1));
+   BSON_ASSERT (bson_iter_init (&iter, &b));
+   BSON_ASSERT (bson_iter_find_w_len (&iter, "keys", 3));
+   bson_destroy (&b);
+
+   bson_init (&b);
+   BSON_ASSERT (bson_append_utf8 (&b, "key", -1, "value", -1));
+   BSON_ASSERT (bson_iter_init (&iter, &b));
+   BSON_ASSERT (bson_iter_find_w_len (&iter, "key", -1));
+   bson_destroy (&b);
+}
+
+
+static void
+test_bson_iter_init_find_w_len (void)
+{
+   bson_t b;
+   bson_iter_t iter;
+
+   bson_init (&b);
+   BSON_ASSERT (bson_append_utf8 (&b, "key", -1, "value", -1));
+   BSON_ASSERT (bson_iter_init_find_w_len (&iter, &b, "key", 3));
+   BSON_ASSERT (bson_iter_init_find_w_len (&iter, &b, "keys", 3));
+   BSON_ASSERT (bson_iter_init_find_w_len (&iter, &b, "key", -1));
+   bson_destroy (&b);
+}
+
+
+static void
 test_bson_iter_as_double (void)
 {
    bson_iter_t iter;
@@ -622,6 +663,10 @@ test_iter_install (TestSuite *suite)
                   "/bson/iter/test_next_after_finish",
                   test_bson_iter_next_after_finish);
    TestSuite_Add (suite, "/bson/iter/test_find_case", test_bson_iter_find_case);
+   TestSuite_Add (
+      suite, "/bson/iter/test_find_w_len", test_bson_iter_find_w_len);
+   TestSuite_Add (
+      suite, "/bson/iter/test_init_find_w_len", test_bson_iter_init_find_w_len);
    TestSuite_Add (
       suite, "/bson/iter/test_bson_iter_as_double", test_bson_iter_as_double);
    TestSuite_Add (

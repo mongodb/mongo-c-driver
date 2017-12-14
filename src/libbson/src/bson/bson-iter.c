@@ -210,6 +210,38 @@ bson_iter_init_find (bson_iter_t *iter,  /* INOUT */
 /*
  *--------------------------------------------------------------------------
  *
+ * bson_iter_init_find_w_len --
+ *
+ *       Initializes a #bson_iter_t and moves the iter to the first field
+ *       matching @key.
+ *
+ * Returns:
+ *       true if the field named @key was found; otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+bson_iter_init_find_w_len (bson_iter_t *iter,  /* INOUT */
+                           const bson_t *bson, /* IN */
+                           const char *key,    /* IN */
+                           int keylen)         /* IN */
+{
+   BSON_ASSERT (iter);
+   BSON_ASSERT (bson);
+   BSON_ASSERT (key);
+
+   return bson_iter_init (iter, bson) &&
+          bson_iter_find_w_len (iter, key, keylen);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_iter_init_find_case --
  *
  *       A case-insensitive version of bson_iter_init_find().
@@ -239,9 +271,11 @@ bson_iter_init_find_case (bson_iter_t *iter,  /* INOUT */
 /*
  *--------------------------------------------------------------------------
  *
- * _bson_iter_find_with_len --
+ * bson_iter_find_w_len --
  *
- *       Internal helper for finding an exact key.
+ *       Searches through @iter starting from the current position for a key
+ *       matching @key. @keylen indicates the length of @key, or -1 to
+ *       determine the length with strlen().
  *
  * Returns:
  *       true if the field @key was found.
@@ -252,10 +286,10 @@ bson_iter_init_find_case (bson_iter_t *iter,  /* INOUT */
  *--------------------------------------------------------------------------
  */
 
-static bool
-_bson_iter_find_with_len (bson_iter_t *iter, /* INOUT */
-                          const char *key,   /* IN */
-                          int keylen)        /* IN */
+bool
+bson_iter_find_w_len (bson_iter_t *iter, /* INOUT */
+                      const char *key,   /* IN */
+                      int keylen)        /* IN */
 {
    const char *ikey;
 
@@ -304,7 +338,7 @@ bson_iter_find (bson_iter_t *iter, /* INOUT */
    BSON_ASSERT (iter);
    BSON_ASSERT (key);
 
-   return _bson_iter_find_with_len (iter, key, -1);
+   return bson_iter_find_w_len (iter, key, -1);
 }
 
 
@@ -380,7 +414,7 @@ bson_iter_find_descendant (bson_iter_t *iter,       /* INOUT */
       sublen = strlen (dotkey);
    }
 
-   if (_bson_iter_find_with_len (iter, dotkey, (int) sublen)) {
+   if (bson_iter_find_w_len (iter, dotkey, (int) sublen)) {
       if (!dot) {
          *descendant = *iter;
          return true;
