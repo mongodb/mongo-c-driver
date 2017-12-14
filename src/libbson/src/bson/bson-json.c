@@ -2229,6 +2229,10 @@ bson_new_from_json (const uint8_t *data, /* IN */
    r = bson_json_reader_read (reader, bson, error);
    bson_json_reader_destroy (reader);
 
+   if (error) {
+      memset (error, 0, sizeof (bson_error_t));
+   }
+
    if (r == 0) {
       bson_set_error (error,
                       BSON_ERROR_JSON,
@@ -2267,6 +2271,10 @@ bson_init_from_json (bson_t *bson,        /* OUT */
    bson_json_data_reader_ingest (reader, (const uint8_t *) data, len);
    r = bson_json_reader_read (reader, bson, error);
    bson_json_reader_destroy (reader);
+
+   if (error) {
+      memset (error, 0, sizeof (bson_error_t));
+   }
 
    if (r == 0) {
       bson_set_error (error,
@@ -2361,6 +2369,10 @@ bson_json_reader_new_from_file (const char *path,    /* IN */
 #else
    fd = open (path, O_RDONLY);
 #endif
+
+   if (error) {
+      memset (error, 0, sizeof (bson_error_t));
+   }
 
    if (fd == -1) {
       errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
