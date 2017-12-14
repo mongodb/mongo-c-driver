@@ -26,6 +26,9 @@ test_bson_utf8_validate (void)
    static const unsigned char test1[] = {
       0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, ' ', 0xe2, 0x82, 0xac, 0};
    static const unsigned char test2[] = {0xc0, 0x80, 0};
+   static const unsigned char out_of_bound[] = {
+      0xfd, 0x9f, 0xb0, 0x80, 0x80, 0x80, 0};
+   static const unsigned char bad[] = {0xed, 0xa0, 0xa5, 0};
 
    BSON_ASSERT (bson_utf8_validate ("asdf", 4, false));
    BSON_ASSERT (bson_utf8_validate ("asdf", 4, true));
@@ -39,6 +42,20 @@ test_bson_utf8_validate (void)
 
    BSON_ASSERT (bson_utf8_validate ((const char *) test2, 2, true));
    BSON_ASSERT (!bson_utf8_validate ((const char *) test2, 2, false));
+
+   /*
+    * This character is allowed in 6-byte-sequence UTF-8 standard but seen as
+    * out of bound in 4-byte-sequence UTF-8 standard (RFC 3629).
+    */
+   BSON_ASSERT (!bson_utf8_validate ((const char *) out_of_bound, 1, true));
+   BSON_ASSERT (!bson_utf8_validate ((const char *) out_of_bound, 1, false));
+
+   /*
+    * Some UTF-8 code points are prohibited to match the constraints of
+    * the UTF-16 character encoding (RFC 3629).
+    */
+   BSON_ASSERT (!bson_utf8_validate ((const char *) bad, 1, true));
+   BSON_ASSERT (!bson_utf8_validate ((const char *) bad, 1, false));
 }
 
 
@@ -157,10 +174,6 @@ test_bson_utf8_from_unichar (void)
    BSON_ASSERT (len == 3);
    bson_utf8_from_unichar (0x00010000, str, &len);
    BSON_ASSERT (len == 4);
-   bson_utf8_from_unichar (0x00200000, str, &len);
-   BSON_ASSERT (len == 5);
-   bson_utf8_from_unichar (0x04000000, str, &len);
-   BSON_ASSERT (len == 6);
 
    /*
     * Last possible sequence of a certain length.
@@ -171,12 +184,8 @@ test_bson_utf8_from_unichar (void)
    BSON_ASSERT (len == 2);
    bson_utf8_from_unichar (0x0000FFFF, str, &len);
    BSON_ASSERT (len == 3);
-   bson_utf8_from_unichar (0x001FFFFF, str, &len);
+   bson_utf8_from_unichar (0x0010FFFF, str, &len);
    BSON_ASSERT (len == 4);
-   bson_utf8_from_unichar (0x03FFFFFF, str, &len);
-   BSON_ASSERT (len == 5);
-   bson_utf8_from_unichar (0x7FFFFFFF, str, &len);
-   BSON_ASSERT (len == 6);
 
    /*
     * Other interesting values.
@@ -187,7 +196,7 @@ test_bson_utf8_from_unichar (void)
    BSON_ASSERT (len == 3);
    bson_utf8_from_unichar (0x0000FFFD, str, &len);
    BSON_ASSERT (len == 3);
-   bson_utf8_from_unichar (0x0010FFFF, str, &len);
+   bson_utf8_from_unichar (0x0010EFFF, str, &len);
    BSON_ASSERT (len == 4);
    bson_utf8_from_unichar (0x00110000, str, &len);
    BSON_ASSERT (len == 4);

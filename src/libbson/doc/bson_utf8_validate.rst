@@ -21,7 +21,7 @@ Parameters
 Description
 -----------
 
-Validates that the content within ``utf8`` is valid UTF-8. If ``allow_null`` is ``true``, then embedded NULL bytes are allowed (``\0``).
+Validates that the content within ``utf8`` is valid UTF-8 (by the RFC 3629 standard). If ``allow_null`` is ``true``, then embedded NULL bytes are allowed (``\0``).
 
 Returns
 -------

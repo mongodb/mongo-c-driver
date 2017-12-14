@@ -71,12 +71,6 @@ _bson_utf8_get_sequence (const char *utf8,    /* IN */
    } else if ((c & 0xF8) == 0xF0) {
       n = 4;
       m = 0x07;
-   } else if ((c & 0xFC) == 0xF8) {
-      n = 5;
-      m = 0x03;
-   } else if ((c & 0xFE) == 0xFC) {
-      n = 6;
-      m = 0x01;
    } else {
       n = 0;
       m = 0;
@@ -92,7 +86,9 @@ _bson_utf8_get_sequence (const char *utf8,    /* IN */
  *
  * bson_utf8_validate --
  *
- *       Validates that @utf8 is a valid UTF-8 string.
+ *       Validates that @utf8 is a valid UTF-8 string. Note that we only
+ *       support UTF-8 characters which have sequence length less than or equal
+ *       to 4 bytes (RFC 3629).
  *
  *       If @allow_null is true, then \0 is allowed within @utf8_len bytes
  *       of @utf8.  Generally, this is bad practice since the main point of
@@ -457,21 +453,6 @@ bson_utf8_from_unichar (bson_unichar_t unichar,                      /* IN */
       utf8[1] = 0x80 | ((unichar >> 12) & 0x3F);
       utf8[2] = 0x80 | ((unichar >> 6) & 0x3F);
       utf8[3] = 0x80 | ((unichar) &0x3F);
-   } else if (unichar <= 0x3FFFFFF) {
-      *len = 5;
-      utf8[0] = 0xF8 | ((unichar >> 24) & 0x3);
-      utf8[1] = 0x80 | ((unichar >> 18) & 0x3F);
-      utf8[2] = 0x80 | ((unichar >> 12) & 0x3F);
-      utf8[3] = 0x80 | ((unichar >> 6) & 0x3F);
-      utf8[4] = 0x80 | ((unichar) &0x3F);
-   } else if (unichar <= 0x7FFFFFFF) {
-      *len = 6;
-      utf8[0] = 0xFC | ((unichar >> 31) & 0x1);
-      utf8[1] = 0x80 | ((unichar >> 25) & 0x3F);
-      utf8[2] = 0x80 | ((unichar >> 19) & 0x3F);
-      utf8[3] = 0x80 | ((unichar >> 13) & 0x3F);
-      utf8[4] = 0x80 | ((unichar >> 7) & 0x3F);
-      utf8[5] = 0x80 | ((unichar) &0x1);
    } else {
       *len = 0;
    }
