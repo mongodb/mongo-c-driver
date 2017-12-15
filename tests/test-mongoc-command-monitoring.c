@@ -731,6 +731,9 @@ one_test (mongoc_collection_t *collection, bson_t *test)
    }
 
    if (!strcmp (op_name, "bulkWrite")) {
+      if (!strcmp (description, "A successful unordered bulk write with an unacknowledged write concern")) {
+         goto done;
+      }
       test_bulk_write (collection, &arguments);
    } else if (!strcmp (op_name, "count")) {
       test_count (collection, &arguments);

@@ -70,6 +70,22 @@
 
 #define IS_NOT_COMMAND(_name) (!!strcasecmp (cmd->command_name, _name))
 
+/**
+ * mongoc_op_msg_flags_t:
+ * @MONGOC_MSG_CHECKSUM_PRESENT: The message ends with 4 bytes containing a
+ * CRC-32C checksum.
+ * @MONGOC_MSG_MORE_TO_COME: If set to 0, wait for a server response. If set to
+ * 1, do not expect a server response.
+ * @MONGOC_MSG_EXHAUST_ALLOWED: If set, allows multiple replies to this request
+ * using the moreToCome bit.
+ */
+typedef enum {
+   MONGOC_MSG_NONE = 0,
+   MONGOC_MSG_CHECKSUM_PRESENT = 1 << 0,
+   MONGOC_MSG_MORE_TO_COME = 1 << 1,
+   MONGOC_EXHAUST_ALLOWED = 1 << 16,
+} mongoc_op_msg_flags_t;
+
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                     uint32_t server_id,
@@ -2532,7 +2548,13 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    rpc.header.request_id = ++cluster->request_id;
    rpc.header.response_to = 0;
    rpc.header.opcode = MONGOC_OPCODE_MSG;
-   rpc.msg.flags = 0;
+
+   if (cmd->is_acknowledged) {
+      rpc.msg.flags = 0;
+   } else {
+      rpc.msg.flags = MONGOC_MSG_MORE_TO_COME;
+   }
+
    rpc.msg.n_sections = 1;
 
    section[0].payload_type = 0;
@@ -2582,71 +2604,12 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       return false;
    }
 
-   ok = _mongoc_buffer_append_from_stream (
-      &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
-   if (!ok) {
-      mongoc_cluster_disconnect_node (
-         cluster, server_stream->sd->id, true, error);
-      bson_free (output);
-      _mongoc_bson_init_if_set (reply);
-      _mongoc_buffer_destroy (&buffer);
-      return false;
-   }
+   /* If acknowledged, wait for a server response. Otherwise, exit early */
+   if (cmd->is_acknowledged) {
 
-   BSON_ASSERT (buffer.len == 4);
-   memcpy (&msg_len, buffer.data, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
-   if ((msg_len < 16) || (msg_len > server_stream->sd->max_msg_size)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_PROTOCOL,
-         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-         "Message size %d is not within expected range 16-%d bytes",
-         msg_len,
-         server_stream->sd->max_msg_size);
-      mongoc_cluster_disconnect_node (
-         cluster, server_stream->sd->id, true, error);
-      bson_free (output);
-      _mongoc_bson_init_if_set (reply);
-      _mongoc_buffer_destroy (&buffer);
-      return false;
-   }
-
-   ok = _mongoc_buffer_append_from_stream (&buffer,
-                                           server_stream->stream,
-                                           (size_t) msg_len - 4,
-                                           cluster->sockettimeoutms,
-                                           error);
-   if (!ok) {
-      mongoc_cluster_disconnect_node (
-         cluster, server_stream->sd->id, true, error);
-      bson_free (output);
-      _mongoc_bson_init_if_set (reply);
-      _mongoc_buffer_destroy (&buffer);
-      return false;
-   }
-
-   ok = _mongoc_rpc_scatter (&rpc, buffer.data, buffer.len);
-   if (!ok) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Malformed message from server");
-      bson_free (output);
-      _mongoc_bson_init_if_set (reply);
-      _mongoc_buffer_destroy (&buffer);
-      return false;
-   }
-   if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
-      size_t len = BSON_UINT32_FROM_LE (rpc.compressed.uncompressed_size) +
-                   sizeof (mongoc_rpc_header_t);
-
-      output = bson_realloc (output, len);
-      if (!_mongoc_rpc_decompress (&rpc, (uint8_t *) output, len)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Could not decompress message from server");
+      ok = _mongoc_buffer_append_from_stream (
+         &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
+      if (!ok) {
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
          bson_free (output);
@@ -2654,26 +2617,91 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          _mongoc_buffer_destroy (&buffer);
          return false;
       }
-   }
-   _mongoc_rpc_swab_from_le (&rpc);
 
-   memcpy (&msg_len, rpc.msg.sections[0].payload.bson_document, 4);
-   msg_len = BSON_UINT32_FROM_LE (msg_len);
-   bson_init_static (
-      &reply_local, rpc.msg.sections[0].payload.bson_document, msg_len);
+      BSON_ASSERT (buffer.len == 4);
+      memcpy (&msg_len, buffer.data, 4);
+      msg_len = BSON_UINT32_FROM_LE (msg_len);
+      if ((msg_len < 16) || (msg_len > server_stream->sd->max_msg_size)) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+            "Message size %d is not within expected range 16-%d bytes",
+            msg_len,
+            server_stream->sd->max_msg_size);
+         mongoc_cluster_disconnect_node (
+            cluster, server_stream->sd->id, true, error);
+         bson_free (output);
+         _mongoc_bson_init_if_set (reply);
+         _mongoc_buffer_destroy (&buffer);
+         return false;
+      }
 
-   _mongoc_topology_update_cluster_time (cluster->client->topology,
-                                         &reply_local);
-   ok = _mongoc_cmd_check_ok (
-      &reply_local, cluster->client->error_api_version, error);
+      ok = _mongoc_buffer_append_from_stream (&buffer,
+                                              server_stream->stream,
+                                              (size_t) msg_len - 4,
+                                              cluster->sockettimeoutms,
+                                              error);
+      if (!ok) {
+         mongoc_cluster_disconnect_node (
+            cluster, server_stream->sd->id, true, error);
+         bson_free (output);
+         _mongoc_bson_init_if_set (reply);
+         _mongoc_buffer_destroy (&buffer);
+         return false;
+      }
 
-   if (cmd->session) {
-      _mongoc_client_session_handle_reply (
-         cmd->session, cmd->is_acknowledged, &reply_local);
-   }
+      ok = _mongoc_rpc_scatter (&rpc, buffer.data, buffer.len);
+      if (!ok) {
+         bson_set_error (error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Malformed message from server");
+         bson_free (output);
+         _mongoc_bson_init_if_set (reply);
+         _mongoc_buffer_destroy (&buffer);
+         return false;
+      }
+      if (BSON_UINT32_FROM_LE (rpc.header.opcode) == MONGOC_OPCODE_COMPRESSED) {
+         size_t len = BSON_UINT32_FROM_LE (rpc.compressed.uncompressed_size) +
+                      sizeof (mongoc_rpc_header_t);
 
-   if (reply) {
-      bson_copy_to (&reply_local, reply);
+         output = bson_realloc (output, len);
+         if (!_mongoc_rpc_decompress (&rpc, (uint8_t *) output, len)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_PROTOCOL,
+                            MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                            "Could not decompress message from server");
+            mongoc_cluster_disconnect_node (
+               cluster, server_stream->sd->id, true, error);
+            bson_free (output);
+            _mongoc_bson_init_if_set (reply);
+            _mongoc_buffer_destroy (&buffer);
+            return false;
+         }
+      }
+      _mongoc_rpc_swab_from_le (&rpc);
+
+      memcpy (&msg_len, rpc.msg.sections[0].payload.bson_document, 4);
+      msg_len = BSON_UINT32_FROM_LE (msg_len);
+      bson_init_static (
+         &reply_local, rpc.msg.sections[0].payload.bson_document, msg_len);
+
+      _mongoc_topology_update_cluster_time (cluster->client->topology,
+                                            &reply_local);
+      ok = _mongoc_cmd_check_ok (
+         &reply_local, cluster->client->error_api_version, error);
+
+      if (cmd->session) {
+         _mongoc_client_session_handle_reply (
+            cmd->session, cmd->is_acknowledged, &reply_local);
+      }
+
+      if (reply) {
+         bson_copy_to (&reply_local, reply);
+      }
+   } else {
+      _mongoc_bson_init_if_set (reply);
    }
 
    _mongoc_buffer_destroy (&buffer);
