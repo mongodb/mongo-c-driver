@@ -23,6 +23,8 @@ Saves modifications to ``file`` to the MongoDB server.
 
 If an error occurred, false is returned and the error can be retrieved with :symbol:`mongoc_gridfs_file_error()`.
 
+Modifying GridFS files is NOT thread-safe. Only one thread or process can access a GridFS file while it is being modified.
+
 Returns
 -------
 

@@ -29,6 +29,8 @@ Performs a gathered write to the underlying gridfs file.
 
 The ``timeout_msec`` parameter is unused.
 
+Modifying GridFS files is NOT thread-safe. Only one thread or process can access a GridFS file while it is being modified.
+
 Returns
 -------
 
