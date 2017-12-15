@@ -707,8 +707,9 @@ one_test (mongoc_collection_t *collection, bson_t *test)
    context_init (&context);
    callbacks = mongoc_apm_callbacks_new ();
 
+   description = bson_lookup_utf8 (test, "description");
+
    if (test_suite_debug_output ()) {
-      description = bson_lookup_utf8 (test, "description");
       printf ("  - %s\n", description);
       fflush (stdout);
    }
@@ -731,6 +732,11 @@ one_test (mongoc_collection_t *collection, bson_t *test)
    }
 
    if (!strcmp (op_name, "bulkWrite")) {
+      if (!strcmp (description,
+                   "A successful unordered bulk write with an unacknowledged "
+                   "write concern")) {
+         goto done;
+      }
       test_bulk_write (collection, &arguments);
    } else if (!strcmp (op_name, "count")) {
       test_count (collection, &arguments);
