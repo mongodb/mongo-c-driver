@@ -287,7 +287,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
+          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
@@ -961,6 +961,69 @@ tasks:
         - func: "run tests"
           vars:
             DNS: on
+            SSL: "darwinssl"
+
+    - name: test-dns-auth-openssl
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "ssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
+            SSL: "ssl"
+
+    - name: test-dns-auth-winssl
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "winssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
+            SSL: "winssl"
+
+    - name: test-dns-auth-darwinssl
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "darwinssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
             SSL: "darwinssl"
 
     - name: debug-compile-nosasl-nossl
@@ -7562,6 +7625,7 @@ buildvariants:
     # Ubuntu16.04 only supports MongoDB 3.4+
     - ".3.6 .openssl !.nosasl .server"
     - "test-dns-openssl"
+    - "test-dns-auth-openssl"
 
 - name: darwin
   display_name: "*Darwin, macOS (Apple LLVM)"
@@ -7587,6 +7651,7 @@ buildvariants:
     - ".3.2 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
     - "test-dns-darwinssl"
+    - "test-dns-auth-darwinssl"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
@@ -7615,6 +7680,7 @@ buildvariants:
     - ".3.0 .nossl !.nosasl"
     - ".2.6 .nossl !.nosasl"
     - "test-dns-winssl"
+    - "test-dns-auth-winssl"
 
 - name: windows-2015-32
   display_name: "Windows (i386) (VS 2015)"

@@ -197,6 +197,7 @@ EXTRA_DIST += \
 	$(wildcard tests/json/auth/*.json) \
 	$(wildcard tests/json/connection_uri/*.json) \
 	$(wildcard tests/json/command_monitoring/*.json) \
+	$(wildcard tests/json/initial_dns_auth/*.json) \
 	$(wildcard tests/json/initial_dns_seedlist_discovery/*.json) \
 	$(wildcard tests/json/retryable_writes/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \

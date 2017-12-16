@@ -323,6 +323,13 @@ test_all_spec_tests (TestSuite *suite)
                                        test_dns,
                                        test_dns_check,
                                        test_framework_skip_if_no_crypto);
+
+   ASSERT (realpath (JSON_DIR "/initial_dns_auth", resolved));
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       test_dns,
+                                       test_dns_check,
+                                       test_framework_skip_if_no_crypto);
 }
 
 

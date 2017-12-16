@@ -44,7 +44,10 @@ if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"
 fi
 
-if [ "$DNS" != "nodns" ]; then
+if [ "$DNS" = "dns-auth" ]; then
+   export MONGOC_TEST_DNS=on
+   TEST_ARGS="$TEST_ARGS -l /initial_dns_auth/*"
+elif [ "$DNS" != "nodns" ]; then
    export MONGOC_TEST_DNS=on
    TEST_ARGS="$TEST_ARGS -l /initial_dns_seedlist_discovery*"
 fi

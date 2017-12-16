@@ -32,6 +32,7 @@ mkdir -p $MONGO_ORCHESTRATION_HOME/db
 if [ -z $ORCHESTRATION_FILE ]; then
    ORCHESTRATION_FILE="basic"
 fi
+
 if [ "$AUTH" = "auth" ]; then
   ORCHESTRATION_FILE="auth"
   MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
@@ -39,6 +40,11 @@ fi
 
 if [ "$IPV4_ONLY" = "on" ]; then
   ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ipv4-only"
+fi
+
+if [ ! -z "$AUTHSOURCE" ]; then
+   ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-${AUTHSOURCE}"
+   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --authenticationDatabase ${AUTHSOURCE}"
 fi
 
 if [ "$SSL" != "nossl" ]; then
@@ -66,7 +72,8 @@ case "$OS" in
       python.exe -m virtualenv venv
       cd venv
       . Scripts/activate
-      git clone https://github.com/10gen/mongo-orchestration.git
+      rm -rf mongo-orchestration
+      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
       cd mongo-orchestration
       pip install .
       cd ../..
@@ -82,7 +89,8 @@ case "$OS" in
       python -m virtualenv venv
       cd venv
       . bin/activate
-      git clone https://github.com/10gen/mongo-orchestration.git
+      rm -rf mongo-orchestration
+      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
       cd mongo-orchestration
       # Our zSeries machines are static-provisioned, cache corruptions persist.
       if [ $(uname -m) = "s390x" ]; then
