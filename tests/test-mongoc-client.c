@@ -1531,6 +1531,7 @@ static void
 test_command_empty (void)
 {
    mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
    bson_error_t error;
    bool r;
 
@@ -1544,6 +1545,29 @@ test_command_empty (void)
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Empty command document");
 
+   r = mongoc_client_command_with_opts (
+      client, "admin", tmp_bson ("{}"), NULL, tmp_bson ("{}"), NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Empty command document");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_client_set_write_concern (client, wc);
+
+   r = mongoc_client_write_command_with_opts (
+      client, "admin", tmp_bson ("{}"), NULL, NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Empty command document");
+
+   mongoc_write_concern_destroy (wc);
    mongoc_client_destroy (client);
 }
 

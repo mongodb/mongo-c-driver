@@ -1713,6 +1713,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
+   const char *command_name;
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_cluster_t *cluster;
    bson_t reply_local;
@@ -1729,6 +1730,16 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    mongoc_cmd_parts_init (&parts, client, db_name, flags, command);
    parts.is_read_command = (mode & MONGOC_CMD_READ);
    parts.is_write_command = (mode & MONGOC_CMD_WRITE);
+
+   command_name = _mongoc_get_command_name (command);
+
+   if (!command_name) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Empty command document");
+      GOTO (err);
+   }
 
    reply_ptr = reply ? reply : &reply_local;
 
@@ -1783,8 +1794,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if ((mode & MONGOC_CMD_WRITE) &&
           !mongoc_write_concern_is_default (default_wc) &&
           (!opts || !bson_has_field (opts, "writeConcern"))) {
-         bool is_fam =
-            !strcasecmp (_mongoc_get_command_name (command), "findandmodify");
+         bool is_fam = !strcasecmp (command_name, "findandmodify");
 
          if ((is_fam && wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
              (!is_fam && wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN)) {

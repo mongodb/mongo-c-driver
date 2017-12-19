@@ -108,6 +108,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               int max_wire_version,
                               bson_error_t *error)
 {
+   const char *command_name;
    bool is_fam;
    mongoc_client_session_t *cs = NULL;
    mongoc_write_concern_t *wc;
@@ -120,8 +121,17 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
    /* not yet assembled */
    BSON_ASSERT (!parts->assembled.command);
 
-   is_fam =
-      !strcasecmp (_mongoc_get_command_name (parts->body), "findandmodify");
+   command_name = _mongoc_get_command_name (parts->body);
+
+   if (!command_name) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Empty command document");
+      RETURN (false);
+   }
+
+   is_fam = !strcasecmp (command_name, "findandmodify");
 
    while (bson_iter_next (iter)) {
       if (BSON_ITER_IS_KEY (iter, "collation")) {
