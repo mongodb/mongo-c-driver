@@ -1563,9 +1563,8 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (!ret && is_retryable &&
-       (error->domain == MONGOC_ERROR_STREAM ||
-        mongoc_cluster_is_not_master_error (error))) {
+   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                mongoc_cluster_is_not_master_error (error))) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -1578,8 +1577,9 @@ retry:
       retry_server_stream =
          mongoc_cluster_stream_for_writes (&client->cluster, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          GOTO (retry);
       }
