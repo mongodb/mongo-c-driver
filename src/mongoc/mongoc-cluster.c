@@ -433,6 +433,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 {
    bool retval;
    uint32_t request_id = ++cluster->request_id;
+   uint32_t server_id;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_apm_command_started_t started_event;
    mongoc_apm_command_succeeded_t succeeded_event;
@@ -444,6 +445,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    int32_t compressor_id;
 
    server_stream = cmd->server_stream;
+   server_id = server_stream->sd->id;
    compressor_id = mongoc_server_description_compressor_id (server_stream->sd);
 
    callbacks = &cluster->client->apm_callbacks;
@@ -476,7 +478,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                          request_id,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
-                                         server_stream->sd->id,
+                                         server_id,
                                          cluster->client->apm_context);
 
       callbacks->succeeded (&succeeded_event);
@@ -490,18 +492,21 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       request_id,
                                       cmd->operation_id,
                                       &server_stream->sd->host,
-                                      server_stream->sd->id,
+                                      server_id,
                                       cluster->client->apm_context);
 
       callbacks->failed (&failed_event);
       mongoc_apm_command_failed_cleanup (&failed_event);
    }
    if (!retval) {
-      handle_not_master_error (cluster, server_stream->sd->id, error);
+      handle_not_master_error (cluster, server_id, error);
    }
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
+
+   _mongoc_topology_update_last_used (cluster->client->topology, server_id);
+
    return retval;
 }
 
@@ -555,6 +560,9 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    if (!retval) {
       handle_not_master_error (cluster, server_stream->sd->id, error);
    }
+
+   _mongoc_topology_update_last_used (cluster->client->topology,
+                                      server_stream->sd->id);
 
    return retval;
 }
@@ -2248,7 +2256,9 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
  *
  * mongoc_cluster_legacy_rpc_sendv_to_server --
  *
- *       Sends the given RPCs to the given server.
+ *       Sends the given RPCs to the given server. Used for OP_QUERY cursors,
+ *       OP_KILLCURSORS, and legacy writes with OP_INSERT, OP_UPDATE, and
+ *       OP_DELETE. This function is *not* in the OP_QUERY command path.
  *
  * Returns:
  *       True if successful.
@@ -2270,7 +2280,6 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
    bson_error_t *error)
 {
    uint32_t server_id;
-   mongoc_topology_scanner_node_t *scanner_node;
    int32_t max_msg_size;
    bool ret = false;
    int32_t compressor_id = 0;
@@ -2326,14 +2335,7 @@ mongoc_cluster_legacy_rpc_sendv_to_server (
       GOTO (done);
    }
 
-   if (cluster->client->topology->single_threaded) {
-      scanner_node = mongoc_topology_scanner_get_node (
-         cluster->client->topology->scanner, server_id);
-
-      if (scanner_node) {
-         scanner_node->last_used = bson_get_monotonic_time ();
-      }
-   }
+   _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
    ret = true;
 

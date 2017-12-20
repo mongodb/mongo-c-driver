@@ -111,6 +111,10 @@ bool
 _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
                                         const mongoc_server_description_t *sd);
 
+void
+_mongoc_topology_update_last_used (mongoc_topology_t *topology,
+                                   uint32_t server_id);
+
 int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id);
 
