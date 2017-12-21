@@ -115,6 +115,11 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    b = mongoc_uri_get_options (pool->uri);
 
    if (bson_iter_init_find_case (&iter, b, MONGOC_URI_MINPOOLSIZE)) {
+      MONGOC_WARNING (
+         MONGOC_URI_MINPOOLSIZE
+         " is deprecated; its behavior does not match its name, and its actual"
+         " behavior will likely hurt performance.");
+
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          pool->min_pool_size = BSON_MAX (0, bson_iter_int32 (&iter));
       }
@@ -156,6 +161,12 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    ENTRY;
 
    BSON_ASSERT (pool);
+
+   if (pool->topology->session_pool) {
+      client = mongoc_client_pool_pop (pool);
+      _mongoc_client_end_sessions (client);
+      mongoc_client_pool_push (pool, client);
+   }
 
    while (
       (client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
@@ -209,7 +220,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = _mongoc_client_new_from_uri (pool->uri, pool->topology);
+         client = _mongoc_client_new_from_uri (pool->topology);
 
          /* for tests */
          mongoc_client_set_stream_initiator (
@@ -252,7 +263,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = _mongoc_client_new_from_uri (pool->uri, pool->topology);
+         client = _mongoc_client_new_from_uri (pool->topology);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
@@ -362,6 +373,10 @@ void
 mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
 {
    ENTRY;
+
+   MONGOC_WARNING (
+      "mongoc_client_pool_min_size is deprecated; its behavior does not match"
+      " its name, and its actual behavior will likely hurt performance.");
 
    mongoc_mutex_lock (&pool->mutex);
    pool->min_pool_size = min_pool_size;

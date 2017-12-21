@@ -16,7 +16,7 @@ bulk2 (mongoc_collection_t *collection)
    bool ret;
    int i;
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    /* Remove everything */
    query = bson_new ();

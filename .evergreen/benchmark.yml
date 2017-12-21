@@ -18,8 +18,6 @@ c_driver_variables:
   mongo_download_url_prefixes:
     mongo_v32: &mongo_v32
       mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.2.10.tgz"
-    mongo_v24: &mongo_v24
-      mongo_url: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-2.4.14.tgz"
 
   ## Common sets of CFLAGS
   cflags:
@@ -247,16 +245,6 @@ buildvariants:
   run_on:
      - rhel62-small
   tasks: *benchmark_compile
-
-- name: c-driver-benchmark-mongo24
-  display_name: "C Driver Benchmark Mongo 2.4"
-  expansions:
-    <<: *cflags_64
-    <<: *mongo_v24
-    <<: *benchmark_common
-  run_on:
-     - centos6-perf
-  tasks: *benchmark_tests
 
 - name: c-driver-benchmark-mongo32
   display_name: "C Driver Benchmark Mongo 3.2"

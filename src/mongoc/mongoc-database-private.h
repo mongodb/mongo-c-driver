@@ -28,7 +28,6 @@
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
 
-
 BSON_BEGIN_DECLS
 
 
@@ -47,11 +46,6 @@ _mongoc_database_new (mongoc_client_t *client,
                       const mongoc_read_prefs_t *read_prefs,
                       const mongoc_read_concern_t *read_concern,
                       const mongoc_write_concern_t *write_concern);
-mongoc_cursor_t *
-_mongoc_database_find_collections_legacy (mongoc_database_t *database,
-                                          const bson_t *filter,
-                                          bson_error_t *error);
-
 
 BSON_END_DECLS
 

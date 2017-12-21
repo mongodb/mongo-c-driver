@@ -51,10 +51,13 @@ Example
     mongoc_client_command
     mongoc_client_command_simple
     mongoc_client_command_simple_with_server_id
+    mongoc_client_command_with_opts
     mongoc_client_destroy
+    mongoc_client_find_databases_with_opts
     mongoc_client_get_collection
     mongoc_client_get_database
     mongoc_client_get_database_names
+    mongoc_client_get_database_names_with_opts
     mongoc_client_get_default_database
     mongoc_client_get_gridfs
     mongoc_client_get_max_bson_size
@@ -79,5 +82,6 @@ Example
     mongoc_client_set_ssl_opts
     mongoc_client_set_stream_initiator
     mongoc_client_set_write_concern
+    mongoc_client_start_session
     mongoc_client_write_command_with_opts
 

@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <mongoc-util-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-topology-private.h"
@@ -376,22 +377,6 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   /* deprecated gssapiServiceName option */
-   uri = mongoc_uri_new ("mongodb://christian%40realm.cc@localhost:27017/"
-                         "?" MONGOC_URI_AUTHMECHANISM
-                         "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=blah");
-   ASSERT (uri);
-   options = mongoc_uri_get_options (uri);
-   ASSERT (options);
-   BSON_ASSERT (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
-   BSON_ASSERT (0 ==
-                strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
-   BSON_ASSERT (
-      bson_iter_init_find_case (&iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
-      BSON_ITER_HOLDS_UTF8 (&iter) &&
-      (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
-   mongoc_uri_destroy (uri);
-
    /* MONGODB-CR */
 
    /* should recognize this mechanism */
@@ -463,6 +448,7 @@ test_mongoc_uri_authmechanismproperties (void)
 {
    mongoc_uri_t *uri;
    bson_t props;
+   const bson_t *options;
 
    uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
                          "=SCRAM-SHA1"
@@ -490,6 +476,20 @@ test_mongoc_uri_authmechanismproperties (void)
    ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
    ASSERT_MATCH (&props, "{'a': 'four', 'b': {'$exists': false}}");
 
+   mongoc_uri_destroy (uri);
+
+   /* deprecated gssapiServiceName option */
+   uri = mongoc_uri_new ("mongodb://christian%40realm.cc@localhost:27017/"
+                         "?" MONGOC_URI_AUTHMECHANISM
+                         "=GSSAPI&" MONGOC_URI_GSSAPISERVICENAME "=blah");
+   ASSERT (uri);
+   options = mongoc_uri_get_options (uri);
+   ASSERT (options);
+   BSON_ASSERT (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
+   BSON_ASSERT (0 ==
+                strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
+   ASSERT (mongoc_uri_get_mechanism_properties (uri, &props));
+   ASSERT_MATCH (&props, "{'SERVICE_NAME': 'blah'}");
    mongoc_uri_destroy (uri);
 }
 
@@ -689,18 +689,28 @@ test_mongoc_uri_new_with_error (void)
    mongoc_uri_destroy (uri);
 
    ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongo://localhost", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid URI Schema, expecting 'mongodb://'");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/?readPreference=unknown", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Unsupported readPreference value [readPreference=unknown]");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/"
       "?appname="
@@ -708,7 +718,10 @@ test_mongoc_uri_new_with_error (void)
       "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
       "sultInAnError",
       &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Unsupported value for \"appname\""); /* ... */
 
    uri = mongoc_uri_new ("mongodb://localhost");
    ASSERT (!mongoc_uri_set_option_as_utf8 (
@@ -719,22 +732,58 @@ test_mongoc_uri_new_with_error (void)
       "sultInAnError"));
    mongoc_uri_destroy (uri);
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (
       !mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Incorrect URI escapes in username. Percent-encode "
+                          "username and password according to RFC 3986");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb:///tmp/mongodb.sock", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI")
 
-   error.domain = 0;
+   memset (&error, 0, sizeof (bson_error_t));
    ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
-   ASSERT (error.domain == MONGOC_ERROR_COMMAND);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid database name in URI");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=0", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=0]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=-1", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=-1]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?w=-5", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Unsupported w value [w=-5]");
 }
 
 
@@ -1696,6 +1745,174 @@ test_mongoc_uri_local_threshold_ms (void)
 }
 
 
+#define INVALID(_uri, _host)                                           \
+   BSON_ASSERT (!mongoc_uri_append_host ((_uri), (_host), 1, &error)); \
+   ASSERT_ERROR_CONTAINS (error,                                       \
+                          MONGOC_ERROR_STREAM,                         \
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,         \
+                          "must be subdomain")
+
+#define VALID(_uri, _host) \
+   ASSERT_OR_PRINT (mongoc_uri_append_host ((_uri), (_host), 1, &error), error)
+
+
+static void
+test_mongoc_uri_srv (void)
+{
+   mongoc_uri_t *uri;
+   bson_error_t error;
+
+   capture_logs (true);
+
+   ASSERT (!mongoc_uri_new ("mongodb+srv://"));
+   /* requires a subdomain, domain, and TLD: "a.example.com" */
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo."));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://.foo"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://.."));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://.a."));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://a.b.c.com."));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://.a.b.c.com"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo\x08\x00bar"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://foo%00bar"));
+   ASSERT (!mongoc_uri_new ("mongodb+srv://example.com"));
+
+   uri = mongoc_uri_new ("mongodb+srv://c.d.com");
+   BSON_ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "c.d.com");
+   BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
+
+   /* ssl is set to true when we use SRV */
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': true}");
+
+   /* but we can override ssl */
+   mongoc_uri_destroy (uri);
+   uri = mongoc_uri_new ("mongodb+srv://c.d.com/?ssl=false");
+   BSON_ASSERT (uri);
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': false}");
+
+   INVALID (uri, "com");
+   INVALID (uri, "foo.com");
+   INVALID (uri, "d.com");
+   INVALID (uri, "cd.com");
+   VALID (uri, "c.d.com");
+   VALID (uri, "bc.d.com");
+   VALID (uri, "longer-string.d.com");
+   INVALID (uri, ".c.d.com");
+   VALID (uri, "b.c.d.com");
+   INVALID (uri, ".b.c.d.com");
+   INVALID (uri, "..b.c.d.com");
+   VALID (uri, "a.b.c.d.com");
+
+   mongoc_uri_destroy (uri);
+   uri = mongoc_uri_new ("mongodb+srv://b.c.d.com");
+
+   INVALID (uri, "foo.com");
+   INVALID (uri, "a.b.d.com");
+   INVALID (uri, "d.com");
+   VALID (uri, "b.c.d.com");
+   VALID (uri, "a.b.c.d.com");
+   VALID (uri, "foo.a.b.c.d.com");
+
+   mongoc_uri_destroy (uri);
+}
+
+
+#define PROHIBITED(_key, _value, _type, _where)                            \
+   do {                                                                    \
+      const char *option = _key "=" #_value;                               \
+      char *lkey = bson_strdup (_key);                                     \
+      mongoc_lowercase (lkey, lkey);                                       \
+      mongoc_uri_parse_options (uri, option, true /* from dns */, &error); \
+      ASSERT_ERROR_CONTAINS (error,                                        \
+                             MONGOC_ERROR_COMMAND,                         \
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,             \
+                             "prohibited in TXT record");                  \
+      BSON_ASSERT (!bson_has_field (mongoc_uri_get_##_where (uri), lkey)); \
+      bson_free (lkey);                                                    \
+   } while (0)
+
+
+static void
+test_mongoc_uri_dns_options (void)
+{
+   mongoc_uri_t *uri;
+   bson_error_t error;
+
+   uri = mongoc_uri_new ("mongodb+srv://a.b.c");
+   BSON_ASSERT (uri);
+
+   BSON_ASSERT (!mongoc_uri_parse_options (
+      uri, "ssl=false", true /* from dsn */, &error));
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "prohibited in TXT record");
+
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': true}");
+
+   /* key we want to set, value, value type, whether it's option/credential */
+   PROHIBITED ("sslAllowInvalidHostnames", true, bool, options);
+   PROHIBITED ("sslallowinvalidcertificates", true, bool, options);
+   PROHIBITED ("gssapiServiceName", malicious, utf8, credentials);
+
+   /* the two options allowed in TXT records, case-insensitive */
+   BSON_ASSERT (mongoc_uri_parse_options (uri, "authsource=db", true, NULL));
+   BSON_ASSERT (mongoc_uri_parse_options (uri, "RepLIcaSET=rs", true, NULL));
+
+   /* test that URI string overrides TXT record options */
+   mongoc_uri_destroy (uri);
+   uri = mongoc_uri_new ("mongodb+srv://a.b.c/?authSource=db1&replicaSet=rs1");
+
+   capture_logs (true);
+   /* parse_options returns true, but logs warnings */
+   BSON_ASSERT (mongoc_uri_parse_options (
+      uri, "authSource=db2&replicaSet=db2", true, NULL));
+   ASSERT_CAPTURED_LOG ("parsing TXT record",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Cannot override URI option \"authSource\"");
+   ASSERT_CAPTURED_LOG ("parsing TXT record",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Cannot override URI option \"replicaSet\"");
+   capture_logs (false);
+   ASSERT_MATCH (mongoc_uri_get_credentials (uri), "{'authsource': 'db1'}");
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'replicaset': 'rs1'}");
+
+   mongoc_uri_destroy (uri);
+}
+
+
+/* test some invalid accesses and a crash, found with a fuzzer */
+static void
+test_mongoc_uri_utf8 (void)
+{
+   bson_error_t err;
+
+   /* start of 3-byte character, but it's incomplete */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://\xe8\x03", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+
+   /* start of 6-byte CESU-8 character, but it's incomplete */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://\xfa", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+
+
+   /* "a<NIL>z" with NIL expressed as two-byte sequence */
+   BSON_ASSERT (!mongoc_uri_new_with_error ("mongodb://a\xc0\x80z", &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid UTF-8 in URI");
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -1720,4 +1937,7 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);
    TestSuite_Add (
       suite, "/Uri/local_threshold_ms", test_mongoc_uri_local_threshold_ms);
+   TestSuite_Add (suite, "/Uri/srv", test_mongoc_uri_srv);
+   TestSuite_Add (suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
+   TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
 }

@@ -2,12 +2,19 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
+# Check that a CLion user didn't accidentally convert NEWS from UTF-8 to ASCII
+news_type=`file NEWS`
+echo "NEWS file type is $news_type"
+case "$news_type" in
+  *ASCII*) exit 1 ;;
+esac
+
 # Use modern sphinx-build from venv.
 . venv/bin/activate
 which sphinx-build
 sphinx-build --version
 
-./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=bundled --with-zlib=bundled --with-libbson=bundled
+./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=auto --with-zlib=bundled --with-libbson=bundled
 make distcheck
 
 # Check that docs were included, but sphinx temp files weren't.

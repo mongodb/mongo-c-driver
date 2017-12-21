@@ -28,6 +28,6 @@
 bool
 _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
-                                const char *hostname,
+                                mongoc_server_description_t *sd,
                                 bson_error_t *error);
 #endif /* MONGOC_CLUSTER_SSPI_PRIVATE_H */

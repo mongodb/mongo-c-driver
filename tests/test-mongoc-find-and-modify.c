@@ -28,6 +28,7 @@ auto_ismaster (mock_server_t *server,
                                         max_message_size,
                                         max_batch_size);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, response);
 
    bson_free (response);
@@ -206,7 +207,8 @@ test_find_and_modify_write_concern (int wire_version)
          "{ 'findAndModify' : 'test_find_and_modify', "
          "'query' : { 'superduper' : 77889 },"
          "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true }");
+         "'new' : true,"
+         "'writeConcern' : { '$exists': false } }");
    }
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
@@ -277,6 +279,7 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
    bson_destroy (&query);
    mongoc_find_and_modify_opts_destroy (opts);
    mongoc_collection_drop (collection, NULL);
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -315,9 +318,9 @@ test_find_and_modify (void)
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
-   ASSERT_OR_PRINT (mongoc_collection_insert (
-                       collection, MONGOC_INSERT_NONE, &doc, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error),
+      error);
 
    update = BCON_NEW ("$set", "{", "superduper", BCON_INT32 (1234), "}");
 
@@ -382,7 +385,7 @@ test_find_and_modify_opts (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -413,6 +416,71 @@ test_find_and_modify_opts (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+
+static void
+test_find_and_modify_opts_write_concern (void)
+{
+   mongoc_write_concern_t *w2;
+   mongoc_write_concern_t *w3;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_find_and_modify_opts_t *opts;
+   bson_t extra = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+
+   w2 = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (w2, 2);
+   w3 = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (w3, 3);
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_write_concern_append (w2, &extra);
+   BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, &extra));
+   bson_destroy (&extra);
+
+   future = future_collection_find_and_modify_with_opts (
+      collection, tmp_bson ("{}"), opts, NULL, &error);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* opts overrides collection */
+   mongoc_collection_set_write_concern (collection, w3);
+   future = future_collection_find_and_modify_with_opts (
+      collection, tmp_bson ("{}"), opts, NULL, &error);
+
+   /* still w: 2 */
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_NONE,
+      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+   mongoc_write_concern_destroy (w2);
+   mongoc_write_concern_destroy (w3);
 }
 
 
@@ -518,6 +586,9 @@ test_find_and_modify_install (TestSuite *suite)
                       should_run_fam_wc);
    TestSuite_AddMockServerTest (
       suite, "/find_and_modify/opts", test_find_and_modify_opts);
+   TestSuite_AddMockServerTest (suite,
+                                "/find_and_modify/opts/write_concern",
+                                test_find_and_modify_opts_write_concern);
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/collation/ok",
                                 test_find_and_modify_collation_ok);

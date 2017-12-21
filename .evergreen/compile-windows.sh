@@ -70,12 +70,27 @@ case "$SSL" in
       ;;
    esac
 esac
-if [ ! -z "$ZLIB" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=${ZLIB}"
-fi
-if [ ! -z "$SNAPPY" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
-fi
+
+case "$SNAPPY" in
+   system)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=SYSTEM"
+      ;;
+   no)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=OFF"
+      ;;
+esac
+
+case "$ZLIB" in
+   system)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=SYSTEM"
+      ;;
+   bundled)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=BUNDLED"
+      ;;
+   no)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
+      ;;
+esac
 
 export CONFIGURE_FLAGS
 export INSTALL_DIR

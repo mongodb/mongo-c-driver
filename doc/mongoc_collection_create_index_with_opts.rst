@@ -36,8 +36,7 @@ Description
 
 This function will request the creation of a new index.
 
-This function will use the ``createIndexes`` command if available on the MongoDB server. If not, it will fallback to inserting into ``system.indexes`` for compatibility with MongoDB <= 2.4.
-
+This function will use the ``createIndexes`` command.
 The server's reply is stored in ``reply``.
 
 If no write concern is provided in ``command_opts``, the collection's write concern is used.

@@ -101,6 +101,9 @@ request_matches_getmore (const request_t *request,
 bool
 request_matches_kill_cursors (const request_t *request, int64_t cursor_id);
 
+bool
+request_matches_msgv (const request_t *request, uint32_t flags, va_list *args);
+
 uint16_t
 request_get_server_port (request_t *request);
 

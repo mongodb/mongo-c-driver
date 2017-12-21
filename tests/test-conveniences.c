@@ -162,46 +162,6 @@ bson_lookup_utf8 (const bson_t *b, const char *key)
 
 /*--------------------------------------------------------------------------
  *
- * bson_lookup_bool --
- *
- *       Return a boolean by key, or return the default value.
- *       Asserts and aborts if the key is present but not boolean.
- *
- *--------------------------------------------------------------------------
- */
-bool
-bson_lookup_bool (const bson_t *b, const char *key, bool default_value)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-
-   if (bson_iter_find_descendant (&iter, key, &descendent)) {
-      BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&descendent));
-      return bson_iter_bool (&descendent);
-   }
-
-   return default_value;
-}
-
-bool
-bson_lookup_bool_null_ok (const bson_t *b, const char *key, bool default_value)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-
-   if (bson_iter_find_descendant (&iter, key, &descendent)) {
-      return bson_iter_as_bool (&descendent);
-   }
-
-   return default_value;
-}
-
-/*--------------------------------------------------------------------------
- *
  * bson_lookup_doc --
  *
  *       Find a subdocument by key and return it by static-initializing
@@ -356,10 +316,6 @@ find (bson_value_t *value,
       bool is_command,
       bool is_first);
 
-static bool
-match_bson_value (const bson_value_t *doc,
-                  const bson_value_t *pattern,
-                  match_ctx_t *ctx);
 
 /*--------------------------------------------------------------------------
  *
@@ -582,7 +538,7 @@ match_bson_with_ctx (const bson_t *doc,
    bool is_empty_operator;
    bool exists;
    bool empty;
-   bool found;
+   bool found = false;
    bson_value_t doc_value;
    match_ctx_t derived;
 
@@ -615,18 +571,18 @@ match_bson_with_ctx (const bson_t *doc,
       if (is_exists_operator) {
          if (exists != found) {
             match_err (&derived, "%s found", found ? "" : "not");
-            return false;
+            goto fail;
          }
       } else if (!found) {
          match_err (&derived, "not found");
-         return false;
+         goto fail;
       } else if (is_empty_operator) {
          if (empty != is_empty_doc_or_array (&doc_value)) {
             match_err (&derived, "%s found", empty ? "" : " not");
-            return false;
+            goto fail;
          }
       } else if (!match_bson_value (&doc_value, value, &derived)) {
-         return false;
+         goto fail;
       }
 
       is_first = false;
@@ -636,6 +592,13 @@ match_bson_with_ctx (const bson_t *doc,
    }
 
    return true;
+
+fail:
+   if (found) {
+      bson_value_destroy (&doc_value);
+   }
+
+   return false;
 }
 
 
@@ -825,60 +788,6 @@ match_bson_arrays (const bson_t *array, const bson_t *pattern, match_ctx_t *ctx)
 }
 
 
-static const char *
-bson_type_to_str (bson_type_t t)
-{
-   switch (t) {
-   case BSON_TYPE_EOD:
-      return "EOD";
-   case BSON_TYPE_DOUBLE:
-      return "DOUBLE";
-   case BSON_TYPE_UTF8:
-      return "UTF8";
-   case BSON_TYPE_DOCUMENT:
-      return "DOCUMENT";
-   case BSON_TYPE_ARRAY:
-      return "ARRAY";
-   case BSON_TYPE_BINARY:
-      return "BINARY";
-   case BSON_TYPE_UNDEFINED:
-      return "UNDEFINED";
-   case BSON_TYPE_OID:
-      return "OID";
-   case BSON_TYPE_BOOL:
-      return "BOOL";
-   case BSON_TYPE_DATE_TIME:
-      return "DATE_TIME";
-   case BSON_TYPE_NULL:
-      return "NULL";
-   case BSON_TYPE_REGEX:
-      return "REGEX";
-   case BSON_TYPE_DBPOINTER:
-      return "DBPOINTER";
-   case BSON_TYPE_CODE:
-      return "CODE";
-   case BSON_TYPE_SYMBOL:
-      return "SYMBOL";
-   case BSON_TYPE_CODEWSCOPE:
-      return "CODEWSCOPE";
-   case BSON_TYPE_INT32:
-      return "INT32";
-   case BSON_TYPE_TIMESTAMP:
-      return "TIMESTAMP";
-   case BSON_TYPE_INT64:
-      return "INT64";
-   case BSON_TYPE_MAXKEY:
-      return "MAXKEY";
-   case BSON_TYPE_MINKEY:
-      return "MINKEY";
-   case BSON_TYPE_DECIMAL128:
-      return "DECIMAL128";
-   default:
-      return "Unknown";
-   }
-}
-
-
 static bool
 is_number_type (bson_type_t t)
 {
@@ -907,7 +816,7 @@ bson_value_as_int64 (const bson_value_t *value)
 }
 
 
-static bool
+bool
 match_bson_value (const bson_value_t *doc,
                   const bson_value_t *pattern,
                   match_ctx_t *ctx)
@@ -937,8 +846,8 @@ match_bson_value (const bson_value_t *doc,
    if (doc->value_type != pattern->value_type) {
       match_err (ctx,
                  "expected type %s, got %s",
-                 bson_type_to_str (pattern->value_type),
-                 bson_type_to_str (doc->value_type));
+                 _mongoc_bson_type_to_str (pattern->value_type),
+                 _mongoc_bson_type_to_str (doc->value_type));
       return false;
    }
 
@@ -1115,13 +1024,14 @@ match_bson_value (const bson_value_t *doc,
    default:
       test_error ("unexpected value type %d: %s",
                   doc->value_type,
-                  bson_type_to_str (doc->value_type));
+                  _mongoc_bson_type_to_str (doc->value_type));
       abort ();
    }
 
    if (!ret) {
-      match_err (
-         ctx, "%s values mismatch", bson_type_to_str (pattern->value_type));
+      match_err (ctx,
+                 "%s values mismatch",
+                 _mongoc_bson_type_to_str (pattern->value_type));
    }
 
    return ret;

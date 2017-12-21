@@ -24,6 +24,7 @@
 #define MONGOC_DEFAULT_WRITE_BATCH_SIZE 1000
 #define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
 #define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
+#define MONGOC_NO_SESSIONS -1
 #define MONGOC_IDLE_WRITE_PERIOD_MS 10 * 1000
 
 /* represent a server or topology with no replica set config version */
@@ -55,8 +56,6 @@ struct _mongoc_server_description_t {
    /* whether an APM server-opened callback has been fired before */
    bool opened;
 
-   /* The following fields are filled from the last_is_master and are zeroed on
-    * parse.  So order matters here.  DON'T move set_name */
    const char *set_name;
    bson_error_t error;
    mongoc_server_description_type_t type;
@@ -66,6 +65,7 @@ struct _mongoc_server_description_t {
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    int32_t max_write_batch_size;
+   int64_t session_timeout_minutes;
 
    bson_t hosts;
    bson_t passives;
@@ -77,9 +77,7 @@ struct _mongoc_server_description_t {
    bson_oid_t election_id;
    int64_t last_write_date_ms;
 
-#ifdef MONGOC_ENABLE_COMPRESSION
    bson_t compressors;
-#endif
 };
 
 void

@@ -70,7 +70,7 @@ test_ismaster_impl (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server_with_autoismaster (i);
+      servers[i] = mock_server_with_autoismaster (i + 2);
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
@@ -144,7 +144,7 @@ test_ismaster_impl (bool with_ssl)
       }
 
       /* received the maxWireVersion configured above */
-      ASSERT_CMPINT (i, ==, results[i].max_wire_version);
+      ASSERT_CMPINT (i + 2, ==, results[i].max_wire_version);
    }
 
    mongoc_async_destroy (async);

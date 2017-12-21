@@ -10,7 +10,6 @@ TEST_CFLAGS = $(MAINTAINER_CFLAGS) \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
-	$(SNAPPY_CFLAGS) \
 	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
@@ -32,6 +31,7 @@ TEST_LIBS = \
 	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
+	$(RESOLV_LIBS) \
 	$(SNAPPY_LIBS) \
 	$(ZLIB_LIBS) \
 	$(SSL_LIBS)
@@ -68,6 +68,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \
 	tests/test-mongoc-bulk.c \
+	tests/test-mongoc-change-stream.c \
 	tests/test-mongoc-client.c \
 	tests/test-mongoc-client-pool.c \
 	tests/test-mongoc-cluster.c \
@@ -90,15 +91,20 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-matcher.c \
 	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-queue.c \
+	tests/test-mongoc-read-concern.c \
 	tests/test-mongoc-read-prefs.c \
+	tests/test-mongoc-retryable-writes.c \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sample-commands.c \
+	tests/test-mongoc-scram.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-sdam-monitoring.c \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-server-selection-errors.c \
+	tests/test-mongoc-client-session.c \
 	tests/test-mongoc-set.c \
+	tests/test-mongoc-dns.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \
 	tests/test-mongoc-topology-reconcile.c \
@@ -124,7 +130,7 @@ test_libmongoc_SOURCES += \
 	tests/ssl-test.h
 endif
 
-if ENABLE_SASL
+if ENABLE_SASL_CYRUS
 test_libmongoc_SOURCES += \
 	tests/test-mongoc-cyrus.c
 endif
@@ -133,7 +139,12 @@ test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
 test_libmongoc_LDFLAGS = -no-undefined \
                          -rpath $(libdir)
 
-
+noinst_PROGRAMS += test-mongoc-gssapi
+test_mongoc_gssapi_SOURCES = tests/test-mongoc-gssapi.c
+test_mongoc_gssapi_CFLAGS = $(TEST_CFLAGS)
+test_mongoc_gssapi_LDADD = libmongoc.la $(TEST_LIBS)
+test_mongoc_gssapi_LDFLAGS = -no-undefined \
+                             -rpath $(libdir)
 
 check: test
 
@@ -143,7 +154,7 @@ test:
 	./test-libmongoc $(TEST_ARGS) -F test-results.json
 
 valgrind: test-libmongoc
-	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
+	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all --num-callers=32 --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc --no-fork $(TEST_ARGS)
 
 local-check: test-libmongoc
 	@ export MONGOC_TEST_SKIP_LIVE=on
@@ -183,11 +194,15 @@ EXTRA_DIST += \
 	tests/x509gen/7750279a.0 \
 	$(wildcard tests/x509gen/*.pem) \
 	$(wildcard tests/release_files/*.txt) \
+	$(wildcard tests/json/auth/*.json) \
 	$(wildcard tests/json/connection_uri/*.json) \
 	$(wildcard tests/json/command_monitoring/*.json) \
+	$(wildcard tests/json/initial_dns_seedlist_discovery/*.json) \
+	$(wildcard tests/json/retryable_writes/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
 	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \
+	$(wildcard tests/json/srv/*.json) \
 	$(wildcard tests/json/max_staleness/*/*.json)
 
 if OS_DARWIN

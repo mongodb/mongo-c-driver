@@ -10,8 +10,6 @@ The `Aggregations using the Zip Codes Data Set <https://docs.mongodb.org/manual/
 Requirements
 ------------
 
-`MongoDB <https://www.mongodb.org>`_, version 2.2.0 or later. `MongoDB C driver <https://github.com/mongodb/mongo-c-driver>`_, version 0.96.0 or later.
-
 Let's check if everything is installed.
 
 Use the following command to load zips.json data set into mongod instance:
@@ -24,8 +22,13 @@ Let's use the MongoDB shell to verify that everything was imported successfully.
 
 .. code-block:: none
 
-  $ mongo testMongoDB shell version: 2.6.1
-  connecting to: test> db.zipcodes.count()29467> db.zipcodes.findOne(){
+  $ mongo test
+  MongoDB shell version: 2.6.1
+  connecting to: test
+  > db.zipcodes.count()
+  29467
+  > db.zipcodes.findOne()
+  {
   	"_id" : "35004",
   	"city" : "ACMAR",
   	"loc" : [

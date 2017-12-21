@@ -12,7 +12,7 @@ insert_data (mongoc_collection_t *collection)
    int i = 0;
    bool ret;
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    docs[0] = BCON_NEW ("x", BCON_DOUBLE (1.0), "tags", "[", "dog", "cat", "]");
    docs[1] = BCON_NEW ("x", BCON_DOUBLE (2.0), "tags", "[", "cat", "]");

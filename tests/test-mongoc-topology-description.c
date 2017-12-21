@@ -13,7 +13,7 @@
 static void
 _test_has_readable_writable_server (bool pooled)
 {
-   mongoc_client_t *client;
+   mongoc_client_t *client = NULL;
    mongoc_client_pool_t *pool = NULL;
    mongoc_topology_description_t *td;
    mongoc_read_prefs_t *prefs;
@@ -22,7 +22,6 @@ _test_has_readable_writable_server (bool pooled)
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
-      client = mongoc_client_pool_pop (pool);
       td = &_mongoc_client_pool_get_topology (pool)->description;
    } else {
       client = test_framework_client_new ();
@@ -37,7 +36,11 @@ _test_has_readable_writable_server (bool pooled)
    ASSERT (!mongoc_topology_description_has_readable_server (td, NULL));
    ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
 
-   /* trigger connection */
+   /* get a client if necessary, and trigger connection */
+   if (pooled) {
+      client = mongoc_client_pool_pop (pool);
+   }
+
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);

@@ -59,8 +59,7 @@ _insert_test_docs (mongoc_collection_t *collection, const bson_t *docs)
    while (bson_iter_next (&iter)) {
       bson_iter_document (&iter, &len, &data);
       bson_init_static (&doc, data, len);
-      r = mongoc_collection_insert (
-         collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+      r = mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error);
       ASSERT_OR_PRINT (r, error);
    }
 }
@@ -1128,8 +1127,8 @@ _test_tailable_timeout (bool pooled)
 
    ASSERT_OR_PRINT (collection, error);
 
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
 

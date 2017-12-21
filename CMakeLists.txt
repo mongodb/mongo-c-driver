@@ -13,7 +13,7 @@ endfunction()
 set (ENABLE_SSL AUTO CACHE STRING
      "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
      \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
-     Secure Channel, \"OPENSSL\", \"AUTO\",\ or \"OFF\". These options are
+     Secure Channel, \"OPENSSL\", \"LIBRESSL\", \"AUTO\",\ or \"OFF\". These options are
      case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
      required for authenticating to MongoDB 3.0 and later.")
 
@@ -25,22 +25,19 @@ set (ENABLE_SASL AUTO CACHE STRING
 set(ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
+set(ENABLE_SRV AUTO CACHE STRING "Support mongodb+srv URIs. Set to ON/AUTO/OFF, default AUTO.")
 option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
-set(ENABLE_SNAPPY bundled CACHE STRING "Enable snappy support")
+set(ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
 set(ENABLE_ZLIB bundled CACHE STRING "Enable zlib support")
 
 if (NOT WIN32)
     message(WARNING "CMake support is experimental and may not produce production quality artifacts")
 endif ()
 
-if (ENABLE_SNAPPY STREQUAL "bundled")
-project (libmongoc C CXX)
-else ()
 project (libmongoc C)
-endif ()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
@@ -97,10 +94,11 @@ endif ()
 if (NOT (ENABLE_SSL STREQUAL DARWIN
          OR ENABLE_SSL STREQUAL WINDOWS
          OR ENABLE_SSL STREQUAL OPENSSL
+         OR ENABLE_SSL STREQUAL LIBRESSL
          OR ENABLE_SSL STREQUAL AUTO
          OR ENABLE_SSL STREQUAL OFF))
    message (FATAL_ERROR
-            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, AUTO, or OFF")
+            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
 endif()
 
 if (NOT ENABLE_SSL STREQUAL OFF)
@@ -252,12 +250,6 @@ endif ()
 include(CheckIncludeFiles)
 CHECK_INCLUDE_FILES(strings.h HAVE_STRINGS_H)
 
-if (MINGW)
-   # Define _CRT_RAND_S, so that MinGW's stdlib.h declares Microsoft's rand_s().
-   message (" MinGW: define _CRT_RAND_S")
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_RAND_S")
-endif ()
-
 include(CheckTypeSize)
 if (WIN32)
    SET(CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
@@ -274,6 +266,8 @@ else()
    set(MONGOC_HAVE_SOCKLEN 0)
    set (MONGOC_SOCKET_ARG3 "int")
 endif()
+
+include (FindResSearch)
 
 function (mongoc_get_accept_args ARG2 ARG3)
    SET (VAR 0)
@@ -347,6 +341,50 @@ if (ENABLE_TRACING)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
 endif ()
 
+set (MONGOC_INTERNAL_INCLUDE_DIRS "")
+
+# Sets SNAPPY_LIBS and SNAPPY_INCLUDE_DIRS.
+include (FindSnappy)
+if (SNAPPY_INCLUDE_DIRS)
+   include_directories ("${SNAPPY_INCLUDE_DIRS}")
+endif ()
+
+if (ENABLE_ZLIB STREQUAL "bundled")
+   message (STATUS "Enabling zlib compression (bundled)")
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
+   set (SOURCES ${SOURCES}
+      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
+      )
+   configure_file (
+      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   )
+
+   list (
+      APPEND
+      MONGOC_INTERNAL_INCLUDE_DIRS
+      "${SOURCE_DIR}/src/zlib-1.2.11"
+      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
+   )
+endif ()
+
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -380,7 +418,7 @@ if (APPLE)
    add_definitions(-Wno-deprecated-declarations)
 endif()
 
-set (SOURCES
+set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async.c
@@ -388,6 +426,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-change-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
@@ -424,6 +463,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-client-session.c
    ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
@@ -440,6 +480,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-write-command-legacy.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
 )
 
@@ -449,6 +490,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc.h
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-change-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.h
@@ -473,6 +515,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-client-session.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -573,57 +616,13 @@ else()
 endif()
 
 
-set (MONGOC_INTERNAL_INCLUDE_DIRS "")
-
-if (ENABLE_SNAPPY STREQUAL "bundled")
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
-   include(FindSnappy)
-endif ()
-
-if (ENABLE_ZLIB STREQUAL "bundled")
-   message (STATUS "Enabling zlib compression (bundled)")
-   check_include_files ("unistd.h" HAVE_UNISTD_H)
-   check_include_files ("stdarg.h" HAVE_STDARG_H)
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
-   set (SOURCES ${SOURCES}
-      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
-   )
-   configure_file (
-      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
-   )
-
-   list (
-      APPEND
-      MONGOC_INTERNAL_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
-   )
-endif ()
-
 set(THREADS_PREFER_PTHREAD_FLAG 1)
 find_package (Threads REQUIRED)
 if(CMAKE_USE_PTHREADS_INIT)
    set(THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} Threads::Threads)
+set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${SNAPPY_LIBS} Threads::Threads)
 if(WIN32)
    set (LIBS ${LIBS} ws2_32)
 endif()
@@ -649,12 +648,6 @@ if (MONGOC_ENABLE_STATIC)
    set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 endif ()
 
-if (ENABLE_SNAPPY STREQUAL "bundled")
-   set_target_properties(mongoc_shared PROPERTIES LINKER_LANGUAGE CXX)
-   if (MONGOC_ENABLE_STATIC)
-      set_target_properties(mongoc_static PROPERTIES LINKER_LANGUAGE CXX)
-   endif ()
-endif ()
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable(${test} ${ARGN})
@@ -670,9 +663,12 @@ function(mongoc_add_test test use_shared)
          target_link_libraries(${test} mongoc_static)
          target_include_directories(${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       endif()
-      if(WIN32)
+      target_link_libraries(${test} ${RESOLV_LIBS})
+      if (WIN32)
          target_link_libraries(${test} shlwapi)
-      endif()
+      else ()
+         target_link_libraries(${test})
+      endif ()
    endif()
 endfunction()
 
@@ -688,10 +684,6 @@ function(mongoc_add_example example use_shared)
          target_link_libraries(${example} shlwapi)
       endif()
       set (EXAMPLES ${EXAMPLES} ${example})
-      if (ENABLE_SNAPPY STREQUAL "bundled")
-         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
-         set_target_properties(${example} PROPERTIES LINKER_LANGUAGE CXX)
-      endif ()
    endif ()
 endfunction()
 
@@ -711,6 +703,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${SOURCE_DIR}/tests/test-mongoc-bulk.c
+   ${SOURCE_DIR}/tests/test-mongoc-change-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
@@ -733,15 +726,20 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
+   ${SOURCE_DIR}/tests/test-mongoc-read-concern.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
+   ${SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-sample-commands.c
+   ${SOURCE_DIR}/tests/test-mongoc-scram.c
    ${SOURCE_DIR}/tests/test-mongoc-sdam.c
    ${SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
+   ${SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
+   ${SOURCE_DIR}/tests/test-mongoc-dns.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-thread.c
    ${SOURCE_DIR}/tests/test-mongoc-topology.c
@@ -765,13 +763,14 @@ if (MONGOC_ENABLE_SSL)
       ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
 endif()
 
-if (MONGOC_ENABLE_SASL)
+if (MONGOC_ENABLE_SASL_CYRUS)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-mongoc-cyrus.c
    )
 endif ()
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
+mongoc_add_test (test-mongoc-gssapi TRUE ${SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 
 if (ENABLE_TESTS)
    enable_testing()
@@ -789,12 +788,16 @@ mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
 mongoc_add_example(example-command-with-opts TRUE ${SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example(example-create-indexes TRUE ${SOURCE_DIR}/examples/example-create-indexes.c)
 mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
+mongoc_add_example(example-session TRUE ${SOURCE_DIR}/examples/example-session.c)
 mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
+mongoc_add_example(fam TRUE ${SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 if (NOT WIN32)
    mongoc_add_example(example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
 endif ()
+mongoc_add_example(example-collection-watch TRUE ${SOURCE_DIR}/examples/example-collection-watch.c)
+mongoc_add_example(example-update TRUE ${SOURCE_DIR}/examples/example-update.c)
 
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
@@ -829,8 +832,12 @@ set(VERSION "${MONGOC_VERSION}")
 set(prefix "${CMAKE_INSTALL_PREFIX}")
 set(libdir "\${prefix}/lib")
 
-foreach(FLAG ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${THREAD_LIB} ${ZLIB_LIBS} ${SNAPPY_LIBS})
-   if ( IS_ABSOLUTE "${FLAG}" )
+foreach(
+      FLAG
+      ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${THREAD_LIB}
+      ${ZLIB_LIBS} ${SNAPPY_LIBS})
+
+   if (IS_ABSOLUTE "${FLAG}" )
       get_filename_component(FLAG_DIR "${FLAG}" DIRECTORY)
       get_filename_component(FLAG_FILE "${FLAG}" NAME_WE)
       STRING(REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")

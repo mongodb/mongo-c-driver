@@ -171,6 +171,8 @@ _test_server_selection (bool try_once)
                           " 'ismaster': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server));
 
@@ -178,6 +180,8 @@ _test_server_selection (bool try_once)
       bson_strdup_printf ("{'ok': 1, "
                           " 'ismaster': true,"
                           " 'setName': 'rs',"
+                          " 'minWireVersion': 2,"
+                          " 'maxWireVersion': 5,"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server));
 
@@ -281,6 +285,7 @@ _test_topology_invalidate_server (bool pooled)
    mongoc_server_description_t *fake_sd;
    mongoc_server_description_t *sd;
    mongoc_topology_description_t *td;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
    bson_error_t error;
@@ -289,14 +294,21 @@ _test_topology_invalidate_server (bool pooled)
    uint32_t id;
    mongoc_server_stream_t *server_stream;
 
+   uri = test_framework_get_uri ();
+   /* no auto heartbeat */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", INT32_MAX);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 2000);
+
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
 
       /* background scanner complains about failed connection */
       capture_logs (true);
    } else {
-      client = test_framework_client_new ();
+      client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
    }
 
    td = &client->topology->description;
@@ -305,9 +317,8 @@ _test_topology_invalidate_server (bool pooled)
    server_stream =
       mongoc_cluster_stream_for_reads (&client->cluster, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
+   sd = server_stream->sd;
    id = server_stream->sd->id;
-   sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, id);
-   BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE ||
                 sd->type == MONGOC_SERVER_RS_PRIMARY ||
                 sd->type == MONGOC_SERVER_MONGOS);
@@ -336,13 +347,21 @@ _test_topology_invalidate_server (bool pooled)
       client->topology->scanner, &fake_host_list, fake_id);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
       &client->cluster, fake_id, true, &error));
+   mongoc_mutex_lock (&client->topology->mutex);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, fake_id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
    BSON_ASSERT (sd->error.domain != 0);
    ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
+   BSON_ASSERT (bson_empty (&sd->last_is_master));
+   BSON_ASSERT (bson_empty (&sd->hosts));
+   BSON_ASSERT (bson_empty (&sd->passives));
+   BSON_ASSERT (bson_empty (&sd->arbiters));
+   BSON_ASSERT (bson_empty (&sd->compressors));
+   mongoc_mutex_unlock (&client->topology->mutex);
 
    mongoc_server_stream_cleanup (server_stream);
+   mongoc_uri_destroy (uri);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -353,13 +372,13 @@ _test_topology_invalidate_server (bool pooled)
 }
 
 static void
-test_topology_invalidate_server_single (void)
+test_topology_invalidate_server_single (void *ctx)
 {
    _test_topology_invalidate_server (false);
 }
 
 static void
-test_topology_invalidate_server_pooled (void)
+test_topology_invalidate_server_pooled (void *ctx)
 {
    _test_topology_invalidate_server (true);
 }
@@ -527,7 +546,9 @@ test_cooldown_standalone (void *ctx)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    request = mock_server_receives_ismaster (server); /* not in cooldown now */
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5 }");
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    request_destroy (request);
@@ -574,13 +595,15 @@ test_cooldown_rs (void *ctx)
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': false, 'secondary': true, 'setName': 'rs',"
+      "{'ok': 1, 'ismaster': false, 'minWireVersion': 2, 'maxWireVersion': 5 , "
+      "'secondary': true, 'setName': 'rs',"
       " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
       mock_server_get_port (servers[0]),
       mock_server_get_port (servers[1]));
 
    primary_response =
-      bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'setName': 'rs',"
+      bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'minWireVersion': 2, "
+                          "'maxWireVersion': 5 , 'setName': 'rs',"
                           " 'hosts': ['localhost:%hu']}",
                           mock_server_get_port (servers[1]));
 
@@ -677,6 +700,8 @@ _test_select_succeed (bool try_once)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
                               mock_server_get_port (primary),
                               mock_server_get_port (secondary));
@@ -821,6 +846,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -854,6 +881,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'BAD NAME',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -932,10 +961,22 @@ test_rtt (void *ctx)
 
    request = mock_server_receives_ismaster (server);
    _mongoc_usleep (1000 * 1000); /* one second */
-   mock_server_replies_ok_and_destroys (request);
+   mock_server_replies (request,
+                        MONGOC_REPLY_NONE,
+                        0,
+                        0,
+                        1,
+                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   request_destroy (request);
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
-   mock_server_replies_ok_and_destroys (request);
+   mock_server_replies (request,
+                        MONGOC_REPLY_NONE,
+                        0,
+                        0,
+                        1,
+                        "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   request_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
    sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
@@ -976,6 +1017,8 @@ test_add_and_scan_failure (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
                               " 'hosts': ['%s', 'fake:1']}",
                               mock_server_get_host_and_port (server));
 
@@ -1126,6 +1169,8 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
+                                  "  'minWireVersion': 2,"
+                                  "  'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1219,6 +1264,8 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
+                                  "  'minWireVersion': 2,"
+                                  "  'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1327,6 +1374,89 @@ test_ismaster_retry_pooled_timeout_fail (void)
 }
 
 
+static void
+test_incompatible_error (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   char *msg;
+
+   server = mock_server_with_autoismaster (1); /* incompatible */
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   client = mongoc_client_new_from_uri (uri);
+
+   /* trigger connection, fails due to incompatibility */
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "reports wire version 1, but this version of"
+                          " libmongoc requires at least 2 (MongoDB 2.6)");
+
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 10,"
+                              " 'maxWireVersion': 11}");
+
+   /* wait until it's time for next heartbeat */
+   _mongoc_usleep (600 * 1000);
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   msg = bson_strdup_printf ("requires wire version 10, but this version"
+                             " of libmongoc only supports up to %d",
+                             WIRE_VERSION_MAX);
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          msg);
+
+   bson_free (msg);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
+/* ensure there's no invalid access if a null bson_error_t pointer is passed
+ * to mongoc_topology_compatible () */
+static void
+test_compatible_null_error_pointer (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_topology_description_t *td;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (1); /* incompatible */
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   td = &client->topology->description;
+
+   /* trigger connection, fails due to incompatibility */
+   ASSERT (!mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
+
+   /* null error pointer is ok */
+   ASSERT (!mongoc_topology_compatible (
+      td, NULL /* read prefs */, NULL /* error */));
+
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -1353,12 +1483,18 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/single",
-                      test_topology_invalidate_server_single);
-   TestSuite_AddLive (suite,
+                      test_topology_invalidate_server_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
+   TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/pooled",
-                      test_topology_invalidate_server_pooled);
+                      test_topology_invalidate_server_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/Topology/invalid_cluster_node",
                       test_invalid_cluster_node,
@@ -1411,26 +1547,42 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/hangup",
-                                test_ismaster_retry_single_hangup);
+                                test_ismaster_retry_single_hangup,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/timeout",
-                                test_ismaster_retry_single_timeout);
+                                test_ismaster_retry_single_timeout,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/hangup/fail",
-                                test_ismaster_retry_single_hangup_fail);
+                                test_ismaster_retry_single_hangup_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/single/timeout/fail",
-                                test_ismaster_retry_single_timeout_fail);
+                                test_ismaster_retry_single_timeout_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/hangup",
-                                test_ismaster_retry_pooled_hangup);
+                                test_ismaster_retry_pooled_hangup,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout",
-                                test_ismaster_retry_pooled_timeout);
+                                test_ismaster_retry_pooled_timeout,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/hangup/fail",
-                                test_ismaster_retry_pooled_hangup_fail);
+                                test_ismaster_retry_pooled_hangup_fail,
+                                test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/ismaster_retry/pooled/timeout/fail",
-                                test_ismaster_retry_pooled_timeout_fail);
+                                test_ismaster_retry_pooled_timeout_fail,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/incompatible_error",
+                                test_incompatible_error,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/compatible_null_error_pointer",
+                                test_compatible_null_error_pointer,
+                                test_framework_skip_if_slow);
 }

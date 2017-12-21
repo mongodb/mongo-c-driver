@@ -60,6 +60,9 @@ mock_server_auto_ismaster (mock_server_t *server,
                            const char *response_json,
                            ...);
 
+int
+mock_server_auto_endsessions (mock_server_t *server);
+
 #ifdef MONGOC_ENABLE_SSL
 
 void
@@ -109,9 +112,6 @@ request_t *
 mock_server_receives_ismaster (mock_server_t *server);
 
 request_t *
-mock_server_receives_gle (mock_server_t *server, const char *database_name);
-
-request_t *
 mock_server_receives_query (mock_server_t *server,
                             const char *ns,
                             mongoc_query_flags_t flags,
@@ -153,6 +153,11 @@ mock_server_receives_getmore (mock_server_t *server,
 
 request_t *
 mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id);
+
+request_t *
+_mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...);
+#define mock_server_receives_msg(_server, _flags, ...) \
+   _mock_server_receives_msg (_server, _flags, __VA_ARGS__, NULL)
 
 void
 mock_server_hangs_up (request_t *request);

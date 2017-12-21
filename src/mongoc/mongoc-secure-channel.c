@@ -231,7 +231,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       0,                            /* dwFlags */
       (const void *) provider);     /* pvData */
    if (success) {
-      TRACE ("Successfully loaded client certificate");
+      TRACE ("%s", "Successfully loaded client certificate");
       return cert;
    }
 
@@ -389,7 +389,7 @@ mongoc_secure_channel_setup_ca (
 
    if (CertAddCertificateContextToStore (
           cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("Added the certificate !");
+      TRACE ("%s", "Added the certificate !");
       CertCloseStore (cert_store, 0);
       return true;
    }
@@ -455,7 +455,7 @@ mongoc_secure_channel_setup_crl (
 
    if (CertAddCertificateContextToStore (
           cert_store, cert, CERT_STORE_ADD_USE_EXISTING, NULL)) {
-      TRACE ("Added the certificate !");
+      TRACE ("%s", "Added the certificate !");
       CertFreeCertificateContext (cert);
       CertCloseStore (cert_store, 0);
       return true;
@@ -660,7 +660,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
    doread = (secure_channel->connecting_state != ssl_connect_2_writing) ? true
                                                                         : false;
 
-   TRACE ("SSL/TLS connection with endpoint (step 2/3)");
+   TRACE ("%s", "SSL/TLS connection with endpoint (step 2/3)");
 
    if (!secure_channel->cred || !secure_channel->ctxt) {
       return false;
@@ -710,7 +710,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
                   secure_channel->connecting_state = ssl_connect_2_reading;
                }
 
-               TRACE ("failed to receive handshake, need more data");
+               TRACE ("%s", "failed to receive handshake, need more data");
                return true;
             }
 
@@ -779,7 +779,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
       /* check if the handshake was incomplete */
       if (sspi_status == SEC_E_INCOMPLETE_MESSAGE) {
          secure_channel->connecting_state = ssl_connect_2_reading;
-         TRACE ("received incomplete message, need more data");
+         TRACE ("%s", "received incomplete message, need more data");
          return true;
       }
 
@@ -790,7 +790,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
           !(secure_channel->req_flags & ISC_REQ_USE_SUPPLIED_CREDS)) {
          secure_channel->req_flags |= ISC_REQ_USE_SUPPLIED_CREDS;
          secure_channel->connecting_state = ssl_connect_2_writing;
-         TRACE ("a client certificate has been requested");
+         TRACE ("%s", "A client certificate has been requested");
          return true;
       }
 
@@ -927,7 +927,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
    /* check if the handshake is complete */
    if (sspi_status == SEC_E_OK) {
       secure_channel->connecting_state = ssl_connect_3;
-      TRACE ("SSL/TLS handshake complete\n");
+      TRACE ("%s", "SSL/TLS handshake complete");
    }
 
    return true;
@@ -942,7 +942,7 @@ mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls,
 
    BSON_ASSERT (ssl_connect_3 == secure_channel->connecting_state);
 
-   TRACE ("SSL/TLS connection with %s (step 3/3)\n", hostname);
+   TRACE ("SSL/TLS connection with %s (step 3/3)", hostname);
 
    if (!secure_channel->cred) {
       return false;

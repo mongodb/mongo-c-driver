@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include "mongoc-util-private.h"
 #include "mongoc-apm-private.h"
+#include "mongoc-cmd-private.h"
 
 /*
  * An Application Performance Management (APM) implementation, complying with
@@ -22,6 +24,51 @@
  *
  * https://github.com/mongodb/specifications/tree/master/source/command-monitoring
  */
+
+static void
+append_documents_from_cmd (const mongoc_cmd_t *cmd,
+                           mongoc_apm_command_started_t *event)
+{
+   int32_t doc_len;
+   bson_t doc;
+   const uint8_t *pos;
+   const char *field_name;
+   bson_t bson;
+   char str[16];
+   const char *key;
+   uint32_t i;
+
+   if (!cmd->payload || !cmd->payload_size) {
+      return;
+   }
+
+   if (!event->command_owned) {
+      event->command = bson_copy (event->command);
+      event->command_owned = true;
+   }
+
+   /* make array from outgoing OP_MSG payload type 1 on an "insert",
+    * "update", or "delete" command. */
+   field_name = _mongoc_get_documents_field_name (cmd->command_name);
+   BSON_ASSERT (field_name);
+   BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (event->command, field_name, &bson));
+
+   pos = cmd->payload;
+   i = 0;
+   while (pos < cmd->payload + cmd->payload_size) {
+      memcpy (&doc_len, pos, sizeof (doc_len));
+      doc_len = BSON_UINT32_FROM_LE (doc_len);
+      BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
+      bson_uint32_to_string (i, &key, str, sizeof (str));
+      BSON_APPEND_DOCUMENT (&bson, key, &doc);
+
+      pos += doc_len;
+      i++;
+   }
+
+   bson_append_array_end (event->command, &bson);
+}
+
 
 /*
  * Private initializer / cleanup functions.
@@ -56,12 +103,12 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_document (&iter, &len, &data);
          event->command = bson_new_from_data (data, len);
+         event->command_owned = true;
       } else {
-         /* $query should exist, but user could provide us a misformatted doc */
-         event->command = bson_new ();
+         /* Got $readPreference without $query, probably OP_MSG */
+         event->command = (bson_t *) command;
+         event->command_owned = false;
       }
-
-      event->command_owned = true;
    } else {
       /* discard "const", we promise not to modify "command" */
       event->command = (bson_t *) command;
@@ -75,6 +122,27 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
    event->host = host;
    event->server_id = server_id;
    event->context = context;
+}
+
+
+void
+mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
+                                          mongoc_cmd_t *cmd,
+                                          int64_t request_id,
+                                          void *context)
+{
+   mongoc_apm_command_started_init (event,
+                                    cmd->command,
+                                    cmd->db_name,
+                                    cmd->command_name,
+                                    request_id,
+                                    cmd->operation_id,
+                                    &cmd->server_stream->sd->host,
+                                    cmd->server_stream->sd->id,
+                                    context);
+
+   /* OP_MSG document sequence for insert, update, or delete? */
+   append_documents_from_cmd (cmd, event);
 }
 
 

@@ -42,7 +42,7 @@ The server replies:
      "ok" : 1
   }
 
-``mongoc_cursor_new_from_command_reply`` is a low-level function that initializes a :symbol:`mongoc_cursor_t` from such a reply.
+``mongoc_cursor_new_from_command_reply`` is a low-level function that initializes a :symbol:`mongoc_cursor_t` from such a reply. Additional options such as "tailable" or "awaitData" can be included in the reply.
 
 When synthesizing a completed cursor response that has no more batches (i.e. with cursor id 0), set ``server_id`` to 0 as well.
 

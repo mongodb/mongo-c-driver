@@ -39,6 +39,8 @@ mongoc_read_concern_new (void)
 
    read_concern = (mongoc_read_concern_t *) bson_malloc0 (sizeof *read_concern);
 
+   bson_init (&read_concern->compiled);
+
    return read_concern;
 }
 
@@ -67,10 +69,7 @@ void
 mongoc_read_concern_destroy (mongoc_read_concern_t *read_concern)
 {
    if (read_concern) {
-      if (read_concern->compiled.len) {
-         bson_destroy (&read_concern->compiled);
-      }
-
+      bson_destroy (&read_concern->compiled);
       bson_free (read_concern->level);
       bson_free (read_concern);
    }
@@ -98,9 +97,6 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  * MongoDB 3.4 added
  *  - MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE
  *
- *  If the @read_concern has already been frozen, calling this function will not
- *  alter the read concern level.
- *
  * See the MongoDB docs for more information on readConcernLevel
  */
 bool
@@ -109,12 +105,10 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
 {
    BSON_ASSERT (read_concern);
 
-   if (read_concern->frozen) {
-      return false;
-   }
-
    bson_free (read_concern->level);
    read_concern->level = bson_strdup (level);
+   read_concern->frozen = false;
+
    return true;
 }
 
@@ -170,13 +164,8 @@ mongoc_read_concern_is_default (const mongoc_read_concern_t *read_concern)
  *
  * This is an internal function.
  *
- * Freeze the read concern if necessary and retrieve the encoded bson_t
- * representing the read concern.
- *
- * You may not modify the read concern further after calling this function.
- *
- * Returns: A bson_t that should not be modified or freed as it is owned by
- *    the mongoc_read_concern_t instance.
+ * Returns: A bson_t representing the read concern, which is owned by the
+ *    mongoc_read_concern_t instance and should not be modified or freed.
  */
 const bson_t *
 _mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern)
@@ -194,10 +183,8 @@ _mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern)
  *
  * This is an internal function.
  *
- * Freeze the read concern if necessary and encode it into a bson_ts which
- * represent the raw bson form and the get last error command form.
- *
- * You may not modify the read concern further after calling this function.
+ * Encodes the read concern into a bson_t, which may then be returned by
+ * mongoc_read_concern_get_bson().
  */
 static void
 _mongoc_read_concern_freeze (mongoc_read_concern_t *read_concern)
@@ -210,8 +197,9 @@ _mongoc_read_concern_freeze (mongoc_read_concern_t *read_concern)
 
    read_concern->frozen = true;
 
-   bson_init (compiled);
+   bson_reinit (compiled);
 
-   BSON_ASSERT (read_concern->level);
-   BSON_APPEND_UTF8 (compiled, "level", read_concern->level);
+   if (read_concern->level) {
+      BSON_APPEND_UTF8 (compiled, "level", read_concern->level);
+   }
 }

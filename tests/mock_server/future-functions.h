@@ -37,6 +37,19 @@ future_client_command_simple (
 
 
 future_t *
+future_client_command_with_opts (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_client_read_command_with_opts (
 
    mongoc_client_ptr client,
@@ -160,10 +173,10 @@ future_collection_find_and_modify (
 
 
 future_t *
-future_collection_find_indexes (
+future_collection_find_indexes_with_opts (
 
    mongoc_collection_ptr collection,
-   bson_error_ptr error
+   const_bson_ptr opts
 );
 
 
@@ -178,12 +191,12 @@ future_collection_stats (
 
 
 future_t *
-future_collection_insert (
+future_collection_insert_one (
 
    mongoc_collection_ptr collection,
-   mongoc_insert_flags_t flags,
    const_bson_ptr document,
-   const_mongoc_write_concern_ptr write_concern,
+   const_bson_ptr opts,
+   bson_ptr reply,
    bson_error_ptr error
 );
 
@@ -213,6 +226,17 @@ future_collection_insert_bulk (
 
 
 future_t *
+future_cluster_run_command_parts (
+
+   mongoc_cluster_ptr cluster,
+   mongoc_server_stream_ptr server_stream,
+   mongoc_cmd_parts_ptr parts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_cursor_destroy (
 
    mongoc_cursor_ptr cursor
@@ -228,9 +252,10 @@ future_cursor_next (
 
 
 future_t *
-future_client_get_database_names (
+future_client_get_database_names_with_opts (
 
    mongoc_client_ptr client,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 
@@ -246,6 +271,20 @@ future_client_select_server (
 
 
 future_t *
+future_client_destroy (
+
+   mongoc_client_ptr client
+);
+
+
+future_t *
+future_client_pool_destroy (
+
+   mongoc_client_pool_ptr pool
+);
+
+
+future_t *
 future_database_command_simple (
 
    mongoc_database_ptr database,
@@ -257,9 +296,10 @@ future_database_command_simple (
 
 
 future_t *
-future_database_get_collection_names (
+future_database_get_collection_names_with_opts (
 
    mongoc_database_ptr database,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 
@@ -338,6 +378,30 @@ future_client_get_gridfs (
    const_char_ptr db,
    const_char_ptr prefix,
    bson_error_ptr error
+);
+
+
+future_t *
+future_collection_watch (
+
+   mongoc_collection_ptr coll,
+   const_bson_ptr pipeline,
+   const_bson_ptr opts
+);
+
+
+future_t *
+future_change_stream_next (
+
+   mongoc_change_stream_ptr stream,
+   const_bson_ptr_ptr bson
+);
+
+
+future_t *
+future_change_stream_destroy (
+
+   mongoc_change_stream_ptr stream
 );
 
 

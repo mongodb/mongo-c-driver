@@ -30,7 +30,6 @@
 #include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
 
-
 BSON_BEGIN_DECLS
 
 
@@ -88,6 +87,13 @@ mongoc_database_read_write_command_with_opts (
    bson_t *reply,
    bson_error_t *error);
 MONGOC_EXPORT (bool)
+mongoc_database_command_with_opts (mongoc_database_t *database,
+                                   const bson_t *command,
+                                   const mongoc_read_prefs_t *read_prefs,
+                                   const bson_t *opts,
+                                   bson_t *reply,
+                                   bson_error_t *error);
+MONGOC_EXPORT (bool)
 mongoc_database_command_simple (mongoc_database_t *database,
                                 const bson_t *command,
                                 const mongoc_read_prefs_t *read_prefs,
@@ -126,13 +132,21 @@ mongoc_database_set_read_concern (mongoc_database_t *database,
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_find_collections (mongoc_database_t *database,
                                   const bson_t *filter,
-                                  bson_error_t *error);
+                                  bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_database_find_collections_with_opts);
+MONGOC_EXPORT (mongoc_cursor_t *)
+mongoc_database_find_collections_with_opts (mongoc_database_t *database,
+                                            const bson_t *opts);
 MONGOC_EXPORT (char **)
 mongoc_database_get_collection_names (mongoc_database_t *database,
-                                      bson_error_t *error);
+                                      bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_database_get_collection_names_with_opts);
+MONGOC_EXPORT (char **)
+mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
+                                                const bson_t *opts,
+                                                bson_error_t *error);
 MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_database_get_collection (mongoc_database_t *database, const char *name);
-
 
 BSON_END_DECLS
 

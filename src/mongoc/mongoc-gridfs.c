@@ -63,8 +63,6 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
    mongoc_index_opt_init (&opt);
    opt.unique = 1;
 
-   /* mongoc_collection_create_index is deprecated, but works with MongoDB 2.4
-    * once we really drop 2.4, call "createIndexes" command directly */
    BEGIN_IGNORE_DEPRECATIONS
    r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
    END_IGNORE_DEPRECATIONS
@@ -101,9 +99,6 @@ _mongoc_gridfs_new (mongoc_client_t *client,
                     bson_error_t *error)
 {
    mongoc_gridfs_t *gridfs;
-   const mongoc_read_prefs_t *read_prefs;
-   const mongoc_read_concern_t *read_concern;
-   const mongoc_write_concern_t *write_concern;
    char buf[128];
    bool r;
    uint32_t prefix_len;
@@ -127,17 +122,11 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
    gridfs->client = client;
 
-   read_prefs = mongoc_client_get_read_prefs (client);
-   read_concern = mongoc_client_get_read_concern (client);
-   write_concern = mongoc_client_get_write_concern (client);
-
    bson_snprintf (buf, sizeof (buf), "%s.chunks", prefix);
-   gridfs->chunks = _mongoc_collection_new (
-      client, db, buf, read_prefs, read_concern, write_concern);
+   gridfs->chunks = mongoc_client_get_collection (client, db, buf);
 
    bson_snprintf (buf, sizeof (buf), "%s.files", prefix);
-   gridfs->files = _mongoc_collection_new (
-      client, db, buf, read_prefs, read_concern, write_concern);
+   gridfs->files = mongoc_client_get_collection (client, db, buf);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 
@@ -394,6 +383,7 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    bson_t q = BSON_INITIALIZER;
    bson_t fields = BSON_INITIALIZER;
    bson_t ar = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
 
    BSON_ASSERT (gridfs);
 
@@ -419,7 +409,7 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
                                 0,
                                 0,
                                 0,
-                                false /* is command */,
+                                true /* is_find */,
                                 &q,
                                 &fields,
                                 NULL,
@@ -440,10 +430,13 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
       goto failure;
    }
 
+   bson_append_bool (&opts, "ordered", 7, false);
    bulk_files =
-      mongoc_collection_create_bulk_operation (gridfs->files, false, NULL);
+      mongoc_collection_create_bulk_operation_with_opts (gridfs->files, &opts);
    bulk_chunks =
-      mongoc_collection_create_bulk_operation (gridfs->chunks, false, NULL);
+      mongoc_collection_create_bulk_operation_with_opts (gridfs->chunks, &opts);
+
+   bson_destroy (&opts);
 
    files_q = BCON_NEW ("_id", "{", "$in", BCON_ARRAY (&ar), "}");
    chunks_q = BCON_NEW ("files_id", "{", "$in", BCON_ARRAY (&ar), "}");

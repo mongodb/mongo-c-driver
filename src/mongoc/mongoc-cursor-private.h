@@ -111,20 +111,22 @@ struct _mongoc_cursor_t {
    bool server_id_set;
    bool slave_ok;
 
-   unsigned is_command : 1;
+   unsigned is_find : 1;
    unsigned sent : 1;
    unsigned done : 1;
    unsigned end_of_event : 1;
    unsigned has_fields : 1;
    unsigned in_exhaust : 1;
+   unsigned explicit_session : 1;
 
    bson_t filter;
    bson_t opts;
+   bson_t reply;
 
    mongoc_read_concern_t *read_concern;
    mongoc_read_prefs_t *read_prefs;
-
    mongoc_write_concern_t *write_concern;
+   mongoc_client_session_t *client_session;
 
    uint32_t count;
 
@@ -133,7 +135,6 @@ struct _mongoc_cursor_t {
    uint32_t dblen;
 
    bson_error_t error;
-   bson_t error_doc;
 
    /* for OP_QUERY and OP_GETMORE replies*/
    mongoc_rpc_t rpc;
@@ -149,7 +150,7 @@ struct _mongoc_cursor_t {
 
 
 int32_t
-_mongoc_n_return (mongoc_cursor_t *cursor);
+_mongoc_n_return (bool is_initial_request, mongoc_cursor_t *cursor);
 void
 _mongoc_set_cursor_ns (mongoc_cursor_t *cursor, const char *ns, uint32_t nslen);
 bool
@@ -157,7 +158,7 @@ _mongoc_cursor_get_opt_bool (const mongoc_cursor_t *cursor, const char *option);
 mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const char *db_and_collection,
-                              bool is_command,
+                              bool is_find,
                               const bson_t *filter,
                               const bson_t *opts,
                               const mongoc_read_prefs_t *read_prefs,
@@ -198,6 +199,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
 bool
 _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *command,
+                            const bson_t *opts,
                             bson_t *reply);
 bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor);
@@ -210,6 +212,10 @@ _mongoc_cursor_error_document (mongoc_cursor_t *cursor,
 void
 _mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host);
 
+bool
+_mongoc_cursor_set_opt_int64 (mongoc_cursor_t *cursor,
+                              const char *option,
+                              int64_t value);
 
 BSON_END_DECLS
 

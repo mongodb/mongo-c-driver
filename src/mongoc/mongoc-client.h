@@ -41,7 +41,6 @@
 #include "mongoc-read-concern.h"
 #include "mongoc-server-description.h"
 
-
 BSON_BEGIN_DECLS
 
 
@@ -74,6 +73,9 @@ BSON_BEGIN_DECLS
  */
 typedef struct _mongoc_client_t mongoc_client_t;
 
+
+typedef struct _mongoc_client_session_t mongoc_client_session_t;
+typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
 
 /**
  * mongoc_stream_initiator_t:
@@ -153,6 +155,14 @@ mongoc_client_read_write_command_with_opts (
    bson_t *reply,
    bson_error_t *error);
 MONGOC_EXPORT (bool)
+mongoc_client_command_with_opts (mongoc_client_t *client,
+                                 const char *db_name,
+                                 const bson_t *command,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 const bson_t *opts,
+                                 bson_t *reply,
+                                 bson_error_t *error);
+MONGOC_EXPORT (bool)
 mongoc_client_command_simple_with_server_id (
    mongoc_client_t *client,
    const char *db_name,
@@ -163,6 +173,10 @@ mongoc_client_command_simple_with_server_id (
    bson_error_t *error);
 MONGOC_EXPORT (void)
 mongoc_client_destroy (mongoc_client_t *client);
+MONGOC_EXPORT (mongoc_client_session_t *)
+mongoc_client_start_session (mongoc_client_t *client,
+                             const mongoc_session_opt_t *opts,
+                             bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_database_t *)
 mongoc_client_get_database (mongoc_client_t *client, const char *name);
 MONGOC_EXPORT (mongoc_database_t *)
@@ -177,9 +191,18 @@ mongoc_client_get_collection (mongoc_client_t *client,
                               const char *db,
                               const char *collection);
 MONGOC_EXPORT (char **)
-mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error);
+mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_client_get_database_names_with_opts);
+MONGOC_EXPORT (char **)
+mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
+                                            const bson_t *opts,
+                                            bson_error_t *error);
 MONGOC_EXPORT (mongoc_cursor_t *)
-mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error);
+mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_client_find_databases_with_opts);
+MONGOC_EXPORT (mongoc_cursor_t *)
+mongoc_client_find_databases_with_opts (mongoc_client_t *client,
+                                        const bson_t *opts);
 MONGOC_EXPORT (bool)
 mongoc_client_get_server_status (mongoc_client_t *client,
                                  mongoc_read_prefs_t *read_prefs,

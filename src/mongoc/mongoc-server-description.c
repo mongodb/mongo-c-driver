@@ -29,9 +29,6 @@
 
 #define ALPHA 0.2
 
-
-static uint8_t kMongocEmptyBson[] = {5, 0, 0, 0, 0};
-
 static bson_oid_t kObjectIdZero = {{0}};
 
 static bool
@@ -54,9 +51,6 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
    BSON_ASSERT (sd);
 
-   /* set other fields to default or empty states. election_id is zeroed. */
-   memset (
-      &sd->set_name, 0, sizeof (*sd) - ((char *) &sd->set_name - (char *) sd));
    memset (&sd->error, 0, sizeof sd->error);
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
@@ -66,6 +60,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
    sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
    sd->last_write_date_ms = -1;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
@@ -73,6 +68,17 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    bson_init (&sd->last_is_master);
    sd->has_is_master = false;
    sd->last_update_time_usec = bson_get_monotonic_time ();
+
+   bson_init (&sd->hosts);
+   bson_init (&sd->passives);
+   bson_init (&sd->arbiters);
+   bson_init (&sd->tags);
+   bson_init (&sd->compressors);
+
+   sd->me = NULL;
+   sd->current_primary = NULL;
+   sd->set_version = MONGOC_NO_SET_VERSION;
+   bson_oid_copy_unsafe (&kObjectIdZero, &sd->election_id);
 }
 
 /*
@@ -100,15 +106,9 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    BSON_ASSERT (sd);
    BSON_ASSERT (address);
 
-   memset (sd, 0, sizeof *sd);
-
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = -1;
-
-   sd->set_name = NULL;
-   sd->set_version = MONGOC_NO_SET_VERSION;
-   sd->current_primary = NULL;
 
    if (!_mongoc_host_list_from_string (&sd->host, address)) {
       MONGOC_WARNING ("Failed to parse uri for %s", address);
@@ -116,27 +116,9 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    }
 
    sd->connection_address = sd->host.host_and_port;
-
-   sd->me = NULL;
-   sd->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
-   sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
-   sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
-   sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
-   sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
-   sd->last_write_date_ms = -1;
-
-   bson_init_static (&sd->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (
-      &sd->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (
-      &sd->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (&sd->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#ifdef MONGOC_ENABLE_COMPRESSION
-   bson_init_static (
-      &sd->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#endif
-
    bson_init (&sd->last_is_master);
+
+   mongoc_server_description_reset (sd);
 
    EXIT;
 }
@@ -550,6 +532,16 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_INT32 (&iter))
             goto failure;
          sd->max_write_batch_size = bson_iter_int32 (&iter);
+      } else if (strcmp ("logicalSessionTimeoutMinutes",
+                         bson_iter_key (&iter)) == 0) {
+         if (BSON_ITER_HOLDS_NUMBER (&iter)) {
+            sd->session_timeout_minutes = bson_iter_as_int64 (&iter);
+         } else if (BSON_ITER_HOLDS_NULL (&iter)) {
+            /* this arises executing standard JSON tests */
+            sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
+         } else {
+            goto failure;
+         }
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_INT32 (&iter))
             goto failure;
@@ -622,13 +614,11 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          sd->last_write_date_ms = bson_iter_date_time (&child);
       } else if (strcmp ("idleWritePeriodMillis", bson_iter_key (&iter)) == 0) {
          sd->last_write_date_ms = bson_iter_as_int64 (&iter);
-#ifdef MONGOC_ENABLE_COMPRESSION
       } else if (strcmp ("compression", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_ARRAY (&iter))
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_init_static (&sd->compressors, bytes, len);
-#endif
       }
    }
 
@@ -697,29 +687,17 @@ mongoc_server_description_new_copy (
    copy->round_trip_time_msec = -1;
 
    copy->connection_address = copy->host.host_and_port;
-
-   /* wait for handle_ismaster to fill these in properly */
-   copy->has_is_master = false;
-   copy->set_version = MONGOC_NO_SET_VERSION;
-   bson_init_static (&copy->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (
-      &copy->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (
-      &copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (&copy->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#ifdef MONGOC_ENABLE_COMPRESSION
-   bson_init_static (
-      &copy->compressors, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-#endif
-
    bson_init (&copy->last_is_master);
 
    if (description->has_is_master) {
+      /* calls mongoc_server_description_reset */
       mongoc_server_description_handle_ismaster (
          copy,
          &description->last_is_master,
          description->round_trip_time_msec,
          &description->error);
+   } else {
+      mongoc_server_description_reset (copy);
    }
 
    /* Preserve the error */
@@ -951,7 +929,6 @@ _match_tag_set (const mongoc_server_description_t *sd,
    return true;
 }
 
-#ifdef MONGOC_ENABLE_COMPRESSION
 /*
  *--------------------------------------------------------------------------
  *
@@ -960,7 +937,7 @@ _match_tag_set (const mongoc_server_description_t *sd,
  *      Get the compressor id if compression was negotiated.
  *
  * Returns:
- *      The compressor ID, or 0 if none was negotiated.
+ *      The compressor ID, or -1 if none was negotiated.
  *
  *--------------------------------------------------------------------------
  */
@@ -980,6 +957,5 @@ mongoc_server_description_compressor_id (
       }
    }
 
-   return 0;
+   return -1;
 }
-#endif

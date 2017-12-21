@@ -71,19 +71,24 @@ typedef_list = [
     # libmongoc.
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
+    typedef("mongoc_client_pool_ptr", "mongoc_client_pool_t *"),
     typedef("mongoc_collection_ptr", "mongoc_collection_t *"),
+    typedef("mongoc_cluster_ptr", "mongoc_cluster_t *"),
+    typedef("mongoc_cmd_parts_ptr", "mongoc_cmd_parts_t *"),
     typedef("mongoc_cursor_ptr", "mongoc_cursor_t *"),
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
     typedef("mongoc_gridfs_file_ptr", "mongoc_gridfs_file_t *"),
     typedef("mongoc_gridfs_ptr", "mongoc_gridfs_t *"),
     typedef("mongoc_insert_flags_t", None),
     typedef("mongoc_iovec_ptr", "mongoc_iovec_t *"),
+    typedef("mongoc_server_stream_ptr", "mongoc_server_stream_t *"),
     typedef("mongoc_query_flags_t", None),
     typedef("const_mongoc_index_opt_t", "const mongoc_index_opt_t *"),
     typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
     typedef("mongoc_ss_optype_t", None),
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
     typedef("mongoc_write_concern_ptr", "mongoc_write_concern_t *"),
+    typedef("mongoc_change_stream_ptr", "mongoc_change_stream_t *"),
 
     # Const libmongoc.
     typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
@@ -115,6 +120,16 @@ future_functions = [
                      param("const_char_ptr", "db_name"),
                      param("const_bson_ptr", "command"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_client_command_with_opts",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
@@ -212,9 +227,9 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_cursor_ptr",
-                    "mongoc_collection_find_indexes",
+                    "mongoc_collection_find_indexes_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("bson_error_ptr", "error")]),
+                     param("const_bson_ptr", "opts")]),
 
     future_function("bool",
                     "mongoc_collection_stats",
@@ -224,11 +239,11 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
-                    "mongoc_collection_insert",
+                    "mongoc_collection_insert_one",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("mongoc_insert_flags_t", "flags"),
                      param("const_bson_ptr", "document"),
-                     param("const_mongoc_write_concern_ptr", "write_concern"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
@@ -249,6 +264,14 @@ future_functions = [
                      param("const_mongoc_write_concern_ptr", "write_concern"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("bool",
+                    "mongoc_cluster_run_command_parts",
+                    [param("mongoc_cluster_ptr", "cluster"),
+                     param("mongoc_server_stream_ptr", "server_stream"),
+                     param("mongoc_cmd_parts_ptr", "parts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("void",
                     "mongoc_cursor_destroy",
                     [param("mongoc_cursor_ptr", "cursor")]),
@@ -259,8 +282,9 @@ future_functions = [
                      param("const_bson_ptr_ptr", "doc")]),
 
     future_function("char_ptr_ptr",
-                    "mongoc_client_get_database_names",
+                    "mongoc_client_get_database_names_with_opts",
                     [param("mongoc_client_ptr", "client"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_server_description_ptr",
@@ -269,6 +293,14 @@ future_functions = [
                      param("bool", "for_writes"),
                      param("const_mongoc_read_prefs_ptr", "prefs"),
                      param("bson_error_ptr", "error")]),
+
+    future_function("void",
+                    "mongoc_client_destroy",
+                    [param("mongoc_client_ptr", "client")]),
+
+    future_function("void",
+                    "mongoc_client_pool_destroy",
+                    [param("mongoc_client_pool_ptr", "pool")]),
 
     future_function("bool",
                     "mongoc_database_command_simple",
@@ -279,8 +311,9 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("char_ptr_ptr",
-                    "mongoc_database_get_collection_names",
+                    "mongoc_database_get_collection_names_with_opts",
                     [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("ssize_t",
@@ -335,6 +368,21 @@ future_functions = [
                      param("const_char_ptr", "db"),
                      param("const_char_ptr", "prefix"),
                      param("bson_error_ptr", "error")]),
+
+    future_function("mongoc_change_stream_ptr",
+                    "mongoc_collection_watch",
+                    [param("mongoc_collection_ptr", "coll"),
+                    param("const_bson_ptr", "pipeline"),
+                    param("const_bson_ptr", "opts")]),
+
+    future_function("bool",
+                    "mongoc_change_stream_next",
+                    [param("mongoc_change_stream_ptr", "stream"),
+                     param("const_bson_ptr_ptr", "bson")]),
+
+    future_function("void",
+                    "mongoc_change_stream_destroy",
+                    [param("mongoc_change_stream_ptr", "stream")]),
 ]
 
 
@@ -382,3 +430,4 @@ for file_name in files:
     with open(joinpath(mock_server_dir, file_name), 'w+') as f:
         t = env.get_template(file_name + ".template")
         f.write(t.render(globals()))
+        f.write('\n')

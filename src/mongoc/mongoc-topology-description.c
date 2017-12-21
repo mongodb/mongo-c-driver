@@ -23,6 +23,28 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-thread-private.h"
+
+
+static bool
+_is_data_node (mongoc_server_description_t *sd)
+{
+   switch (sd->type) {
+   case MONGOC_SERVER_MONGOS:
+   case MONGOC_SERVER_STANDALONE:
+   case MONGOC_SERVER_RS_SECONDARY:
+   case MONGOC_SERVER_RS_PRIMARY:
+      return true;
+   case MONGOC_SERVER_RS_OTHER:
+   case MONGOC_SERVER_RS_ARBITER:
+   case MONGOC_SERVER_UNKNOWN:
+   case MONGOC_SERVER_POSSIBLE_PRIMARY:
+   case MONGOC_SERVER_RS_GHOST:
+   case MONGOC_SERVER_DESCRIPTION_TYPES:
+   default:
+      return false;
+   }
+}
 
 
 static void
@@ -48,21 +70,17 @@ _mongoc_topology_server_dtor (void *server_, void *ctx_)
  */
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                  mongoc_topology_description_type_t type,
                                   int64_t heartbeat_msec)
 {
    ENTRY;
 
    BSON_ASSERT (description);
-   BSON_ASSERT (type == MONGOC_TOPOLOGY_UNKNOWN ||
-                type == MONGOC_TOPOLOGY_SINGLE ||
-                type == MONGOC_TOPOLOGY_RS_NO_PRIMARY);
 
    memset (description, 0, sizeof (*description));
 
    bson_oid_init (&description->topology_id, NULL);
    description->opened = false;
-   description->type = type;
+   description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->heartbeat_msec = heartbeat_msec;
    description->servers =
       mongoc_set_new (8, _mongoc_topology_server_dtor, NULL);
@@ -70,6 +88,8 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->max_set_version = MONGOC_NO_SET_VERSION;
    description->stale = true;
    description->rand_seed = (unsigned int) bson_get_monotonic_time ();
+   bson_init (&description->cluster_time);
+   description->session_timeout_minutes = MONGOC_NO_SESSIONS;
 
    EXIT;
 }
@@ -133,6 +153,10 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 
    dst->apm_context = src->apm_context;
 
+   bson_copy_to (&src->cluster_time, &dst->cluster_time);
+
+   dst->session_timeout_minutes = src->session_timeout_minutes;
+
    EXIT;
 }
 
@@ -158,11 +182,15 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 
    BSON_ASSERT (description);
 
-   mongoc_set_destroy (description->servers);
+   if (description->servers) {
+      mongoc_set_destroy (description->servers);
+   }
 
    if (description->set_name) {
       bson_free (description->set_name);
    }
+
+   bson_destroy (&description->cluster_time);
 
    EXIT;
 }
@@ -709,6 +737,30 @@ DONE:
    return;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_has_data_node --
+ *
+ *      Internal method: are any servers not Arbiter, Ghost, or Unknown?
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_description_has_data_node (mongoc_topology_description_t *td)
+{
+   int i;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; i < (int) td->servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+      if (_is_data_node (sd)) {
+         return true;
+      }
+   }
+
+   return false;
+}
 
 /*
  *-------------------------------------------------------------------------
@@ -1132,6 +1184,69 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_update_cluster_time --
+ *
+ *  Drivers Session Spec: Drivers MUST examine responses to server commands to
+ *  see if they contain a top level field named $clusterTime formatted as
+ *  follows:
+ *
+ *  {
+ *      ...
+ *      $clusterTime : {
+ *          clusterTime : <BsonTimestamp>,
+ *          signature : {
+ *              hash : <BsonBinaryData>,
+ *              keyId : <BsonInt64>
+ *          }
+ *      },
+ *      ...
+ *  }
+ *
+ *  Whenever a driver receives a clusterTime from a server it MUST compare it
+ *  to the current highest seen clusterTime for the cluster. If the new
+ *  clusterTime is higher than the highest seen clusterTime it MUST become
+ *  the new highest seen clusterTime. Two clusterTimes are compared using
+ *  only the BsonTimestamp value of the clusterTime embedded field (be sure to
+ *  include both the timestamp and the increment of the BsonTimestamp in the
+ *  comparison). The signature field does not participate in the comparison.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_description_update_cluster_time (
+   mongoc_topology_description_t *td, const bson_t *reply)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+   const uint8_t *data;
+   uint32_t size;
+   bson_t cluster_time;
+
+   if (!reply || !bson_iter_init_find (&iter, reply, "$clusterTime")) {
+      return;
+   }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter) ||
+       !bson_iter_recurse (&iter, &child)) {
+      MONGOC_ERROR ("Can't parse $clusterTime");
+      return;
+   }
+
+   bson_iter_document (&iter, &size, &data);
+   bson_init_static (&cluster_time, data, (size_t) size);
+
+   if (bson_empty (&td->cluster_time) ||
+       _mongoc_cluster_time_greater (&cluster_time, &td->cluster_time)) {
+      bson_destroy (&td->cluster_time);
+      bson_copy_to (&cluster_time, &td->cluster_time);
+   }
+}
+
+
 static void
 _mongoc_topology_description_add_new_servers (
    mongoc_topology_description_t *topology, mongoc_server_description_t *server)
@@ -1390,15 +1505,15 @@ _mongoc_topology_description_update_rs_without_primary (
    /* Add new servers that this replica set member knows about */
    _mongoc_topology_description_add_new_servers (topology, server);
 
-   if (!_mongoc_topology_description_matches_me (server)) {
-      _mongoc_topology_description_remove_server (topology, server);
-      return;
-   }
-
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    if (server->current_primary) {
       _mongoc_topology_description_label_unknown_member (
          topology, server->current_primary, MONGOC_SERVER_POSSIBLE_PRIMARY);
+   }
+
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server (topology, server);
+      return;
    }
 }
 
@@ -1592,7 +1707,7 @@ transition_t gSDAMTransitionTable
          NULL, /* MONGOC_TOPOLOGY_SHARDED */
          NULL, /* MONGOC_TOPOLOGY_RS_NO_PRIMARY */
          _mongoc_topology_description_check_if_has_primary /* MONGOC_TOPOLOGY_RS_WITH_PRIMARY
-                                                              */
+                                                            */
       },
       {/* STANDALONE */
        _mongoc_topology_description_update_unknown_with_standalone,
@@ -1681,6 +1796,51 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_update_session_timeout --
+ *
+ *      Fill out td.session_timeout_minutes.
+ *
+ *      Server Discovery and Monitoring Spec: "set logicalSessionTimeoutMinutes
+ *      to the smallest logicalSessionTimeoutMinutes value among all
+ *      ServerDescriptions of known ServerType. If any ServerDescription of
+ *      known ServerType has a null logicalSessionTimeoutMinutes, then
+ *      logicalSessionTimeoutMinutes MUST be set to null."
+ *
+ * --------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_topology_description_update_session_timeout (
+   mongoc_topology_description_t *td)
+{
+   mongoc_set_t *set;
+   size_t i;
+   mongoc_server_description_t *sd;
+
+   set = td->servers;
+
+   td->session_timeout_minutes = MONGOC_NO_SESSIONS;
+
+   for (i = 0; i < set->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
+      if (!_is_data_node (sd)) {
+         continue;
+      }
+
+      if (sd->session_timeout_minutes == MONGOC_NO_SESSIONS) {
+         td->session_timeout_minutes = MONGOC_NO_SESSIONS;
+         return;
+      } else if (td->session_timeout_minutes == MONGOC_NO_SESSIONS) {
+         td->session_timeout_minutes = sd->session_timeout_minutes;
+      } else if (td->session_timeout_minutes > sd->session_timeout_minutes) {
+         td->session_timeout_minutes = sd->session_timeout_minutes;
+      }
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_description_check_compatible --
  *
  *      Fill out td.compatibility_error if any server's wire versions do
@@ -1698,38 +1858,36 @@ _mongoc_topology_description_check_compatible (
 {
    size_t i;
    mongoc_server_description_t *sd;
-   bool server_too_new;
-   bool server_too_old;
 
    memset (&td->compatibility_error, 0, sizeof (bson_error_t));
 
    for (i = 0; i < td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
                                                                 (int) i);
+      if (sd->type == MONGOC_SERVER_UNKNOWN ||
+          sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
+         continue;
+      }
 
-      /* A server is considered to be incompatible with a driver if its min and
-       * max wire version does not overlap the driver’s. Specifically, a driver
-       * with a min and max range of [a, b] must be considered incompatible
-       * with any server with min and max range of [c, d] where c > b or d < a.
-       * All other servers are considered to be compatible. */
-      server_too_new = sd->min_wire_version > WIRE_VERSION_MAX;
-      server_too_old = sd->max_wire_version < WIRE_VERSION_MIN;
-
-      if (server_too_new || server_too_old) {
-         bson_set_error (&td->compatibility_error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Server at \"%s\" uses wire protocol versions %d"
-                         " through %d, but libmongoc %s only supports %d"
-                         " through %d",
-                         sd->host.host_and_port,
-                         sd->min_wire_version,
-                         sd->max_wire_version,
-                         MONGOC_VERSION_S,
-                         WIRE_VERSION_MIN,
-                         WIRE_VERSION_MAX);
-
-         break;
+      if (sd->min_wire_version > WIRE_VERSION_MAX) {
+         bson_set_error (
+            &td->compatibility_error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Server at %s requires wire version %d,"
+            " but this version of libmongoc only supports up to %d",
+            sd->host.host_and_port,
+            sd->min_wire_version,
+            WIRE_VERSION_MAX);
+      } else if (sd->max_wire_version < WIRE_VERSION_MIN) {
+         bson_set_error (
+            &td->compatibility_error,
+            MONGOC_ERROR_PROTOCOL,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "Server at %s reports wire version %d, but this"
+            " version of libmongoc requires at least 2 (MongoDB 2.6)",
+            sd->host.host_and_port,
+            sd->max_wire_version);
       }
    }
 }
@@ -1782,6 +1940,8 @@ mongoc_topology_description_handle_ismaster (
    mongoc_server_description_handle_ismaster (
       sd, ismaster_response, rtt_msec, error);
 
+   mongoc_topology_description_update_cluster_time (topology,
+                                                    ismaster_response);
    _mongoc_topology_description_monitor_server_changed (topology, prev_sd, sd);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
@@ -1795,7 +1955,12 @@ mongoc_topology_description_handle_ismaster (
              mongoc_server_description_type (sd));
    }
 
-   _mongoc_topology_description_check_compatible (topology);
+   _mongoc_topology_description_update_session_timeout (topology);
+
+   /* Don't bother checking wire version compatibility if we already errored */
+   if (ismaster_response && (!error || !error->code)) {
+      _mongoc_topology_description_check_compatible (topology);
+   }
    _mongoc_topology_description_monitor_changed (prev_td, topology);
 
    if (prev_td) {
@@ -1904,6 +2069,7 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
 
    return NULL;
 }
+
 /*
  *--------------------------------------------------------------------------
  *

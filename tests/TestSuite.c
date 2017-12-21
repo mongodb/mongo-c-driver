@@ -369,11 +369,74 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
 }
 
 
-void
-TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func)
+static void
+_TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 {
-   TestSuite_AddFull (
-      suite, name, (void *) func, NULL, NULL, TestSuite_CheckMockServerAllowed);
+   test->checks[test->num_checks] = check;
+   if (++test->num_checks > MAX_TEST_CHECK_FUNCS) {
+      fprintf (stderr,
+               "Too many check funcs for %s, increase MAX_TEST_CHECK_FUNCS "
+               "to more than %d\n",
+               name,
+               MAX_TEST_CHECK_FUNCS);
+      abort ();
+   }
+}
+
+
+Test *
+_V_TestSuite_AddFull (TestSuite *suite,
+                      const char *name,
+                      TestFuncWC func,
+                      TestFuncDtor dtor,
+                      void *ctx,
+                      va_list ap)
+{
+   CheckFunc check;
+   Test *test;
+   Test *iter;
+
+   test = (Test *) calloc (1, sizeof *test);
+   test->name = bson_strdup (name);
+   test->func = func;
+   test->num_checks = 0;
+
+   while ((check = va_arg (ap, CheckFunc))) {
+      _TestSuite_AddCheck (test, check, name);
+   }
+
+   test->next = NULL;
+   test->dtor = dtor;
+   test->ctx = ctx;
+   TestSuite_SeedRand (suite, test);
+
+   if (!suite->tests) {
+      suite->tests = test;
+      return test;
+   }
+
+   for (iter = suite->tests; iter->next; iter = iter->next) {
+   }
+
+   iter->next = test;
+   return test;
+}
+
+
+void
+_TestSuite_AddMockServerTest (TestSuite *suite,
+                              const char *name,
+                              TestFunc func,
+                              ...)
+{
+   Test *test;
+   va_list ap;
+
+   va_start (ap, func);
+   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   va_end (ap);
+
+   _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
 }
 
 
@@ -389,34 +452,18 @@ TestSuite_AddWC (TestSuite *suite,  /* IN */
 
 
 void
-TestSuite_AddFull (TestSuite *suite,  /* IN */
-                   const char *name,  /* IN */
-                   TestFuncWC func,   /* IN */
-                   TestFuncDtor dtor, /* IN */
-                   void *ctx,
-                   int (*check) (void)) /* IN */
+_TestSuite_AddFull (TestSuite *suite,  /* IN */
+                    const char *name,  /* IN */
+                    TestFuncWC func,   /* IN */
+                    TestFuncDtor dtor, /* IN */
+                    void *ctx,
+                    ...) /* IN */
 {
-   Test *test;
-   Test *iter;
+   va_list ap;
 
-   test = (Test *) calloc (1, sizeof *test);
-   test->name = bson_strdup (name);
-   test->func = func;
-   test->check = check;
-   test->next = NULL;
-   test->dtor = dtor;
-   test->ctx = ctx;
-   TestSuite_SeedRand (suite, test);
-
-   if (!suite->tests) {
-      suite->tests = test;
-      return;
-   }
-
-   for (iter = suite->tests; iter->next; iter = iter->next) {
-   }
-
-   iter->next = test;
+   va_start (ap, ctx);
+   _V_TestSuite_AddFull (suite, name, func, dtor, ctx, ap);
+   va_end (ap);
 }
 
 
@@ -581,6 +628,7 @@ _append_json_escaped (bson_string_t *buf, const char *s)
 }
 
 
+/* returns 1 on failure, 0 on success */
 static int
 TestSuite_RunTest (TestSuite *suite, /* IN */
                    Test *test,       /* IN */
@@ -592,102 +640,103 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    char name[MAX_TEST_NAME_LENGTH];
    bson_string_t *buf;
    bson_string_t *mock_server_log_buf;
+   size_t i;
    int status = 0;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-   name[sizeof name - 1] = '\0';
 
    buf = bson_string_new (NULL);
 
-   if (!test->check || test->check ()) {
-      _Clock_GetMonotonic (&ts1);
-
-      /*
-       * TODO: If not verbose, close()/dup(/dev/null) for stdout.
-       */
-
-      if (suite->flags & TEST_DEBUGOUTPUT) {
-         test_msg ("Begin %s, seed %u", name, test->seed);
-      }
-
-      if ((suite->flags & TEST_NOFORK)) {
-#ifdef MONGOC_TRACE
-         if (suite->flags & TEST_TRACE) {
-            mongoc_log_set_handler (mongoc_log_default_handler, NULL);
-            mongoc_log_trace_enable ();
-         } else {
-            mongoc_log_trace_disable ();
+   for (i = 0; i < test->num_checks; i++) {
+      if (!test->checks[i]()) {
+         if (!suite->silent) {
+            bson_string_append_printf (
+               buf,
+               "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s",
+               test->name,
+               ((*count) == 1) ? "" : ",");
+            test_msg ("%s", buf->str);
+            if (suite->outfile) {
+               fprintf (suite->outfile, "%s", buf->str);
+               fflush (suite->outfile);
+            }
          }
-#endif
 
-         srand (test->seed);
-         test->func (test->ctx);
-         status = 0;
-      } else {
-         status = TestSuite_RunFuncInChild (suite, test);
-      }
-
-      capture_logs (false);
-
-      if (suite->silent) {
-         return status;
-      }
-
-      _Clock_GetMonotonic (&ts2);
-      _Clock_Subtract (&ts3, &ts2, &ts1);
-
-      bson_string_append_printf (buf,
-                                 "    { \"status\": \"%s\", "
-                                 "\"test_file\": \"%s\", "
-                                 "\"seed\": \"%u\", "
-                                 "\"start\": %u.%09u, "
-                                 "\"end\": %u.%09u, "
-                                 "\"elapsed\": %u.%09u ",
-                                 (status == 0) ? "PASS" : "FAIL",
-                                 name,
-                                 test->seed,
-                                 (unsigned) ts1.tv_sec,
-                                 (unsigned) ts1.tv_nsec,
-                                 (unsigned) ts2.tv_sec,
-                                 (unsigned) ts2.tv_nsec,
-                                 (unsigned) ts3.tv_sec,
-                                 (unsigned) ts3.tv_nsec);
-
-      mock_server_log_buf = suite->mock_server_log_buf;
-
-      if (mock_server_log_buf && mock_server_log_buf->len) {
-         bson_string_append (buf, ", \"log_raw\": \"");
-         _append_json_escaped (buf, mock_server_log_buf->str);
-         bson_string_append (buf, "\"");
-
-         bson_string_truncate (mock_server_log_buf, 0);
-      }
-
-      bson_string_append_printf (buf, " }");
-
-      if (*count > 1) {
-         bson_string_append_printf (buf, ",");
-      }
-
-      test_msg ("%s", buf->str);
-      if (suite->outfile) {
-         fprintf (suite->outfile, "%s", buf->str);
-         fflush (suite->outfile);
-      }
-   } else if (!suite->silent) {
-      status = 0;
-      bson_string_append_printf (
-         buf,
-         "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s",
-         test->name,
-         ((*count) == 1) ? "" : ",");
-      test_msg ("%s", buf->str);
-      if (suite->outfile) {
-         fprintf (suite->outfile, "%s", buf->str);
-         fflush (suite->outfile);
+         goto done;
       }
    }
 
+   _Clock_GetMonotonic (&ts1);
+
+   if (suite->flags & TEST_DEBUGOUTPUT) {
+      test_msg ("Begin %s, seed %u", name, test->seed);
+   }
+
+   if ((suite->flags & TEST_NOFORK)) {
+#ifdef MONGOC_TRACE
+      if (suite->flags & TEST_TRACE) {
+         mongoc_log_set_handler (mongoc_log_default_handler, NULL);
+         mongoc_log_trace_enable ();
+      } else {
+         mongoc_log_trace_disable ();
+      }
+#endif
+
+      srand (test->seed);
+      test->func (test->ctx);
+   } else {
+      status = TestSuite_RunFuncInChild (suite, test);
+   }
+
+   capture_logs (false);
+
+   if (suite->silent) {
+      goto done;
+   }
+
+   _Clock_GetMonotonic (&ts2);
+   _Clock_Subtract (&ts3, &ts2, &ts1);
+
+   bson_string_append_printf (buf,
+                              "    { \"status\": \"%s\", "
+                              "\"test_file\": \"%s\", "
+                              "\"seed\": \"%u\", "
+                              "\"start\": %u.%09u, "
+                              "\"end\": %u.%09u, "
+                              "\"elapsed\": %u.%09u ",
+                              (status == 0) ? "PASS" : "FAIL",
+                              name,
+                              test->seed,
+                              (unsigned) ts1.tv_sec,
+                              (unsigned) ts1.tv_nsec,
+                              (unsigned) ts2.tv_sec,
+                              (unsigned) ts2.tv_nsec,
+                              (unsigned) ts3.tv_sec,
+                              (unsigned) ts3.tv_nsec);
+
+   mock_server_log_buf = suite->mock_server_log_buf;
+
+   if (mock_server_log_buf && mock_server_log_buf->len) {
+      bson_string_append (buf, ", \"log_raw\": \"");
+      _append_json_escaped (buf, mock_server_log_buf->str);
+      bson_string_append (buf, "\"");
+
+      bson_string_truncate (mock_server_log_buf, 0);
+   }
+
+   bson_string_append_printf (buf, " }");
+
+   if (*count > 1) {
+      bson_string_append_printf (buf, ",");
+   }
+
+   test_msg ("%s", buf->str);
+   if (suite->outfile) {
+      fprintf (suite->outfile, "%s", buf->str);
+      fflush (suite->outfile);
+   }
+
+done:
    bson_string_free (buf, true);
 
    return status ? 1 : 0;
@@ -916,32 +965,47 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
 }
 
 
+static bool
+TestSuite_TestMatchesName (const TestSuite *suite,
+                           const Test *test,
+                           const char *testname)
+{
+   char name[128];
+   bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
+
+   snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+
+   if (star) {
+      /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
+      return (0 == strncmp (name, testname, strlen (testname) - 1));
+   } else {
+      return (0 == strcmp (name, testname));
+   }
+}
+
+
 static int
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
-   char name[128];
    Test *test;
-   int count = 1;
-   bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
-   bool match;
+   int count = 0;
    int status = 0;
 
    ASSERT (suite);
    ASSERT (testname);
 
+   /* initialize "count" so we can omit comma after last test output */
    for (test = suite->tests; test; test = test->next) {
-      snprintf (name, sizeof name, "%s%s", suite->name, test->name);
-      name[sizeof name - 1] = '\0';
-      if (star) {
-         /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
-         match = (0 == strncmp (name, testname, strlen (testname) - 1));
-      } else {
-         match = (0 == strcmp (name, testname));
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
+         count++;
       }
+   }
 
-      if (match) {
+   for (test = suite->tests; test; test = test->next) {
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
          status += TestSuite_RunTest (suite, test, &count);
+         count--;
       }
    }
 

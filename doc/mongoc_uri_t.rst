@@ -22,7 +22,7 @@ Format
 
 .. code-block:: none
 
-  mongodb://                                   <1>
+  mongodb[+srv]://                             <1>
      [username:password@]                      <2>
      host1                                     <3>
      [:port1]                                  <4>
@@ -30,7 +30,7 @@ Format
      [/[database]                              <6>
      [?options]]                               <7>
 
-#. mongodb is the specifier of the MongoDB protocol.
+#. "mongodb" is the specifier of the MongoDB protocol. Use "mongodb+srv" with a single service name in place of "host1" to specify the initial list of servers with an SRV record.
 #. An optional username and password.
 #. The only required part of the uri.  This specifies either a hostname, IP address or UNIX domain socket.
 #. An optional port number.  Defaults to :27017.
@@ -61,11 +61,24 @@ To describe a connection to a replica set named 'test' with the following mongod
 * ``db1.example.com`` on port ``27017``
 * ``db2.example.com`` on port ``2500``
 
-You would use the connection string that resembles the following.
+You would use a connection string that resembles the following.
 
 .. code-block:: none
 
   mongodb://db1.example.com,db2.example.com:2500/?replicaSet=test
+
+SRV Example
+-----------
+
+If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ with a name like "_mongodb._tcp.server.example.com" whose records are a list of one or more MongoDB server hostnames, use a connection string like this:
+
+.. code-block:: c
+
+  uri = mongoc_uri_new ("mongodb+srv://server.example.com/?replicaSet=rs&appName=applicationName");
+
+The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames. If this query succeeds, the driver performs a DNS TXT query on the service name (without the "_mongodb._tcp" prefix) for additional URI options configured as TXT records.
+
+On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
 
 Connection Options
 ------------------
@@ -73,6 +86,8 @@ Connection Options
 ========================================== ================================= ============================================================================================================================================================================================================================================
 Constant                                   Key                               Description
 ========================================== ================================= ============================================================================================================================================================================================================================================
+MONGOC_URI_RETRYWRITES                     retrywrites                       If "true" and the server is a MongoDB 3.6+ replica set or sharded cluster, the driver safely retries a write that failed due to a network error or replica set failover. Only inserts, updates of single documents, or deletes of single
+                                                                             documents are retried.
 MONGOC_URI_APPNAME                         appname                           The client application name. This value is used by MongoDB when it logs connection information and profile information, such as slow queries.
 MONGOC_URI_SSL                             ssl                               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
 MONGOC_URI_COMPRESSORS                     compressors                       Comma separated list of compressors, if any, to use to compress the wire protocol messages. Snappy are Zlib are optional build time dependencies, and enable the "snappy" and "zlib" values respectively. Defaults to empty (no compressors).
@@ -101,7 +116,7 @@ Mechanism Properties
 ========================================== ================================= =========================================================================================================================================================================================================================
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
-MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use the canonical hostname of the service, rather than configured alias.
+MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use the canonical hostname of the service, rather than its configured alias, when authenticating with Cyrus-SASL Kerberos.
 MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use alternative service name. The default is ``mongodb``.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
@@ -155,7 +170,7 @@ These options govern the behavior of a :symbol:`mongoc_client_pool_t`. They are 
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The maximum number of clients created by a :symbol:`mongoc_client_pool_t` total (both in the pool and checked out). The default value is 100. Once it is reached, :symbol:`mongoc_client_pool_pop` blocks until another thread pushes a client.
-MONGOC_URI_MINPOOLSIZE                     minpoolsize                       The number of clients to keep in the pool; once it is reached, :symbol:`mongoc_client_pool_push` destroys clients instead of pushing them. The default value, 0, means "no minimum": a client pushed into the pool is always stored, not destroyed.                  
+MONGOC_URI_MINPOOLSIZE                     minpoolsize                       Deprecated. This option's behavior does not match its name, and its actual behavior will likely hurt performance.
 MONGOC_URI_MAXIDLETIMEMS                   maxidletimems                     Not implemented.
 MONGOC_URI_WAITQUEUEMULTIPLE               waitqueuemultiple                 Not implemented.
 MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                Not implemented.
@@ -262,6 +277,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_read_prefs
     mongoc_uri_get_read_prefs_t
     mongoc_uri_get_replica_set
+    mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
     mongoc_uri_get_username

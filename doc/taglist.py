@@ -42,6 +42,14 @@ def tag_role(name, rawtext, text, lineno, inliner, options=None, content=[]):
     return [], []
 
 
+def find_node(doctree, klass):
+    matches = doctree.traverse(lambda node: isinstance(node, klass))
+    if not matches:
+        raise IndexError("No %s in %s" % (klass, doctree))
+
+    return matches[0]
+
+
 class taglist(nodes.General, nodes.Element):
     def __init__(self, *a, **b):
         super(taglist, self).__init__(*a, **b)
@@ -79,6 +87,15 @@ def process_tags(app, doctree):
     if not hasattr(env, 'tags_all_tags'):
         env.tags_all_tags = []
 
+    metadata = env.metadata[env.docname]
+
+    # A page like mongoc_session_opts_get_causal_consistency.rst sets its
+    # tags with ":tags: session"
+    tags = metadata.get('tags')
+    if tags:
+        env.tags_all_tags.append({'docname': env.docname,
+                                  'tags': get_tags(tags)})
+
     for node in doctree.traverse(taglist):
         env.tags_all_tags.append({'docname': env.docname, 'tags': node.tags})
 
@@ -92,7 +109,8 @@ def process_taglist_nodes(app, doctree, fromdocname):
         env.tags_all_tags = []
 
     for node in doctree.traverse(taglist):
-        content = []
+        links = set()
+
         for tag_info in env.tags_all_tags:
             tags = tag_info['tags']
             if not set(tags).intersection(node.tags):
@@ -101,20 +119,23 @@ def process_taglist_nodes(app, doctree, fromdocname):
             if fromdocname == tag_info['docname']:
                 continue
 
+            links.add(tag_info['docname'])
+
+        content = []
+        for docname in sorted(links):
             # (Recursively) resolve references in the tag content
             para = nodes.paragraph(classes=['tag-source'])
             refnode = nodes.reference('', '', internal=True)
             try:
                 refnode['refuri'] = app.builder.get_relative_uri(
-                    fromdocname, tag_info['docname'])
+                    fromdocname, docname)
             except NoUri:
                 # ignore if no URI can be determined, e.g. for LaTeX output
                 pass
 
             # Create a reference
-            refnode.append(nodes.Text(tag_info['docname']))
+            refnode.append(nodes.Text(docname))
             para += refnode
-
             content.append(para)
 
         node.replace_self(content)
@@ -136,11 +157,11 @@ def depart_tag_node(self, node):
 
 
 def setup(app):
-    app.add_config_value('taglist_css', {}, 'env')
-    app.add_config_value('taglist_tags', {}, 'env')
     app.add_role('tag', tag_role)
     app.add_node(taglist)
     app.add_directive('taglist', TaglistDirective)
     app.connect('doctree-read', process_tags)
     app.connect('doctree-resolved', process_taglist_nodes)
     app.connect('env-purge-doc', purge_tags)
+
+    return {'parallel_write_safe': True, 'parallel_read_safe': False}

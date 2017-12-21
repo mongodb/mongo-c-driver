@@ -1,6 +1,7 @@
 REM Supported/used environment variables:
 REM   LINK_STATIC              Whether to statically link to libmongoc
 REM   ENABLE_SSL               Enable SSL with Microsoft Secure Channel
+REM   ENABLE_SNAPPY            Enable Snappy compression
 
 rem Ensure Cygwin executables like sh.exe are not in PATH
 rem set PATH=C:\Windows\system32;C:\Windows
@@ -32,13 +33,27 @@ cd src\libbson
 %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
 msbuild.exe /m ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj
+cd %BUILD_DIR%
 
-cd ..\..
+if "%ENABLE_SNAPPY%"=="1" (
+  rem Enable Snappy
+  curl --silent --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz
+  %TAR% xzf 1.1.7.tar.gz
+  cd snappy-1.1.7
+  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
+  msbuild.exe /m ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+  set SNAPPY_OPTION=-DENABLE_SNAPPY=ON
+) else (
+  set SNAPPY_OPTION=-DENABLE_SNAPPY=OFF
+)
+
+cd %BUILD_DIR%
 rem Build libmongoc
 if "%ENABLE_SSL%"=="1" (
   %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=WINDOWS .
 ) else (
-  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF .
+  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_SSL=OFF %ENABLE_SNAPPY_OPTION% .
 )
 
 msbuild.exe /m ALL_BUILD.vcxproj

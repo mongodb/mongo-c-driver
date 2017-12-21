@@ -606,11 +606,12 @@ _mongoc_stream_tls_openssl_sni (SSL *ssl, int *ad, void *arg)
    const char *hostname;
 
    if (ssl == NULL) {
-      MONGOC_DEBUG ("No SNI hostname provided");
+      TRACE ("%s", "No SNI hostname provided");
       return SSL_TLSEXT_ERR_NOACK;
    }
 
    hostname = SSL_get_servername (ssl, TLSEXT_NAMETYPE_host_name);
+   /* This is intentionally debug since its only used by the mock test server */
    MONGOC_DEBUG ("Got SNI: '%s'", hostname);
 
    return SSL_TLSEXT_ERR_OK;

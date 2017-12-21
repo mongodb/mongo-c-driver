@@ -1,6 +1,125 @@
+mongo-c-driver 1.9.0
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.0. This version drops support
+for MongoDB 2.4 and adds support for MongoDB 3.6 features:
+
+  * New struct mongoc_change_stream_t to watch a collection for changes.
+  * New struct mongoc_client_session_t represents a MongoDB 3.6 session,
+    which supports causal consistency: you are guaranteed to read your writes
+    and to perform monotonic reads, even when reading from secondaries or in
+    a sharded cluster.
+  * New functions that accept flexible options as a BSON document. These
+    accept a "sessionId" option and any future options. In addition, the
+    two new "update" functions accept the "arrayFilters" option that is new
+    in MongoDB 3.6:
+      mongoc_collection_insert_one
+      mongoc_collection_insert_many
+      mongoc_collection_update_one
+      mongoc_collection_update_many
+      mongoc_collection_replace_one
+      mongoc_collection_delete_one
+      mongoc_collection_delete_many
+      mongoc_client_command_with_opts
+      mongoc_database_command_with_opts
+      mongoc_collection_command_with_opts
+      mongoc_client_find_databases_with_opts
+      mongoc_client_get_database_names_with_opts
+      mongoc_collection_create_bulk_operation_with_opts
+      mongoc_collection_find_indexes_with_opts
+      mongoc_database_find_collections_with_opts
+      mongoc_database_get_collection_names_with_opts
+  * New URI option "retryWrites=true" safely and automatically retries certain
+    write operations if the server is a MongoDB 3.6 replica set or sharded
+    cluster.
+  * Support for MongoDB OP_MSG wire protocol.
+
+Additional changes not specific to MongoDB 3.6:
+
+  * Support for mongodb+srv URIs to query DNS for SRV and TXT records that
+    configure the connection to MongoDB.
+  * Support LibreSSL with CMake build
+  * The "minPoolSize" URI option is deprecated: it's confusing and not useful.
+
+Bug fixes:
+
+  * mongoc_bulk_operation_execute did not always initialize "reply".
+  * Fix C99 pedantic warnings.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeremy Mikola
+  * Kevin Albertson
+  * Jeroen Ooms
+  * Iulian Rotaru
+  * Derick Rethans
+  * Graham Whitted
+  * Brian Moss
+  * Alex Masterov
+  * Michael Kuhn
+  * Sriharsha Vardhan
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.8.2
+====================
+
+It is my pleasure to announce mongo-c-driver 1.8.2. This release fixes the
+following bugs:
+
+  * Remove option to bundle the Snappy compression library, it caused issues
+    for programs linking to libmongoc
+  * Fix pkg-config and CMake config file flags for programs that statically
+    link to libmongoc when libmongoc is statically linked to zLib
+  * The configure flag "--with-zlib=no" was ignored
+    Crash in authentication when username is NULL
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Derick Rethans
+  * Hannes Magnusson
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.8.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.8.1. This release fixes the
+following bugs:
+
+  * Remove a syntax error in the configure script that affects some shells.
+  * The configure script respects --with-zlib=system and --with-snappy=system.
+  * The internal mongoc_server_description_t struct is properly reinitialized
+    after a network error.
+  * Fix the encoding of this NEWS file.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.8.0
 ====================
 
+  * The zLib and Snappy compression libraries are bundled if not available.
+    Wire protocol compression is enabled on Windows.
+  * mongoc_collection_find_and_modify_with_opts now respects a "writeConcern"
+    field in the "extra" BSON document in its mongoc_find_and_modify_opts_t.
   * The command functions mongoc_client_read_write_command_with_opts,
     mongoc_database_read_write_command_with_opts, and
     mongoc_collection_read_write_command_with_opts now ignore the "read_prefs"
@@ -8,18 +127,31 @@ mongo-c-driver 1.8.0
   * mongoc_collection_create_index and mongoc_collection_create_index_with_opts
     are both now deprecated. Use mongoc_database_write_command_with_opts
     instead; a guide to creating an index using that function has been added.
+  * Use select, not WSAPoll, on Windows.
+  * Always mark a server "Unknown" after a network error (besides a timeout).
+  * mongoc_client_pool_t sends platform metadata to the server; before, only a
+    single mongoc_client_t did.
   * New stream method mongoc_stream_timed_out.
+  * Wire version checks introduced in 1.8.0 will prevent the driver from
+    connecting to a future MongoDB server version if its wire protocol is
+    incompatible.
+  * New CMake option ENABLE_MAINTAINER_FLAGS.
 
 Thanks to everyone who contributed to the development of this release.
 
-  * A name
-  * Another name
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Jeremy Mikola
+
+Peace,
+
+   A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.7.0
 ====================
 
-It is my please to announce mongo-c-driver 1.7.0.
+It is my pleasure to announce mongo-c-driver 1.7.0.
 
 New features and bug fixes:
 
@@ -85,7 +217,7 @@ Peace,
 mongo-c-driver 1.6.0
 ====================
 
-It is my please to announce mongo-c-driver 1.6.0.
+It is my pleasure to announce mongo-c-driver 1.6.0.
 
 New features and bug fixes:
 

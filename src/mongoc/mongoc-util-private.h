@@ -34,20 +34,7 @@
 #define strncasecmp _strnicmp
 #endif
 
-/* Suppress CWE-252 ("Unchecked return value") warnings for things we can't deal
- * with */
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define _ignore_value(x)       \
-   (({                         \
-      __typeof__(x) __x = (x); \
-      (void) __x;              \
-   }))
-#else
-#define _ignore_value(x) ((void) (x))
-#endif
-
-
-#if BSON_GNUC_CHECK_VERSION (4, 6)
+#if BSON_GNUC_CHECK_VERSION(4, 6)
 #define BEGIN_IGNORE_DEPRECATIONS  \
    _Pragma ("GCC diagnostic push") \
       _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
@@ -84,11 +71,23 @@ _mongoc_usleep (int64_t usec);
 const char *
 _mongoc_get_command_name (const bson_t *command);
 
+const char *
+_mongoc_get_documents_field_name (const char *command_name);
+
+bool
+_mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value);
+
 void
 _mongoc_get_db_name (const char *ns, char *db /* OUT */);
 
 void
+_mongoc_bson_init_if_set (bson_t *bson);
+
+void
 _mongoc_bson_destroy_if_set (bson_t *bson);
+
+const char *
+_mongoc_bson_type_to_str (bson_type_t t);
 
 size_t
 _mongoc_strlen_or_zero (const char *s);
@@ -99,9 +98,6 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  mongoc_error_code_t code,
                                  uint32_t *server_id,
                                  bson_error_t *error);
-
-bool
-_mongoc_validate_legacy_index (const bson_t *doc, bson_error_t *error);
 
 bool
 _mongoc_validate_new_document (const bson_t *insert, bson_error_t *error);

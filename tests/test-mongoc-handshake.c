@@ -285,8 +285,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    _reset_handshake ();
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1/?" MONGOC_URI_MAXPOOLSIZE
-                         "=1&" MONGOC_URI_MINPOOLSIZE "=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?" MONGOC_URI_MAXPOOLSIZE "=1");
 
    /* Make sure that after we pop a client we can't set global handshake */
    pool = mongoc_client_pool_new (uri);
@@ -364,7 +363,8 @@ test_mongoc_handshake_too_big (void)
    /* Should have truncated the platform field so it fits exactly */
    ASSERT (len == HANDSHAKE_MAX_SIZE);
 
-   mock_server_replies_simple (request, "{'ok': 1}");
+   mock_server_replies_simple (
+      request, "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
    request_destroy (request);
 
    request = mock_server_receives_command (

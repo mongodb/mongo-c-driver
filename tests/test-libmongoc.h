@@ -98,17 +98,27 @@ test_framework_is_replset (void);
 bool
 test_framework_server_is_secondary (mongoc_client_t *client,
                                     uint32_t server_id);
+int64_t
+test_framework_session_timeout_minutes (void);
+bool
+test_framework_clustertime_supported (void);
 bool
 test_framework_max_wire_version_at_least (int version);
+int64_t
+test_framework_max_write_batch_size (void);
 
 int
 test_framework_skip_if_auth (void);
 int
 test_framework_skip_if_no_auth (void);
 int
-test_framework_skip_if_max_wire_version_less_than_1 (void);
+test_framework_skip_if_no_sessions (void);
 int
-test_framework_skip_if_max_wire_version_less_than_2 (void);
+test_framework_skip_if_no_cluster_time (void);
+int
+test_framework_skip_if_crypto (void);
+int
+test_framework_skip_if_no_crypto (void);
 int
 test_framework_skip_if_max_wire_version_less_than_4 (void);
 int
@@ -116,9 +126,15 @@ test_framework_skip_if_max_wire_version_more_than_4 (void);
 int
 test_framework_skip_if_max_wire_version_less_than_5 (void);
 int
+test_framework_skip_if_max_wire_version_less_than_6 (void);
+int
 test_framework_skip_if_not_rs_version_5 (void);
 int
 test_framework_skip_if_rs_version_5 (void);
+int
+test_framework_skip_if_not_rs_version_6 (void);
+int
+test_framework_skip_if_rs_version_6 (void);
 int
 test_framework_skip_if_mongos (void);
 int

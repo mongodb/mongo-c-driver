@@ -23,9 +23,12 @@ Description
 
 Sets the read concern level. See :symbol:`mongoc_read_concern_t` for details.
 
-If the struct has been used in any operation it is "frozen", and calling this function will not alter the read concern level.
+Beginning in version 1.9.0, this function can now alter the read concern after
+it has been used in an operation. Previously, using the struct with an operation
+would mark it as "frozen" and calling this function would return ``false``
+instead of altering the read concern.
 
 Returns
 -------
 
-Returns ``true`` if the read concern level was set, or ``false`` if the struct is frozen.
+Returns ``true`` if the read concern level was set, or ``false`` otherwise.

@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-client-private.h"
 #include "mongoc.h"
 
 #include "mongoc-buffer-private.h"
@@ -160,10 +161,11 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
-                                        " 'minWireVersion': 0,"
+                                        " 'minWireVersion': 2,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
 
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
@@ -193,14 +195,33 @@ mock_server_t *
 mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
+   char *mongos_36_fields = "";
+   char *ismaster;
 
-   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
-                                        " 'msg': 'isdbgrid',"
-                                        " 'minWireVersion': 0,"
-                                        " 'maxWireVersion': %d}",
-                                        max_wire_version);
+   if (max_wire_version >= WIRE_VERSION_OP_MSG) {
+      mongos_36_fields =
+         ","
+         "'$clusterTime': {"
+         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+         "  'signature': {"
+         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+         "    'keyId': {'$numberLong': '6446735049323708417'}"
+         "  },"
+         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+         "},"
+         "'logicalSessionTimeoutMinutes': 30";
+   }
 
+   ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                  " 'ismaster': true,"
+                                  " 'msg': 'isdbgrid',"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': %d"
+                                  " %s}",
+                                  max_wire_version,
+                                  mongos_36_fields);
+
+   BSON_ASSERT (max_wire_version > 0);
    mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
@@ -499,13 +520,60 @@ mock_server_auto_ismaster (mock_server_t *server,
 {
    char *formatted_response_json;
    va_list args;
+   bson_t *tmp;
+   bson_iter_t iter;
 
    va_start (args, response_json);
    formatted_response_json = bson_strdupv_printf (response_json, args);
    va_end (args);
+   tmp = tmp_bson (formatted_response_json);
+
+   if (!bson_iter_init_find (&iter, tmp, "minWireVersion")) {
+      BSON_APPEND_INT32 (tmp, "minWireVersion", WIRE_VERSION_MIN);
+   }
+   if (!bson_iter_init_find (&iter, tmp, "maxWireVersion")) {
+      BSON_APPEND_INT32 (tmp, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
+   }
+   bson_free (formatted_response_json);
+   formatted_response_json = bson_as_json (tmp, 0);
 
    return mock_server_autoresponds (
       server, auto_ismaster, (void *) formatted_response_json, bson_free);
+}
+
+
+static bool
+auto_endsessions (request_t *request, void *data)
+{
+   if (!request->is_command ||
+       strcasecmp (request->command_name, "endSessions") != 0) {
+      return false;
+   }
+
+   mock_server_replies_ok_and_destroys (request);
+   return true;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_auto_endsessions --
+ *
+ *       Autorespond to "endSessions".
+ *
+ * Returns:
+ *       An id for mock_server_remove_autoresponder.
+ *
+ * Side effects:
+ *       If a matching request is enqueued, pop it and respond.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int
+mock_server_auto_endsessions (mock_server_t *server)
+{
+   return mock_server_autoresponds (server, auto_endsessions, NULL, NULL);
 }
 
 
@@ -701,15 +769,67 @@ mock_server_get_queue (mock_server_t *server)
 }
 
 
+static bool
+find_key (void *current, void *key)
+{
+   return !strcmp ((const char *) current, (const char *) key);
+}
+
+
+static void
+key_dtor (void *item, void *ctx)
+{
+   /* mongoc_set_t requires a dtor, there's nothing to destroy */
+}
+
+
+static void
+assert_no_duplicate_keys (request_t *request)
+{
+   mongoc_set_t *keys;
+   size_t n_documents;
+   int i;
+   bson_iter_t iter;
+
+   n_documents = request->docs.len;
+
+   for (i = 0; i < n_documents; i++) {
+      keys = mongoc_set_new (8, key_dtor, NULL);
+      BSON_ASSERT (bson_iter_init (&iter, request_get_doc (request, i)));
+
+      while (bson_iter_next (&iter)) {
+         if (mongoc_set_find_item (
+                keys, find_key, (void *) bson_iter_key (&iter))) {
+            fprintf (stderr,
+                     "Duplicate key \"%s\" in document:\n%s",
+                     bson_iter_key (&iter),
+                     bson_as_json (request_get_doc (request, i), NULL));
+            abort ();
+         }
+
+         mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));
+      }
+
+      mongoc_set_destroy (keys);
+   }
+}
+
+
 request_t *
 mock_server_receives_request (mock_server_t *server)
 {
    sync_queue_t *q;
    int64_t request_timeout_msec;
+   request_t *r;
 
    q = mock_server_get_queue (server);
    request_timeout_msec = mock_server_get_request_timeout_msec (server);
-   return (request_t *) q_get (q, request_timeout_msec);
+   r = (request_t *) q_get (q, request_timeout_msec);
+   if (r) {
+      assert_no_duplicate_keys (r);
+   }
+
+   return r;
 }
 
 
@@ -725,7 +845,7 @@ mock_server_receives_request (mock_server_t *server)
  *       not match.
  *
  * Side effects:
- *       Logs if the current request is not a command matching
+ *       Logs if the current request is not an OP_QUERY command matching
  *       database_name, command_name, and command_json.
  *
  *--------------------------------------------------------------------------
@@ -769,6 +889,47 @@ mock_server_receives_command (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_receives_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass varargs
+ *       list of bson_t pointers, which are matched to the series of
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+_mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
+{
+   request_t *request;
+   va_list args;
+   bool r;
+
+   request = mock_server_receives_request (server);
+
+   va_start (args, flags);
+   r = request_matches_msgv (request, flags, &args);
+   va_end (args);
+
+   if (!r) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_receives_ismaster --
  *
  *       Pop a client ismaster call if one is enqueued, or wait up to
@@ -791,30 +952,6 @@ mock_server_receives_ismaster (mock_server_t *server)
       server, "admin", MONGOC_QUERY_SLAVE_OK, "{'isMaster': 1}");
 }
 
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_receives_gle --
- *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
- *
- * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
- *
- * Side effects:
- *       Logs if the current request is not getLastError.
- *
- *--------------------------------------------------------------------------
- */
-
-request_t *
-mock_server_receives_gle (mock_server_t *server, const char *database_name)
-{
-   return mock_server_receives_command (
-      server, database_name, MONGOC_QUERY_NONE, "{'getLastError': 1}");
-}
 
 /*--------------------------------------------------------------------------
  *
@@ -959,9 +1096,8 @@ mock_server_receives_update (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request &&
-       !request_matches_update (
-          request, ns, flags, selector_json, update_json)) {
+   if (request && !request_matches_update (
+                     request, ns, flags, selector_json, update_json)) {
       request_destroy (request);
       return NULL;
    }
@@ -1709,6 +1845,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
    uint8_t *buf;
    uint8_t *ptr;
    size_t len;
+   bool is_op_msg;
 
    mongoc_reply_flags_t flags = reply->flags;
    const bson_t *docs = reply->docs;
@@ -1725,10 +1862,13 @@ _mock_server_reply_with_stream (mock_server_t *server,
       }
    }
 
-   test_suite_mock_server_log ("%5.2f  %hu <- %hu \t%s",
+   is_op_msg = reply->request_opcode == MONGOC_OPCODE_MSG;
+
+   test_suite_mock_server_log ("%5.2f  %hu <- %hu %s %s",
                                mock_server_get_uptime_sec (server),
                                reply->client_port,
                                mock_server_get_port (server),
+                               is_op_msg ? "OP_MSG" : "OP_REPLY",
                                docs_json->str);
 
    len = 0;
@@ -1757,13 +1897,22 @@ _mock_server_reply_with_stream (mock_server_t *server,
    mongoc_mutex_unlock (&server->mutex);
    r.header.msg_len = 0;
    r.header.response_to = reply->response_to;
-   r.header.opcode = MONGOC_OPCODE_REPLY;
-   r.reply.flags = flags;
-   r.reply.cursor_id = cursor_id;
-   r.reply.start_from = 0;
-   r.reply.n_returned = 1;
-   r.reply.documents = buf;
-   r.reply.documents_len = (uint32_t) len;
+
+   if (is_op_msg) {
+      r.header.opcode = MONGOC_OPCODE_MSG;
+      r.msg.n_sections = 1;
+      /* we don't yet implement payload type 1, a document stream */
+      r.msg.sections[0].payload_type = 0;
+      r.msg.sections[0].payload.bson_document = buf;
+   } else {
+      r.header.opcode = MONGOC_OPCODE_REPLY;
+      r.reply.flags = flags;
+      r.reply.cursor_id = cursor_id;
+      r.reply.start_from = 0;
+      r.reply.n_returned = 1;
+      r.reply.documents = buf;
+      r.reply.documents_len = (uint32_t) len;
+   }
 
    _mongoc_rpc_gather (&r, &ar);
    _mongoc_rpc_swab_to_le (&r);

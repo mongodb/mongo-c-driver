@@ -23,7 +23,7 @@
 #define MONGOC_LOG_DOMAIN "server-stream"
 
 mongoc_server_stream_t *
-mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
+mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,
                           mongoc_stream_t *stream)
 {
@@ -33,7 +33,8 @@ mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
    BSON_ASSERT (stream);
 
    server_stream = bson_malloc (sizeof (mongoc_server_stream_t));
-   server_stream->topology_type = topology_type;
+   server_stream->topology_type = td->type;
+   bson_copy_to (&td->cluster_time, &server_stream->cluster_time);
    server_stream->sd = sd;         /* becomes owned */
    server_stream->stream = stream; /* merely borrowed */
 
@@ -45,6 +46,7 @@ mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream)
 {
    if (server_stream) {
       mongoc_server_description_destroy (server_stream->sd);
+      bson_destroy (&server_stream->cluster_time);
       bson_free (server_stream);
    }
 }

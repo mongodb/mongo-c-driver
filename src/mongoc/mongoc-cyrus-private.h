@@ -37,7 +37,7 @@ typedef struct _mongoc_cyrus_t mongoc_cyrus_t;
 
 struct _mongoc_cyrus_t {
    mongoc_sasl_t credentials;
-   sasl_callback_t callbacks[5];
+   sasl_callback_t callbacks[6];
    sasl_conn_t *conn;
    bool done;
    int step;

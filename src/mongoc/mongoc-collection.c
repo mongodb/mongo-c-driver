@@ -15,11 +15,11 @@
  */
 
 
-#include <bcon.h>
 #include <stdio.h>
 
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
+#include "mongoc-change-stream-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-find-and-modify-private.h"
 #include "mongoc-find-and-modify.h"
@@ -34,47 +34,31 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-write-command-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
 
 
-#define _BSON_APPEND_WRITE_CONCERN(_bson, _write_concern)                      \
-   do {                                                                        \
-      const bson_t *write_concern_bson;                                        \
-      mongoc_write_concern_t *write_concern_copy = NULL;                       \
-      if (_write_concern->frozen) {                                            \
-         write_concern_bson = _mongoc_write_concern_get_bson (_write_concern); \
-      } else {                                                                 \
-         /* _mongoc_write_concern_get_bson will freeze the write_concern */    \
-         write_concern_copy = mongoc_write_concern_copy (_write_concern);      \
-         write_concern_bson =                                                  \
-            _mongoc_write_concern_get_bson (write_concern_copy);               \
-      }                                                                        \
-      BSON_APPEND_DOCUMENT (_bson, "writeConcern", write_concern_bson);        \
-      if (write_concern_copy) {                                                \
-         mongoc_write_concern_destroy (write_concern_copy);                    \
-      }                                                                        \
-   } while (0);
-
-
 static mongoc_cursor_t *
 _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                                mongoc_query_flags_t flags,
-                               const mongoc_read_prefs_t *prefs)
+                               const mongoc_read_prefs_t *prefs,
+                               bool is_command)
 {
    return _mongoc_cursor_new (collection->client,
                               collection->ns,
                               flags,
-                              0,     /* skip */
-                              0,     /* limit */
-                              0,     /* batch_size */
-                              false, /* is_command */
-                              NULL,  /* query */
-                              NULL,  /* fields */
-                              prefs, /* read prefs */
-                              NULL); /* read concern */
+                              0,           /* skip */
+                              0,           /* limit */
+                              0,           /* batch_size */
+                              !is_command, /* is_find */
+                              NULL,        /* query */
+                              NULL,        /* fields */
+                              prefs,       /* read prefs */
+                              NULL);       /* read concern */
 }
 
 static void
@@ -82,6 +66,7 @@ _mongoc_collection_write_command_execute (
    mongoc_write_command_t *command,
    const mongoc_collection_t *collection,
    const mongoc_write_concern_t *write_concern,
+   mongoc_client_session_t *cs,
    mongoc_write_result_t *result)
 {
    mongoc_server_stream_t *server_stream;
@@ -103,6 +88,7 @@ _mongoc_collection_write_command_execute (
                                   collection->collection,
                                   write_concern,
                                   0 /* offset */,
+                                  cs,
                                   result);
 
    mongoc_server_stream_cleanup (server_stream);
@@ -169,8 +155,6 @@ _mongoc_collection_new (mongoc_client_t *client,
    col->collectionlen = (uint32_t) strlen (col->collection);
    col->nslen = (uint32_t) strlen (col->ns);
 
-   _mongoc_buffer_init (&col->buffer, NULL, 0, NULL, NULL);
-
    col->gle = NULL;
 
    RETURN (col);
@@ -202,8 +186,6 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
    BSON_ASSERT (collection);
 
    bson_clear (&collection->gle);
-
-   _mongoc_buffer_destroy (&collection->buffer);
 
    if (collection->read_prefs) {
       mongoc_read_prefs_destroy (collection->read_prefs);
@@ -266,11 +248,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *
  *       Send an "aggregate" command to the MongoDB server.
  *
- *       This varies it's behavior based on the wire version.  If we're on
- *       wire_version > 0, we use the new aggregate command, which returns a
- *       database cursor.  On wire_version == 0, we create synthetic cursor on
- *       top of the array returned in result.
- *
  *       This function will always return a new mongoc_cursor_t that should
  *       be freed with mongoc_cursor_destroy().
  *
@@ -280,9 +257,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *       See http://docs.mongodb.org/manual/aggregation/ for more
  *       information on how to build aggregation pipelines.
  *
- * Requires:
- *       MongoDB >= 2.1.0
- *
  * Parameters:
  *       @flags: bitwise or of mongoc_query_flags_t or 0.
  *       @pipeline: A bson_t containing the pipeline request. @pipeline
@@ -291,7 +265,7 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
  *                  bypassDocumentValidation (used with $out pipeline),
  *                  maxTimeMS (declaring maximum server execution time) and
  *                  explain (return information on the processing of the
- *pipeline).
+ *                  pipeline).
  *       @read_prefs: Optional read preferences for the command.
  *
  * Returns:
@@ -312,7 +286,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const bson_t *opts,                    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream = NULL;
    bool has_batch_size = false;
    bool has_out_key = false;
@@ -324,7 +297,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    bson_iter_t iter;
    bson_t command;
    bson_t child;
-   bool use_cursor;
 
    ENTRY;
 
@@ -333,17 +305,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
    bson_init (&command);
 
-   if (!read_prefs) {
-      read_prefs = collection->read_prefs;
-   }
-
-   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs);
-   mongoc_cmd_parts_init (&parts, collection->db, flags, &command);
-   parts.read_prefs = read_prefs;
-
-   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
-      GOTO (done);
-   }
+   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs, true);
 
    if (!_mongoc_get_server_id_from_opts (opts,
                                          MONGOC_ERROR_COMMAND,
@@ -379,7 +341,14 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       cursor->server_id = server_stream->sd->id;
    }
 
-   use_cursor = server_stream->sd->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
+   if (!read_prefs && !server_id) {
+      mongoc_read_prefs_destroy (cursor->read_prefs);
+      cursor->read_prefs = mongoc_read_prefs_copy (collection->read_prefs);
+   }
+
+   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
+      GOTO (done);
+   }
 
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
@@ -410,50 +379,31 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       }
    }
 
-   /* for newer version, we include a cursor subdocument */
-   if (use_cursor) {
-      bson_append_document_begin (&command, "cursor", 6, &child);
-
-      if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-          BSON_ITER_HOLDS_NUMBER (&iter)) {
-         batch_size = (int32_t) bson_iter_as_int64 (&iter);
-         BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-         has_batch_size = true;
-      }
-
-      bson_append_document_end (&command, &child);
+   bson_append_document_begin (&command, "cursor", 6, &child);
+   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      batch_size = (int32_t) bson_iter_as_int64 (&iter);
+      BSON_APPEND_INT32 (&child, "batchSize", batch_size);
+      has_batch_size = true;
    }
+   bson_append_document_end (&command, &child);
 
    if (opts) {
-      bool ok = false;
-      bson_t opts_dupe = BSON_INITIALIZER;
-
-      if (has_batch_size || server_stream->sd->max_wire_version == 0) {
-         bson_copy_to_excluding_noinit (opts, &opts_dupe, "batchSize", NULL);
-         bson_iter_init (&iter, &opts_dupe);
+      if (has_batch_size) {
+         bson_copy_to_excluding_noinit (opts, &cursor->opts, "batchSize", NULL);
       } else {
-         bson_iter_init (&iter, opts);
-      }
-
-      /* omits "serverId" */
-      ok = mongoc_cmd_parts_append_opts (
-         &parts, &iter, server_stream->sd->max_wire_version, &cursor->error);
-
-      bson_destroy (&opts_dupe);
-
-      if (!ok) {
-         GOTO (done);
+         bson_concat (&cursor->opts, opts);
       }
    }
 
    /* Only inherit WriteConcern when for aggregate with $out */
-   if (!bson_has_field (&parts.extra, "writeConcern") && has_out_key) {
+   if (!bson_has_field (&cursor->opts, "writeConcern") && has_out_key) {
       mongoc_write_concern_destroy (cursor->write_concern);
       cursor->write_concern = mongoc_write_concern_copy (
          mongoc_collection_get_write_concern (collection));
    }
 
-   if (!bson_has_field (&parts.extra, "readConcern")) {
+   if (!bson_has_field (&cursor->opts, "readConcern")) {
       mongoc_read_concern_destroy (cursor->read_concern);
       cursor->read_concern = mongoc_read_concern_copy (
          mongoc_collection_get_read_concern (collection));
@@ -464,23 +414,14 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          read_concern_bson =
             _mongoc_read_concern_get_bson (cursor->read_concern);
 
-         BSON_APPEND_DOCUMENT (&parts.extra, "readConcern", read_concern_bson);
+         BSON_APPEND_DOCUMENT (&cursor->opts, "readConcern", read_concern_bson);
       }
    }
 
-   mongoc_cmd_parts_assemble (&parts, server_stream);
-
-   if (use_cursor) {
-      _mongoc_cursor_cursorid_init (cursor, parts.assembled.command);
-   } else {
-      /* for older versions we get an array that we can create a synthetic
-       * cursor on top of */
-      _mongoc_cursor_array_init (cursor, parts.assembled.command, "result");
-   }
+   _mongoc_cursor_cursorid_init (cursor, &command);
 
 done:
    mongoc_server_stream_cleanup (server_stream); /* null ok */
-   mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
 
    /* we always return the cursor, even if it fails; users can detect the
@@ -559,7 +500,7 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
                               skip,
                               limit,
                               batch_size,
-                              false,
+                              true /* is_find */,
                               query,
                               fields,
                               COALESCE (read_prefs, collection->read_prefs),
@@ -612,7 +553,7 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
    return _mongoc_cursor_new_with_opts (
       collection->client,
       collection->ns,
-      false /* is_command */,
+      true /* is_find */,
       filter,
       opts,
       COALESCE (read_prefs, collection->read_prefs),
@@ -671,21 +612,26 @@ mongoc_collection_command (mongoc_collection_t *collection,
    bson_clear (&collection->gle);
 
    if (NULL == strstr (collection->collection, "$cmd")) {
-      bson_snprintf (ns, sizeof ns, "%s", collection->db);
+      bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
    } else {
-      bson_snprintf (
-         ns, sizeof ns, "%s.%s", collection->db, collection->collection);
+      bson_snprintf (ns, sizeof ns, "%s", collection->db);
    }
 
-   return mongoc_client_command (collection->client,
-                                 ns,
-                                 flags,
-                                 skip,
-                                 limit,
-                                 batch_size,
-                                 query,
-                                 fields,
-                                 read_prefs);
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+
+   /* flags, skip, limit, batch_size, fields are unused */
+   return _mongoc_cursor_new_with_opts (collection->client,
+                                        ns,
+                                        false /* is_find */,
+                                        query,
+                                        NULL,
+                                        read_prefs,
+                                        NULL);
 }
 
 
@@ -764,6 +710,30 @@ mongoc_collection_read_write_command_with_opts (
 
 
 bool
+mongoc_collection_command_with_opts (mongoc_collection_t *collection,
+                                     const bson_t *command,
+                                     const mongoc_read_prefs_t *read_prefs,
+                                     const bson_t *opts,
+                                     bson_t *reply,
+                                     bson_error_t *error)
+{
+   BSON_ASSERT (collection);
+
+   return _mongoc_client_command_with_opts (collection->client,
+                                            collection->db,
+                                            command,
+                                            MONGOC_CMD_RAW,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            collection->read_concern,
+                                            collection->write_concern,
+                                            reply,
+                                            error);
+}
+
+
+bool
 mongoc_collection_command_simple (mongoc_collection_t *collection,
                                   const bson_t *command,
                                   const mongoc_read_prefs_t *read_prefs,
@@ -775,8 +745,24 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
 
    bson_clear (&collection->gle);
 
-   return mongoc_client_command_simple (
-      collection->client, collection->db, command, read_prefs, reply, error);
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+
+   return _mongoc_client_command_with_opts (collection->client,
+                                            collection->db,
+                                            command,
+                                            MONGOC_CMD_READ,
+                                            NULL /* opts */,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            NULL /* read concern */,
+                                            NULL /* write concern */,
+                                            reply,
+                                            error);
 }
 
 /*
@@ -1053,123 +1039,6 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_collection_create_index_legacy --
- *
- *       Request the MongoDB server create the named index.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is setup upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
-static bool
-_mongoc_collection_create_index_legacy (mongoc_collection_t *collection,
-                                        const bson_t *keys,
-                                        const mongoc_index_opt_t *opt,
-                                        bson_error_t *error)
-{
-   const mongoc_index_opt_t *def_opt;
-   mongoc_collection_t *col;
-   bool ret;
-   bson_t insert;
-   char *name;
-
-   BSON_ASSERT (collection);
-
-   def_opt = mongoc_index_opt_get_default ();
-   opt = opt ? opt : def_opt;
-
-   if (!opt->is_initialized) {
-      MONGOC_WARNING ("Options have not yet been initialized");
-      return false;
-   }
-
-   bson_init (&insert);
-
-   bson_append_document (&insert, "key", -1, keys);
-   bson_append_utf8 (&insert, "ns", -1, collection->ns, -1);
-
-   if (opt->background != def_opt->background) {
-      bson_append_bool (&insert, "background", -1, opt->background);
-   }
-
-   if (opt->unique != def_opt->unique) {
-      bson_append_bool (&insert, "unique", -1, opt->unique);
-   }
-
-   if (opt->name != def_opt->name) {
-      bson_append_utf8 (&insert, "name", -1, opt->name, -1);
-   } else {
-      name = mongoc_collection_keys_to_index_string (keys);
-      if (!name) {
-         bson_set_error (
-            error,
-            MONGOC_ERROR_BSON,
-            MONGOC_ERROR_BSON_INVALID,
-            "Cannot generate index name from invalid `keys` argument");
-         bson_destroy (&insert);
-         return false;
-      }
-      bson_append_utf8 (&insert, "name", -1, name, -1);
-      bson_free (name);
-   }
-
-   if (opt->drop_dups != def_opt->drop_dups) {
-      bson_append_bool (&insert, "dropDups", -1, opt->drop_dups);
-   }
-
-   if (opt->sparse != def_opt->sparse) {
-      bson_append_bool (&insert, "sparse", -1, opt->sparse);
-   }
-
-   if (opt->expire_after_seconds != def_opt->expire_after_seconds) {
-      bson_append_int32 (
-         &insert, "expireAfterSeconds", -1, opt->expire_after_seconds);
-   }
-
-   if (opt->v != def_opt->v) {
-      bson_append_int32 (&insert, "v", -1, opt->v);
-   }
-
-   if (opt->weights != def_opt->weights) {
-      bson_append_document (&insert, "weights", -1, opt->weights);
-   }
-
-   if (opt->default_language != def_opt->default_language) {
-      bson_append_utf8 (
-         &insert, "default_language", -1, opt->default_language, -1);
-   }
-
-   if (opt->language_override != def_opt->language_override) {
-      bson_append_utf8 (
-         &insert, "language_override", -1, opt->language_override, -1);
-   }
-
-   col = mongoc_client_get_collection (
-      collection->client, collection->db, "system.indexes");
-
-   ret = mongoc_collection_insert (
-      col,
-      (mongoc_insert_flags_t) MONGOC_INSERT_NO_VALIDATE,
-      &insert,
-      NULL,
-      error);
-
-   mongoc_collection_destroy (col);
-
-   bson_destroy (&insert);
-
-   return ret;
-}
-
-
 bool
 mongoc_collection_create_index (mongoc_collection_t *collection,
                                 const bson_t *keys,
@@ -1201,7 +1070,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    mongoc_cmd_parts_t parts;
    const mongoc_index_opt_t *def_opt;
    const mongoc_index_opt_geo_t *def_geo;
-   bson_error_t local_error;
    const char *name;
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
@@ -1227,7 +1095,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    def_opt = mongoc_index_opt_get_default ();
    opt = opt ? opt : def_opt;
 
-   mongoc_cmd_parts_init (&parts, collection->db, MONGOC_QUERY_NONE, &cmd);
+   mongoc_cmd_parts_init (
+      &parts, collection->client, collection->db, MONGOC_QUERY_NONE, &cmd);
    parts.is_write_command = true;
 
    /*
@@ -1354,35 +1223,18 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    }
 
    cluster = &collection->client->cluster;
-   ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts, server_stream, reply, &local_error);
+   if (mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      ret = mongoc_cluster_run_command_monitored (
+         cluster, &parts.assembled, reply, error);
+   } else {
+      _mongoc_bson_init_if_set (reply);
+   }
 
    reply_initialized = true;
 
    if (ret) {
       if (reply) {
          ret = !_mongoc_parse_wc_err (reply, error);
-      }
-   } else {
-      /*
-       * If we failed due to the command not being found, then use the legacy
-       * version which performs an insert into the system.indexes collection.
-       */
-      if (local_error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-         if (has_collation) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "The selected server does not support collation");
-         }
-         ret = _mongoc_collection_create_index_legacy (
-            collection, keys, opt, error);
-         /* Clear the error reply from the first request */
-         if (reply) {
-            bson_reinit (reply);
-         }
-      } else if (error) {
-         memcpy (error, &local_error, sizeof *error);
       }
    }
 
@@ -1412,8 +1264,7 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
 }
 
 mongoc_cursor_t *
-_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
-                                        bson_error_t *error)
+_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection)
 {
    mongoc_database_t *db;
    mongoc_collection_t *idx_collection;
@@ -1449,8 +1300,27 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                 bson_error_t *error)
 {
    mongoc_cursor_t *cursor;
+
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
+
+   if (mongoc_cursor_error (cursor, error)) {
+      /* conform to deprecated API: unhandled errors cause a NULL return */
+      mongoc_cursor_destroy (cursor);
+      return NULL;
+   }
+
+   return cursor;
+}
+
+
+mongoc_cursor_t *
+mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
+                                          const bson_t *opts)
+{
+   mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
    bson_t child;
+   bson_error_t error;
 
    BSON_ASSERT (collection);
 
@@ -1463,39 +1333,41 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
    BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
    bson_append_document_end (&cmd, &child);
 
-   /* Set slaveOk but no read preference: Index Enumeration Spec says
-    * "listIndexes can be run on a secondary" when directly connected but
-    * "run listIndexes on the primary node in replicaSet mode". */
-   cursor = _mongoc_collection_cursor_new (
-      collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
+   /* No read preference. Index Enumeration Spec: "run listIndexes on the
+    * primary node in replicaSet mode". */
+   cursor = _mongoc_cursor_new_with_opts (collection->client,
+                                          collection->ns,
+                                          false /* is_find */,
+                                          &cmd,
+                                          opts,
+                                          NULL /* read prefs */,
+                                          NULL /* read concern */);
+
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
       /* intentionally empty */
    } else {
-      if (mongoc_cursor_error (cursor, error)) {
-         mongoc_cursor_destroy (cursor);
-
-         if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+      if (mongoc_cursor_error (cursor, &error)) {
+         if (error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
             bson_t empty_arr = BSON_INITIALIZER;
             /* collection does not exist. in accordance with the spec we return
              * an empty array. Also we need to clear out the error. */
-            error->code = 0;
-            error->domain = 0;
+            error.code = 0;
+            error.domain = 0;
+            mongoc_cursor_destroy (cursor);
             cursor = _mongoc_collection_cursor_new (
-               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */);
+               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
-         } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+         } else if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
             /* talking to an old server. */
             /* clear out error. */
-            error->code = 0;
-            error->domain = 0;
-            cursor = _mongoc_collection_find_indexes_legacy (collection, error);
-         } else {
-            /* other error, to be handled by caller */
-            cursor = NULL;
+            error.code = 0;
+            error.domain = 0;
+            mongoc_cursor_destroy (cursor);
+            cursor = _mongoc_collection_find_indexes_legacy (collection);
          }
       }
    }
@@ -1572,6 +1444,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert (
       &command,
       NULL,
+      NULL,
       write_flags,
       ++collection->client->cluster.operation_id,
       true);
@@ -1581,16 +1454,16 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
    }
 
    _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, &result);
+      &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
@@ -1599,33 +1472,126 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_insert --
- *
- *       Insert a document into a MongoDB collection.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: flags for the insert or 0.
- *       @document: The document to insert.
- *       @write_concern: A write concern or NULL.
- *       @error: a location for an error or NULL.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- *       If the write concern does not dictate checking the result of the
- *       insert, then true may be returned even though the document was
- *       not actually inserted on the MongoDB server or cluster.
- *
- * Side effects:
- *       @collection->gle is setup, depending on write_concern->w value.
- *       @error may be set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
+typedef struct {
+   mongoc_bulk_write_flags_t write_flags;
+   mongoc_write_concern_t *write_concern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bool client_validation;
+   bson_t copied_opts;
+} mongoc_write_opts_parsed_t;
+
+
+static bool
+_mongoc_write_opts_parse (const bson_t *opts,
+                          mongoc_collection_t *collection,
+                          mongoc_write_opts_parsed_t *parsed,
+                          bson_error_t *error)
+{
+   mongoc_bulk_write_flags_t default_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_iter_t iter;
+
+   bson_clear (&collection->gle);
+
+   parsed->write_flags = default_flags;
+   bson_init (&parsed->copied_opts);
+   parsed->write_concern = collection->write_concern;
+   parsed->write_concern_owned = false;
+   parsed->client_session = NULL;
+   parsed->client_validation = true;
+
+   if (opts) {
+      if (!bson_iter_init (&iter, opts)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid 'opts' parameter.");
+         return false;
+      }
+
+      while (bson_iter_next (&iter)) {
+         if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+            parsed->write_concern =
+               _mongoc_write_concern_new_from_iter (&iter, error);
+            if (!parsed->write_concern) {
+               return false;
+            }
+
+            parsed->write_concern_owned = true;
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
+            parsed->write_flags.bypass_document_validation =
+               bson_iter_as_bool (&iter)
+                  ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
+                  : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+            if (!_mongoc_client_session_from_iter (
+                   collection->client, &iter, &parsed->client_session, error)) {
+               return false;
+            }
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "validate")) {
+            parsed->client_validation = bson_iter_as_bool (&iter);
+            if (parsed->client_validation && !BSON_ITER_HOLDS_BOOL (&iter)) {
+               /* reserve truthy values besides boolean "true" for future
+                * fine-grained validation control, see CDRIVER-2296
+                */
+               bson_set_error (
+                  error,
+                  MONGOC_ERROR_COMMAND,
+                  MONGOC_ERROR_COMMAND_INVALID_ARG,
+                  "Invalid type for option \"validate\", \"%s\":"
+                  " \"validate\" must be a boolean.",
+                  _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+               return false;
+            }
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "ordered")) {
+            parsed->write_flags.ordered = bson_iter_as_bool (&iter);
+            continue;
+         }
+
+         if (!strcmp (bson_iter_key (&iter), "collation")) {
+            parsed->write_flags.has_collation = true;
+            /* FALL THROUGH */
+         }
+
+         if (!bson_append_value (&parsed->copied_opts,
+                                 bson_iter_key (&iter),
+                                 -1,
+                                 bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+
+static void
+_mongoc_write_opts_cleanup (mongoc_write_opts_parsed_t *parsed)
+{
+   if (parsed->write_concern_owned) {
+      mongoc_write_concern_destroy (parsed->write_concern);
+   }
+
+   bson_destroy (&parsed->copied_opts);
+}
+
 
 bool
 mongoc_collection_insert (mongoc_collection_t *collection,
@@ -1634,7 +1600,64 @@ mongoc_collection_insert (mongoc_collection_t *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error)
 {
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t reply;
+   bool r;
+
+   bson_clear (&collection->gle);
+
+   if (flags & MONGOC_INSERT_NO_VALIDATE) {
+      bson_append_bool (&opts, "validate", 8, false);
+   }
+
+   if (write_concern) {
+      mongoc_write_concern_append ((mongoc_write_concern_t *) write_concern,
+                                   &opts);
+   }
+
+   r =
+      mongoc_collection_insert_one (collection, document, &opts, &reply, error);
+
+   collection->gle = bson_copy (&reply);
+   bson_destroy (&reply);
+   bson_destroy (&opts);
+
+   return r;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert_one --
+ *
+ *       Insert a document into a MongoDB collection.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @document: The document to insert.
+ *       @opts: Standard command options.
+ *       @reply: Optional. Uninitialized doc to receive the update result.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then true may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_insert_one (mongoc_collection_t *collection,
+                              const bson_t *document,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
+{
+   mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
@@ -1644,13 +1667,14 @@ mongoc_collection_insert (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (document);
 
-   bson_clear (&collection->gle);
+   _mongoc_bson_init_if_set (reply);
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
    }
 
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE) &&
+   if (parsed.client_validation &&
        !_mongoc_validate_new_document (document, error)) {
       RETURN (false);
    }
@@ -1659,24 +1683,124 @@ mongoc_collection_insert (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert (
       &command,
       document,
-      write_flags,
+      &parsed.copied_opts,
+      parsed.write_flags,
       ++collection->client->cluster.operation_id,
       false);
 
-   _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, &result);
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
 
-   collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "insertedCount");
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
+
+   RETURN (ret);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert_many --
+ *
+ *       Insert documents into a MongoDB collection. Replaces
+ *       mongoc_collection_insert_bulk.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @documents: The documents to insert.
+ *       @n_documents: Length of @documents array.
+ *       @opts: Standard command options.
+ *       @reply: Optional. Uninitialized doc to receive the update result.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then true may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_insert_many (mongoc_collection_t *collection,
+                               const bson_t **documents,
+                               size_t n_documents,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   mongoc_write_opts_parsed_t parsed;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   size_t i;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (documents);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
+   }
+
+   _mongoc_write_result_init (&result);
+   _mongoc_write_command_init_insert (
+      &command,
+      NULL,
+      &parsed.copied_opts,
+      parsed.write_flags,
+      ++collection->client->cluster.operation_id,
+      false);
+
+   for (i = 0; i < n_documents; i++) {
+      if (parsed.client_validation &&
+          !_mongoc_validate_new_document (documents[i], error)) {
+         ret = false;
+         GOTO (done);
+      }
+
+      _mongoc_write_command_insert_append (&command, documents[i]);
+   }
+
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
+
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "insertedCount");
+
+done:
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
 
    RETURN (ret);
 }
@@ -1764,21 +1888,153 @@ mongoc_collection_update (mongoc_collection_t *collection,
    bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, &result);
+      &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        /* no error domain override */
-                                        (mongoc_error_domain_t) 0,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
    RETURN (ret);
+}
+
+static bool
+_mongoc_collection_update_or_replace (mongoc_collection_t *collection,
+                                      const bson_t *selector,
+                                      const bson_t *update,
+                                      const bson_t *opts,
+                                      bson_t *reply,
+                                      bson_error_t *error,
+                                      bool is_multi,
+                                      bool is_update)
+{
+   mongoc_write_opts_parsed_t parsed;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (update);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
+   }
+
+   if (parsed.client_validation) {
+      /* update document, all keys must be $-operators */
+      if (is_update) {
+         if (!_mongoc_validate_update (update, error)) {
+            return false;
+         }
+      } else if (!_mongoc_validate_replace (update, error)) {
+         return false;
+      }
+   }
+
+   if (is_multi) {
+      bson_append_bool (&parsed.copied_opts, "multi", 5, true);
+   }
+
+   _mongoc_write_result_init (&result);
+
+   _mongoc_write_command_init_update (
+      &command,
+      selector,
+      update,
+      &parsed.copied_opts,
+      parsed.write_flags,
+      ++collection->client->cluster.operation_id);
+
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
+
+   /* set fields described in CRUD spec for the UpdateResult */
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "modifiedCount",
+                                       "matchedCount",
+                                       "upsertedId");
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
+
+   RETURN (ret);
+}
+
+bool
+mongoc_collection_update_one (mongoc_collection_t *collection,
+                              const bson_t *selector,
+                              const bson_t *update,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                update,
+                                                opts,
+                                                reply,
+                                                error,
+                                                false /* is_multi */,
+                                                true /* is_update */);
+}
+
+bool
+mongoc_collection_update_many (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *update,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                update,
+                                                opts,
+                                                reply,
+                                                error,
+                                                true /* is_multi */,
+                                                true /* is_update */);
+}
+
+bool
+mongoc_collection_replace_one (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *replacement,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   return _mongoc_collection_update_or_replace (collection,
+                                                selector,
+                                                replacement,
+                                                opts,
+                                                reply,
+                                                error,
+                                                false /* is_multi */,
+                                                false /* is_update */);
 }
 
 
@@ -1814,6 +2070,7 @@ mongoc_collection_save (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (document);
 
+   BEGIN_IGNORE_DEPRECATIONS
    if (!bson_iter_init_find (&iter, document, "_id")) {
       return mongoc_collection_insert (
          collection, MONGOC_INSERT_NONE, document, write_concern, error);
@@ -1841,6 +2098,7 @@ mongoc_collection_save (mongoc_collection_t *collection,
                                    document,
                                    write_concern,
                                    error);
+   END_IGNORE_DEPRECATIONS
 
    bson_destroy (&selector);
 
@@ -1856,6 +2114,8 @@ mongoc_collection_save (mongoc_collection_t *collection,
  *       Delete one or more items from a collection. If you want to
  *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
  *       for @flags.
+ *
+ *       Superseded by mongoc_collection_delete_one/many.
  *
  * Parameters:
  *       @collection: A mongoc_collection_t.
@@ -1909,21 +2169,22 @@ mongoc_collection_remove (mongoc_collection_t *collection,
    ++collection->client->cluster.operation_id;
    _mongoc_write_command_init_delete (&command,
                                       selector,
+                                      NULL,
                                       &opts,
                                       write_flags,
                                       collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
    _mongoc_collection_write_command_execute (
-      &command, collection, write_concern, &result);
+      &command, collection, write_concern, NULL, &result);
 
    collection->gle = bson_new ();
-   ret = _mongoc_write_result_complete (&result,
-                                        collection->client->error_api_version,
-                                        write_concern,
-                                        0 /* no error domain override */,
-                                        collection->gle,
-                                        error);
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       write_concern,
+                                       0 /* no error domain override */,
+                                       collection->gle,
+                                       error);
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
@@ -1944,6 +2205,94 @@ mongoc_collection_delete (mongoc_collection_t *collection,
                                     selector,
                                     write_concern,
                                     error);
+}
+
+
+static bool
+_mongoc_delete_one_or_many (mongoc_collection_t *collection,
+                            const bson_t *selector,
+                            const bson_t *opts,
+                            bson_t *reply,
+                            bson_error_t *error,
+                            bool is_multi)
+{
+   mongoc_write_opts_parsed_t parsed;
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   bson_t limit_opt = BSON_INITIALIZER;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_write_opts_parse (opts, collection, &parsed, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
+   }
+
+   /* limit of 0 or 1 is required for each delete operation */
+   bson_append_int32 (&limit_opt, "limit", 5, is_multi ? 0 : 1);
+
+   _mongoc_write_result_init (&result);
+
+   _mongoc_write_command_init_delete (
+      &command,
+      selector,
+      &parsed.copied_opts,
+      &limit_opt,
+      parsed.write_flags,
+      ++collection->client->cluster.operation_id);
+
+   _mongoc_collection_write_command_execute (&command,
+                                             collection,
+                                             parsed.write_concern,
+                                             parsed.client_session,
+                                             &result);
+
+   /* set field described in CRUD spec for the DeleteResult */
+   ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                       collection->client->error_api_version,
+                                       parsed.write_concern,
+                                       /* no error domain override */
+                                       (mongoc_error_domain_t) 0,
+                                       reply,
+                                       error,
+                                       "deletedCount");
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_opts_cleanup (&parsed);
+   bson_destroy (&limit_opt);
+
+   RETURN (ret);
+}
+
+
+bool
+mongoc_collection_delete_one (mongoc_collection_t *collection,
+                              const bson_t *selector,
+                              const bson_t *opts,
+                              bson_t *reply,
+                              bson_error_t *error)
+{
+   return _mongoc_delete_one_or_many (
+      collection, selector, opts, reply, error, false /* is_multi */);
+}
+
+
+bool
+mongoc_collection_delete_many (mongoc_collection_t *collection,
+                               const bson_t *selector,
+                               const bson_t *opts,
+                               bson_t *reply,
+                               bson_error_t *error)
+{
+   return _mongoc_delete_one_or_many (
+      collection, selector, opts, reply, error, true /* is_multi */);
 }
 
 
@@ -2416,20 +2765,68 @@ mongoc_collection_create_bulk_operation (
    bool ordered,
    const mongoc_write_concern_t *write_concern)
 {
-   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   BSON_ASSERT (collection);
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   bool wc_ok = true;
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
+   bson_append_bool (&opts, "ordered", 7, ordered);
+   if (write_concern) {
+      wc_ok = mongoc_write_concern_append (
+         (mongoc_write_concern_t *) write_concern, &opts);
    }
 
-   write_flags.ordered = ordered;
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
-   return _mongoc_bulk_operation_new (collection->client,
+   bson_destroy (&opts);
+
+   if (!wc_ok) {
+      bson_set_error (&bulk->result.error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "invalid writeConcern");
+   }
+
+   return bulk;
+}
+
+
+mongoc_bulk_operation_t *
+mongoc_collection_create_bulk_operation_with_opts (
+   mongoc_collection_t *collection, const bson_t *opts)
+{
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+   bson_iter_t iter;
+   mongoc_write_concern_t *wc = NULL;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t wc_invalid = {0};
+
+   BSON_ASSERT (collection);
+
+   if (opts && bson_iter_init_find (&iter, opts, "writeConcern")) {
+      wc = _mongoc_write_concern_new_from_iter (&iter, &wc_invalid);
+   }
+
+   write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
+
+   bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
                                       write_flags,
-                                      write_concern);
+                                      wc ? wc : collection->write_concern);
+
+   mongoc_write_concern_destroy (wc); /* NULL is ok */
+
+   if (opts && bson_iter_init_find (&iter, opts, "sessionId")) {
+      _mongoc_client_session_from_iter (
+         collection->client, &iter, &bulk->session, &bulk->result.error);
+   }
+
+   if (wc_invalid.domain) {
+      /* _mongoc_write_concern_new_from_iter failed, above */
+      memcpy (&bulk->result.error, &wc_invalid, sizeof (bson_error_t));
+   }
+
+   return bulk;
 }
 
 /*
@@ -2465,6 +2862,7 @@ mongoc_collection_find_and_modify_with_opts (
    mongoc_cluster_t *cluster;
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
+   bool is_retryable;
    bson_iter_t iter;
    bson_iter_t inner;
    const char *name;
@@ -2472,6 +2870,7 @@ mongoc_collection_find_and_modify_with_opts (
    bson_t *reply_ptr;
    bool ret;
    bson_t command = BSON_INITIALIZER;
+   mongoc_server_stream_t *retry_server_stream = NULL;
 
    ENTRY;
 
@@ -2526,23 +2925,31 @@ mongoc_collection_find_and_modify_with_opts (
       BSON_APPEND_INT32 (&command, "maxTimeMS", opts->max_time_ms);
    }
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) {
-      if (!mongoc_write_concern_is_valid (collection->write_concern)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The write concern is invalid.");
-         bson_destroy (&command);
-         mongoc_server_stream_cleanup (server_stream);
-         RETURN (false);
-      }
+   if (!bson_has_field (&opts->extra, "writeConcern")) {
+      if (server_stream->sd->max_wire_version >=
+          WIRE_VERSION_FAM_WRITE_CONCERN) {
+         if (!mongoc_write_concern_is_valid (collection->write_concern)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The write concern is invalid.");
+            bson_destroy (&command);
+            mongoc_server_stream_cleanup (server_stream);
+            RETURN (false);
+         }
 
-      if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
-         _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
+         if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
+            BSON_APPEND_DOCUMENT (
+               &command,
+               "writeConcern",
+               _mongoc_write_concern_get_bson (collection->write_concern));
+         }
       }
    }
 
-   mongoc_cmd_parts_init (&parts, collection->db, MONGOC_QUERY_NONE, &command);
+   mongoc_cmd_parts_init (
+      &parts, collection->client, collection->db, MONGOC_QUERY_NONE, &command);
+   parts.is_read_command = true;
    parts.is_write_command = true;
 
    if (bson_iter_init (&iter, &opts->extra)) {
@@ -2556,8 +2963,54 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    parts.assembled.operation_id = ++cluster->operation_id;
+   if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      bson_destroy (&command);
+      mongoc_cmd_parts_cleanup (&parts);
+      mongoc_server_stream_cleanup (server_stream);
+      RETURN (false);
+   }
+
+   is_retryable = parts.is_retryable_write;
+
+   /* increment the transaction number for the first attempt of each retryable
+    * write command */
+   if (is_retryable) {
+      bson_iter_t txn_number_iter;
+      BSON_ASSERT (bson_iter_init_find (
+         &txn_number_iter, parts.assembled.command, "txnNumber"));
+      bson_iter_overwrite_int64 (
+         &txn_number_iter,
+         ++parts.assembled.session->server_session->txn_number);
+   }
+retry:
    ret = mongoc_cluster_run_command_monitored (
-      cluster, &parts, server_stream, reply_ptr, error);
+      cluster, &parts.assembled, reply_ptr, error);
+
+   /* If a retryable error is encountered and the write is retryable, select
+    * a new writable stream and retry. If server selection fails or the selected
+    * server does not support retryable writes, fall through and allow the
+    * original error to be reported. */
+   if (!ret && is_retryable &&
+       (error->domain == MONGOC_ERROR_STREAM ||
+        mongoc_cluster_is_not_master_error (error))) {
+      bson_error_t ignored_error;
+
+      /* each write command may be retried at most once */
+      is_retryable = false;
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+      }
+
+      retry_server_stream =
+         mongoc_cluster_stream_for_writes (cluster, &ignored_error);
+
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_WRITES) {
+         parts.assembled.server_stream = retry_server_stream;
+         GOTO (retry);
+      }
+   }
 
    if (bson_iter_init_find (&iter, reply_ptr, "writeConcernError") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -2586,6 +3039,10 @@ mongoc_collection_find_and_modify_with_opts (
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    mongoc_server_stream_cleanup (server_stream);
+
+   if (retry_server_stream) {
+      mongoc_server_stream_cleanup (retry_server_stream);
+   }
 
    RETURN (ret);
 }
@@ -2667,4 +3124,12 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    mongoc_find_and_modify_opts_destroy (opts);
 
    return ret;
+}
+
+mongoc_change_stream_t *
+mongoc_collection_watch (const mongoc_collection_t *coll,
+                         const bson_t *pipeline,
+                         const bson_t *opts)
+{
+   return _mongoc_change_stream_new (coll, pipeline, opts);
 }

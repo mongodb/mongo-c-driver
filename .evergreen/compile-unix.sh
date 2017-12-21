@@ -21,7 +21,7 @@ ANALYZE=${ANALYZE:-no}
 COVERAGE=${COVERAGE:-no}
 SASL=${SASL:-no}
 SSL=${SSL:-no}
-SNAPPY=${SNAPPY:-bundled}
+SNAPPY=${SNAPPY:-auto}
 ZLIB=${ZLIB:-bundled}
 INSTALL_DIR=$(pwd)/install-dir
 
@@ -129,7 +129,7 @@ case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
       CXXFLAGS="$CXXFLAGS -m32 -march=i386"
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=bundled --with-zlib=bundled"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=auto --with-zlib=bundled"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
@@ -212,11 +212,17 @@ fi
 openssl md5 README.rst || true
 $SCAN_BUILD make all
 
+ulimit -c unlimited || true
+
 # Write stderr to error.log and to console.
-mkfifo pipe
-tee error.log < pipe &
-$SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
-rm pipe
+mkfifo pipe || true
+if [ -e pipe ]; then
+   tee error.log < pipe &
+   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
+   rm pipe
+else
+   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
+fi
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then

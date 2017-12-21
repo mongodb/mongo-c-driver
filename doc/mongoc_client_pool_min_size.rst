@@ -10,15 +10,18 @@ Synopsis
 
   void
   mongoc_client_pool_min_size (mongoc_client_pool_t *pool,
-                               uint32_t min_pool_size);
+                               uint32_t min_pool_size)
+     BSON_GNUC_DEPRECATED;
 
-This function sets the minimum number of pooled connections kept in :symbol:`mongoc_client_pool_t`.
+This function sets the *maximum* number of idle clients to be kept in the pool. Any idle clients in excess of the maximum are destroyed. This function is deprecated because its behavior does not match what developers expect from a "minimum pool size", and its actual behavior is likely to hurt performance.
+
+Applications should not call this function, they should instead accept the default behavior, which is to keep all idle clients that are pushed into the pool.
 
 Parameters
 ----------
 
 * ``pool``: A :symbol:`mongoc_client_pool_t`.
-* ``min_pool_size``: The minimum number of connections which shall be kept in the pool.
+* ``min_pool_size``: The number of idle clients to keep in the pool.
 
 .. include:: includes/mongoc_client_pool_thread_safe.txt
 

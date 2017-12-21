@@ -44,10 +44,6 @@ void
 _mongoc_sasl_set_pass (mongoc_sasl_t *sasl, const char *pass);
 void
 _mongoc_sasl_set_user (mongoc_sasl_t *sasl, const char *user);
-bool
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
-                            const char *mechanism,
-                            bson_error_t *error);
 void
 _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl, const char *service_name);
 void
@@ -57,8 +53,7 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri);
 bool
 _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
                                      char *name,                   /* OUT */
-                                     size_t namelen,               /* IN */
-                                     bson_error_t *error);         /* OUT */
+                                     size_t namelen);              /* IN */
 
 BSON_END_DECLS
 

@@ -44,6 +44,8 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             int32_t timeout_msec,
                             bson_error_t *error);
 
+mongoc_stream_t *
+mongoc_stream_get_root_stream (mongoc_stream_t *stream);
 
 BSON_END_DECLS
 

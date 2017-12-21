@@ -447,11 +447,8 @@ test_properties (void)
                       "chunkSize",
                       BCON_INT32 (100));
 
-   ASSERT (mongoc_collection_insert (mongoc_gridfs_get_files (gridfs),
-                                     MONGOC_INSERT_NONE,
-                                     doc_in,
-                                     NULL,
-                                     NULL));
+   ASSERT (mongoc_collection_insert_one (
+      mongoc_gridfs_get_files (gridfs), doc_in, NULL, NULL, NULL));
 
    list = mongoc_gridfs_find (gridfs, &query);
    file = mongoc_gridfs_file_list_next (list);
@@ -1128,8 +1125,8 @@ test_missing_chunk (void *ctx)
 
    /* chunks have n=0, 1, 2; remove the middle one */
    chunks = mongoc_gridfs_get_chunks (gridfs);
-   ret = mongoc_collection_remove (
-      chunks, MONGOC_REMOVE_NONE, tmp_bson ("{'n': 1}"), NULL, &error);
+   ret = mongoc_collection_delete_many (
+      chunks, tmp_bson ("{'n': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (ret, error);
 

@@ -11,7 +11,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
 
 
-C_TIMEOUT="connectTimeoutMS=30000"
+C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -31,12 +31,15 @@ case "$OS" in
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
       chmod +x ./Debug/* src/libbson/Debug/*
       PING="./Debug/mongoc-ping.exe"
+      TEST_GSSAPI="./Debug/test-mongoc-gssapi.exe"
       ;;
 
    darwin)
       sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
+      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-mongoc-gssapi
       export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
+      TEST_GSSAPI="./test-mongoc-gssapi"
       ;;
 
    *)
@@ -44,8 +47,10 @@ case "$OS" in
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.
       sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
+      sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-mongoc-gssapi
       export LD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
+      TEST_GSSAPI="./test-mongoc-gssapi"
 esac
 
 if test -f /tmp/drivers.keytab; then
@@ -62,6 +67,7 @@ cp /etc/ca-certificates/extracted/tls-ca-bundle.pem install-dir/cert.pem || true
 
 export PATH=install-dir/bin:$PATH
 openssl version || true
+ulimit -c unlimited || true
 
 if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008
@@ -86,6 +92,9 @@ $PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB
 if [ $SASL -eq 1 ]; then
 echo "Authenticating using GSSAPI"
    $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+   echo "Test threaded GSSAPI auth"
+   MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" $TEST_GSSAPI
+   echo "Threaded GSSAPI auth OK"
    if [ "${OS%_*}" = "cygwin" ]; then
       echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
       $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"

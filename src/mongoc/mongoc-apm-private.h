@@ -26,6 +26,9 @@
 
 BSON_BEGIN_DECLS
 
+/* forward decl */
+struct _mongoc_cmd_t;
+
 struct _mongoc_apm_callbacks_t {
    mongoc_apm_command_started_cb_t started;
    mongoc_apm_command_succeeded_cb_t succeeded;
@@ -149,6 +152,12 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
                                  void *context);
+
+void
+mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
+                                          struct _mongoc_cmd_t *cmd,
+                                          int64_t request_id,
+                                          void *context);
 
 void
 mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event);

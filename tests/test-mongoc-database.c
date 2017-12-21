@@ -2,6 +2,7 @@
 #include <mongoc-collection-private.h>
 #include <mongoc-write-concern-private.h>
 #include <mongoc-read-concern-private.h>
+#include <mongoc-util-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -70,6 +71,7 @@ test_create_with_write_concern (void)
    ASSERT (!error.domain);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+   mongoc_collection_destroy (collection);
 
    /* writeConcern that results in writeConcernError */
    bad_wc->wtimeout = 0;
@@ -77,7 +79,6 @@ test_create_with_write_concern (void)
    if (!test_framework_is_mongos ()) { /* skip if sharded */
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      mongoc_collection_destroy (collection);
       collection =
          mongoc_database_create_collection (database, name, opts, &error);
 
@@ -158,9 +159,8 @@ test_has_collection (void)
    bson_oid_init (&oid, NULL);
    bson_append_oid (&b, "_id", 3, &oid);
    bson_append_utf8 (&b, "hello", 5, "world", 5);
-   ASSERT_OR_PRINT (mongoc_collection_insert (
-                       collection, MONGOC_INSERT_NONE, &b, NULL, &error),
-                    error);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (collection, &b, NULL, NULL, &error), error);
    bson_destroy (&b);
 
    r = mongoc_database_has_collection (database, name, &error);
@@ -246,7 +246,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    const bson_t *reply;
 
    /* mock mongos: easiest way to test that read preference is configured */
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    if (pooled) {
@@ -390,8 +390,8 @@ test_drop (void)
    /* MongoDB 3.2+ must create at least one replicated database before
     * dropDatabase will check writeConcern, see SERVER-25601 */
    collection = mongoc_database_get_collection (database, "collection");
-   r = mongoc_collection_insert (
-      collection, MONGOC_INSERT_NONE, tmp_bson ("{}"), NULL, &error);
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
 
@@ -448,8 +448,8 @@ test_drop (void)
          ASSERT_OR_PRINT (r, error);
          ASSERT (!error.code);
          ASSERT (!error.domain);
-         mongoc_database_destroy (database);
       }
+      mongoc_database_destroy (database);
    }
 
    bson_free (dbname);
@@ -574,7 +574,9 @@ test_get_collection_info (void)
     * test w/o filters for us. */
 
    /* Filter on an exact match of name */
+   BEGIN_IGNORE_DEPRECATIONS
    cursor = mongoc_database_find_collections (database, &name_filter, &error);
+   END_IGNORE_DEPRECATIONS
    BSON_ASSERT (cursor);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
@@ -608,7 +610,135 @@ test_get_collection_info (void)
 }
 
 static void
-_test_get_collection_info_getmore (bool use_cmd)
+test_get_collection_info_regex (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   bson_iter_t col_iter;
+   bson_t name_filter = BSON_INITIALIZER;
+   const bson_t *doc;
+   char *dbname;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+
+   dbname = gen_collection_name ("test_get_collection_info_regex");
+   database = mongoc_client_get_database (client, dbname);
+   mongoc_database_drop_with_opts (database, NULL, NULL);
+
+   collection =
+      mongoc_database_create_collection (database, "abbbc", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+   mongoc_collection_destroy (collection);
+
+   collection =
+      mongoc_database_create_collection (database, "foo", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+
+   BSON_APPEND_REGEX (&name_filter, "name", "ab+c", NULL);
+
+   BEGIN_IGNORE_DEPRECATIONS
+   cursor = mongoc_database_find_collections (database, &name_filter, &error);
+   END_IGNORE_DEPRECATIONS
+
+   if (test_framework_max_wire_version_at_least (3)) {
+      BSON_ASSERT (cursor);
+      BSON_ASSERT (!error.domain);
+      BSON_ASSERT (!error.code);
+
+      BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
+      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
+
+      /* only one match */
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      mongoc_cursor_destroy (cursor);
+   } else {
+      BSON_ASSERT (!cursor);
+      /* MongoDB 2.6 doesn't allow regex */
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_NAMESPACE,
+                             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
+                             "filter on name can only be a string");
+   }
+
+   mongoc_collection_destroy (collection);
+   bson_free (dbname);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_get_collection_info_with_opts_regex (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   bson_iter_t col_iter;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t name_filter;
+   const bson_t *doc;
+   char *dbname;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+
+   dbname = gen_collection_name ("test_get_collection_info_regex");
+   database = mongoc_client_get_database (client, dbname);
+   mongoc_database_drop_with_opts (database, NULL, NULL);
+
+   collection =
+      mongoc_database_create_collection (database, "abbbc", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+   mongoc_collection_destroy (collection);
+
+   collection =
+      mongoc_database_create_collection (database, "foo", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+
+   BSON_APPEND_DOCUMENT_BEGIN (&opts, "filter", &name_filter);
+   BSON_APPEND_REGEX (&name_filter, "name", "ab+c", NULL);
+   bson_append_document_end (&opts, &name_filter);
+
+   cursor = mongoc_database_find_collections_with_opts (database, &opts);
+   BSON_ASSERT (cursor);
+
+   if (test_framework_max_wire_version_at_least (3)) {
+      BSON_ASSERT (!error.domain);
+      BSON_ASSERT (!error.code);
+
+      BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+      BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
+      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
+
+      /* only one match */
+      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   } else {
+      /* MongoDB 2.6 doesn't allow regex */
+      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_NAMESPACE,
+                             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
+                             "filter on name can only be a string");
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   bson_free (dbname);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+static void
+_test_get_collection_info_getmore ()
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -617,64 +747,37 @@ _test_get_collection_info_getmore (bool use_cmd)
    request_t *request;
    char **names;
 
-   server = mock_server_with_autoismaster (use_cmd ? WIRE_VERSION_FIND_CMD : 0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "db");
-   future = future_database_get_collection_names (database, NULL);
+   future =
+      future_database_get_collection_names_with_opts (database, NULL, NULL);
 
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
 
-   if (use_cmd) {
-      mock_server_replies_simple (request,
-                                  "{'ok': 1,"
-                                  " 'cursor': {"
-                                  "    'id': {'$numberLong': '123'},"
-                                  "    'ns': 'db.$cmd.listCollections',"
-                                  "    'firstBatch': [{'name': 'a'}]}}");
-      request_destroy (request);
-      request = mock_server_receives_command (
-         server,
-         "db",
-         MONGOC_QUERY_SLAVE_OK,
-         "{'getMore': {'$numberLong': '123'},"
-         " 'collection': '$cmd.listCollections'}");
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': {'$numberLong': '123'},"
+                               "    'ns': 'db.$cmd.listCollections',"
+                               "    'firstBatch': [{'name': 'a'}]}}");
+   request_destroy (request);
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'getMore': {'$numberLong': '123'},"
+                                    " 'collection': '$cmd.listCollections'}");
 
-      mock_server_replies_simple (request,
-                                  "{'ok': 1,"
-                                  " 'cursor': {"
-                                  "    'id': {'$numberLong': '0'},"
-                                  "    'ns': 'db.$cmd.listCollections',"
-                                  "    'nextBatch': []}}");
-      request_destroy (request);
-   } else {
-      /* "command not found" */
-      mock_server_replies_simple (request, "{'ok': 0, 'code': 59}");
-      request_destroy (request);
-
-      request = mock_server_receives_query (server,
-                                            "db.system.namespaces",
-                                            MONGOC_QUERY_SLAVE_OK,
-                                            0,
-                                            0,
-                                            NULL,
-                                            NULL);
-      mock_server_replies (request,
-                           MONGOC_REPLY_NONE,
-                           123 /* cursor id */,
-                           0,
-                           1,
-                           "{'name': 'db.a'}");
-      request_destroy (request);
-
-      request =
-         mock_server_receives_getmore (server, "db.system.namespaces", 0, 123);
-      mock_server_replies (
-         request, MONGOC_REPLY_NONE, 0 /* cursor id */, 0, 0, NULL);
-      request_destroy (request);
-   }
-
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': {'$numberLong': '0'},"
+                               "    'ns': 'db.$cmd.listCollections',"
+                               "    'nextBatch': []}}");
+   request_destroy (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (names);
    ASSERT_CMPSTR (names[0], "a");
@@ -687,15 +790,9 @@ _test_get_collection_info_getmore (bool use_cmd)
 }
 
 static void
-test_get_collection_info_op_getmore (void)
-{
-   _test_get_collection_info_getmore (false);
-}
-
-static void
 test_get_collection_info_getmore_cmd (void)
 {
-   _test_get_collection_info_getmore (true);
+   _test_get_collection_info_getmore ();
 }
 
 static void
@@ -802,7 +899,8 @@ test_get_collection_names (void)
    BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
-   names = mongoc_database_get_collection_names (database, &error);
+   names =
+      mongoc_database_get_collection_names_with_opts (database, NULL, &error);
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
 
@@ -864,7 +962,8 @@ test_get_collection_names_error (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
-   future = future_database_get_collection_names (database, &error);
+   future =
+      future_database_get_collection_names_with_opts (database, NULL, &error);
    request = mock_server_receives_command (
       server, "test", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
    mock_server_hangs_up (request);
@@ -928,9 +1027,12 @@ test_database_install (TestSuite *suite)
       suite, "/Database/create_collection", test_create_collection);
    TestSuite_AddLive (
       suite, "/Database/get_collection_info", test_get_collection_info);
-   TestSuite_AddMockServerTest (suite,
-                                "/Database/get_collection/op_getmore",
-                                test_get_collection_info_op_getmore);
+   TestSuite_AddLive (suite,
+                      "/Database/get_collection_info_regex",
+                      test_get_collection_info_regex);
+   TestSuite_AddLive (suite,
+                      "/Database/get_collection_info_with_opts_regex",
+                      test_get_collection_info_with_opts_regex);
    TestSuite_AddMockServerTest (suite,
                                 "/Database/get_collection/getmore_cmd",
                                 test_get_collection_info_getmore_cmd);

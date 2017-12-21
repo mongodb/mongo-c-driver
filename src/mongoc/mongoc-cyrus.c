@@ -28,13 +28,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "CYRUS-SASL"
 
-int
-_mongoc_cyrus_log (mongoc_cyrus_t *sasl, int level, const char *message)
-{
-   TRACE ("SASL Log; level=%d: message=%s", level, message);
-   return SASL_OK;
-}
-
 bool
 _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
                              const char *mechanism,
@@ -71,7 +64,7 @@ _mongoc_cyrus_set_mechanism (mongoc_cyrus_t *sasl,
                       str->str);
    }
 
-   bson_string_free (str, 0);
+   bson_string_free (str, true);
    return ok;
 }
 
@@ -207,7 +200,7 @@ _mongoc_cyrus_new_from_cluster (mongoc_cyrus_t *sasl,
     */
    if (sasl->credentials.canonicalize_host_name &&
        _mongoc_sasl_get_canonicalized_name (
-          stream, real_name, sizeof real_name, error)) {
+          stream, real_name, sizeof real_name)) {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, real_name);
    } else {
       _mongoc_sasl_set_service_host ((mongoc_sasl_t *) sasl, hostname);

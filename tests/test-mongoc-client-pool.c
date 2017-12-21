@@ -1,6 +1,6 @@
 #include <mongoc.h>
 #include "mongoc-client-pool-private.h"
-#include "mongoc-array-private.h"
+#include "mongoc-util-private.h"
 
 
 #include "TestSuite.h"
@@ -14,7 +14,7 @@ test_mongoc_client_pool_basic (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
@@ -31,7 +31,7 @@ test_mongoc_client_pool_try_pop (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
@@ -81,6 +81,7 @@ test_mongoc_client_pool_min_size_dispose (void)
    mongoc_uri_t *uri;
    mongoc_client_t *c0, *c1, *c2, *c3;
 
+   capture_logs (true);
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?minpoolsize=2");
    pool = mongoc_client_pool_new (uri);
 
@@ -145,7 +146,7 @@ test_mongoc_client_pool_set_max_size (void)
 
    _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10");
    pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 5; i++) {
@@ -183,7 +184,10 @@ test_mongoc_client_pool_set_min_size (void)
    _mongoc_array_init (&conns, sizeof client);
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
+   capture_logs (true);
    pool = mongoc_client_pool_new (uri);
+   ASSERT_CAPTURED_LOG (
+      "minpoolsize URI option", MONGOC_LOG_LEVEL_WARNING, "is deprecated");
 
    for (i = 0; i < 10; i++) {
       client = mongoc_client_pool_pop (pool);
@@ -192,7 +196,13 @@ test_mongoc_client_pool_set_min_size (void)
       BSON_ASSERT (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
+   capture_logs (true);
+   BEGIN_IGNORE_DEPRECATIONS
    mongoc_client_pool_min_size (pool, 7);
+   END_IGNORE_DEPRECATIONS
+   ASSERT_CAPTURED_LOG ("mongoc_client_pool_min_size",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "mongoc_client_pool_min_size is deprecated");
 
    for (i = 0; i < 10; i++) {
       client = _mongoc_array_index (&conns, mongoc_client_t *, i);
@@ -229,7 +239,7 @@ test_mongoc_client_pool_handshake (void)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
-   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1&minpoolsize=1");
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
    pool = mongoc_client_pool_new (uri);
 
 

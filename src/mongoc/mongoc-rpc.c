@@ -19,6 +19,7 @@
 
 #include "mongoc.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-compression-private.h"
@@ -40,6 +41,11 @@
    iov.iov_base = (void *) &rpc->_name;      \
    iov.iov_len = 1;                          \
    header->msg_len += (int32_t) iov.iov_len; \
+   _mongoc_array_append_val (array, iov);
+#define UINT32_FIELD(_name)                   \
+   iov.iov_base = (void *) &rpc->_name;       \
+   iov.iov_len = 4;                           \
+   header->msg_len += (uint32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
 #define INT32_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
@@ -89,6 +95,50 @@
          _mongoc_array_append_val (array, rpc->_name[_i]);    \
       }                                                       \
    } while (0);
+#define SECTION_ARRAY_FIELD(_name)                                            \
+   do {                                                                       \
+      ssize_t _i;                                                             \
+      BSON_ASSERT (rpc->n_##_name);                                           \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                               \
+         int32_t __l;                                                         \
+         iov.iov_base = (void *) &rpc->_name[_i].payload_type;                \
+         iov.iov_len = 1;                                                     \
+         header->msg_len += (int32_t) iov.iov_len;                            \
+         _mongoc_array_append_val (array, iov);                               \
+         switch (rpc->_name[_i].payload_type) {                               \
+         case 0:                                                              \
+            memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);           \
+            __l = BSON_UINT32_FROM_LE (__l);                                  \
+            iov.iov_base = (void *) rpc->_name[_i].payload.bson_document;     \
+            iov.iov_len = __l;                                                \
+            break;                                                            \
+         case 1:                                                              \
+            rpc->_name[_i].payload.sequence.size_le =                         \
+               BSON_UINT32_TO_LE (rpc->_name[_i].payload.sequence.size);      \
+            iov.iov_base = (void *) &rpc->_name[_i].payload.sequence.size_le; \
+            iov.iov_len = 4;                                                  \
+            header->msg_len += 4;                                             \
+            _mongoc_array_append_val (array, iov);                            \
+            iov.iov_base =                                                    \
+               (void *) rpc->_name[_i].payload.sequence.identifier;           \
+            iov.iov_len =                                                     \
+               strlen (rpc->_name[_i].payload.sequence.identifier) + 1;       \
+            header->msg_len += (int32_t) iov.iov_len;                         \
+            _mongoc_array_append_val (array, iov);                            \
+            iov.iov_base =                                                    \
+               (void *) rpc->_name[_i].payload.sequence.bson_documents;       \
+            iov.iov_len =                                                     \
+               rpc->_name[_i].payload.sequence.size - iov.iov_len - 4;        \
+            break;                                                            \
+         default:                                                             \
+            MONGOC_ERROR ("Unknown Payload Type: %d",                         \
+                          rpc->_name[_i].payload_type);                       \
+            BSON_ASSERT (0);                                                  \
+         }                                                                    \
+         header->msg_len += (int32_t) iov.iov_len;                            \
+         _mongoc_array_append_val (array, iov);                               \
+      }                                                                       \
+   } while (0);
 #define RAW_BUFFER_FIELD(_name)              \
    iov.iov_base = (void *) rpc->_name;       \
    iov.iov_len = rpc->_name##_len;           \
@@ -121,6 +171,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -128,6 +179,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
 #undef BSON_OPTIONAL
 
@@ -141,6 +193,7 @@
       _code                                                                 \
    }
 #define UINT8_FIELD(_name)
+#define UINT32_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
@@ -148,6 +201,7 @@
 #define BSON_FIELD(_name)
 #define BSON_ARRAY_FIELD(_name)
 #define IOVEC_ARRAY_FIELD(_name)
+#define SECTION_ARRAY_FIELD(_name)
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
       _code                          \
@@ -205,6 +259,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -212,6 +267,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -225,23 +281,24 @@
       _code                                                             \
    }
 #define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
+#define UINT32_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
    printf ("  " #_name " : %" PRIi64 "\n", (int64_t) rpc->_name);
 #define CSTRING_FIELD(_name) printf ("  " #_name " : %s\n", rpc->_name);
-#define BSON_FIELD(_name)                             \
-   do {                                               \
-      bson_t b;                                       \
-      char *s;                                        \
-      int32_t __l;                                    \
-      memcpy (&__l, rpc->_name, 4);                   \
-      __l = BSON_UINT32_FROM_LE (__l);                \
-      bson_init_static (&b, rpc->_name, __l);         \
-      s = bson_as_canonical_extended_json (&b, NULL); \
-      printf ("  " #_name " : %s\n", s);              \
-      bson_free (s);                                  \
-      bson_destroy (&b);                              \
+#define BSON_FIELD(_name)                           \
+   do {                                             \
+      bson_t b;                                     \
+      char *s;                                      \
+      int32_t __l;                                  \
+      memcpy (&__l, rpc->_name, 4);                 \
+      __l = BSON_UINT32_FROM_LE (__l);              \
+      bson_init_static (&b, rpc->_name, __l);       \
+      s = bson_as_relaxed_extended_json (&b, NULL); \
+      printf ("  " #_name " : %s\n", s);            \
+      bson_free (s);                                \
+      bson_destroy (&b);                            \
    } while (0);
 #define BSON_ARRAY_FIELD(_name)                                       \
    do {                                                               \
@@ -250,7 +307,7 @@
       const bson_t *__b;                                              \
       __r = bson_reader_new_from_data (rpc->_name, rpc->_name##_len); \
       while ((__b = bson_reader_read (__r, &__eof))) {                \
-         char *s = bson_as_canonical_extended_json (__b, NULL);       \
+         char *s = bson_as_relaxed_extended_json (__b, NULL);         \
          printf ("  " #_name " : %s\n", s);                           \
          bson_free (s);                                               \
       }                                                               \
@@ -269,6 +326,45 @@
          }                                                 \
          printf ("\n");                                    \
       }                                                    \
+   } while (0);
+#define SECTION_ARRAY_FIELD(_name)                                          \
+   do {                                                                     \
+      ssize_t _i;                                                           \
+      printf ("  " #_name " : %d\n", rpc->n_##_name);                       \
+      for (_i = 0; _i < rpc->n_##_name; _i++) {                             \
+         if (rpc->_name[_i].payload_type == 0) {                            \
+            do {                                                            \
+               bson_t b;                                                    \
+               char *s;                                                     \
+               int32_t __l;                                                 \
+               memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);      \
+               __l = BSON_UINT32_FROM_LE (__l);                             \
+               bson_init_static (                                           \
+                  &b, rpc->_name[_i].payload.bson_document, __l);           \
+               s = bson_as_relaxed_extended_json (&b, NULL);                \
+               printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s);  \
+               bson_free (s);                                               \
+               bson_destroy (&b);                                           \
+            } while (0);                                                    \
+         } else if (rpc->_name[_i].payload_type == 1) {                     \
+            bson_reader_t *__r;                                             \
+            int max = rpc->_name[_i].payload.sequence.size -                \
+                      strlen (rpc->_name[_i].payload.sequence.identifier) - \
+                      1 - sizeof (int32_t);                                 \
+            bool __eof;                                                     \
+            const bson_t *__b;                                              \
+            printf ("  Identifier: %s\n",                                   \
+                    rpc->_name[_i].payload.sequence.identifier);            \
+            printf ("  Size: %d\n", max);                                   \
+            __r = bson_reader_new_from_data (                               \
+               rpc->_name[_i].payload.sequence.bson_documents, max);        \
+            while ((__b = bson_reader_read (__r, &__eof))) {                \
+               char *s = bson_as_relaxed_extended_json (__b, NULL);         \
+               bson_free (s);                                               \
+            }                                                               \
+            bson_reader_destroy (__r);                                      \
+         }                                                                  \
+      }                                                                     \
    } while (0);
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) {                \
@@ -309,6 +405,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -316,6 +413,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -336,6 +434,13 @@
    memcpy (&rpc->_name, buf, 1); \
    buflen -= 1;                  \
    buf += 1;
+#define UINT32_FIELD(_name)      \
+   if (buflen < 4) {             \
+      return false;              \
+   }                             \
+   memcpy (&rpc->_name, buf, 4); \
+   buflen -= 4;                  \
+   buf += 4;
 #define INT32_FIELD(_name)       \
    if (buflen < 4) {             \
       return false;              \
@@ -416,6 +521,20 @@
    rpc->n_##_name = 1;                        \
    buf = NULL;                                \
    buflen = 0;
+#define SECTION_ARRAY_FIELD(_name)                                 \
+   do {                                                            \
+      uint32_t __l;                                                \
+      mongoc_rpc_section_t *section = &rpc->_name[rpc->n_##_name]; \
+      section->payload_type = buf[0];                              \
+      buf++;                                                       \
+      buflen -= 1;                                                 \
+      memcpy (&__l, buf, 4);                                       \
+      __l = BSON_UINT32_FROM_LE (__l);                             \
+      section->payload.bson_document = (uint8_t *) buf;            \
+      buf += __l;                                                  \
+      buflen -= __l;                                               \
+   } while (0);                                                    \
+   rpc->n_##_name++;
 #define RAW_BUFFER_FIELD(_name)         \
    rpc->_name = (void *) buf;           \
    rpc->_name##_len = (int32_t) buflen; \
@@ -439,6 +558,7 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
+#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -446,6 +566,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
+#undef SECTION_ARRAY_FIELD
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -467,36 +588,55 @@
 void
 _mongoc_rpc_gather (mongoc_rpc_t *rpc, mongoc_array_t *array)
 {
+   mongoc_counter_op_egress_total_inc ();
    switch ((mongoc_opcode_t) rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       _mongoc_rpc_gather_reply (&rpc->reply, &rpc->header, array);
       return;
+
    case MONGOC_OPCODE_MSG:
       _mongoc_rpc_gather_msg (&rpc->msg, &rpc->header, array);
+      mongoc_counter_op_egress_msg_inc ();
       return;
+
    case MONGOC_OPCODE_UPDATE:
       _mongoc_rpc_gather_update (&rpc->update, &rpc->header, array);
+      mongoc_counter_op_egress_update_inc ();
       return;
+
    case MONGOC_OPCODE_INSERT:
       _mongoc_rpc_gather_insert (&rpc->insert, &rpc->header, array);
+      mongoc_counter_op_egress_insert_inc ();
       return;
+
    case MONGOC_OPCODE_QUERY:
       _mongoc_rpc_gather_query (&rpc->query, &rpc->header, array);
+      mongoc_counter_op_egress_query_inc ();
       return;
+
    case MONGOC_OPCODE_GET_MORE:
       _mongoc_rpc_gather_get_more (&rpc->get_more, &rpc->header, array);
+      mongoc_counter_op_egress_getmore_inc ();
       return;
+
    case MONGOC_OPCODE_DELETE:
       _mongoc_rpc_gather_delete (&rpc->delete_, &rpc->header, array);
+      mongoc_counter_op_egress_delete_inc ();
       return;
+
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_gather_kill_cursors (&rpc->kill_cursors, &rpc->header, array);
+      mongoc_counter_op_egress_killcursors_inc ();
       return;
+
    case MONGOC_OPCODE_COMPRESSED:
       _mongoc_rpc_gather_compressed (&rpc->compressed, &rpc->header, array);
+      mongoc_counter_op_egress_compressed_inc ();
       return;
+
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
+      BSON_ASSERT (false);
       break;
    }
 }
@@ -544,7 +684,7 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
    }
 #endif
 #if 0
-   _mongoc_rpc_printf (&rpc);
+   _mongoc_rpc_printf (rpc);
 #endif
 }
 
@@ -591,7 +731,7 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
    }
 #endif
 #if 0
-   _mongoc_rpc_printf (&rpc);
+   _mongoc_rpc_printf (rpc);
 #endif
 }
 
@@ -631,6 +771,7 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
    }
+   printf ("\n");
 }
 
 /*
@@ -787,6 +928,7 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
       return false;
    }
 
+   mongoc_counter_op_ingress_total_inc ();
    if (!_mongoc_rpc_scatter_header (&rpc->header, buf, 16)) {
       return false;
    }
@@ -795,23 +937,37 @@ _mongoc_rpc_scatter (mongoc_rpc_t *rpc, const uint8_t *buf, size_t buflen)
 
    switch (opcode) {
    case MONGOC_OPCODE_COMPRESSED:
+      mongoc_counter_op_ingress_compressed_inc ();
       return _mongoc_rpc_scatter_compressed (&rpc->compressed, buf, buflen);
+
    case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc ();
       return _mongoc_rpc_scatter_reply (&rpc->reply, buf, buflen);
+
    case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_ingress_msg_inc ();
       return _mongoc_rpc_scatter_msg (&rpc->msg, buf, buflen);
+
+
+   /* useless, we are never *getting* these opcodes */
    case MONGOC_OPCODE_UPDATE:
       return _mongoc_rpc_scatter_update (&rpc->update, buf, buflen);
+
    case MONGOC_OPCODE_INSERT:
       return _mongoc_rpc_scatter_insert (&rpc->insert, buf, buflen);
+
    case MONGOC_OPCODE_QUERY:
       return _mongoc_rpc_scatter_query (&rpc->query, buf, buflen);
+
    case MONGOC_OPCODE_GET_MORE:
       return _mongoc_rpc_scatter_get_more (&rpc->get_more, buf, buflen);
+
    case MONGOC_OPCODE_DELETE:
       return _mongoc_rpc_scatter_delete (&rpc->delete_, buf, buflen);
+
    case MONGOC_OPCODE_KILL_CURSORS:
       return _mongoc_rpc_scatter_kill_cursors (&rpc->kill_cursors, buf, buflen);
+
    default:
       MONGOC_WARNING ("Unknown rpc type: 0x%08x", opcode);
       return false;
@@ -860,52 +1016,6 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply, bson_t *bson)
    return bson_init_static (bson, reply->documents, len);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_needs_gle --
- *
- *       Checks to see if an rpc requires a getlasterror command to
- *       determine the success of the rpc.
- *
- *       The write_concern is checked to ensure that the caller wants
- *       to know about a failure.
- *
- * Returns:
- *       true if a getlasterror should be delivered; otherwise false.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-_mongoc_rpc_needs_gle (mongoc_rpc_t *rpc,
-                       const mongoc_write_concern_t *write_concern)
-{
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_REPLY:
-   case MONGOC_OPCODE_QUERY:
-   case MONGOC_OPCODE_MSG:
-   case MONGOC_OPCODE_GET_MORE:
-   case MONGOC_OPCODE_KILL_CURSORS:
-   case MONGOC_OPCODE_COMPRESSED:
-      return false;
-   case MONGOC_OPCODE_INSERT:
-   case MONGOC_OPCODE_UPDATE:
-   case MONGOC_OPCODE_DELETE:
-   default:
-      break;
-   }
-
-   if (!write_concern || !mongoc_write_concern_get_w (write_concern)) {
-      return false;
-   }
-
-   return true;
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -1067,13 +1177,11 @@ _mongoc_populate_query_error (const bson_t *doc,
 
 bool
 _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
-                      bool is_command,
                       int32_t error_api_version,
                       bson_error_t *error /* OUT */,
                       bson_t *error_doc /* OUT */)
 {
    bson_t b;
-   bool r;
 
    ENTRY;
 
@@ -1087,33 +1195,7 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
       RETURN (false);
    }
 
-   if (is_command) {
-      if (rpc->reply.n_returned != 1) {
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
-                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                         "Expected only one reply document, got %d",
-                         rpc->reply.n_returned);
-         RETURN (false);
-      }
-
-      if (_mongoc_rpc_get_first_document (rpc, &b)) {
-         r = _mongoc_cmd_check_ok (&b, error_api_version, error);
-         if (!r && error_doc) {
-            bson_destroy (error_doc);
-            bson_copy_to (&b, error_doc);
-         }
-
-         bson_destroy (&b);
-         RETURN (r);
-      } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Failed to decode document from the server.");
-         RETURN (false);
-      }
-   } else if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
+   if (rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE) {
       if (_mongoc_rpc_get_first_document (rpc, &b)) {
          _mongoc_populate_query_error (&b, error_api_version, error);
 

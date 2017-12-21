@@ -49,6 +49,14 @@ void
 install_json_test_suite (TestSuite *suite,
                          const char *dir_path,
                          test_hook callback);
+void
+_install_json_test_suite_with_check (TestSuite *suite,
+                                     const char *dir_path,
+                                     test_hook callback,
+                                     ...);
+
+#define install_json_test_suite_with_check(_suite, _dir_path, ...) \
+   _install_json_test_suite_with_check (_suite, _dir_path, __VA_ARGS__, NULL)
 
 mongoc_topology_description_type_t
 topology_type_from_test (const char *type);

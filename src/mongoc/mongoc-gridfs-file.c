@@ -46,12 +46,12 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file);
 
 
 /*****************************************************************
-* Magic accessor generation
-*
-* We need some accessors to get and set properties on files, to handle memory
-* ownership and to determine dirtiness.  These macros produce the getters and
-* setters we need
-*****************************************************************/
+ * Magic accessor generation
+ *
+ * We need some accessors to get and set properties on files, to handle memory
+ * ownership and to determine dirtiness.  These macros produce the getters and
+ * setters we need
+ *****************************************************************/
 
 #define MONGOC_GRIDFS_FILE_STR_ACCESSOR(name)                             \
    const char *mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t *file) \
@@ -1027,19 +1027,16 @@ mongoc_gridfs_file_remove (mongoc_gridfs_file_t *file, bson_error_t *error)
 
    BSON_APPEND_VALUE (&sel, "_id", &file->files_id);
 
-   if (!mongoc_collection_remove (file->gridfs->files,
-                                  MONGOC_REMOVE_SINGLE_REMOVE,
-                                  &sel,
-                                  NULL,
-                                  error)) {
+   if (!mongoc_collection_delete_one (
+          file->gridfs->files, &sel, NULL, NULL, error)) {
       goto cleanup;
    }
 
    bson_reinit (&sel);
    BSON_APPEND_VALUE (&sel, "files_id", &file->files_id);
 
-   if (!mongoc_collection_remove (
-          file->gridfs->chunks, MONGOC_REMOVE_NONE, &sel, NULL, error)) {
+   if (!mongoc_collection_delete_many (
+          file->gridfs->chunks, &sel, NULL, NULL, error)) {
       goto cleanup;
    }
 

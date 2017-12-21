@@ -13,7 +13,7 @@ Synopsis
                                  bson_t *reply,
                                  bson_error_t *error);
 
-This function executes all operations queued into the bulk operation. If ``ordered`` was specified to :symbol:`mongoc_collection_create_bulk_operation()`, then forward progress will be stopped upon the first error.
+This function executes all operations queued into the bulk operation. Unless ``ordered: false`` was specified in the ``opts`` passed to :symbol:`mongoc_collection_create_bulk_operation_with_opts()`, then forward progress will be stopped upon the first error.
 
 It is only valid to call :symbol:`mongoc_bulk_operation_execute()` once. The ``mongoc_bulk_operation_t`` must be destroyed afterwards.
 

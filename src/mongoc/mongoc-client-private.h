@@ -39,12 +39,11 @@
 #include "mongoc-topology-private.h"
 #include "mongoc-write-concern.h"
 
-
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 0
-#define WIRE_VERSION_MAX 5
+#define WIRE_VERSION_MIN 2
+#define WIRE_VERSION_MAX 6
 
 /* first version that supported aggregation cursors */
 #define WIRE_VERSION_AGG_CURSOR 1
@@ -66,6 +65,10 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_CMD_WRITE_CONCERN 5
 /* first version to support collation */
 #define WIRE_VERSION_COLLATION 5
+/* first version to support OP_MSG */
+#define WIRE_VERSION_OP_MSG 6
+/* first version to support retryable writes  */
+#define WIRE_VERSION_RETRY_WRITES 6
 
 
 struct _mongoc_client_t {
@@ -92,6 +95,10 @@ struct _mongoc_client_t {
 
    int32_t error_api_version;
    bool error_api_set;
+
+   /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
+   mongoc_set_t *client_sessions;
+   unsigned int csid_rand_seed;
 };
 
 
@@ -100,17 +107,25 @@ struct _mongoc_client_t {
  * a command like "createRole", or both, like "aggregate" with "$out".
  */
 typedef enum {
+   MONGOC_CMD_RAW = 0,
    MONGOC_CMD_READ = 1,
    MONGOC_CMD_WRITE = 2,
    MONGOC_CMD_RW = 3,
 } mongoc_command_mode_t;
 
-BSON_STATIC_ASSERT (MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
+BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
+                     MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
+typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
+
+bool
+_mongoc_client_get_rr (const char *service,
+                       mongoc_rr_type_t rr_type,
+                       mongoc_uri_t *uri,
+                       bson_error_t *error);
 
 mongoc_client_t *
-_mongoc_client_new_from_uri (const mongoc_uri_t *uri,
-                             mongoc_topology_t *topology);
+_mongoc_client_new_from_uri (mongoc_topology_t *topology);
 
 bool
 _mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,
@@ -135,19 +150,14 @@ _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_server_stream_t *server_stream,
                      bson_error_t *error);
 
-bool
-_mongoc_client_recv_gle (mongoc_client_t *client,
-                         mongoc_server_stream_t *server_stream,
-                         bson_t **gle_doc,
-                         bson_error_t *error);
-
 void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t server_id,
                             int64_t cursor_id,
                             int64_t operation_id,
                             const char *db,
-                            const char *collection);
+                            const char *collection,
+                            mongoc_client_session_t *cs);
 bool
 _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   const char *db_name,
@@ -161,6 +171,25 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_t *reply,
                                   bson_error_t *error);
 
+mongoc_server_session_t *
+_mongoc_client_pop_server_session (mongoc_client_t *client,
+                                   bson_error_t *error);
+
+bool
+_mongoc_client_lookup_session (const mongoc_client_t *client,
+                               uint32_t client_session_id,
+                               mongoc_client_session_t **cs,
+                               bson_error_t *error);
+
+void
+_mongoc_client_unregister_session (mongoc_client_t *client,
+                                   mongoc_client_session_t *session);
+
+void
+_mongoc_client_push_server_session (mongoc_client_t *client,
+                                    mongoc_server_session_t *server_session);
+void
+_mongoc_client_end_sessions (mongoc_client_t *client);
 BSON_END_DECLS
 
 

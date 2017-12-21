@@ -31,5 +31,5 @@ Returns true on success. If any arguments are invalid, returns false and logs an
 Example
 -------
 
-See the example code for :symbol:`mongoc_client_read_command_with_opts`.
+See the example code for :symbol:`mongoc_client_write_command_with_opts`.
 

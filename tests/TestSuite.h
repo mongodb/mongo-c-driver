@@ -51,7 +51,7 @@ extern "C" {
 #define CERT_CLIENT CERT_TEST_DIR "/client.pem"
 #define CERT_ALTNAME                                                   \
    CERT_TEST_DIR "/altname.pem"             /* alternative.mongodb.org \
-                                               */
+                                             */
 #define CERT_WILD CERT_TEST_DIR "/wild.pem" /* *.mongodb.org */
 #define CERT_COMMONNAME \
    CERT_TEST_DIR "/commonName.pem"                /* 127.0.0.1 & localhost */
@@ -282,29 +282,33 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                            \
    } while (0)
 
-#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)               \
-   do {                                                                      \
-      if (error.domain != _domain) {                                         \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): error domain %d doesn't match expected %d\n", \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  BSON_FUNC,                                                 \
-                  error.domain,                                              \
-                  _domain);                                                  \
-         abort ();                                                           \
-      };                                                                     \
-      if (error.code != _code) {                                             \
-         fprintf (stderr,                                                    \
-                  "%s:%d %s(): error code %d doesn't match expected %d\n",   \
-                  __FILE__,                                                  \
-                  __LINE__,                                                  \
-                  BSON_FUNC,                                                 \
-                  error.code,                                                \
-                  _code);                                                    \
-         abort ();                                                           \
-      };                                                                     \
-      ASSERT_CONTAINS (error.message, _message);                             \
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message)              \
+   do {                                                                     \
+      if (error.domain != _domain) {                                        \
+         fprintf (stderr,                                                   \
+                  "%s:%d %s(): error domain %d doesn't match expected %d\n" \
+                  "error: \"%s\"",                                          \
+                  __FILE__,                                                 \
+                  __LINE__,                                                 \
+                  BSON_FUNC,                                                \
+                  error.domain,                                             \
+                  _domain,                                                  \
+                  error.message);                                           \
+         abort ();                                                          \
+      };                                                                    \
+      if (error.code != _code) {                                            \
+         fprintf (stderr,                                                   \
+                  "%s:%d %s(): error code %d doesn't match expected %d\n"   \
+                  "error: \"%s\"",                                          \
+                  __FILE__,                                                 \
+                  __LINE__,                                                 \
+                  BSON_FUNC,                                                \
+                  error.code,                                               \
+                  _code,                                                    \
+                  error.message);                                           \
+         abort ();                                                          \
+      };                                                                    \
+      ASSERT_CONTAINS (error.message, _message);                            \
    } while (0);
 
 #define ASSERT_CAPTURED_LOG(_info, _level, _msg)                \
@@ -447,11 +451,13 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
+#define MAX_TEST_CHECK_FUNCS 10
 
 
 typedef void (*TestFunc) (void);
 typedef void (*TestFuncWC) (void *);
 typedef void (*TestFuncDtor) (void *);
+typedef int (*CheckFunc) (void);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
 
@@ -464,7 +470,8 @@ struct _Test {
    void *ctx;
    int exit_code;
    unsigned seed;
-   int (*check) (void);
+   CheckFunc checks[MAX_TEST_CHECK_FUNCS];
+   size_t num_checks;
 };
 
 
@@ -492,20 +499,34 @@ TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
 int
 TestSuite_CheckMockServerAllowed (void);
 void
-TestSuite_AddMockServerTest (TestSuite *suite, const char *name, TestFunc func);
+_TestSuite_AddMockServerTest (TestSuite *suite,
+                              const char *name,
+                              TestFunc func,
+                              ...);
+#define TestSuite_AddMockServerTest(_suite, _name, ...) \
+   _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
 void
 TestSuite_AddWC (TestSuite *suite,
                  const char *name,
                  TestFuncWC func,
                  TestFuncDtor dtor,
                  void *ctx);
+Test *
+_V_TestSuite_AddFull (TestSuite *suite,
+                      const char *name,
+                      TestFuncWC func,
+                      TestFuncDtor dtor,
+                      void *ctx,
+                      va_list ap);
 void
-TestSuite_AddFull (TestSuite *suite,
-                   const char *name,
-                   TestFuncWC func,
-                   TestFuncDtor dtor,
-                   void *ctx,
-                   int (*check) (void));
+_TestSuite_AddFull (TestSuite *suite,
+                    const char *name,
+                    TestFuncWC func,
+                    TestFuncDtor dtor,
+                    void *ctx,
+                    ...);
+#define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
+   _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
 int
 TestSuite_Run (TestSuite *suite);
 void

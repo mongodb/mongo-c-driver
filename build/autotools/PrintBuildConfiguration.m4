@@ -39,6 +39,7 @@ Build configuration:
   Compile with debug symbols (slow)                : ${enable_debug_symbols}
   Enable GCC build optimization                    : ${enable_optimizations}
   Enable automatic init and cleanup                : ${enable_automatic_init_and_cleanup}${automatic_init_deprecated}
+  Enable mongodb+srv URIs                          : ${enable_srv}
   Enable maintainer flags                          : ${enable_maintainer_flags}
   Code coverage support                            : ${enable_coverage}
   Cross Compiling                                  : ${enable_crosscompile}

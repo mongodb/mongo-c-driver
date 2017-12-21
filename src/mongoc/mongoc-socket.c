@@ -26,6 +26,7 @@
 #include "mongoc-trace-private.h"
 #ifdef _WIN32
 #include <Mstcpip.h>
+#include <process.h>
 #endif
 
 #undef MONGOC_LOG_DOMAIN
@@ -351,7 +352,6 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
 static void
 _mongoc_socket_setkeepalive_windows (SOCKET sd)
 {
-   BOOL optval = 1;
    struct tcp_keepalive keepalive;
    DWORD lpcbBytesReturned = 0;
    HKEY hKey;
@@ -415,9 +415,9 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
                  &lpcbBytesReturned,
                  NULL,
                  NULL) == SOCKET_ERROR) {
-      TRACE ("Could not set keepalive values");
+      TRACE ("%s", "Could not set keepalive values");
    } else {
-      TRACE ("KeepAlive values updated");
+      TRACE ("%s", "KeepAlive values updated");
       TRACE ("KeepAliveTime: %d", keepalive.keepalivetime);
       TRACE ("KeepAliveInterval: %d", keepalive.keepaliveinterval);
    }
@@ -771,9 +771,9 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 
    BSON_ASSERT (sock);
 
-   owned = (sock->pid == (int) getpid ());
-
 #ifdef _WIN32
+   owned = (sock->pid == (int) _getpid ());
+
    if (sock->sd != INVALID_SOCKET) {
       if (owned) {
          shutdown (sock->sd, SD_BOTH);
@@ -788,6 +788,8 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    }
    RETURN (0);
 #else
+   owned = (sock->pid == (int) getpid ());
+
    if (sock->sd != -1) {
       if (owned) {
          shutdown (sock->sd, SHUT_RDWR);
@@ -998,7 +1000,11 @@ mongoc_socket_new (int domain,   /* IN */
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
+#ifdef _WIN32
+   sock->pid = (int) _getpid ();
+#else
    sock->pid = (int) getpid ();
+#endif
 
    RETURN (sock);
 

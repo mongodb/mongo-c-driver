@@ -8,8 +8,8 @@ Deprecated
 
 This function is deprecated and should not be used in new code.
 
-Please use :symbol:`mongoc_collection_insert()` or
-:symbol:`mongoc_collection_update()` instead.
+Please use :symbol:`mongoc_collection_insert_one()` or
+:symbol:`mongoc_collection_replace_one()` with "upsert" instead.
 
 
 Synopsis
@@ -22,7 +22,8 @@ Synopsis
                           const bson_t *document,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t *error)
-      BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert or mongoc_collection_update);
+     BSON_GNUC_DEPRECATED_FOR (mongoc_collection_insert_one or
+                               mongoc_collection_replace_one);
 
 Parameters
 ----------

@@ -47,6 +47,14 @@ struct _mongoc_topology_description_t {
    bool stale;
    unsigned int rand_seed;
 
+   /* the greatest seen cluster time, for a MongoDB 3.6+ sharded cluster.
+    * see Driver Sessions Spec. */
+   bson_t cluster_time;
+
+   /* smallest seen logicalSessionTimeoutMinutes, or -1 if any server has no
+    * logicalSessionTimeoutMinutes. see Server Discovery and Monitoring Spec */
+   int64_t session_timeout_minutes;
+
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
 };
@@ -55,7 +63,6 @@ typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE } mongoc_ss_optype_t;
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                  mongoc_topology_description_type_t type,
                                   int64_t heartbeat_msec);
 
 void
@@ -108,6 +115,9 @@ mongoc_topology_description_suitable_servers (
    const mongoc_read_prefs_t *read_pref,
    size_t local_threshold_ms);
 
+bool
+mongoc_topology_description_has_data_node (mongoc_topology_description_t *td);
+
 void
 mongoc_topology_description_invalidate_server (
    mongoc_topology_description_t *topology,
@@ -118,5 +128,9 @@ bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                         const char *server,
                                         uint32_t *id /* OUT */);
+
+void
+mongoc_topology_description_update_cluster_time (
+   mongoc_topology_description_t *td, const bson_t *reply);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H */

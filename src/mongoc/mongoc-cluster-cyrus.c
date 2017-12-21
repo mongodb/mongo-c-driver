@@ -17,6 +17,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
+#include "mongoc-client-private.h"
 #include "mongoc-cyrus-private.h"
 #include "mongoc-cluster-cyrus-private.h"
 #include "mongoc-error.h"
@@ -25,7 +26,7 @@
 bool
 _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
                                  mongoc_stream_t *stream,
-                                 const char *hostname,
+                                 mongoc_server_description_t *sd,
                                  bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
@@ -38,17 +39,19 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
+   mongoc_server_stream_t *server_stream;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
    if (!_mongoc_cyrus_new_from_cluster (
-          &sasl, cluster, stream, hostname, error)) {
+          &sasl, cluster, stream, sd->host.host, error)) {
       return false;
    }
 
    for (;;) {
-      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
 
       if (!_mongoc_cyrus_step (
              &sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
@@ -67,12 +70,23 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
+      server_stream = _mongoc_cluster_create_server_stream (
+         cluster->client->topology, sd->id, stream, error);
+
+      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+         mongoc_server_stream_cleanup (server_stream);
+         bson_destroy (&cmd);
+         goto failure;
+      }
+
       if (!mongoc_cluster_run_command_private (
-             cluster, &parts, stream, 0, &reply, error)) {
+             cluster, &parts.assembled, &reply, error)) {
+         mongoc_server_stream_cleanup (server_stream);
          bson_destroy (&cmd);
          bson_destroy (&reply);
          goto failure;
       }
+      mongoc_server_stream_cleanup (server_stream);
 
       bson_destroy (&cmd);
 

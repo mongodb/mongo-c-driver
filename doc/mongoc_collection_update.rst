@@ -29,6 +29,8 @@ Parameters
 Description
 -----------
 
+Superseded by :symbol:`mongoc_collection_update_one`, :symbol:`mongoc_collection_update_many`, and :symbol:`mongoc_collection_replace_one`.
+
 This function shall update documents in ``collection`` that match ``selector``.
 
 By default, updates only a single document. Set flags to ``MONGOC_UPDATE_MULTI_UPDATE`` to update multiple documents.

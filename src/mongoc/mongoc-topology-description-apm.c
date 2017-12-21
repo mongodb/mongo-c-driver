@@ -94,8 +94,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
    if (td->apm_callbacks.topology_changed) {
       /* prepare to call monitor_changed */
       prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
-      mongoc_topology_description_init (
-         prev_td, MONGOC_TOPOLOGY_UNKNOWN, td->heartbeat_msec);
+      mongoc_topology_description_init (prev_td, td->heartbeat_msec);
    }
 
    td->opened = true;

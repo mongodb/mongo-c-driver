@@ -14,7 +14,7 @@ bulk1 (mongoc_collection_t *collection)
    bool ret;
    int i;
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    for (i = 0; i < 10000; i++) {
       doc = BCON_NEW ("i", BCON_INT32 (i));

@@ -71,8 +71,8 @@ typedef struct mongoc_topology_scanner {
    mongoc_async_t *async;
    mongoc_topology_scanner_node_t *nodes;
    bson_t ismaster_cmd;
-
    bson_t ismaster_cmd_with_handshake;
+   bson_t cluster_time;
    bool handshake_ok_to_send;
    const char *appname;
 
@@ -103,6 +103,9 @@ mongoc_topology_scanner_new (
 
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
+
+bool
+mongoc_topology_scanner_valid (mongoc_topology_scanner_t *ts);
 
 void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
@@ -164,6 +167,9 @@ mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
 bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char *name);
+void
+_mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts,
+                                           const bson_t *cluster_time);
 
 
 #ifdef MONGOC_ENABLE_SSL

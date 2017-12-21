@@ -312,9 +312,8 @@ mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 }
 
 
-static mongoc_stream_t *
+mongoc_stream_t *
 mongoc_stream_get_root_stream (mongoc_stream_t *stream)
-
 {
    BSON_ASSERT (stream);
 

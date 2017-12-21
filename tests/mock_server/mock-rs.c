@@ -104,6 +104,65 @@ make_uri (mongoc_array_t *servers)
 }
 
 
+static char *
+ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
+{
+   char *server_type;
+   char *ls_timeout;
+   char *hosts_str;
+   char *json;
+
+   if (type == MONGOC_SERVER_RS_PRIMARY) {
+      server_type = "'ismaster': true, 'secondary': false, ";
+   } else if (type == MONGOC_SERVER_RS_SECONDARY) {
+      server_type = "'ismaster': false, 'secondary': true, ";
+   } else {
+      BSON_ASSERT (type == MONGOC_SERVER_RS_ARBITER);
+      server_type = "'ismaster': false, 'arbiterOnly': true, ";
+   }
+
+   if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      ls_timeout = "'logicalSessionTimeoutMinutes': 30, ";
+   } else {
+      ls_timeout = "";
+   }
+
+   hosts_str = hosts (&rs->servers);
+
+   json = bson_strdup_printf ("{'ok': 1, %s %s 'maxWireVersion': %d, "
+                              "'setName': 'rs', 'hosts': [%s]}",
+                              server_type,
+                              ls_timeout,
+                              rs->max_wire_version,
+                              hosts_str);
+
+   bson_free (hosts_str);
+
+   return json;
+}
+
+
+static char *
+primary_json (mock_rs_t *rs)
+{
+   return ismaster_json (rs, MONGOC_SERVER_RS_PRIMARY);
+}
+
+
+static char *
+secondary_json (mock_rs_t *rs)
+{
+   return ismaster_json (rs, MONGOC_SERVER_RS_SECONDARY);
+}
+
+
+static char *
+arbiter_json (mock_rs_t *rs)
+{
+   return ismaster_json (rs, MONGOC_SERVER_RS_ARBITER);
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_rs_with_autoismaster --
@@ -132,10 +191,21 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->has_primary = has_primary;
    rs->n_secondaries = n_secondaries;
    rs->n_arbiters = n_arbiters;
-   rs->request_timeout_msec = 10 * 1000;
+   rs->request_timeout_msec = get_future_timeout_ms ();
    rs->q = q_new ();
 
    return rs;
+}
+
+
+static void
+mock_rs_auto_endsessions (mock_rs_t *rs)
+{
+   int i;
+
+   for (i = 0; i < rs->servers.len; i++) {
+      mock_server_auto_endsessions (get_server (&rs->servers, i));
+   }
 }
 
 
@@ -205,7 +275,7 @@ mock_rs_run (mock_rs_t *rs)
    int i;
    mock_server_t *server;
    char *hosts_str;
-   char *ismaster_json;
+   char *ismaster_reply;
 
    if (rs->has_primary) {
       /* start primary */
@@ -254,45 +324,36 @@ mock_rs_run (mock_rs_t *rs)
    rs->hosts_str = hosts_str = hosts (&rs->servers);
    rs->uri = make_uri (&rs->servers);
 
+   BSON_ASSERT (rs->max_wire_version > 0);
    if (rs->has_primary) {
       /* primary's ismaster response */
-      ismaster_json =
-         bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'secondary': false, "
-                             "'maxWireVersion': %d, "
-                             "'setName': 'rs', 'hosts': [%s]}",
-                             rs->max_wire_version,
-                             hosts_str);
-
-      mock_server_auto_ismaster (rs->primary, ismaster_json);
-      bson_free (ismaster_json);
+      ismaster_reply = primary_json (rs);
+      mock_server_auto_ismaster (rs->primary, ismaster_reply);
+      bson_free (ismaster_reply);
    }
 
    /* secondaries' ismaster response */
-   ismaster_json = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': false, 'secondary': true, 'maxWireVersion': %d, "
-      "'setName': 'rs', 'hosts': [%s]}",
-      rs->max_wire_version,
-      hosts_str);
+   ismaster_reply = secondary_json (rs);
 
    for (i = 0; i < rs->n_secondaries; i++) {
       mock_server_auto_ismaster (get_server (&rs->secondaries, i),
-                                 ismaster_json);
+                                 ismaster_reply);
    }
 
-   bson_free (ismaster_json);
+   bson_free (ismaster_reply);
 
    /* arbiters' ismaster response */
-   ismaster_json = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': true, 'arbiterOnly': true, 'maxWireVersion': %d, "
-      "'setName': 'rs', 'hosts': [%s]}",
-      rs->max_wire_version,
-      hosts_str);
+   ismaster_reply = arbiter_json (rs);
 
    for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_json);
+      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_reply);
    }
 
-   bson_free (ismaster_json);
+   bson_free (ismaster_reply);
+
+   if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      mock_rs_auto_endsessions (rs);
+   }
 }
 
 
@@ -549,6 +610,47 @@ mock_rs_receives_getmore (mock_rs_t *rs,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_rs_receives_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass varargs
+ *       list of bson_t pointers, which are matched to the series of
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+_mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...)
+{
+   request_t *request;
+   va_list args;
+   bool r;
+
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
+
+   va_start (args, flags);
+   r = request_matches_msgv (request, flags, &args);
+   va_end (args);
+
+   if (!r) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_rs_hangs_up --
  *
  *       Hang up on a client request.
@@ -761,6 +863,67 @@ mock_rs_request_is_to_secondary (mock_rs_t *rs, request_t *request)
 
    return MONGOC_SERVER_RS_SECONDARY ==
           _mock_rs_server_type (rs, request_get_server_port (request));
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_stepdown --
+ *
+ *       Change the primary to a secondary.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_rs_stepdown (mock_rs_t *rs)
+{
+   char *json;
+
+   BSON_ASSERT (rs->primary);
+
+   json = secondary_json (rs);
+   mock_server_auto_ismaster (rs->primary, json);
+   bson_free (json);
+
+   _mongoc_array_append_val (&rs->secondaries, rs->primary);
+   rs->primary = NULL;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_elect --
+ *
+ *       Change a secondary to the primary.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_rs_elect (mock_rs_t *rs, int id)
+{
+   char *json;
+   size_t i;
+   mock_server_t **ptrs;
+
+   BSON_ASSERT (!rs->primary);
+   BSON_ASSERT (id >= 0);
+   BSON_ASSERT (id < rs->secondaries.len);
+
+   rs->primary = get_server (&rs->secondaries, id);
+
+   json = primary_json (rs);
+   mock_server_auto_ismaster (rs->primary, json);
+   bson_free (json);
+
+   ptrs = (mock_server_t **) rs->secondaries.data;
+
+   for (i = (size_t) id + 1; i < rs->secondaries.len; i++) {
+      ptrs[i - 1] = ptrs[i];
+   }
+
+   rs->secondaries.len--;
 }
 
 

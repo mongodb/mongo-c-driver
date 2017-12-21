@@ -15,7 +15,6 @@
  */
 
 
-#include "mongoc-config.h"
 #include "mongoc-error.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
@@ -192,7 +191,7 @@ static void
 _apply_read_preferences_mongos (
    const mongoc_read_prefs_t *read_prefs,
    const bson_t *query_bson,
-   mongoc_apply_read_prefs_result_t *result /* OUT */)
+   mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
@@ -236,18 +235,18 @@ _apply_read_preferences_mongos (
        *
        * This applies to commands, too.
        */
-      result->query_with_read_prefs = bson_new ();
+      result->assembled_query = bson_new ();
       result->query_owned = true;
 
       if (bson_has_field (query_bson, "$query")) {
-         bson_concat (result->query_with_read_prefs, query_bson);
+         bson_concat (result->assembled_query, query_bson);
       } else {
          bson_append_document (
-            result->query_with_read_prefs, "$query", 6, query_bson);
+            result->assembled_query, "$query", 6, query_bson);
       }
 
       bson_append_document_begin (
-         result->query_with_read_prefs, "$readPreference", 15, &child);
+         result->assembled_query, "$readPreference", 15, &child);
       mode_str = _mongoc_read_mode_as_str (mode);
       bson_append_utf8 (&child, "mode", 4, mode_str, -1);
       if (!bson_empty0 (tags)) {
@@ -262,36 +261,36 @@ _apply_read_preferences_mongos (
             &child, "maxStalenessSeconds", 19, max_staleness_seconds);
       }
 
-      bson_append_document_end (result->query_with_read_prefs, &child);
+      bson_append_document_end (result->assembled_query, &child);
    }
 }
 
 /*
  *--------------------------------------------------------------------------
  *
- * apply_read_preferences --
+ * assemble_query --
  *
- *       Update @result based on @read prefs, following the Server Selection
+ *       Update @result based on @read_prefs, following the Server Selection
  *       Spec.
  *
  * Side effects:
- *       Sets @result->query_with_read_prefs and @result->flags.
+ *       Sets @result->assembled_query and @result->flags.
  *
  *  Note:
- *       This function, the mongoc_apply_read_prefs_result_t struct, and all
+ *       This function, the mongoc_assemble_query_result_t struct, and all
  *       related functions are only used for find operations with OP_QUERY.
- *       Remove them once MongoDB 3.0 is EOL, all find operations will then
- *       use the "find" command.
+ *       Remove them once we have implemented exhaust cursors with OP_MSG in
+ *       the server, and all previous server versions are EOL.
  *
  *--------------------------------------------------------------------------
  */
 
 void
-apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
-                        const mongoc_server_stream_t *server_stream,
-                        const bson_t *query_bson,
-                        mongoc_query_flags_t initial_flags,
-                        mongoc_apply_read_prefs_result_t *result /* OUT */)
+assemble_query (const mongoc_read_prefs_t *read_prefs,
+                const mongoc_server_stream_t *server_stream,
+                const bson_t *query_bson,
+                mongoc_query_flags_t initial_flags,
+                mongoc_assemble_query_result_t *result /* OUT */)
 {
    mongoc_server_description_type_t server_type;
 
@@ -302,7 +301,7 @@ apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
    BSON_ASSERT (result);
 
    /* default values */
-   result->query_with_read_prefs = (bson_t *) query_bson;
+   result->assembled_query = (bson_t *) query_bson;
    result->query_owned = false;
    result->flags = initial_flags;
 
@@ -353,14 +352,14 @@ apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
 
 
 void
-apply_read_prefs_result_cleanup (mongoc_apply_read_prefs_result_t *result)
+assemble_query_result_cleanup (mongoc_assemble_query_result_t *result)
 {
    ENTRY;
 
    BSON_ASSERT (result);
 
    if (result->query_owned) {
-      bson_destroy (result->query_with_read_prefs);
+      bson_destroy (result->assembled_query);
    }
 
    EXIT;

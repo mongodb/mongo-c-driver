@@ -17,7 +17,7 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
-
+#include "mongoc-client-private.h"
 #include "mongoc-cluster-sspi-private.h"
 #include "mongoc-cluster-sasl-private.h"
 #include "mongoc-sasl-private.h"
@@ -135,49 +135,23 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
 bool
 _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
-                                const char *hostname,
+                                mongoc_server_description_t *sd,
                                 bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
-   uint8_t buf[4096] = {0};
+   SEC_CHAR buf[4096] = {0};
    bson_iter_t iter;
    uint32_t buflen;
    bson_t reply;
-   char *tmpstr;
+   const char *tmpstr;
    int conv_id;
    bson_t cmd;
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
    int step;
-   bool canonicalize = false;
-   const bson_t *options;
-   bson_t properties;
-   char real_name[BSON_HOST_NAME_MAX + 1];
+   mongoc_server_stream_t *server_stream;
 
-   options = mongoc_uri_get_options (cluster->uri);
-
-   if (bson_iter_init_find_case (
-          &iter, options, MONGOC_URI_CANONICALIZEHOSTNAME) &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      canonicalize = bson_iter_bool (&iter);
-   }
-
-   if (mongoc_uri_get_mechanism_properties (cluster->uri, &properties)) {
-      if (bson_iter_init_find_case (
-             &iter, &properties, "CANONICALIZE_HOST_NAME") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         canonicalize = !strcasecmp (bson_iter_utf8 (&iter, NULL), "true");
-      }
-      bson_destroy (&properties);
-   }
-
-   if (canonicalize && _mongoc_sasl_get_canonicalized_name (
-                          stream, real_name, sizeof real_name, error)) {
-      state = _mongoc_cluster_sspi_new (cluster->uri, real_name);
-   } else {
-      state = _mongoc_cluster_sspi_new (cluster->uri, hostname);
-   }
-
+   state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
 
    if (!state) {
       bson_set_error (error,
@@ -188,7 +162,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    }
 
    for (step = 0;; step++) {
-      mongoc_cmd_parts_init (&parts, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      mongoc_cmd_parts_init (
+         &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
       bson_init (&cmd);
 
       if (res == MONGOC_SSPI_AUTH_GSS_CONTINUE) {
@@ -201,7 +176,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          res = _mongoc_sspi_auth_sspi_client_unwrap (state, buf);
          response = bson_strdup (state->response);
          _mongoc_sspi_auth_sspi_client_wrap (
-            state, response, tmp_creds, tmp_creds_len, 0);
+            state, response, (SEC_CHAR*) tmp_creds, tmp_creds_len, 0);
          bson_free (response);
       }
 
@@ -228,18 +203,26 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
-      if (!mongoc_cluster_run_command_private (cluster,
-                                               &parts,
-                                               stream,
-                                               0,
-                                               &reply,
-                                               error)) {
+      server_stream = _mongoc_cluster_create_server_stream (
+         cluster->client->topology, sd->id, stream, error);
+
+      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+         mongoc_server_stream_cleanup (server_stream);
+         mongoc_cmd_parts_cleanup (&parts);
+         bson_destroy (&cmd);
+         break;
+      }
+
+      if (!mongoc_cluster_run_command_private (
+             cluster, &parts.assembled, &reply, error)) {
+         mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
          bson_destroy (&reply);
          break;
       }
 
+      mongoc_server_stream_cleanup (server_stream);
       mongoc_cmd_parts_cleanup (&parts);
       bson_destroy (&cmd);
 

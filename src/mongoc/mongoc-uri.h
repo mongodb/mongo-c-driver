@@ -54,6 +54,7 @@
 #define MONGOC_URI_READPREFERENCE "readpreference"
 #define MONGOC_URI_READPREFERENCETAGS "readpreferencetags"
 #define MONGOC_URI_REPLICASET "replicaset"
+#define MONGOC_URI_RETRYWRITES "retrywrites"
 #define MONGOC_URI_SAFE "safe"
 #define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"
 #define MONGOC_URI_SERVERSELECTIONTRYONCE "serverselectiontryonce"
@@ -93,6 +94,8 @@ mongoc_uri_new_for_host_port (const char *hostname,
                               uint16_t port) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (const mongoc_host_list_t *)
 mongoc_uri_get_hosts (const mongoc_uri_t *uri);
+MONGOC_EXPORT (const char *)
+mongoc_uri_get_service (const mongoc_uri_t *uri);
 MONGOC_EXPORT (const char *)
 mongoc_uri_get_database (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)

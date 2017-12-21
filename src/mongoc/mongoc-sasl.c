@@ -21,6 +21,7 @@
 #include "mongoc-util-private.h"
 
 #include "mongoc-trace-private.h"
+#include "mongoc-change-stream-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "SASL"
@@ -149,11 +150,9 @@ _mongoc_sasl_set_properties (mongoc_sasl_t *sasl, const mongoc_uri_t *uri)
 bool
 _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
                                      char *name,                   /* OUT */
-                                     size_t namelen,               /* IN */
-                                     bson_error_t *error)          /* OUT */
+                                     size_t namelen)               /* OUT */
 {
    mongoc_stream_t *stream;
-   mongoc_stream_t *tmp;
    mongoc_socket_t *sock = NULL;
    char *canonicalized;
 
@@ -162,17 +161,7 @@ _mongoc_sasl_get_canonicalized_name (mongoc_stream_t *node_stream, /* IN */
    BSON_ASSERT (node_stream);
    BSON_ASSERT (name);
 
-   /*
-    * Find the underlying socket used in the stream chain.
-    */
-   for (stream = node_stream; stream;) {
-      if ((tmp = mongoc_stream_get_base_stream (stream))) {
-         stream = tmp;
-         continue;
-      }
-      break;
-   }
-
+   stream = mongoc_stream_get_root_stream (node_stream);
    BSON_ASSERT (stream);
 
    if (stream->type == MONGOC_STREAM_SOCKET) {

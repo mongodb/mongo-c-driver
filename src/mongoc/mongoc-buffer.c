@@ -124,6 +124,46 @@ _mongoc_buffer_clear (mongoc_buffer_t *buffer, bool zero)
 }
 
 
+bool
+_mongoc_buffer_append (mongoc_buffer_t *buffer,
+                       const uint8_t *data,
+                       size_t data_size)
+{
+   uint8_t *buf;
+
+   ENTRY;
+
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (data_size);
+
+   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT ((buffer->datalen + data_size) < INT_MAX);
+
+   if (!SPACE_FOR (buffer, data_size)) {
+      if (buffer->len) {
+         memmove (&buffer->data[0], &buffer->data[buffer->off], buffer->len);
+      }
+      buffer->off = 0;
+      if (!SPACE_FOR (buffer, data_size)) {
+         buffer->datalen =
+            bson_next_power_of_two (data_size + buffer->len + buffer->off);
+         buffer->data = (uint8_t *) buffer->realloc_func (
+            buffer->data, buffer->datalen, NULL);
+      }
+   }
+
+   buf = &buffer->data[buffer->off + buffer->len];
+
+   BSON_ASSERT ((buffer->off + buffer->len + data_size) <= buffer->datalen);
+
+   memcpy (buf, data, data_size);
+
+   buffer->len += data_size;
+
+   RETURN (true);
+}
+
+
 /**
  * mongoc_buffer_append_from_stream:
  * @buffer; A mongoc_buffer_t.

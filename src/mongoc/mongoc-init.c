@@ -33,7 +33,6 @@
 #endif
 #endif
 #include "mongoc-thread-private.h"
-#include "mongoc-trace-private.h"
 
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
@@ -45,7 +44,6 @@
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
 #include <sasl/sasl.h>
-#include "mongoc-cyrus-private.h"
 
 static void *
 mongoc_cyrus_mutex_alloc (void)
@@ -91,9 +89,6 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    int status;
-   sasl_callback_t callbacks[] = {
-      {SASL_CB_LOG, SASL_CALLBACK_FN (_mongoc_cyrus_log), NULL},
-      {SASL_CB_LIST_END}};
 #endif
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    _mongoc_openssl_init ();
@@ -113,7 +108,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
                    mongoc_cyrus_mutex_unlock,
                    mongoc_cyrus_mutex_free);
 
-   status = sasl_client_init (callbacks);
+   status = sasl_client_init (NULL);
    BSON_ASSERT (status == SASL_OK);
 #endif
 

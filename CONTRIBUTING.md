@@ -66,7 +66,7 @@ when adding a new symbol.
 ### Documentation
 
 We strive to document all symbols. See doc/ for documentation examples. If you
-add a new function, add a new .txt file describing the function so that we can
+add a new function, add a new .rst file describing the function so that we can
 generate man pages and HTML for it.
 
 
@@ -166,6 +166,18 @@ Some tests run against a local mock server, these can be skipped with:
 If you have started with MongoDB with `--ipv6`, you can test IPv6 with:
 
 * `MONGOC_CHECK_IPV6=on`
+
+The tests for mongodb+srv:// connection strings require some setup, see the
+Initial DNS Seedlist Discovery Spec. By default these connection strings are
+NOT tested, enable them with:
+
+* `MONGOC_TEST_DNS=on`
+
+The mock server timeout threshold for future functions can be set with:
+
+* `MONGOC_TEST_FUTURE_TIMEOUT_MS=<int>`
+
+This is useful for debugging, so future calls don't timeout when stepping through code.
 
 All tests should pass before submitting a patch.
 

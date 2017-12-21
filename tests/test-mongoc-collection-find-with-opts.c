@@ -258,8 +258,7 @@ test_find_cmd_subdoc_named_filter_with_option (void)
    _test_collection_find_with_opts (&test_data);
 }
 
-/* this can't work until later in CDRIVER-1522 implementation */
-/* test future-compatibility with a new server's find command options */
+
 static void
 test_newoption (void)
 {
@@ -728,7 +727,7 @@ test_find_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (0 /* wire version */,
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN /* wire version */,
                                    true /* has primary  */,
                                    1 /* secondary    */,
                                    0 /* arbiters     */);
@@ -829,7 +828,7 @@ test_find_w_server_id_sharded (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (0);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -970,9 +969,9 @@ test_find_with_opts_collation_error (void *ctx)
 
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "Collation is not supported by this server");
+                          "The selected server does not support collation");
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);

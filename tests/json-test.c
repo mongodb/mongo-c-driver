@@ -313,7 +313,6 @@ test_server_selection_logic_cb (bson_t *test)
    bson_t server;
    bson_t test_read_pref;
    bson_t test_tag_sets;
-   const char *type;
    uint32_t i = 0;
    bool matched_servers[50];
    mongoc_array_t selected_servers;
@@ -338,17 +337,10 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* set topology state from test */
    BSON_ASSERT (bson_iter_init_find (&topology_iter, &test_topology, "type"));
-   type = bson_iter_utf8 (&topology_iter, NULL);
 
-   if (strcmp (type, "Single") == 0) {
-      mongoc_topology_description_init (
-         &topology, MONGOC_TOPOLOGY_SINGLE, heartbeat_msec);
-   } else {
-      mongoc_topology_description_init (
-         &topology, MONGOC_TOPOLOGY_UNKNOWN, heartbeat_msec);
-      topology.type =
-         topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
-   }
+   mongoc_topology_description_init (&topology, heartbeat_msec);
+   topology.type =
+      topology_type_from_test (bson_iter_utf8 (&topology_iter, NULL));
 
    /* for each server description in test, add server to our topology */
    BSON_ASSERT (
@@ -562,23 +554,22 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         int max_paths)
 {
 #ifdef _MSC_VER
+   char *dir_path_plus_star;
    intptr_t handle;
    struct _finddata_t info;
 
    char child_path[MAX_TEST_NAME_LENGTH];
 
-   handle = _findfirst (dir_path, &info);
+   dir_path_plus_star = bson_strdup_printf ("%s/*", dir_path);
+   handle = _findfirst (dir_path_plus_star, &info);
 
    if (handle == -1) {
+      bson_free (dir_path_plus_star);
       return 0;
    }
 
    while (1) {
       BSON_ASSERT (paths_index < max_paths);
-
-      if (_findnext (handle, &info) == -1) {
-         break;
-      }
 
       if (info.attrib & _A_SUBDIR) {
          /* recursively call on child directories */
@@ -591,8 +582,13 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
          /* if this is a JSON test, collect its path */
          assemble_path (dir_path, info.name, paths[paths_index++]);
       }
+
+      if (_findnext (handle, &info) == -1) {
+         break;
+      }
    }
 
+   bson_free (dir_path_plus_star);
    _findclose (handle);
 
    return paths_index;
@@ -702,9 +698,10 @@ get_bson_from_json_file (char *filename)
  *-----------------------------------------------------------------------
  */
 void
-install_json_test_suite (TestSuite *suite,
-                         const char *dir_path,
-                         test_hook callback)
+_install_json_test_suite_with_check (TestSuite *suite,
+                                     const char *dir_path,
+                                     test_hook callback,
+                                     ...)
 {
    char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
@@ -712,6 +709,7 @@ install_json_test_suite (TestSuite *suite,
    bson_t *test;
    char *skip_json;
    char *ext;
+   va_list ap;
 
    num_tests =
       collect_tests_from_dir (&test_paths[0], dir_path, 0, MAX_NUM_TESTS);
@@ -726,11 +724,39 @@ install_json_test_suite (TestSuite *suite,
       BSON_ASSERT (ext);
       ext[0] = '\0';
 
-      TestSuite_AddFull (suite,
-                         skip_json,
-                         (void (*) (void *)) callback,
-                         (void (*) (void *)) bson_destroy,
-                         test,
-                         TestSuite_CheckLive);
+      /* list of "check" functions that decide whether to skip the test */
+      va_start (ap, callback);
+      _V_TestSuite_AddFull (suite,
+                            skip_json,
+                            (void (*) (void *)) callback,
+                            (void (*) (void *)) bson_destroy,
+                            test,
+                            ap);
+
+      va_end (ap);
    }
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * install_json_test_suite --
+ *
+ *      Given a path to a directory containing JSON tests, import each
+ *      test into a BSON blob and call the provided callback for
+ *      evaluation.
+ *
+ *      It is expected that the callback will BSON_ASSERT on failure, so if
+ *      callback returns quietly the test is considered to have passed.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+install_json_test_suite (TestSuite *suite,
+                         const char *dir_path,
+                         test_hook callback)
+{
+   install_json_test_suite_with_check (
+      suite, dir_path, callback, TestSuite_CheckLive);
 }

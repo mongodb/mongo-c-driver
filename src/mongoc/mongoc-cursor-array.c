@@ -92,7 +92,8 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
 
    BSON_ASSERT (arr);
 
-   if (_mongoc_cursor_run_command (cursor, &cursor->filter, &arr->array) &&
+   if (_mongoc_cursor_run_command (
+          cursor, &cursor->filter, &cursor->opts, &arr->array) &&
        bson_iter_init_find (&iter, &arr->array, arr->field_name) &&
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &arr->iter)) {
       arr->has_array = true;

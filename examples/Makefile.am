@@ -64,6 +64,11 @@ example_scram_SOURCES = examples/example-scram.c
 example_scram_CFLAGS = $(EXAMPLE_CFLAGS)
 example_scram_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-session
+example_session_SOURCES = examples/example-session.c
+example_session_CFLAGS = $(EXAMPLE_CFLAGS)
+example_session_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += mongoc-ping
 mongoc_ping_SOURCES = examples/mongoc-ping.c
 mongoc_ping_CFLAGS = $(EXAMPLE_CFLAGS)
@@ -129,6 +134,16 @@ fam_SOURCES = examples/find_and_modify_with_opts/fam.c
 fam_CFLAGS = $(EXAMPLE_CFLAGS)
 fam_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += example-update
+example_update_SOURCES = examples/example-update.c
+example_update_CFLAGS = $(EXAMPLE_CFLAGS)
+example_update_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += example-collection-watch
+example_collection_watch_SOURCES = examples/example-collection-watch.c
+example_collection_watch_CFLAGS = $(EXAMPLE_CFLAGS)
+example_collection_watch_LDADD = $(EXAMPLE_LDADD)
+
 EXTRA_DIST += \
 	examples/doc-common-insert.c \
 	examples/basic_aggregation/map-reduce-basic.c \
@@ -139,13 +154,7 @@ EXTRA_DIST += \
 	examples/common_operations/explain.c \
 	examples/common_operations/copydb.c \
 	examples/common_operations/common-operations.c \
-	examples/common_operations/clone-collection.c \
-	examples/find_and_modify_with_opts/bypass.c \
-	examples/find_and_modify_with_opts/fields.c \
-	examples/find_and_modify_with_opts/flags.c \
-	examples/find_and_modify_with_opts/opts.c \
-	examples/find_and_modify_with_opts/sort.c \
-	examples/find_and_modify_with_opts/update.c
+	examples/common_operations/clone-collection.c
 
 # These files are included when we generate docs from tutorial.rst
 EXTRA_DIST += \

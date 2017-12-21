@@ -19,7 +19,7 @@ Synopsis
                              const mongoc_read_prefs_t *read_prefs)
      BSON_GNUC_WARN_UNUSED_RESULT;
 
-This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next` is called on it. The collection's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next` will not check the server response for a write concern error or write concern timeout.
+This function is superseded by :symbol:`mongoc_collection_command_with_opts()`, :symbol:`mongoc_collection_read_command_with_opts()`, :symbol:`mongoc_collection_write_command_with_opts()`, and :symbol:`mongoc_collection_read_write_command_with_opts()`.
 
 Parameters
 ----------

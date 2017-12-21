@@ -44,8 +44,12 @@ test_split_insert (void)
 
    _mongoc_write_result_init (&result);
 
-   _mongoc_write_command_init_insert (
-      &command, docs[0], write_flags, ++client->cluster.operation_id, true);
+   _mongoc_write_command_init_insert (&command,
+                                      docs[0],
+                                      NULL,
+                                      write_flags,
+                                      ++client->cluster.operation_id,
+                                      true);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
@@ -60,14 +64,15 @@ test_split_insert (void)
                                   collection->collection,
                                   NULL,
                                   0,
+                                  NULL,
                                   &result);
 
-   r = _mongoc_write_result_complete (&result,
-                                      2,
-                                      collection->write_concern,
-                                      (mongoc_error_domain_t) 0,
-                                      &reply,
-                                      &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                     2,
+                                     collection->write_concern,
+                                     (mongoc_error_domain_t) 0,
+                                     &reply,
+                                     &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (result.nInserted == 3000);
 
@@ -117,7 +122,7 @@ test_invalid_write_concern (void)
    doc = BCON_NEW ("_id", BCON_INT32 (0));
 
    _mongoc_write_command_init_insert (
-      &command, doc, write_flags, ++client->cluster.operation_id, true);
+      &command, doc, NULL, write_flags, ++client->cluster.operation_id, true);
    _mongoc_write_result_init (&result);
    server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
    ASSERT_OR_PRINT (server_stream, error);
@@ -128,14 +133,15 @@ test_invalid_write_concern (void)
                                   collection->collection,
                                   write_concern,
                                   0,
+                                  NULL,
                                   &result);
 
-   r = _mongoc_write_result_complete (&result,
-                                      2,
-                                      collection->write_concern,
-                                      (mongoc_error_domain_t) 0,
-                                      &reply,
-                                      &error);
+   r = MONGOC_WRITE_RESULT_COMPLETE (&result,
+                                     2,
+                                     collection->write_concern,
+                                     (mongoc_error_domain_t) 0,
+                                     &reply,
+                                     &error);
 
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
@@ -185,7 +191,7 @@ test_bypass_validation (void *context)
    mongoc_collection_destroy (collection2);
 
    /* {{{ Default fails validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
 
@@ -201,7 +207,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ bypass_document_validation=false Fails validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, false);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
@@ -218,7 +224,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ bypass_document_validation=true ignores validation */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    mongoc_bulk_operation_set_bypass_document_validation (bulk, true);
    for (i = 0; i < 3; i++) {
       bson_t *doc = tmp_bson ("{'number': 3, 'high': %d }", i);
@@ -232,7 +238,7 @@ test_bypass_validation (void *context)
    /* }}} */
 
    /* {{{ w=0 and bypass_document_validation=set fails */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    wr = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wr, 0);
    mongoc_bulk_operation_set_write_concern (bulk, wr);

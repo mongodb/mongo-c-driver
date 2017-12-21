@@ -43,6 +43,8 @@ test_buffer_install (TestSuite *suite);
 extern void
 test_bulk_install (TestSuite *suite);
 extern void
+test_change_stream_install (TestSuite *suite);
+extern void
 test_client_install (TestSuite *suite);
 extern void
 test_client_max_staleness_install (TestSuite *suite);
@@ -64,6 +66,8 @@ extern void
 test_cursor_install (TestSuite *suite);
 extern void
 test_database_install (TestSuite *suite);
+extern void
+test_dns_install (TestSuite *suite);
 extern void
 test_error_install (TestSuite *suite);
 extern void
@@ -87,17 +91,25 @@ test_handshake_install (TestSuite *suite);
 extern void
 test_queue_install (TestSuite *suite);
 extern void
+test_read_concern_install (TestSuite *suite);
+extern void
 test_read_prefs_install (TestSuite *suite);
+extern void
+test_retryable_writes_install (TestSuite *suite);
 extern void
 test_rpc_install (TestSuite *suite);
 extern void
 test_samples_install (TestSuite *suite);
+extern void
+test_scram_install (TestSuite *suite);
 extern void
 test_sdam_install (TestSuite *suite);
 extern void
 test_sdam_monitoring_install (TestSuite *suite);
 extern void
 test_server_selection_install (TestSuite *suite);
+extern void
+test_session_install (TestSuite *suite);
 #if 0
 extern void test_server_selection_errors_install (TestSuite *suite);
 #endif
@@ -137,9 +149,9 @@ test_x509_install (TestSuite *suite);
 extern void
 test_stream_tls_error_install (TestSuite *suite);
 #endif
-#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_ENABLE_SASL_CYRUS
 extern void
-test_sasl_install (TestSuite *suite);
+test_cyrus_install (TestSuite *suite);
 #endif
 
 
@@ -967,15 +979,30 @@ test_framework_get_unix_domain_socket_uri_str ()
 static void
 call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 {
+   char *user;
+   char *password;
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri_str = bson_strdup_printf ("mongodb://%s:%hu%s",
-                                 host,
-                                 port,
-                                 test_framework_get_ssl () ? "/?ssl=true" : "");
+   if (test_framework_get_user_password (&user, &password)) {
+      uri_str =
+         bson_strdup_printf ("mongodb://%s:%s@%s:%hu%s",
+                             user,
+                             password,
+                             host,
+                             port,
+                             test_framework_get_ssl () ? "/?ssl=true" : "");
+      bson_free (user);
+      bson_free (password);
+   } else {
+      uri_str =
+         bson_strdup_printf ("mongodb://%s:%hu%s",
+                             host,
+                             port,
+                             test_framework_get_ssl () ? "/?ssl=true" : "");
+   }
 
    uri = mongoc_uri_new (uri_str);
    BSON_ASSERT (uri);
@@ -1585,9 +1612,48 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    ret = bson_iter_init_find (&iter, &reply, "secondary") &&
          bson_iter_as_bool (&iter);
 
+   bson_destroy (&reply);
+
    mongoc_server_description_destroy (sd);
 
    return ret;
+}
+
+
+bool
+test_framework_clustertime_supported (void)
+{
+   bson_t reply;
+   bool has_cluster_time;
+
+   call_ismaster (&reply);
+   has_cluster_time = bson_has_field (&reply, "$clusterTime");
+   bson_destroy (&reply);
+
+   return has_cluster_time &&
+          test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG);
+}
+
+
+int64_t
+test_framework_session_timeout_minutes (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   int64_t timeout = -1;
+
+   if (!TestSuite_CheckLive ()) {
+      return -1;
+   }
+
+   call_ismaster (&reply);
+   if (bson_iter_init_find (&iter, &reply, "logicalSessionTimeoutMinutes")) {
+      timeout = bson_iter_as_int64 (&iter);
+   }
+
+   bson_destroy (&reply);
+
+   return timeout;
 }
 
 
@@ -1616,7 +1682,7 @@ test_framework_skip_if_no_auth (void)
       return 0;
    }
 
-#ifndef MONGOC_ENABLE_SSL_OPENSSL
+#ifndef MONGOC_ENABLE_SSL
    if (test_framework_max_wire_version_at_least (3)) {
       /* requires SSL for SCRAM implementation, can't test auth */
       return 0;
@@ -1627,6 +1693,45 @@ test_framework_skip_if_no_auth (void)
    user = test_framework_get_admin_user ();
    bson_free (user);
    return user ? 1 : 0;
+}
+
+
+int
+test_framework_skip_if_no_sessions (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   return -1 != test_framework_session_timeout_minutes ();
+}
+
+
+int
+test_framework_skip_if_no_cluster_time (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   return test_framework_clustertime_supported () ? 1 : 0;
+}
+
+
+int
+test_framework_skip_if_crypto (void)
+{
+#ifdef MONGOC_ENABLE_CRYPTO
+   return 0;
+#else
+   return 1;
+#endif
+}
+
+int
+test_framework_skip_if_no_crypto (void)
+{
+   return test_framework_skip_if_crypto () ? 0 : 1;
 }
 
 
@@ -1694,12 +1799,34 @@ test_framework_max_wire_version_at_least (int version)
 
    call_ismaster (&reply);
 
+   BSON_ASSERT (version > 0);
    at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion") &&
                bson_iter_as_int64 (&iter) >= version);
 
    bson_destroy (&reply);
 
    return at_least;
+}
+
+
+int64_t
+test_framework_max_write_batch_size (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   int64_t size;
+
+   call_ismaster (&reply);
+
+   if (bson_iter_init_find (&iter, &reply, "maxWriteBatchSize")) {
+      size = bson_iter_as_int64 (&iter);
+   } else {
+      size = 1000;
+   }
+
+   bson_destroy (&reply);
+
+   return size;
 }
 
 #define N_SERVER_VERSION_PARTS 4
@@ -1874,24 +2001,6 @@ test_framework_skip_if_not_replset (void)
 }
 
 int
-test_framework_skip_if_max_wire_version_less_than_1 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (2);
-}
-
-int
-test_framework_skip_if_max_wire_version_less_than_2 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (2);
-}
-
-int
 test_framework_skip_if_max_wire_version_less_than_4 (void)
 {
    if (!TestSuite_CheckLive ()) {
@@ -1919,6 +2028,15 @@ test_framework_skip_if_max_wire_version_less_than_5 (void)
 }
 
 int
+test_framework_skip_if_max_wire_version_less_than_6 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return test_framework_max_wire_version_at_least (6);
+}
+
+int
 test_framework_skip_if_not_rs_version_5 (void)
 {
    if (!TestSuite_CheckLive ()) {
@@ -1937,6 +2055,30 @@ test_framework_skip_if_rs_version_5 (void)
       return 0;
    }
    return (test_framework_max_wire_version_at_least (5) &&
+           test_framework_is_replset ())
+             ? 0
+             : 1;
+}
+
+int
+test_framework_skip_if_not_rs_version_6 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (6) &&
+           test_framework_is_replset ())
+             ? 1
+             : 0;
+}
+
+int
+test_framework_skip_if_rs_version_6 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return (test_framework_max_wire_version_at_least (6) &&
            test_framework_is_replset ())
              ? 0
              : 1;
@@ -1973,6 +2115,7 @@ main (int argc, char *argv[])
    test_array_install (&suite);
    test_async_install (&suite);
    test_buffer_install (&suite);
+   test_change_stream_install (&suite);
    test_client_install (&suite);
    test_client_max_staleness_install (&suite);
    test_client_pool_install (&suite);
@@ -1997,18 +2140,23 @@ main (int argc, char *argv[])
    test_log_install (&suite);
    test_matcher_install (&suite);
    test_queue_install (&suite);
+   test_read_concern_install (&suite);
    test_read_prefs_install (&suite);
+   test_retryable_writes_install (&suite);
    test_rpc_install (&suite);
    test_socket_install (&suite);
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
    test_samples_install (&suite);
+   test_scram_install (&suite);
    test_sdam_install (&suite);
    test_sdam_monitoring_install (&suite);
    test_server_selection_install (&suite);
+   test_dns_install (&suite);
 #if 0
    test_server_selection_errors_install (&suite);
 #endif
+   test_session_install (&suite);
    test_set_install (&suite);
    test_stream_install (&suite);
    test_thread_install (&suite);
@@ -2024,8 +2172,8 @@ main (int argc, char *argv[])
    test_x509_install (&suite);
    test_stream_tls_error_install (&suite);
 #endif
-#ifdef MONGOC_ENABLE_SASL
-   test_sasl_install (&suite);
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   test_cyrus_install (&suite);
 #endif
 
    ret = TestSuite_Run (&suite);

@@ -30,6 +30,8 @@ Description
 
 Update and return an object.
 
+``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
+
 Errors
 ------
 

@@ -37,12 +37,24 @@
 
 BSON_BEGIN_DECLS
 
+typedef enum {
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN,
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES,
+   MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
+} mongoc_cmd_parts_allow_txn_number_t;
+
 typedef struct _mongoc_cmd_t {
    const char *db_name;
    mongoc_query_flags_t query_flags;
    const bson_t *command;
-   uint32_t server_id;
+   const char *command_name;
+   const uint8_t *payload;
+   int32_t payload_size;
+   const char *payload_identifier;
+   const mongoc_server_stream_t *server_stream;
    int64_t operation_id;
+   mongoc_client_session_t *session;
+   bool is_acknowledged;
 } mongoc_cmd_t;
 
 
@@ -50,19 +62,30 @@ typedef struct _mongoc_cmd_parts_t {
    mongoc_cmd_t assembled;
    mongoc_query_flags_t user_query_flags;
    const bson_t *body;
+   bson_t read_concern_document;
    bson_t extra;
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;
+   bool is_read_command;
    bool is_write_command;
+   bool prohibit_lsid;
+   mongoc_cmd_parts_allow_txn_number_t allow_txn_number;
+   bool is_retryable_write;
+   bool has_implicit_session;
+   mongoc_client_t *client;
 } mongoc_cmd_parts_t;
 
 
 void
 mongoc_cmd_parts_init (mongoc_cmd_parts_t *op,
+                       mongoc_client_t *client,
                        const char *db_name,
                        mongoc_query_flags_t user_query_flags,
                        const bson_t *command_body);
 
+void
+mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
+                              mongoc_client_session_t *cs);
 
 bool
 mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
@@ -70,12 +93,13 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               int max_wire_version,
                               bson_error_t *error);
 
-void
+bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           const mongoc_server_stream_t *server_stream);
+                           const mongoc_server_stream_t *server_stream,
+                           bson_error_t *error);
 
-void
-mongoc_cmd_parts_assemble_simple (mongoc_cmd_parts_t *op, uint32_t server_id);
+bool
+mongoc_cmd_is_compressible (mongoc_cmd_t *cmd);
 
 void
 mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *op);

@@ -73,7 +73,7 @@ _test_command_error (int32_t error_api_version)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (0);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 

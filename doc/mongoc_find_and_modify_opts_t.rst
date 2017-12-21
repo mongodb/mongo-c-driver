@@ -19,32 +19,46 @@ As of MongoDB 3.2, the :symbol:`mongoc_write_concern_t` specified on the :symbol
 Example
 -------
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/flags.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_FLAGS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_FLAGS_END */
    :caption: flags.c
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/bypass.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_BYPASS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_BYPASS_END */
    :caption: bypass.c
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/update.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_UPDATE_BEGIN */
+   :end-before: /* EXAMPLE_FAM_UPDATE_END */
    :caption: update.c
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/fields.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_FIELDS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_FIELDS_END */
    :caption: fields.c
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/sort.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_SORT_BEGIN */
+   :end-before: /* EXAMPLE_FAM_SORT_END */
    :caption: sort.c
 
-.. literalinclude:: ../examples/find_and_modify_with_opts/opts.c
+.. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_OPTS_BEGIN */
+   :end-before: /* EXAMPLE_FAM_OPTS_END */
    :caption: opts.c
 
 .. literalinclude:: ../examples/find_and_modify_with_opts/fam.c
    :language: c
+   :start-after: /* EXAMPLE_FAM_MAIN_BEGIN */
+   :end-before: /* EXAMPLE_FAM_MAIN_END */
    :caption: fam.c
 
 Outputs:

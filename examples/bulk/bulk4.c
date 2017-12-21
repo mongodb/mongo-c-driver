@@ -6,6 +6,7 @@
 static void
 bulk4 (mongoc_collection_t *collection)
 {
+   bson_t opts = BSON_INITIALIZER;
    mongoc_write_concern_t *wc;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
@@ -17,8 +18,9 @@ bulk4 (mongoc_collection_t *collection)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 4);
    mongoc_write_concern_set_wtimeout (wc, 100); /* milliseconds */
+   mongoc_write_concern_append (wc, &opts);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, wc);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
 
    /* Two inserts */
    doc = BCON_NEW ("_id", BCON_INT32 (10));
@@ -42,6 +44,7 @@ bulk4 (mongoc_collection_t *collection)
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_write_concern_destroy (wc);
+   bson_destroy (&opts);
 }
 
 int

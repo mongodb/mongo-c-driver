@@ -23,6 +23,7 @@ MONGOC_DEF_FILES = \
 INST_H_FILES = \
 	src/mongoc/mongoc-apm.h \
 	src/mongoc/mongoc-bulk-operation.h \
+	src/mongoc/mongoc-change-stream.h \
 	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-collection.h \
@@ -49,6 +50,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-read-concern.h \
 	src/mongoc/mongoc-read-prefs.h \
 	src/mongoc/mongoc-server-description.h \
+	src/mongoc/mongoc-client-session.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-ssl.h \
 	src/mongoc/mongoc-stream-buffered.h \
@@ -76,6 +78,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-b64-private.h \
 	src/mongoc/mongoc-buffer-private.h \
 	src/mongoc/mongoc-bulk-operation-private.h \
+	src/mongoc/mongoc-change-stream-private.h \
 	src/mongoc/mongoc-client-pool-private.h \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-cluster-cyrus-private.h \
@@ -121,6 +124,8 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
+	src/mongoc/mongoc-client-session-private.h \
+	src/mongoc/mongoc-sspi-private.h \
 	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-secure-channel-private.h \
 	src/mongoc/mongoc-secure-transport-private.h \
@@ -146,6 +151,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-write-command-private.h \
+	src/mongoc/mongoc-write-command-legacy-private.h \
 	src/mongoc/mongoc-write-concern-private.h
 
 libmongoc_la_SOURCES = \
@@ -157,6 +163,7 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-buffer.c \
 	src/mongoc/mongoc-bulk-operation.c \
 	src/mongoc/mongoc-b64.c \
+	src/mongoc/mongoc-change-stream.c \
 	src/mongoc/mongoc-client.c \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
@@ -190,6 +197,7 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-rpc.c \
 	src/mongoc/mongoc-server-description.c \
 	src/mongoc/mongoc-server-stream.c \
+	src/mongoc/mongoc-client-session.c \
 	src/mongoc/mongoc-set.c \
 	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \
@@ -205,6 +213,7 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-util.c \
 	src/mongoc/mongoc-version-functions.c \
 	src/mongoc/mongoc-write-command.c \
+	src/mongoc/mongoc-write-command-legacy.c \
 	src/mongoc/mongoc-write-concern.c
 
 if ENABLE_CRYPTO
@@ -290,7 +299,6 @@ libmongoc_la_CFLAGS = \
 	$(COVERAGE_CFLAGS) \
 	$(PTHREAD_CFLAGS) \
 	$(SSL_CFLAGS) \
-	$(SNAPPY_CFLAGS) \
 	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS)
 
@@ -305,32 +313,11 @@ libmongoc_la_LIBADD = \
 	$(SSL_LIBS) \
 	$(SNAPPY_LIBS) \
 	$(ZLIB_LIBS) \
-	$(SASL_LIBS)
+	$(SASL_LIBS) \
+	$(RESOLV_LIBS)
 
 if OS_WIN32
 libmongoc_la_LIBADD += -lws2_32
-endif
-
-if WITH_SNAPPY
-libmongoc_la_LIBADD += libsnappy.la
-lib_LTLIBRARIES += libsnappy.la
-libsnappy_la_CPPFLAGS = $(BSON_CFLAGS)
-libsnappy_la_SOURCES = \
-                        src/snappy-1.1.3/snappy.cc \
-                        src/snappy-1.1.3/snappy-sinksource.cc \
-                        src/snappy-1.1.3/snappy-stubs-internal.cc \
-                        src/snappy-1.1.3/snappy-c.cc
-
-noinst_HEADERS += \
-                  src/snappy-1.1.3/snappy-internal.h \
-                  src/snappy-1.1.3/snappy-stubs-internal.h \
-                  src/snappy-1.1.3/snappy-test.h \
-                  src/snappy-1.1.3/snappy.h \
-                  src/snappy-1.1.3/snappy-sinksource.h \
-                  src/snappy-1.1.3/snappy-stubs-public.h \
-                  src/snappy-1.1.3/snappy-c.h
-
-dist_doc_DATA = src/snappy-1.1.3/COPYING
 endif
 
 if WITH_ZLIB
