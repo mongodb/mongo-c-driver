@@ -20,8 +20,6 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-write-concern-private.h"
-/* For strcasecmp on Windows */
-#include "mongoc-util-private.h"
 
 
 void
@@ -69,15 +67,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               int max_wire_version,
                               bson_error_t *error)
 {
-   bool is_fam;
-
    ENTRY;
 
    /* not yet assembled */
    BSON_ASSERT (!parts->assembled.command);
-
-   is_fam =
-      !strcasecmp (_mongoc_get_command_name (parts->body), "findandmodify");
 
    while (bson_iter_next (iter)) {
       if (BSON_ITER_IS_KEY (iter, "collation")) {
@@ -98,8 +91,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
             RETURN (false);
          }
 
-         if ((is_fam && max_wire_version < WIRE_VERSION_FAM_WRITE_CONCERN) ||
-             (!is_fam && max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN)) {
+         if (max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
             continue;
          }
 
