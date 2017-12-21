@@ -1,11 +1,3 @@
-Next Release
-============
-
-New features:
-
-  * Add bson_validate_flags_t to opt for update/insert functions.
-
-
 mongo-c-driver 1.9.0
 ====================
 
@@ -60,13 +52,14 @@ Thanks to everyone who contributed to the development of this release.
   * Hannes Magnusson
   * Jeremy Mikola
   * Kevin Albertson
-  * Derick Rethans
+  * Jeroen Ooms
   * Iulian Rotaru
-  * Brian Moss
-  * Sriharsha Vardhan
+  * Derick Rethans
   * Graham Whitted
+  * Brian Moss
   * Alex Masterov
   * Michael Kuhn
+  * Sriharsha Vardhan
 
 Peace,
 
