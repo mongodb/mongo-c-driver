@@ -313,11 +313,15 @@ _bson_iso8601_date_format (int64_t msec_since_epoch, bson_string_t *str)
       gmtime_r (&t, &posix_date);
       strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &posix_date);
    }
-#else
+#elif defined(_MSC_VER)
    {
-      /* Windows gmtime is thread-safe */
-      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", gmtime (&t));
+      /* Windows gmtime_s is thread-safe */
+      struct tm time_buf;
+      gmtime_s (&time_buf, &t);
+      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &time_buf);
    }
+#else
+   strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", gmtime (&t));
 #endif
 
    if (msecs_part) {
