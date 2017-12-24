@@ -25,6 +25,7 @@ Parameters
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/crud-opts.txt
+* ``ordered``: If the operations must be performed in order. Default ``true``.
 
 Description
 -----------
@@ -34,6 +35,10 @@ This function removes all documents in the given ``collection`` that match ``sel
 To delete at most one matching document, use :symbol:`mongoc_collection_delete_one`.
 
 If you pass a non-NULL ``reply``, it is filled out with the field "deletedCount". If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
+
+If ``opts`` omits `ordered`` or includes ``ordered: true``, then processing will stop at the first error.
+
+If ``opts`` includes ``ordered: false``, then the bulk operation will attempt to continue processing even after the first failure.
 
 Errors
 ------
