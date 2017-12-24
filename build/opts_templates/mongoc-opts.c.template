@@ -1,0 +1,3 @@
+#include "mongoc-opts-private.h"
+
+{{ header_comment }}

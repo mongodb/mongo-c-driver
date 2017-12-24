@@ -118,6 +118,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-memcmp-private.h \
 	src/mongoc/mongoc-openssl-private.h \
+	src/mongoc/mongoc-opts-private.h \
 	src/mongoc/mongoc-queue-private.h \
 	src/mongoc/mongoc-rand-private.h \
 	src/mongoc/mongoc-read-concern-private.h \
@@ -191,6 +192,7 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-matcher.c \
 	src/mongoc/mongoc-memcmp.c \
 	src/mongoc/mongoc-cmd.c \
+	src/mongoc/mongoc-opts.c \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-concern.c \
 	src/mongoc/mongoc-read-prefs.c \
