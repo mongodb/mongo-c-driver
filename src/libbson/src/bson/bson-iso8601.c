@@ -316,7 +316,9 @@ _bson_iso8601_date_format (int64_t msec_since_epoch, bson_string_t *str)
 #else
    {
       /* Windows gmtime is thread-safe */
-      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", gmtime (&t));
+      struct tm time_buf;
+      gmtime_s (&time_buf, &t);
+      strftime (buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &time_buf);
    }
 #endif
 
