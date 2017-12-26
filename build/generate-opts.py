@@ -34,8 +34,16 @@ this_dir = dirname(__file__)
 template_dir = joinpath(this_dir, 'opts_templates')
 src_dir = normpath(joinpath(this_dir, '../src/mongoc'))
 
+
+class Struct(OrderedDict):
+    def __init__(self, items, is_base=False):
+        """Define a struct. If is_base=True, don't generate a parse function."""
+        super(Struct, self).__init__(items)
+        self.is_base = is_base
+
+
 opts_structs = OrderedDict([
-    ('mongoc_find_one_opts_t', OrderedDict([
+    ('mongoc_find_one_opts_t', Struct([
         ('projection', {'type': 'document'}),
         ('sort', {'type': 'document'}),
         ('skip', {
@@ -78,7 +86,7 @@ opts_structs = OrderedDict([
         ('snapshot', {'type': 'bool'}),
         ('tailable', {'type': 'bool'})
     ])),
-    ('mongoc_crud_opts_t', OrderedDict([
+    ('mongoc_crud_opts_t', Struct([
         ('writeConcern', {
             'type': 'document',
             'convert': '_mongoc_convert_write_concern',
@@ -103,16 +111,15 @@ opts_structs = OrderedDict([
             'type': 'document',
             'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
         }),
-    ])),
-    ('mongoc_insert_one_opts_t', OrderedDict([
+    ], is_base=True)),
+    ('mongoc_insert_one_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'})
     ])),
-    ('mongoc_insert_many_opts_t', OrderedDict([
+    ('mongoc_insert_many_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         ('ordered', {'type': 'bool'})
     ])),
 ])
-
 
 header_comment = """/**************************************************
  *
@@ -124,7 +131,25 @@ header_comment = """/**************************************************
 /* clang-format off */""" % basename(__file__)
 
 
-env = Environment(loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True)
+def paths(struct):
+    """Sequence of path, option name, option info."""
+    for option_name, info in struct.items():
+        the_type = info['type']
+        the_field = info.get('field', option_name)
+        if the_type in opts_structs:
+            # E.g., the type is mongoc_crud_opts_t. Recurse.
+            for path, sub_option_name, sub_info in paths(opts_structs[the_type]):
+                yield ('%s.%s' % (the_field, path),
+                       sub_option_name,
+                       sub_info)
+        else:
+            yield the_field, option_name, info
+
+
+env = Environment(loader=FileSystemLoader(template_dir),
+                  trim_blocks=True,
+                  extensions=['jinja2.ext.loopcontrols'])
+
 files = ["mongoc-opts-private.h", "mongoc-opts.c"]
 
 for file_name in files:

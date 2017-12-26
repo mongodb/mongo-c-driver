@@ -14,49 +14,49 @@
 /* clang-format off */
 
 typedef struct {
-    bson_t projection;
-    bson_t sort;
-    int64_t skip;
-    int64_t limit;
-    int64_t batchSize;
-    bool exhaust;
-    bson_value_t hint;
-    bool allowPartialResults;
-    bool awaitData;
-    bson_t collation;
-    const char *comment;
-    bson_t max;
-    int64_t maxScan;
-    int64_t maxTimeMS;
-    int64_t maxAwaitTimeMS;
-    bson_t min;
-    bool noCursorTimeout;
-    bool oplogReplay;
-    bool returnKey;
-    bool showRecordId;
-    bool singleBatch;
-    bool snapshot;
-    bool tailable;
+   bson_t projection;
+   bson_t sort;
+   int64_t skip;
+   int64_t limit;
+   int64_t batchSize;
+   bool exhaust;
+   bson_value_t hint;
+   bool allowPartialResults;
+   bool awaitData;
+   bson_t collation;
+   const char *comment;
+   bson_t max;
+   int64_t maxScan;
+   int64_t maxTimeMS;
+   int64_t maxAwaitTimeMS;
+   bson_t min;
+   bool noCursorTimeout;
+   bool oplogReplay;
+   bool returnKey;
+   bool showRecordId;
+   bool singleBatch;
+   bool snapshot;
+   bool tailable;
 } mongoc_find_one_opts_t;
 
 
 typedef struct {
-    bson_t writeConcern;
-    mongoc_client_session_t *client_session;
-    bson_validate_flags_t validate;
-    bool bypassDocumentValidation;
-    bson_t collation;
+   bson_t writeConcern;
+   mongoc_client_session_t *client_session;
+   bson_validate_flags_t validate;
+   bool bypassDocumentValidation;
+   bson_t collation;
 } mongoc_crud_opts_t;
 
 
 typedef struct {
-    mongoc_crud_opts_t crud;
+   mongoc_crud_opts_t crud;
 } mongoc_insert_one_opts_t;
 
 
 typedef struct {
-    mongoc_crud_opts_t crud;
-    bool ordered;
+   mongoc_crud_opts_t crud;
+   bool ordered;
 } mongoc_insert_many_opts_t;
 
 

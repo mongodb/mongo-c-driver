@@ -1,4 +1,5 @@
 #include "mongoc-opts-private.h"
+#include "mongoc-error.h"
 
 /**************************************************
  *
@@ -8,3 +9,314 @@
  *
  *************************************************/
 /* clang-format off */
+
+bool
+parse_mongoc_find_one_opts (
+   const bson_t *opts,
+   mongoc_find_one_opts_t *mongoc_find_one_opts,
+   bson_t *extra,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "projection")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_find_one_opts->projection, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sort")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_find_one_opts->sort, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "skip")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->skip, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "limit")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->limit, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "batchSize")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->batchSize, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "exhaust")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->exhaust, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "hint")) {
+         if (!_mongoc_convert_bson_value_t (
+               &iter, &mongoc_find_one_opts->hint, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "allowPartialResults")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->allowPartialResults, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "awaitData")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->awaitData, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "collation")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_find_one_opts->collation, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "comment")) {
+         if (!_mongoc_convert_utf8 (
+               &iter, &mongoc_find_one_opts->comment, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "max")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_find_one_opts->max, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "maxScan")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->maxScan, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "maxTimeMS")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->maxTimeMS, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "maxAwaitTimeMS")) {
+         if (!_mongoc_convert_int64_positive (
+               &iter, &mongoc_find_one_opts->maxAwaitTimeMS, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "min")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_find_one_opts->min, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "noCursorTimeout")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->noCursorTimeout, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "oplogReplay")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->oplogReplay, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "returnKey")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->returnKey, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "showRecordId")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->showRecordId, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "singleBatch")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->singleBatch, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "snapshot")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->snapshot, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "tailable")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_find_one_opts->tailable, error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!bson_append_value (
+                extra, bson_iter_key (&iter), -1, bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+
+bool
+parse_mongoc_insert_one_opts (
+   const bson_t *opts,
+   mongoc_insert_one_opts_t *mongoc_insert_one_opts,
+   bson_t *extra,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               &iter, &mongoc_insert_one_opts->crud.writeConcern, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               &iter, &mongoc_insert_one_opts->crud.client_session, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "validate")) {
+         if (!_mongoc_convert_validate_flags (
+               &iter, &mongoc_insert_one_opts->crud.validate, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_insert_one_opts->crud.bypassDocumentValidation, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "collation")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_insert_one_opts->crud.collation, error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!bson_append_value (
+                extra, bson_iter_key (&iter), -1, bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+
+bool
+parse_mongoc_insert_many_opts (
+   const bson_t *opts,
+   mongoc_insert_many_opts_t *mongoc_insert_many_opts,
+   bson_t *extra,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               &iter, &mongoc_insert_many_opts->crud.writeConcern, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               &iter, &mongoc_insert_many_opts->crud.client_session, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "validate")) {
+         if (!_mongoc_convert_validate_flags (
+               &iter, &mongoc_insert_many_opts->crud.validate, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_insert_many_opts->crud.bypassDocumentValidation, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "collation")) {
+         if (!_mongoc_convert_document (
+               &iter, &mongoc_insert_many_opts->crud.collation, error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "ordered")) {
+         if (!_mongoc_convert_bool (
+               &iter, &mongoc_insert_many_opts->ordered, error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!bson_append_value (
+                extra, bson_iter_key (&iter), -1, bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+
+
