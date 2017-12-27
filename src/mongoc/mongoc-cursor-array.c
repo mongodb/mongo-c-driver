@@ -89,6 +89,7 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
    ENTRY;
 
    arr = (mongoc_cursor_array_t *) cursor->iface_data;
+   arr->has_array = true;
 
    BSON_ASSERT (arr);
 
@@ -96,7 +97,6 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
           cursor, &cursor->filter, &cursor->opts, &arr->array) &&
        bson_iter_init_find (&iter, &arr->array, arr->field_name) &&
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &arr->iter)) {
-      arr->has_array = true;
       return true;
    }
 

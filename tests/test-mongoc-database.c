@@ -605,6 +605,11 @@ test_get_collection_info (void)
    bson_free (noopts_name);
    bson_free (autoindexid_name);
 
+   bson_destroy (&capped_options);
+   bson_destroy (&autoindexid_options);
+   bson_destroy (&noopts_options);
+   bson_destroy (&name_filter);
+
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 }
@@ -666,6 +671,7 @@ test_get_collection_info_regex (void)
                              "filter on name can only be a string");
    }
 
+   bson_destroy (&name_filter);
    mongoc_collection_destroy (collection);
    bson_free (dbname);
    mongoc_database_destroy (database);
@@ -936,6 +942,7 @@ test_get_collection_names (void)
    BSON_ASSERT (!error.domain);
    BSON_ASSERT (!error.code);
 
+   bson_destroy (&options);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 }

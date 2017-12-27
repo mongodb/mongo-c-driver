@@ -85,6 +85,7 @@ test_split_insert (void)
       bson_destroy (docs[i]);
    }
 
+   bson_destroy (&reply);
    bson_free (docs);
    mongoc_server_stream_cleanup (server_stream);
    mongoc_collection_destroy (collection);
@@ -151,6 +152,7 @@ test_invalid_write_concern (void)
    _mongoc_write_result_destroy (&result);
 
    bson_destroy (doc);
+   bson_destroy (&reply);
    mongoc_server_stream_cleanup (server_stream);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

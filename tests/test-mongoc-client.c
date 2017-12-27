@@ -283,6 +283,7 @@ test_client_cmd_write_concern (void)
    BSON_ASSERT (future_get_bool (future));
 
    future_destroy (future);
+   bson_destroy (&reply);
 
    /* standalone response */
    future = future_client_command_simple (
@@ -299,6 +300,7 @@ test_client_cmd_write_concern (void)
    BSON_ASSERT (!future_get_bool (future));
    future_destroy (future);
    request_destroy (request);
+   bson_destroy (&reply);
 
    /* replicaset response */
    future = future_client_command_simple (
@@ -311,6 +313,7 @@ test_client_cmd_write_concern (void)
       "'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
    BSON_ASSERT (future_get_bool (future));
 
+   bson_destroy (&reply);
    future_destroy (future);
    mock_server_destroy (server);
    mongoc_client_destroy (client);
@@ -352,6 +355,7 @@ test_client_cmd_write_concern_fam (void)
    future_destroy (future);
    mock_server_destroy (server);
    mongoc_client_destroy (client);
+   bson_destroy (&reply);
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
    mock_server_run (server);
@@ -370,6 +374,7 @@ test_client_cmd_write_concern_fam (void)
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
 
+   bson_destroy (&reply);
    future_destroy (future);
    mock_server_destroy (server);
    mongoc_write_concern_destroy (wc);
@@ -694,6 +699,7 @@ test_wire_version (void)
    request_t *request;
 
    if (!test_framework_skip_if_slow ()) {
+      bson_destroy (&q);
       return;
    }
 
@@ -755,6 +761,7 @@ test_wire_version (void)
    BSON_ASSERT (future_get_bool (future));
    BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
 
+   bson_destroy (&q);
    request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
@@ -1439,6 +1446,7 @@ test_command_with_opts (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   bson_destroy (&opts);
    mongoc_read_prefs_destroy (prefs);
    mongoc_read_concern_destroy (read_concern);
    mongoc_write_concern_destroy (wc);
@@ -1520,6 +1528,7 @@ test_command_with_opts_op_msg (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
+   bson_destroy (&opts);
    mongoc_read_prefs_destroy (prefs);
    mongoc_read_concern_destroy (read_concern);
    mongoc_write_concern_destroy (wc);
@@ -1677,6 +1686,7 @@ test_unavailable_seeds (void)
    }
 
    bson_strfreev (uri_strs);
+   bson_destroy (&query);
 }
 
 

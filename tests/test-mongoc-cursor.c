@@ -72,6 +72,7 @@ test_get_host (void)
       abort ();
    }
 
+   bson_destroy (&q);
    bson_free (uri_str);
    mongoc_uri_destroy (uri);
    mongoc_cursor_destroy (cursor);
@@ -135,6 +136,7 @@ test_clone (void)
    }
    ASSERT (doc);
 
+   bson_destroy (&q);
    mongoc_cursor_destroy (cursor);
    mongoc_cursor_destroy (cloned);
    mongoc_client_destroy (client);
@@ -237,6 +239,7 @@ test_clone_with_concerns (void)
            BSON_ITER_HOLDS_UTF8 (&iter));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "majority");
 
+   bson_destroy (&q);
    mongoc_read_concern_destroy (read_concern);
    mongoc_cursor_destroy (cursor);
    mongoc_cursor_destroy (cloned);
@@ -972,6 +975,7 @@ test_cursor_new_static (void)
    mongoc_cursor_t *cursor;
    bson_t *bson_alloced;
    bson_t bson_static;
+   bson_t *bson_copied;
 
    bson_alloced = tmp_bson ("{ 'ok':1,"
                             "  'cursor': {"
@@ -984,8 +988,9 @@ test_cursor_new_static (void)
 
    /* test heap-allocated bson */
    client = test_framework_client_new ();
+   bson_copied = bson_copy (bson_alloced);
    cursor = mongoc_cursor_new_from_command_reply (
-      client, bson_copy (bson_alloced), 0);
+      client, bson_copied, 0);
 
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));

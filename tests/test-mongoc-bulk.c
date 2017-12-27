@@ -209,6 +209,7 @@ test_bulk (void)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   bson_destroy (&doc);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -236,6 +237,7 @@ test_bulk_error (void)
 
    /* reply was initialized */
    ASSERT_CMPUINT32 (reply.len, ==, (uint32_t) 5);
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_client_destroy (client);
    mock_server_destroy (mock_server);
@@ -258,6 +260,7 @@ test_bulk_error_unordered (void)
    mongoc_uri_t *uri;
 
    if (test_suite_valgrind ()) {
+      bson_destroy (&opts);
       return;
    }
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
@@ -320,8 +323,8 @@ test_bulk_error_unordered (void)
                  " 'nUpserted': 0}");
 
    bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
    bson_destroy (&opts);
+   mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1001,7 +1004,7 @@ test_upsert_huge (void *ctx)
    mongoc_client_t *client;
    bson_t *sel = tmp_bson ("{'_id': 1}");
    bson_t doc = BSON_INITIALIZER;
-   bson_t child = BSON_INITIALIZER;
+   bson_t child;
    bson_t query = BSON_INITIALIZER;
    const bson_t *retdoc;
    bson_error_t error;
@@ -1045,6 +1048,7 @@ test_upsert_huge (void *ctx)
    ASSERT_CURSOR_NEXT (cursor, &retdoc);
    ASSERT_CURSOR_DONE (cursor);
 
+   bson_destroy (&child);
    bson_destroy (&query);
    bson_destroy (&reply);
    bson_destroy (&doc);
@@ -2986,6 +2990,7 @@ _test_numerous (bool ordered)
    assert_n_removed (n_docs / 2, &reply);
    ASSERT_COUNT (0, collection);
 
+   bson_destroy (&doc);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bson_destroy (&opts);
@@ -3283,6 +3288,7 @@ test_bulk_max_msg_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (3, &reply);
+   bson_destroy (&reply);
    /* Make sure this was ONE bulk ! */
    ASSERT_CMPINT (stats.succeeded, ==, 1);
    stats.succeeded = 0;
@@ -3316,6 +3322,7 @@ test_bulk_max_msg_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (3, &reply);
+   bson_destroy (&reply);
    /* Make sure this was TWO bulks, otherwise our one bulk math was wrong! */
    ASSERT_CMPINT (stats.succeeded, ==, 2);
    stats.succeeded = 0;
@@ -3381,6 +3388,7 @@ test_bulk_max_batch_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (i - 1, &reply);
+   bson_destroy (&reply);
    ASSERT_CMPINT (stats.succeeded, ==, 1);
    stats.succeeded = 0;
    mongoc_bulk_operation_destroy (bulk);
@@ -3399,6 +3407,7 @@ test_bulk_max_batch_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (i - 1, &reply);
+   bson_destroy (&reply);
    ASSERT_CMPINT (stats.succeeded, ==, 2);
    stats.succeeded = 0;
    mongoc_bulk_operation_destroy (bulk);
@@ -3417,6 +3426,7 @@ test_bulk_max_batch_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (i - 1, &reply);
+   bson_destroy (&reply);
    ASSERT_CMPINT (stats.succeeded, ==, 2);
    stats.succeeded = 0;
    mongoc_bulk_operation_destroy (bulk);
@@ -3435,6 +3445,7 @@ test_bulk_max_batch_size (void)
    retval = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (retval, error);
    assert_n_inserted (i - 1, &reply);
+   bson_destroy (&reply);
    ASSERT_CMPINT (stats.succeeded, ==, 3);
    stats.succeeded = 0;
    mongoc_bulk_operation_destroy (bulk);
@@ -3500,6 +3511,7 @@ test_bulk_new (void)
 
    mongoc_collection_drop (collection, NULL);
 
+   bson_destroy (&empty);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }

@@ -408,6 +408,7 @@ _mongoc_cursor_cursorid_init_with_reply (mongoc_cursor_t *cursor,
 
    bson_destroy (&cid->array);
    if (!bson_steal (&cid->array, reply)) {
+      bson_destroy (&cid->array);
       bson_steal (&cid->array, bson_copy (reply));
    }
 

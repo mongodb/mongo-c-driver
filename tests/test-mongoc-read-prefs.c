@@ -535,6 +535,7 @@ test_read_prefs_standalone_tags (void)
                      "{'find': 'test', 'filter':  {'a': 1}}",
                      MONGOC_QUERY_SLAVE_OK);
 
+   bson_destroy (&b);
    mongoc_read_prefs_destroy (read_prefs);
 }
 
@@ -761,6 +762,7 @@ test_read_prefs_mongos_tags (void)
       "                             'tags': [{'dc': 'ny'}, {}]}}");
 
    mongoc_read_prefs_destroy (read_prefs);
+   bson_destroy (&b);
 }
 
 

@@ -221,6 +221,7 @@ test_aggregate_inherit_collection (void)
    future_destroy (future);
    mongoc_cursor_destroy (cursor);
 
+   bson_destroy (&opts);
    bson_destroy (pipeline);
    mongoc_read_concern_destroy (rc);
    mongoc_read_concern_destroy (rc2);
@@ -292,6 +293,7 @@ test_read_prefs_is_valid (void)
    /* mongoc_collection_command_simple */
    ASSERT (!mongoc_collection_command_simple (
       collection, tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error));
+   bson_destroy (&reply);
 
    /* mongoc_collection_count_with_opts */
    ASSERT (mongoc_collection_count_with_opts (collection,
@@ -356,6 +358,7 @@ test_read_prefs_is_valid (void)
       mongoc_collection_command_simple (
          collection, tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error),
       error);
+   bson_destroy (&reply);
    /* mongoc_collection_count_with_opts */
    ASSERT_OR_PRINT (mongoc_collection_count_with_opts (collection,
                                                        MONGOC_QUERY_NONE,
@@ -394,7 +397,6 @@ test_read_prefs_is_valid (void)
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (pipeline);
-   bson_destroy (&reply);
 }
 
 static void
@@ -710,11 +712,6 @@ test_insert_many (void)
    ASSERT (error.domain == MONGOC_ERROR_COMMAND);
    ASSERT (error.code == MONGOC_ERROR_COMMAND_INVALID_ARG);
 
-   bson_destroy (&q);
-   for (i = 0; i < 10; i++) {
-      bson_destroy (&b[i]);
-   }
-
    for (i = 0; i < 10; i++) {
       bson_destroy (&b[i]);
       bson_init (&b[i]);
@@ -1012,8 +1009,6 @@ test_save (void)
       bson_destroy (&b);
    }
 
-   bson_destroy (&b);
-
    r = mongoc_collection_save (
       collection, tmp_bson ("{'$hello': 1}"), NULL, &error);
    ASSERT (!r);
@@ -1123,7 +1118,7 @@ test_decimal128 (void *ctx)
    mongoc_write_concern_append (wr, &opts);
 
    doc = BCON_NEW ("the_decimal", BCON_DECIMAL128 (&decimal128));
-   r = mongoc_collection_insert_one (collection, doc, NULL, &opts, &error);
+   r = mongoc_collection_insert_one (collection, doc, &opts, NULL, &error);
    if (!r) {
       MONGOC_WARNING ("test_decimal128: %s\n", error.message);
    }
@@ -1627,6 +1622,7 @@ test_index_w_write_concern ()
    mongoc_write_concern_append_bad (bad_wc, opts);
    ASSERT (!mongoc_collection_create_index_with_opts (
       collection, &keys, &opt, opts, &reply, &error));
+   bson_destroy (&reply);
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
@@ -1712,6 +1708,7 @@ test_index_w_write_concern ()
    BSON_APPEND_UTF8 (&keys, "abc", "hallo thar");
    result = mongoc_collection_create_index_with_opts (
       collection, &keys, &opt, NULL, &reply, &error);
+   bson_destroy (&reply);
 
    ASSERT (!result);
    ASSERT (strlen (error.message) > 0);
@@ -1732,7 +1729,6 @@ test_index_w_write_concern ()
    mongoc_client_destroy (client);
    mongoc_write_concern_destroy (bad_wc);
    mongoc_write_concern_destroy (good_wc);
-   bson_destroy (&reply);
    bson_destroy (opts);
 }
 
@@ -1815,6 +1811,7 @@ test_index_geo (void)
       mongoc_collection_drop_index (collection, "location_2d", &error), error);
 
    /* Create a 2d index with bells and whistles */
+   bson_destroy (&keys);
    bson_init (&keys);
    BSON_APPEND_UTF8 (&keys, "location", "2d");
 
@@ -1839,6 +1836,7 @@ test_index_geo (void)
    }
 
    /* Create a Haystack index */
+   bson_destroy (&keys);
    bson_init (&keys);
    BSON_APPEND_UTF8 (&keys, "location", "geoHaystack");
    BSON_APPEND_INT32 (&keys, "category", 1);
@@ -1858,6 +1856,7 @@ test_index_geo (void)
       ASSERT_OR_PRINT (r, error);
    }
 
+   bson_destroy (&keys);
    mongoc_server_description_destroy (description);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -2560,6 +2559,7 @@ test_aggregate_bypass (void *context)
    ASSERT_OR_PRINT (mongoc_collection_drop (data_collection, &error), error);
    ASSERT_OR_PRINT (mongoc_collection_drop (out_collection, &error), error);
 
+   bson_destroy (&reply);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (data_collection);
    mongoc_collection_destroy (out_collection);
@@ -3090,6 +3090,7 @@ test_validate (void *ctx)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_destroy (&doc);
@@ -3961,6 +3962,7 @@ test_get_index_info (void)
    ASSERT_OR_PRINT (
       mongoc_collection_create_index (collection, &indexkey1, &opt1, &error),
       error);
+   bson_destroy (&indexkey1);
 
    bson_init (&indexkey2);
    BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
@@ -3970,6 +3972,7 @@ test_get_index_info (void)
    ASSERT_OR_PRINT (
       mongoc_collection_create_index (collection, &indexkey2, &opt2, &error),
       error);
+   bson_destroy (&indexkey2);
 
    /*
     * Now we try again after creating two indexes.
@@ -4012,6 +4015,7 @@ test_get_index_info (void)
    bson_free (idx1_name);
    bson_free (idx2_name);
 
+   bson_destroy (&dummy);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -4646,6 +4650,7 @@ test_index_with_collation (int wire)
                              "The selected server does not support collation");
    }
 
+   bson_destroy (&reply);
    bson_destroy (collation);
    bson_destroy (&keys);
    future_destroy (future);
@@ -4712,6 +4717,7 @@ test_create_index_fail (void *context)
    /* reply was initialized */
    ASSERT (bson_empty (&reply));
 
+   bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -5048,6 +5054,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
                     "'upsertedId': {'$exists': false}}");
       /* omit testing collection since not sure which was updated */
    }
+   bson_destroy (&reply);
 
    ctx.expected_command = "{'update': 'coll'}";
    ret = fn (coll, tmp_bson ("{'$badOp': 1}"), update, NULL, &reply, &err);
@@ -5102,6 +5109,7 @@ _test_update_and_replace (bool is_replace, bool is_multi)
                     "'upsertedId': {'$exists': false}}");
       _test_docs_in_coll_matches (
          coll, tmp_bson ("{'_id': 5}"), "{'a': 2, 'b': {'$exists': false}}", 1);
+      bson_destroy (&reply);
 
       /* Test that a non-replace update fails. */
       ret = fn (coll,

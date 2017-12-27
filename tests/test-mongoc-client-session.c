@@ -193,6 +193,7 @@ _test_session_pool_timeout (bool pooled)
    s = mongoc_client_start_session (client, NULL, &error);
    ASSERT_SESSIONS_DIFFER (&lsid, mongoc_client_session_get_lsid (s));
 
+   bson_destroy (&lsid);
    bson_copy_to (mongoc_client_session_get_lsid (s), &lsid);
 
    s->server_session->last_used_usec =
@@ -307,6 +308,7 @@ _test_session_pool_reap (bool pooled)
    }
 
    bson_destroy (&lsid_a);
+   bson_destroy (&lsid_b);
 }
 
 
@@ -424,7 +426,7 @@ _test_mock_end_sessions (bool pooled)
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_client_session_t *session;
-   bson_t lsid = BSON_INITIALIZER;
+   bson_t lsid;
    bson_t opts = BSON_INITIALIZER;
    bson_t *expected_cmd;
    future_t *future;
@@ -544,8 +546,8 @@ _test_end_sessions (bool pooled)
    bson_error_t error;
    mongoc_client_session_t *cs1;
    mongoc_client_session_t *cs2;
-   bson_t lsid1 = BSON_INITIALIZER;
-   bson_t lsid2 = BSON_INITIALIZER;
+   bson_t lsid1;
+   bson_t lsid2;
    bson_t opts1 = BSON_INITIALIZER;
    bson_t opts2 = BSON_INITIALIZER;
    bool lsid1_ended = false;

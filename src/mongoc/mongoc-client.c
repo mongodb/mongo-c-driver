@@ -2709,7 +2709,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
    mongoc_read_prefs_t *prefs;
    bson_error_t error;
    uint32_t server_id;
-   bson_t cmd = BSON_INITIALIZER;
+   bson_t cmd;
    mongoc_server_stream_t *stream;
    mongoc_cmd_parts_t parts;
    mongoc_cluster_t *cluster = &client->cluster;

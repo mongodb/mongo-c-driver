@@ -192,6 +192,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
    uint32_t i = 0;
 
    if (!TestSuite_CheckMockServerAllowed ()) {
+      bson_destroy (&actual_result);
       return;
    }
 
@@ -246,6 +247,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
                        test_data->funcname,
                        test_data->expected_result));
 
+   bson_destroy (&actual_result);
    request_destroy (request);
    future_destroy (future);
    mongoc_cursor_destroy (cursor);

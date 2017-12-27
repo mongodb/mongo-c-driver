@@ -250,6 +250,7 @@ test_list (void)
    bson_append_utf8 (&query, "filename", -1, "file.1", -1);
    ASSERT_OR_PRINT (file = mongoc_gridfs_find_one (gridfs, &query, &error),
                     error);
+   bson_destroy (&query);
 
    ASSERT_CMPINT (
       strcmp (mongoc_gridfs_file_get_filename (file), "file.1"), ==, 0);
@@ -472,6 +473,7 @@ test_properties (void)
    mongoc_gridfs_file_destroy (file);
    mongoc_gridfs_file_list_destroy (list);
    bson_destroy (doc_in);
+   bson_destroy (&query);
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
 }

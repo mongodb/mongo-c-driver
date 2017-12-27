@@ -104,9 +104,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
       mongoc_write_concern_destroy (bulk->write_concern);
       _mongoc_array_destroy (&bulk->commands);
 
-      if (bulk->executed) {
-         _mongoc_write_result_destroy (&bulk->result);
-      }
+      _mongoc_write_result_destroy (&bulk->result);
 
       bson_free (bulk);
    }
@@ -698,6 +696,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
 
    if (bulk->executed) {
       _mongoc_write_result_destroy (&bulk->result);
+      _mongoc_write_result_init (&bulk->result);
    }
 
    bulk->executed = true;

@@ -657,6 +657,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, error)) {
+      bson_destroy (&reply);
       mongoc_server_stream_cleanup (server_stream);
       RETURN (NULL);
    }

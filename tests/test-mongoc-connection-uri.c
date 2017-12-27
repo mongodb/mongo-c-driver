@@ -117,9 +117,9 @@ test_connection_uri_cb (bson_t *scenario)
    bson_iter_t tests_iter;
    bson_iter_t warning_iter;
    const char *uri_string = NULL;
-   bson_t hosts = BSON_INITIALIZER;
-   bson_t auth = BSON_INITIALIZER;
-   bson_t options = BSON_INITIALIZER;
+   bson_t hosts;
+   bson_t auth;
+   bson_t options;
    bool valid;
    int c = 0;
 
@@ -175,9 +175,9 @@ test_connection_uri_cb (bson_t *scenario)
          }
       }
 
-      bson_reinit (&hosts);
-      bson_reinit (&auth);
-      bson_reinit (&options);
+      bson_destroy (&hosts);
+      bson_destroy (&auth);
+      bson_destroy (&options);
    }
 }
 

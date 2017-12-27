@@ -625,6 +625,7 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
 
    /* append our auth properties to our credentials */
    mongoc_uri_set_mechanism_properties (uri, &properties);
+   bson_destroy (&properties);
    return true;
 }
 
@@ -1024,7 +1025,6 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 {
    bson_iter_t iter;
    const char *source = NULL;
-   const char *mechanism = mongoc_uri_get_auth_mechanism (uri);
 
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
@@ -1032,9 +1032,9 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    /* authSource with GSSAPI or X509 should always be external */
-   if (mechanism) {
-      if (!strcasecmp (mechanism, "GSSAPI") ||
-          !strcasecmp (mechanism, "MONGODB-X509")) {
+   if (mongoc_uri_get_auth_mechanism (uri)) {
+      if (!strcasecmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI") ||
+          !strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
          if (source) {
             if (strcasecmp (source, "$external")) {
                MONGOC_URI_ERROR (
@@ -1049,11 +1049,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
       }
       /* MONGODB-X509 is the only mechanism that doesn't require username */
-      if (strcasecmp (mechanism, "MONGODB-X509")) {
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
          if (!mongoc_uri_get_username (uri)) {
             MONGOC_URI_ERROR (error,
                               "'%s' authentication mechanism requires username",
-                              mechanism);
+                              mongoc_uri_get_auth_mechanism (uri));
             return false;
          }
       }
@@ -1308,6 +1308,7 @@ mongoc_uri_set_mechanism_properties (mongoc_uri_t *uri,
 
       return true;
    } else {
+      bson_destroy (&tmp);
       return BSON_APPEND_DOCUMENT (
          &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES, properties);
    }

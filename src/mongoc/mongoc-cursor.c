@@ -1046,7 +1046,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
          if (!bson_init_static (&subdocument, data, (size_t) len)) {
             OPT_BSON_ERR ("Invalid 'projection' subdocument in 'opts'.");
          }
-
+         bson_destroy (fields);
          bson_copy_to (&subdocument, fields);
       } else if (!strcmp (key, MONGOC_CURSOR_SORT)) {
          PUSH_DOLLAR_QUERY ();
@@ -1319,6 +1319,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    server_stream = _mongoc_cursor_fetch_stream (cursor);
 
    if (!server_stream) {
+      _mongoc_bson_init_if_set (reply);
       GOTO (done);
    }
 
@@ -1333,6 +1334,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                                          &iter,
                                          server_stream->sd->max_wire_version,
                                          &cursor->error)) {
+         _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
    }
@@ -1352,6 +1354,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    parts.assembled.db_name = db;
 
    if (!_mongoc_cursor_flags (cursor, server_stream, &parts.user_query_flags)) {
+      _mongoc_bson_init_if_set (reply);
       GOTO (done);
    }
 

@@ -383,9 +383,8 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       if (bson_iter_init_find (&sd_iter, &server, "tags")) {
+         bson_destroy (&sd->tags);
          bson_iter_bson (&sd_iter, &sd->tags);
-      } else {
-         bson_init (&sd->tags);
       }
 
       /* add new server to our topology description */

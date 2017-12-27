@@ -790,6 +790,7 @@ test_multiple_selection_errors (void *context)
    ASSERT_CONTAINS (error.message, "calling ismaster on 'example.com:2'");
    ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist']");
 
+   bson_destroy (&reply);
    mongoc_client_destroy (client);
 }
 

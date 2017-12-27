@@ -1355,6 +1355,7 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
 
             _mongoc_cursor_array_init (cursor, NULL, NULL);
             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
+            bson_destroy (&empty_arr);
          } else if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
             /* talking to an old server. */
             /* clear out error. */
@@ -1677,6 +1678,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    if (parsed.validation_flags &&
        !_mongoc_validate_new_document (
           document, parsed.validation_flags, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
       RETURN (false);
    }
 
@@ -1948,10 +1950,12 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       if (is_update) {
          if (!_mongoc_validate_update (
                 update, parsed.validation_flags, error)) {
+            _mongoc_write_opts_cleanup (&parsed);
             return false;
          }
       } else if (!_mongoc_validate_replace (
                     update, parsed.validation_flags, error)) {
+         _mongoc_write_opts_cleanup (&parsed);
          return false;
       }
    }
@@ -2881,7 +2885,7 @@ mongoc_collection_find_and_modify_with_opts (
    const char *name;
    bson_t reply_local;
    bson_t *reply_ptr;
-   bool ret;
+   bool ret = false;
    bson_t command = BSON_INITIALIZER;
    mongoc_server_stream_t *retry_server_stream = NULL;
 
@@ -2895,8 +2899,7 @@ mongoc_collection_find_and_modify_with_opts (
    cluster = &collection->client->cluster;
    server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    if (!server_stream) {
-      bson_destroy (&command);
-      RETURN (false);
+      GOTO (done);
    }
 
    name = mongoc_collection_get_name (collection);
@@ -2946,9 +2949,8 @@ mongoc_collection_find_and_modify_with_opts (
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
                             "The write concern is invalid.");
-            bson_destroy (&command);
             mongoc_server_stream_cleanup (server_stream);
-            RETURN (false);
+            GOTO (done);
          }
 
          if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
@@ -2969,18 +2971,17 @@ mongoc_collection_find_and_modify_with_opts (
       bool ok = mongoc_cmd_parts_append_opts (
          &parts, &iter, server_stream->sd->max_wire_version, error);
       if (!ok) {
-         bson_destroy (&command);
+         mongoc_cmd_parts_cleanup (&parts);
          mongoc_server_stream_cleanup (server_stream);
-         RETURN (false);
+         GOTO (done);
       }
    }
 
    parts.assembled.operation_id = ++cluster->operation_id;
    if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
-      bson_destroy (&command);
       mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (server_stream);
-      RETURN (false);
+      GOTO (done);
    }
 
    is_retryable = parts.is_retryable_write;
@@ -2996,6 +2997,7 @@ mongoc_collection_find_and_modify_with_opts (
          ++parts.assembled.session->server_session->txn_number);
    }
 retry:
+   bson_destroy (reply_ptr);
    ret = mongoc_cluster_run_command_monitored (
       cluster, &parts.assembled, reply_ptr, error);
 
@@ -3045,18 +3047,19 @@ retry:
                       errmsg);
       ret = false;
    }
-   if (reply_ptr == &reply_local) {
-      bson_destroy (reply_ptr);
-   }
 
    mongoc_cmd_parts_cleanup (&parts);
-   bson_destroy (&command);
    mongoc_server_stream_cleanup (server_stream);
 
    if (retry_server_stream) {
       mongoc_server_stream_cleanup (retry_server_stream);
    }
 
+done:
+   bson_destroy (&command);
+   if (&reply_local == reply_ptr) {
+      bson_destroy (&reply_local);
+   }
    RETURN (ret);
 }
 

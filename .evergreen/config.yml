@@ -680,6 +680,19 @@ tasks:
               VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-valgrind-bson
+      tags: ["debug-compile", "special", "valgrind", "bson"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=no CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: debug-compile-coverage
       tags: ["debug-compile", "special", "coverage"]
       commands:
@@ -1791,6 +1804,27 @@ tasks:
             VALGRIND: "on"
             AUTH: "auth"
             SSL: "openssl"
+            URI: ""
+
+    - name: test-valgrind-bson
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind-bson"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind-bson"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "nossl"
             URI: ""
 
     - name: test-2.6-server-noauth-nosasl-nossl
@@ -7945,4 +7979,5 @@ buildvariants:
   tasks:
     - ".debug-compile !.sspi .openssl !.sasl"
     - ".debug-compile !.sspi .nossl !.sasl"
+    - ".debug-compile .special .valgrind .bson"
     - ".test-valgrind"

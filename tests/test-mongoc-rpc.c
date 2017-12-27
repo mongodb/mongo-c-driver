@@ -119,6 +119,7 @@ test_mongoc_rpc_delete_gather (void)
    rpc.delete_.selector = bson_get_data (&sel);
 
    assert_rpc_equal ("delete1.dat", &rpc);
+   bson_destroy (&sel);
 }
 
 
@@ -151,6 +152,7 @@ test_mongoc_rpc_delete_scatter (void)
 
    assert_rpc_equal ("delete1.dat", &rpc);
    bson_free (data);
+   bson_destroy (&sel);
 }
 
 
@@ -351,6 +353,7 @@ test_mongoc_rpc_query_gather (void)
    rpc.query.fields = bson_get_data (&b);
 
    assert_rpc_equal ("query1.dat", &rpc);
+   bson_destroy (&b);
 }
 
 
@@ -383,6 +386,7 @@ test_mongoc_rpc_query_scatter (void)
    ASSERT (!memcmp (rpc.query.query, bson_get_data (&empty), 5));
    ASSERT (!memcmp (rpc.query.fields, bson_get_data (&empty), 5));
 
+   bson_destroy (&empty);
    assert_rpc_equal ("query1.dat", &rpc);
    bson_free (data);
 }
@@ -464,6 +468,7 @@ test_mongoc_rpc_reply_scatter (void)
    ASSERT (eof == true);
    ASSERT (count == 100);
 
+   bson_destroy (&empty);
    assert_rpc_equal ("reply1.dat", &rpc);
    bson_reader_destroy (reader);
    bson_free (data);
@@ -509,6 +514,7 @@ test_mongoc_rpc_reply_scatter2 (void)
    ASSERT (eof == true);
    ASSERT (count == 100);
 
+   bson_destroy (&empty);
    assert_rpc_equal ("reply2.dat", &rpc);
    bson_reader_destroy (reader);
    bson_free (data);
@@ -538,6 +544,9 @@ test_mongoc_rpc_update_gather (void)
    rpc.update.update = bson_get_data (&up);
 
    assert_rpc_equal ("update1.dat", &rpc);
+
+   bson_destroy (&sel);
+   bson_destroy (&up);
 }
 
 
@@ -586,6 +595,7 @@ test_mongoc_rpc_update_scatter (void)
    ASSERT (r);
    bson_destroy (&b);
 
+   bson_destroy (&empty);
    assert_rpc_equal ("update1.dat", &rpc);
    bson_free (data);
 }
@@ -645,6 +655,7 @@ test_mongoc_rpc_buffer_iov (void)
    bson_free (full_opcode);
    bson_free (matching_opcode);
 
+   bson_destroy (&b);
    _mongoc_array_destroy (&ar);
 }
 
