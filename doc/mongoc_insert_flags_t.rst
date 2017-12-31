@@ -26,8 +26,8 @@ Flag Values
 -----------
 
 ===============================  ======================================================================================================================================================================
-MONGOC_INSERT_NONE               Specify no insert flags.                                                                                                                                              
-MONGOC_INSERT_CONTINUE_ON_ERROR  Continue inserting documents from the insertion set even if one insert fails.                                                                                         
+MONGOC_INSERT_NONE               Specify no insert flags.
+MONGOC_INSERT_CONTINUE_ON_ERROR  Continue inserting documents from the insertion set even if one insert fails.
 MONGOC_INSERT_NO_VALIDATE        Do not validate insertion documents before performing an insert. Validation can be expensive, so this can save some time if you know your documents are already valid.
 ===============================  ======================================================================================================================================================================
 

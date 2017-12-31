@@ -25,7 +25,7 @@ To run the examples in this tutorial, MongoDB must be installed and running on `
   $ mongo --host localhost --port 27017
   MongoDB shell version: 3.0.6
   connecting to: localhost:27017/test
-  > 
+  >
 
 Include and link libmongoc in your C program
 --------------------------------------------
@@ -409,7 +409,7 @@ To verify that the insert succeeded, connect with the MongoDB shell.
   switched to db mydb
   > db.mycoll.find()
   { "_id" : ObjectId("55ef43766cb5f36a3bae6ee4"), "hello" : "world" }
-  > 
+  >
 
 .. _tutorial_find:
 
@@ -467,7 +467,7 @@ This first example uses an empty query specifier to find all documents in the da
      return 0;
   }
 
-Compile the code and run it: 
+Compile the code and run it:
 
 .. code-block:: none
 
@@ -633,7 +633,7 @@ To verify that the update succeeded, connect with the MongoDB shell.
   switched to db mydb
   > db.mycoll.find({"updated" : true})
   { "_id" : ObjectId("55ef549236fe322f9490e17b"), "updated" : true, "key" : "new_value" }
-  > 
+  >
 
 Deleting a Document
 ^^^^^^^^^^^^^^^^^^^
@@ -715,7 +715,7 @@ Use the MongoDB shell to prove that the documents have been removed successfully
   switched to db mydb
   > db.mycoll.count({"hello" : "world"})
   0
-  > 
+  >
 
 Counting Documents
 ^^^^^^^^^^^^^^^^^^
@@ -762,7 +762,7 @@ Counting the number of documents in a MongoDB collection is similar to performin
      return 0;
   }
 
-Compile the code and run it: 
+Compile the code and run it:
 
 .. code-block:: none
 

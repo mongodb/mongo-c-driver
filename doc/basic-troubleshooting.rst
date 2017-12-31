@@ -22,7 +22,7 @@ Performance counters are available for each process using the driver.
 The counters can be accessed outside of the application process via a shared memory segment.
 This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
 Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
-      
+
 Counters are currently available on UNIX-like platforms that support shared memory segments.
 
 * Active and Disposed Cursors

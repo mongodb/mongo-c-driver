@@ -31,10 +31,10 @@ Write Concern Levels
 Set the write concern level with :symbol:`mongoc_write_concern_set_w`.
 
 ==========================================  ===============================================================================================================================================================================================================
-MONGOC_WRITE_CONCERN_W_DEFAULT (1)          By default, writes block awaiting acknowledgment from MongoDB. Acknowledged write concern allows clients to catch network, duplicate key, and other errors.                                                    
+MONGOC_WRITE_CONCERN_W_DEFAULT (1)          By default, writes block awaiting acknowledgment from MongoDB. Acknowledged write concern allows clients to catch network, duplicate key, and other errors.
 MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED (0)   With this write concern, MongoDB does not acknowledge the receipt of write operation. Unacknowledged is similar to errors ignored; however, mongoc attempts to receive and handle network errors when possible.
-MONGOC_WRITE_CONCERN_W_MAJORITY (majority)  Block until a write has been propagated to a majority of the nodes in the replica set.                                                                                                                         
-n                                           Block until a write has been propagated to at least ``n`` nodes in the replica set.                                                                                                                            
+MONGOC_WRITE_CONCERN_W_MAJORITY (majority)  Block until a write has been propagated to a majority of the nodes in the replica set.
+n                                           Block until a write has been propagated to at least ``n`` nodes in the replica set.
 ==========================================  ===============================================================================================================================================================================================================
 
 Deprecations

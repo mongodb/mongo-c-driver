@@ -122,9 +122,9 @@ The driver automatically converts queries to the new "find" command syntax if ne
 The "find" command takes different options from the traditional OP_QUERY message.
 
 ====================  ==================  =================
-Query                 ``$query``          ``filter``       
-Sort                  ``$orderby``        ``sort``         
-Show record location  ``$showDiskLoc``    ``showRecordId`` 
+Query                 ``$query``          ``filter``
+Sort                  ``$orderby``        ``sort``
+Show record location  ``$showDiskLoc``    ``showRecordId``
 Other $-options       ``$<option name>``  ``<option name>``
 ====================  ==================  =================
 

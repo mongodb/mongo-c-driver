@@ -121,7 +121,7 @@ Option                   BSON type           Option               BSON type
 ``allowPartialResults``  bool                ``showRecordId``     bool
 ``awaitData``            bool                ``singleBatch``      bool
 ``collation``            document            ``snapshot``         bool
-``comment``              string              ``tailable``         bool              
+``comment``              string              ``tailable``         bool
 ``max``                  document
 =======================  ==================  ===================  ==================
 

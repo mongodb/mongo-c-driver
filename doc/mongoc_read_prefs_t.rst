@@ -16,11 +16,11 @@ Read Modes
 ----------
 
 ===============================  ====================================================================================================================================================
-MONGOC_READ_PRIMARY              Default mode. All operations read from the current replica set primary.                                                                             
-MONGOC_READ_SECONDARY            All operations read from among the nearest secondary members of the replica set.                                                                    
-MONGOC_READ_PRIMARY_PREFERRED    In most situations, operations read from the primary but if it is unavailable, operations read from secondary members.                              
+MONGOC_READ_PRIMARY              Default mode. All operations read from the current replica set primary.
+MONGOC_READ_SECONDARY            All operations read from among the nearest secondary members of the replica set.
+MONGOC_READ_PRIMARY_PREFERRED    In most situations, operations read from the primary but if it is unavailable, operations read from secondary members.
 MONGOC_READ_SECONDARY_PREFERRED  In most situations, operations read from among the nearest secondary members, but if no secondaries are available, operations read from the primary.
-MONGOC_READ_NEAREST              Operations read from among the nearest members of the replica set, irrespective of the member's type.                                               
+MONGOC_READ_NEAREST              Operations read from among the nearest members of the replica set, irrespective of the member's type.
 ===============================  ====================================================================================================================================================
 
 .. _mongoc-read-prefs-tag-sets:

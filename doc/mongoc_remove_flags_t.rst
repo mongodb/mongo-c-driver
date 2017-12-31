@@ -25,6 +25,6 @@ Flag Values
 
 ===========================  =================================================================
 MONGOC_REMOVE_NONE           Specify no removal flags. All matching documents will be removed.
-MONGOC_REMOVE_SINGLE_REMOVE  Only remove the first matching document from the selector.       
+MONGOC_REMOVE_SINGLE_REMOVE  Only remove the first matching document from the selector.
 ===========================  =================================================================
 
