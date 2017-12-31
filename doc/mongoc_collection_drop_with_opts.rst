@@ -37,4 +37,3 @@ Returns
 
 Returns true if the collection was successfully dropped. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
-

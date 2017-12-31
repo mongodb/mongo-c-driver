@@ -41,7 +41,6 @@ You can specify tag sets with the following read preference modes:
 
 Tags are not compatible with ``MONGOC_READ_PRIMARY`` and, in general, only apply when selecting a secondary member of a set for a read operation. However, the nearest read mode, when combined with a tag set will select the nearest member that matches the specified tag set, which may be a primary or secondary.
 
-
 Tag sets are represented as a comma-separated list of colon-separated key-value
 pairs when provided as a connection string, e.g. `dc:ny,rack:1`.
 
@@ -57,7 +56,6 @@ last resort.
 Order matters when using multiple readPreferenceTags.
 
 Tag Sets can also be configured using :symbol:`mongoc_read_prefs_set_tags`.
-
 
 All interfaces use the same member selection logic to choose the member to which to direct read operations, basing the choice on read preference mode and tag sets.
 

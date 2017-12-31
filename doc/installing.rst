@@ -23,7 +23,6 @@ The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/wate
 - Visual Studio 2010, 2013, 2015
 - x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
 
-
 Install with a Package Manager
 ------------------------------
 
@@ -120,7 +119,6 @@ mongo-c-driver contains a copy of libbson, in case your system does not already 
   $ make
   $ sudo make install
 
-
 Building from git
 ^^^^^^^^^^^^^^^^^
 
@@ -154,7 +152,6 @@ Once you have the dependencies installed, clone the repository and build the cur
   $ ./autogen.sh --with-libbson=bundled
   $ make
   $ sudo make install
-
 
 Generating the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -284,7 +281,6 @@ default however, the driver will compile against OpenSSL if it
 detects it being available. If OpenSSL is not available, it will
 fallback on the native libraries.
 
-
 To compile against the Windows native TLS and crypto libraries, even when
 OpenSSL is available, configure the driver like so:
 
@@ -295,7 +291,6 @@ OpenSSL is available, configure the driver like so:
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver"
 
-
 Native SASL Support on Windows (SSPI)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -303,7 +298,6 @@ The MongoDB C Driver supports the Windows native Kerberos and Active Directory
 interface, SSPI. Using the native libraries there is no need to install any
 dependencies, such as cyrus-sasl.  By default however, the driver will compile
 against cyrus-sasl.
-
 
 To compile against the Windows native SSPI, configure the driver like so:
 

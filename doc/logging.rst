@@ -128,4 +128,3 @@ Trace messages can be enabled and disabled by calling ``mongoc_log_trace_enable(
 
         Compiling the driver with ``--enable-tracing`` will affect its performance. Disabling tracing with ``mongoc_log_trace_disable()`` significantly reduces the overhead, but cannot remove it completely.
 
-

@@ -128,7 +128,6 @@ This example program prints something like:
 
 The driver discovers the third member, "localhost:27019", and adds it to the topology.
 
-
 .. only:: html
 
   Functions

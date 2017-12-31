@@ -16,7 +16,6 @@ Synopsis
                                  bson_t *reply,
                                  bson_error_t *error);
 
-
 Parameters
 ----------
 

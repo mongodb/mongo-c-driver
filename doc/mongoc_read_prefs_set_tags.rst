@@ -75,7 +75,6 @@ Examples
       bson_destroy (doc);
    }
 
-
    int main (void)
    {
       mongoc_client_t *client;

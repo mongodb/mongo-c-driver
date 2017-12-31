@@ -17,7 +17,6 @@ Its API conforms to the `SDAM Monitoring Specification <https://github.com/mongo
 
 Applications receive a temporary reference to a ``mongoc_topology_description_t`` as a parameter to an SDAM Monitoring callback. See :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`.
 
-
 .. only:: html
 
   Functions

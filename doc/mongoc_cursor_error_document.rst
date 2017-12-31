@@ -85,7 +85,6 @@ On the other hand, if the client connects to the server successfully and attempt
      mongoc_client_destroy (client);
   }
 
-
   int
   main (int argc, char *argv[])
   {
@@ -131,7 +130,6 @@ On the other hand, if the client connects to the server successfully and attempt
 
      return 0;
   }
-
 
 .. only:: html
 

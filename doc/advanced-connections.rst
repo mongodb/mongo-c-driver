@@ -152,7 +152,6 @@ To enable compression support the client must be configured with which compresso
   mongoc_client_t *client = NULL;
   client = mongoc_client_new ("mongodb://localhost:27017/?compressors=snappy,zlib");
 
-
 The ``compressors`` option specifies the priority order of compressors the
 client wants to use. Messages are compressed if the client and server share any
 compressors in common.
@@ -166,14 +165,12 @@ depending on how the server was configured.
 The driver must be built with zlib and/or snappy support to enable compression
 support, any unknown (or not compiled in) compressor value will be ignored.
 
-
 Additional Connection Options
 -----------------------------
 
 The full list of connection options can be found in the :symbol:`mongoc_uri_t` docs.
 
 Certain socket/connection related options are not configurable:
-
 
 ============== ===================================================== ======================
 Option         Description                                           Value
