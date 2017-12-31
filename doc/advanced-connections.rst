@@ -113,7 +113,7 @@ To run a server locally (on port 27017, for example):
 
 .. code-block:: none
 
-  $ mongod --port 27017 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem 
+  $ mongod --port 27017 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem
 
 Add ``/?ssl=true`` to the end of a client URI.
 
@@ -131,7 +131,7 @@ MongoDB requires client certificates by default, unless the ``--sslAllowConnecti
 
   /* optionally copy in a custom trust directory or file; otherwise the default is used. */
   memcpy (&ssl_opts, ssl_default, sizeof ssl_opts);
-  ssl_opts.pem_file = "client.pem" 
+  ssl_opts.pem_file = "client.pem"
 
   mongoc_client_set_ssl_opts (client, &ssl_opts);
 
@@ -189,6 +189,6 @@ TCP_KEEPCNT    How many probes to send, without acknowledgement,     9 probes
                before dropping the connection
 -------------- ----------------------------------------------------- ----------------------
 TCP_NODELAY    Send packets as soon as possible or buffer small      Enabled (no buffering)
-               packets (Nagle algorithm) 
+               packets (Nagle algorithm)
 ============== ===================================================== ======================
 

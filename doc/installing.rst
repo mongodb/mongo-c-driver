@@ -119,7 +119,7 @@ mongo-c-driver contains a copy of libbson, in case your system does not already 
 
   $ make
   $ sudo make install
-      
+
 
 Building from git
 ^^^^^^^^^^^^^^^^^
@@ -154,7 +154,7 @@ Once you have the dependencies installed, clone the repository and build the cur
   $ ./autogen.sh --with-libbson=bundled
   $ make
   $ sudo make install
-      
+
 
 Generating the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

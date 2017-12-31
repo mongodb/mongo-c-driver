@@ -97,7 +97,7 @@ Example ``reply`` document:
 
   Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }
 
-The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_COMMAND`` and its code is 11000. 
+The :symbol:`bson_error_t <errors>` domain is ``MONGOC_ERROR_COMMAND`` and its code is 11000.
 
 .. _bulk_operation_bypassing_document_validation:
 

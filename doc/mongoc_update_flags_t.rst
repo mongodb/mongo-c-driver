@@ -27,9 +27,9 @@ Flag Values
 -----------
 
 ==========================  ========================================================================================================================================
-MONGOC_UPDATE_NONE          No update flags set.                                                                                                                    
-MONGOC_UPDATE_UPSERT        If an upsert should be performed.                                                                                                       
-MONGOC_UPDATE_MULTI_UPDATE  If more than a single matching document should be updated. By default only the first document is updated.                               
+MONGOC_UPDATE_NONE          No update flags set.
+MONGOC_UPDATE_UPSERT        If an upsert should be performed.
+MONGOC_UPDATE_MULTI_UPDATE  If more than a single matching document should be updated. By default only the first document is updated.
 MONGOC_UPDATE_NO_VALIDATE   Do not perform client side BSON validations when performing an update. This is useful if you already know your BSON documents are valid.
 ==========================  ========================================================================================================================================
 

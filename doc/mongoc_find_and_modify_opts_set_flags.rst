@@ -25,10 +25,10 @@ Description
 Adds one or more flags to the builder.
 
 =================================  =============================================================================
-MONGOC_FIND_AND_MODIFY_NONE        Default. Doesn't add anything to the builder.                                
-MONGOC_FIND_AND_MODIFY_REMOVE      Will instruct find_and_modify to remove the matching document.               
+MONGOC_FIND_AND_MODIFY_NONE        Default. Doesn't add anything to the builder.
+MONGOC_FIND_AND_MODIFY_REMOVE      Will instruct find_and_modify to remove the matching document.
 MONGOC_FIND_AND_MODIFY_UPSERT      Update the matching document or, if no document matches, insert the document.
-MONGOC_FIND_AND_MODIFY_RETURN_NEW  Return the resulting document.                                               
+MONGOC_FIND_AND_MODIFY_RETURN_NEW  Return the resulting document.
 =================================  =============================================================================
 
 Returns

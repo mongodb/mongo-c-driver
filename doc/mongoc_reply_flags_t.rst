@@ -27,10 +27,10 @@ Flag Values
 -----------
 
 ===============================  ==================================================================
-MONGOC_REPLY_NONE                No flags set.                                                     
-MONGOC_REPLY_CURSOR_NOT_FOUND    No matching cursor was found on the server.                       
+MONGOC_REPLY_NONE                No flags set.
+MONGOC_REPLY_CURSOR_NOT_FOUND    No matching cursor was found on the server.
 MONGOC_REPLY_QUERY_FAILURE       The query failed or was invalid. Error document has been provided.
-MONGOC_REPLY_SHARD_CONFIG_STALE  Shard config is stale.                                            
-MONGOC_REPLY_AWAIT_CAPABLE       If the returned cursor is capable of MONGOC_QUERY_AWAIT_DATA.     
+MONGOC_REPLY_SHARD_CONFIG_STALE  Shard config is stale.
+MONGOC_REPLY_AWAIT_CAPABLE       If the returned cursor is capable of MONGOC_QUERY_AWAIT_DATA.
 ===============================  ==================================================================
 
