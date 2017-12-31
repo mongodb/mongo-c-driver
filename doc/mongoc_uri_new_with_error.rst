@@ -56,4 +56,3 @@ Examples of some valid MongoDB connection strings can be seen below.
 
 ``"mongodb://localhost,[::1]/mydb?authSource=mydb"``
 
-

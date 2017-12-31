@@ -28,7 +28,6 @@ Beginning in version 1.2.0, once a pool or client has any SSL options set, all c
 
 As of 1.4.0, the :symbol:`mongoc_client_pool_set_ssl_opts` and :symbol:`mongoc_client_set_ssl_opts` will not only shallow copy the struct, but will also copy the ``const char*``. It is therefore no longer needed to make sure the values remain valid after setting them.
 
-
 Configuration through URI Options
 ---------------------------------
 

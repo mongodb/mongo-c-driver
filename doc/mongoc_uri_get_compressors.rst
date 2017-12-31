@@ -40,4 +40,3 @@ Returns
 
 A bson_t * which should not be modified or freed.
 
-

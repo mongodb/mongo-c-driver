@@ -11,11 +11,9 @@ By default, if a username and password are provided as part of the connection st
 
 To select a specific authentication mechanism other than the default, see the list of supported mechanism below.
 
-
 .. code-block:: none
 
   mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/?authSource=mydb");
-
 
 Currently supported values for the authMechanism connection string option are:
 
@@ -32,16 +30,13 @@ Basic Authentication (SCRAM-SHA-1)
 
 The default authentication mechanism when talking to MongoDB 3.0 and later is ``SCRAM-SHA-1`` (`RFC 5802 <http://tools.ietf.org/html/rfc5802>`_). Using this authentication mechanism means that the password is never actually sent over the wire when authenticating, but rather a computed proof that the client password is the same as the password the server knows.
 
-
 .. code-block:: none
 
   mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/?authMechanism=SCRAM-SHA-1&authSource=mydb");
 
-
 .. note::
 
   ``SCRAM-SHA-1`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required.
-
 
 .. _authentication_mongodbcr:
 
@@ -50,11 +45,9 @@ Legacy Authentication (MONGODB-CR)
 
 The MONGODB-CR authMechanism is a challenge response authentication mechanism. It was the default mechanism until MongoDB 3.0 and is being phased out. It is strongly suggested that users upgrade to SCRAM-SHA-1.
 
-
 .. note::
 
   ``MONGODB-CR`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required.
-
 
 .. _authentication_kerberos:
 
@@ -111,7 +104,6 @@ If you encounter errors such as ``Invalid net address``, check if the applicatio
 
   $ kinit -f -A mongodbuser@EXAMPLE.COM
 
-
 .. _authentication_plain:
 
 SASL Plain Authentication
@@ -134,7 +126,6 @@ MongoDB Enterprise Edition supports the ``SASL PLAIN`` authentication mechanism,
   client = mongoc_client_new ("mongodb://user:password@example.com/?authMechanism=PLAIN");
 
 ``PLAIN`` authenticates against the ``$external`` database, so specifying the authSource database is not required.
-
 
 .. _authentication_x509:
 
@@ -166,7 +157,6 @@ The ``MONGODB-X509`` mechanism authenticates a username derived from the disting
   mongoc_client_set_ssl_opts (client, &ssl_opts);
 
 ``MONGODB-X509`` authenticates against the ``$external`` database, so specifying the authSource database is not required. For more information on the x509_derived_username, see the MongoDB server `x.509 tutorial <https://docs.mongodb.com/manual/tutorial/configure-x509-client-authentication/#add-x-509-certificate-subject-as-a-user>`_.
-
 
 .. note::
 

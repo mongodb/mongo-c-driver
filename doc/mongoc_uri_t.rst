@@ -52,7 +52,6 @@ For example, the following calls are equal.
   uri = mongoc_uri_new ("mongodb://localhost/?appname=applicationName");
   uri = mongoc_uri_new ("mongodb://localhost/?appName=applicationName");
 
-
 Replica Set Example
 -------------------
 

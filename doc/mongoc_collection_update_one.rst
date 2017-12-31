@@ -62,7 +62,6 @@ A write concern timeout or write concern error is considered a failure.
 
 If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable.
 
-
 Example
 -------
 .. literalinclude:: ../examples/example-update.c
