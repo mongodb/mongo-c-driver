@@ -1372,6 +1372,42 @@ test_framework_replset_member_count (void)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_data_nodes_count --
+ *
+ *       Returns the number of replica set members (excluding arbiters),
+ *       or number of mongos servers or 1 for a standalone.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+size_t
+test_framework_data_nodes_count (void)
+{
+   bson_t reply;
+   bson_iter_t iter, array;
+   size_t count = 0;
+
+
+   call_ismaster (&reply);
+   if (!bson_iter_init_find (&iter, &reply, "hosts")) {
+      bson_destroy (&reply);
+      return test_framework_mongos_count ();
+   }
+
+   bson_iter_recurse (&iter, &array);
+   while (bson_iter_next (&array)) {
+      ++count;
+   }
+
+   bson_destroy (&reply);
+
+   return count;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_server_count --
  *
  *       Returns the number of mongos servers or replica set members,

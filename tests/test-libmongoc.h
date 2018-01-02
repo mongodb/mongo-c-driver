@@ -76,6 +76,8 @@ test_framework_replset_name (void);
 size_t
 test_framework_replset_member_count (void);
 size_t
+test_framework_data_nodes_count (void);
+size_t
 test_framework_server_count (void);
 
 #ifdef MONGOC_ENABLE_SSL

@@ -975,9 +975,14 @@ test_change_stream_live_read_prefs (void *test_ctx)
 
    coll = drop_and_get_coll (client, "db", "coll_read_prefs");
    ASSERT (coll);
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
-      err);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll,
+                       tmp_bson (NULL),
+                       tmp_bson ("{'writeConcern': {'w': %d}}",
+                                 test_framework_data_nodes_count ()),
+                       NULL,
+                       &err),
+                    err);
 
    prefs = mongoc_read_prefs_copy (mongoc_collection_get_read_prefs (coll));
    mongoc_read_prefs_set_mode (prefs, MONGOC_READ_SECONDARY);
