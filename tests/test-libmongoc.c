@@ -1076,14 +1076,30 @@ set_name (bson_t *ismaster_response)
 }
 
 
+static bool
+uri_str_has_db (bson_string_t *uri_string)
+{
+   const char *after_scheme;
+
+   ASSERT_STARTSWITH (uri_string->str, "mongodb://");
+   after_scheme = uri_string->str + strlen ("mongodb://");
+   return strchr (after_scheme, '/') != NULL;
+}
+
+
 static void
 add_option_to_uri_str (bson_string_t *uri_string,
                        const char *option,
                        const char *value)
 {
    if (strchr (uri_string->str, '?')) {
+      /* already has some options */
       bson_string_append_c (uri_string, '&');
+   } else if (uri_str_has_db (uri_string)) {
+      /* like "mongodb://host/db" */
+      bson_string_append_c (uri_string, '?');
    } else {
+      /* like "mongodb://host" */
       bson_string_append_printf (uri_string, "/?");
    }
 

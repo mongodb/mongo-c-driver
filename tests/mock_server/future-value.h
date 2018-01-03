@@ -134,7 +134,7 @@ typedef struct _future_value_t
       const_mongoc_read_prefs_ptr const_mongoc_read_prefs_ptr_value;
       const_mongoc_write_concern_ptr const_mongoc_write_concern_ptr_value;
 
-   };
+   } value;
 } future_value_t;
 
 future_value_t *future_value_new ();
