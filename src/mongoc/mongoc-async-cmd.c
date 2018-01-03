@@ -72,6 +72,10 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   /* pass 0 for the timeout to begin / continue non-blocking handshake */
+   timeout_msec = 0;
+#endif
    if (mongoc_stream_tls_handshake (
           tls_stream, host, timeout_msec, &retry_events, error)) {
       return 1;

@@ -2927,10 +2927,7 @@ _test_ssl_reconnect (bool pooled)
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
 
    ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS handshake failed");
+   ASSERT_CONTAINS (error.message, "TLS handshake failed");
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

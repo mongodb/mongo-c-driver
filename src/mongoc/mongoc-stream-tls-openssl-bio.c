@@ -199,6 +199,7 @@ int
 mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
 {
    mongoc_stream_tls_t *tls;
+   mongoc_stream_tls_openssl_t *openssl;
    int ret;
 
    BSON_ASSERT (b);
@@ -211,13 +212,19 @@ mongoc_stream_tls_openssl_bio_read (BIO *b, char *buf, int len)
       RETURN (-1);
    }
 
+   openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
+
    errno = 0;
    ret = (int) mongoc_stream_read (
       tls->base_stream, buf, len, 0, tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      BIO_set_retry_read (b);
+      /* this BIO is not the same as "b", which openssl passed in to this func.
+       * set its retry flag, which we check with BIO_should_retry in
+       * mongoc-stream-tls-openssl.c
+       */
+      BIO_set_retry_read (openssl->bio);
    }
 
    RETURN (ret);
@@ -244,6 +251,7 @@ int
 mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
 {
    mongoc_stream_tls_t *tls;
+   mongoc_stream_tls_openssl_t *openssl;
    mongoc_iovec_t iov;
    int ret;
    ENTRY;
@@ -256,6 +264,8 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
    if (!tls) {
       RETURN (-1);
    }
+
+   openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
 
    iov.iov_base = (void *) buf;
    iov.iov_len = len;
@@ -272,10 +282,13 @@ mongoc_stream_tls_openssl_bio_write (BIO *b, const char *buf, int len)
       TRACE ("Completed the %d", ret);
    }
    if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      /* this BIO is not the same as "b", which openssl passed in to this func.
+       * set its retry flag, which we check with BIO_should_retry in
+       * mongoc-stream-tls-openssl.c
+       */
       TRACE ("%s", "Requesting a retry");
-      BIO_set_retry_write (b);
+      BIO_set_retry_write (openssl->bio);
    }
-
 
    RETURN (ret);
 }
