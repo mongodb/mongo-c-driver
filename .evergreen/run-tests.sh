@@ -104,7 +104,6 @@ case "$OS" in
       ulimit -c unlimited || true
 
       if [ "$VALGRIND" = "on" ]; then
-         export MONGOC_TEST_SKIP_SLOW="on";
          make valgrind;
       else
          TEST_ARGS="--no-fork $TEST_ARGS"

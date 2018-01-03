@@ -477,6 +477,7 @@ _test_mock_end_sessions (bool pooled)
    request = mock_server_receives_msg (server, 0, expected_cmd);
    mock_server_replies_ok_and_destroys (request);
    future_wait (future);
+   future_destroy (future);
 
    mock_server_destroy (server);
    bson_destroy (expected_cmd);

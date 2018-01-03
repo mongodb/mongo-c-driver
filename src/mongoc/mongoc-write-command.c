@@ -552,6 +552,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
                 retry_server_stream->sd->max_wire_version >=
                    WIRE_VERSION_RETRY_WRITES) {
                parts.assembled.server_stream = retry_server_stream;
+               bson_destroy (&reply);
                GOTO (retry);
             }
          }

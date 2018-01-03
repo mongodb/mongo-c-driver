@@ -1294,6 +1294,7 @@ test_update_oversize (void *ctx)
    bson_free (huger);
    bson_destroy (&huge);
    bson_destroy (&empty);
+   bson_destroy (&huge_update);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }

@@ -625,12 +625,12 @@ static mongoc_server_description_t *
 _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                              mongoc_stream_t *stream,
                              const char *address,
-                             uint32_t server_id)
+                             uint32_t server_id,
+                             bson_error_t *error)
 {
    const bson_t *command;
    mongoc_cmd_parts_t parts;
    bson_t reply;
-   bson_error_t error;
    int64_t start;
    int64_t rtt_msec;
    mongoc_server_description_t *sd;
@@ -647,7 +647,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    start = bson_get_monotonic_time ();
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, server_id, stream, &error);
+      cluster->client->topology, server_id, stream, error);
    if (!server_stream) {
       RETURN (NULL);
    }
@@ -656,7 +656,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
       &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, command);
    parts.prohibit_lsid = true;
    if (!mongoc_cluster_run_command_parts (
-          cluster, server_stream, &parts, &reply, &error)) {
+          cluster, server_stream, &parts, &reply, error)) {
       mongoc_server_stream_cleanup (server_stream);
       RETURN (NULL);
    }
@@ -668,7 +668,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    mongoc_server_description_init (sd, address, server_id);
    /* send the error from run_command IN to handle_ismaster */
-   mongoc_server_description_handle_ismaster (sd, &reply, rtt_msec, &error);
+   mongoc_server_description_handle_ismaster (sd, &reply, rtt_msec, error);
 
    bson_destroy (&reply);
 
@@ -719,7 +719,7 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (node->stream);
 
    sd = _mongoc_stream_run_ismaster (
-      cluster, node->stream, node->connection_address, server_id);
+      cluster, node->stream, node->connection_address, server_id, error);
 
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
       memcpy (error, &sd->error, sizeof (bson_error_t));
@@ -1591,7 +1591,6 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    if (topology->single_threaded) {
       server_stream = mongoc_cluster_fetch_stream_single (
          cluster, server_id, reconnect_ok, err_ptr);
-
    } else {
       server_stream = mongoc_cluster_fetch_stream_pooled (
          cluster, server_id, reconnect_ok, err_ptr);
@@ -1733,7 +1732,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 #endif
 
       sd = _mongoc_stream_run_ismaster (
-         cluster, stream, scanner_node->host.host_and_port, server_id);
+         cluster, stream, scanner_node->host.host_and_port, server_id, error);
 
       if (!sd) {
          return NULL;

@@ -977,6 +977,7 @@ test_long_seek (void *ctx)
 
    iov.iov_base = buf;
    iov.iov_len = sizeof (buf);
+   memset (iov.iov_base, 0, iov.iov_len);
 
    client = test_framework_client_new ();
    gridfs = get_test_gridfs (client, "long_seek", &error);
@@ -1101,6 +1102,7 @@ test_missing_chunk (void *ctx)
 
    iov.iov_base = buf;
    iov.iov_len = sizeof (buf);
+   memset (iov.iov_base, 0, iov.iov_len);
 
    client = test_framework_client_new ();
    gridfs = get_test_gridfs (client, "long_seek", &error);

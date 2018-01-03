@@ -928,6 +928,7 @@ test_cluster_time_comparison_pooled (void)
 
 
 typedef future_t *(*run_command_fn_t) (mongoc_client_t *);
+typedef void (*cleanup_fn_t) (future_t *);
 
 
 typedef struct {
@@ -944,7 +945,10 @@ test_error_msg_t errors[] = {{"not master", true},
 
 /* a "not master" or "node is recovering" error marks server Unknown */
 static void
-_test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
+_test_not_master (bool pooled,
+                  bool use_op_msg,
+                  run_command_fn_t run_command,
+                  cleanup_fn_t cleanup_fn)
 {
    test_error_msg_t *test_error_msg;
    mock_server_t *server;
@@ -1004,7 +1008,7 @@ _test_not_master (bool pooled, bool use_op_msg, run_command_fn_t run_command)
 
       bson_free (reply);
       request_destroy (request);
-      future_destroy (future);
+      cleanup_fn (future);
    }
 
    if (pooled) {
@@ -1027,29 +1031,40 @@ future_command_simple (mongoc_client_t *client)
 
 
 static void
+function_command_simple_cleanup (future_t *future)
+{
+   future_destroy (future);
+}
+
+
+static void
 test_not_master_single_op_query (void)
 {
-   _test_not_master (false, false, future_command_simple);
+   _test_not_master (
+      false, false, future_command_simple, function_command_simple_cleanup);
 }
 
 
 static void
 test_not_master_pooled_op_query (void)
 {
-   _test_not_master (true, false, future_command_simple);
+   _test_not_master (
+      true, false, future_command_simple, function_command_simple_cleanup);
 }
 
 static void
 test_not_master_single_op_msg (void)
 {
-   _test_not_master (false, true, future_command_simple);
+   _test_not_master (
+      false, true, future_command_simple, function_command_simple_cleanup);
 }
 
 
 static void
 test_not_master_pooled_op_msg (void)
 {
-   _test_not_master (true, true, future_command_simple);
+   _test_not_master (
+      true, true, future_command_simple, function_command_simple_cleanup);
 }
 
 
@@ -1075,29 +1090,43 @@ future_command_private (mongoc_client_t *client)
 
 
 static void
+future_command_private_cleanup (future_t *future)
+{
+   mongoc_server_stream_t *server_stream =
+      future_value_get_mongoc_server_stream_ptr (future_get_param (future, 1));
+   mongoc_server_stream_cleanup (server_stream);
+   future_destroy (future);
+}
+
+
+static void
 test_not_master_auth_single_op_query (void)
 {
-   _test_not_master (false, false, future_command_private);
+   _test_not_master (
+      false, false, future_command_private, future_command_private_cleanup);
 }
 
 
 static void
 test_not_master_auth_pooled_op_query (void)
 {
-   _test_not_master (true, false, future_command_private);
+   _test_not_master (
+      true, false, future_command_private, future_command_private_cleanup);
 }
 
 static void
 test_not_master_auth_single_op_msg (void)
 {
-   _test_not_master (false, true, future_command_private);
+   _test_not_master (
+      false, true, future_command_private, future_command_private_cleanup);
 }
 
 
 static void
 test_not_master_auth_pooled_op_msg (void)
 {
-   _test_not_master (true, true, future_command_private);
+   _test_not_master (
+      true, true, future_command_private, future_command_private_cleanup);
 }
 
 
