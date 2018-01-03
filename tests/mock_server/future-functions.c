@@ -27,6 +27,22 @@
 
 
 static void *
+background_mongoc_async_run (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_void_type;
+
+   mongoc_async_run (
+      future_value_get_mongoc_async_ptr (future_get_param (future, 0)));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_bulk_operation_execute (void *data)
 {
    future_t *future = (future_t *) data;
@@ -858,6 +874,20 @@ background_mongoc_change_stream_destroy (void *data)
 }
 
 
+
+future_t *
+future_async_run (
+   mongoc_async_ptr async)
+{
+   future_t *future = future_new (future_value_void_type,
+                                  1);
+   
+   future_value_set_mongoc_async_ptr (
+      future_get_param (future, 0), async);
+   
+   future_start (future, background_mongoc_async_run);
+   return future;
+}
 
 future_t *
 future_bulk_operation_execute (

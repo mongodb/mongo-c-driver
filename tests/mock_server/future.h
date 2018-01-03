@@ -81,6 +81,9 @@ future_get_const_bson_ptr (future_t *future);
 const_bson_ptr_ptr
 future_get_const_bson_ptr_ptr (future_t *future);
 
+mongoc_async_ptr
+future_get_mongoc_async_ptr (future_t *future);
+
 mongoc_bulk_operation_ptr
 future_get_mongoc_bulk_operation_ptr (future_t *future);
 

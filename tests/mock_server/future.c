@@ -181,6 +181,18 @@ future_get_const_bson_ptr_ptr (future_t *future)
    abort ();
 }
 
+mongoc_async_ptr
+future_get_mongoc_async_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_async_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
+   abort ();
+}
+
 mongoc_bulk_operation_ptr
 future_get_mongoc_bulk_operation_ptr (future_t *future)
 {

@@ -69,6 +69,7 @@ typedef_list = [
     typedef("const_bson_ptr_ptr", "const bson_t **"),
 
     # libmongoc.
+    typedef("mongoc_async_ptr", "mongoc_async_t *"),
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
     typedef("mongoc_client_pool_ptr", "mongoc_client_pool_t *"),
@@ -108,6 +109,10 @@ future_function = namedtuple("future_function", ["ret_type", "name", "params"])
 # a background thread, and background_cursor_next to run on the thread and
 # resolve the future.
 future_functions = [
+    future_function("void",
+                    "mongoc_async_run",
+                    [param("mongoc_async_ptr", "async")]),
+
     future_function("uint32_t",
                     "mongoc_bulk_operation_execute",
                     [param("mongoc_bulk_operation_ptr", "bulk"),

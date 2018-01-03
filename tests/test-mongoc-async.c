@@ -1,9 +1,11 @@
 #include <mongoc.h>
 
+#include "mongoc-util-private.h"
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
+#include "mock_server/future-functions.h"
 #include "mongoc-errno-private.h"
 
 #undef MONGOC_LOG_DOMAIN
@@ -13,7 +15,7 @@
 #define NSERVERS 10
 
 struct result {
-   int32_t max_wire_version;
+   int32_t server_id;
    bool finished;
 };
 
@@ -33,9 +35,9 @@ test_ismaster_helper (mongoc_async_cmd_result_t result,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
-   BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "serverId"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
-   r->max_wire_version = bson_iter_int32 (&iter);
+   r->server_id = bson_iter_int32 (&iter);
    r->finished = true;
 }
 
@@ -55,7 +57,12 @@ test_ismaster_impl (bool with_ssl)
    int r;
    int i;
    int errcode;
+   int offset;
+   int server_id;
    bson_t q = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   char *reply;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = {0};
@@ -69,8 +76,7 @@ test_ismaster_impl (bool with_ssl)
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
 
    for (i = 0; i < NSERVERS; i++) {
-      /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server_with_autoismaster (i + 2);
+      servers[i] = mock_server_new ();
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
@@ -135,7 +141,29 @@ test_ismaster_impl (bool with_ssl)
                             TIMEOUT);
    }
 
-   mongoc_async_run (async);
+   future = future_async_run (async);
+
+   /* start in the middle - prove scanner handles replies in any order */
+   offset = NSERVERS / 2;
+   for (i = 0; i < NSERVERS; i++) {
+      server_id = (i + offset) % NSERVERS;
+      request = mock_server_receives_command (
+         servers[server_id], "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+
+      /* use "serverId" field to distinguish among responses */
+      reply = bson_strdup_printf ("{'ok': 1,"
+                                  " 'ismaster': true,"
+                                  " 'minWireVersion': 0,"
+                                  " 'maxWireVersion': 1000,"
+                                  " 'serverId': %d}",
+                                  server_id);
+
+      mock_server_replies_simple (request, reply);
+      bson_free (reply);
+      request_destroy (request);
+   }
+
+   BSON_ASSERT (future_wait (future));
 
    for (i = 0; i < NSERVERS; i++) {
       if (!results[i].finished) {
@@ -143,12 +171,11 @@ test_ismaster_impl (bool with_ssl)
          abort ();
       }
 
-      /* received the maxWireVersion configured above */
-      ASSERT_CMPINT (i + 2, ==, results[i].max_wire_version);
+      ASSERT_CMPINT (i, ==, results[i].server_id);
    }
 
    mongoc_async_destroy (async);
-
+   future_destroy (future);
    bson_destroy (&q);
 
    for (i = 0; i < NSERVERS; i++) {

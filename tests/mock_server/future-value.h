@@ -27,6 +27,7 @@ typedef bson_error_t * bson_error_ptr;
 typedef bson_t * bson_ptr;
 typedef const bson_t * const_bson_ptr;
 typedef const bson_t ** const_bson_ptr_ptr;
+typedef mongoc_async_t * mongoc_async_ptr;
 typedef mongoc_bulk_operation_t * mongoc_bulk_operation_ptr;
 typedef mongoc_client_t * mongoc_client_ptr;
 typedef mongoc_client_pool_t * mongoc_client_pool_ptr;
@@ -64,6 +65,7 @@ typedef enum {
    future_value_bson_ptr_type,
    future_value_const_bson_ptr_type,
    future_value_const_bson_ptr_ptr_type,
+   future_value_mongoc_async_ptr_type,
    future_value_mongoc_bulk_operation_ptr_type,
    future_value_mongoc_client_ptr_type,
    future_value_mongoc_client_pool_ptr_type,
@@ -109,6 +111,7 @@ typedef struct _future_value_t
       bson_ptr bson_ptr_value;
       const_bson_ptr const_bson_ptr_value;
       const_bson_ptr_ptr const_bson_ptr_ptr_value;
+      mongoc_async_ptr mongoc_async_ptr_value;
       mongoc_bulk_operation_ptr mongoc_bulk_operation_ptr_value;
       mongoc_client_ptr mongoc_client_ptr_value;
       mongoc_client_pool_ptr mongoc_client_pool_ptr_value;
@@ -264,6 +267,15 @@ future_value_set_const_bson_ptr_ptr(
 
 const_bson_ptr_ptr
 future_value_get_const_bson_ptr_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_async_ptr(
+   future_value_t *future_value,
+   mongoc_async_ptr value);
+
+mongoc_async_ptr
+future_value_get_mongoc_async_ptr (
    future_value_t *future_value);
 
 void

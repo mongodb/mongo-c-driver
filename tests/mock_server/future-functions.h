@@ -16,6 +16,13 @@
 
 
 future_t *
+future_async_run (
+
+   mongoc_async_ptr async
+);
+
+
+future_t *
 future_bulk_operation_execute (
 
    mongoc_bulk_operation_ptr bulk,
