@@ -7478,8 +7478,7 @@ buildvariants:
     - ".compression"
     - "debug-compile-scan-build"
     - "debug-compile-sanitizer-address-clang"
-# TODO CDRIVER-2328
-#    - "debug-compile-sanitizer-undefined"
+    - "debug-compile-sanitizer-undefined"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
