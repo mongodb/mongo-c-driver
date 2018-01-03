@@ -1084,7 +1084,7 @@ add_option_to_uri_str (bson_string_t *uri_string,
    if (strchr (uri_string->str, '?')) {
       bson_string_append_c (uri_string, '&');
    } else {
-      bson_string_append_c (uri_string, '?');
+      bson_string_append_printf (uri_string, "/?");
    }
 
    bson_string_append_printf (uri_string, "%s=%s", option, value);
