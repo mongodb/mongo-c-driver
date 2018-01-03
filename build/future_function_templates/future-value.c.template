@@ -25,13 +25,13 @@ void
 future_value_set_{{ T }} (future_value_t *future_value, {{ T }} value)
 {
    future_value->type = future_value_{{ T }}_type;
-   future_value->{{ T }}_value = value;
+   future_value->value.{{ T }}_value = value;
 }
 
 {{ T }}
 future_value_get_{{ T }} (future_value_t *future_value)
 {
    BSON_ASSERT (future_value->type == future_value_{{ T }}_type);
-   return future_value->{{ T }}_value;
+   return future_value->value.{{ T }}_value;
 }
 {% endfor %}
