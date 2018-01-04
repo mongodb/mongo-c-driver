@@ -24,7 +24,7 @@ set PATH=%PATH%;"c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
-%TAR% xf ..\..\libbson.tar.gz -C . --strip-components=1
+%TAR% xf ..\..\..\..\libbson.tar.gz -C . --strip-components=1
 
 if "%LINK_STATIC%"=="1" (
   %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF .

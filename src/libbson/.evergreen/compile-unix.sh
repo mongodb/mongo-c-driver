@@ -114,7 +114,7 @@ CFLAGS="$CFLAGS -Werror"
 if [ "$RELEASE" ]; then
    # Build from the release tarball.
    mkdir build-dir
-   $TAR xf ../libbson.tar.gz -C build-dir --strip-components=1
+   $TAR xf ../../../libbson.tar.gz -C build-dir --strip-components=1
    cd build-dir
    CONFIGURE_SCRIPT="./configure"
 fi

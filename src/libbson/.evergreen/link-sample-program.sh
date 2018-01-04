@@ -39,7 +39,7 @@ rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
-$TAR xf ../../libbson.tar.gz -C . --strip-components=1
+$TAR xf ../../../../libbson.tar.gz -C . --strip-components=1
 
 if [ "$LINK_STATIC" ]; then
   if [ "$BUILD_LIBBSON_WITH_CMAKE" ]; then

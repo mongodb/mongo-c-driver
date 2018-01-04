@@ -22,7 +22,7 @@ if [ "$RELEASE" ]; then
    TEST_PATH="./Release/test-libbson.exe"
    # Build from the release tarball.
    mkdir build-dir
-   tar xf ../libbson.tar.gz -C build-dir --strip-components=1
+   tar xf ../../../libbson.tar.gz -C build-dir --strip-components=1
    cd build-dir
 else
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_BUILD_TYPE=Debug"
