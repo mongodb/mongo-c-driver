@@ -46,24 +46,49 @@ SecIdentityCreate (CFAllocatorRef allocator,
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-secure_transport"
 
+char *
+_mongoc_cfstringref_to_cstring (CFStringRef str)
+{
+   CFIndex length;
+   CFStringEncoding encoding;
+   CFIndex max_size;
+   char *cs;
 
-void
+   if (!str) {
+      return NULL;
+   }
+
+   if (CFGetTypeID (str) != CFStringGetTypeID ()) {
+      return NULL;
+   }
+
+   length = CFStringGetLength (str);
+   encoding = kCFStringEncodingASCII;
+   max_size = CFStringGetMaximumSizeForEncoding (length, encoding) + 1;
+   cs = bson_malloc ((size_t) max_size);
+
+   if (CFStringGetCString (str, cs, max_size, encoding)) {
+      return cs;
+   }
+
+   bson_free (cs);
+   return NULL;
+}
+
+static void
 _bson_append_cftyperef (bson_string_t *retval, const char *label, CFTypeRef str)
 {
-   if (str && CFGetTypeID (str) == CFStringGetTypeID ()) {
-      CFIndex length = CFStringGetLength (str);
-      CFStringEncoding encoding = kCFStringEncodingASCII;
-      CFIndex maxSize =
-         CFStringGetMaximumSizeForEncoding (length, encoding) + 1;
+   char *cs;
 
-      char *cs = bson_malloc ((size_t) maxSize);
-      if (CFStringGetCString (str, cs, maxSize, encoding)) {
+   if (str) {
+      cs = _mongoc_cfstringref_to_cstring (str);
+
+      if (cs) {
          bson_string_append_printf (retval, "%s%s", label, cs);
+         bson_free (cs);
       } else {
          bson_string_append_printf (retval, "%s(null)", label);
       }
-
-      bson_free (cs);
    }
 }
 
@@ -464,10 +489,8 @@ mongoc_secure_transport_write (SSLConnectionRef connection,
    switch (errno) {
    case EAGAIN:
       RETURN (errSSLWouldBlock);
-      break;
    default:
       RETURN (-36); /* ioErr */
-      break;
    }
 }
 #endif

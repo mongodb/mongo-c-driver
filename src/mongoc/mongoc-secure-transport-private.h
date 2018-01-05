@@ -30,6 +30,8 @@
 
 BSON_BEGIN_DECLS
 
+char *
+_mongoc_cfstringref_to_cstring (CFStringRef ref);
 
 char *
 _mongoc_secure_transport_extract_subject (const char *filename,
@@ -48,6 +50,7 @@ bool
 mongoc_secure_transport_setup_ca (
    mongoc_stream_tls_secure_transport_t *secure_transport,
    mongoc_ssl_opt_t *opt);
+
 bool
 mongoc_secure_transport_setup_certificate (
    mongoc_stream_tls_secure_transport_t *secure_transport,

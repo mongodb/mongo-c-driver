@@ -407,6 +407,8 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
                                               bson_error_t *error)
 {
    OSStatus ret = 0;
+   CFStringRef err;
+   char *err_str;
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
    mongoc_stream_tls_secure_transport_t *secure_transport =
       (mongoc_stream_tls_secure_transport_t *) tls->ctx;
@@ -429,11 +431,17 @@ mongoc_stream_tls_secure_transport_handshake (mongoc_stream_t *stream,
       *events = POLLIN | POLLOUT;
    } else {
       *events = 0;
+      err = SecCopyErrorMessageString (ret, NULL);
+      err_str = _mongoc_cfstringref_to_cstring (err);
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: %d",
+                      "TLS handshake failed: %s (%d)",
+                      err_str,
                       ret);
+
+      bson_free (err_str);
+      CFRelease (err);
    }
 
    RETURN (false);
