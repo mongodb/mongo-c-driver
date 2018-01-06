@@ -211,6 +211,20 @@ future_value_get_const_bson_ptr_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_async_ptr (future_value_t *future_value, mongoc_async_ptr value)
+{
+   future_value->type = future_value_mongoc_async_ptr_type;
+   future_value->value.mongoc_async_ptr_value = value;
+}
+
+mongoc_async_ptr
+future_value_get_mongoc_async_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_mongoc_async_ptr_type);
+   return future_value->value.mongoc_async_ptr_value;
+}
+
+void
 future_value_set_mongoc_bulk_operation_ptr (future_value_t *future_value, mongoc_bulk_operation_ptr value)
 {
    future_value->type = future_value_mongoc_bulk_operation_ptr_type;
