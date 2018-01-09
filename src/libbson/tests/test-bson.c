@@ -2259,6 +2259,26 @@ test_bson_subtype_2 (void)
    bson_destroy (bson_ok);
 }
 
+/* CDRIVER-2455 Off-by-one error while appending regex */
+void
+test_bson_regex_lengths (void)
+{
+    bson_t new = BSON_INITIALIZER;
+    bson_oid_t oid;
+
+    bson_oid_init_from_string (&oid, "1234567890abcdef12345678");
+    bson_append_oid (&new, "0123456", -1, &oid);
+
+    bson_append_regex (&new,
+        "0_________1_________2_________3___4", -1,
+        "0_________1_________2_________3_________4_________5___4", "i");
+
+    ASSERT (new.len == 121);
+    ASSERT (new.flags & BSON_FLAG_STATIC);
+    ASSERT (!(new.flags & BSON_FLAG_INLINE));
+
+    bson_destroy(&new);
+}
 
 void
 test_bson_install (TestSuite *suite)
@@ -2345,5 +2365,6 @@ test_bson_install (TestSuite *suite)
                   "/bson/unsupported_type/empty_key",
                   test_bson_visit_unsupported_type_empty_key);
    TestSuite_Add (suite, "/bson/binary_subtype_2", test_bson_subtype_2);
+   TestSuite_Add (suite, "/bson/regex_length", test_bson_regex_lengths);
    TestSuite_Add (suite, "/util/next_power_of_two", test_next_power_of_two);
 }

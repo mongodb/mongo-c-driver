@@ -1588,7 +1588,7 @@ bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
 
    r = _bson_append (bson,
                      6,
-                     (1 + key_length + 1 + regex_length + 1 + options_sorted->len),
+                     (1 + key_length + 1 + regex_length + 1 + options_sorted->len + 1),
                      1,
                      &type,
                      key_length,
