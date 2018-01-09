@@ -838,39 +838,41 @@ started (const mongoc_apm_command_started_t *event)
       return;
    }
 
-   if (!bson_iter_init_find (&iter, cmd, "lsid")) {
-      fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
-      abort ();
-   }
-
-   bson_iter_bson (&iter, &lsid);
-   client_session_lsid = &test->cs->server_session->lsid;
-
-   if (test->expect_explicit_lsid) {
-      if (!match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
-         fprintf (stderr,
-                  "command %s should have used client session's lsid\n",
-                  cmd_name);
+   if (test->acknowledged) {
+      if (!bson_iter_init_find (&iter, cmd, "lsid")) {
+         fprintf (stderr, "no lsid sent with command %s\n", cmd_name);
          abort ();
       }
-   } else {
-      if (match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
-         fprintf (stderr,
-                  "command %s should not have used client session's lsid\n",
-                  cmd_name);
-         abort ();
-      }
-   }
 
-   if (bson_empty (&test->sent_lsid)) {
-      bson_destroy (&test->sent_lsid);
-      bson_copy_to (&lsid, &test->sent_lsid);
-   } else {
-      if (!match_bson_with_ctx (&lsid, &test->sent_lsid, false, &ctx)) {
-         fprintf (stderr,
-                  "command %s used different lsid than previous command\n",
-                  cmd_name);
-         abort ();
+      bson_iter_bson (&iter, &lsid);
+      client_session_lsid = &test->cs->server_session->lsid;
+
+      if (test->expect_explicit_lsid) {
+         if (!match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
+            fprintf (stderr,
+                     "command %s should have used client session's lsid\n",
+                     cmd_name);
+            abort ();
+         }
+      } else {
+         if (match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
+            fprintf (stderr,
+                     "command %s should not have used client session's lsid\n",
+                     cmd_name);
+            abort ();
+         }
+      }
+
+      if (bson_empty (&test->sent_lsid)) {
+         bson_destroy (&test->sent_lsid);
+         bson_copy_to (&lsid, &test->sent_lsid);
+      } else {
+         if (!match_bson_with_ctx (&lsid, &test->sent_lsid, false, &ctx)) {
+            fprintf (stderr,
+                     "command %s used different lsid than previous command\n",
+                     cmd_name);
+            abort ();
+         }
       }
    }
 

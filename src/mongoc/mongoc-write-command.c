@@ -430,18 +430,21 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    bson_init (&cmd);
    _mongoc_write_command_init (&cmd, command, collection, write_concern);
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
-   mongoc_cmd_parts_set_session (&parts, cs);
    parts.assembled.operation_id = command->operation_id;
    parts.is_write_command = true;
    parts.assembled.is_acknowledged =
       mongoc_write_concern_is_acknowledged (write_concern);
+   if (parts.assembled.is_acknowledged) {
+      mongoc_cmd_parts_set_session (&parts, cs);
+   }
 
    /* Write commands that include multi-document operations are not retryable.
     * Set this explicitly so that mongoc_cmd_parts_assemble does not need to
     * inspect the command body later. */
-   parts.allow_txn_number = command->flags.has_multi_write
-                               ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
-                               : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
+   parts.allow_txn_number =
+      (command->flags.has_multi_write || !parts.assembled.is_acknowledged)
+         ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
+         : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
 
    bson_iter_init (&iter, &command->cmd_opts);
    if (!mongoc_cmd_parts_append_opts (

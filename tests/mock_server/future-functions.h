@@ -218,6 +218,39 @@ future_collection_insert_one (
 
 
 future_t *
+future_collection_update_one (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr selector,
+   const_bson_ptr update,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_delete_one (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr selector,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_remove (
+   mongoc_collection_ptr collection,
+   mongoc_remove_flags_t flags,
+   const_bson_ptr selector,
+   const mongoc_write_concern_ptr write_concern,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_read_write_command_with_opts (
 
    mongoc_collection_ptr collection,

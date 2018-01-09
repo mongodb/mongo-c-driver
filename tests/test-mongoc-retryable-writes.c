@@ -792,6 +792,240 @@ test_command_with_opts (void *ctx)
 }
 
 
+static void
+test_insert_one_unacknowledged (void)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_client_session_t *cs;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* Create a session intentionally. However, unacknowledged writes should not
+    * use session so the session id won't be included in the request. */
+   cs = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_append (wc, &opts);
+
+   future = future_collection_insert_one (
+      collection, tmp_bson ("{}"), &opts, NULL, &error);
+
+   request = mock_server_receives_msg (
+      server,
+      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+      tmp_bson (
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+   ASSERT (future_get_bool (future));
+   mock_server_auto_endsessions (server);
+
+   request_destroy (request);
+   bson_destroy (&opts);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_update_one_unacknowledged (void)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_append (wc, &opts);
+
+   future = future_collection_update_one (collection,
+                                          tmp_bson ("{}"),
+                                          tmp_bson ("{'$set': {'x': 1}}"),
+                                          &opts,
+                                          NULL,
+                                          &error);
+
+   request = mock_server_receives_msg (
+      server,
+      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+      tmp_bson (
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+   ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   bson_destroy (&opts);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_delete_one_unacknowledged (void)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_append (wc, &opts);
+
+   future = future_collection_delete_one (
+      collection, tmp_bson ("{}"), &opts, NULL, &error);
+
+   request = mock_server_receives_msg (
+      server,
+      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+      tmp_bson (
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+   ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   bson_destroy (&opts);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_bulk_operation_execute_unacknowledged (void)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   mongoc_bulk_operation_t *bulk;
+   bson_t opts = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_set_journal (wc, false);
+   mongoc_write_concern_append (wc, &opts);
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+   future = future_bulk_operation_execute (bulk, NULL, &error);
+
+   request = mock_server_receives_msg (
+      server,
+      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+      tmp_bson (
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+   ASSERT (future_get_uint32_t (future) == 1);
+
+   request_destroy (request);
+   bson_destroy (&opts);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_remove_unacknowledged (void)
+{
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_mongos_new (WIRE_VERSION_RETRY_WRITES);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_set_journal (wc, false);
+
+   future = future_collection_remove (
+      collection, 1, tmp_bson ("{'a': 1}"), wc, &error);
+
+   request = mock_server_receives_msg (
+      server,
+      2, /* set moreToCome bit in mongoc_op_msg_flags_t */
+      tmp_bson (
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+   ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   bson_destroy (&opts);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -826,4 +1060,25 @@ test_retryable_writes_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
+   TestSuite_AddMockServerTest (suite,
+                                "/retryable_writes/insert_one_unacknowledged",
+                                test_insert_one_unacknowledged,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/retryable_writes/update_one_unacknowledged",
+                                test_update_one_unacknowledged,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/retryable_writes/delete_one_unacknowledged",
+                                test_delete_one_unacknowledged,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/retryable_writes/remove_unacknowledged",
+                                test_remove_unacknowledged,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/retryable_writes/bulk_operation_execute_unacknowledged",
+      test_bulk_operation_execute_unacknowledged,
+      test_framework_skip_if_no_crypto);
 }

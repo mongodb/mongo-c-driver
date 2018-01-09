@@ -486,6 +486,10 @@ _allow_txn_number (const mongoc_cmd_parts_t *parts,
       return false;
    }
 
+   if (!parts->assembled.is_acknowledged) {
+      return false;
+   }
+
    if (!strcasecmp (parts->assembled.command_name, "findandmodify")) {
       return true;
    }
@@ -617,7 +621,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       /* If an explicit session was not provided and lsid is not prohibited,
        * attempt to create an implicit session (ignoring any errors). */
-      if (!cs && !parts->prohibit_lsid) {
+      if (!cs && !parts->prohibit_lsid && parts->assembled.is_acknowledged) {
          cs = mongoc_client_start_session (parts->client, NULL, NULL);
 
          if (cs) {
