@@ -1,3 +1,26 @@
+Next release
+============
+
+  * All functions that accept read concern now prohibit it if MongoDB is too
+    old to support it (pre-3.2).
+  * mongoc_collection_find_and_modify_with_opts now prohibits write concern if
+    MongoDB is too old to support it (pre-3.2).
+  * Other helper functions for commands that write, now prohibit write concern
+    if MongoDB is too old to support it (pre-3.4):
+      mongoc_client_read_write_command_with_opts
+      mongoc_client_write_command_with_opts
+      mongoc_collection_read_write_command_with_opts
+      mongoc_collection_write_command_with_opts
+      mongoc_database_read_write_command_with_opts
+      mongoc_database_write_command_with_opts
+      mongoc_collection_aggregate with $out
+      mongoc_collection_drop_index_with_opts
+      mongoc_collection_drop_with_opts
+      mongoc_collection_rename_with_opts
+      mongoc_database_drop_with_opts
+    Write concern behavior is unchanged for regular CRUD functions.
+
+
 mongo-c-driver 1.9.0
 ====================
 

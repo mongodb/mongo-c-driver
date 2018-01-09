@@ -288,6 +288,8 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 {
    mongoc_server_stream_t *server_stream = NULL;
    bool has_out_key = false;
+   bool has_read_concern;
+   bool has_write_concern;
    bson_iter_t kiter;
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
@@ -390,6 +392,20 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       bson_concat (&cursor->opts, opts);
    }
 
+   has_write_concern = bson_has_field (&cursor->opts, "writeConcern");
+   if (has_write_concern &&
+       server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                      "\"aggregate\" with \"$out\" does not support "
+                      "writeConcern with wire version %d, wire version %d is "
+                      "required",
+                      server_stream->sd->max_wire_version,
+                      WIRE_VERSION_CMD_WRITE_CONCERN);
+      GOTO (done);
+   }
+
    /* Only inherit WriteConcern when for aggregate with $out */
    if (!bson_has_field (&cursor->opts, "writeConcern") && has_out_key) {
       mongoc_write_concern_destroy (cursor->write_concern);
@@ -397,19 +413,11 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          mongoc_collection_get_write_concern (collection));
    }
 
-   if (!bson_has_field (&cursor->opts, "readConcern")) {
+   has_read_concern = bson_has_field (&cursor->opts, "readConcern");
+   if (!has_read_concern) {
       mongoc_read_concern_destroy (cursor->read_concern);
       cursor->read_concern = mongoc_read_concern_copy (
          mongoc_collection_get_read_concern (collection));
-
-      if (cursor->read_concern->level != NULL) {
-         const bson_t *read_concern_bson;
-
-         read_concern_bson =
-            _mongoc_read_concern_get_bson (cursor->read_concern);
-
-         BSON_APPEND_DOCUMENT (&cursor->opts, "readConcern", read_concern_bson);
-      }
    }
 
    _mongoc_cursor_cursorid_init (cursor, &command);

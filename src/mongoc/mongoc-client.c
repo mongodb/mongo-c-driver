@@ -1719,6 +1719,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    bson_t reply_local;
    bson_t *reply_ptr;
    uint32_t server_id;
+   bool explicit_write_concern;
+   int32_t wc_wire_version;
    bool ret = false;
 
    ENTRY;
@@ -1790,14 +1792,27 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          }
       }
 
-      /* use default write concern unless it's in opts */
-      if ((mode & MONGOC_CMD_WRITE) &&
-          !mongoc_write_concern_is_default (default_wc) &&
-          (!opts || !bson_has_field (opts, "writeConcern"))) {
-         bool is_fam = !strcasecmp (command_name, "findandmodify");
+      if (mode & MONGOC_CMD_WRITE) {
+         explicit_write_concern = opts && bson_has_field (opts, "writeConcern");
+         wc_wire_version = !strcasecmp (command_name, "findandmodify")
+                              ? WIRE_VERSION_FAM_WRITE_CONCERN
+                              : WIRE_VERSION_CMD_WRITE_CONCERN;
 
-         if ((is_fam && wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
-             (!is_fam && wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN)) {
+         if (explicit_write_concern && wire_version < wc_wire_version) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "\"%s\" command does not support writeConcern with "
+                            "wire version %d, wire version %d is required",
+                            command_name,
+                            wire_version,
+                            wc_wire_version);
+            GOTO (err);
+         }
+
+         /* use default write concern unless it's in opts */
+         if (!mongoc_write_concern_is_default (default_wc) &&
+             !explicit_write_concern && wire_version >= wc_wire_version) {
             bson_append_document (&parts.extra,
                                   "writeConcern",
                                   12,
@@ -1807,13 +1822,24 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
 
       /* use read prefs and read concern for read commands, unless in opts */
       if ((mode & MONGOC_CMD_READ) &&
-          wire_version >= WIRE_VERSION_READ_CONCERN &&
           !mongoc_read_concern_is_default (default_rc) &&
           (!opts || !bson_has_field (opts, "readConcern"))) {
-         bson_append_document (&parts.extra,
-                               "readConcern",
-                               11,
-                               _mongoc_read_concern_get_bson (default_rc));
+         if (wire_version >= WIRE_VERSION_READ_CONCERN) {
+            bson_append_document (&parts.extra,
+                                  "readConcern",
+                                  11,
+                                  _mongoc_read_concern_get_bson (default_rc));
+         } else {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                            "\"%s\" command does not support readConcern with "
+                            "wire version %d, wire version %d is required",
+                            command_name,
+                            wire_version,
+                            WIRE_VERSION_READ_CONCERN);
+            GOTO (err);
+         }
       }
 
       ret = _mongoc_client_command_with_stream (

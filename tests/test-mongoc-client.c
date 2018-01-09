@@ -171,7 +171,7 @@ test_server_id_option (void *ctx)
 
 
 static void
-test_client_cmd_w_write_concern (void)
+test_client_cmd_w_write_concern (void *ctx)
 {
    mongoc_write_concern_t *good_wc;
    mongoc_write_concern_t *bad_wc;
@@ -181,9 +181,6 @@ test_client_cmd_w_write_concern (void)
    bson_t reply;
    bson_t *opts = NULL;
    bson_error_t error;
-   bool wire_version_5;
-
-   wire_version_5 = test_framework_max_wire_version_at_least (5);
 
    opts = bson_new ();
    client = test_framework_client_new ();
@@ -218,23 +215,21 @@ test_client_cmd_w_write_concern (void)
    error.domain = 0;
 
    if (!test_framework_is_mongos ()) {
-      if (wire_version_5) {
-         mongoc_write_concern_set_w (bad_wc, 99);
-         bson_reinit (opts);
-         mongoc_write_concern_append_bad (bad_wc, opts);
+      mongoc_write_concern_set_w (bad_wc, 99);
+      bson_reinit (opts);
+      mongoc_write_concern_append_bad (bad_wc, opts);
 
-         /* bad write concern in opts */
-         ASSERT (!mongoc_client_write_command_with_opts (
-            client, "test", command, opts, &reply, &error));
-         if (test_framework_is_replset ()) { /* replset */
-            ASSERT_ERROR_CONTAINS (
-               error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
-         } else { /* standalone */
-            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
-            ASSERT_CMPINT (error.code, ==, 2);
-         }
-         bson_destroy (&reply);
+      /* bad write concern in opts */
+      ASSERT (!mongoc_client_write_command_with_opts (
+         client, "test", command, opts, &reply, &error));
+      if (test_framework_is_replset ()) { /* replset */
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+      } else { /* standalone */
+         ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+         ASSERT_CMPINT (error.code, ==, 2);
       }
+      bson_destroy (&reply);
    }
 
    mongoc_write_concern_destroy (good_wc);
@@ -1189,8 +1184,9 @@ test_command_with_opts_legacy (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
-   bson_t *cmd;
    bson_t *opts;
+   bson_t *cmd;
+   mongoc_write_concern_t *wc;
    mongoc_read_concern_t *read_concern;
    bson_error_t error;
    future_t *future;
@@ -1200,11 +1196,18 @@ test_command_with_opts_legacy (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_client_set_write_concern (client, wc);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "local");
+   mongoc_client_set_read_concern (client, read_concern);
+
    /* writeConcern is omitted */
    cmd = tmp_bson ("{'create': 'db'}");
-   opts = tmp_bson ("{'writeConcern': {'w': 1}}");
    future = future_client_write_command_with_opts (
-      client, "admin", cmd, opts, NULL, &error);
+      client, "admin", cmd, NULL, NULL, &error);
 
    request = mock_server_receives_command (
       server,
@@ -1218,17 +1221,15 @@ test_command_with_opts_legacy (void)
 
    /* readConcern causes error */
    cmd = tmp_bson ("{'count': 'collection'}");
-   read_concern = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (read_concern, "local");
-   opts = tmp_bson (NULL);
-   mongoc_read_concern_append (read_concern, opts);
    ASSERT (!mongoc_client_read_command_with_opts (
-      client, "db", cmd, NULL, opts, NULL, &error));
+      client, "db", cmd, NULL, NULL, NULL, &error));
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                           "does not support readConcern");
+
+   mongoc_client_set_read_concern (client, NULL);
 
    /* collation causes error */
    cmd = tmp_bson ("{'create': 'db'}");
@@ -1243,6 +1244,7 @@ test_command_with_opts_legacy (void)
 
    mongoc_read_concern_destroy (read_concern);
    mongoc_client_destroy (client);
+   mongoc_write_concern_destroy (wc);
    mock_server_destroy (server);
 }
 
@@ -3451,9 +3453,12 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/Client/command_w_write_concern",
-                      test_client_cmd_w_write_concern);
+                      test_client_cmd_w_write_concern,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_5);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
    TestSuite_AddMockServerTest (suite,

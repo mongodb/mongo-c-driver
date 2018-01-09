@@ -14,7 +14,7 @@
 
 
 static void
-test_create_with_write_concern (void)
+test_create_with_write_concern (void *ctx)
 {
    mongoc_database_t *database;
    mongoc_collection_t *collection;
@@ -401,41 +401,41 @@ test_drop (void)
 
    mongoc_database_destroy (database);
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   database = mongoc_client_get_database (client, dbname);
-
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_database_drop_with_opts (database, opts, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
-   /* valid writeConcern */
-   mongoc_write_concern_set_w (good_wc, 1);
-
-   bson_reinit (opts);
-   mongoc_write_concern_append (good_wc, opts);
-   ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error),
-                    error);
-   BSON_ASSERT (!error.code);
-   BSON_ASSERT (!error.domain);
-
-   /* invalid writeConcern */
-   mongoc_write_concern_set_w (bad_wc, 99);
-   mongoc_database_destroy (database);
-
-   if (!test_framework_is_mongos ()) { /* skip if sharded */
+   if (wire_version_5) {
+      /* invalid writeConcern */
+      bad_wc->wtimeout = -10;
       database = mongoc_client_get_database (client, dbname);
+
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      r = mongoc_database_drop_with_opts (database, opts, &error);
-      if (wire_version_5) {
+      ASSERT (!mongoc_database_drop_with_opts (database, opts, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid writeConcern");
+      bad_wc->wtimeout = 0;
+      error.code = 0;
+      error.domain = 0;
+
+      /* valid writeConcern */
+      mongoc_write_concern_set_w (good_wc, 1);
+
+      bson_reinit (opts);
+      mongoc_write_concern_append (good_wc, opts);
+      ASSERT_OR_PRINT (mongoc_database_drop_with_opts (database, opts, &error),
+                       error);
+      BSON_ASSERT (!error.code);
+      BSON_ASSERT (!error.domain);
+
+      /* invalid writeConcern */
+      mongoc_write_concern_set_w (bad_wc, 99);
+      mongoc_database_destroy (database);
+
+      if (!test_framework_is_mongos ()) { /* skip if sharded */
+         database = mongoc_client_get_database (client, dbname);
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+         r = mongoc_database_drop_with_opts (database, opts, &error);
          ASSERT (!r);
          if (test_framework_is_replset ()) {
             ASSERT_ERROR_CONTAINS (
@@ -444,13 +444,9 @@ test_drop (void)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
-      } else { /* if wire_version <= 4, no error */
-         ASSERT_OR_PRINT (r, error);
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
+         mongoc_database_destroy (database);
       }
-      mongoc_database_destroy (database);
-   }
+   } /* wire_version_5 */
 
    bson_free (dbname);
    bson_destroy (opts);
@@ -1011,9 +1007,12 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/Database/create_with_write_concern",
-                      test_create_with_write_concern);
+                      test_create_with_write_concern,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_5);
    TestSuite_AddLive (suite, "/Database/copy", test_copy);
    TestSuite_AddLive (suite, "/Database/has_collection", test_has_collection);
    TestSuite_AddLive (suite, "/Database/command", test_command);

@@ -153,6 +153,15 @@ future_collection_create_index_with_opts (
 
 
 future_t *
+future_collection_drop_with_opts (
+
+   mongoc_collection_ptr collection,
+   bson_ptr opts,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_find_and_modify_with_opts (
 
    mongoc_collection_ptr collection,

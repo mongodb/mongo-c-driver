@@ -20,7 +20,7 @@ BEGIN_IGNORE_DEPRECATIONS
 
 
 static void
-test_aggregate_w_write_concern (void)
+test_aggregate_w_write_concern (void *ctx)
 {
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
@@ -1512,42 +1512,42 @@ test_index (void)
    ASSERT_OR_PRINT (
       mongoc_collection_create_index (collection, &keys, &opt, &error), error);
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_drop_index_with_opts (
-      collection, "hello_1", opts, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
-   /* valid writeConcern on all configs*/
-   mongoc_write_concern_set_w (good_wc, 1);
-   bson_reinit (opts);
-   mongoc_write_concern_append (good_wc, opts);
-   ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (
-                       collection, "hello_1", opts, &error),
-                    error);
-   ASSERT (!error.code);
-   ASSERT (!error.domain);
-
-   /* writeConcern that results in writeConcernError */
-   mongoc_write_concern_set_w (bad_wc, 99);
-
-   if (!test_framework_is_mongos ()) { /* skip if sharded */
-      ASSERT_OR_PRINT (
-         mongoc_collection_create_index (collection, &keys, &opt, &error),
-         error);
+   if (wire_version_5) {
+      /* invalid writeConcern */
+      bad_wc->wtimeout = -10;
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      r = mongoc_collection_drop_index_with_opts (
-         collection, "hello_1", opts, &error);
-      if (wire_version_5) {
+      ASSERT (!mongoc_collection_drop_index_with_opts (
+         collection, "hello_1", opts, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid writeConcern");
+      bad_wc->wtimeout = 0;
+      error.code = 0;
+      error.domain = 0;
+
+      /* valid writeConcern on all configs*/
+      mongoc_write_concern_set_w (good_wc, 1);
+      bson_reinit (opts);
+      mongoc_write_concern_append (good_wc, opts);
+      ASSERT_OR_PRINT (mongoc_collection_drop_index_with_opts (
+                          collection, "hello_1", opts, &error),
+                       error);
+      ASSERT (!error.code);
+      ASSERT (!error.domain);
+
+      /* writeConcern that results in writeConcernError */
+      mongoc_write_concern_set_w (bad_wc, 99);
+
+      if (!test_framework_is_mongos ()) { /* skip if sharded */
+         ASSERT_OR_PRINT (
+            mongoc_collection_create_index (collection, &keys, &opt, &error),
+            error);
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+         r = mongoc_collection_drop_index_with_opts (
+            collection, "hello_1", opts, &error);
          ASSERT (!r);
 
          if (test_framework_is_replset ()) { /* replica set */
@@ -1557,12 +1557,8 @@ test_index (void)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
-      } else { /* if version <= 4, no error */
-         ASSERT_OR_PRINT (r, error);
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
       }
-   }
+   } /* wire_version_5 */
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
@@ -2418,44 +2414,43 @@ test_drop (void)
       error);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
-   ASSERT (!mongoc_collection_drop (collection, &error));
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   ASSERT_OR_PRINT (
-      mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
-      error);
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_drop_with_opts (collection, opts, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid writeConcern");
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
-   /* valid writeConcern */
-   mongoc_write_concern_set_w (good_wc, 1);
-   bson_reinit (opts);
-   mongoc_write_concern_append (good_wc, opts);
-   ASSERT_OR_PRINT (mongoc_collection_drop_with_opts (collection, opts, &error),
-                    error);
-   ASSERT (!error.code);
-   ASSERT (!error.domain);
-
-   /* writeConcern that results in writeConcernError */
-   mongoc_write_concern_set_w (bad_wc, 99);
-
-   if (!test_framework_is_mongos ()) { /* skip if sharded */
+   if (wire_version_5) {
+      /* invalid writeConcern */
+      bad_wc->wtimeout = -10;
       ASSERT_OR_PRINT (
          mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
          error);
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
-      r = mongoc_collection_drop_with_opts (collection, opts, &error);
-      if (wire_version_5) {
+      ASSERT (!mongoc_collection_drop_with_opts (collection, opts, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid writeConcern");
+      bad_wc->wtimeout = 0;
+      error.code = 0;
+      error.domain = 0;
+
+      /* valid writeConcern */
+      mongoc_write_concern_set_w (good_wc, 1);
+      bson_reinit (opts);
+      mongoc_write_concern_append (good_wc, opts);
+      ASSERT_OR_PRINT (
+         mongoc_collection_drop_with_opts (collection, opts, &error), error);
+      ASSERT (!error.code);
+      ASSERT (!error.domain);
+
+      /* writeConcern that results in writeConcernError */
+      mongoc_write_concern_set_w (bad_wc, 99);
+
+      if (!test_framework_is_mongos ()) { /* skip if sharded */
+         ASSERT_OR_PRINT (
+            mongoc_collection_insert_one (collection, doc, NULL, NULL, &error),
+            error);
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+         r = mongoc_collection_drop_with_opts (collection, opts, &error);
          ASSERT (!r);
          if (test_framework_is_replset ()) { /* replica set */
             ASSERT_ERROR_CONTAINS (
@@ -2464,12 +2459,8 @@ test_drop (void)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
-      } else { /* if wire_version <= 4, no error */
-         ASSERT_OR_PRINT (r, error);
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
       }
-   }
+   } /* wire_version_5 */
 
    bson_destroy (doc);
    bson_destroy (opts);
@@ -3153,43 +3144,43 @@ test_rename (void)
    ASSERT (found);
    ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
 
-   /* invalid writeConcern */
-   bad_wc->wtimeout = -10;
-   bson_reinit (opts);
-   mongoc_write_concern_append_bad (bad_wc, opts);
-   ASSERT (!mongoc_collection_rename_with_opts (
-      collection, dbname, "test_rename.3", false, opts, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid writeConcern");
-   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
-
-   bad_wc->wtimeout = 0;
-   error.code = 0;
-   error.domain = 0;
-
-   /* valid writeConcern on all configs */
-   mongoc_write_concern_set_w (good_wc, 1);
-   bson_reinit (opts);
-   mongoc_write_concern_append (good_wc, opts);
-   r = mongoc_collection_rename_with_opts (
-      collection, dbname, "test_rename.3", false, opts, &error);
-   ASSERT_OR_PRINT (r, error);
-   ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
-
-   ASSERT (!error.code);
-   ASSERT (!error.domain);
-
-   /* writeConcern that results in writeConcernError */
-   mongoc_write_concern_set_w (bad_wc, 99);
-
-   if (!test_framework_is_mongos ()) {
+   if (wire_version_5) {
+      /* invalid writeConcern */
+      bad_wc->wtimeout = -10;
       bson_reinit (opts);
       mongoc_write_concern_append_bad (bad_wc, opts);
+      ASSERT (!mongoc_collection_rename_with_opts (
+         collection, dbname, "test_rename.3", false, opts, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Invalid writeConcern");
+      ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.2");
+
+      bad_wc->wtimeout = 0;
+      error.code = 0;
+      error.domain = 0;
+
+      /* valid writeConcern on all configs */
+      mongoc_write_concern_set_w (good_wc, 1);
+      bson_reinit (opts);
+      mongoc_write_concern_append (good_wc, opts);
       r = mongoc_collection_rename_with_opts (
-         collection, dbname, "test_rename.4", false, opts, &error);
-      if (wire_version_5) {
+         collection, dbname, "test_rename.3", false, opts, &error);
+      ASSERT_OR_PRINT (r, error);
+      ASSERT_CMPSTR (mongoc_collection_get_name (collection), "test_rename.3");
+
+      ASSERT (!error.code);
+      ASSERT (!error.domain);
+
+      /* writeConcern that results in writeConcernError */
+      mongoc_write_concern_set_w (bad_wc, 99);
+
+      if (!test_framework_is_mongos ()) {
+         bson_reinit (opts);
+         mongoc_write_concern_append_bad (bad_wc, opts);
+         r = mongoc_collection_rename_with_opts (
+            collection, dbname, "test_rename.4", false, opts, &error);
          ASSERT (!r);
 
          /* check that collection name has not changed */
@@ -3202,16 +3193,8 @@ test_rename (void)
             ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
             ASSERT_CMPINT (error.code, ==, 2);
          }
-      } else { /* if wire version <= 4, no error */
-         ASSERT_OR_PRINT (r, error);
-
-         /* check that collection has been renamed */
-         ASSERT_CMPSTR (mongoc_collection_get_name (collection),
-                        "test_rename.4");
-         ASSERT (!error.code);
-         ASSERT (!error.domain);
       }
-   }
+   } /* wire_version_5 */
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
@@ -5430,9 +5413,12 @@ test_collection_install (TestSuite *suite)
 {
    test_aggregate_install (suite);
 
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/Collection/aggregate/write_concern",
-                      test_aggregate_w_write_concern);
+                      test_aggregate_w_write_concern,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_5);
    TestSuite_AddLive (
       suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid);
    TestSuite_AddLive (suite, "/Collection/insert_many", test_insert_many);

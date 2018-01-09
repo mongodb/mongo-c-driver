@@ -1346,6 +1346,17 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    }
 
    if (cursor->read_concern->level) {
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support readConcern "
+                         "for the \"%s\" command",
+                         _mongoc_get_command_name (command));
+
+         GOTO (done);
+      }
+
       bson_concat (&parts.read_concern_document,
                    _mongoc_read_concern_get_bson (cursor->read_concern));
    }

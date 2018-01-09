@@ -5,6 +5,9 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 
 static void
@@ -406,6 +409,102 @@ test_write_concern_always_mutable (void)
 }
 
 
+static void
+_test_wc_request (future_t *future,
+                  mock_server_t *server,
+                  bson_error_t *error,
+                  bool allow)
+{
+   request_t *request;
+
+   if (allow) {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'writeConcern': {'w': 2}}");
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+   } else {
+      BSON_ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS ((*error),
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "does not support writeConcern");
+   }
+
+   future_destroy (future);
+}
+
+
+static void
+_test_write_concern_wire_version (bool allow)
+{
+   bson_t *opts;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   bson_error_t error;
+
+   opts = tmp_bson ("{'writeConcern': {'w': 2}}");
+   server = mock_server_with_autoismaster (
+      allow ? WIRE_VERSION_CMD_WRITE_CONCERN
+            : WIRE_VERSION_CMD_WRITE_CONCERN - 1);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /*
+    * aggregate with $out
+    */
+   cursor = mongoc_collection_aggregate (collection,
+                                         MONGOC_QUERY_NONE,
+                                         tmp_bson ("[{'$out': 'foo'}]"),
+                                         opts,
+                                         NULL);
+   if (allow) {
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   } else {
+      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "does not support writeConcern");
+   }
+
+   /*
+    * generic mongoc_client_write_command_with_opts
+    */
+   future = future_client_write_command_with_opts (
+      client, "db", tmp_bson ("{'foo': 1}"), opts, NULL, &error);
+   _test_wc_request (future, server, &error, allow);
+
+   /*
+    * drop
+    */
+   future = future_collection_drop_with_opts (collection, opts, &error);
+   _test_wc_request (future, server, &error, allow);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_write_concern_allowed (void)
+{
+   _test_write_concern_wire_version (true);
+}
+
+
+static void
+test_write_concern_prohibited (void)
+{
+   _test_write_concern_wire_version (false);
+}
+
+
 void
 test_write_concern_install (TestSuite *suite)
 {
@@ -427,4 +526,8 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
    TestSuite_Add (
       suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
+   TestSuite_AddMockServerTest (
+      suite, "/WriteConcern/allowed", test_write_concern_allowed);
+   TestSuite_AddMockServerTest (
+      suite, "/WriteConcern/prohibited", test_write_concern_prohibited);
 }
