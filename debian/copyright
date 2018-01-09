@@ -3,7 +3,7 @@ Upstream-Name: mongo-c-driver
 Source: https://github.com/mongodb/mongo-c-driver/releases
 
 Files: *
-Copyright: 2013-2015 MongoDB, Inc.
+Copyright: 2009-2017 MongoDB, Inc.
 License: Apache-2.0
 
 Files: src/mongoc/mongoc-b64.c
@@ -32,21 +32,25 @@ License: BSD-1-clause
  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Files: build/autotools/m4/ax_pthread.m4
+Files: src/libbson/src/jsonsl/jsonsl.c src/libbson/src/jsonsl/jsonsl.h
+Copyright: 2012-2015 M. Nunberg, mnunberg@haskalah.org
+License: Expat
+
+Files: build/autotools/m4/ax_pthread.m4 src/libbson/build/autotools/m4/ax_pthread.m4
 Copyright: 2008 Steven G. Johnson <stevenj@alum.mit.edu>
            2011 Daniel Richard G. <skunk@iSKUNK.ORG>
 License: GPL-3+
 
-Files: build/autotools/m4/ax_check_link_flag.m4 build/autotools/m4/ax_check_compile_flag.m4
+Files: build/autotools/m4/ax_check_link_flag.m4 build/autotools/m4/ax_check_compile_flag.m4 src/libbson/build/autotools/m4/ax_check_link_flag.m4 src/libbson/build/autotools/m4/ax_check_compile_flag.m4
 Copyright: 2008 Guido U. Draheim <guidod@gmx.de>
            2011 Maarten Bosmans <mkbosmans@gmail.com>
 License: GPL-3+
 
-Files: build/autotools/m4/pkg.m4
+Files: build/autotools/m4/pkg.m4 src/libbson/build/autotools/m4/pkg.m4
 Copyright: 2004 Scott James Remnant <scott@netsplit.com>
 License: GPL-2+
 
-Files: build/autotools/m4/silent.m4
+Files: build/autotools/m4/silent.m4 src/libbson/build/autotools/m4/silent.m4
 Copyright: 2010, Damien Lespiau <damien.lespiau@gmail.com>
 License: Other-DWTFYWTPL
             DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
@@ -61,13 +65,35 @@ Files: debian/*
 Copyright: 2015 MongoDB, Inc.
 License: Apache-2.0
 
-Files: doc/taglist.py
+Files: doc/taglist.py src/libbson/doc/taglist.py
 Copyright: 2007-2009 by the Sphinx team
 License: Expat
 
-Files: doc/mongoc-theme/static/mongoc.css_t
+Files: doc/mongoc-theme/static/mongoc.css_t src/libbson/doc/mongoc-theme/static/mongoc.css_t
 Copyright: 2013 by Ignacy Sokolowski
 License: Expat
+
+Files: src/libbson/src/bson/bson-md5.h
+Copyright: 1999, 2002 Aladdin Enterprises.
+License: ZLib
+ This software is provided 'as-is', without any express or implied
+ warranty.  In no event will the authors be held liable for any damages
+ arising from the use of this software.
+ .
+ Permission is granted to anyone to use this software for any purpose,
+ including commercial applications, and to alter it and redistribute it
+ freely, subject to the following restrictions:
+ .
+ 1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+ 2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+ 3. This notice may not be removed or altered from any source distribution.
+ .
+ L. Peter Deutsch
+ ghost@aladdin.com
 
 License: Apache-2.0
  Licensed under the Apache License, Version 2.0 (the "License");

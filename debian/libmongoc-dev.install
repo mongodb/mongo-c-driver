@@ -1,7 +1,7 @@
-usr/include/*/*.h
-usr/include/*/*.def
-usr/include/*/*.defs
+usr/include/libmongoc*/*.h
+usr/include/libmongoc*/*.def
+usr/include/libmongoc*/*.defs
 usr/lib/*/libmongoc-[0-9]*.so
 usr/lib/*/pkgconfig/libmongoc-[0-9]*
 usr/lib/*/pkgconfig/libmongoc-ssl-[0-9]*
-usr/lib/*/cmake/*
+usr/lib/*/cmake/libmongoc*

@@ -1,0 +1,4 @@
+# Sphinx embeds jQuery
+libbson-doc: embedded-javascript-library
+# See bug #762753, Lintian misinterprets canonical URLs
+libbson-doc: privacy-breach-generic

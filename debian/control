@@ -3,7 +3,6 @@ Priority: optional
 Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
 Build-Depends: debhelper (>= 9),
                dh-autoreconf,
-               libbson-dev (>= 1.9.2),
                libssl-dev,
                pkg-config,
                python3-sphinx,
@@ -19,7 +18,7 @@ Package: libmongoc-dev
 Section: libdevel
 Architecture: any
 Depends: libmongoc-1.0-0 (= ${binary:Version}),
-         libbson-dev (>= 1.9.2),
+         libbson-dev (= ${binary:Version}),
          libssl-dev,
          zlib1g-dev,
          libsnappy-dev,
@@ -51,3 +50,42 @@ Description: MongoDB C client library - documentation
  applications.
  .
  This package contains the man pages for libmongoc.
+
+Package: libbson-dev
+Section: libdevel
+Architecture: any
+Depends: libbson-1.0-0 (= ${binary:Version}),
+         ${misc:Depends}
+Description: Library to parse and generate BSON documents - dev files
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains all files necessary to develop applications which
+ use libbson.
+
+Package: libbson-1.0-0
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: Library to parse and generate BSON documents - runtime files
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains the libbson runtime libraries, for applications that
+ have been built with libbson.
+
+Package: libbson-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Library to parse and generate BSON documents - documentation
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains the man pages for libbson.
