@@ -784,33 +784,44 @@ key_dtor (void *item, void *ctx)
 
 
 static void
-assert_no_duplicate_keys (request_t *request)
+doc_assert_no_duplicate_keys (const bson_t *doc)
 {
    mongoc_set_t *keys;
-   size_t n_documents;
-   int i;
    bson_iter_t iter;
+   bson_t subdoc;
 
-   n_documents = request->docs.len;
+   keys = mongoc_set_new (8, key_dtor, NULL);
+   BSON_ASSERT (bson_iter_init (&iter, doc));
 
-   for (i = 0; i < n_documents; i++) {
-      keys = mongoc_set_new (8, key_dtor, NULL);
-      BSON_ASSERT (bson_iter_init (&iter, request_get_doc (request, i)));
-
-      while (bson_iter_next (&iter)) {
-         if (mongoc_set_find_item (
-                keys, find_key, (void *) bson_iter_key (&iter))) {
-            fprintf (stderr,
-                     "Duplicate key \"%s\" in document:\n%s",
-                     bson_iter_key (&iter),
-                     bson_as_json (request_get_doc (request, i), NULL));
-            abort ();
-         }
-
-         mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));
+   while (bson_iter_next (&iter)) {
+      if (mongoc_set_find_item (
+             keys, find_key, (void *) bson_iter_key (&iter))) {
+         fprintf (stderr,
+                  "Duplicate key \"%s\" in document:\n%s",
+                  bson_iter_key (&iter),
+                  bson_as_json (doc, NULL));
+         abort ();
       }
 
-      mongoc_set_destroy (keys);
+      mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));
+
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter) || BSON_ITER_HOLDS_ARRAY (&iter)) {
+         bson_iter_bson (&iter, &subdoc);
+         doc_assert_no_duplicate_keys (&subdoc);
+      }
+   }
+
+   mongoc_set_destroy (keys);
+}
+
+
+static void
+request_assert_no_duplicate_keys (request_t *request)
+{
+   int i;
+
+   for (i = 0; i < request->docs.len; i++) {
+      doc_assert_no_duplicate_keys (request_get_doc (request, i));
    }
 }
 
@@ -826,7 +837,7 @@ mock_server_receives_request (mock_server_t *server)
    request_timeout_msec = mock_server_get_request_timeout_msec (server);
    r = (request_t *) q_get (q, request_timeout_msec);
    if (r) {
-      assert_no_duplicate_keys (r);
+      request_assert_no_duplicate_keys (r);
    }
 
    return r;
