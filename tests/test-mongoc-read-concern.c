@@ -233,6 +233,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
    mongoc_read_concern_destroy (rc);
+   bson_destroy (&opts);
 }
 
 
