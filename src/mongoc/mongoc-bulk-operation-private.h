@@ -51,6 +51,11 @@ _mongoc_bulk_operation_new (mongoc_client_t *client,
                             const mongoc_write_concern_t *write_concern);
 
 
+bson_validate_flags_t
+_mongoc_bulk_operation_parse_vflags (const bson_t *opts,
+                                     bson_validate_flags_t default_vflags);
+
+
 BSON_END_DECLS
 
 

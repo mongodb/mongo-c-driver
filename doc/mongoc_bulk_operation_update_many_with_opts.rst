@@ -30,6 +30,10 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: A :symbol:`bson:bson_error_t` any errors that may have occurred.
 
+.. include:: includes/bulk-crud-opts.txt
+* ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.
+* ``arrayFilters`` An array of filters specifying to which array elements an update should apply.
+
 See Also
 --------
 
@@ -44,4 +48,3 @@ Returns
 -------
 
 Returns true on success, and false if there is a server or network error or if passed invalid arguments.
-

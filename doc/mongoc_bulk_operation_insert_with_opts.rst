@@ -24,7 +24,7 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-Currently the ``opts`` is unused.
+.. include:: includes/bulk-crud-opts.txt
 
 Errors
 ------

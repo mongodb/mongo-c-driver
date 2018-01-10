@@ -345,6 +345,8 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_validate_flags_t vflags =
+      _mongoc_bulk_operation_parse_vflags (opts, _mongoc_default_insert_vflags);
 
    ENTRY;
 
@@ -353,8 +355,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_validate_new_document (
-          document, _mongoc_default_insert_vflags, error)) {
+   if (vflags && !_mongoc_validate_new_document (document, vflags, error)) {
       return false;
    }
 
@@ -390,6 +391,8 @@ _mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_validate_flags_t vflags = _mongoc_bulk_operation_parse_vflags (
+      opts, _mongoc_default_replace_vflags);
 
    ENTRY;
 
@@ -399,8 +402,7 @@ _mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
    BSON_ASSERT (selector);
    BSON_ASSERT (document);
 
-   if (!_mongoc_validate_replace (
-          document, _mongoc_default_replace_vflags, error)) {
+   if (vflags && !_mongoc_validate_replace (document, vflags, error)) {
       RETURN (false);
    }
 
@@ -498,6 +500,8 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_validate_flags_t vflags =
+      _mongoc_bulk_operation_parse_vflags (opts, _mongoc_default_update_vflags);
 
    ENTRY;
 
@@ -507,8 +511,7 @@ _mongoc_bulk_operation_update_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_validate_update (
-          document, _mongoc_default_update_vflags, error)) {
+   if (vflags && !_mongoc_validate_update (document, vflags, error)) {
       RETURN (false);
    }
 
@@ -902,4 +905,21 @@ mongoc_bulk_operation_set_bypass_document_validation (
    bulk->flags.bypass_document_validation =
       bypass ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
              : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+}
+
+bson_validate_flags_t
+_mongoc_bulk_operation_parse_vflags (const bson_t *opts,
+                                     bson_validate_flags_t default_vflags)
+{
+   bson_iter_t iter;
+
+   if (opts && bson_iter_init_find (&iter, opts, "validate")) {
+      if (BSON_ITER_HOLDS_BOOL (&iter)) {
+         return (bson_iter_as_bool (&iter)) ? default_vflags : 0;
+      } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
+         return bson_iter_int32 (&iter);
+      }
+   }
+
+   return default_vflags;
 }

@@ -813,6 +813,50 @@ test_update_one_unordered (void)
 
 
 static void
+test_update_with_opts_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_with_opts_validate");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+
+   BSON_ASSERT (!mongoc_bulk_operation_update_one_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "update only works with $ operators");
+
+   BSON_ASSERT (mongoc_bulk_operation_update_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+      &error));
+   BSON_ASSERT (!mongoc_bulk_operation_update_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+      &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid argument for update: keys cannot contain \".\": \"a.a\"");
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_replace_one (bool ordered)
 {
    bson_t opts = BSON_INITIALIZER;
@@ -936,6 +980,57 @@ static void
 test_replace_one_with_opts_check_keys (void)
 {
    _test_replace_one_check_keys (true);
+}
+
+
+static void
+test_replace_one_with_opts_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_replace_with_opts_validate");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+
+   BSON_ASSERT (!mongoc_bulk_operation_replace_one_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
+
+   BSON_ASSERT (mongoc_bulk_operation_replace_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+      &error));
+   BSON_ASSERT (mongoc_bulk_operation_replace_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
+      &error));
+   BSON_ASSERT (!mongoc_bulk_operation_replace_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+      &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 /*
@@ -1678,6 +1773,54 @@ static void
 test_insert_with_opts_invalid_second (void)
 {
    _test_insert_invalid (false, true);
+}
+
+
+static void
+test_insert_with_opts_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_with_opts_validate");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+
+   BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{'a.a': 1}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+
+   BSON_ASSERT (mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+      &error));
+   BSON_ASSERT (mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
+      &error));
+   BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'a.a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+      &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -4209,6 +4352,9 @@ test_bulk_install (TestSuite *suite)
                       "/BulkOperation/insert_with_opts_invalid_second",
                       test_insert_with_opts_invalid_second);
    TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_with_opts_validate",
+                      test_insert_with_opts_validate);
+   TestSuite_AddLive (suite,
                       "/BulkOperation/remove_one_after_invalid",
                       test_remove_one_after_invalid);
    TestSuite_AddLive (
@@ -4251,6 +4397,9 @@ test_bulk_install (TestSuite *suite)
       suite, "/BulkOperation/update_one_ordered", test_update_one_ordered);
    TestSuite_AddLive (
       suite, "/BulkOperation/update_one_unordered", test_update_one_unordered);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_with_opts_validate",
+                      test_update_with_opts_validate);
    TestSuite_AddLive (
       suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
    TestSuite_AddLive (suite,
@@ -4261,6 +4410,9 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts/keys",
                       test_replace_one_with_opts_check_keys);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replalce_one_with_opts_validate",
+                      test_replace_one_with_opts_validate);
    TestSuite_AddLive (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_AddLive (
       suite, "/BulkOperation/single_ordered_bulk", test_single_ordered_bulk);
