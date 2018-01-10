@@ -201,7 +201,7 @@
    } while (0)
 
 /* obsolete macros, preserved for compatibility */
-#define BSON_STATIC_ASSERT(s) BSON_STATIC_ASSERT_ (s, __LINE__, assert)
+#define BSON_STATIC_ASSERT(s) BSON_STATIC_ASSERT_ (s, __LINE__)
 #define BSON_STATIC_ASSERT_JOIN(a, b) BSON_STATIC_ASSERT_JOIN2 (a, b)
 #define BSON_STATIC_ASSERT_JOIN2(a, b) a##b
 #define BSON_STATIC_ASSERT_(s, l)                             \
