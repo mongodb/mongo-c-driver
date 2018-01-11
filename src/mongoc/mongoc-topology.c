@@ -1056,8 +1056,10 @@ _mongoc_topology_run_background (void *data)
 
       /* we exit this loop on error, or when we should scan immediately */
       for (;;) {
-         if (topology->shutdown_requested)
+         if (topology->shutdown_requested) {
+            mongoc_mutex_unlock (&topology->mutex);
             goto DONE;
+         }
 
          now = bson_get_monotonic_time ();
 
@@ -1097,6 +1099,7 @@ _mongoc_topology_run_background (void *data)
 #else
             if (!(r == 0 || r == ETIMEDOUT)) {
 #endif
+               mongoc_mutex_unlock (&topology->mutex);
                /* handle errors */
                goto DONE;
             }
@@ -1125,8 +1128,6 @@ _mongoc_topology_run_background (void *data)
    }
 
 DONE:
-   mongoc_mutex_unlock (&topology->mutex);
-
    return NULL;
 }
 
