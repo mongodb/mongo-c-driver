@@ -1466,6 +1466,40 @@ test_remove_w0 (void)
 
 
 static void
+test_insert_twice_w0 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_insert_twice_w0");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_append (wc, &opts);
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{'_id': 1}"), &opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (mongoc_collection_get_last_error (collection) == NULL);
+
+   /* Insert same document for the second time, but we should not get
+    * an error since we don't wait for a server response */
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{'_id': 1}"), &opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (mongoc_collection_get_last_error (collection) == NULL);
+
+   bson_destroy (&opts);
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_index (void)
 {
    mongoc_collection_t *collection;
@@ -5440,6 +5474,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert/w0", test_insert_w0);
    TestSuite_AddLive (suite, "/Collection/update/w0", test_update_w0);
    TestSuite_AddLive (suite, "/Collection/remove/w0", test_remove_w0);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_twice/w0", test_insert_twice_w0);
    TestSuite_AddLive (suite, "/Collection/index", test_index);
    TestSuite_AddLive (
       suite, "/Collection/index_w_write_concern", test_index_w_write_concern);
