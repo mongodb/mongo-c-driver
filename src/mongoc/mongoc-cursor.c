@@ -1354,6 +1354,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                          "for the \"%s\" command",
                          _mongoc_get_command_name (command));
 
+         _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
 
