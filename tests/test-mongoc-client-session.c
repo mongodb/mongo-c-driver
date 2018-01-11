@@ -801,6 +801,7 @@ typedef struct {
    int n_started;
    int n_succeeded;
    bool expect_explicit_lsid;
+   bool acknowledged;
    bool succeeded;
    mongoc_array_t cmds;
    mongoc_array_t replies;
@@ -816,6 +817,7 @@ started (const mongoc_apm_command_started_t *event)
    char errmsg[1000];
    match_ctx_t ctx = {errmsg, sizeof (errmsg), false /* strict numbers */};
    bson_iter_t iter;
+   bool has_cluster_time;
    bson_t cluster_time;
    bson_t lsid;
    const bson_t *client_session_lsid;
@@ -872,15 +874,19 @@ started (const mongoc_apm_command_started_t *event)
       }
    }
 
-   if (!bson_iter_init_find (&iter, cmd, "$clusterTime")) {
+   has_cluster_time = bson_iter_init_find (&iter, cmd, "$clusterTime");
+   if (test->acknowledged && !has_cluster_time) {
       fprintf (stderr, "no $clusterTime sent with command %s\n", cmd_name);
       abort ();
    }
 
-   /* like $clusterTime: {clusterTime: <timestamp>} */
-   bson_iter_bson (&iter, &cluster_time);
-   bson_destroy (&test->sent_cluster_time);
-   bson_copy_to (&cluster_time, &test->sent_cluster_time);
+   if (has_cluster_time) {
+      /* like $clusterTime: {clusterTime: <timestamp>} */
+      bson_iter_bson (&iter, &cluster_time);
+      bson_destroy (&test->sent_cluster_time);
+      bson_copy_to (&cluster_time, &test->sent_cluster_time);
+   }
+
    _mongoc_array_append_vals (&test->cmds, &cmd, 1);
 
    test->n_started++;
@@ -891,6 +897,7 @@ static void
 succeeded (const mongoc_apm_command_succeeded_t *event)
 {
    bson_iter_t iter;
+   bool has_cluster_time;
    bson_t cluster_time;
    bson_t *reply = bson_copy (mongoc_apm_command_succeeded_get_reply (event));
    const char *cmd_name = mongoc_apm_command_succeeded_get_command_name (event);
@@ -903,7 +910,8 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
       bson_free (s);
    }
 
-   if (!bson_iter_init_find (&iter, reply, "$clusterTime")) {
+   has_cluster_time = bson_iter_init_find (&iter, reply, "$clusterTime");
+   if (test->acknowledged && !has_cluster_time) {
       fprintf (stderr, "no $clusterTime in reply to command %s\n", cmd_name);
       abort ();
    }
@@ -913,10 +921,13 @@ succeeded (const mongoc_apm_command_succeeded_t *event)
       return;
    }
 
-   /* like $clusterTime: {clusterTime: <timestamp>} */
-   bson_iter_bson (&iter, &cluster_time);
-   bson_destroy (&test->received_cluster_time);
-   bson_copy_to (&cluster_time, &test->received_cluster_time);
+   if (has_cluster_time) {
+      /* like $clusterTime: {clusterTime: <timestamp>} */
+      bson_iter_bson (&iter, &cluster_time);
+      bson_destroy (&test->received_cluster_time);
+      bson_copy_to (&cluster_time, &test->received_cluster_time);
+   }
+
    _mongoc_array_append_vals (&test->replies, &reply, 1);
 
    test->n_succeeded++;
@@ -971,6 +982,7 @@ session_test_new (session_test_correct_t correct_client,
 
    test->n_started = 0;
    test->expect_explicit_lsid = true;
+   test->acknowledged = true;
    test->succeeded = false;
    _mongoc_array_init (&test->cmds, sizeof (bson_t *));
    _mongoc_array_init (&test->replies, sizeof (bson_t *));
@@ -2041,9 +2053,8 @@ test_read_concern (void *ctx)
    session_test_destroy (test);
 }
 
-/* TODO: update this test since OP_MSG with w: 0 is unacknowledged */
-/*
- * static void
+
+static void
 test_unacknowledged (void *ctx)
 {
    session_test_t *test;
@@ -2052,6 +2063,7 @@ test_unacknowledged (void *ctx)
 
    test = session_test_new (CORRECT_CLIENT, CAUSAL);
    test->expect_explicit_lsid = true;
+   test->acknowledged = false;
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
 
@@ -2059,7 +2071,7 @@ test_unacknowledged (void *ctx)
    mongoc_write_concern_set_w (wc, 0);
    BSON_ASSERT (mongoc_write_concern_append_bad (wc, &test->opts));
 
-   // unacknowledged exchange does NOT set operationTime
+   /* unacknowledged exchange does NOT set operationTime */
    test_insert_one (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test), "{'writeConcern': {'w': 0}}");
@@ -2069,8 +2081,6 @@ test_unacknowledged (void *ctx)
    mongoc_write_concern_destroy (wc);
    session_test_destroy (test);
 }
-*/
-
 
 #define add_session_test(_suite, _name, _test_fn, _allow_read_concern) \
    TestSuite_AddFull (_suite,                                          \
@@ -2267,12 +2277,11 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_cluster_time,
                       test_framework_skip_if_no_crypto);
-   /*
-    * TestSuite_AddFull (suite,
+   TestSuite_AddFull (suite,
                       "/Session/unacknowledged",
                       test_unacknowledged,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_cluster_time,
-                      test_framework_skip_if_no_crypto); */
+                      test_framework_skip_if_no_crypto);
 }
