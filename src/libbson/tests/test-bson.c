@@ -30,6 +30,9 @@
 #define BINARY_DIR "tests/binary"
 #endif
 
+/* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
+BSON_STATIC_ASSERT (1 == 1);
+
 
 static bson_t *
 get_bson (const char *filename)
@@ -409,7 +412,8 @@ test_bson_append_regex_w_len (void)
    bson_destroy (b2);
 
    b = bson_new ();
-   BSON_ASSERT (bson_append_regex_w_len (b, "regex", -1, "^abcd    ", 5, "ilx"));
+   BSON_ASSERT (
+      bson_append_regex_w_len (b, "regex", -1, "^abcd    ", 5, "ilx"));
    b2 = get_bson ("test27.bson");
    BSON_ASSERT_BSON_EQUAL (b, b2);
    bson_destroy (b);
@@ -2263,21 +2267,23 @@ test_bson_subtype_2 (void)
 void
 test_bson_regex_lengths (void)
 {
-    bson_t new = BSON_INITIALIZER;
-    bson_oid_t oid;
+   bson_t new = BSON_INITIALIZER;
+   bson_oid_t oid;
 
-    bson_oid_init_from_string (&oid, "1234567890abcdef12345678");
-    bson_append_oid (&new, "0123456", -1, &oid);
+   bson_oid_init_from_string (&oid, "1234567890abcdef12345678");
+   bson_append_oid (&new, "0123456", -1, &oid);
 
-    bson_append_regex (&new,
-        "0_________1_________2_________3___4", -1,
-        "0_________1_________2_________3_________4_________5___4", "i");
+   bson_append_regex (&new,
+                      "0_________1_________2_________3___4",
+                      -1,
+                      "0_________1_________2_________3_________4_________5___4",
+                      "i");
 
-    ASSERT (new.len == 121);
-    ASSERT (new.flags & BSON_FLAG_STATIC);
-    ASSERT (!(new.flags & BSON_FLAG_INLINE));
+   ASSERT (new.len == 121);
+   ASSERT (new.flags &BSON_FLAG_STATIC);
+   ASSERT (!(new.flags &BSON_FLAG_INLINE));
 
-    bson_destroy(&new);
+   bson_destroy (&new);
 }
 
 void
