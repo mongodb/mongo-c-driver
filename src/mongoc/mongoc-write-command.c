@@ -723,6 +723,7 @@ again:
       bson_iter_init (&iter, &command->cmd_opts);
       if (!mongoc_cmd_parts_append_opts (
              &parts, &iter, server_stream->sd->max_wire_version, error)) {
+         bson_reader_destroy (reader);
          bson_destroy (&cmd);
          mongoc_cmd_parts_cleanup (&parts);
          EXIT;
