@@ -1,3 +1,11 @@
+mongo-c-driver 1.9.2
+====================
+
+No change since 1.9.1; released to keep pace with libbson's version number.
+
+-- A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.9.1
 ====================
 
