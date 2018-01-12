@@ -7336,6 +7336,19 @@ tasks:
         - func: "run auth tests"
         - func: "upload build"
 
+    - name: compile-libmongocapi
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o verbose
+              export ${libmongocapi_compile_env|}
+              ./autogen.sh --prefix=$(pwd)/install-dir --build x86_64-apple-darwin --with-libbson=bundled --disable-automatic-init-and-cleanup --disable-ssl --disable-sasl --disable-examples --disable-man-pages --disable-html-docs --disable-shm-counters --disable-shared --enable-static ${libmongocapi_configure_flags|}
+              make all
+
 # }}}
 
 buildvariants:
@@ -7981,3 +7994,25 @@ buildvariants:
     - ".debug-compile !.sspi .nossl !.sasl"
     - ".debug-compile .special .valgrind .bson"
     - ".test-valgrind"
+
+- name: ios-102-debug
+  display_name: "iOS 10.2 DEBUG"
+  run_on:
+    - macos-1012
+  batchtime: 1440 # 1 day
+  expansions:
+    libmongocapi_configure_flags: --host arm-apple-darwin CC="$(xcrun -f --sdk iphoneos clang)" CXX="$(xcrun -f --sdk iphoneos clang++)" CPPFLAGS="-isysroot $(xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=10.2 -arch arm64 -fembed-bitcode"  CFLAGS="-isysroot $(xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=10.2 -arch arm64 -fembed-bitcode" CXXFLAGS="-isysroot $(xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=10.2 -arch arm64 -fembed-bitcode" LDFLAGS="-miphoneos-version-min=10.2 -arch arm64"
+    libmongocapi_compile_env: DEVELOPER_DIR=/Applications/Xcode8.3.app
+  tasks:
+    - name: compile-libmongocapi
+
+- name: ios-sim-102-debug
+  display_name: "iOS Simulator 10.2 DEBUG"
+  run_on:
+  - macos-1012
+  batchtime: 1440 # 1 day
+  expansions:
+    libmongocapi_configure_flags: --host x86_64-apple-darwin16.6.0 CC="$(xcrun -f --sdk iphonesimulator clang)" CXX="$(xcrun -f --sdk iphonesimulator clang++)" CPPFLAGS="-isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) -miphoneos-version-min=10.2"  CFLAGS="-isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) -miphoneos-version-min=10.2" CXXFLAGS="-isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) -miphoneos-version-min=10.2" LDFLAGS="-miphoneos-version-min=10.2"
+    libmongocapi_compile_env: DEVELOPER_DIR=/Applications/Xcode8.3.app
+  tasks:
+  - name: compile-libmongocapi
