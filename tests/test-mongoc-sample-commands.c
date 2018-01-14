@@ -2547,7 +2547,7 @@ test_example_change_stream (mongoc_database_t *db)
 {
    /* Start Changestream Example 1 */
    mongoc_collection_t *collection;
-   bson_t pipeline = BSON_INITIALIZER;
+   bson_t *pipeline = bson_new ();
    bson_t opts = BSON_INITIALIZER;
    mongoc_change_stream_t *stream;
    const bson_t *change;
@@ -2555,7 +2555,7 @@ test_example_change_stream (mongoc_database_t *db)
    bson_error_t error;
 
    collection = mongoc_database_get_collection (db, "inventory");
-   stream = mongoc_collection_watch (collection, &pipeline, NULL /* opts */);
+   stream = mongoc_collection_watch (collection, pipeline, NULL /* opts */);
    mongoc_change_stream_next (stream, &change);
    if (mongoc_change_stream_error_document (stream, &error, NULL)) {
       MONGOC_ERROR ("%s\n", error.message);
@@ -2566,7 +2566,7 @@ test_example_change_stream (mongoc_database_t *db)
 
    /* Start Changestream Example 2 */
    BSON_APPEND_UTF8 (&opts, "fullDocument", "updateLookup");
-   stream = mongoc_collection_watch (collection, &pipeline, &opts);
+   stream = mongoc_collection_watch (collection, pipeline, &opts);
    mongoc_change_stream_next (stream, &change);
    if (mongoc_change_stream_error_document (stream, &error, NULL)) {
       MONGOC_ERROR ("%s\n", error.message);
@@ -2578,13 +2578,13 @@ test_example_change_stream (mongoc_database_t *db)
    bson_reinit (&opts);
 
    /* Start Changestream Example 3 */
-   stream = mongoc_collection_watch (collection, &pipeline, NULL);
+   stream = mongoc_collection_watch (collection, pipeline, NULL);
    if (mongoc_change_stream_next (stream, &change)) {
       bson_iter_init_find (&iter, change, "_id");
       BSON_APPEND_VALUE (&opts, "resumeAfter", bson_iter_value (&iter));
 
       mongoc_change_stream_destroy (stream);
-      stream = mongoc_collection_watch (collection, &pipeline, &opts);
+      stream = mongoc_collection_watch (collection, pipeline, &opts);
       mongoc_change_stream_next (stream, &change);
       mongoc_change_stream_destroy (stream);
    } else {
@@ -2594,10 +2594,37 @@ test_example_change_stream (mongoc_database_t *db)
 
       mongoc_change_stream_destroy (stream);
    }
-
    /* End Changestream Example 3 */
+
+   bson_destroy (pipeline);
+
+   /* Start Changestream Example 4 */
+   pipeline = BCON_NEW ("$match",
+                        "{",
+                        "$or",
+                        "[",
+                        "{",
+                        "fullDocument.username",
+                        BCON_UTF8 ("alice"),
+                        "}",
+                        "{",
+                        "operationType",
+                        BCON_UTF8 ("delete"),
+                        "}",
+                        "]",
+                        "}");
+
+   stream = mongoc_collection_watch (collection, pipeline, &opts);
+   mongoc_change_stream_next (stream, &change);
+   if (mongoc_change_stream_error_document (stream, &error, NULL)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_change_stream_destroy (stream);
+   /* End Changestream Example 4 */
+   
    bson_destroy (&opts);
-   bson_destroy (&pipeline);
+   bson_destroy (pipeline);
    bson_destroy (&opts);
    mongoc_collection_destroy (collection);
 }
