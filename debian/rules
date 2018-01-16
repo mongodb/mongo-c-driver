@@ -39,3 +39,6 @@ override_dh_auto_clean:
 
 override_dh_install:
 	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver -Xdoc/libbson -Xman/man3 -X-priv.so -X-priv.pc --fail-missing
+
+override_dh_makeshlibs:
+	dh_makeshlibs -V
