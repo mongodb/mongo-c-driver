@@ -318,7 +318,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
    if (server_id) {
       /* will set slaveok bit if server is not mongos */
-      mongoc_cursor_set_hint (cursor, server_id);
+      (void) mongoc_cursor_set_hint (cursor, server_id);
 
       /* server id isn't enough. ensure we're connected & know wire version */
       server_stream =
@@ -1122,64 +1122,72 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    /*
     * Build our createIndexes command to send to the server.
     */
-   BSON_APPEND_UTF8 (&cmd, "createIndexes", collection->collection);
+   BSON_ASSERT (
+      BSON_APPEND_UTF8 (&cmd, "createIndexes", collection->collection));
    bson_append_array_begin (&cmd, "indexes", 7, &ar);
    bson_append_document_begin (&ar, "0", 1, &doc);
-   BSON_APPEND_DOCUMENT (&doc, "key", keys);
-   BSON_APPEND_UTF8 (&doc, "name", name);
+   BSON_ASSERT (BSON_APPEND_DOCUMENT (&doc, "key", keys));
+   BSON_ASSERT (BSON_APPEND_UTF8 (&doc, "name", name));
    if (opt->background) {
-      BSON_APPEND_BOOL (&doc, "background", true);
+      BSON_ASSERT (BSON_APPEND_BOOL (&doc, "background", true));
    }
    if (opt->unique) {
-      BSON_APPEND_BOOL (&doc, "unique", true);
+      BSON_ASSERT (BSON_APPEND_BOOL (&doc, "unique", true));
    }
    if (opt->drop_dups) {
-      BSON_APPEND_BOOL (&doc, "dropDups", true);
+      BSON_ASSERT (BSON_APPEND_BOOL (&doc, "dropDups", true));
    }
    if (opt->sparse) {
-      BSON_APPEND_BOOL (&doc, "sparse", true);
+      BSON_ASSERT (BSON_APPEND_BOOL (&doc, "sparse", true));
    }
    if (opt->expire_after_seconds != def_opt->expire_after_seconds) {
-      BSON_APPEND_INT32 (&doc, "expireAfterSeconds", opt->expire_after_seconds);
+      BSON_ASSERT (BSON_APPEND_INT32 (
+         &doc, "expireAfterSeconds", opt->expire_after_seconds));
    }
    if (opt->v != def_opt->v) {
-      BSON_APPEND_INT32 (&doc, "v", opt->v);
+      BSON_ASSERT (BSON_APPEND_INT32 (&doc, "v", opt->v));
    }
    if (opt->weights && (opt->weights != def_opt->weights)) {
-      BSON_APPEND_DOCUMENT (&doc, "weights", opt->weights);
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&doc, "weights", opt->weights));
    }
    if (opt->default_language != def_opt->default_language) {
-      BSON_APPEND_UTF8 (&doc, "default_language", opt->default_language);
+      BSON_ASSERT (
+         BSON_APPEND_UTF8 (&doc, "default_language", opt->default_language));
    }
    if (opt->language_override != def_opt->language_override) {
-      BSON_APPEND_UTF8 (&doc, "language_override", opt->language_override);
+      BSON_ASSERT (
+         BSON_APPEND_UTF8 (&doc, "language_override", opt->language_override));
    }
    if (opt->partial_filter_expression) {
-      BSON_APPEND_DOCUMENT (
-         &doc, "partialFilterExpression", opt->partial_filter_expression);
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (
+         &doc, "partialFilterExpression", opt->partial_filter_expression));
    }
    if (opt->collation) {
-      BSON_APPEND_DOCUMENT (&doc, "collation", opt->collation);
+      BSON_ASSERT (BSON_APPEND_DOCUMENT (&doc, "collation", opt->collation));
       has_collation = true;
    }
    if (opt->geo_options) {
       geo_opt = opt->geo_options;
       def_geo = mongoc_index_opt_geo_get_default ();
       if (geo_opt->twod_sphere_version != def_geo->twod_sphere_version) {
-         BSON_APPEND_INT32 (
-            &doc, "2dsphereIndexVersion", geo_opt->twod_sphere_version);
+         BSON_ASSERT (BSON_APPEND_INT32 (
+            &doc, "2dsphereIndexVersion", geo_opt->twod_sphere_version));
       }
       if (geo_opt->twod_bits_precision != def_geo->twod_bits_precision) {
-         BSON_APPEND_INT32 (&doc, "bits", geo_opt->twod_bits_precision);
+         BSON_ASSERT (
+            BSON_APPEND_INT32 (&doc, "bits", geo_opt->twod_bits_precision));
       }
       if (geo_opt->twod_location_min != def_geo->twod_location_min) {
-         BSON_APPEND_DOUBLE (&doc, "min", geo_opt->twod_location_min);
+         BSON_ASSERT (
+            BSON_APPEND_DOUBLE (&doc, "min", geo_opt->twod_location_min));
       }
       if (geo_opt->twod_location_max != def_geo->twod_location_max) {
-         BSON_APPEND_DOUBLE (&doc, "max", geo_opt->twod_location_max);
+         BSON_ASSERT (
+            BSON_APPEND_DOUBLE (&doc, "max", geo_opt->twod_location_max));
       }
       if (geo_opt->haystack_bucket_size != def_geo->haystack_bucket_size) {
-         BSON_APPEND_DOUBLE (&doc, "bucketSize", geo_opt->haystack_bucket_size);
+         BSON_ASSERT (BSON_APPEND_DOUBLE (
+            &doc, "bucketSize", geo_opt->haystack_bucket_size));
       }
    }
 
@@ -1190,7 +1198,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
          wt_opt = (mongoc_index_opt_wt_t *) storage_opt;
          BSON_APPEND_DOCUMENT_BEGIN (&doc, "storageEngine", &storage_doc);
          BSON_APPEND_DOCUMENT_BEGIN (&storage_doc, "wiredTiger", &wt_doc);
-         BSON_APPEND_UTF8 (&wt_doc, "configString", wt_opt->config_str);
+         BSON_ASSERT (
+            BSON_APPEND_UTF8 (&wt_doc, "configString", wt_opt->config_str));
          bson_append_document_end (&storage_doc, &wt_doc);
          bson_append_document_end (&doc, &storage_doc);
          break;
@@ -2842,7 +2851,7 @@ mongoc_collection_create_bulk_operation_with_opts (
    mongoc_write_concern_destroy (wc); /* NULL is ok */
 
    if (opts && bson_iter_init_find (&iter, opts, "sessionId")) {
-      _mongoc_client_session_from_iter (
+      (void) _mongoc_client_session_from_iter (
          collection->client, &iter, &bulk->session, &bulk->result.error);
    }
 
@@ -3040,7 +3049,7 @@ retry:
       const char *errmsg = NULL;
       int32_t code = 0;
 
-      bson_iter_recurse (&iter, &inner);
+      BSON_ASSERT (bson_iter_recurse (&iter, &inner));
       while (bson_iter_next (&inner)) {
          if (BSON_ITER_IS_KEY (&inner, "code")) {
             code = bson_iter_int32 (&inner);

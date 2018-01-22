@@ -201,7 +201,7 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
       if (!strcmp (bson_iter_key (&iter), "$clusterTime") &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          bson_iter_document (&iter, &len, &data);
-         bson_init_static (&cluster_time, data, (size_t) len);
+         BSON_ASSERT (bson_init_static (&cluster_time, data, (size_t) len));
 
          mongoc_client_session_advance_cluster_time (session, &cluster_time);
       } else if (!strcmp (bson_iter_key (&iter), "operationTime") &&

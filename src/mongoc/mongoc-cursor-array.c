@@ -127,7 +127,7 @@ _mongoc_cursor_array_next (mongoc_cursor_t *cursor, const bson_t **bson)
 
    if (ret) {
       bson_iter_document (&arr->iter, &document_len, &document);
-      bson_init_static (&arr->bson, document, document_len);
+      ret = bson_init_static (&arr->bson, document, document_len);
       *bson = &arr->bson;
    }
 
@@ -239,7 +239,7 @@ _mongoc_cursor_array_set_bson (mongoc_cursor_t *cursor, const bson_t *bson)
    arr = (mongoc_cursor_array_t *) cursor->iface_data;
    bson_copy_to (bson, &arr->bson);
    arr->has_synthetic_bson = true;
-   bson_iter_init (&arr->iter, &arr->bson);
+   BSON_ASSERT (bson_iter_init (&arr->iter, &arr->bson));
 
    EXIT;
 }

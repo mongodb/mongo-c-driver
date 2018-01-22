@@ -350,7 +350,14 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
 
       _mongoc_rpc_swab_from_le (&rpc);
 
-      _mongoc_rpc_get_first_document (&rpc, &tmp);
+      if (!_mongoc_rpc_get_first_document (&rpc, &tmp)) {
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Corrupt compressed OP_QUERY reply from server");
+         bson_free (reply_buf);
+         bson_free (buf);
+         GOTO (done);
+      }
       bson_copy_to (&tmp, reply_ptr);
       bson_free (reply_buf);
       bson_free (buf);
@@ -2606,7 +2613,6 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
 
    /* If acknowledged, wait for a server response. Otherwise, exit early */
    if (cmd->is_acknowledged) {
-
       ok = _mongoc_buffer_append_from_stream (
          &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
       if (!ok) {

@@ -197,7 +197,7 @@ mongoc_server_description_has_rs_member (mongoc_server_description_t *server,
       rs_members[2] = &server->passives;
 
       for (i = 0; i < 3; i++) {
-         bson_iter_init (&member_iter, rs_members[i]);
+         BSON_ASSERT (bson_iter_init (&member_iter, rs_members[i]));
 
          while (bson_iter_next (&member_iter)) {
             if (strcasecmp (address, bson_iter_utf8 (&member_iter, NULL)) ==
@@ -520,7 +520,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
    bson_copy_to (ismaster_response, &sd->last_is_master);
    sd->has_is_master = true;
 
-   bson_iter_init (&iter, &sd->last_is_master);
+   BSON_ASSERT (bson_iter_init (&iter, &sd->last_is_master));
 
    while (bson_iter_next (&iter)) {
       num_keys++;
@@ -590,19 +590,19 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->hosts);
-         bson_init_static (&sd->hosts, bytes, len);
+         BSON_ASSERT (bson_init_static (&sd->hosts, bytes, len));
       } else if (strcmp ("passives", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_ARRAY (&iter))
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->passives);
-         bson_init_static (&sd->passives, bytes, len);
+         BSON_ASSERT (bson_init_static (&sd->passives, bytes, len));
       } else if (strcmp ("arbiters", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_ARRAY (&iter))
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->arbiters);
-         bson_init_static (&sd->arbiters, bytes, len);
+         BSON_ASSERT (bson_init_static (&sd->arbiters, bytes, len));
       } else if (strcmp ("primary", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;
@@ -620,7 +620,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             goto failure;
          bson_iter_document (&iter, &len, &bytes);
          bson_destroy (&sd->tags);
-         bson_init_static (&sd->tags, bytes, len);
+         BSON_ASSERT (bson_init_static (&sd->tags, bytes, len));
       } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
          is_hidden = bson_iter_bool (&iter);
       } else if (strcmp ("lastWrite", bson_iter_key (&iter)) == 0) {
@@ -639,7 +639,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->compressors);
-         bson_init_static (&sd->compressors, bytes, len);
+         BSON_ASSERT (bson_init_static (&sd->compressors, bytes, len));
       }
    }
 
@@ -875,7 +875,7 @@ mongoc_server_description_filter_tags (
             continue;
          }
 
-         bson_iter_recurse (&rp_tagset_iter, &tag_set_iter);
+         BSON_ASSERT (bson_iter_recurse (&rp_tagset_iter, &tag_set_iter));
          sd_matched[i] = _match_tag_set (descriptions[i], &tag_set_iter);
          if (sd_matched[i]) {
             found = true;
@@ -974,7 +974,7 @@ mongoc_server_description_compressor_id (
 {
    int id;
    bson_iter_t iter;
-   bson_iter_init (&iter, &description->compressors);
+   BSON_ASSERT (bson_iter_init (&iter, &description->compressors));
 
    while (bson_iter_next (&iter)) {
       id = mongoc_compressor_name_to_id (bson_iter_utf8 (&iter, NULL));

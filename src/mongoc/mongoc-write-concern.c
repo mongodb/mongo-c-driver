@@ -453,7 +453,7 @@ _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error)
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       const char *errmsg = NULL;
       int32_t code = 0;
-      bson_iter_recurse (&iter, &inner);
+      BSON_ASSERT (bson_iter_recurse (&iter, &inner));
       while (bson_iter_next (&inner)) {
          if (BSON_ITER_IS_KEY (&inner, "code")) {
             code = bson_iter_int32 (&inner);

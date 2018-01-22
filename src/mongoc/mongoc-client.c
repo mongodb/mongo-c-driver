@@ -2269,7 +2269,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
       /* Find, getMore And killCursors Commands Spec: "The result from the
        * killCursors command MAY be safely ignored."
        */
-      mongoc_cluster_run_command_monitored (
+      (void) mongoc_cluster_run_command_monitored (
          cluster, &parts.assembled, NULL, NULL);
    }
 

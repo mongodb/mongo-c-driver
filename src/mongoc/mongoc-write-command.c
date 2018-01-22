@@ -446,7 +446,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          ? MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_NO
          : MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES;
 
-   bson_iter_init (&iter, &command->cmd_opts);
+   BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
    if (!mongoc_cmd_parts_append_opts (
           &parts, &iter, server_stream->sd->max_wire_version, error)) {
       bson_destroy (&cmd);
@@ -720,7 +720,7 @@ again:
       parts.assembled.operation_id = command->operation_id;
       parts.assembled.is_acknowledged =
          mongoc_write_concern_is_acknowledged (write_concern);
-      bson_iter_init (&iter, &command->cmd_opts);
+      BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
       if (!mongoc_cmd_parts_append_opts (
              &parts, &iter, server_stream->sd->max_wire_version, error)) {
          bson_reader_destroy (reader);
@@ -1104,8 +1104,10 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       bson_uint32_to_string (
          result->n_writeConcernErrors, &key, str, sizeof str);
 
-      bson_append_document (
-         &result->writeConcernErrors, key, -1, &write_concern_error);
+      if (!bson_append_document (
+             &result->writeConcernErrors, key, -1, &write_concern_error)) {
+         MONGOC_ERROR ("Error adding \"%s\" to writeConcernErrors.\n", key);
+      }
 
       result->n_writeConcernErrors++;
    }

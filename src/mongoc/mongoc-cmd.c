@@ -177,7 +177,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 
          /* add readConcern later, once we know about causal consistency */
          bson_iter_document (iter, &len, &data);
-         bson_init_static (&read_concern, data, (size_t) len);
+         BSON_ASSERT (bson_init_static (&read_concern, data, (size_t) len));
          bson_destroy (&parts->read_concern_document);
          bson_copy_to (&read_concern, &parts->read_concern_document);
          continue;
@@ -196,7 +196,9 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          continue;
       }
 
-      bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter);
+      if (!bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter)) {
+         RETURN (false);
+      }
    }
 
    RETURN (true);
@@ -250,8 +252,8 @@ _iter_concat (bson_t *dst, bson_iter_t *iter)
    bson_t src;
 
    bson_iter_document (iter, &len, &data);
-   bson_init_static (&src, data, len);
-   bson_concat (dst, &src);
+   BSON_ASSERT (bson_init_static (&src, data, len));
+   BSON_ASSERT (bson_concat (dst, &src));
 }
 
 

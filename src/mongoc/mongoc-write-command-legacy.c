@@ -454,7 +454,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
       rpc.update.collection = ns;
       rpc.update.flags = MONGOC_UPDATE_NONE;
 
-      bson_iter_init (&subiter, bson);
+      BSON_ASSERT (bson_iter_init (&subiter, bson));
       while (bson_iter_next (&subiter)) {
          if (strcmp (bson_iter_key (&subiter), "u") == 0) {
             bson_iter_document (&subiter, &len, &data);
@@ -467,7 +467,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             }
 
             rpc.update.update = data;
-            bson_init_static (&update, data, len);
+            BSON_ASSERT (bson_init_static (&update, data, len));
          } else if (strcmp (bson_iter_key (&subiter), "q") == 0) {
             bson_iter_document (&subiter, &len, &data);
             if (len > max_bson_obj_size) {
@@ -479,7 +479,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             }
 
             rpc.update.selector = data;
-            bson_init_static (&selector, data, len);
+            BSON_ASSERT (bson_init_static (&selector, data, len));
          } else if (strcmp (bson_iter_key (&subiter), "multi") == 0) {
             val = bson_iter_bool (&subiter);
             if (val) {

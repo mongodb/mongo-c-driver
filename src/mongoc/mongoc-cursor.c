@@ -295,7 +295,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
 
       if (server_id) {
-         mongoc_cursor_set_hint (cursor, server_id);
+         (void) mongoc_cursor_set_hint (cursor, server_id);
       }
 
       bson_copy_to_excluding_noinit (
@@ -337,7 +337,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    }
 
    _mongoc_buffer_init (&cursor->buffer, NULL, 0, NULL, NULL);
-   _mongoc_read_prefs_validate (read_prefs, &cursor->error);
+   (void) _mongoc_read_prefs_validate (read_prefs, &cursor->error);
 
 finish:
    mongoc_counter_cursors_active_inc ();
@@ -379,7 +379,13 @@ _mongoc_cursor_new (mongoc_client_t *client,
    if (query) {
       if (bson_has_field (query, "$query")) {
          /* like "{$query: {a: 1}, $orderby: {b: 1}, $otherModifier: true}" */
-         bson_iter_init (&iter, query);
+         if (!bson_iter_init (&iter, query)) {
+            bson_set_error (&error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid BSON in query document");
+            GOTO (done);
+         }
          while (bson_iter_next (&iter)) {
             key = bson_iter_key (&iter);
 
@@ -395,14 +401,32 @@ _mongoc_cursor_new (mongoc_client_t *client,
             if (!strcmp (key, "$query")) {
                /* set "filter" to the incoming document's "$query" */
                bson_iter_document (&iter, &data_len, &data);
-               bson_init_static (&filter, data, (size_t) data_len);
+               if (!bson_init_static (&filter, data, (size_t) data_len)) {
+                  bson_set_error (&error,
+                                  MONGOC_ERROR_BSON,
+                                  MONGOC_ERROR_BSON_INVALID,
+                                  "Invalid BSON in $query subdocument");
+                  GOTO (done);
+               }
                has_filter = true;
             } else if (_translate_query_opt (key, &opt_key, &len)) {
                /* "$orderby" becomes "sort", etc., "$unknown" -> "unknown" */
-               bson_append_iter (&opts, opt_key, len, &iter);
+               if (!bson_append_iter (&opts, opt_key, len, &iter)) {
+                  bson_set_error (&error,
+                                  MONGOC_ERROR_BSON,
+                                  MONGOC_ERROR_BSON_INVALID,
+                                  "Error adding \"%s\" to query",
+                                  opt_key);
+               }
             } else {
                /* strip leading "$" */
-               bson_append_iter (&opts, key + 1, -1, &iter);
+               if (!bson_append_iter (&opts, key + 1, -1, &iter)) {
+                  bson_set_error (&error,
+                                  MONGOC_ERROR_BSON,
+                                  MONGOC_ERROR_BSON_INVALID,
+                                  "Error adding \"%s\" to query",
+                                  key);
+               }
             }
          }
       }
@@ -1126,7 +1150,14 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
          /* pass unrecognized options to server, prefixed with $ */
          PUSH_DOLLAR_QUERY ();
          dollar_modifier = bson_strdup_printf ("$%s", key);
-         bson_append_iter (query, dollar_modifier, -1, &iter);
+         if (!bson_append_iter (query, dollar_modifier, -1, &iter)) {
+            bson_set_error (&cursor->error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Error adding \"%s\" to query",
+                            dollar_modifier);
+            return NULL;
+         }
          bson_free (dollar_modifier);
       }
    }
@@ -1329,7 +1360,14 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    }
 
    if (opts) {
-      bson_iter_init (&iter, opts);
+      if (!bson_iter_init (&iter, opts)) {
+         _mongoc_bson_init_if_set (reply);
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Invalid BSON in opts document");
+         GOTO (done);
+      }
       if (!mongoc_cmd_parts_append_opts (&parts,
                                          &iter,
                                          server_stream->sd->max_wire_version,

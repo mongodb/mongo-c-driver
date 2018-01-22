@@ -473,8 +473,8 @@ _mongoc_matcher_iter_eq_match (bson_iter_t *compare_iter, /* IN */
    case _TYPE_CODE (BSON_TYPE_ARRAY, BSON_TYPE_ARRAY): {
       bson_iter_t left_array;
       bson_iter_t right_array;
-      bson_iter_recurse (compare_iter, &left_array);
-      bson_iter_recurse (iter, &right_array);
+      BSON_ASSERT (bson_iter_recurse (compare_iter, &left_array));
+      BSON_ASSERT (bson_iter_recurse (iter, &right_array));
 
       while (true) {
          bool left_has_next = bson_iter_next (&left_array);

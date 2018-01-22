@@ -82,7 +82,7 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
       char buf[16];
       const char *key_str;
 
-      bson_iter_recurse (&iter, &child_iter);
+      BSON_ASSERT (bson_iter_recurse (&iter, &child_iter));
       while (bson_iter_next (&child_iter)) {
          if (BSON_ITER_HOLDS_DOCUMENT (&child_iter)) {
             size_t keyLen =

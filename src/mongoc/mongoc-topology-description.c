@@ -1237,7 +1237,7 @@ mongoc_topology_description_update_cluster_time (
    }
 
    bson_iter_document (&iter, &size, &data);
-   bson_init_static (&cluster_time, data, (size_t) size);
+   BSON_ASSERT (bson_init_static (&cluster_time, data, (size_t) size));
 
    if (bson_empty (&td->cluster_time) ||
        _mongoc_cluster_time_greater (&cluster_time, &td->cluster_time)) {
@@ -1260,7 +1260,7 @@ _mongoc_topology_description_add_new_servers (
    rs_members[2] = &server->passives;
 
    for (i = 0; i < 3; i++) {
-      bson_iter_init (&member_iter, rs_members[i]);
+      BSON_ASSERT (bson_iter_init (&member_iter, rs_members[i]));
 
       while (bson_iter_next (&member_iter)) {
          mongoc_topology_description_add_server (

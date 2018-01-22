@@ -624,7 +624,10 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
    }
 
    /* append our auth properties to our credentials */
-   mongoc_uri_set_mechanism_properties (uri, &properties);
+   if (!mongoc_uri_set_mechanism_properties (uri, &properties)) {
+      bson_destroy (&properties);
+      return false;
+   }
    bson_destroy (&properties);
    return true;
 }
@@ -1267,7 +1270,7 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
       const uint8_t *data = NULL;
 
       bson_iter_document (&iter, &len, &data);
-      bson_init_static (properties, data, len);
+      BSON_ASSERT (bson_init_static (properties, data, len));
 
       return true;
    }

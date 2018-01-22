@@ -157,7 +157,7 @@ _mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
       bson_iter_document (&cid->batch_iter, &data_len, &data);
 
       /* bson_iter_next guarantees valid BSON, so this must succeed */
-      bson_init_static (&cid->current_doc, data, data_len);
+      BSON_ASSERT (bson_init_static (&cid->current_doc, data, data_len));
       *bson = &cid->current_doc;
 
       cursor->end_of_event = false;
@@ -409,7 +409,7 @@ _mongoc_cursor_cursorid_init_with_reply (mongoc_cursor_t *cursor,
    bson_destroy (&cid->array);
    if (!bson_steal (&cid->array, reply)) {
       bson_destroy (&cid->array);
-      bson_steal (&cid->array, bson_copy (reply));
+      BSON_ASSERT (bson_steal (&cid->array, bson_copy (reply)));
    }
 
    if (!_mongoc_cursor_cursorid_start_batch (cursor)) {

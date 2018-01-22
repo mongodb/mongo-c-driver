@@ -781,7 +781,9 @@ _bson_json_read_double (bson_json_reader_t *reader, /* IN */
    BASIC_CB_PREAMBLE;
    BASIC_CB_BAIL_IF_NOT_NORMAL ("double");
 
-   bson_append_double (STACK_BSON_CHILD, key, (int) len, val);
+   if (!bson_append_double (STACK_BSON_CHILD, key, (int) len, val)) {
+      _bson_json_read_set_error (reader, "Cannot append double value %g", val);
+   }
 }
 
 
@@ -838,8 +840,14 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
       }
 
       _bson_json_buf_ensure (&bson->bson_type_buf[0], (size_t) binary_len + 1);
-      b64_pton (
-         val_w_null, bson->bson_type_buf[0].buf, (size_t) binary_len + 1);
+      if (b64_pton (val_w_null,
+                    bson->bson_type_buf[0].buf,
+                    (size_t) binary_len + 1) < 0) {
+         _bson_json_read_set_error (
+            reader,
+            "Invalid input string \"%s\", looking for base64-encoded binary",
+            val_w_null);
+      }
 
       bson->bson_type_buf[0].len = (size_t) binary_len;
    } else if (bs == BSON_JSON_LF_TYPE) {
@@ -1549,6 +1557,7 @@ static void
 _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
 {
    bson_json_reader_bson_t *bson = &reader->bson;
+   bool r = true;
 
    if (bson->read_state == BSON_JSON_IN_START_MAP) {
       bson->read_state = BSON_JSON_REGULAR;
@@ -1593,40 +1602,40 @@ _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
          _bson_json_read_append_date_time (reader, bson);
          break;
       case BSON_TYPE_UNDEFINED:
-         bson_append_undefined (
+         r = bson_append_undefined (
             STACK_BSON_CHILD, bson->key, (int) bson->key_buf.len);
          break;
       case BSON_TYPE_MINKEY:
-         bson_append_minkey (
+         r = bson_append_minkey (
             STACK_BSON_CHILD, bson->key, (int) bson->key_buf.len);
          break;
       case BSON_TYPE_MAXKEY:
-         bson_append_maxkey (
+         r = bson_append_maxkey (
             STACK_BSON_CHILD, bson->key, (int) bson->key_buf.len);
          break;
       case BSON_TYPE_INT32:
-         bson_append_int32 (STACK_BSON_CHILD,
-                            bson->key,
-                            (int) bson->key_buf.len,
-                            bson->bson_type_data.v_int32.value);
+         r = bson_append_int32 (STACK_BSON_CHILD,
+                                bson->key,
+                                (int) bson->key_buf.len,
+                                bson->bson_type_data.v_int32.value);
          break;
       case BSON_TYPE_INT64:
-         bson_append_int64 (STACK_BSON_CHILD,
-                            bson->key,
-                            (int) bson->key_buf.len,
-                            bson->bson_type_data.v_int64.value);
+         r = bson_append_int64 (STACK_BSON_CHILD,
+                                bson->key,
+                                (int) bson->key_buf.len,
+                                bson->bson_type_data.v_int64.value);
          break;
       case BSON_TYPE_DOUBLE:
-         bson_append_double (STACK_BSON_CHILD,
-                             bson->key,
-                             (int) bson->key_buf.len,
-                             bson->bson_type_data.v_double.value);
-         break;
-      case BSON_TYPE_DECIMAL128:
-         bson_append_decimal128 (STACK_BSON_CHILD,
+         r = bson_append_double (STACK_BSON_CHILD,
                                  bson->key,
                                  (int) bson->key_buf.len,
-                                 &bson->bson_type_data.v_decimal128.value);
+                                 bson->bson_type_data.v_double.value);
+         break;
+      case BSON_TYPE_DECIMAL128:
+         r = bson_append_decimal128 (STACK_BSON_CHILD,
+                                     bson->key,
+                                     (int) bson->key_buf.len,
+                                     &bson->bson_type_data.v_decimal128.value);
          break;
       case BSON_TYPE_DBPOINTER:
          /* shouldn't set type to DBPointer unless inside $dbPointer: {...} */
@@ -1650,6 +1659,14 @@ _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
             _bson_json_type_name (bson->bson_type));
          break;
       }
+
+      if (!r) {
+         _bson_json_read_set_error (
+            reader,
+            "Cannot append value at end of JSON object for key %s",
+            bson->key);
+      }
+
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_TIMESTAMP_VALUES) {
       if (!bson->key) {
          _bad_extended_json (reader);

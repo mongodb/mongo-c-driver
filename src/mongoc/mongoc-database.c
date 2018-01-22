@@ -703,7 +703,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
       }
    }
 
-   mongoc_cursor_error (cursor, error);
+   (void) mongoc_cursor_error (cursor, error);
 
 cleanup:
    mongoc_cursor_destroy (cursor);
@@ -894,7 +894,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
    _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (!_mongoc_cursor_cursorid_prime (cursor)) {
-      mongoc_cursor_error (cursor, &error);
+      (void) mongoc_cursor_error (cursor, &error);
       if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
          /* old server doesn't have listCollections, use system.namespaces */
          memset (&error, 0, sizeof error);
@@ -902,7 +902,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
 
          if (opts && bson_iter_init_find (&iter, opts, "filter")) {
             bson_iter_document (&iter, &len, &data);
-            bson_init_static (&filter, data, len);
+            BSON_ASSERT (bson_init_static (&filter, data, len));
             cursor =
                _mongoc_database_find_collections_legacy (database, &filter);
          } else {
@@ -920,7 +920,8 @@ char **
 mongoc_database_get_collection_names (mongoc_database_t *database,
                                       bson_error_t *error)
 {
-   return mongoc_database_get_collection_names_with_opts (database, NULL, error);
+   return mongoc_database_get_collection_names_with_opts (
+      database, NULL, error);
 }
 
 

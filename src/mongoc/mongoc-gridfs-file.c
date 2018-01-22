@@ -138,7 +138,9 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
    }
 
    if (file->page && _mongoc_gridfs_file_page_is_dirty (file->page)) {
-      _mongoc_gridfs_file_flush_page (file);
+      if (!_mongoc_gridfs_file_flush_page (file)) {
+         RETURN (false);
+      }
    }
 
    md5 = mongoc_gridfs_file_get_md5 (file);
@@ -222,7 +224,9 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs, const bson_t *data)
    file->gridfs = gridfs;
    bson_copy_to (data, &file->bson);
 
-   bson_iter_init (&iter, &file->bson);
+   if (!bson_iter_init (&iter, &file->bson)) {
+      GOTO (failure);
+   }
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
@@ -274,7 +278,9 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs, const bson_t *data)
             GOTO (failure);
          }
          bson_iter_document (&iter, &buf_len, &buf);
-         bson_init_static (&file->bson_metadata, buf, buf_len);
+         if (!bson_init_static (&file->bson_metadata, buf, buf_len)) {
+            GOTO (failure);
+         }
       }
    }
 
@@ -578,7 +584,9 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 
    diff = (ssize_t) (file->pos - file->length);
    target_length = file->pos;
-   mongoc_gridfs_file_seek (file, 0, SEEK_END);
+   if (-1 == mongoc_gridfs_file_seek (file, 0, SEEK_END)) {
+      RETURN (-1);
+   }
 
    while (true) {
       if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
@@ -834,7 +842,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          file->cursor_range[0]++;
       }
 
-      bson_iter_init (&iter, chunk);
+      BSON_ASSERT (bson_iter_init (&iter, chunk));
 
       /* grab out what we need from the chunk */
       while (bson_iter_next (&iter)) {
@@ -940,7 +948,9 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
 
       if (file->page) {
          if (_mongoc_gridfs_file_page_is_dirty (file->page)) {
-            _mongoc_gridfs_file_flush_page (file);
+            if (!_mongoc_gridfs_file_flush_page (file)) {
+               return -1;
+            }
          } else {
             _mongoc_gridfs_file_page_destroy (file->page);
             file->page = NULL;
@@ -950,7 +960,8 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file, int64_t delta, int whence)
       /** we'll pick up the seek when we fetch a page on the next action.  We
        * lazily load */
    } else if (file->page) {
-      _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size);
+      BSON_ASSERT (
+         _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size));
    }
 
    file->pos = offset;
