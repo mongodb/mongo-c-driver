@@ -114,7 +114,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       NULL, /* phCertStore, OUT, HCERTSTORE.., unused, for now */
       NULL, /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
       (const void **) &cert /* ppvContext, OUT, the Certificate Context */
-      );
+   );
 
    if (!cert) {
       MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X",
@@ -431,7 +431,7 @@ mongoc_secure_channel_setup_crl (
       NULL, /* phCertStore, OUT, HCERTSTORE.., unused, for now */
       NULL, /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
       (const void **) &cert /* ppvContext, OUT, the Certificate Context */
-      );
+   );
    bson_free (str);
 
    if (!cert) {
@@ -476,7 +476,7 @@ mongoc_secure_channel_read (mongoc_stream_tls_t *tls,
    ssize_t length;
 
    errno = 0;
-   TRACE ("Wanting to read: %d", data_length);
+   TRACE ("Wanting to read: %d, timeout is %d", data_length, tls->timeout_msec);
    /* 4th argument is minimum bytes, while the data_length is the
     * size of the buffer. We are totally fine with just one TLS record (few
     *bytes)
@@ -508,6 +508,13 @@ mongoc_secure_channel_write (mongoc_stream_tls_t *tls,
 
 
    return length;
+}
+
+void
+mongoc_secure_channel_realloc_buf (size_t *size, uint8_t **buf, size_t new_size)
+{
+   *size = bson_next_power_of_two (new_size);
+   *buf = bson_realloc (*buf, *size);
 }
 
 /**
@@ -604,7 +611,7 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,
       &outbuf_desc,                       /* pOutput OUT param */
       &secure_channel->ret_flags,         /* pfContextAttr OUT param */
       &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
-      );
+   );
 
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
       MONGOC_ERROR ("initial InitializeSecurityContext failed: %d",
@@ -647,9 +654,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
    mongoc_stream_tls_secure_channel_t *secure_channel =
       (mongoc_stream_tls_secure_channel_t *) tls->ctx;
    SECURITY_STATUS sspi_status = SEC_E_OK;
-   unsigned char *reallocated_buffer;
    ssize_t nread = -1, written = -1;
-   size_t reallocated_length;
    SecBufferDesc outbuf_desc;
    SecBufferDesc inbuf_desc;
    SecBuffer outbuf[3];
@@ -666,33 +671,11 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
       return false;
    }
 
-   /* buffer to store previously received and decrypted data */
-   if (secure_channel->decdata_buffer == NULL) {
-      secure_channel->decdata_offset = 0;
-      secure_channel->decdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
-      secure_channel->decdata_buffer =
-         bson_malloc0 (secure_channel->decdata_length);
-   }
-
-   /* buffer to store previously received and encrypted data */
-   if (secure_channel->encdata_buffer == NULL) {
-      secure_channel->encdata_offset = 0;
-      secure_channel->encdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
-      secure_channel->encdata_buffer =
-         bson_malloc0 (secure_channel->encdata_length);
-   }
-
-   /* if we need a bigger buffer to read a full message, increase buffer now */
-   if (secure_channel->encdata_length - secure_channel->encdata_offset <
-       MONGOC_SCHANNEL_BUFFER_FREE_SIZE) {
-      /* increase internal encrypted data buffer */
-      reallocated_length =
-         secure_channel->encdata_offset + MONGOC_SCHANNEL_BUFFER_FREE_SIZE;
-      reallocated_buffer =
-         bson_realloc (secure_channel->encdata_buffer, reallocated_length);
-
-      secure_channel->encdata_buffer = reallocated_buffer;
-      secure_channel->encdata_length = reallocated_length;
+   /* grow the buffer if necessary */
+   if (secure_channel->encdata_length == secure_channel->encdata_offset) {
+      mongoc_secure_channel_realloc_buf (&secure_channel->encdata_length,
+                                         &secure_channel->encdata_buffer,
+                                         secure_channel->encdata_length + 1);
    }
 
    for (;;) {

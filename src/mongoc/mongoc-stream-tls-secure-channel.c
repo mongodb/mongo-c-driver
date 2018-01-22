@@ -323,7 +323,7 @@ _mongoc_stream_tls_secure_channel_write (mongoc_stream_t *stream,
 
    if (buf_len == (size_t) written) {
       /* Encrypted message including header, data and trailer entirely sent.
-      *  The return value is the number of unencrypted bytes that were sent. */
+       * The return value is the number of unencrypted bytes that were sent. */
       written = outbuf[1].cbBuffer;
    }
 
@@ -461,115 +461,47 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
 }
 
 
+/* move up to "len" decrypted bytes to buf, return number of bytes */
 static ssize_t
-_mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
-                                        char *buf,
-                                        size_t len)
+_mongoc_stream_tls_secure_channel_debuf (
+   mongoc_stream_tls_secure_channel_t *secure_channel, char *buf, size_t size)
 {
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
-   mongoc_stream_tls_secure_channel_t *secure_channel =
-      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
-   ssize_t error = 0;
+   size_t s = BSON_MIN (size, secure_channel->decdata_offset);
+   memcpy (buf, secure_channel->decdata_buffer, s);
+   memmove (secure_channel->decdata_buffer,
+            secure_channel->decdata_buffer + s,
+            secure_channel->decdata_offset - s);
+
+   secure_channel->decdata_offset -= s;
+
+   TRACE ("decrypted data returned %zu", s);
+   TRACE ("decrypted data buffer: offset %zu length %zu",
+          secure_channel->decdata_offset,
+          secure_channel->decdata_length);
+
+   return (ssize_t) s;
+}
+
+
+/* decrypt as many received bytes as possible to secure_channel.decdata_buf */
+static void
+_mongoc_stream_tls_secure_channel_decrypt (
+   mongoc_stream_tls_secure_channel_t *secure_channel)
+{
    size_t size = 0;
+   size_t remaining;
    ssize_t nread = -1;
-   unsigned char *reallocated_buffer;
-   size_t reallocated_length;
    bool done = false;
    SecBuffer inbuf[4];
    SecBufferDesc inbuf_desc;
    SECURITY_STATUS sspi_status = SEC_E_OK;
-   /* we want the length of the encrypted buffer to be at least large enough
-   *  that it can hold all the bytes requested and some TLS record overhead. */
-   size_t min_encdata_length = len + MONGOC_SCHANNEL_BUFFER_FREE_SIZE;
-
-   /****************************************************************************
-    * Don't return or set secure_channel->recv_unrecoverable_err unless in the
-    * cleanup.
-    * The pattern for return error is set error, optional infof, goto cleanup.
-    *
-    * Our priority is to always return as much decrypted data to the caller as
-    * possible, even if an error occurs. The state of the decrypted buffer must
-    * always be valid. Transfer of decrypted data to the caller's buffer is
-    * handled in the cleanup.
-    */
-
-   TRACE ("client wants to read %zu bytes", len);
-
-   if (len && len <= secure_channel->decdata_offset) {
-      TRACE ("enough decrypted data is already available");
-      goto cleanup;
-   } else if (secure_channel->recv_unrecoverable_err) {
-      error = secure_channel->recv_unrecoverable_err;
-      TRACE ("an unrecoverable error occurred in a prior call");
-      goto cleanup;
-   } else if (secure_channel->recv_sspi_close_notify) {
-      /* once a server has indicated shutdown there is no more encrypted data */
-      TRACE ("server indicated shutdown in a prior call");
-      goto cleanup;
-   } else if (!len) {
-      /* It's debatable what to return when !len. Regardless we can't return
-       * immediately because there may be data to decrypt (in the case we want
-       * to
-       * decrypt all encrypted cached data) so handle !len later in cleanup.
-       */
-      /* do nothing */
-   } else if (!secure_channel->recv_connection_closed) {
-      /* increase enc buffer in order to fit the requested amount of data */
-      size = secure_channel->encdata_length - secure_channel->encdata_offset;
-
-      if (size < MONGOC_SCHANNEL_BUFFER_FREE_SIZE ||
-          secure_channel->encdata_length < min_encdata_length) {
-         reallocated_length =
-            secure_channel->encdata_offset + MONGOC_SCHANNEL_BUFFER_FREE_SIZE;
-
-         if (reallocated_length < min_encdata_length) {
-            reallocated_length = min_encdata_length;
-         }
-
-         reallocated_buffer =
-            bson_realloc (secure_channel->encdata_buffer, reallocated_length);
-
-         secure_channel->encdata_buffer = reallocated_buffer;
-         secure_channel->encdata_length = reallocated_length;
-         size = secure_channel->encdata_length - secure_channel->encdata_offset;
-         TRACE ("encdata_buffer resized %zu", secure_channel->encdata_length);
-      }
-
-      TRACE ("encrypted data buffer: offset %zu length %zu",
-             secure_channel->encdata_offset,
-             secure_channel->encdata_length);
-
-      /* read encrypted data from socket */
-      nread =
-         mongoc_secure_channel_read (tls,
-                                     (char *) (secure_channel->encdata_buffer +
-                                               secure_channel->encdata_offset),
-                                     size);
-
-      if (!nread) {
-         nread = -1;
-
-         if (MONGOC_ERRNO_IS_AGAIN (errno)) {
-            TRACE ("Try again");
-            error = EAGAIN;
-         } else {
-            secure_channel->recv_connection_closed = true;
-            TRACE ("reading failed: %d", errno);
-         }
-      } else {
-         secure_channel->encdata_offset += (size_t) nread;
-         TRACE ("encrypted data got %zd", nread);
-      }
-   }
 
    TRACE ("encrypted data buffer: offset %zu length %zu",
           secure_channel->encdata_offset,
           secure_channel->encdata_length);
 
    /* decrypt loop */
-   while (secure_channel->encdata_offset > 0 && sspi_status == SEC_E_OK &&
-          (!len || secure_channel->decdata_offset < len ||
-           secure_channel->recv_connection_closed)) {
+   while (secure_channel->encdata_offset > 0 && sspi_status == SEC_E_OK) {
       /* prepare data buffer for DecryptMessage call */
       _mongoc_secure_channel_init_sec_buffer (
          &inbuf[0],
@@ -601,32 +533,18 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
          if (inbuf[1].BufferType == SECBUFFER_DATA) {
             TRACE ("decrypted data length: %lu", inbuf[1].cbBuffer);
 
-            /* increase buffer in order to fit the received amount of data */
-            size = inbuf[1].cbBuffer > MONGOC_SCHANNEL_BUFFER_FREE_SIZE
-                      ? inbuf[1].cbBuffer
-                      : MONGOC_SCHANNEL_BUFFER_FREE_SIZE;
+            size = inbuf[1].cbBuffer;
+            remaining =
+               secure_channel->decdata_length - secure_channel->decdata_offset;
 
-            if (secure_channel->decdata_length -
-                      secure_channel->decdata_offset <
-                   size ||
-                secure_channel->decdata_length < len) {
-               /* increase internal decrypted data buffer */
-               reallocated_length = secure_channel->decdata_offset + size;
-
-               /* make sure that the requested amount of data fits */
-               if (reallocated_length < len) {
-                  reallocated_length = len;
-               }
-
-               reallocated_buffer = bson_realloc (
-                  secure_channel->decdata_buffer, reallocated_length);
-               secure_channel->decdata_buffer = reallocated_buffer;
-               secure_channel->decdata_length = reallocated_length;
+            if (remaining < size) {
+               mongoc_secure_channel_realloc_buf (
+                  &secure_channel->decdata_length,
+                  &secure_channel->decdata_buffer,
+                  size);
             }
 
             /* copy decrypted data to internal buffer */
-            size = inbuf[1].cbBuffer;
-
             if (size) {
                memcpy (secure_channel->decdata_buffer +
                           secure_channel->decdata_offset,
@@ -671,7 +589,6 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
          /* check if server wants to renegotiate the connection context */
          if (sspi_status == SEC_I_RENEGOTIATE) {
             TRACE ("remote party requests renegotiation");
-            goto cleanup;
          }
          /* check if the server closed the connection */
          else if (sspi_status == SEC_I_CONTEXT_EXPIRED) {
@@ -683,20 +600,12 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
                secure_channel->recv_connection_closed = true;
                TRACE ("server closed the connection");
             }
-
-            goto cleanup;
          }
       } else if (sspi_status == SEC_E_INCOMPLETE_MESSAGE) {
-         if (!error) {
-            error = EAGAIN;
-         }
-
          TRACE ("failed to decrypt data, need more data");
-         goto cleanup;
       } else {
-         error = 1;
          TRACE ("failed to read data from server: %d", sspi_status);
-         goto cleanup;
+         secure_channel->recv_unrecoverable_err = true;
       }
    }
 
@@ -707,71 +616,86 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
    TRACE ("decrypted data buffer: offset %zu length %zu",
           secure_channel->decdata_offset,
           secure_channel->decdata_length);
-
-cleanup:
-   /* Warning- there is no guarantee the encdata state is valid at this point */
-   TRACE ("cleanup");
-
-   /* Error if the connection has closed without a close_notify.
-    * Behavior here is a matter of debate. We don't want to be vulnerable to a
-    * truncation attack however there's some browser precedent for ignoring the
-    * close_notify for compatibility reasons.
-    * Additionally, Windows 2000 (v5.0) is a special case since it seems it
-    * doesn't
-    * return close_notify. In that case if the connection was closed we assume
-    * it
-    * was graceful (close_notify) since there doesn't seem to be a way to tell.
-    */
-   if (len && !secure_channel->decdata_offset &&
-       secure_channel->recv_connection_closed &&
-       !secure_channel->recv_sspi_close_notify) {
-      error = 1;
-      TRACE ("server closed abruptly (missing close_notify)");
-   }
-
-   /* Any error other than EAGAIN is an unrecoverable error. */
-   if (error && error != EAGAIN) {
-      secure_channel->recv_unrecoverable_err = error;
-      TRACE ("fatal error");
-   }
-
-   size = len < secure_channel->decdata_offset ? len
-                                               : secure_channel->decdata_offset;
-
-   if (size) {
-      memcpy (buf, secure_channel->decdata_buffer, size);
-      memmove (secure_channel->decdata_buffer,
-               secure_channel->decdata_buffer + size,
-               secure_channel->decdata_offset - size);
-      secure_channel->decdata_offset -= size;
-
-      TRACE ("decrypted data returned %zu", size);
-      TRACE ("decrypted data buffer: offset %zu length %zu",
-             secure_channel->decdata_offset,
-             secure_channel->decdata_length);
-      return (ssize_t) size;
-   }
-
-   if (!error && !secure_channel->recv_connection_closed) {
-      error = EAGAIN;
-   }
-
-   /* It's debatable what to return when !len. We could return whatever error we
-    * got from decryption but instead we override here so the return is
-    * consistent.
-    */
-   if (!len) {
-      error = 0;
-   }
-
-   if (error == EAGAIN) {
-      errno = EAGAIN;
-      return 0;
-   }
-
-   TRACE ("error is: %d and errno is: %d", error, errno);
-   return error ? -1 : 0;
 }
+
+
+static ssize_t
+_mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
+                                        char *buf,
+                                        size_t len)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+   mongoc_stream_tls_secure_channel_t *secure_channel =
+      (mongoc_stream_tls_secure_channel_t *) tls->ctx;
+   ssize_t size = 0;
+   ssize_t nread;
+
+   TRACE ("client wants to read %zu bytes", len);
+   BSON_ASSERT (len > 0);
+
+   /*
+    * Our priority is to always return as much decrypted data to the caller as
+    * possible, even if an error occurs. The state of the decrypted buffer must
+    * always be valid.
+    */
+
+   if (secure_channel->decdata_offset) {
+      TRACE ("decrypted data is already available");
+      return _mongoc_stream_tls_secure_channel_debuf (secure_channel, buf, len);
+   }
+
+   /* is a complete encrypted block left from last network read? */
+   if (secure_channel->encdata_offset) {
+      _mongoc_stream_tls_secure_channel_decrypt (secure_channel);
+      if (secure_channel->decdata_offset) {
+         return _mongoc_stream_tls_secure_channel_debuf (
+            secure_channel, buf, len);
+      }
+   }
+
+   /* keep these checks separated, for more detailed tracing */
+   if (secure_channel->recv_unrecoverable_err) {
+      TRACE ("an unrecoverable error occurred in a prior call");
+      return -1;
+   }
+
+   if (secure_channel->recv_sspi_close_notify) {
+      TRACE ("server indicated shutdown in a prior call");
+      return -1;
+   }
+
+   if (secure_channel->recv_connection_closed) {
+      TRACE ("connection closed");
+      return -1;
+   }
+
+   size = secure_channel->encdata_length - secure_channel->encdata_offset;
+
+   /* read encrypted data from socket. returns 0 on shutdown or error */
+   nread =
+      mongoc_secure_channel_read (tls,
+                                  (char *) (secure_channel->encdata_buffer +
+                                            secure_channel->encdata_offset),
+                                  (size_t) size);
+
+   if (!nread) {
+      if (MONGOC_ERRNO_IS_AGAIN (errno)) {
+         TRACE ("Try again");
+         return 0;
+      } else {
+         secure_channel->recv_connection_closed = true;
+         TRACE ("reading failed: %d", errno);
+         return -1;
+      }
+   }
+
+   secure_channel->encdata_offset += (size_t) nread;
+   TRACE ("encrypted data got %zd", nread);
+
+   _mongoc_stream_tls_secure_channel_decrypt (secure_channel);
+   return _mongoc_stream_tls_secure_channel_debuf (secure_channel, buf, len);
+}
+
 
 /* This function is copypasta of _mongoc_stream_tls_openssl_readv */
 static ssize_t
@@ -904,10 +828,13 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    ENTRY;
    BSON_ASSERT (secure_channel);
 
-   TRACE ("Getting ready for state: %d", secure_channel->connecting_state + 1);
+   TRACE ("Getting ready for state: %d, timeout is %d",
+          secure_channel->connecting_state + 1,
+          tls->timeout_msec);
 
    switch (secure_channel->connecting_state) {
    case ssl_connect_1:
+
 
       if (mongoc_secure_channel_handshake_step_1 (tls, (char *) host)) {
          TRACE ("Step#1 Worked!\n\n");
@@ -924,8 +851,11 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    case ssl_connect_2_writing:
 
       if (mongoc_secure_channel_handshake_step_2 (tls, (char *) host)) {
-         TRACE ("Step#2 Worked!\n\n");
-         *events = POLLIN | POLLOUT;
+         if (secure_channel->connecting_state == ssl_connect_2_reading) {
+            *events = POLLIN;
+         } else {
+            *events = POLLOUT;
+         }
          RETURN (false);
       } else {
          TRACE ("Step#2 FAILED!");
@@ -991,6 +921,13 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
 
    secure_channel = (mongoc_stream_tls_secure_channel_t *) bson_malloc0 (
       sizeof *secure_channel);
+
+   secure_channel->decdata_buffer =
+      bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
+   secure_channel->decdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
+   secure_channel->encdata_buffer =
+      bson_malloc (MONGOC_SCHANNEL_BUFFER_INIT_SIZE);
+   secure_channel->encdata_length = MONGOC_SCHANNEL_BUFFER_INIT_SIZE;
 
    tls = (mongoc_stream_tls_t *) bson_malloc0 (sizeof *tls);
    tls->parent.type = MONGOC_STREAM_TLS;

@@ -25,6 +25,7 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-server-description-private.h"
+#include "mongoc-topology-scanner-private.h"
 #include "mongoc-log.h"
 #include "utlist.h"
 
@@ -68,11 +69,13 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
    const char *host = (const char *) ctx;
    int retry_events = 0;
 
+
    for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
-#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
+   defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
    /* pass 0 for the timeout to begin / continue non-blocking handshake */
    timeout_msec = 0;
 #endif

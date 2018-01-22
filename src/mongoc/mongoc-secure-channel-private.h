@@ -54,9 +54,9 @@ mongoc_secure_channel_setup_certificate (
    mongoc_stream_tls_secure_channel_t *secure_channel, mongoc_ssl_opt_t *opt);
 
 
-/* Both schannel buffer sizes must be > 0 */
-#define MONGOC_SCHANNEL_BUFFER_INIT_SIZE 4096
-#define MONGOC_SCHANNEL_BUFFER_FREE_SIZE 1024
+/* it may require 16k + some overhead to hold one decryptable block of data - do
+ * what cURL does, add 1k */
+#define MONGOC_SCHANNEL_BUFFER_INIT_SIZE (17 * 1024)
 
 void
 _mongoc_secure_channel_init_sec_buffer (SecBuffer *buffer,
@@ -68,6 +68,11 @@ void
 _mongoc_secure_channel_init_sec_buffer_desc (SecBufferDesc *desc,
                                              SecBuffer *buffer_array,
                                              unsigned long buffer_count);
+
+void
+mongoc_secure_channel_realloc_buf (size_t *size,
+                                   uint8_t **buf,
+                                   size_t new_size);
 
 bool
 mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,

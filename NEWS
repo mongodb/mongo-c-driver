@@ -1,6 +1,11 @@
 Next release
 ============
 
+  * The driver now handshakes SSL connections to multiple servers in a replica
+    set or sharded cluster in parallel, so long as it uses OpenSSL or Windows
+    SChannel. (SSL handshakes with Apple's Secure Transport are still serial.)
+    A larger receive buffer with SChannel increases performance over slow
+    connections.
   * All functions that accept read concern now prohibit it if MongoDB is too
     old to support it (pre-3.2).
   * mongoc_collection_find_and_modify_with_opts now prohibits write concern if
