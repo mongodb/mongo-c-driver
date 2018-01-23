@@ -34,10 +34,11 @@ from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 this_dir = dirname(__file__)
 template_dir = joinpath(this_dir, 'opts_templates')
 src_dir = normpath(joinpath(this_dir, '../src/mongoc'))
+doc_includes = normpath(joinpath(this_dir, '../doc/includes'))
 
 
 class Struct(OrderedDict):
-    def __init__(self, instance_type, items, **defaults):
+    def __init__(self, instance_type, items, generate_rst=True, **defaults):
         """Define an options struct.
 
         - instance_type: A type like mongoc_client_t, mongoc_database_t, etc.
@@ -51,6 +52,7 @@ class Struct(OrderedDict):
         else:
             self.instance_type = self.instance_name = ''
         self.is_shared = False
+        self.generate_rst = generate_rst
         self.defaults = defaults
 
     def default(self, item, fallback):
@@ -62,7 +64,15 @@ class Shared(Struct):
         """Define a struct that is shared by others."""
         super(Shared, self).__init__(None, items, **defaults)
         self.is_shared = True
+        self.generate_rst = False
 
+
+crud_shared_options = ('crud', {'type': 'mongoc_crud_opts_t'})
+
+ordered_option = ('ordered', {
+    'type': 'bool',
+    'help': 'set to ``false`` to attempt to insert all documents, continuing after errors.'
+})
 
 opts_structs = OrderedDict([
     ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
@@ -107,7 +117,7 @@ opts_structs = OrderedDict([
         ('singleBatch', {'type': 'bool'}),
         ('snapshot', {'type': 'bool'}),
         ('tailable', {'type': 'bool'})
-    ])),
+    ], generate_rst=False)),
 
     ('mongoc_crud_opts_t', Shared([
         ('writeConcern', {
@@ -141,34 +151,34 @@ opts_structs = OrderedDict([
     ])),
 
     ('mongoc_insert_one_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'})
+        crud_shared_options
     ], validate='_mongoc_default_insert_vflags')),
 
     ('mongoc_insert_many_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'}),
-        ('ordered', {'type': 'bool'})
+        crud_shared_options,
+        ordered_option,
     ], validate='_mongoc_default_insert_vflags', ordered='true')),
 
     ('mongoc_delete_one_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'})
+        crud_shared_options
     ])),
 
     ('mongoc_delete_many_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'}),
-        ('ordered', {'type': 'bool'})
+        crud_shared_options,
+        ordered_option
     ], ordered='true')),
 
     ('mongoc_update_one_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'})
+        crud_shared_options
     ], validate='_mongoc_default_update_vflags')),
 
     ('mongoc_update_many_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'}),
-        ('ordered', {'type': 'bool'})
+        crud_shared_options,
+        ordered_option
     ], validate='_mongoc_default_update_vflags', ordered='true')),
 
     ('mongoc_replace_one_opts_t', Struct('mongoc_collection_t', [
-        ('crud', {'type': 'mongoc_crud_opts_t'}),
+        crud_shared_options,
     ], validate='_mongoc_default_replace_vflags')),
 ])
 
@@ -211,4 +221,31 @@ for file_name in files:
         f.write(t.render(globals()))
         f.write('\n')
 
-# TODO: also generate RST text files in doc/includes
+
+def document_opts(struct, f):
+    for option_name, info in struct.items():
+        if info.get('hidden'):
+            continue
+
+        the_type = info['type']
+        if the_type in opts_structs:
+            # E.g., the type is mongoc_crud_opts_t. Recurse.
+            document_opts(opts_structs[the_type], f)
+            continue
+
+        assert 'help' in info, "No 'help' for '%s'" % option_name
+        f.write("* ``{option_name}``: {info[help]}\n".format(**locals()))
+
+
+for struct_name, struct in opts_structs.items():
+    if not struct.generate_rst:
+        continue
+
+    name = re.sub(r'mongoc_(\w+)_t', r'\1', struct_name).replace('_', '-')
+    file_name = name + '.txt'
+    print(file_name)
+    f = open(joinpath(doc_includes, file_name), 'w')
+    f.write("``opts`` may be NULL or a BSON document with additional command options:\n\n")
+    document_opts(struct, f)
+
+    f.close()

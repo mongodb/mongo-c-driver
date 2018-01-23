@@ -26,8 +26,7 @@ Parameters
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the insert result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-.. include:: includes/crud-opts.txt
-* ``ordered``: set to ``false`` to attempt to insert all documents, continuing after errors.
+.. include:: includes/insert-many-opts.txt
 
 Description
 -----------
