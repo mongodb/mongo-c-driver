@@ -313,7 +313,6 @@ _mongoc_insert_one_opts_parse (
    mongoc_insert_one_opts->crud.validate = _mongoc_default_insert_vflags;
    mongoc_insert_one_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_insert_one_opts->crud.collation);
    bson_init (&mongoc_insert_one_opts->extra);
 
    if (!opts) {
@@ -367,15 +366,6 @@ _mongoc_insert_one_opts_parse (
             return false;
          }
       }
-      else if (!strcmp (bson_iter_key (&iter), "collation")) {
-         if (!_mongoc_convert_document (
-               client,
-               &iter,
-               &mongoc_insert_one_opts->crud.collation,
-               error)) {
-            return false;
-         }
-      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -400,7 +390,6 @@ _mongoc_insert_one_opts_cleanup (mongoc_insert_one_opts_t *mongoc_insert_one_opt
    if (mongoc_insert_one_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_insert_one_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_insert_one_opts->crud.collation);
    bson_destroy (&mongoc_insert_one_opts->extra);
 }
 
@@ -420,7 +409,6 @@ _mongoc_insert_many_opts_parse (
    mongoc_insert_many_opts->crud.validate = _mongoc_default_insert_vflags;
    mongoc_insert_many_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_insert_many_opts->crud.collation);
    mongoc_insert_many_opts->ordered = true;
    bson_init (&mongoc_insert_many_opts->extra);
 
@@ -475,15 +463,6 @@ _mongoc_insert_many_opts_parse (
             return false;
          }
       }
-      else if (!strcmp (bson_iter_key (&iter), "collation")) {
-         if (!_mongoc_convert_document (
-               client,
-               &iter,
-               &mongoc_insert_many_opts->crud.collation,
-               error)) {
-            return false;
-         }
-      }
       else if (!strcmp (bson_iter_key (&iter), "ordered")) {
          if (!_mongoc_convert_bool (
                client,
@@ -517,7 +496,6 @@ _mongoc_insert_many_opts_cleanup (mongoc_insert_many_opts_t *mongoc_insert_many_
    if (mongoc_insert_many_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_insert_many_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_insert_many_opts->crud.collation);
    bson_destroy (&mongoc_insert_many_opts->extra);
 }
 
@@ -537,7 +515,7 @@ _mongoc_delete_one_opts_parse (
    mongoc_delete_one_opts->crud.validate = BSON_VALIDATE_NONE;
    mongoc_delete_one_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_delete_one_opts->crud.collation);
+   bson_init (&mongoc_delete_one_opts->collation);
    bson_init (&mongoc_delete_one_opts->extra);
 
    if (!opts) {
@@ -595,7 +573,7 @@ _mongoc_delete_one_opts_parse (
          if (!_mongoc_convert_document (
                client,
                &iter,
-               &mongoc_delete_one_opts->crud.collation,
+               &mongoc_delete_one_opts->collation,
                error)) {
             return false;
          }
@@ -624,7 +602,7 @@ _mongoc_delete_one_opts_cleanup (mongoc_delete_one_opts_t *mongoc_delete_one_opt
    if (mongoc_delete_one_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_delete_one_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_delete_one_opts->crud.collation);
+   bson_destroy (&mongoc_delete_one_opts->collation);
    bson_destroy (&mongoc_delete_one_opts->extra);
 }
 
@@ -644,7 +622,7 @@ _mongoc_delete_many_opts_parse (
    mongoc_delete_many_opts->crud.validate = BSON_VALIDATE_NONE;
    mongoc_delete_many_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_delete_many_opts->crud.collation);
+   bson_init (&mongoc_delete_many_opts->collation);
    mongoc_delete_many_opts->ordered = true;
    bson_init (&mongoc_delete_many_opts->extra);
 
@@ -703,7 +681,7 @@ _mongoc_delete_many_opts_parse (
          if (!_mongoc_convert_document (
                client,
                &iter,
-               &mongoc_delete_many_opts->crud.collation,
+               &mongoc_delete_many_opts->collation,
                error)) {
             return false;
          }
@@ -741,7 +719,7 @@ _mongoc_delete_many_opts_cleanup (mongoc_delete_many_opts_t *mongoc_delete_many_
    if (mongoc_delete_many_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_delete_many_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_delete_many_opts->crud.collation);
+   bson_destroy (&mongoc_delete_many_opts->collation);
    bson_destroy (&mongoc_delete_many_opts->extra);
 }
 
@@ -761,7 +739,7 @@ _mongoc_update_one_opts_parse (
    mongoc_update_one_opts->crud.validate = _mongoc_default_update_vflags;
    mongoc_update_one_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_update_one_opts->crud.collation);
+   bson_init (&mongoc_update_one_opts->collation);
    bson_init (&mongoc_update_one_opts->extra);
 
    if (!opts) {
@@ -819,7 +797,7 @@ _mongoc_update_one_opts_parse (
          if (!_mongoc_convert_document (
                client,
                &iter,
-               &mongoc_update_one_opts->crud.collation,
+               &mongoc_update_one_opts->collation,
                error)) {
             return false;
          }
@@ -848,7 +826,7 @@ _mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opt
    if (mongoc_update_one_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_update_one_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_update_one_opts->crud.collation);
+   bson_destroy (&mongoc_update_one_opts->collation);
    bson_destroy (&mongoc_update_one_opts->extra);
 }
 
@@ -868,7 +846,7 @@ _mongoc_update_many_opts_parse (
    mongoc_update_many_opts->crud.validate = _mongoc_default_update_vflags;
    mongoc_update_many_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_update_many_opts->crud.collation);
+   bson_init (&mongoc_update_many_opts->collation);
    mongoc_update_many_opts->ordered = true;
    bson_init (&mongoc_update_many_opts->extra);
 
@@ -927,7 +905,7 @@ _mongoc_update_many_opts_parse (
          if (!_mongoc_convert_document (
                client,
                &iter,
-               &mongoc_update_many_opts->crud.collation,
+               &mongoc_update_many_opts->collation,
                error)) {
             return false;
          }
@@ -965,7 +943,7 @@ _mongoc_update_many_opts_cleanup (mongoc_update_many_opts_t *mongoc_update_many_
    if (mongoc_update_many_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_update_many_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_update_many_opts->crud.collation);
+   bson_destroy (&mongoc_update_many_opts->collation);
    bson_destroy (&mongoc_update_many_opts->extra);
 }
 
@@ -985,7 +963,7 @@ _mongoc_replace_one_opts_parse (
    mongoc_replace_one_opts->crud.validate = _mongoc_default_replace_vflags;
    mongoc_replace_one_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
-   bson_init (&mongoc_replace_one_opts->crud.collation);
+   bson_init (&mongoc_replace_one_opts->collation);
    bson_init (&mongoc_replace_one_opts->extra);
 
    if (!opts) {
@@ -1043,7 +1021,7 @@ _mongoc_replace_one_opts_parse (
          if (!_mongoc_convert_document (
                client,
                &iter,
-               &mongoc_replace_one_opts->crud.collation,
+               &mongoc_replace_one_opts->collation,
                error)) {
             return false;
          }
@@ -1072,7 +1050,7 @@ _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_
    if (mongoc_replace_one_opts->crud.write_concern_owned) {
       mongoc_write_concern_destroy (mongoc_replace_one_opts->crud.writeConcern);
    }
-   bson_destroy (&mongoc_replace_one_opts->crud.collation);
+   bson_destroy (&mongoc_replace_one_opts->collation);
    bson_destroy (&mongoc_replace_one_opts->extra);
 }
 

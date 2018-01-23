@@ -244,7 +244,6 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
 
    BSON_ASSERT (command);
 
-   flags.has_collation = bson_empty (&crud->collation);
    flags.bypass_document_validation = crud->bypassDocumentValidation;
 
    _mongoc_write_command_init_bulk (
@@ -918,7 +917,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (result);
 
-   if (!bson_empty (&crud->collation)) {
+   if (command->flags.has_collation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
          bson_set_error (&result->error,

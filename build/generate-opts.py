@@ -74,6 +74,11 @@ ordered_option = ('ordered', {
     'help': 'set to ``false`` to attempt to insert all documents, continuing after errors.'
 })
 
+collation_option = ('collation', {
+    'type': 'document',
+    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
         ('projection', {'type': 'document'}),
@@ -144,10 +149,6 @@ opts_structs = OrderedDict([
             'type': 'mongoc_write_bypass_document_validation_t',
             'help': 'Set to ``true`` to skip server-side schema validation of the provided BSON documents.'
         }),
-        ('collation', {
-            'type': 'document',
-            'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
-        }),
     ])),
 
     ('mongoc_insert_one_opts_t', Struct('mongoc_collection_t', [
@@ -160,25 +161,30 @@ opts_structs = OrderedDict([
     ], validate='_mongoc_default_insert_vflags', ordered='true')),
 
     ('mongoc_delete_one_opts_t', Struct('mongoc_collection_t', [
-        crud_shared_options
+        crud_shared_options,
+        collation_option,
     ])),
 
     ('mongoc_delete_many_opts_t', Struct('mongoc_collection_t', [
         crud_shared_options,
-        ordered_option
+        collation_option,
+        ordered_option,
     ], ordered='true')),
 
     ('mongoc_update_one_opts_t', Struct('mongoc_collection_t', [
-        crud_shared_options
+        crud_shared_options,
+        collation_option,
     ], validate='_mongoc_default_update_vflags')),
 
     ('mongoc_update_many_opts_t', Struct('mongoc_collection_t', [
         crud_shared_options,
-        ordered_option
+        collation_option,
+        ordered_option,
     ], validate='_mongoc_default_update_vflags', ordered='true')),
 
     ('mongoc_replace_one_opts_t', Struct('mongoc_collection_t', [
         crud_shared_options,
+        collation_option,
     ], validate='_mongoc_default_replace_vflags')),
 ])
 
@@ -245,7 +251,8 @@ for struct_name, struct in opts_structs.items():
     file_name = name + '.txt'
     print(file_name)
     f = open(joinpath(doc_includes, file_name), 'w')
-    f.write("``opts`` may be NULL or a BSON document with additional command options:\n\n")
+    f.write(
+        "``opts`` may be NULL or a BSON document with additional command options:\n\n")
     document_opts(struct, f)
 
     f.close()
