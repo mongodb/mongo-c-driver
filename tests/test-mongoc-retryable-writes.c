@@ -1026,6 +1026,24 @@ test_remove_unacknowledged (void)
 }
 
 
+static void
+test_retry_no_crypto (void *ctx)
+{
+   mongoc_client_t *client;
+
+   capture_logs (true);
+   client = mongoc_client_new ("mongodb://localhost/?retryWrites=true");
+   BSON_ASSERT (client);
+
+   ASSERT_CAPTURED_LOG (
+      "retryWrites=true",
+      MONGOC_LOG_LEVEL_WARNING,
+      "retryWrites not supported without an SSL crypto library");
+
+   mongoc_client_destroy (client);
+}
+
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -1081,4 +1099,10 @@ test_retryable_writes_install (TestSuite *suite)
       "/retryable_writes/bulk_operation_execute_unacknowledged",
       test_bulk_operation_execute_unacknowledged,
       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/no_crypto",
+                      test_retry_no_crypto,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_crypto);
 }
