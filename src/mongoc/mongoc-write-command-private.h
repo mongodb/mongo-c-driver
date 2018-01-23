@@ -106,6 +106,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,
                                    mongoc_bulk_write_flags_t flags,
                                    int64_t operation_id,
                                    bool allow_bulk_op_insert);
+
 void
 _mongoc_write_command_init_delete (mongoc_write_command_t *command,
                                    const bson_t *selectors,
@@ -149,6 +150,20 @@ _mongoc_write_command_execute (mongoc_write_command_t *command,
                                uint32_t offset,
                                mongoc_client_session_t *cs,
                                mongoc_write_result_t *result);
+
+void
+_mongoc_write_command_execute_idl (mongoc_write_command_t *command,
+                               mongoc_client_t *client,
+                               mongoc_server_stream_t *server_stream,
+                               const char *database,
+                               const char *collection,
+                               const mongoc_write_concern_t *write_concern,
+                               uint32_t offset,
+                               mongoc_client_session_t *cs,
+                               bson_t collation,
+                               mongoc_write_bypass_document_validation_t bypassDocVal,
+                               mongoc_write_result_t *result);
+
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
 void

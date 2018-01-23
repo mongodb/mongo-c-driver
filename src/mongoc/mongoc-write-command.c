@@ -228,7 +228,6 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
    EXIT;
 }
 
-
 void
 _mongoc_write_command_init_delete (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
@@ -830,6 +829,111 @@ _mongoc_write_command_execute (
          EXIT;
       }
    }
+   if (command->payload.len == 0) {
+      _empty_error (command, &result->error);
+      EXIT;
+   }
+
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      _mongoc_write_opmsg (command,
+                           client,
+                           server_stream,
+                           database,
+                           collection,
+                           write_concern,
+                           offset,
+                           cs,
+                           result,
+                           &result->error);
+   } else {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
+         _mongoc_write_opquery (command,
+                                client,
+                                server_stream,
+                                database,
+                                collection,
+                                write_concern,
+                                offset,
+                                cs,
+                                result,
+                                &result->error);
+      } else {
+         gLegacyWriteOps[command->type](command,
+                                        client,
+                                        server_stream,
+                                        database,
+                                        collection,
+                                        offset,
+                                        result,
+                                        &result->error);
+      }
+   }
+
+   EXIT;
+}
+
+void
+_mongoc_write_command_execute_idl (
+   mongoc_write_command_t *command,             /* IN */
+   mongoc_client_t *client,                     /* IN */
+   mongoc_server_stream_t *server_stream,       /* IN */
+   const char *database,                        /* IN */
+   const char *collection,                      /* IN */
+   const mongoc_write_concern_t *write_concern, /* IN */
+   uint32_t offset,                             /* IN */
+   mongoc_client_session_t *cs,                 /* IN */
+   bson_t collation,                            /* IN */
+   mongoc_write_bypass_document_validation_t bypassDocVal,                           /* IN */
+   mongoc_write_result_t *result)               /* OUT */
+{
+   ENTRY;
+
+   BSON_ASSERT (command);
+   BSON_ASSERT (client);
+   BSON_ASSERT (server_stream);
+   BSON_ASSERT (database);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (result);
+
+   if (!mongoc_write_concern_is_valid (write_concern)) {
+      bson_set_error (&result->error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "The write concern is invalid.");
+      result->failed = true;
+      EXIT;
+   }
+
+   if (!bson_empty (&collation)) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
+         result->failed = true;
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set collation for unacknowledged writes");
+         EXIT;
+      }
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Collation is not supported by the selected server");
+         result->failed = true;
+         EXIT;
+      }
+   }
+   if (bypassDocVal != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
+         result->failed = true;
+         bson_set_error (
+            &result->error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Cannot set bypassDocumentValidation for unacknowledged writes");
+         EXIT;
+      }
+   }
+
    if (command->payload.len == 0) {
       _empty_error (command, &result->error);
       EXIT;

@@ -59,16 +59,25 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
 
    if (write_concern) {
       ret = mongoc_write_concern_new ();
-      ret->fsync_ = write_concern->fsync_;
-      ret->journal = write_concern->journal;
-      ret->w = write_concern->w;
-      ret->wtimeout = write_concern->wtimeout;
-      ret->frozen = false;
-      ret->wtag = bson_strdup (write_concern->wtag);
-      ret->is_default = write_concern->is_default;
+      mongoc_write_concern_copy_to (write_concern, ret);
    }
 
    return ret;
+}
+
+void
+mongoc_write_concern_copy_to (const mongoc_write_concern_t *write_concern,
+                             mongoc_write_concern_t *dst) {
+
+   if (write_concern) {
+      dst->fsync_ = write_concern->fsync_;
+      dst->journal = write_concern->journal;
+      dst->w = write_concern->w;
+      dst->wtimeout = write_concern->wtimeout;
+      dst->frozen = false;
+      dst->wtag = bson_strdup (write_concern->wtag);
+      dst->is_default = write_concern->is_default;
+   }
 }
 
 

@@ -43,6 +43,9 @@ mongoc_write_concern_new (void);
 MONGOC_EXPORT (mongoc_write_concern_t *)
 mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (void)
+mongoc_write_concern_copy_to (const mongoc_write_concern_t *write_concern,
+                             mongoc_write_concern_t *dst);
+MONGOC_EXPORT (void)
 mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (bool)
 mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern)

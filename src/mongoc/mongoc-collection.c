@@ -37,6 +37,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-command-private.h"
+#include "mongoc-opts-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -89,6 +90,56 @@ _mongoc_collection_write_command_execute (
                                   write_concern,
                                   0 /* offset */,
                                   cs,
+                                  result);
+
+   mongoc_server_stream_cleanup (server_stream);
+
+   EXIT;
+}
+
+
+static void
+_mongoc_collection_write_command_execute_idl (
+   mongoc_write_command_t *command,
+   const mongoc_collection_t *collection,
+   const mongoc_write_concern_t *write_concern,
+   mongoc_client_session_t *cs,
+   bson_t collation,
+   mongoc_write_bypass_document_validation_t bypassDocVal,
+   mongoc_write_result_t *result)
+{
+   mongoc_server_stream_t *server_stream;
+
+   ENTRY;
+
+   BSON_ASSERT (command);
+   BSON_ASSERT (collection->client);
+   BSON_ASSERT (collection->db);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (result);
+
+   server_stream = mongoc_cluster_stream_for_writes (
+      &collection->client->cluster, &result->error);
+
+   if (!server_stream) {
+      /* result->error has been filled out */
+      EXIT;
+   }
+
+   if (!write_concern) {
+      write_concern = collection->client->write_concern;
+   }
+
+   _mongoc_write_command_execute_idl (command,
+                                  collection->client,
+                                  server_stream,
+                                  collection->db,
+                                  collection->collection,
+                                  write_concern,
+                                  0 /* offset */,
+                                  cs,
+                                  collation,
+                                  bypassDocVal,
                                   result);
 
    mongoc_server_stream_cleanup (server_stream);
@@ -1656,10 +1707,13 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
                               bson_t *reply,
                               bson_error_t *error)
 {
-   mongoc_write_opts_parsed_t parsed;
+   mongoc_insert_one_opts_t insert_one_opts;
+   bson_t extra;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
+   mongoc_bulk_write_flags_t default_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
 
    ENTRY;
 
@@ -1667,16 +1721,28 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    BSON_ASSERT (document);
 
    _mongoc_bson_init_if_set (reply);
+   bson_init (&extra);
 
-   if (!_mongoc_write_opts_parse (
-          opts, collection, &parsed, _mongoc_default_insert_vflags, error)) {
-      _mongoc_write_opts_cleanup (&parsed);
+   if (!parse_mongoc_insert_one_opts (opts, &insert_one_opts, &extra, error, collection)) {
+      /* Cleanup a newly allocated write concern or collation bson_t */
+      mongoc_write_concern_destroy (insert_one_opts.crud.writeConcern);
+      bson_destroy (&insert_one_opts.crud.collation);
       return false;
    }
 
-   if (parsed.validation_flags &&
+   /* Update default bulk write flags based on insert_one_opts parsing */
+   if (!bson_empty0 (&insert_one_opts.crud.collation)) {
+      default_flags.has_collation = true;
+   }
+
+   if (insert_one_opts.crud.bypassDocumentValidation !=
+      MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      default_flags.bypass_document_validation = insert_one_opts.crud.bypassDocumentValidation;
+   }
+
+   if (insert_one_opts.crud.validate &&
        !_mongoc_validate_new_document (
-          document, parsed.validation_flags, error)) {
+          document, insert_one_opts.crud.validate, error)) {
       RETURN (false);
    }
 
@@ -1684,20 +1750,22 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert (
       &command,
       document,
-      &parsed.copied_opts,
-      parsed.write_flags,
+      &extra,
+      default_flags,
       ++collection->client->cluster.operation_id,
       false);
 
-   _mongoc_collection_write_command_execute (&command,
+   _mongoc_collection_write_command_execute_idl (&command,
                                              collection,
-                                             parsed.write_concern,
-                                             parsed.client_session,
+                                             insert_one_opts.crud.writeConcern,
+                                             insert_one_opts.crud.client_session,
+                                             insert_one_opts.crud.collation,
+                                             insert_one_opts.crud.bypassDocumentValidation,
                                              &result);
 
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       parsed.write_concern,
+                                       insert_one_opts.crud.writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -1706,7 +1774,10 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_write_opts_cleanup (&parsed);
+
+   mongoc_write_concern_destroy (insert_one_opts.crud.writeConcern);
+   bson_destroy (&insert_one_opts.crud.collation);
+   bson_destroy (&extra);
 
    RETURN (ret);
 }
