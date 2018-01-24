@@ -31,7 +31,7 @@ option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
 set(ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
-set(ENABLE_ZLIB bundled CACHE STRING "Enable zlib support")
+set(ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
 
 if (NOT WIN32)
     message(WARNING "CMake support is experimental and may not produce production quality artifacts")
@@ -349,7 +349,7 @@ if (SNAPPY_INCLUDE_DIRS)
    include_directories ("${SNAPPY_INCLUDE_DIRS}")
 endif ()
 
-if (ENABLE_ZLIB STREQUAL "bundled")
+if (ENABLE_ZLIB STREQUAL "BUNDLED")
    message (STATUS "Enabling zlib compression (bundled)")
    check_include_files ("unistd.h" HAVE_UNISTD_H)
    check_include_files ("stdarg.h" HAVE_STDARG_H)
