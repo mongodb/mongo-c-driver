@@ -126,7 +126,8 @@ ssl_test_server (void *ptr)
    if (r < 0) {
       data->server_result->err = errno;
       data->server_result->result = SSL_TEST_TIMEOUT;
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, error.message);
+      MONGOC_ERROR (
+         "ERRORED (line: %d): %s\n", __LINE__, "mongoc_stream_readv failed.");
 
       mongoc_stream_destroy (ssl_stream);
       mongoc_socket_destroy (listen_sock);
@@ -221,7 +222,9 @@ ssl_test_client (void *ptr)
 
       data->client_result->ssl_err = err;
       data->client_result->result = SSL_TEST_SSL_INIT;
-      MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, error.message);
+      MONGOC_ERROR ("ERRORED (line: %d): %s\n",
+                    __LINE__,
+                    "mongoc_stream_tls_new_with_hostname failed.");
 
       mongoc_stream_destroy (sock_stream);
 

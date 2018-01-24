@@ -53,19 +53,3 @@
    ...
    fun:_mongoc_do_init
 }
-{
-   temp_ignore_vfprintf
-   Memcheck:Cond
-   fun:vfprintf
-   ...
-   fun:bson_vsnprintf
-   fun:bson_strdupv_printf
-   ...
-}
-{
-   temp_ignore_strlen
-   Memcheck:Cond
-   fun:strlen
-   fun:bson_strdup
-   ...
-}
