@@ -33,10 +33,6 @@ option(ENABLE_TRACING "Turn on verbose debug output" OFF)
 set(ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
 set(ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
 
-if (NOT WIN32)
-    message(WARNING "CMake support is experimental and may not produce production quality artifacts")
-endif ()
-
 project (libmongoc C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)

@@ -27,10 +27,6 @@ if (ENABLE_TESTS AND NOT BSON_ENABLE_STATIC)
    message (FATAL_ERROR "-DENABLE_STATIC=OFF also requires -DENABLE_TESTS=OFF")
 endif ()
 
-if (NOT WIN32)
-    message(WARNING "CMake support is experimental and may not produce production quality artifacts")
-endif ()
-
 include(CheckFunctionExists)
 include(CheckIncludeFile)
 include(CheckStructHasMember)
