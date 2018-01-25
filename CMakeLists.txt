@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
+# Used in MaintainerFlags.cmake to silence errors while testing configs.
 set (MESSAGES_ENABLED 1)
 
 function(message)
@@ -30,7 +31,7 @@ option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
-option(ENABLE_BUILD_DEPENDECIES "ENable to build subproject dependecies" OFF)
+set(ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
 set(ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
 set(ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
 
@@ -45,9 +46,9 @@ include(LoadVersion)
 LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
 LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
 
-message("Current version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
+message("libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
-   message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
+   message("libmongoc previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
 endif()
 
 include(MaintainerFlags)
@@ -56,47 +57,61 @@ if((ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STR
   set(ENABLE_BUILD_DEPENDECIES ON)
 endif()
 
-if(NOT ENABLE_BUILD_DEPENDECIES)
+if (NOT (ENABLE_BSON STREQUAL SYSTEM
+         OR ENABLE_BSON STREQUAL AUTO
+         OR ENABLE_BSON STREQUAL BUNDLED))
+   message (FATAL_ERROR "ENABLE_BSON option must be SYSTEM, BUNDLED, or AUTO")
+endif()
+
+if (NOT ENABLE_BSON STREQUAL BUNDLED)
   # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
   # but you should use the standard CMAKE_PREFIX_PATH instead.
   message (STATUS "Searching for libbson CMake packages")
   find_package (libbson-1.0
     "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
     HINTS
-    ${BSON_ROOT_DIR}
-    REQUIRED)
+    ${BSON_ROOT_DIR})
 
-  message ("--   libbson found version \"${BSON_VERSION}\"")
-  message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-  message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
-
-  if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
-    find_package (libbson-static-1.0
-        "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
-        HINTS
-        ${BSON_ROOT_DIR})
-
-    if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
-        message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
-    endif ()
-
-    if (BSON_STATIC_LIBRARY)
-        set (MONGOC_ENABLE_STATIC ON)
-    endif ()
-
-    message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
-    message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-    message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
+  if (ENABLE_BSON STREQUAL SYSTEM AND NOT BSON_LIBRARIES)
+     message (FATAL_ERROR "System libbson not found")
   endif ()
-else()
-  if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
-    set (MONGOC_ENABLE_STATIC ON)
-  endif()
-  add_subdirectory(src/libbson)
-  set(BSON_STATIC_LIBRARIES bson_static)
-  set(BSON_LIBRARIES bson_shared)
-  set(BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
-  set(BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
+
+  if (BSON_LIBRARIES)
+     message ("--   libbson found version \"${BSON_VERSION}\"")
+     message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
+     message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+
+     if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
+        find_package (libbson-static-1.0
+            "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+            HINTS
+            ${BSON_ROOT_DIR})
+
+        if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
+           message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
+        endif ()
+
+        if (BSON_STATIC_LIBRARY)
+           set (MONGOC_ENABLE_STATIC ON)
+        endif ()
+
+        message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
+        message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+        message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
+     endif ()
+  endif ()
+endif ()
+
+if (NOT BSON_LIBRARIES)
+   message ("  -- Using bundled libbson")
+   if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
+     set (MONGOC_ENABLE_STATIC ON)
+   endif ()
+   add_subdirectory (src/libbson)
+   set (BSON_STATIC_LIBRARIES bson_static)
+   set (BSON_LIBRARIES bson_shared)
+   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
+   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
 endif()
 
 if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)

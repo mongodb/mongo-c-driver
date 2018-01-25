@@ -1,21 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-set (MESSAGES_ENABLED 1)
-
-function(message)
-   list (GET ARGV 0 MessageType)
-   if (MESSAGES_ENABLED)
-      list (REMOVE_AT ARGV 0)
-      _message (${MessageType} "${ARGV}")
-   endif()
-endfunction()
-
 project (libbson C)
-
-set(ENABLE_STATIC AUTO CACHE STRING "Build static libbson. Set to ON/AUTO/OFF, default AUTO.")
-option(ENABLE_TESTS "Build libbson tests." ON)
-option(ENABLE_EXAMPLES "Build libbson examples." OFF)
-option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 
 if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
    # In the future we may need to check whether static dependencies are
@@ -37,20 +22,17 @@ include(InstallRequiredSystemLibraries)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
 # Set BSON_MAJOR_VERSION, BSON_MINOR_VERSION, etc.
-include(LoadVersion)
 LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_CURRENT BSON)
 LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_RELEASED BSON_RELEASED)
 
-message("Current version (from VERSION_CURRENT file): ${BSON_VERSION}")
+message("libbson version (from VERSION_CURRENT file): ${BSON_VERSION}")
 if (NOT ${BSON_VERSION} STREQUAL ${BSON_RELEASED_VERSION})
-   message("Previous release (from VERSION_RELEASED file): ${BSON_RELEASED_VERSION}")
+   message("libbson previous release (from VERSION_RELEASED file): ${BSON_RELEASED_VERSION}")
 endif()
-
-set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set (BSON_API_VERSION 1.0)
 
-set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
+set (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${BSON_MAJOR_VERSION})
 set (CPACK_PACKAGE_VERSION_MINOR ${BSON_MINOR_VERSION})
 
@@ -147,12 +129,12 @@ else ()
 endif ()
 
 configure_file (
-   "${SOURCE_DIR}/src/bson/bson-config.h.in"
+   "${PROJECT_SOURCE_DIR}/src/bson/bson-config.h.in"
    "${PROJECT_BINARY_DIR}/src/bson/bson-config.h"
 )
 
 configure_file (
-   "${SOURCE_DIR}/src/bson/bson-version.h.in"
+   "${PROJECT_SOURCE_DIR}/src/bson/bson-version.h.in"
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
@@ -162,8 +144,8 @@ configure_file (
 )
 
 include_directories("${PROJECT_BINARY_DIR}/src/bson")
-include_directories("${SOURCE_DIR}/src/bson")
-include_directories("${SOURCE_DIR}/src")
+include_directories("${PROJECT_SOURCE_DIR}/src/bson")
+include_directories("${PROJECT_SOURCE_DIR}/src")
 
 if (APPLE)
    cmake_policy(SET CMP0042 OLD)
@@ -172,58 +154,58 @@ endif()
 include (MaintainerFlags)
 
 set (SOURCES
-   ${SOURCE_DIR}/src/bson/bcon.c
-   ${SOURCE_DIR}/src/bson/bson.c
-   ${SOURCE_DIR}/src/bson/bson-atomic.c
-   ${SOURCE_DIR}/src/bson/bson-clock.c
-   ${SOURCE_DIR}/src/bson/bson-context.c
-   ${SOURCE_DIR}/src/bson/bson-decimal128.c
-   ${SOURCE_DIR}/src/bson/bson-error.c
-   ${SOURCE_DIR}/src/bson/bson-iso8601.c
-   ${SOURCE_DIR}/src/bson/bson-iter.c
-   ${SOURCE_DIR}/src/bson/bson-json.c
-   ${SOURCE_DIR}/src/bson/bson-keys.c
-   ${SOURCE_DIR}/src/bson/bson-md5.c
-   ${SOURCE_DIR}/src/bson/bson-memory.c
-   ${SOURCE_DIR}/src/bson/bson-oid.c
-   ${SOURCE_DIR}/src/bson/bson-reader.c
-   ${SOURCE_DIR}/src/bson/bson-string.c
-   ${SOURCE_DIR}/src/bson/bson-timegm.c
-   ${SOURCE_DIR}/src/bson/bson-utf8.c
-   ${SOURCE_DIR}/src/bson/bson-value.c
-   ${SOURCE_DIR}/src/bson/bson-version-functions.c
-   ${SOURCE_DIR}/src/bson/bson-writer.c
-   ${SOURCE_DIR}/src/jsonsl/jsonsl.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bcon.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-clock.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-context.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-error.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-iso8601.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-iter.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-json.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-keys.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-md5.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-string.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-timegm.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-utf8.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-value.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-version-functions.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.c
+   ${PROJECT_SOURCE_DIR}/src/jsonsl/jsonsl.c
 )
 
 set (HEADERS
    ${PROJECT_BINARY_DIR}/src/bson/bson-config.h
    ${PROJECT_BINARY_DIR}/src/bson/bson-stdint.h
    ${PROJECT_BINARY_DIR}/src/bson/bson-version.h
-   ${SOURCE_DIR}/src/bson/bcon.h
-   ${SOURCE_DIR}/src/bson/bson-atomic.h
-   ${SOURCE_DIR}/src/bson/bson-clock.h
-   ${SOURCE_DIR}/src/bson/bson-compat.h
-   ${SOURCE_DIR}/src/bson/bson-context.h
-   ${SOURCE_DIR}/src/bson/bson-decimal128.h
-   ${SOURCE_DIR}/src/bson/bson-endian.h
-   ${SOURCE_DIR}/src/bson/bson-error.h
-   ${SOURCE_DIR}/src/bson/bson.h
-   ${SOURCE_DIR}/src/bson/bson-iter.h
-   ${SOURCE_DIR}/src/bson/bson-json.h
-   ${SOURCE_DIR}/src/bson/bson-keys.h
-   ${SOURCE_DIR}/src/bson/bson-macros.h
-   ${SOURCE_DIR}/src/bson/bson-md5.h
-   ${SOURCE_DIR}/src/bson/bson-memory.h
-   ${SOURCE_DIR}/src/bson/bson-oid.h
-   ${SOURCE_DIR}/src/bson/bson-reader.h
-   ${SOURCE_DIR}/src/bson/bson-stdint-win32.h
-   ${SOURCE_DIR}/src/bson/bson-string.h
-   ${SOURCE_DIR}/src/bson/bson-types.h
-   ${SOURCE_DIR}/src/bson/bson-utf8.h
-   ${SOURCE_DIR}/src/bson/bson-value.h
-   ${SOURCE_DIR}/src/bson/bson-version-functions.h
-   ${SOURCE_DIR}/src/bson/bson-writer.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bcon.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-clock.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-compat.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-context.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-endian.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-error.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-iter.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-json.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-keys.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-macros.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-md5.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-stdint-win32.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-string.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-types.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-utf8.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-value.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-version-functions.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.h
 )
 
 add_library(bson_shared SHARED ${SOURCES} ${HEADERS})
@@ -281,38 +263,38 @@ endif ()
 if (ENABLE_TESTS)
     enable_testing()
 
-    add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
-    add_definitions("-DJSON_DIR=\"${SOURCE_DIR}/tests/json\"")
+    add_definitions("-DBINARY_DIR=\"${PROJECT_SOURCE_DIR}/tests/binary\"")
+    add_definitions("-DJSON_DIR=\"${PROJECT_SOURCE_DIR}/tests/json\"")
 
     set (BSON_TEST_SOURCES
-         ${SOURCE_DIR}/tests/bson-tests.h
-         ${SOURCE_DIR}/tests/corpus-test.c
-         ${SOURCE_DIR}/tests/corpus-test.h
-         ${SOURCE_DIR}/tests/TestSuite.c
-         ${SOURCE_DIR}/tests/TestSuite.h
-         ${SOURCE_DIR}/tests/test-libbson.c
-         ${SOURCE_DIR}/tests/test-atomic.c
-         ${SOURCE_DIR}/tests/test-bson.c
-         ${SOURCE_DIR}/tests/test-bson-corpus.c
-         ${SOURCE_DIR}/tests/test-endian.c
-         ${SOURCE_DIR}/tests/test-clock.c
-         ${SOURCE_DIR}/tests/test-decimal128.c
-         ${SOURCE_DIR}/tests/test-error.c
-         ${SOURCE_DIR}/tests/test-iso8601.c
-         ${SOURCE_DIR}/tests/test-iter.c
-         ${SOURCE_DIR}/tests/test-json.c
-         ${SOURCE_DIR}/tests/test-oid.c
-         ${SOURCE_DIR}/tests/test-reader.c
-         ${SOURCE_DIR}/tests/test-string.c
-         ${SOURCE_DIR}/tests/test-utf8.c
-         ${SOURCE_DIR}/tests/test-value.c
-         ${SOURCE_DIR}/tests/test-version.c
-         ${SOURCE_DIR}/tests/test-writer.c
-         ${SOURCE_DIR}/tests/test-bcon-basic.c
-         ${SOURCE_DIR}/tests/test-bcon-extract.c
-         ${SOURCE_DIR}/tests/json-test.c
-         ${SOURCE_DIR}/tests/json-test.c
-         ${SOURCE_DIR}/tests/json-test.h
+         ${PROJECT_SOURCE_DIR}/tests/bson-tests.h
+         ${PROJECT_SOURCE_DIR}/tests/corpus-test.c
+         ${PROJECT_SOURCE_DIR}/tests/corpus-test.h
+         ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
+         ${PROJECT_SOURCE_DIR}/tests/TestSuite.h
+         ${PROJECT_SOURCE_DIR}/tests/test-libbson.c
+         ${PROJECT_SOURCE_DIR}/tests/test-atomic.c
+         ${PROJECT_SOURCE_DIR}/tests/test-bson.c
+         ${PROJECT_SOURCE_DIR}/tests/test-bson-corpus.c
+         ${PROJECT_SOURCE_DIR}/tests/test-endian.c
+         ${PROJECT_SOURCE_DIR}/tests/test-clock.c
+         ${PROJECT_SOURCE_DIR}/tests/test-decimal128.c
+         ${PROJECT_SOURCE_DIR}/tests/test-error.c
+         ${PROJECT_SOURCE_DIR}/tests/test-iso8601.c
+         ${PROJECT_SOURCE_DIR}/tests/test-iter.c
+         ${PROJECT_SOURCE_DIR}/tests/test-json.c
+         ${PROJECT_SOURCE_DIR}/tests/test-oid.c
+         ${PROJECT_SOURCE_DIR}/tests/test-reader.c
+         ${PROJECT_SOURCE_DIR}/tests/test-string.c
+         ${PROJECT_SOURCE_DIR}/tests/test-utf8.c
+         ${PROJECT_SOURCE_DIR}/tests/test-value.c
+         ${PROJECT_SOURCE_DIR}/tests/test-version.c
+         ${PROJECT_SOURCE_DIR}/tests/test-writer.c
+         ${PROJECT_SOURCE_DIR}/tests/test-bcon-basic.c
+         ${PROJECT_SOURCE_DIR}/tests/test-bcon-extract.c
+         ${PROJECT_SOURCE_DIR}/tests/json-test.c
+         ${PROJECT_SOURCE_DIR}/tests/json-test.c
+         ${PROJECT_SOURCE_DIR}/tests/json-test.h
     )
 
     add_executable (test-libbson ${BSON_TEST_SOURCES})
@@ -320,12 +302,12 @@ if (ENABLE_TESTS)
     target_link_libraries(test-libbson bson_shared bson_static)
     add_test(NAME test-libbson COMMAND test-libbson)
 
-    file(COPY ${SOURCE_DIR}/tests/binary ${SOURCE_DIR}/tests/json
+    file(COPY ${PROJECT_SOURCE_DIR}/tests/binary ${PROJECT_SOURCE_DIR}/tests/json
          DESTINATION ${PROJECT_BINARY_DIR}/tests)
 endif ()  # ENABLE_TESTS
 
 function (add_example bin src)
-    set (BSON_EXAMPLE_SOURCES ${SOURCE_DIR}/${src})
+    set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
     add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
 
     # Link against the shared lib like normal apps
@@ -338,8 +320,9 @@ if (ENABLE_EXAMPLES)
     add_example (bcon-col-view examples/bcon-col-view.c)
     add_example (bcon-speed examples/bcon-speed.c)
     add_example (bson-metrics examples/bson-metrics.c)
-    # Uses getopt ()
-    #add_example (bson-streaming-reader examples/bson-streaming-reader.c)
+    if (NOT WIN32)
+      add_example (bson-streaming-reader examples/bson-streaming-reader.c)
+    endif ()
     add_example (bson-to-json examples/bson-to-json.c)
     add_example (bson-validate examples/bson-validate.c)
     add_example (json-to-bson examples/json-to-bson.c)
