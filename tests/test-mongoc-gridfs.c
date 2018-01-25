@@ -44,14 +44,14 @@ static void
 _check_index (mongoc_collection_t *collection, const char *index_json)
 {
    mongoc_cursor_t *cursor;
-   bson_error_t error;
+   bson_error_t error = {0};
    const bson_t *info;
    const char *index_name;
    bson_t index_key;
    int n;
 
    cursor = mongoc_collection_find_indexes (collection, &error);
-   ASSERT_OR_PRINT (cursor, error);
+   ASSERT_OR_PRINT (0 == error.code, error);
 
    n = 0;
 

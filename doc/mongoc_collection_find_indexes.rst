@@ -36,6 +36,3 @@ Returns
 -------
 
 A cursor where each result corresponds to the server's representation of an index on this collection. If the collection does not exist on the server, the cursor will be empty.
-
-On error, returns NULL and fills out ``error``.
-

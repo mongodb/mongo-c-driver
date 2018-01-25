@@ -1314,11 +1314,7 @@ mongoc_collection_find_indexes (mongoc_collection_t *collection,
 
    cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
 
-   if (mongoc_cursor_error (cursor, error)) {
-      /* conform to deprecated API: unhandled errors cause a NULL return */
-      mongoc_cursor_destroy (cursor);
-      return NULL;
-   }
+   (void) mongoc_cursor_error (cursor, error);
 
    return cursor;
 }
