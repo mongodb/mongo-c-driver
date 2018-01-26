@@ -31,13 +31,14 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --prefix=`pwd`/mongoc
-          make -j8
-          make install
+          CMAKE=/opt/cmake/bin/cmake
+          cd src/libbson
+          $CMAKE -DCMAKE_INSTALL_PREFIX=../../mongoc . && make -j8 && make install
+          cd ../..
+          $CMAKE -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone https://github.com/mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
-          PKG_CONFIG_PATH=../mongoc/lib/pkgconfig /opt/cmake/bin/cmake .
-          make
+          $CMAKE -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
 
     mongodb:
       start_mongod_command: &start_mongod_command
