@@ -907,6 +907,7 @@ mongoc_bulk_operation_set_bypass_document_validation (
              : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
 }
 
+
 bson_validate_flags_t
 _mongoc_bulk_operation_parse_vflags (const bson_t *opts,
                                      bson_validate_flags_t default_vflags)
@@ -915,9 +916,10 @@ _mongoc_bulk_operation_parse_vflags (const bson_t *opts,
 
    if (opts && bson_iter_init_find (&iter, opts, "validate")) {
       if (BSON_ITER_HOLDS_BOOL (&iter)) {
-         return (bson_iter_as_bool (&iter)) ? default_vflags : 0;
+         return (bson_iter_as_bool (&iter)) ? default_vflags
+                                            : BSON_VALIDATE_NONE;
       } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
-         return bson_iter_int32 (&iter);
+         return (bson_validate_flags_t) bson_iter_int32 (&iter);
       }
    }
 
