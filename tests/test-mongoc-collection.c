@@ -2294,6 +2294,9 @@ skip_unless_server_has_decimal128 (void)
 int
 mongod_supports_majority_read_concern (void)
 {
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
    return test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN");
 }
 

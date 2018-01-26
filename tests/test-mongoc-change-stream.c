@@ -463,7 +463,7 @@ test_change_stream_live_batch_size (void *test_ctx)
       bson_t *doc = BCON_NEW ("_id", BCON_INT32 (i));
       ASSERT_OR_PRINT (
          mongoc_collection_insert_one (coll, doc, &opts, NULL, &err), err);
-      bson_free (doc);
+      bson_destroy (doc);
    }
 
    ctx.expected_getmore_batch_size = 1;

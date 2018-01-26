@@ -2260,6 +2260,7 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_write_opts_parse (opts, collection, &parsed, 0, error)) {
+      bson_destroy (&limit_opt);
       _mongoc_write_opts_cleanup (&parsed);
       return false;
    }

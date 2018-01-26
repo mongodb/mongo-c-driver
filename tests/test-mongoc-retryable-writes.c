@@ -72,11 +72,15 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
       success = mongoc_bulk_operation_insert_with_opts (
          bulk, &document, &opts, &error);
       ASSERT_OR_PRINT (success, error);
+
+      bson_destroy (&opts);
    }
 
    server_id = mongoc_bulk_operation_execute (bulk, &reply, &error);
    ASSERT_OR_PRINT (server_id, error);
 
+   bson_destroy (&documents);
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -175,6 +179,9 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
    }
 
    ASSERT_OR_PRINT (success, error);
+
+   bson_destroy (&args);
+   bson_destroy (&opts);
 }
 
 
@@ -283,6 +290,8 @@ execute_bulk_operation (mongoc_bulk_operation_t *bulk, const bson_t *test)
 
       ASSERT (match_bson (&reply, expected_result, false));
    }
+
+   bson_destroy (&reply);
 }
 
 
@@ -334,6 +343,7 @@ bulk_write (mongoc_collection_t *collection,
       add_request_to_bulk (bulk, &request);
    }
 
+   bson_destroy (&requests);
    execute_bulk_operation (bulk, test);
    mongoc_bulk_operation_destroy (bulk);
 }
@@ -355,6 +365,8 @@ single_write (mongoc_collection_t *collection,
    add_request_to_bulk (bulk, &operation);
 
    execute_bulk_operation (bulk, test);
+
+   bson_destroy (&operation);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -455,6 +467,10 @@ find_and_modify (mongoc_collection_t *collection,
 
       ASSERT (match_bson (&reply_result, &expected_result, false));
    }
+
+   bson_destroy (&args);
+   bson_destroy (&filter);
+   bson_destroy (&reply);
 }
 
 
@@ -486,6 +502,8 @@ insert_many (mongoc_collection_t *collection,
    }
 
    execute_bulk_operation (bulk, test);
+
+   bson_destroy (&documents);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -513,6 +531,10 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
    }
 
    ASSERT_CURSOR_DONE (cursor);
+
+   bson_destroy (&data);
+   bson_destroy (&query);
+   mongoc_cursor_destroy (cursor);
 }
 
 
@@ -644,6 +666,7 @@ _test_retryable_writes_cb (bson_t *scenario, bool explicit_session)
          mongoc_client_session_destroy (session);
       }
 
+      bson_destroy (&test);
       mongoc_collection_destroy (collection);
       mongoc_client_destroy (client);
    }
@@ -786,6 +809,7 @@ test_command_with_opts (void *ctx)
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
+   bson_destroy (&reply_result);
    bson_destroy (&reply);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -835,6 +859,8 @@ test_insert_one_unacknowledged (void)
    ASSERT (future_get_bool (future));
    mock_server_auto_endsessions (server);
 
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
    request_destroy (request);
    bson_destroy (&opts);
    future_destroy (future);
@@ -884,6 +910,8 @@ test_update_one_unacknowledged (void)
          "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
    ASSERT (future_get_bool (future));
 
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
    request_destroy (request);
    bson_destroy (&opts);
    future_destroy (future);
@@ -928,6 +956,8 @@ test_delete_one_unacknowledged (void)
          "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
    ASSERT (future_get_bool (future));
 
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
    request_destroy (request);
    bson_destroy (&opts);
    future_destroy (future);
@@ -974,6 +1004,9 @@ test_bulk_operation_execute_unacknowledged (void)
          "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
    ASSERT (future_get_uint32_t (future) == 1);
 
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
+   mongoc_bulk_operation_destroy (bulk);
    request_destroy (request);
    bson_destroy (&opts);
    future_destroy (future);
@@ -1017,6 +1050,8 @@ test_remove_unacknowledged (void)
          "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
    ASSERT (future_get_bool (future));
 
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
    request_destroy (request);
    bson_destroy (&opts);
    future_destroy (future);

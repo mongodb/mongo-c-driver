@@ -5,7 +5,7 @@
 stepback: true
 command_type: system
 
-exec_timeout_secs: 1800 # 30 minutes is the longest we'll ever run
+exec_timeout_secs: 2400 # 40 minutes is the longest we'll ever run
 
 timeout:
   - command: shell.exec
@@ -306,6 +306,15 @@ functions:
         working_dir: "mongoc"
         script: |
            AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' sh .evergreen/run-auth-tests.sh
+
+  "run mock server tests":
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh
 
   "cleanup":
     - command: shell.exec
@@ -677,10 +686,10 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: debug-compile-valgrind-bson
+    - name: debug-compile-valgrind-memcheck
       tags: ["debug-compile", "special", "valgrind", "bson"]
       commands:
         - command: shell.exec
@@ -690,7 +699,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=no CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-coverage
@@ -1806,25 +1815,61 @@ tasks:
             SSL: "openssl"
             URI: ""
 
-    - name: test-valgrind-bson
+    - name: test-valgrind-memcheck-server
       tags: ["test-valgrind"]
       depends_on:
-        - name: "debug-compile-valgrind-bson"
+        - name: "debug-compile-valgrind-memcheck"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-valgrind-bson"
+            BUILD_NAME: "debug-compile-valgrind-memcheck"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
             TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
+            AUTH: "auth"
+            SSL: "ssl"
         - func: "run tests"
           vars:
             VALGRIND: "on"
+            AUTH: "auth"
+            SSL: "ssl"
+            URI: ""
+
+    - name: test-valgrind-memcheck-replica-set
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind-memcheck"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "auth"
+            SSL: "ssl"
+            URI: ""
+
+    - name: test-valgrind-memcheck-mock-server
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind-memcheck"
+        - func: "run mock server tests"
+          vars:
+            VALGRIND: "on"
             AUTH: "noauth"
-            SSL: "nossl"
+            SSL: "ssl"
             URI: ""
 
     - name: test-2.6-server-noauth-nosasl-nossl

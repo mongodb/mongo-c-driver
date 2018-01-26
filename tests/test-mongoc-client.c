@@ -469,6 +469,7 @@ test_mongoc_client_authenticate (void *context)
    r = mongoc_database_remove_all_users (database, &error);
    BSON_ASSERT (r);
 
+   bson_destroy (&q);
    bson_free (uri_str_no_auth);
    bson_free (uri_str_auth);
    bson_destroy (&roles);
@@ -550,6 +551,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+
+   bson_destroy (&insert);
 }
 
 
@@ -621,6 +624,8 @@ test_mongoc_client_authenticate_failure (void *context)
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
+   bson_destroy (&q);
+   bson_destroy (&empty);
    bson_free (host);
    bson_free (uri_str_no_auth);
    bson_free (bad_uri_str);

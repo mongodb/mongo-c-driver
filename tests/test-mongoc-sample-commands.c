@@ -2492,6 +2492,7 @@ insert_docs (void *p)
          ctx->collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
       ASSERT_OR_PRINT (r, error);
       if (ctx->done) {
+         bson_destroy (&doc);
          mongoc_mutex_unlock (&ctx->lock);
          return 0;
       }
@@ -2499,6 +2500,7 @@ insert_docs (void *p)
       mongoc_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
+   bson_destroy (&doc);
 }
 
 
@@ -2625,7 +2627,6 @@ test_example_change_stream (mongoc_database_t *db)
    
    bson_destroy (&opts);
    bson_destroy (pipeline);
-   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
 }
 
