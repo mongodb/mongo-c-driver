@@ -68,7 +68,7 @@ request_new (const mongoc_buffer_t *buffer,
    uint8_t *data;
 
    data = (uint8_t *) bson_malloc ((size_t) msg_len);
-   memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
+   memcpy (data, buffer->data, (size_t) msg_len);
    request->data = data;
    request->data_len = (size_t) msg_len;
    request->replies = replies;

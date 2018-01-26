@@ -2449,7 +2449,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Read the msg length from the buffer.
     */
-   memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
+   memcpy (&msg_len, &buffer->data[pos], 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
    if ((msg_len < 16) || (msg_len > max_msg_size)) {
@@ -2482,7 +2482,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Scatter the buffer into the rpc structure.
     */
-   if (!_mongoc_rpc_scatter (rpc, &buffer->data[buffer->off + pos], msg_len)) {
+   if (!_mongoc_rpc_scatter (rpc, &buffer->data[pos], msg_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,

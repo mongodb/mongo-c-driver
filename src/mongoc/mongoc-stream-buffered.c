@@ -227,6 +227,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream, /* IN */
    bson_error_t error = {0};
    size_t total_bytes = 0;
    size_t i;
+   size_t off = 0;
 
    ENTRY;
 
@@ -248,12 +249,13 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream, /* IN */
    BSON_ASSERT (buffered->buffer.len >= total_bytes);
 
    for (i = 0; i < iovcnt; i++) {
-      memcpy (iov[i].iov_base,
-              buffered->buffer.data + buffered->buffer.off,
-              iov[i].iov_len);
-      buffered->buffer.off += iov[i].iov_len;
+      memcpy (iov[i].iov_base, buffered->buffer.data + off, iov[i].iov_len);
+      off += iov[i].iov_len;
       buffered->buffer.len -= iov[i].iov_len;
    }
+
+   memmove (
+      buffered->buffer.data, buffered->buffer.data + off, buffered->buffer.len);
 
    RETURN (total_bytes);
 }

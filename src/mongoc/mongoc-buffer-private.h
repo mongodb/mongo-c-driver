@@ -35,7 +35,6 @@ typedef struct _mongoc_buffer_t mongoc_buffer_t;
 struct _mongoc_buffer_t {
    uint8_t *data;
    size_t datalen;
-   off_t off;
    size_t len;
    bson_realloc_func realloc_func;
    void *realloc_data;

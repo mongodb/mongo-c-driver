@@ -1713,7 +1713,7 @@ again:
    if (_mongoc_buffer_fill (&buffer, client_stream, 4, 10, &error) > 0) {
       BSON_ASSERT (buffer.len >= 4);
 
-      memcpy (&msg_len, buffer.data + buffer.off, 4);
+      memcpy (&msg_len, buffer.data, 4);
       msg_len = BSON_UINT32_FROM_LE (msg_len);
 
       if (msg_len < 16) {
@@ -1733,9 +1733,7 @@ again:
       request = request_new (
          &buffer, msg_len, server, client_stream, closure->port, replies);
 
-      memmove (
-         buffer.data, buffer.data + buffer.off + msg_len, buffer.len - msg_len);
-      buffer.off = 0;
+      memmove (buffer.data, buffer.data + msg_len, buffer.len - msg_len);
       buffer.len -= msg_len;
 
       mongoc_mutex_lock (&server->mutex);
