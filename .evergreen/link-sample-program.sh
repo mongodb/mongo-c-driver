@@ -86,13 +86,6 @@ fi
 
 
 if [ "$BUILD_MONGOC_WITH_CMAKE" ]; then
-  # Our CMake script doesn't build bundled libbson (CDRIVER-1948) so fake it.
-  cd src/libbson
-  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR $STATIC_CMAKE_OPTION .
-  make
-  make install
-  cd ../..
-
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION .
   make
   make install

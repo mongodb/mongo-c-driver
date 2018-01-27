@@ -8,4 +8,5 @@ c:\cmake\bin\cmake -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM
 
 %CMAKE_MAKE_PROGRAM%
 
+cd src/libbson
 test-libbson.exe --no-fork -F test-results.json

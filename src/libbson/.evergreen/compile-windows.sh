@@ -19,24 +19,16 @@ BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 if [ "$RELEASE" ]; then
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_BUILD_TYPE=Release"
    BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Release"
-   TEST_PATH="./Release/test-libbson.exe"
-   # Build from the release tarball.
-   mkdir build-dir
-   tar xf ../../../libbson.tar.gz -C build-dir --strip-components=1
-   cd build-dir
+   TEST_PATH="./src/libbson/Release/test-libbson.exe"
 else
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_BUILD_TYPE=Debug"
    BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Debug"
-   TEST_PATH="./Debug/test-libbson.exe"
+   TEST_PATH="./src/libbson/Debug/test-libbson.exe"
 fi
 
 case "$CC" in
    mingw*)
-      if [ "$RELEASE" ]; then
-         cmd.exe /c ..\\.evergreen\\compile.bat
-      else
-         cmd.exe /c .evergreen\\compile.bat
-      fi
+      cmd.exe /c .evergreen\\compile.bat
       exit 0
    ;;
    # Resolve the compiler name to correct MSBuild location

@@ -405,6 +405,20 @@ functions:
           BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
           BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
+  "link sample program bson" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libbson with CMake, compile a program that links dynamically
+          # or statically to libbson, using variables from pkg-config or from
+          # CMake's find_package command.
+          BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
+          BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
+          BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
+          BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
 
 pre:
   - func: "fetch source"
@@ -933,6 +947,52 @@ tasks:
         - func: "link sample program"
           vars:
             ENABLE_SSL: "1"
+
+    - name: link-with-bson
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "link sample program bson"
+
+    - name: link-with-bson-mac
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "link sample program bson"
+
+    - name: link-with-bson-windows
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              # Build libbson with CMake and compile a program that links
+              # dynamically or statically to it, using variables from CMake's
+              # find_package command.
+              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+
+    - name: link-with-bson-mingw
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Build libbson with CMake and compile a program that links
+              # dynamically or statically to it, using variables from
+              # pkg-config.exe.
+              cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
 
     - name: test-dns-openssl
       depends_on:
@@ -7461,7 +7521,22 @@ buildvariants:
     - name: "link-with-pkg-config-mac"
       distros:
       - macos-1012
-
+    - name: "link-with-bson"
+      distros:
+      - ubuntu1604-build
+      - ubuntu1604-test
+      - ubuntu1404-build
+      - ubuntu1404-test
+    - name: "link-with-bson-windows"
+      distros:
+      - windows-64-vs2015-compile
+      - windows-64-vs2015-test
+    - name: "link-with-bson-mac"
+      distros:
+      - macos-1012
+    - name: "link-with-bson-mingw"
+      distros:
+      - windows-64-vs2013-compile
 
 - name: clang34ubuntu
   display_name: "clang 3.4 (Ubuntu 14.04)"

@@ -3,14 +3,11 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
-#   BUILD_LIBBSON_WITH_CMAKE Build libbson with CMake. Default: use Autotools.
 #   LINK_STATIC              Whether to statically link to libbson
 #   BUILD_SAMPLE_WITH_CMAKE  Link program w/ CMake. Default: use pkg-config.
 
 
-echo "BUILD_LIBBSON_WITH_CMAKE=$BUILD_LIBBSON_WITH_CMAKE LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
-
-CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
+echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 if command -v gtar 2>/dev/null; then
   TAR=gtar
@@ -19,10 +16,12 @@ else
 fi
 
 if [ $(uname) = "Darwin" ]; then
+  CMAKE=${CMAKE:-/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake}
   SO=dylib
   LIB_SO=libbson-1.0.0.dylib
   LDD="otool -L"
 else
+  CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
   SO=so
   LIB_SO=libbson-1.0.so.0
   LDD=ldd
@@ -39,24 +38,15 @@ rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
 cd $BUILD_DIR
-$TAR xf ../../../../libbson.tar.gz -C . --strip-components=1
+$TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 
 if [ "$LINK_STATIC" ]; then
-  if [ "$BUILD_LIBBSON_WITH_CMAKE" ]; then
-    # Our CMake system builds shared and static by default.
-    $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF .
-  else
-    ./configure --prefix=$INSTALL_DIR --enable-static
-  fi
+  # Our CMake system builds shared and static by default.
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF .
   make
   make install
 else
-  if [ "$BUILD_LIBBSON_WITH_CMAKE" ]; then
-    # Our CMake system builds shared and static by default.
-    $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
-  else
-    ./configure --prefix=$INSTALL_DIR
-  fi
+  $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_STATIC=OFF .
   make
   make install
 
@@ -160,7 +150,7 @@ cd $SRCROOT
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
-  EXAMPLE_DIR=$SRCROOT/examples/cmake/find_package
+  EXAMPLE_DIR=$SRCROOT/src/libbson/examples/cmake/find_package
 
   if [ "$LINK_STATIC" ]; then
     EXAMPLE_DIR="${EXAMPLE_DIR}_static"
@@ -172,7 +162,7 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-  cd $SRCROOT/examples
+  cd $SRCROOT/src/libbson/examples
 
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"

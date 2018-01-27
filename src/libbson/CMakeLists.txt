@@ -299,7 +299,8 @@ if (ENABLE_TESTS)
 
     add_executable (test-libbson ${BSON_TEST_SOURCES})
 
-    target_link_libraries(test-libbson bson_shared bson_static)
+    target_link_libraries(test-libbson bson_static)
+    target_compile_definitions (test-libbson PUBLIC "BSON_STATIC")
     add_test(NAME test-libbson COMMAND test-libbson)
 
     file(COPY ${PROJECT_SOURCE_DIR}/tests/binary ${PROJECT_SOURCE_DIR}/tests/json

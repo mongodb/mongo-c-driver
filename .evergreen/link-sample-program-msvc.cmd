@@ -28,13 +28,6 @@ set PATH=%PATH%;%INSTALL_DIR%\bin
 cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
 
-rem Build libbson
-cd src\libbson
-%CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .
-msbuild.exe /m ALL_BUILD.vcxproj
-msbuild.exe INSTALL.vcxproj
-cd %BUILD_DIR%
-
 if "%ENABLE_SNAPPY%"=="1" (
   rem Enable Snappy
   curl --silent --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz

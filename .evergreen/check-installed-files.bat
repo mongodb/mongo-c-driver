@@ -1,11 +1,15 @@
 rem Validations shared by link-sample-program-msvc.bat and
 rem link-sample-program-mingw.bat
 
+echo off
+
 rem Notice that the dll goes in "bin".
 set DLL=%INSTALL_DIR%\bin\libmongoc-1.0.dll
 if not exist %DLL% (
   echo %DLL% is missing!
   exit /B 1
+) else (
+  echo libmongoc-1.0.dll check ok
 )
 if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
   echo libmongoc-1.0.pc missing!
@@ -43,3 +47,5 @@ if not exist %INSTALL_DIR%\lib\cmake\libmongoc-static-1.0\libmongoc-static-1.0-c
 ) else (
   echo libmongoc-static-1.0-config-version.cmake check ok
 )
+
+echo on

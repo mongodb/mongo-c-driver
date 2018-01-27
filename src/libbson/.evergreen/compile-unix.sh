@@ -22,6 +22,7 @@ echo "CC: $CC"
 echo "ANALYZE $ANALYZE"
 echo "COVERAGE $COVERAGE"
 
+cd src/libbson
 
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')

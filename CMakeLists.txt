@@ -108,10 +108,12 @@ if (NOT BSON_LIBRARIES)
      set (MONGOC_ENABLE_STATIC ON)
    endif ()
    add_subdirectory (src/libbson)
+   # Defined in src/libbson/CMakeLists.txt
    set (BSON_STATIC_LIBRARIES bson_static)
    set (BSON_LIBRARIES bson_shared)
    set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
    set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
+   set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
 endif()
 
 if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
@@ -909,4 +911,3 @@ if (MONGOC_ENABLE_SSL)
 endif()
 
 include (build/cmake/MongoCPackage.cmake)
-
