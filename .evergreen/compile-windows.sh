@@ -135,15 +135,6 @@ else
    export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
 fi
 
-# CMake can't compile against bundled libbson, so we have to
-# compile it and install it separately, and then configure mongoc
-# to build against the installed libbson
-cd src/libbson
-"$CMAKE" -G "$CC" $CONFIGURE_FLAGS
-"$BUILD" $BUILD_FLAGS ALL_BUILD.vcxproj
-"$BUILD" $BUILD_FLAGS INSTALL.vcxproj
-cd ../..
-
 "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" $CONFIGURE_FLAGS
 "$BUILD" $BUILD_FLAGS ALL_BUILD.vcxproj
 "$BUILD" $BUILD_FLAGS INSTALL.vcxproj
