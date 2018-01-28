@@ -7,6 +7,8 @@ from sphinx import version_info as sphinx_version_info
 # Ensure we can import "mongoc" and "taglist" extension modules.
 sys.path.append(os.path.dirname(__file__))
 
+needs_sphinx = '1.6'
+
 extensions = [
     'mongoc',
     'taglist',
