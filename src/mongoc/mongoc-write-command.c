@@ -631,7 +631,6 @@ _mongoc_write_opquery (mongoc_write_command_t *command,
                        const char *collection,
                        const mongoc_write_concern_t *write_concern,
                        uint32_t offset,
-                       mongoc_client_session_t *session,
                        mongoc_write_result_t *result,
                        bson_error_t *error)
 {
@@ -715,7 +714,6 @@ again:
       }
    } else {
       mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
-      mongoc_cmd_parts_set_session (&parts, session);
       parts.is_write_command = true;
       parts.assembled.operation_id = command->operation_id;
       parts.assembled.is_acknowledged =
@@ -745,13 +743,6 @@ again:
             /* assembling failed, or a network error running the command */
             result->must_stop = true;
          }
-      }
-
-      if (session) {
-         _mongoc_client_session_handle_reply (
-            session,
-            mongoc_write_concern_is_acknowledged (write_concern),
-            &reply);
       }
 
       _mongoc_write_result_merge (result, command, &reply, offset);
@@ -860,7 +851,6 @@ _mongoc_write_command_execute (
                                 collection,
                                 write_concern,
                                 offset,
-                                cs,
                                 result,
                                 &result->error);
       } else {
