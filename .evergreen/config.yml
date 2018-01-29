@@ -118,21 +118,39 @@ functions:
     - command: shell.exec
       params:
         silent: true
+        working_dir: "mongoc/src/libbson"
+        script: |
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  mongoc/src/libbson/doc/html/index.html
+        remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "libbson docs"
+    - command: shell.exec
+      params:
+        silent: true
         working_dir: "mongoc"
         script: |
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp doc/html s3://mciuploads/${project}/docs/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+           aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file:  mongoc/doc/html/index.html
-        remote_file: ${project}/docs/${CURRENT_VERSION}/index.html
+        remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
-        display_name: "Rendered docs"
+        display_name: "libmongoc docs"
 
   "upload man pages" :
     - command: shell.exec
@@ -141,6 +159,7 @@ functions:
         working_dir: "mongoc"
         script: |
            . venv/bin/activate
+           cd src/libbson
 
            # "man" with redirection writes plain ASCII, use lower-level groff to
            # force formatted output. -t lays out tables, -T utf8 sets the output
@@ -157,7 +176,39 @@ functions:
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            sudo apt-get install -y awscli
-           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+
+           sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  mongoc/src/libbson/man-page-images/index.html
+        remote_file: ${project}/man-page-images/libbson/${CURRENT_VERSION}/index.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "libbson man pages"
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongoc"
+        script: |
+           . venv/bin/activate
+
+           for doc in doc/man/*.3; do
+             echo $doc
+             fullpath=`pwd`/$doc
+             groff -man -t -T utf8 $fullpath | term2image -o $fullpath.png
+           done
+
+           mkdir -p man-page-images
+           mv doc/man/*.png man-page-images
+
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           sudo apt-get install -y awscli
+           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
 
            sh .evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
     - command: s3.put
@@ -165,11 +216,11 @@ functions:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file:  mongoc/man-page-images/index.html
-        remote_file: ${project}/man-page-images/${CURRENT_VERSION}/index.html
+        remote_file: ${project}/man-page-images/libmongoc/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
-        display_name: "Rendered man pages"
+        display_name: "libmongoc man pages"
 
   "upload coverage" :
     - command: shell.exec
