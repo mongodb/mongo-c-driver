@@ -1,6 +1,7 @@
 #include "mongoc-opts-private.h"
 #include "mongoc-opts-helpers.h"
 #include "mongoc-util-private.h"
+#include "mongoc-error.h"
 
 /**************************************************
  *

@@ -134,10 +134,6 @@ opts_structs = OrderedDict([
         ('crud', {'type': 'mongoc_crud_opts_t'})
     ])),
     ('mongoc_update_many_opts_t', Struct([
-        ('crud', {'type': 'mongoc_crud_opts_t'}),
-        ('ordered', {'type': 'bool'})
-    ])),
-    ('mongoc_delete_one_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'})
     ])),
     ('mongoc_replace_one_opts_t', Struct([
