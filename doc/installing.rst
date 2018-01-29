@@ -316,3 +316,23 @@ If not found, it will fallback to native TLS support provided by the platform.
 
 OpenSSL 1.1.0 support requires CMake 3.7 or later on Windows.
 
+Building on Windows with MinGW-W64 and MSYS2
+--------------------------------------------
+
+Install MSYS2 from `msys2.github.io <http://msys2.github.io>`_. Choose the x86_64 version, not i686.
+
+Open ``c:\msys64\ming64_shell.bat`` (not the msys2_shell). Install dependencies:
+
+.. code-block:: none
+
+  pacman --noconfirm -Syu
+  pacman --noconfirm -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
+  pacman --noconfirm -S mingw-w64-x86_64-extra-cmake-modules make tar
+  pacman --noconfirm -S mingw64/mingw-w64-x86_64-cyrus-sasl
+
+Download and untar the latest tarball, enter its directory, and build with CMake:
+
+.. code-block:: none
+
+  CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver"
+  make
