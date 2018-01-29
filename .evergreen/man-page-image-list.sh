@@ -14,20 +14,9 @@ echo "<html>
 
 for path in $1/*.png; do
     png=$(basename $path)
-    case "$png" in
-    # These pages include all others, CDRIVER-2035
-    bson_api.3.png)
-        continue
-    ;;
-    bson_index.3.png)
-        continue
-    ;;
-    *)
-        echo "
+    echo "
   <p class="img-name"><a href=\"${png}\">${png}</a></p>
   <p><a href=\"${png}\"><img src=\"${png}\"></a></p>"
-        ;;
-    esac
 done
 
 echo "</body></html>"
