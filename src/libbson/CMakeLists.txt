@@ -263,9 +263,6 @@ endif ()
 if (ENABLE_TESTS)
     enable_testing()
 
-    add_definitions("-DBINARY_DIR=\"${PROJECT_SOURCE_DIR}/tests/binary\"")
-    add_definitions("-DJSON_DIR=\"${PROJECT_SOURCE_DIR}/tests/json\"")
-
     set (BSON_TEST_SOURCES
          ${PROJECT_SOURCE_DIR}/tests/bson-tests.h
          ${PROJECT_SOURCE_DIR}/tests/corpus-test.c

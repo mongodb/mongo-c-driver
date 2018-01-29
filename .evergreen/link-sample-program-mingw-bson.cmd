@@ -10,6 +10,7 @@ set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bi
 set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH
 set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson
+set LINK_STATIC=1
 
 set SRCROOT=%CD%
 set BUILD_DIR=%CD%\build-dir
@@ -28,7 +29,7 @@ cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
+%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_BSON=BUNDLED -DENABLE_STATIC=ON .
 %CMAKE_MAKE_PROGRAM%
 if errorlevel 1 (
    exit /B 1

@@ -298,6 +298,15 @@ functions:
           set -o errexit
           COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${URI} DNS=${DNS} sh .evergreen/run-tests.sh
 
+  "run tests bson":
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          CC="${CC}" sh .evergreen/run-tests-bson.sh
+
   "run auth tests":
     - command: shell.exec
       type: test
@@ -514,6 +523,15 @@ tasks:
               export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=no sh .evergreen/compile.sh
         - func: "upload build"
+
+    - name: test-bson
+      depends_on:
+        - name: "debug-compile"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile"
+        - func: "run tests bson"
 
     - name: test-latest-server-hardened
       tags: ["hardened", "latest"]
@@ -992,7 +1010,7 @@ tasks:
               # Build libbson with CMake and compile a program that links
               # dynamically or statically to it, using variables from
               # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
+              LINK_STATIC= cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
 
     - name: test-dns-openssl
       depends_on:
@@ -7792,6 +7810,7 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
     - "test-dns-openssl"
     - "test-dns-auth-openssl"
+    - "test-bson"
 
 - name: darwin
   display_name: "*Darwin, macOS (Apple LLVM)"
@@ -7818,6 +7837,7 @@ buildvariants:
     - ".2.6 .nossl !.nosasl" # No MongoDB SSL builds available
     - "test-dns-darwinssl"
     - "test-dns-auth-darwinssl"
+    - "test-bson"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
@@ -7847,6 +7867,7 @@ buildvariants:
     - ".2.6 .nossl !.nosasl"
     - "test-dns-winssl"
     - "test-dns-auth-winssl"
+    - "test-bson"
 
 - name: windows-2015-32
   display_name: "Windows (i386) (VS 2015)"
@@ -7966,10 +7987,12 @@ buildvariants:
   run_on:
   - windows-64-vs2013-compile
   tasks:
+    - "debug-compile"
     - ".debug-compile .nossl .nosasl"
     - ".debug-compile .winssl .sspi"
     - ".latest .nossl .nosasl .server"
     - ".latest .winssl .sspi .server"
+    - "test-bson"
 
 - name: power8-rhel71
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"
@@ -8014,6 +8037,7 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 ppc64le is only supported by MongoDB 3.4+
     - "test-dns-openssl"
+    - "test-bson"
 
 - name: arm-ubuntu1604
   display_name: "*ARM (aarch64) (Ubuntu 16.04)"
@@ -8038,6 +8062,7 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 aarch64 is only supported by MongoDB 3.4+
     - "test-dns-openssl"
+    - "test-bson"
 
 - name: zseries-rhel72
   display_name: "*zSeries (s390x) (RHEL 7.2)"
@@ -8080,6 +8105,7 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
     - "test-dns-openssl"
+    - "test-bson"
 
 - name: zseries-suse12
   display_name: "zSeries (s390x) SUSE12"
