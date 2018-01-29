@@ -67,3 +67,40 @@ An example GDB session looks like::
 
 .. _automatically: https://sourceware.org/gdb/onlinedocs/gdb/Auto_002dloading.html
 .. _auto-load safe-path: https://sourceware.org/gdb/onlinedocs/gdb/Auto_002dloading-safe-path.html
+
+LLDB
+----
+
+This repository also includes a script that customizes LLDB's standard ``print`` command to print a ``bson_t`` or ``bson_t *`` as JSON::
+
+    (lldb) print b
+    (bson_t) $0 = {"x": 1, "y": 2}
+
+The custom ``bson`` command provides more options::
+
+    (lldb) bson --verbose b
+    len=19
+    flags=INLINE|STATIC
+    {
+      "x": 1,
+      "y": 2
+    }
+    (lldb) bson --raw b
+    '\x13\x00\x00\x00\x10x\x00\x01\x00\x00\x00\x10y\x00\x02\x00\x00\x00\x00'
+
+Type ``help bson`` for a list of options.
+
+The script requires a build of libbson with debug symbols, and an installation of `PyMongo`_. Install PyMongo with::
+
+  python -m pip install pymongo
+
+If you see "No module named pip" then you must `install pip`_, then run the previous command again.
+
+Create a file ``~/.lldbinit`` containing::
+
+  command script import /path/to/mongo-c-driver/src/libbson/lldb_bson.py
+
+If you see "bson command installed by lldb_bson" at the beginning of your LLDB session, you've installed the script correctly.
+
+.. _PyMongo: https://pypi.python.org/pypi/pymongo
+.. _install pip: https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
