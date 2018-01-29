@@ -20,6 +20,7 @@ typedef struct {
    mongoc_uri_t *test_framework_uri;
    int64_t cursor_id;
    int64_t operation_id;
+   bool acknowledged;
    bool verbose;
 } context_t;
 
@@ -32,6 +33,7 @@ context_init (context_t *context)
    context->test_framework_uri = test_framework_get_uri ();
    context->cursor_id = 0;
    context->operation_id = 0;
+   context->acknowledged = true;
    context->verbose =
       test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
 }
@@ -216,6 +218,12 @@ convert_command_for_test (context_t *context,
    bson_t src_child;
    bson_t dst_child;
    char *child_path;
+
+   if (bson_empty (src) && !context->acknowledged) {
+      /* spec tests say unacknowledged writes reply "ok": 1, but we don't */
+      BSON_APPEND_DOUBLE (dst, "ok", 1.0);
+      return;
+   }
 
    bson_iter_init (&iter, src);
 
@@ -476,7 +484,9 @@ one_bulk_op (mongoc_bulk_operation_t *bulk, const bson_t *request)
 
 
 static void
-test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
+test_bulk_write (context_t *context,
+                 mongoc_collection_t *collection,
+                 const bson_t *arguments)
 {
    bool ordered;
    mongoc_write_concern_t *wc;
@@ -495,6 +505,8 @@ test_bulk_write (mongoc_collection_t *collection, const bson_t *arguments)
    } else {
       wc = mongoc_write_concern_new ();
    }
+
+   context->acknowledged = mongoc_write_concern_is_acknowledged (wc);
 
    mongoc_write_concern_append (wc, &opts);
    bson_append_bool (&opts, "ordered", 7, ordered);
@@ -732,12 +744,7 @@ one_test (mongoc_collection_t *collection, bson_t *test)
    }
 
    if (!strcmp (op_name, "bulkWrite")) {
-      if (!strcmp (description,
-                   "A successful unordered bulk write with an unacknowledged "
-                   "write concern")) {
-         goto done;
-      }
-      test_bulk_write (collection, &arguments);
+      test_bulk_write (&context, collection, &arguments);
    } else if (!strcmp (op_name, "count")) {
       test_count (collection, &arguments);
    } else if (!strcmp (op_name, "find")) {
