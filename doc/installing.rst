@@ -197,7 +197,7 @@ The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
 Using the native libraries there is no need to install OpenSSL. By
 default however, the driver will compile against OpenSSL if it
 detects it being available. If OpenSSL is not available, it will
-fallback on the native libraries.
+fall back on the native libraries.
 
 To compile against the Darwin native TLS and crypto libraries, even when
 OpenSSL is available, configure the driver like so:
@@ -206,10 +206,10 @@ OpenSSL is available, configure the driver like so:
 
   $ ./configure --enable-ssl=darwin
 
-OpenSSL support on El Capitan
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OpenSSL support in Mac OS X
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers. To build the driver with SSL on El Capitan and later:
+Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers. To build the driver with OpenSSL on El Capitan and later:
 
 .. code-block:: none
 
@@ -219,8 +219,8 @@ Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers.
 
 .. _build-on-windows:
 
-Building on Windows
--------------------
+Building on Windows with Visual Studio
+--------------------------------------
 
 Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.
 
