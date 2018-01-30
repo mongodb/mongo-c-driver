@@ -24,7 +24,7 @@ case "$OS" in
 
    darwin)
       sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' src/libbson/test-libbson
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export DYLD_LIBRARY_PATH=".libs"
       ;;
 
    *)
@@ -32,7 +32,7 @@ case "$OS" in
       # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
       # replace its absolute path with "." so it can run in the CWD.
       sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' src/libbson/test-libbson
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
+      export LD_LIBRARY_PATH=".libs"
       ;;
 esac
 
@@ -49,8 +49,7 @@ case "$OS" in
       if [ "$VALGRIND" = "on" ]; then
          make valgrind
       else
-         TEST_ARGS="--no-fork $TEST_ARGS"
-         make -o test-libbson test TEST_ARGS="$TEST_ARGS"
+         ./.libs/test-libbson "--no-fork $TEST_ARGS"
       fi
       ;;
 esac
