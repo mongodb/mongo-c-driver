@@ -15,15 +15,15 @@ run_uri_test (const char *uri_string,
 {
    bson_error_t error;
    mongoc_uri_t *uri;
-   bson_iter_t iter;
+   bson_iter_t auth_iter;
    const char *db;
 
    uri = mongoc_uri_new_with_error (uri_string, &error);
 
    /* some spec tests assume we allow DB names like "auth.foo" */
-   if (bson_iter_init_find (&iter, auth, "db") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      db = bson_iter_utf8 (&iter, NULL);
+   if (bson_iter_init_find (&auth_iter, auth, "db") &&
+       BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
+      db = bson_iter_utf8 (&auth_iter, NULL);
       if (strchr (db, '.')) {
          BSON_ASSERT (!uri);
          ASSERT_ERROR_CONTAINS (error,
