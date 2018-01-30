@@ -21,7 +21,7 @@ main (int argc, char *argv[])
    const bson_t *doc;
 
    if (argc != 2) {
-      printf ("%s - [implicit|scram|cr]\n", argv[0]);
+      printf ("%s - [implicit|scram]\n", argv[0]);
       return 1;
    }
 
@@ -30,11 +30,8 @@ main (int argc, char *argv[])
    } else if (strcmp (argv[1], "scram") == 0) {
       authuristr = "mongodb://user,=:pass@127.0.0.1/"
                    "test?appname=scram-example&authMechanism=SCRAM-SHA-1";
-   } else if (strcmp (argv[1], "cr") == 0) {
-      authuristr = "mongodb://user,=:pass@127.0.0.1/"
-                   "test?appname=scram-example&authMechanism=MONGODB-CR";
    } else {
-      printf ("%s - [implicit|scram|cr]\n", argv[0]);
+      printf ("%s - [implicit|scram]\n", argv[0]);
       return 1;
    }
 

@@ -18,7 +18,7 @@ To select a specific authentication mechanism other than the default, see the li
 Currently supported values for the authMechanism connection string option are:
 
 * :ref:`SCRAM-SHA-1 <authentication_scram_sha_1>`
-* :ref:`MONGODB-CR <authentication_mongodbcr>`
+* :ref:`MONGODB-CR (deprecated) <authentication_mongodbcr>`
 * :ref:`GSSAPI <authentication_kerberos>`
 * :ref:`PLAIN <authentication_plain>`
 * :ref:`X509 <authentication_x509>`
@@ -43,11 +43,8 @@ The default authentication mechanism when talking to MongoDB 3.0 and later is ``
 Legacy Authentication (MONGODB-CR)
 ----------------------------------
 
-The MONGODB-CR authMechanism is a challenge response authentication mechanism. It was the default mechanism until MongoDB 3.0 and is being phased out. It is strongly suggested that users upgrade to SCRAM-SHA-1.
-
-.. note::
-
-  ``MONGODB-CR`` authenticates against the ``admin`` database by default. If the user is created in another database, then specifying the authSource is required.
+The MONGODB-CR authMechanism is deprecated and will no longer function in the next major server release. Instead, specify no authMechanism and the driver
+will use an authentication mechanism compatible with your server.
 
 .. _authentication_kerberos:
 

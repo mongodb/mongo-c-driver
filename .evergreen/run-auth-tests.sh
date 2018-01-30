@@ -1,5 +1,6 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
+# The following expansions are set in the evergreen project:
 # AUTH_HOST=${auth_host} # Evergreen variable
 # AUTH_PLAIN=${auth_plain} # Evergreen variable
 # AUTH_MONGODBCR=${auth_mongodbcr} # Evergreen variable
@@ -86,8 +87,8 @@ fi
 echo "Authenticating using PLAIN"
 $PING "mongodb://${AUTH_PLAIN}@${AUTH_HOST}/?authMechanism=PLAIN&${C_TIMEOUT}"
 
-echo "Authenticating using MONGODB-CR"
-$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?authMechanism=MONGODB-CR&${C_TIMEOUT}"
+echo "Authenticating using default auth mechanism"
+$PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?${C_TIMEOUT}"
 
 if [ $SASL -eq 1 ]; then
 echo "Authenticating using GSSAPI"
