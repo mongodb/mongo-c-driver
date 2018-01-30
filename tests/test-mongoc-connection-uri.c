@@ -13,12 +13,11 @@ run_uri_test (const char *uri_string,
               const bson_t *auth,
               const bson_t *options)
 {
-   bson_error_t error;
    mongoc_uri_t *uri;
    bson_iter_t auth_iter;
    const char *db;
 
-   uri = mongoc_uri_new_with_error (uri_string, &error);
+   uri = mongoc_uri_new (uri_string);
 
    /* some spec tests assume we allow DB names like "auth.foo" */
    if (bson_iter_init_find (&auth_iter, auth, "db") &&
@@ -26,10 +25,10 @@ run_uri_test (const char *uri_string,
       db = bson_iter_utf8 (&auth_iter, NULL);
       if (strchr (db, '.')) {
          BSON_ASSERT (!uri);
-         ASSERT_ERROR_CONTAINS (error,
-                                MONGOC_ERROR_COMMAND,
-                                MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                "Invalid database name in URI");
+         ASSERT_CAPTURED_LOG ("parsing invalid DB name",
+                              MONGOC_LOG_LEVEL_WARNING,
+                              "Invalid database name in URI");
+         clear_captured_logs ();
          return;
       }
    }
@@ -181,7 +180,6 @@ test_connection_uri_cb (bson_t *scenario)
       valid = _mongoc_lookup_bool (&test_case, "valid", true);
       capture_logs (true);
       run_uri_test (uri_string, valid, &hosts, &auth, &options);
-
 
       bson_iter_init (&warning_iter, &test_case);
 
