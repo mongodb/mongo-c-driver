@@ -16,3 +16,4 @@ Guides
    distinct-mapreduce
    visual-studio-guide
    create-indexes
+   debugging

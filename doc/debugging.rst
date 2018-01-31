@@ -1,12 +1,12 @@
 :man_page: debugging
 
-Aids for Debugging libbson Applications
-=======================================
+Aids for Debugging
+==================
 
 GDB
 ---
 
-The libbson repository contains a ``.gdbinit`` file that contains helper functions to
+This repository contains a ``.gdbinit`` file that contains helper functions to
 aid debugging of data structures. GDB will load this file
 `automatically`_ if you have added the directory which contains the `.gdbinit` file to GDB's
 `auto-load safe-path`_, *and* you start GDB from the directory which holds the `.gdbinit` file.
@@ -14,12 +14,12 @@ aid debugging of data structures. GDB will load this file
 You can see the safe-path with ``show auto-load safe-path`` on a GDB prompt. You
 can configure it by setting it in ``~/.gdbinit`` with::
 
-  add-auto-load-safe-path /path/to/mongo-c-driver/src/libbson
+  add-auto-load-safe-path /path/to/mongo-c-driver
 
 If you haven't added the path to your auto-load safe-path, or start GDB in
 another directory, load the file with::
 
-  source path/to/mongo-c-driver/src/libbson/.gdbinit
+  source path/to/mongo-c-driver/.gdbinit
 
 The ``.gdbinit`` file defines the ``printbson`` function, which shows the contents of a ``bson_t *`` variable.
 If you have a local ``bson_t``, then you must prefix the variable with a `&`.
@@ -98,7 +98,7 @@ If you see "No module named pip" then you must `install pip`_, then run the prev
 
 Create a file ``~/.lldbinit`` containing::
 
-  command script import /path/to/mongo-c-driver/src/libbson/lldb_bson.py
+  command script import /path/to/mongo-c-driver/lldb_bson.py
 
 If you see "bson command installed by lldb_bson" at the beginning of your LLDB session, you've installed the script correctly.
 

@@ -9,4 +9,3 @@ Guides
   streaming-bson
   json
   valgrind
-  debugging
