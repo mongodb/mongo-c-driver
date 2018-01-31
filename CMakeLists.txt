@@ -31,6 +31,7 @@ option(ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option(ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option(ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option(ENABLE_TRACING "Turn on verbose debug output" OFF)
+set(ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance counters. Set to ON/AUTO/OFF, default AUTO.")
 set(ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
 set(ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
 set(ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
@@ -370,6 +371,27 @@ if (ENABLE_TRACING)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
 endif ()
 
+if (NOT (ENABLE_SHM_COUNTERS STREQUAL ON
+         OR ENABLE_SHM_COUNTERS STREQUAL OFF
+         OR ENABLE_SHM_COUNTERS STREQUAL AUTO))
+   message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
+endif()
+
+if (ENABLE_SHM_COUNTERS STREQUAL "AUTO")
+   if (UNIX AND NOT APPLE)
+      set (ENABLE_SHM_COUNTERS ON)
+   endif ()
+endif ()
+
+if (ENABLE_SHM_COUNTERS STREQUAL "ON")
+   if (APPLE OR NOT UNIX)
+      message (
+         FATAL_ERROR
+         "Shared memory performance counters not supported on Mac or Windows")
+   endif ()
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_ENABLE_SHM_COUNTERS")
+endif ()
+
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")
 
 # Sets SNAPPY_LIBS and SNAPPY_INCLUDE_DIRS.
@@ -678,6 +700,9 @@ if (MONGOC_ENABLE_STATIC)
    set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
    set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 endif ()
+
+add_executable (mongoc-stat ${SOURCE_DIR}/src/tools/mongoc-stat.c)
+target_link_libraries (mongoc-stat mongoc_shared)
 
 function(mongoc_add_test test use_shared)
    if (ENABLE_TESTS)

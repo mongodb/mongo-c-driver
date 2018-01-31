@@ -23,7 +23,7 @@ The counters can be accessed outside of the application process via a shared mem
 This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
 Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
 
-Counters are currently available on UNIX-like platforms that support shared memory segments.
+Counters are currently available on UNIX platforms (besides macOS) that support shared memory segments.
 
 * Active and Disposed Cursors
 * Active and Disposed Clients, Client Pools, and Socket Streams.
