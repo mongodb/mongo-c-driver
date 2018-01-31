@@ -60,6 +60,7 @@ typedef struct _mongoc_async_cmd {
    mongoc_array_t array;
    mongoc_iovec_t *iovec;
    size_t niovec;
+   size_t bytes_written;
    size_t bytes_to_read;
    mongoc_rpc_t rpc;
    bson_t reply;

@@ -144,6 +144,7 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
    acmd->iovec = (mongoc_iovec_t *) acmd->array.data;
    acmd->niovec = acmd->array.len;
    _mongoc_rpc_swab_to_le (&acmd->rpc);
+   acmd->bytes_written = 0;
 }
 
 void
@@ -250,9 +251,49 @@ _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
 {
+   size_t total_bytes = 0;
+   size_t offset;
    ssize_t bytes;
+   int i;
+   /* if a continued write, then iovec will be set to a temporary copy */
+   bool used_temp_iovec = false;
+   mongoc_iovec_t *iovec = acmd->iovec;
+   size_t niovec = acmd->niovec;
 
-   bytes = mongoc_stream_writev (acmd->stream, acmd->iovec, acmd->niovec, 0);
+   for (i = 0; i < acmd->niovec; i++) {
+      total_bytes += acmd->iovec[i].iov_len;
+   }
+
+   if (acmd->bytes_written > 0) {
+      BSON_ASSERT (acmd->bytes_written < total_bytes);
+      /* if bytes have been written before, compute the offset in the next
+       * iovec entry to be written. */
+      offset = acmd->bytes_written;
+
+      /* subtract the lengths of all iovec entries written so far. */
+      for (i = 0; i < acmd->niovec; i++) {
+         if (offset < acmd->iovec[i].iov_len) {
+            break;
+         }
+         offset -= acmd->iovec[i].iov_len;
+      }
+
+      BSON_ASSERT (i < acmd->niovec);
+
+      /* create a new iovec with the remaining data to be written. */
+      niovec = acmd->niovec - i;
+      iovec = bson_malloc (niovec * sizeof (mongoc_iovec_t));
+      memcpy (iovec, acmd->iovec + i, niovec * sizeof (mongoc_iovec_t));
+      iovec[0].iov_base += offset;
+      iovec[0].iov_len -= offset;
+      used_temp_iovec = true;
+   }
+
+   bytes = mongoc_stream_writev (acmd->stream, iovec, niovec, 0);
+
+   if (used_temp_iovec) {
+      bson_free (iovec);
+   }
 
    if (bytes < 0) {
       bson_set_error (&acmd->error,
@@ -262,16 +303,10 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
-   while (bytes) {
-      if (acmd->iovec->iov_len < (size_t) bytes) {
-         bytes -= acmd->iovec->iov_len;
-         acmd->iovec++;
-         acmd->niovec--;
-      } else {
-         acmd->iovec->iov_base = ((char *) acmd->iovec->iov_base) + bytes;
-         acmd->iovec->iov_len -= bytes;
-         bytes = 0;
-      }
+   acmd->bytes_written += bytes;
+
+   if (acmd->bytes_written < total_bytes) {
+      return MONGOC_ASYNC_CMD_IN_PROGRESS;
    }
 
    acmd->state = MONGOC_ASYNC_CMD_RECV_LEN;
