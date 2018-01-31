@@ -460,7 +460,7 @@ test_insert (void)
       bson_init (&b);
       bson_oid_init (&oid, context);
       bson_append_oid (&b, "_id", 3, &oid);
-      bson_append_utf8 (&b, "hello", 5, "/world", 5);
+      bson_append_utf8 (&b, "hello", 5, "/world", 6);
       ASSERT_OR_PRINT (
          mongoc_collection_insert_one (collection, &b, NULL, NULL, &error),
          error);
