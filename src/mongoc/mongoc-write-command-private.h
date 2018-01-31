@@ -33,7 +33,7 @@
 BSON_BEGIN_DECLS
 
 /* forward decl */
-typedef struct _mongoc_crud_opts_t mongoc_crud_opts_t;
+struct _mongoc_crud_opts_t;
 
 #define MONGOC_WRITE_COMMAND_DELETE 0
 #define MONGOC_WRITE_COMMAND_INSERT 1
@@ -111,7 +111,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
                                        const bson_t *document,
-                                       mongoc_crud_opts_t *crud,
+                                       struct _mongoc_crud_opts_t *crud,
                                        const bson_t *cmd_opts,
                                        int64_t operation_id,
                                        bool allow_bulk_op_insert);
@@ -165,7 +165,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                                    const char *database,
                                    const char *collection,
                                    uint32_t offset,
-                                   mongoc_crud_opts_t *crud,
+                                   struct _mongoc_crud_opts_t *crud,
                                    mongoc_write_result_t *result);
 void
 _mongoc_write_result_init (mongoc_write_result_t *result);
