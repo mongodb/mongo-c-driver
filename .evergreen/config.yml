@@ -7336,36 +7336,6 @@ tasks:
             SSL: "winssl"
             URI: ""
 
-    - name: authentication-tests-sasl-cyrus
-      tags: ["authentication-tests", "sasl", "cyrus"]
-      depends_on:
-        - name: "debug-compile-sasl-nossl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-nossl"
-        - func: "run auth tests"
-
-    - name: authentication-tests-sasl-sspi
-      tags: ["authentication-tests", "sasl", "sspi"]
-      depends_on:
-        - name: "debug-compile-sspi-nossl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sspi-nossl"
-        - func: "run auth tests"
-
-    - name: authentication-tests-nosasl
-      tags: ["authentication-tests", "nosasl"]
-      depends_on:
-        - name: "debug-compile-nosasl-nossl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-nossl"
-        - func: "run auth tests"
-
     - name: authentication-tests-openssl
       tags: ["authentication-tests", "nosasl", "ssl", "openssl"]
       depends_on:
@@ -7640,7 +7610,6 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7674,7 +7643,6 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .nossl !.nosasl"
     - ".3.6 .nossl !.nosasl"
@@ -7697,7 +7665,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests .nosasl !.ssl"
     - ".latest .nossl .nosasl"
     - ".3.6 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
@@ -7720,7 +7687,6 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7739,7 +7705,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7760,7 +7725,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7787,7 +7751,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7810,7 +7773,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7829,7 +7791,6 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
-    - ".authentication-tests .nosasl !.ssl !.sspi"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.6 .nossl .nosasl"
@@ -7851,7 +7812,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7877,7 +7837,6 @@ buildvariants:
     - ".debug-compile .darwinssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7904,10 +7863,8 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7934,9 +7891,7 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -7956,10 +7911,8 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -7978,9 +7931,7 @@ buildvariants:
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
-    - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -8000,10 +7951,8 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .nosasl !.ssl" # GSSAPI isn't installed
     - ".authentication-tests .openssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8023,9 +7972,7 @@ buildvariants:
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".debug-compile .nossl .sspi"
-    - ".authentication-tests .nosasl !.ssl"
     - ".authentication-tests .winssl"
-    - ".authentication-tests .sspi"
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
@@ -8059,7 +8006,7 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .nosasl !.ssl" # Revert me: CDRIVER-2000
+    # - ".authentication-tests .openssl .sasl" uncomment after CDRIVER-2000 is fixed
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8081,7 +8028,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8106,7 +8052,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8128,7 +8073,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8149,7 +8093,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
@@ -8172,7 +8115,6 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests !.ssl !.sspi"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
