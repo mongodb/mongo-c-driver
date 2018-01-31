@@ -405,7 +405,7 @@ mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
 
 bool
 _mongoc_client_session_from_iter (mongoc_client_t *client,
-                                  bson_iter_t *iter,
+                                  const bson_iter_t *iter,
                                   mongoc_client_session_t **cs,
                                   bson_error_t *error)
 {

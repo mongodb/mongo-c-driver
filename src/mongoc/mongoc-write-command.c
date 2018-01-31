@@ -24,6 +24,7 @@
 #include "mongoc-write-command-legacy-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-opts-private.h"
 
 
 /*
@@ -215,6 +216,36 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
    ENTRY;
 
    BSON_ASSERT (command);
+
+   _mongoc_write_command_init_bulk (
+      command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
+
+   command->u.insert.allow_bulk_op_insert = (uint8_t) allow_bulk_op_insert;
+   /* must handle NULL document from mongoc_collection_insert_bulk */
+   if (document) {
+      _mongoc_write_command_insert_append (command, document);
+   }
+
+   EXIT;
+}
+
+
+void
+_mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
+                                       const bson_t *document,
+                                       mongoc_crud_opts_t *crud,
+                                       const bson_t *cmd_opts,
+                                       int64_t operation_id,
+                                       bool allow_bulk_op_insert)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT (command);
+
+   flags.has_collation = bson_empty (&crud->collation);
+   flags.bypass_document_validation = crud->bypassDocumentValidation;
 
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
@@ -850,6 +881,100 @@ _mongoc_write_command_execute (
                                 database,
                                 collection,
                                 write_concern,
+                                offset,
+                                result,
+                                &result->error);
+      } else {
+         gLegacyWriteOps[command->type](command,
+                                        client,
+                                        server_stream,
+                                        database,
+                                        collection,
+                                        offset,
+                                        result,
+                                        &result->error);
+      }
+   }
+
+   EXIT;
+}
+
+void
+_mongoc_write_command_execute_idl (mongoc_write_command_t *command,
+                                   mongoc_client_t *client,
+                                   mongoc_server_stream_t *server_stream,
+                                   const char *database,
+                                   const char *collection,
+                                   uint32_t offset,
+                                   mongoc_crud_opts_t *crud,
+                                   mongoc_write_result_t *result)
+{
+   ENTRY;
+
+   BSON_ASSERT (command);
+   BSON_ASSERT (client);
+   BSON_ASSERT (server_stream);
+   BSON_ASSERT (database);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (result);
+
+   if (!bson_empty (&crud->collation)) {
+      if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
+         result->failed = true;
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set collation for unacknowledged writes");
+         EXIT;
+      }
+
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Collation is not supported by the selected server");
+         result->failed = true;
+         EXIT;
+      }
+   }
+
+   if (crud->bypassDocumentValidation !=
+       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
+         result->failed = true;
+         bson_set_error (
+            &result->error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Cannot set bypassDocumentValidation for unacknowledged writes");
+         EXIT;
+      }
+   }
+
+   if (command->payload.len == 0) {
+      _empty_error (command, &result->error);
+      EXIT;
+   }
+
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      _mongoc_write_opmsg (command,
+                           client,
+                           server_stream,
+                           database,
+                           collection,
+                           crud->writeConcern,
+                           offset,
+                           crud->client_session,
+                           result,
+                           &result->error);
+   } else {
+      if (mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
+         _mongoc_write_opquery (command,
+                                client,
+                                server_stream,
+                                database,
+                                collection,
+                                crud->writeConcern,
                                 offset,
                                 result,
                                 &result->error);

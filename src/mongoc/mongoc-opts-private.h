@@ -13,7 +13,7 @@
  *************************************************/
 /* clang-format off */
 
-typedef struct {
+typedef struct _mongoc_find_one_opts_t {
    bson_t projection;
    bson_t sort;
    int64_t skip;
@@ -37,28 +37,134 @@ typedef struct {
    bool singleBatch;
    bool snapshot;
    bool tailable;
+   bson_t extra;
 } mongoc_find_one_opts_t;
 
-
-typedef struct {
-   bson_t writeConcern;
+typedef struct _mongoc_crud_opts_t {
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
    mongoc_client_session_t *client_session;
    bson_validate_flags_t validate;
-   bool bypassDocumentValidation;
+   mongoc_write_bypass_document_validation_t bypassDocumentValidation;
    bson_t collation;
 } mongoc_crud_opts_t;
 
-
-typedef struct {
+typedef struct _mongoc_insert_one_opts_t {
    mongoc_crud_opts_t crud;
+   bson_t extra;
 } mongoc_insert_one_opts_t;
 
-
-typedef struct {
+typedef struct _mongoc_insert_many_opts_t {
    mongoc_crud_opts_t crud;
    bool ordered;
+   bson_t extra;
 } mongoc_insert_many_opts_t;
 
+typedef struct _mongoc_delete_one_opts_t {
+   mongoc_crud_opts_t crud;
+   bson_t extra;
+} mongoc_delete_one_opts_t;
 
+typedef struct _mongoc_delete_many_opts_t {
+   mongoc_crud_opts_t crud;
+   bool ordered;
+   bson_t extra;
+} mongoc_delete_many_opts_t;
+
+typedef struct _mongoc_update_one_opts_t {
+   mongoc_crud_opts_t crud;
+   bson_t extra;
+} mongoc_update_one_opts_t;
+
+typedef struct _mongoc_update_many_opts_t {
+   mongoc_crud_opts_t crud;
+   bool ordered;
+   bson_t extra;
+} mongoc_update_many_opts_t;
+
+typedef struct _mongoc_replace_one_opts_t {
+   mongoc_crud_opts_t crud;
+   bson_t extra;
+} mongoc_replace_one_opts_t;
+
+bool
+_mongoc_find_one_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_find_one_opts_t *mongoc_find_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_find_one_opts_cleanup (mongoc_find_one_opts_t *mongoc_find_one_opts);
+
+bool
+_mongoc_insert_one_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_insert_one_opts_t *mongoc_insert_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_insert_one_opts_cleanup (mongoc_insert_one_opts_t *mongoc_insert_one_opts);
+
+bool
+_mongoc_insert_many_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_insert_many_opts_t *mongoc_insert_many_opts,
+   bson_error_t *error);
+
+void
+_mongoc_insert_many_opts_cleanup (mongoc_insert_many_opts_t *mongoc_insert_many_opts);
+
+bool
+_mongoc_delete_one_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_delete_one_opts_t *mongoc_delete_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_delete_one_opts_cleanup (mongoc_delete_one_opts_t *mongoc_delete_one_opts);
+
+bool
+_mongoc_delete_many_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_delete_many_opts_t *mongoc_delete_many_opts,
+   bson_error_t *error);
+
+void
+_mongoc_delete_many_opts_cleanup (mongoc_delete_many_opts_t *mongoc_delete_many_opts);
+
+bool
+_mongoc_update_one_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_update_one_opts_t *mongoc_update_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opts);
+
+bool
+_mongoc_update_many_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_update_many_opts_t *mongoc_update_many_opts,
+   bson_error_t *error);
+
+void
+_mongoc_update_many_opts_cleanup (mongoc_update_many_opts_t *mongoc_update_many_opts);
+
+bool
+_mongoc_replace_one_opts_parse (
+   mongoc_collection_t *collection,
+   const bson_t *opts,
+   mongoc_replace_one_opts_t *mongoc_replace_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_opts);
 
 #endif /* MONGOC_OPTS_H */

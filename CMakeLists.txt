@@ -487,6 +487,7 @@ set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cmd.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opts.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-opts-helpers.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c

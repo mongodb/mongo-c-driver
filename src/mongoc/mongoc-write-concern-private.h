@@ -44,7 +44,8 @@ struct _mongoc_write_concern_t {
 
 
 mongoc_write_concern_t *
-_mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error);
+_mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
+                                     bson_error_t *error);
 const bson_t *
 _mongoc_write_concern_get_bson (mongoc_write_concern_t *write_concern);
 bool

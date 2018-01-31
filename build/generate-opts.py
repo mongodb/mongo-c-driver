@@ -27,6 +27,7 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 
 from collections import OrderedDict
 from os.path import basename, dirname, join as joinpath, normpath
+import re
 
 from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 
@@ -36,14 +37,35 @@ src_dir = normpath(joinpath(this_dir, '../src/mongoc'))
 
 
 class Struct(OrderedDict):
-    def __init__(self, items, is_base=False):
-        """Define a struct. If is_base=True, don't generate a parse function."""
+    def __init__(self, instance_type, items, **defaults):
+        """Define an options struct.
+
+        - instance_type: A type like mongoc_client_t, mongoc_database_t, etc.
+        - items: List of pairs: (optionName, info)
+        - defaults: Initial values for options
+        """
         super(Struct, self).__init__(items)
-        self.is_base = is_base
+        if instance_type is not None:
+            self.instance_type = instance_type
+            self.instance_name = re.sub(r'mongoc_(\w+)_t', r'\1', instance_type)
+        else:
+            self.instance_type = self.instance_name = ''
+        self.is_shared = False
+        self.defaults = defaults
+
+    def default(self, item, fallback):
+        return self.defaults.get(item, fallback)
+
+
+class Shared(Struct):
+    def __init__(self, items, **defaults):
+        """Define a struct that is shared by others."""
+        super(Shared, self).__init__(None, items, **defaults)
+        self.is_shared = True
 
 
 opts_structs = OrderedDict([
-    ('mongoc_find_one_opts_t', Struct([
+    ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
         ('projection', {'type': 'document'}),
         ('sort', {'type': 'document'}),
         ('skip', {
@@ -86,11 +108,16 @@ opts_structs = OrderedDict([
         ('snapshot', {'type': 'bool'}),
         ('tailable', {'type': 'bool'})
     ])),
-    ('mongoc_crud_opts_t', Struct([
+
+    ('mongoc_crud_opts_t', Shared([
         ('writeConcern', {
-            'type': 'document',
+            'type': 'mongoc_write_concern_t *',
             'convert': '_mongoc_convert_write_concern',
             'help': 'Construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.'
+        }),
+        ('write_concern_owned', {
+            'type': 'bool',
+            'hidden': True,
         }),
         ('sessionId', {
             'type': 'mongoc_client_session_t *',
@@ -104,21 +131,45 @@ opts_structs = OrderedDict([
             'help': 'Construct a bitwise-or of all desired `bson_validate_flags_t <http://mongoc.org/libbson/current/bson_validate_with_error.html>`_. Set to ``0`` to skip client-side validation of the provided BSON documents.'
         }),
         ('bypassDocumentValidation', {
-            'type': 'bool',
+            'type': 'mongoc_write_bypass_document_validation_t',
             'help': 'Set to ``true`` to skip server-side schema validation of the provided BSON documents.'
         }),
         ('collation', {
             'type': 'document',
             'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
         }),
-    ], is_base=True)),
-    ('mongoc_insert_one_opts_t', Struct([
-        ('crud', {'type': 'mongoc_crud_opts_t'})
     ])),
-    ('mongoc_insert_many_opts_t', Struct([
+
+    ('mongoc_insert_one_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'})
+    ], validate='_mongoc_default_insert_vflags')),
+
+    ('mongoc_insert_many_opts_t', Struct('mongoc_collection_t', [
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         ('ordered', {'type': 'bool'})
+    ], validate='_mongoc_default_insert_vflags', ordered='true')),
+
+    ('mongoc_delete_one_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'})
     ])),
+
+    ('mongoc_delete_many_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'}),
+        ('ordered', {'type': 'bool'})
+    ], ordered='true')),
+
+    ('mongoc_update_one_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'})
+    ], validate='_mongoc_default_update_vflags')),
+
+    ('mongoc_update_many_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'}),
+        ('ordered', {'type': 'bool'})
+    ], validate='_mongoc_default_update_vflags', ordered='true')),
+
+    ('mongoc_replace_one_opts_t', Struct('mongoc_collection_t', [
+        ('crud', {'type': 'mongoc_crud_opts_t'}),
+    ], validate='_mongoc_default_replace_vflags')),
 ])
 
 header_comment = """/**************************************************

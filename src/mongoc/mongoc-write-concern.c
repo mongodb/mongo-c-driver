@@ -512,7 +512,8 @@ mongoc_write_concern_append (mongoc_write_concern_t *write_concern,
  *    with mongoc_write_concern_destroy().
  */
 mongoc_write_concern_t *
-_mongoc_write_concern_new_from_iter (bson_iter_t *iter, bson_error_t *error)
+_mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
+                                     bson_error_t *error)
 {
    bson_iter_t inner;
    mongoc_write_concern_t *write_concern;

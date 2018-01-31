@@ -37,6 +37,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-command-private.h"
+#include "mongoc-opts-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -90,6 +91,40 @@ _mongoc_collection_write_command_execute (
                                   0 /* offset */,
                                   cs,
                                   result);
+
+   mongoc_server_stream_cleanup (server_stream);
+
+   EXIT;
+}
+
+
+static void
+_mongoc_collection_write_command_execute_idl (
+   mongoc_write_command_t *command,
+   const mongoc_collection_t *collection,
+   mongoc_crud_opts_t *crud,
+   mongoc_write_result_t *result)
+{
+   mongoc_server_stream_t *server_stream;
+
+   ENTRY;
+
+   server_stream = mongoc_cluster_stream_for_writes (
+      &collection->client->cluster, &result->error);
+
+   if (!server_stream) {
+      /* result->error has been filled out */
+      EXIT;
+   }
+
+   _mongoc_write_command_execute_idl (command,
+                                      collection->client,
+                                      server_stream,
+                                      collection->db,
+                                      collection->collection,
+                                      0 /* offset */,
+                                      crud,
+                                      result);
 
    mongoc_server_stream_cleanup (server_stream);
 
@@ -1670,7 +1705,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
                               bson_t *reply,
                               bson_error_t *error)
 {
-   mongoc_write_opts_parsed_t parsed;
+   mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
@@ -1682,37 +1717,32 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (
-          opts, collection, &parsed, _mongoc_default_insert_vflags, error)) {
-      _mongoc_write_opts_cleanup (&parsed);
+   if (!_mongoc_insert_one_opts_parse (
+          collection, opts, &insert_one_opts, error)) {
+      _mongoc_insert_one_opts_cleanup (&insert_one_opts);
       return false;
    }
 
-   if (parsed.validation_flags &&
-       !_mongoc_validate_new_document (
-          document, parsed.validation_flags, error)) {
-      _mongoc_write_opts_cleanup (&parsed);
+   if (!_mongoc_validate_new_document (
+          document, insert_one_opts.crud.validate, error)) {
       RETURN (false);
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (
+   _mongoc_write_command_init_insert_idl (
       &command,
       document,
-      &parsed.copied_opts,
-      parsed.write_flags,
+      &insert_one_opts.crud,
+      &insert_one_opts.extra,
       ++collection->client->cluster.operation_id,
       false);
 
-   _mongoc_collection_write_command_execute (&command,
-                                             collection,
-                                             parsed.write_concern,
-                                             parsed.client_session,
-                                             &result);
+   _mongoc_collection_write_command_execute_idl (
+      &command, collection, &insert_one_opts.crud, &result);
 
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       parsed.write_concern,
+                                       insert_one_opts.crud.writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -1721,7 +1751,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_write_opts_cleanup (&parsed);
+   _mongoc_insert_one_opts_cleanup (&insert_one_opts);
 
    RETURN (ret);
 }
@@ -1761,7 +1791,7 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
                                bson_t *reply,
                                bson_error_t *error)
 {
-   mongoc_write_opts_parsed_t parsed;
+   mongoc_insert_many_opts_t insert_many_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    size_t i;
@@ -1774,25 +1804,26 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
 
-   if (!_mongoc_write_opts_parse (
-          opts, collection, &parsed, _mongoc_default_insert_vflags, error)) {
-      _mongoc_write_opts_cleanup (&parsed);
+   if (!_mongoc_insert_many_opts_parse (
+          collection, opts, &insert_many_opts, error)) {
+      _mongoc_insert_many_opts_cleanup (&insert_many_opts);
       return false;
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (
+   _mongoc_write_command_init_insert_idl (
       &command,
       NULL,
-      &parsed.copied_opts,
-      parsed.write_flags,
+      &insert_many_opts.crud,
+      &insert_many_opts.extra,
       ++collection->client->cluster.operation_id,
       false);
 
+   command.flags.ordered = insert_many_opts.ordered;
+
    for (i = 0; i < n_documents; i++) {
-      if (parsed.validation_flags &&
-          !_mongoc_validate_new_document (
-             documents[i], parsed.validation_flags, error)) {
+      if (!_mongoc_validate_new_document (
+             documents[i], insert_many_opts.crud.validate, error)) {
          ret = false;
          GOTO (done);
       }
@@ -1800,15 +1831,12 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
       _mongoc_write_command_insert_append (&command, documents[i]);
    }
 
-   _mongoc_collection_write_command_execute (&command,
-                                             collection,
-                                             parsed.write_concern,
-                                             parsed.client_session,
-                                             &result);
+   _mongoc_collection_write_command_execute_idl (
+      &command, collection, &insert_many_opts.crud, &result);
 
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       parsed.write_concern,
+                                       insert_many_opts.crud.writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -1818,7 +1846,7 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
 done:
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_write_opts_cleanup (&parsed);
+   _mongoc_insert_many_opts_cleanup (&insert_many_opts);
 
    RETURN (ret);
 }
@@ -1958,19 +1986,16 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       return false;
    }
 
-   if (parsed.validation_flags) {
-      /* update document, all keys must be $-operators */
-      if (is_update) {
-         if (!_mongoc_validate_update (
-                update, parsed.validation_flags, error)) {
-            _mongoc_write_opts_cleanup (&parsed);
-            return false;
-         }
-      } else if (!_mongoc_validate_replace (
-                    update, parsed.validation_flags, error)) {
+   /* update document, all keys must be $-operators */
+   if (is_update) {
+      if (!_mongoc_validate_update (update, parsed.validation_flags, error)) {
          _mongoc_write_opts_cleanup (&parsed);
          return false;
       }
+   } else if (!_mongoc_validate_replace (
+                 update, parsed.validation_flags, error)) {
+      _mongoc_write_opts_cleanup (&parsed);
+      return false;
    }
 
    if (is_multi) {

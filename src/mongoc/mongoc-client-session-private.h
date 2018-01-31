@@ -36,7 +36,7 @@ struct _mongoc_session_opt_t {
 typedef struct _mongoc_server_session_t {
    struct _mongoc_server_session_t *prev, *next;
    int64_t last_used_usec;
-   bson_t lsid; /* logical session id */
+   bson_t lsid;        /* logical session id */
    int64_t txn_number; /* transaction number */
 } mongoc_server_session_t;
 
@@ -81,7 +81,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
 
 bool
 _mongoc_client_session_from_iter (mongoc_client_t *client,
-                                  bson_iter_t *iter,
+                                  const bson_iter_t *iter,
                                   mongoc_client_session_t **cs,
                                   bson_error_t *error);
 

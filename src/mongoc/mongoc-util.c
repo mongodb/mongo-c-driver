@@ -312,6 +312,10 @@ _mongoc_validate_new_document (const bson_t *doc,
 {
    bson_error_t validate_err;
 
+   if (vflags == BSON_VALIDATE_NONE) {
+      return true;
+   }
+
    if (!bson_validate_with_error (doc, vflags, &validate_err)) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
@@ -331,6 +335,10 @@ _mongoc_validate_replace (const bson_t *doc,
                           bson_error_t *error)
 {
    bson_error_t validate_err;
+
+   if (vflags == BSON_VALIDATE_NONE) {
+      return true;
+   }
 
    if (!bson_validate_with_error (doc, vflags, &validate_err)) {
       bson_set_error (error,
@@ -353,6 +361,10 @@ _mongoc_validate_update (const bson_t *update,
    bson_error_t validate_err;
    bson_iter_t iter;
    const char *key;
+
+   if (vflags == BSON_VALIDATE_NONE) {
+      return true;
+   }
 
    if (!bson_validate_with_error (update, vflags, &validate_err)) {
       bson_set_error (error,

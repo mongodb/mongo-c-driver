@@ -1,19 +1,50 @@
+#include "mongoc-opts-helpers-private.h"
 #include "mongoc-opts-private.h"
 #include "mongoc-error.h"
+#include "mongoc-util-private.h"
 
 {{ header_comment }}
 
 {% for struct_type, description in opts_structs.items() %}
-{% if description.is_base %}{% continue %}{% endif %}
+{% if description.is_shared %}{% continue %}{% endif %}
 {% set struct_name = struct_type.split('_t', -1)[0] %}
 bool
-parse_{{ struct_name }} (
+_{{ struct_name }}_parse (
+   {{ description.instance_type }} *{{ description.instance_name }},
    const bson_t *opts,
    {{ struct_type }} *{{ struct_name }},
-   bson_t *extra,
    bson_error_t *error)
 {
+{% if description.instance_type != 'mongoc_client_t *' %}
+   mongoc_client_t *client = {{ description.instance_name }}->client;
+{% endif %}
    bson_iter_t iter;
+
+{% for path, opt_name, info in paths(description) %}
+{% if info['type'] == 'bool' %}
+   {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'false') }};
+{% elif info['type'] == 'int64_t' %}
+   {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 0) }};
+{% elif info['type'] == 'mongoc_write_concern_t *' %}
+   {{ struct_name }}->{{ path }} = {{ description.instance_name }}->write_concern;
+{% elif info['type'] == 'bson_validate_flags_t' %}
+   {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'BSON_VALIDATE_NONE') }};
+{% elif info['type'] == 'mongoc_write_bypass_document_validation_t' %}
+   {{ struct_name }}->{{ path }} = \
+      {{ description.default(opt_name, 'MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT') }};
+{% elif info['type'] == 'bson_value_t' %}
+   memset (&{{ struct_name }}->{{ path }}, 0, sizeof (bson_value_t));
+{% elif info['type'] == 'document' %}
+   bson_init (&{{ struct_name }}->{{ path }});
+{% else %}
+   {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'NULL') }};
+{% endif %}
+{% endfor %}
+   bson_init (&{{ struct_name }}->extra);
+
+   if (!opts) {
+      return true;
+   }
 
    if (!bson_iter_init (&iter, opts)) {
       bson_set_error (error,
@@ -25,6 +56,9 @@ parse_{{ struct_name }} (
 
    while (bson_iter_next (&iter)) {
 {% for path, opt_name, info in paths(description) %}
+{% if info.get('hidden') %}
+{% continue %}
+{% endif %}
 {% if info['type'] == 'utf8' %}
 {% set the_type = 'const char *' %}
 {% elif info['type'] == 'document' %}
@@ -35,16 +69,33 @@ parse_{{ struct_name }} (
 {% set the_name = info.get('field', opt_name) %}
 {% set the_converter = info.get('convert', '_mongoc_convert_' + info['type'] ) %}
       {% if loop.index > 1 %}else {% endif %}if (!strcmp (bson_iter_key (&iter), "{{ opt_name }}")) {
+{% if the_converter == '_mongoc_convert_write_concern' %}
          if (!{{ the_converter }} (
-               &iter, &{{ struct_name }}->{{ path }}, error)) {
+               client,
+               &iter,
+               &{{ struct_name }}->{{ path }},
+               error)) {
             return false;
          }
+
+         {{ struct_name }}->crud.write_concern_owned = true;
+{% else %}
+         if (!{{ the_converter }} (
+               client,
+               &iter,
+               &{{ struct_name }}->{{ path }},
+               error)) {
+            return false;
+         }
+{% endif %}
       }
 {% endfor %}
       else {
          /* unrecognized values are copied to "extra" */
-         if (!bson_append_value (
-                extra, bson_iter_key (&iter), -1, bson_iter_value (&iter))) {
+         if (!BSON_APPEND_VALUE (
+               &{{ struct_name }}->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
             bson_set_error (error,
                             MONGOC_ERROR_BSON,
                             MONGOC_ERROR_BSON_INVALID,
@@ -57,5 +108,21 @@ parse_{{ struct_name }} (
    return true;
 }
 
+void
+_{{ struct_name }}_cleanup ({{ struct_type }} *{{ struct_name }})
+{
+{% for path, opt_name, info in paths(description) %}
+{% if info['type'] == 'mongoc_write_concern_t *' %}
+   if ({{ struct_name }}->crud.write_concern_owned) {
+      mongoc_write_concern_destroy ({{ struct_name }}->{{ path }});
+   }
+{% elif info['type'] == 'bson_value_t' %}
+   bson_value_destroy (&{{ struct_name }}->{{ path }});
+{% elif info['type'] == 'document' %}
+   bson_destroy (&{{ struct_name }}->{{ path }});
+{% endif %}
+{% endfor %}
+   bson_destroy (&{{struct_name }}->extra);
+}
 
 {% endfor %}

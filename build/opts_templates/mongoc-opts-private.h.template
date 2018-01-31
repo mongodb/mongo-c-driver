@@ -7,7 +7,7 @@
 {{ header_comment }}
 
 {% for struct_type, description in opts_structs.items() %}
-typedef struct {
+typedef struct _{{ struct_type }} {
 {% for opt_name, info in description.items() %}
 {% if info['type'] == 'utf8' %}
 {% set the_type = 'const char *' %}
@@ -20,9 +20,24 @@ typedef struct {
 {% set space = '' if the_type.endswith('*') else ' ' %}
    {{ the_type }}{{ space }}{{ the_name }};
 {% endfor %}
+{% if not description.is_shared %}
+   bson_t extra;
+{% endif %}
 } {{ struct_type }};
 
+{% endfor %}
+{% for struct_type, description in opts_structs.items() %}
+{% if description.is_shared %}{% continue %}{% endif %}
+{% set struct_name = struct_type.split('_t', -1)[0] %}
+bool
+_{{ struct_name }}_parse (
+   {{ description.instance_type }} *{{ description.instance_name }},
+   const bson_t *opts,
+   {{ struct_type }} *{{ struct_name }},
+   bson_error_t *error);
+
+void
+_{{ struct_name }}_cleanup ({{ struct_type }} *{{ struct_name }});
 
 {% endfor %}
-
 #endif /* MONGOC_OPTS_H */
