@@ -3662,7 +3662,7 @@ _test_insert_validate (insert_fn_t insert_fn)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid type for option \"validate\", \"UTF8\"");
+                          "Invalid type for option \"validate\": \"UTF8\"");
 
    BSON_ASSERT (insert_fn (
       collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'validate': 0}"), &error));
@@ -3687,16 +3687,15 @@ _test_insert_validate (insert_fn_t insert_fn)
       MONGOC_ERROR_COMMAND_INVALID_ARG,
       "invalid document for insert: keys cannot contain \".\": \"a.a\"");
 
-   /* {validate: true} is equivalent to setting all the flags */
+   /* {validate: true} is still prohibited */
    BSON_ASSERT (!insert_fn (collection,
                             tmp_bson ("{'a.a': 1}"),
                             tmp_bson ("{'validate': true}"),
                             &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid option \"validate\": true");
 
 
    BSON_ASSERT (insert_fn (collection,

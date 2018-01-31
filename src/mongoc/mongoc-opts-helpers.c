@@ -110,8 +110,8 @@ _mongoc_convert_validate_flags (mongoc_client_t *client,
       } else {
          /* validate: false is ok but validate: true is prohibited */
          bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "Invalid option \"%s\": true, must be a bitwise-OR of"
                          " bson_validate_flags_t values.",
                          bson_iter_key (iter));
@@ -123,8 +123,8 @@ _mongoc_convert_validate_flags (mongoc_client_t *client,
          return true;
       } else {
          bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "Invalid field \"%s\" in opts, must be a bitwise-OR of"
                          " bson_validate_flags_t values.",
                          bson_iter_key (iter));
