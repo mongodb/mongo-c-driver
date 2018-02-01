@@ -30,7 +30,7 @@ _{{ struct_name }}_parse (
 {% elif info['type'] == 'bson_validate_flags_t' %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'BSON_VALIDATE_NONE') }};
 {% elif info['type'] == 'mongoc_write_bypass_document_validation_t' %}
-   {{ struct_name }}->{{ path }} = \
+   {{ struct_name }}->{{ path }} =
       {{ description.default(opt_name, 'MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT') }};
 {% elif info['type'] == 'bson_value_t' %}
    memset (&{{ struct_name }}->{{ path }}, 0, sizeof (bson_value_t));

@@ -45,22 +45,24 @@ typedef struct _mongoc_crud_opts_t {
    bool write_concern_owned;
    mongoc_client_session_t *client_session;
    bson_validate_flags_t validate;
-   mongoc_write_bypass_document_validation_t bypassDocumentValidation;
 } mongoc_crud_opts_t;
 
 typedef struct _mongoc_insert_one_opts_t {
    mongoc_crud_opts_t crud;
+   mongoc_write_bypass_document_validation_t bypass;
    bson_t extra;
 } mongoc_insert_one_opts_t;
 
 typedef struct _mongoc_insert_many_opts_t {
    mongoc_crud_opts_t crud;
    bool ordered;
+   mongoc_write_bypass_document_validation_t bypass;
    bson_t extra;
 } mongoc_insert_many_opts_t;
 
 typedef struct _mongoc_delete_one_opts_t {
    mongoc_crud_opts_t crud;
+   mongoc_write_bypass_document_validation_t bypass;
    bson_t collation;
    bson_t extra;
 } mongoc_delete_one_opts_t;
@@ -68,29 +70,30 @@ typedef struct _mongoc_delete_one_opts_t {
 typedef struct _mongoc_delete_many_opts_t {
    mongoc_crud_opts_t crud;
    bson_t collation;
-   bool ordered;
    bson_t extra;
 } mongoc_delete_many_opts_t;
 
 typedef struct _mongoc_update_one_opts_t {
    mongoc_crud_opts_t crud;
-   bson_t collation;
    bson_t arrayFilters;
    bool upsert;
+   mongoc_write_bypass_document_validation_t bypass;
+   bson_t collation;
    bson_t extra;
 } mongoc_update_one_opts_t;
 
 typedef struct _mongoc_update_many_opts_t {
    mongoc_crud_opts_t crud;
-   bson_t collation;
-   bool ordered;
    bson_t arrayFilters;
    bool upsert;
+   mongoc_write_bypass_document_validation_t bypass;
+   bson_t collation;
    bson_t extra;
 } mongoc_update_many_opts_t;
 
 typedef struct _mongoc_replace_one_opts_t {
    mongoc_crud_opts_t crud;
+   mongoc_write_bypass_document_validation_t bypass;
    bson_t collation;
    bson_t extra;
 } mongoc_replace_one_opts_t;

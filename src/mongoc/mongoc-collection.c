@@ -1516,131 +1516,6 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
 }
 
 
-typedef struct {
-   mongoc_bulk_write_flags_t write_flags;
-   mongoc_write_concern_t *write_concern;
-   bool write_concern_owned;
-   mongoc_client_session_t *client_session;
-   bson_validate_flags_t validation_flags;
-   bson_t copied_opts;
-} mongoc_write_opts_parsed_t;
-
-
-static bool
-_mongoc_write_opts_parse (const bson_t *opts,
-                          mongoc_collection_t *collection,
-                          mongoc_write_opts_parsed_t *parsed,
-                          bson_validate_flags_t default_vflags,
-                          bson_error_t *error)
-{
-   mongoc_bulk_write_flags_t default_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   bson_iter_t iter;
-
-   bson_clear (&collection->gle);
-
-   parsed->write_flags = default_flags;
-   bson_init (&parsed->copied_opts);
-   parsed->write_concern = collection->write_concern;
-   parsed->write_concern_owned = false;
-   parsed->client_session = NULL;
-   parsed->validation_flags = default_vflags;
-
-   if (opts) {
-      if (!bson_iter_init (&iter, opts)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Invalid 'opts' parameter.");
-         return false;
-      }
-
-      while (bson_iter_next (&iter)) {
-         if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
-            parsed->write_concern =
-               _mongoc_write_concern_new_from_iter (&iter, error);
-            if (!parsed->write_concern) {
-               return false;
-            }
-
-            parsed->write_concern_owned = true;
-            continue;
-         }
-
-         if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-            parsed->write_flags.bypass_document_validation =
-               bson_iter_as_bool (&iter)
-                  ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
-                  : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
-            continue;
-         }
-
-         if (!strcmp (bson_iter_key (&iter), "sessionId")) {
-            if (!_mongoc_client_session_from_iter (
-                   collection->client, &iter, &parsed->client_session, error)) {
-               return false;
-            }
-            continue;
-         }
-
-         if (!strcmp (bson_iter_key (&iter), "validate")) {
-            if (BSON_ITER_HOLDS_BOOL (&iter)) {
-               if (!bson_iter_as_bool (&iter)) {
-                  parsed->validation_flags = 0;
-               }
-               continue;
-            } else if (BSON_ITER_HOLDS_INT32 (&iter)) {
-               parsed->validation_flags = bson_iter_int32 (&iter);
-               if (parsed->validation_flags <= 0x1F)
-                  continue;
-            }
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid type for option \"validate\": \"%s\"."
-                            " \"validate\" must be a bitwise-or of all desired "
-                            "bson_validate_flags_t.",
-                            _mongoc_bson_type_to_str (bson_iter_type (&iter)));
-            return false;
-         }
-
-         if (!strcmp (bson_iter_key (&iter), "ordered")) {
-            parsed->write_flags.ordered = bson_iter_as_bool (&iter);
-            continue;
-         }
-
-         if (!strcmp (bson_iter_key (&iter), "collation")) {
-            parsed->write_flags.has_collation = true;
-            /* FALL THROUGH */
-         }
-
-         if (!bson_append_value (&parsed->copied_opts,
-                                 bson_iter_key (&iter),
-                                 -1,
-                                 bson_iter_value (&iter))) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "Invalid 'opts' parameter.");
-            return false;
-         }
-      }
-   }
-
-   return true;
-}
-
-
-static void
-_mongoc_write_opts_cleanup (mongoc_write_opts_parsed_t *parsed)
-{
-   if (parsed->write_concern_owned) {
-      mongoc_write_concern_destroy (parsed->write_concern);
-   }
-
-   bson_destroy (&parsed->copied_opts);
-}
-
-
 bool
 mongoc_collection_insert (mongoc_collection_t *collection,
                           mongoc_insert_flags_t flags,
@@ -1732,11 +1607,11 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert_idl (
       &command,
       document,
-      &insert_one_opts.crud,
       &insert_one_opts.extra,
       ++collection->client->cluster.operation_id,
       false);
 
+   command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (
       &command, collection, &insert_one_opts.crud, &result);
 
@@ -1814,12 +1689,12 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
    _mongoc_write_command_init_insert_idl (
       &command,
       NULL,
-      &insert_many_opts.crud,
       &insert_many_opts.extra,
       ++collection->client->cluster.operation_id,
       false);
 
    command.flags.ordered = insert_many_opts.ordered;
+   command.flags.bypass_document_validation = insert_many_opts.bypass;
 
    for (i = 0; i < n_documents; i++) {
       if (!_mongoc_validate_new_document (
@@ -1954,13 +1829,15 @@ mongoc_collection_update (mongoc_collection_t *collection,
 }
 
 static bool
-_mongoc_collection_update_or_replace (mongoc_collection_t *collection,
-                                      const bson_t *selector,
-                                      const bson_t *update,
-                                      const mongoc_crud_opts_t *crud,
-                                      const bson_t *extra,
-                                      bson_t *reply,
-                                      bson_error_t *error)
+_mongoc_collection_update_or_replace (
+   mongoc_collection_t *collection,
+   const bson_t *selector,
+   const bson_t *update,
+   const mongoc_crud_opts_t *crud,
+   mongoc_write_bypass_document_validation_t bypass,
+   const bson_t *extra,
+   bson_t *reply,
+   bson_error_t *error)
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
@@ -1978,10 +1855,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       &command,
       selector,
       update,
-      crud,
       extra,
       ++collection->client->cluster.operation_id);
 
+   command.flags.bypass_document_validation = bypass;
    _mongoc_collection_write_command_execute_idl (
       &command, collection, crud, &result);
 
@@ -2048,6 +1925,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
                                                selector,
                                                update,
                                                &update_one_opts.crud,
+                                               update_one_opts.bypass,
                                                &update_one_opts.extra,
                                                reply,
                                                error);
@@ -2103,6 +1981,7 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
                                                selector,
                                                update,
                                                &update_many_opts.crud,
+                                               update_many_opts.bypass,
                                                &update_many_opts.extra,
                                                reply,
                                                error);
@@ -2146,6 +2025,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                                selector,
                                                replacement,
                                                &replace_one_opts.crud,
+                                               replace_one_opts.bypass,
                                                &replace_one_opts.extra,
                                                reply,
                                                error);
@@ -2330,53 +2210,37 @@ mongoc_collection_delete (mongoc_collection_t *collection,
 static bool
 _mongoc_delete_one_or_many (mongoc_collection_t *collection,
                             const bson_t *selector,
+                            const mongoc_crud_opts_t *crud,
+                            const bson_t *cmd_opts,
                             const bson_t *opts,
                             bson_t *reply,
-                            bson_error_t *error,
-                            bool is_multi)
+                            bson_error_t *error)
 {
-   mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bson_t limit_opt = BSON_INITIALIZER;
    bool ret;
 
    ENTRY;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (selector);
-
-   _mongoc_bson_init_if_set (reply);
-
-   if (!_mongoc_write_opts_parse (opts, collection, &parsed, 0, error)) {
-      bson_destroy (&limit_opt);
-      _mongoc_write_opts_cleanup (&parsed);
-      return false;
-   }
-
-   /* limit of 0 or 1 is required for each delete operation */
-   bson_append_int32 (&limit_opt, "limit", 5, is_multi ? 0 : 1);
+   BSON_ASSERT (bson_empty0 (reply));
 
    _mongoc_write_result_init (&result);
-
-   _mongoc_write_command_init_delete (
+   _mongoc_write_command_init_delete_idl (
       &command,
       selector,
-      &parsed.copied_opts,
-      &limit_opt,
-      parsed.write_flags,
+      cmd_opts,
+      opts,
       ++collection->client->cluster.operation_id);
 
-   _mongoc_collection_write_command_execute (&command,
-                                             collection,
-                                             parsed.write_concern,
-                                             parsed.client_session,
-                                             &result);
+   _mongoc_collection_write_command_execute_idl (
+      &command, collection, crud, &result);
 
    /* set field described in CRUD spec for the DeleteResult */
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       parsed.write_concern,
+                                       crud->writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -2385,8 +2249,6 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_write_opts_cleanup (&parsed);
-   bson_destroy (&limit_opt);
 
    RETURN (ret);
 }
@@ -2399,8 +2261,35 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
                               bson_t *reply,
                               bson_error_t *error)
 {
-   return _mongoc_delete_one_or_many (
-      collection, selector, opts, reply, error, false /* is_multi */);
+   mongoc_delete_one_opts_t delete_one_opts;
+   bson_t limit = BSON_INITIALIZER;
+   bool ret = false;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+
+   _mongoc_bson_init_if_set (reply);
+   bson_append_int32 (&limit, "limit", 5, 1);
+   if (!_mongoc_delete_one_opts_parse (
+          collection, opts, &delete_one_opts, error)) {
+      GOTO (done);
+   }
+
+   ret = _mongoc_delete_one_or_many (collection,
+                                     selector,
+                                     &delete_one_opts.crud,
+                                     &delete_one_opts.extra,
+                                     &limit,
+                                     reply,
+                                     error);
+
+done:
+   _mongoc_delete_one_opts_cleanup (&delete_one_opts);
+   bson_destroy (&limit);
+
+   RETURN (ret);
 }
 
 
@@ -2411,8 +2300,35 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
                                bson_t *reply,
                                bson_error_t *error)
 {
-   return _mongoc_delete_one_or_many (
-      collection, selector, opts, reply, error, true /* is_multi */);
+   mongoc_delete_many_opts_t delete_many_opts;
+   bson_t limit = BSON_INITIALIZER;
+   bool ret = false;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+
+   _mongoc_bson_init_if_set (reply);
+   if (!_mongoc_delete_many_opts_parse (
+          collection, opts, &delete_many_opts, error)) {
+      GOTO (done);
+   }
+
+   bson_append_int32 (&limit, "limit", 5, 0);
+   ret = _mongoc_delete_one_or_many (collection,
+                                     selector,
+                                     &delete_many_opts.crud,
+                                     &delete_many_opts.extra,
+                                     &limit,
+                                     reply,
+                                     error);
+
+done:
+   _mongoc_delete_many_opts_cleanup (&delete_many_opts);
+   bson_destroy (&limit);
+
+   RETURN (ret);
 }
 
 

@@ -111,7 +111,6 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
                                        const bson_t *document,
-                                       const struct _mongoc_crud_opts_t *crud,
                                        const bson_t *cmd_opts,
                                        int64_t operation_id,
                                        bool allow_bulk_op_insert);
@@ -123,6 +122,12 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command,
                                    mongoc_bulk_write_flags_t flags,
                                    int64_t operation_id);
 void
+_mongoc_write_command_init_delete_idl (mongoc_write_command_t *command,
+                                       const bson_t *selector,
+                                       const bson_t *cmd_opts,
+                                       const bson_t *opts,
+                                       int64_t operation_id);
+void
 _mongoc_write_command_init_update (mongoc_write_command_t *command,
                                    const bson_t *selector,
                                    const bson_t *update,
@@ -133,7 +138,6 @@ void
 _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
                                        const bson_t *selector,
                                        const bson_t *update,
-                                       const struct _mongoc_crud_opts_t *crud,
                                        const bson_t *opts,
                                        int64_t operation_id);
 void

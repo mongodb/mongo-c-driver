@@ -233,7 +233,6 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 void
 _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
                                        const bson_t *document,
-                                       const mongoc_crud_opts_t *crud,
                                        const bson_t *cmd_opts,
                                        int64_t operation_id,
                                        bool allow_bulk_op_insert)
@@ -243,8 +242,6 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
    ENTRY;
 
    BSON_ASSERT (command);
-
-   flags.bypass_document_validation = crud->bypassDocumentValidation;
 
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
@@ -281,6 +278,29 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command, /* IN */
 
 
 void
+_mongoc_write_command_init_delete_idl (mongoc_write_command_t *command,
+                                       const bson_t *selector,
+                                       const bson_t *cmd_opts,
+                                       const bson_t *opts,
+                                       int64_t operation_id)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT (command);
+   BSON_ASSERT (selector);
+
+   _mongoc_write_command_init_bulk (
+      command, MONGOC_WRITE_COMMAND_DELETE, flags, operation_id, cmd_opts);
+
+   _mongoc_write_command_delete_append (command, selector, opts);
+
+   EXIT;
+}
+
+
+void
 _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
                                    const bson_t *update,            /* IN */
@@ -306,7 +326,6 @@ void
 _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
                                        const bson_t *selector,
                                        const bson_t *update,
-                                       const mongoc_crud_opts_t *crud,
                                        const bson_t *opts,
                                        int64_t operation_id)
 {
@@ -315,8 +334,6 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
    ENTRY;
 
    BSON_ASSERT (command);
-
-   flags.bypass_document_validation = crud->bypassDocumentValidation;
 
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
@@ -961,7 +978,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
       }
    }
 
-   if (crud->bypassDocumentValidation !=
+   if (command->flags.bypass_document_validation !=
        MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;

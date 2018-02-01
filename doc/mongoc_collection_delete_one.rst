@@ -24,7 +24,7 @@ Parameters
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the delete result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-.. include:: includes/crud-opts.txt
+.. include:: includes/delete-one-opts.txt
 
 Description
 -----------
