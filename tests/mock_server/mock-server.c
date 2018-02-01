@@ -769,59 +769,13 @@ mock_server_get_queue (mock_server_t *server)
 }
 
 
-static bool
-find_key (void *current, void *key)
-{
-   return !strcmp ((const char *) current, (const char *) key);
-}
-
-
-static void
-key_dtor (void *item, void *ctx)
-{
-   /* mongoc_set_t requires a dtor, there's nothing to destroy */
-}
-
-
-static void
-doc_assert_no_duplicate_keys (const bson_t *doc)
-{
-   mongoc_set_t *keys;
-   bson_iter_t iter;
-   bson_t subdoc;
-
-   keys = mongoc_set_new (8, key_dtor, NULL);
-   BSON_ASSERT (bson_iter_init (&iter, doc));
-
-   while (bson_iter_next (&iter)) {
-      if (mongoc_set_find_item (
-             keys, find_key, (void *) bson_iter_key (&iter))) {
-         fprintf (stderr,
-                  "Duplicate key \"%s\" in document:\n%s",
-                  bson_iter_key (&iter),
-                  bson_as_json (doc, NULL));
-         abort ();
-      }
-
-      mongoc_set_add (keys, 0 /* index */, (void *) bson_iter_key (&iter));
-
-      if (BSON_ITER_HOLDS_DOCUMENT (&iter) || BSON_ITER_HOLDS_ARRAY (&iter)) {
-         bson_iter_bson (&iter, &subdoc);
-         doc_assert_no_duplicate_keys (&subdoc);
-      }
-   }
-
-   mongoc_set_destroy (keys);
-}
-
-
 static void
 request_assert_no_duplicate_keys (request_t *request)
 {
    int i;
 
    for (i = 0; i < request->docs.len; i++) {
-      doc_assert_no_duplicate_keys (request_get_doc (request, i));
+      assert_no_duplicate_keys (request_get_doc (request, i));
    }
 }
 

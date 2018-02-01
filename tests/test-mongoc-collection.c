@@ -4793,6 +4793,7 @@ _test_crud_command_start (const mongoc_apm_command_started_t *event)
    if (!strcmp (cmd_name, ctx->command_under_test)) {
       ctx->commands_tested++;
       ASSERT_MATCH (cmd, ctx->expected_command);
+      assert_no_duplicate_keys (cmd);
    }
 }
 

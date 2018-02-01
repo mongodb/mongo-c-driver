@@ -94,6 +94,12 @@ match_json (const bson_t *doc,
             const char *json_pattern,
             ...);
 
+#define ASSERT_MATCH(doc, ...)                                                 \
+   do {                                                                        \
+      BSON_ASSERT (                                                            \
+         match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
+   } while (0)
+
 bool
 mongoc_write_concern_append_bad (mongoc_write_concern_t *write_concern,
                                  bson_t *command);
@@ -109,10 +115,7 @@ huge_string_length (mongoc_client_t *client);
 const char *
 four_mb_string ();
 
-#define ASSERT_MATCH(doc, ...)                                                 \
-   do {                                                                        \
-      BSON_ASSERT (                                                            \
-         match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, __VA_ARGS__)); \
-   } while (0)
+void
+assert_no_duplicate_keys (const bson_t *doc);
 
 #endif /* TEST_CONVENIENCES_H */
