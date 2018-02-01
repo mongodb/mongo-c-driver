@@ -20,14 +20,44 @@ _mongoc_convert_document (mongoc_client_t *client,
       bson_copy_to (&value, doc);
       bson_destroy (&value);
       return true;
-   } else {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Invalid field \"%s\" in opts",
-                      bson_iter_key (iter));
-      return false;
    }
+
+   bson_set_error (error,
+                   MONGOC_ERROR_COMMAND,
+                   MONGOC_ERROR_COMMAND_INVALID_ARG,
+                   "Invalid field \"%s\" in opts, should contain document,"
+                   " not %s",
+                   bson_iter_key (iter),
+                   _mongoc_bson_type_to_str (bson_iter_type (iter)));
+   return false;
+}
+
+bool
+_mongoc_convert_array (mongoc_client_t *client,
+                       const bson_iter_t *iter,
+                       bson_t *doc,
+                       bson_error_t *error)
+{
+   uint32_t len;
+   const uint8_t *data;
+   bson_t value;
+
+   if (BSON_ITER_HOLDS_ARRAY (iter)) {
+      bson_iter_array (iter, &len, &data);
+      bson_init_static (&value, data, len);
+      bson_copy_to (&value, doc);
+      bson_destroy (&value);
+      return true;
+   }
+
+   bson_set_error (error,
+                   MONGOC_ERROR_COMMAND,
+                   MONGOC_ERROR_COMMAND_INVALID_ARG,
+                   "Invalid field \"%s\" in opts, should contain array,"
+                   " not %s",
+                   bson_iter_key (iter),
+                   _mongoc_bson_type_to_str (bson_iter_type (iter)));
+   return false;
 }
 
 bool
@@ -41,8 +71,8 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
       return true;
    } else {
       bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Invalid field \"%s\" in opts",
                       bson_iter_key (iter));
       return false;
@@ -60,8 +90,8 @@ _mongoc_convert_bool (mongoc_client_t *client,
       return true;
    } else {
       bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Invalid field \"%s\" in opts",
                       bson_iter_key (iter));
       return false;
@@ -89,8 +119,8 @@ _mongoc_convert_utf8 (mongoc_client_t *client,
       return true;
    } else {
       bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Invalid field \"%s\" in opts",
                       bson_iter_key (iter));
       return false;
@@ -160,8 +190,8 @@ _mongoc_convert_mongoc_write_bypass_document_validation_t (
       return true;
    } else {
       bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Invalid field \"%s\" in opts",
                       bson_iter_key (iter));
       return false;
