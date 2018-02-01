@@ -2,5 +2,5 @@
 
 * ``writeConcern``: Construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.
 * ``sessionId``: Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.
-* ``validate``: Construct a bitwise-or of all desired `bson_validate_flags_t <http://mongoc.org/libbson/current/bson_validate_with_error.html>`_. Set to ``false`` to skip client-side validation of the provided BSON documents.
+* ``validate``: Construct a bitwise-or of all desired :symbol:`bson:bson_validate_flags_t`. Set to ``false`` to skip client-side validation of the provided BSON documents.
 * ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.

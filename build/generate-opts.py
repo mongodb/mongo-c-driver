@@ -74,6 +74,12 @@ ordered_option = ('ordered', {
     'help': 'set to ``false`` to attempt to insert all documents, continuing after errors.'
 })
 
+validate_option = ('validate', {
+    'type': 'bson_validate_flags_t',
+    'convert': '_mongoc_convert_validate_flags',
+    'help': 'Construct a bitwise-or of all desired :symbol:`bson:bson_validate_flags_t`. Set to ``false`` to skip client-side validation of the provided BSON documents.'
+})
+
 collation_option = ('collation', {
     'type': 'document',
     'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
@@ -94,7 +100,6 @@ bypass_option = ('bypassDocumentValidation', {
     'field': 'bypass',
     'help': 'Set to ``true`` to skip server-side schema validation of the provided BSON documents.'
 })
-
 
 opts_structs = OrderedDict([
     ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
@@ -157,11 +162,7 @@ opts_structs = OrderedDict([
             'field': 'client_session',
             'help': 'Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.'
         }),
-        ('validate', {
-            'type': 'bson_validate_flags_t',
-            'convert': '_mongoc_convert_validate_flags',
-            'help': 'Construct a bitwise-or of all desired `bson_validate_flags_t <http://mongoc.org/libbson/current/bson_validate_with_error.html>`_. Set to ``false`` to skip client-side validation of the provided BSON documents.'
-        }),
+        validate_option,
     ])),
 
     ('mongoc_insert_one_opts_t', Struct('mongoc_collection_t', [
