@@ -740,6 +740,8 @@ _mongoc_update_one_opts_parse (
    mongoc_update_one_opts->crud.bypassDocumentValidation = \
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
    bson_init (&mongoc_update_one_opts->collation);
+   bson_init (&mongoc_update_one_opts->arrayFilters);
+   mongoc_update_one_opts->upsert = false;
    bson_init (&mongoc_update_one_opts->extra);
 
    if (!opts) {
@@ -802,6 +804,24 @@ _mongoc_update_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "arrayFilters")) {
+         if (!_mongoc_convert_array (
+               client,
+               &iter,
+               &mongoc_update_one_opts->arrayFilters,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "upsert")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_update_one_opts->upsert,
+               error)) {
+            return false;
+         }
+      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -827,6 +847,7 @@ _mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opt
       mongoc_write_concern_destroy (mongoc_update_one_opts->crud.writeConcern);
    }
    bson_destroy (&mongoc_update_one_opts->collation);
+   bson_destroy (&mongoc_update_one_opts->arrayFilters);
    bson_destroy (&mongoc_update_one_opts->extra);
 }
 
@@ -848,6 +869,8 @@ _mongoc_update_many_opts_parse (
       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
    bson_init (&mongoc_update_many_opts->collation);
    mongoc_update_many_opts->ordered = true;
+   bson_init (&mongoc_update_many_opts->arrayFilters);
+   mongoc_update_many_opts->upsert = false;
    bson_init (&mongoc_update_many_opts->extra);
 
    if (!opts) {
@@ -919,6 +942,24 @@ _mongoc_update_many_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "arrayFilters")) {
+         if (!_mongoc_convert_array (
+               client,
+               &iter,
+               &mongoc_update_many_opts->arrayFilters,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "upsert")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_update_many_opts->upsert,
+               error)) {
+            return false;
+         }
+      }
       else {
          /* unrecognized values are copied to "extra" */
          if (!BSON_APPEND_VALUE (
@@ -944,6 +985,7 @@ _mongoc_update_many_opts_cleanup (mongoc_update_many_opts_t *mongoc_update_many_
       mongoc_write_concern_destroy (mongoc_update_many_opts->crud.writeConcern);
    }
    bson_destroy (&mongoc_update_many_opts->collation);
+   bson_destroy (&mongoc_update_many_opts->arrayFilters);
    bson_destroy (&mongoc_update_many_opts->extra);
 }
 

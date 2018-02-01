@@ -15,6 +15,12 @@ _mongoc_convert_document (mongoc_client_t *client,
                           bson_error_t *error);
 
 bool
+_mongoc_convert_array (mongoc_client_t *client,
+                       const bson_iter_t *iter,
+                       bson_t *doc,
+                       bson_error_t *error);
+
+bool
 _mongoc_convert_int64_positive (mongoc_client_t *client,
                                 const bson_iter_t *iter,
                                 int64_t *num,

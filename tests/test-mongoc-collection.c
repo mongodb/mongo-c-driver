@@ -5204,6 +5204,50 @@ test_update_and_replace (void)
 
 
 static void
+test_array_filters_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_array_filters_validation");
+   r = mongoc_collection_update_one (collection,
+                                     tmp_bson ("{}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"),
+                                     tmp_bson ("{'arrayFilters': 1}"),
+                                     NULL,
+                                     &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid field \"arrayFilters\" in opts, should contain array,"
+      " not INT32");
+
+   r = mongoc_collection_update_one (collection,
+                                     tmp_bson ("{}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"),
+                                     tmp_bson ("{'arrayFilters': {}}"),
+                                     NULL,
+                                     &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid field \"arrayFilters\" in opts, should contain array,"
+      " not DOCUMENT");
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 _test_update_validate (update_fn_t update_fn)
 {
    mongoc_client_t *client;
@@ -5254,7 +5298,7 @@ _test_update_validate (update_fn_t update_fn)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid type for option \"validate\", \"UTF8\"");
+                          "Invalid type for option \"validate\": \"UTF8\"");
 
    /* Set all validation flags */
    BSON_ASSERT (!update_fn (collection,
@@ -5265,33 +5309,6 @@ _test_update_validate (update_fn_t update_fn)
                             &error));
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
-
-   /* {validate: true} is equivalent to setting all the flags */
-   BSON_ASSERT (!update_fn (collection,
-                            selector,
-                            update,
-                            tmp_bson ("{'validate': true}"),
-                            NULL,
-                            &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
-
-
-   if (update_fn == mongoc_collection_replace_one) {
-      BSON_ASSERT (update_fn (collection,
-                              selector,
-                              tmp_bson ("{'x': 1}"),
-                              tmp_bson ("{'validate': true}"),
-                              NULL,
-                              &error));
-   } else {
-      BSON_ASSERT (update_fn (collection,
-                              selector,
-                              tmp_bson ("{'$set': {'x': 1}}"),
-                              tmp_bson ("{'validate': true}"),
-                              NULL,
-                              &error));
-   }
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -5626,6 +5643,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/insert_one", test_insert_one);
    TestSuite_AddLive (
       suite, "/Collection/update_and_replace", test_update_and_replace);
+   TestSuite_AddLive (
+      suite, "/Collection/array_filters_validate", test_array_filters_validate);
    TestSuite_AddLive (
       suite, "/Collection/replace_one_validate", test_replace_one_validate);
    TestSuite_AddLive (

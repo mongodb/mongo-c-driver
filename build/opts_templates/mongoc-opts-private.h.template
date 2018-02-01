@@ -11,7 +11,7 @@ typedef struct _{{ struct_type }} {
 {% for opt_name, info in description.items() %}
 {% if info['type'] == 'utf8' %}
 {% set the_type = 'const char *' %}
-{% elif info['type'] == 'document' %}
+{% elif info['type'] in ('document', 'array') %}
 {% set the_type = 'bson_t' %}
 {% else %}
 {% set the_type = info['type'] %}

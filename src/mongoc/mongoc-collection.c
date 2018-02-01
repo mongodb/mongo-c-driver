@@ -102,7 +102,7 @@ static void
 _mongoc_collection_write_command_execute_idl (
    mongoc_write_command_t *command,
    const mongoc_collection_t *collection,
-   mongoc_crud_opts_t *crud,
+   const mongoc_crud_opts_t *crud,
    mongoc_write_result_t *result)
 {
    mongoc_server_stream_t *server_stream;
@@ -1596,7 +1596,7 @@ _mongoc_write_opts_parse (const bson_t *opts,
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid type for option \"validate\", \"%s\":"
+                            "Invalid type for option \"validate\": \"%s\"."
                             " \"validate\" must be a bitwise-or of all desired "
                             "bson_validate_flags_t.",
                             _mongoc_bson_type_to_str (bson_iter_type (&iter)));
@@ -1957,13 +1957,11 @@ static bool
 _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
                                       const bson_t *selector,
                                       const bson_t *update,
-                                      const bson_t *opts,
+                                      const mongoc_crud_opts_t *crud,
+                                      const bson_t *extra,
                                       bson_t *reply,
-                                      bson_error_t *error,
-                                      bool is_multi,
-                                      bool is_update)
+                                      bson_error_t *error)
 {
-   mongoc_write_opts_parsed_t parsed;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
@@ -1973,55 +1971,24 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (selector);
    BSON_ASSERT (update);
-
-   _mongoc_bson_init_if_set (reply);
-
-   if (!_mongoc_write_opts_parse (opts,
-                                  collection,
-                                  &parsed,
-                                  (is_update ? _mongoc_default_update_vflags
-                                             : _mongoc_default_replace_vflags),
-                                  error)) {
-      _mongoc_write_opts_cleanup (&parsed);
-      return false;
-   }
-
-   /* update document, all keys must be $-operators */
-   if (is_update) {
-      if (!_mongoc_validate_update (update, parsed.validation_flags, error)) {
-         _mongoc_write_opts_cleanup (&parsed);
-         return false;
-      }
-   } else if (!_mongoc_validate_replace (
-                 update, parsed.validation_flags, error)) {
-      _mongoc_write_opts_cleanup (&parsed);
-      return false;
-   }
-
-   if (is_multi) {
-      bson_append_bool (&parsed.copied_opts, "multi", 5, true);
-   }
+   BSON_ASSERT (bson_empty0 (reply));
 
    _mongoc_write_result_init (&result);
-
-   _mongoc_write_command_init_update (
+   _mongoc_write_command_init_update_idl (
       &command,
       selector,
       update,
-      &parsed.copied_opts,
-      parsed.write_flags,
+      crud,
+      extra,
       ++collection->client->cluster.operation_id);
 
-   _mongoc_collection_write_command_execute (&command,
-                                             collection,
-                                             parsed.write_concern,
-                                             parsed.client_session,
-                                             &result);
+   _mongoc_collection_write_command_execute_idl (
+      &command, collection, crud, &result);
 
    /* set fields described in CRUD spec for the UpdateResult */
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       parsed.write_concern,
+                                       crud->writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -2032,7 +1999,6 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_write_opts_cleanup (&parsed);
 
    RETURN (ret);
 }
@@ -2045,14 +2011,50 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
                               bson_t *reply,
                               bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace (collection,
-                                                selector,
-                                                update,
-                                                opts,
-                                                reply,
-                                                error,
-                                                false /* is_multi */,
-                                                true /* is_update */);
+   mongoc_update_one_opts_t update_one_opts;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (update);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_update_one_opts_parse (
+          collection, opts, &update_one_opts, error)) {
+      _mongoc_update_one_opts_cleanup (&update_one_opts);
+      return false;
+   }
+
+   if (!_mongoc_validate_update (
+          update, update_one_opts.crud.validate, error)) {
+      _mongoc_update_one_opts_cleanup (&update_one_opts);
+      return false;
+   }
+
+   if (update_one_opts.upsert) {
+      bson_append_bool (&update_one_opts.extra, "upsert", 6, true);
+   }
+
+   if (!bson_empty (&update_one_opts.arrayFilters)) {
+      bson_append_array (&update_one_opts.extra,
+                         "arrayFilters",
+                         12,
+                         &update_one_opts.arrayFilters);
+   }
+
+   ret = _mongoc_collection_update_or_replace (collection,
+                                               selector,
+                                               update,
+                                               &update_one_opts.crud,
+                                               &update_one_opts.extra,
+                                               reply,
+                                               error);
+
+   _mongoc_update_one_opts_cleanup (&update_one_opts);
+
+   RETURN (ret);
 }
 
 bool
@@ -2063,14 +2065,51 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
                                bson_t *reply,
                                bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace (collection,
-                                                selector,
-                                                update,
-                                                opts,
-                                                reply,
-                                                error,
-                                                true /* is_multi */,
-                                                true /* is_update */);
+   mongoc_update_many_opts_t update_many_opts;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (update);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_update_many_opts_parse (
+          collection, opts, &update_many_opts, error)) {
+      _mongoc_update_many_opts_cleanup (&update_many_opts);
+      return false;
+   }
+
+   if (!_mongoc_validate_update (
+          update, update_many_opts.crud.validate, error)) {
+      _mongoc_update_many_opts_cleanup (&update_many_opts);
+      return false;
+   }
+
+   bson_append_bool (&update_many_opts.extra, "multi", 5, true);
+   if (update_many_opts.upsert) {
+      bson_append_bool (&update_many_opts.extra, "upsert", 6, true);
+   }
+
+   if (!bson_empty (&update_many_opts.arrayFilters)) {
+      bson_append_array (&update_many_opts.extra,
+                         "arrayFilters",
+                         12,
+                         &update_many_opts.arrayFilters);
+   }
+
+   ret = _mongoc_collection_update_or_replace (collection,
+                                               selector,
+                                               update,
+                                               &update_many_opts.crud,
+                                               &update_many_opts.extra,
+                                               reply,
+                                               error);
+
+   _mongoc_update_many_opts_cleanup (&update_many_opts);
+
+   RETURN (ret);
 }
 
 bool
@@ -2081,14 +2120,39 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                bson_t *reply,
                                bson_error_t *error)
 {
-   return _mongoc_collection_update_or_replace (collection,
-                                                selector,
-                                                replacement,
-                                                opts,
-                                                reply,
-                                                error,
-                                                false /* is_multi */,
-                                                false /* is_update */);
+   mongoc_replace_one_opts_t replace_one_opts;
+   bool ret;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (replacement);
+
+   _mongoc_bson_init_if_set (reply);
+
+   if (!_mongoc_replace_one_opts_parse (
+          collection, opts, &replace_one_opts, error)) {
+      _mongoc_replace_one_opts_cleanup (&replace_one_opts);
+      return false;
+   }
+
+   if (!_mongoc_validate_replace (
+          replacement, replace_one_opts.crud.validate, error)) {
+      _mongoc_replace_one_opts_cleanup (&replace_one_opts);
+      return false;
+   }
+
+   ret = _mongoc_collection_update_or_replace (collection,
+                                               selector,
+                                               replacement,
+                                               &replace_one_opts.crud,
+                                               &replace_one_opts.extra,
+                                               reply,
+                                               error);
+
+   _mongoc_replace_one_opts_cleanup (&replace_one_opts);
+
+   RETURN (ret);
 }
 
 

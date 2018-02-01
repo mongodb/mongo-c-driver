@@ -16,10 +16,6 @@ Synopsis
                                  bson_t *reply,
                                  bson_error_t *error);
 
-.. warning::
-
-  If not ``NULL``, ``reply`` is always initialized, even upon failure. Callers *must* call :symbol:`bson:bson_destroy()` to release this potential allocation.
-
 Parameters
 ----------
 
@@ -30,8 +26,7 @@ Parameters
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-.. include:: includes/crud-opts.txt
-* ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
+.. include:: includes/replace-one-opts.txt
 
 Description
 -----------
@@ -59,5 +54,3 @@ Returns
 Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 A write concern timeout or write concern error is considered a failure.
-
-If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable.

@@ -79,6 +79,16 @@ collation_option = ('collation', {
     'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
 })
 
+array_filters_option = ('arrayFilters', {
+    'type': 'array',
+    'help': 'An array of filters specifying to which array elements an update should apply.',
+})
+
+upsert_option = ('upsert', {
+    'type': 'bool',
+    'help': 'When true, creates a new document if no document matches the query.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
         ('projection', {'type': 'document'}),
@@ -174,12 +184,16 @@ opts_structs = OrderedDict([
     ('mongoc_update_one_opts_t', Struct('mongoc_collection_t', [
         crud_shared_options,
         collation_option,
+        array_filters_option,
+        upsert_option,
     ], validate='_mongoc_default_update_vflags')),
 
     ('mongoc_update_many_opts_t', Struct('mongoc_collection_t', [
         crud_shared_options,
         collation_option,
         ordered_option,
+        array_filters_option,
+        upsert_option,
     ], validate='_mongoc_default_update_vflags', ordered='true')),
 
     ('mongoc_replace_one_opts_t', Struct('mongoc_collection_t', [

@@ -26,9 +26,7 @@ Parameters
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-.. include:: includes/crud-opts.txt
-* ``arrayFilters`` An array of filters specifying to which array elements an update should apply.
-* ``upsert`` A ``boolean``, when true, creates a new document if no document matches the query.
+.. include:: includes/update-one-opts.txt
 
 Description
 -----------
@@ -36,8 +34,6 @@ Description
 This function updates at most one document in ``collection`` that matches ``selector``.
 
 To update multiple documents see :symbol:`mongoc_collection_update_many`.
-
-If you pass a non-NULL ``reply``, it is filled out with fields "modifiedCount" and "matchedCount". If a document was upserted, ``reply`` contains an "upsertedId" field. If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
 
 See Also
 --------
@@ -60,7 +56,7 @@ Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there ar
 
 A write concern timeout or write concern error is considered a failure.
 
-If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable.
+If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable. The reply must be freed with :symbol:`bson:bson_destroy`.
 
 Example
 -------

@@ -34,7 +34,7 @@ _{{ struct_name }}_parse (
       {{ description.default(opt_name, 'MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT') }};
 {% elif info['type'] == 'bson_value_t' %}
    memset (&{{ struct_name }}->{{ path }}, 0, sizeof (bson_value_t));
-{% elif info['type'] == 'document' %}
+{% elif info['type'] in ('document', 'array') %}
    bson_init (&{{ struct_name }}->{{ path }});
 {% else %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'NULL') }};
@@ -61,7 +61,7 @@ _{{ struct_name }}_parse (
 {% endif %}
 {% if info['type'] == 'utf8' %}
 {% set the_type = 'const char *' %}
-{% elif info['type'] == 'document' %}
+{% elif info['type'] in ('document', 'array') %}
 {% set the_type = 'bson_t' %}
 {% else %}
 {% set the_type = info['type'] %}
@@ -118,7 +118,7 @@ _{{ struct_name }}_cleanup ({{ struct_type }} *{{ struct_name }})
    }
 {% elif info['type'] == 'bson_value_t' %}
    bson_value_destroy (&{{ struct_name }}->{{ path }});
-{% elif info['type'] == 'document' %}
+{% elif info['type'] in ('document', 'array') %}
    bson_destroy (&{{ struct_name }}->{{ path }});
 {% endif %}
 {% endfor %}

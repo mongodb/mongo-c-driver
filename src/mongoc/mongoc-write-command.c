@@ -233,7 +233,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
 void
 _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
                                        const bson_t *document,
-                                       mongoc_crud_opts_t *crud,
+                                       const mongoc_crud_opts_t *crud,
                                        const bson_t *cmd_opts,
                                        int64_t operation_id,
                                        bool allow_bulk_op_insert)
@@ -293,6 +293,30 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
    BSON_ASSERT (command);
    BSON_ASSERT (selector);
    BSON_ASSERT (update);
+
+   _mongoc_write_command_init_bulk (
+      command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
+   _mongoc_write_command_update_append (command, selector, update, opts);
+
+   EXIT;
+}
+
+
+void
+_mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
+                                       const bson_t *selector,
+                                       const bson_t *update,
+                                       const mongoc_crud_opts_t *crud,
+                                       const bson_t *opts,
+                                       int64_t operation_id)
+{
+   mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
+
+   ENTRY;
+
+   BSON_ASSERT (command);
+
+   flags.bypass_document_validation = crud->bypassDocumentValidation;
 
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_UPDATE, flags, operation_id, NULL);
@@ -905,7 +929,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
                                    const char *database,
                                    const char *collection,
                                    uint32_t offset,
-                                   mongoc_crud_opts_t *crud,
+                                   const mongoc_crud_opts_t *crud,
                                    mongoc_write_result_t *result)
 {
    ENTRY;

@@ -6,3 +6,5 @@
 * ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.
 * ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.
 * ``ordered``: set to ``false`` to attempt to insert all documents, continuing after errors.
+* ``arrayFilters``: An array of filters specifying to which array elements an update should apply.
+* ``upsert``: When true, creates a new document if no document matches the query.
