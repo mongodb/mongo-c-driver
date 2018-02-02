@@ -21,6 +21,8 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-opts-private.h"
+#include "mongoc-write-command-private.h"
 
 
 /*
@@ -135,13 +137,18 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
 
 bool
-_mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
-                                         const bson_t *selector,
-                                         const bson_t *opts,
-                                         bson_error_t *error) /* OUT */
+_mongoc_bulk_operation_remove_with_opts (
+   mongoc_bulk_operation_t *bulk,
+   const bson_t *selector,
+   const mongoc_bulk_remove_opts_t *remove_opts,
+   int32_t limit,
+   bson_error_t *error) /* OUT */
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
+   bson_t opts;
+   bool has_collation;
+   bool ret = false;
 
    ENTRY;
 
@@ -150,22 +157,52 @@ _mongoc_bulk_operation_remove_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
+   bson_init (&opts);
+
+   /* allow "limit" in opts, but it must be the correct limit */
+   if (remove_opts->limit != limit) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid \"limit\" in opts: %" PRId32 "."
+                      " The value must be %" PRId32 ", or omitted.",
+                      remove_opts->limit,
+                      limit);
+      GOTO (done);
+   }
+
+   bson_append_int32 (&opts, "limit", 5, limit);
+   has_collation = !bson_empty (&remove_opts->collation);
+   if (has_collation) {
+      bson_append_document (&opts, "collation", 9, &remove_opts->collation);
+   }
+
    if (bulk->commands.len) {
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
       if (last->type == MONGOC_WRITE_COMMAND_DELETE) {
-         _mongoc_write_command_delete_append (last, selector, opts);
-         RETURN (true);
+         last->flags.has_collation |= has_collation;
+         last->flags.has_multi_write |= (remove_opts->limit == 0);
+         _mongoc_write_command_delete_append (last, selector, &opts);
+         ret = true;
+         GOTO (done);
       }
    }
 
    _mongoc_write_command_init_delete (
-      &command, selector, NULL, opts, bulk->flags, bulk->operation_id);
+      &command, selector, NULL, &opts, bulk->flags, bulk->operation_id);
+
+   command.flags.has_collation = has_collation;
+   command.flags.has_multi_write = (remove_opts->limit == 0);
 
    _mongoc_array_append_val (&bulk->commands, command);
+   ret = true;
 
-   RETURN (true);
+done:
+   bson_destroy (&opts);
+   RETURN (ret);
 }
+
 
 bool
 mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
@@ -173,39 +210,23 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
                                             const bson_t *opts,
                                             bson_error_t *error) /* OUT */
 {
-   bool retval;
-   bson_t opts_dup;
-   bson_iter_t iter;
+   mongoc_bulk_remove_one_opts_t remove_opts;
+   bool ret;
 
    ENTRY;
 
-   BULK_RETURN_IF_PRIOR_ERROR;
-
-   if (opts && bson_iter_init_find (&iter, opts, "limit")) {
-      if ((!BSON_ITER_HOLDS_INT (&iter)) || !bson_iter_as_int64 (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "%s expects the 'limit' option to be 1",
-                         BSON_FUNC);
-         RETURN (false);
-      }
-
-      return _mongoc_bulk_operation_remove_with_opts (
-         bulk, selector, opts, error);
+   if (!_mongoc_bulk_remove_one_opts_parse (bulk, opts, &remove_opts, error)) {
+      _mongoc_bulk_remove_one_opts_cleanup (&remove_opts);
+      RETURN (false);
    }
 
-   bson_init (&opts_dup);
-   BSON_APPEND_INT32 (&opts_dup, "limit", 1);
-   if (opts) {
-      bson_concat (&opts_dup, opts);
-   }
-   retval = _mongoc_bulk_operation_remove_with_opts (
-      bulk, selector, &opts_dup, error);
-   bson_destroy (&opts_dup);
+   ret = _mongoc_bulk_operation_remove_with_opts (
+      bulk, selector, &remove_opts.remove, 1, error);
 
-   RETURN (retval);
+   _mongoc_bulk_remove_one_opts_cleanup (&remove_opts);
+   RETURN (ret);
 }
+
 
 bool
 mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
@@ -213,38 +234,21 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
                                              const bson_t *opts,
                                              bson_error_t *error) /* OUT */
 {
-   bool retval;
-   bson_t opts_dup;
-   bson_iter_t iter;
+   mongoc_bulk_remove_many_opts_t remove_opts;
+   bool ret;
 
    ENTRY;
 
-   BULK_RETURN_IF_PRIOR_ERROR;
-
-   if (opts && bson_iter_init_find (&iter, opts, "limit")) {
-      if ((!BSON_ITER_HOLDS_INT (&iter)) || bson_iter_as_int64 (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "%s expects the 'limit' option to be 0",
-                         BSON_FUNC);
-         RETURN (false);
-      }
-
-      RETURN (
-         _mongoc_bulk_operation_remove_with_opts (bulk, selector, opts, error));
+   if (!_mongoc_bulk_remove_many_opts_parse (bulk, opts, &remove_opts, error)) {
+      _mongoc_bulk_remove_many_opts_cleanup (&remove_opts);
+      RETURN (false);
    }
 
-   bson_init (&opts_dup);
-   BSON_APPEND_INT32 (&opts_dup, "limit", 0);
-   if (opts) {
-      bson_concat (&opts_dup, opts);
-   }
-   retval = _mongoc_bulk_operation_remove_with_opts (
-      bulk, selector, &opts_dup, error);
-   bson_destroy (&opts_dup);
+   ret = _mongoc_bulk_operation_remove_with_opts (
+      bulk, selector, &remove_opts.remove, 0, error);
 
-   RETURN (retval);
+   _mongoc_bulk_remove_many_opts_cleanup (&remove_opts);
+   RETURN (ret);
 }
 
 
@@ -252,19 +256,13 @@ void
 mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
                               const bson_t *selector)        /* IN */
 {
-   bson_t opts;
    bson_error_t *error = &bulk->result.error;
 
    ENTRY;
 
    BULK_EXIT_IF_PRIOR_ERROR;
 
-   bson_init (&opts);
-   BSON_APPEND_INT32 (&opts, "limit", 0);
-
-   mongoc_bulk_operation_remove_many_with_opts (bulk, selector, &opts, error);
-
-   bson_destroy (&opts);
+   mongoc_bulk_operation_remove_many_with_opts (bulk, selector, NULL, error);
 
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
@@ -278,18 +276,13 @@ void
 mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
                                   const bson_t *selector)        /* IN */
 {
-   bson_t opts;
    bson_error_t *error = &bulk->result.error;
 
    ENTRY;
 
    BULK_EXIT_IF_PRIOR_ERROR;
 
-   bson_init (&opts);
-   BSON_APPEND_INT32 (&opts, "limit", 1);
-
-   mongoc_bulk_operation_remove_one_with_opts (bulk, selector, &opts, error);
-   bson_destroy (&opts);
+   mongoc_bulk_operation_remove_one_with_opts (bulk, selector, NULL, error);
 
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
@@ -343,10 +336,10 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
                                         const bson_t *opts,
                                         bson_error_t *error)
 {
+   mongoc_bulk_insert_opts_t insert_opts;
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
-   bson_validate_flags_t vflags =
-      _mongoc_bulk_operation_parse_vflags (opts, _mongoc_default_insert_vflags);
+   bool ret = false;
 
    ENTRY;
 
@@ -355,8 +348,12 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (vflags && !_mongoc_validate_new_document (document, vflags, error)) {
-      return false;
+   if (!_mongoc_bulk_insert_opts_parse (bulk, opts, &insert_opts, error)) {
+      GOTO (done);
+   }
+
+   if (!_mongoc_validate_new_document (document, insert_opts.validate, error)) {
+      GOTO (done);
    }
 
    if (bulk->commands.len) {
@@ -379,7 +376,11 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    _mongoc_array_append_val (&bulk->commands, command);
 
-   return true;
+   ret = true;
+
+done:
+   _mongoc_bulk_insert_opts_cleanup (&insert_opts);
+   RETURN (ret);
 }
 
 bool

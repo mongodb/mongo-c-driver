@@ -2,7 +2,9 @@
 #define MONGOC_OPTS_H
 
 #include <bson.h>
+
 #include "mongoc-client-session.h"
+#include "mongoc-bulk-operation-private.h"
 
 {{ header_comment }}
 

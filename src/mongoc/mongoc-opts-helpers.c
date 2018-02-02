@@ -66,8 +66,8 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
                                 int64_t *num,
                                 bson_error_t *error)
 {
-   if (BSON_ITER_HOLDS_INT64 (iter) && bson_iter_int64 (iter) >= 0) {
-      *num = bson_iter_int64 (iter);
+   if (BSON_ITER_HOLDS_NUMBER (iter) && bson_iter_as_int64 (iter) >= 0) {
+      *num = bson_iter_as_int64 (iter);
       return true;
    } else {
       bson_set_error (error,
@@ -77,6 +77,40 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
                       bson_iter_key (iter));
       return false;
    }
+}
+
+bool
+_mongoc_convert_int32_t (mongoc_client_t *client,
+                         const bson_iter_t *iter,
+                         int32_t *num,
+                         bson_error_t *error)
+{
+   int64_t i;
+
+   if (!BSON_ITER_HOLDS_NUMBER (iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid field \"%s\" in opts",
+                      bson_iter_key (iter));
+      return false;
+   }
+
+   i = bson_iter_as_int64 (iter);
+   if (i > INT32_MAX || i < INT32_MIN) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid field \"%s\" in opts: %" PRId64
+                      " out of range for int32",
+                      bson_iter_key (iter),
+                      i);
+      return false;
+   }
+
+   *num = (int32_t) i;
+
+   return true;
 }
 
 bool

@@ -3933,7 +3933,6 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    mock_server_t *mock_server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   mongoc_write_concern_t *wc;
    mongoc_bulk_operation_t *bulk;
    bson_t reply;
    bson_error_t error;
@@ -3941,6 +3940,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    future_t *future;
    bson_t *opts;
    const char *expect;
+   bool r;
 
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
@@ -3948,9 +3948,8 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, w);
-   mongoc_write_concern_set_wtimeout (wc, 100);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
 
    opts = BCON_NEW ("collation",
                     "{",
@@ -3960,11 +3959,9 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
                     BCON_UTF8 ("lower"),
                     "}");
 
-   mongoc_write_concern_append (wc, opts);
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
    switch (op) {
    case BULK_REMOVE:
-      mongoc_bulk_operation_remove_many_with_opts (
+      r = mongoc_bulk_operation_remove_many_with_opts (
          bulk, tmp_bson ("{'_id': 1}"), opts, &error);
       expect = "{'delete': 'test',"
                " 'writeConcern': {'w': %d, 'wtimeout': 100},"
@@ -3976,7 +3973,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
                "}";
       break;
    case BULK_REMOVE_ONE:
-      mongoc_bulk_operation_remove_one_with_opts (
+      r = mongoc_bulk_operation_remove_one_with_opts (
          bulk, tmp_bson ("{'_id': 2}"), opts, &error);
       expect = "{'delete': 'test',"
                " 'writeConcern': {'w': %d, 'wtimeout': 100},"
@@ -3988,7 +3985,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
                "}";
       break;
    case BULK_REPLACE_ONE:
-      mongoc_bulk_operation_replace_one_with_opts (
+      r = mongoc_bulk_operation_replace_one_with_opts (
          bulk, tmp_bson ("{'_id': 3}"), tmp_bson ("{'_id': 4}"), opts, &error);
       expect = "{'update': 'test',"
                " 'writeConcern': {'w': %d, 'wtimeout': 100},"
@@ -4000,7 +3997,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
                "}";
       break;
    case BULK_UPDATE:
-      mongoc_bulk_operation_update_many_with_opts (
+      r = mongoc_bulk_operation_update_many_with_opts (
          bulk,
          tmp_bson ("{'_id': 5}"),
          tmp_bson ("{'$set': {'_id': 6}}"),
@@ -4017,7 +4014,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
          "}";
       break;
    case BULK_UPDATE_ONE:
-      mongoc_bulk_operation_update_one_with_opts (
+      r = mongoc_bulk_operation_update_one_with_opts (
          bulk,
          tmp_bson ("{'_id': 7}"),
          tmp_bson ("{'$set': {'_id': 8}}"),
@@ -4037,6 +4034,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
       BSON_ASSERT (false);
    }
 
+   ASSERT_OR_PRINT (r, error);
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
    if (wire_version >= WIRE_VERSION_COLLATION && w) {
@@ -4069,7 +4067,6 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    bson_destroy (opts);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (mock_server);
@@ -4079,7 +4076,6 @@ static void
 _test_bulk_collation_multi (int w, int wire_version)
 {
    mock_server_t *mock_server;
-   mongoc_write_concern_t *wc;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
@@ -4087,32 +4083,24 @@ _test_bulk_collation_multi (int w, int wire_version)
    bson_error_t error;
    request_t *request;
    future_t *future;
-   bson_t *opts;
 
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
 
-   opts = BCON_NEW ("collation",
-                    "{",
-                    "locale",
-                    BCON_UTF8 ("en_US"),
-                    "caseFirst",
-                    BCON_UTF8 ("lower"),
-                    "}");
-
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, w);
-   mongoc_write_concern_set_wtimeout (wc, 100);
-   mongoc_write_concern_append (wc, opts);
-
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
    mongoc_bulk_operation_remove_many_with_opts (
       bulk, tmp_bson ("{'_id': 1}"), NULL, &error);
+
    mongoc_bulk_operation_remove_many_with_opts (
-      bulk, tmp_bson ("{'_id': 2}"), opts, &error);
+      bulk,
+      tmp_bson ("{'_id': 2}"),
+      tmp_bson ("{'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"),
+      &error);
+
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
    if (wire_version >= WIRE_VERSION_COLLATION && w) {
@@ -4150,13 +4138,10 @@ _test_bulk_collation_multi (int w, int wire_version)
       }
    }
 
-
-   bson_destroy (opts);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mongoc_write_concern_destroy (wc);
    mock_server_destroy (mock_server);
 }
 
@@ -4249,6 +4234,49 @@ test_bulk_update_one_error_message (void)
       MONGOC_ERROR_COMMAND_INVALID_ARG,
       "Invalid key 'set': update only works with $ operators");
 
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_bulk_opts_parse (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *q = tmp_bson ("{'_id': 1}");
+   bson_error_t error;
+   bool r;
+
+   client = mongoc_client_new ("mongodb://server");
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+
+#define PARSE_ERROR(_msg, _fn, ...)                                            \
+   r = mongoc_bulk_operation_##_fn##_with_opts (bulk, q, __VA_ARGS__, &error); \
+   BSON_ASSERT (!r);                                                           \
+   ASSERT_ERROR_CONTAINS (                                                     \
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, _msg)
+
+   PARSE_ERROR ("Invalid option 'foo'", remove_one, tmp_bson ("{'foo': 1}"));
+   PARSE_ERROR ("Invalid option 'foo'", remove_many, tmp_bson ("{'foo': 1}"));
+   PARSE_ERROR (
+      "Invalid \"limit\" in opts: 2", remove_one, tmp_bson ("{'limit': 2}"));
+   PARSE_ERROR (
+      "Invalid \"limit\" in opts: 2", remove_many, tmp_bson ("{'limit': 2}"));
+   PARSE_ERROR (
+      "Invalid \"limit\" in opts: 0", remove_one, tmp_bson ("{'limit': 0}"));
+   PARSE_ERROR (
+      "Invalid \"limit\" in opts: 1", remove_many, tmp_bson ("{'limit': 1}"));
+
+   /* ok */
+   BSON_ASSERT (mongoc_bulk_operation_remove_one_with_opts (
+      bulk, q, tmp_bson ("{'limit': 1}"), &error));
+   BSON_ASSERT (mongoc_bulk_operation_remove_many_with_opts (
+      bulk, q, tmp_bson ("{'limit': 0}"), &error));
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -4562,5 +4590,6 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
                   test_bulk_update_one_error_message);
+   TestSuite_Add (suite, "/BulkOperation/opts/parse", test_bulk_opts_parse);
    TestSuite_Add (suite, "/BulkOperation/no_client", test_bulk_no_client);
 }

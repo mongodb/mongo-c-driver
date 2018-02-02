@@ -158,15 +158,7 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
    if (opts) {
-      bson_iter_t iter;
-
       bson_concat (&document, opts);
-      command->flags.has_collation |= bson_has_field (opts, "collation");
-
-      if (bson_iter_init_find (&iter, opts, "limit") &&
-          bson_iter_as_int64 (&iter) != 1) {
-         command->flags.has_multi_write = true;
-      }
    }
 
    _mongoc_buffer_append (

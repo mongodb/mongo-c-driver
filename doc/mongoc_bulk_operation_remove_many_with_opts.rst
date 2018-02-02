@@ -24,6 +24,8 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
+.. include:: includes/bulk-remove-many-opts.txt
+
 See Also
 --------
 
@@ -39,5 +41,5 @@ Operation errors are propagated via :symbol:`mongoc_bulk_operation_execute()`, w
 Returns
 -------
 
-Returns true on success, and false if there is a server or network error or if passed invalid arguments.
+Returns true on success, and false if passed invalid arguments.
 

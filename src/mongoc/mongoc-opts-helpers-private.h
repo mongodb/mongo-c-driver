@@ -27,6 +27,12 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
                                 bson_error_t *error);
 
 bool
+_mongoc_convert_int32_t (mongoc_client_t *client,
+                         const bson_iter_t *iter,
+                         int32_t *num,
+                         bson_error_t *error);
+
+bool
 _mongoc_convert_bool (mongoc_client_t *client,
                       const bson_iter_t *iter,
                       bool *flag,
