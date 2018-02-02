@@ -307,7 +307,7 @@ _mongoc_get_server_id_from_opts (const bson_t *opts,
 
 bool
 _mongoc_validate_new_document (const bson_t *doc,
-                               const bson_validate_flags_t vflags,
+                               bson_validate_flags_t vflags,
                                bson_error_t *error)
 {
    bson_error_t validate_err;
@@ -331,7 +331,7 @@ _mongoc_validate_new_document (const bson_t *doc,
 
 bool
 _mongoc_validate_replace (const bson_t *doc,
-                          const bson_validate_flags_t vflags,
+                          bson_validate_flags_t vflags,
                           bson_error_t *error)
 {
    bson_error_t validate_err;
@@ -355,7 +355,7 @@ _mongoc_validate_replace (const bson_t *doc,
 
 bool
 _mongoc_validate_update (const bson_t *update,
-                         const bson_validate_flags_t vflags,
+                         bson_validate_flags_t vflags,
                          bson_error_t *error)
 {
    bson_error_t validate_err;
