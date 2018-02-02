@@ -1,5 +1,3 @@
 ``opts`` may be NULL or a BSON document with additional command options:
 
-* ``validate``: Construct a bitwise-or of all desired
-  `bson_validate_flags_t
-  <http://mongoc.org/libbson/current/bson_validate_with_error.html>`_. Set to ``0`` to skip client-side validation of the provided BSON documents.
+* ``validate``: Construct a bitwise-or of all desired :symbol:`bson_validate_flags_t <bson_validate_with_error>`. Set to ``0`` to skip client-side validation of the provided BSON documents.
