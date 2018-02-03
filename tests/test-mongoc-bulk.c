@@ -1797,21 +1797,21 @@ test_insert_with_opts_validate (void)
       MONGOC_ERROR_COMMAND_INVALID_ARG,
       "invalid document for insert: keys cannot contain \".\": \"a.a\"");
 
-   BSON_ASSERT (mongoc_bulk_operation_insert_with_opts (
+   ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
       bulk,
       tmp_bson ("{'a.a': 1}"),
       tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
-      &error));
-   BSON_ASSERT (mongoc_bulk_operation_insert_with_opts (
+      &error), error);
+   ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
       bulk,
       tmp_bson ("{'a.a': 1}"),
       tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
-      &error));
-   BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
+      &error), error);
+   ASSERT_OR_PRINT (!mongoc_bulk_operation_insert_with_opts (
       bulk,
       tmp_bson ("{'a.a': 1}"),
       tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
-      &error));
+      &error), error);
    ASSERT_ERROR_CONTAINS (
       error,
       MONGOC_ERROR_COMMAND,
