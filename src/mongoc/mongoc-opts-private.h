@@ -105,6 +105,29 @@ typedef struct _mongoc_bulk_insert_opts_t {
    bson_t extra;
 } mongoc_bulk_insert_opts_t;
 
+typedef struct _mongoc_bulk_update_opts_t {
+   bson_validate_flags_t validate;
+   mongoc_write_bypass_document_validation_t bypass;
+   bson_t collation;
+   bool upsert;
+   bool multi;
+} mongoc_bulk_update_opts_t;
+
+typedef struct _mongoc_bulk_update_one_opts_t {
+   mongoc_bulk_update_opts_t update;
+   bson_t extra;
+} mongoc_bulk_update_one_opts_t;
+
+typedef struct _mongoc_bulk_update_many_opts_t {
+   mongoc_bulk_update_opts_t update;
+   bson_t extra;
+} mongoc_bulk_update_many_opts_t;
+
+typedef struct _mongoc_bulk_replace_one_opts_t {
+   mongoc_bulk_update_opts_t update;
+   bson_t extra;
+} mongoc_bulk_replace_one_opts_t;
+
 typedef struct _mongoc_bulk_remove_opts_t {
    bson_t collation;
    int32_t limit;
@@ -209,6 +232,36 @@ _mongoc_bulk_insert_opts_parse (
 
 void
 _mongoc_bulk_insert_opts_cleanup (mongoc_bulk_insert_opts_t *mongoc_bulk_insert_opts);
+
+bool
+_mongoc_bulk_update_one_opts_parse (
+   mongoc_bulk_operation_t *bulk_operation,
+   const bson_t *opts,
+   mongoc_bulk_update_one_opts_t *mongoc_bulk_update_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_bulk_update_one_opts_cleanup (mongoc_bulk_update_one_opts_t *mongoc_bulk_update_one_opts);
+
+bool
+_mongoc_bulk_update_many_opts_parse (
+   mongoc_bulk_operation_t *bulk_operation,
+   const bson_t *opts,
+   mongoc_bulk_update_many_opts_t *mongoc_bulk_update_many_opts,
+   bson_error_t *error);
+
+void
+_mongoc_bulk_update_many_opts_cleanup (mongoc_bulk_update_many_opts_t *mongoc_bulk_update_many_opts);
+
+bool
+_mongoc_bulk_replace_one_opts_parse (
+   mongoc_bulk_operation_t *bulk_operation,
+   const bson_t *opts,
+   mongoc_bulk_replace_one_opts_t *mongoc_bulk_replace_one_opts,
+   bson_error_t *error);
+
+void
+_mongoc_bulk_replace_one_opts_cleanup (mongoc_bulk_replace_one_opts_t *mongoc_bulk_replace_one_opts);
 
 bool
 _mongoc_bulk_remove_one_opts_parse (

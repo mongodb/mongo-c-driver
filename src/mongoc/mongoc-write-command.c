@@ -120,15 +120,7 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    BSON_APPEND_DOCUMENT (&document, "q", selector);
    BSON_APPEND_DOCUMENT (&document, "u", update);
    if (opts) {
-      bson_iter_t iter;
-
       bson_concat (&document, opts);
-      command->flags.has_collation |= bson_has_field (opts, "collation");
-
-      if (bson_iter_init_find (&iter, opts, "multi") &&
-          bson_iter_as_bool (&iter)) {
-         command->flags.has_multi_write = true;
-      }
    }
 
    _mongoc_buffer_append (

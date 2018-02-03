@@ -26,8 +26,7 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: A :symbol:`bson:bson_error_t` any errors that may have occurred.
 
-.. include:: includes/bulk-crud-opts.txt
-* ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.
+.. include:: includes/bulk-replace-one-opts.txt
 
 .. warning::
 

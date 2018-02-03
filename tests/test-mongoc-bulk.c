@@ -4247,6 +4247,8 @@ test_bulk_opts_parse (void)
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    bson_t *q = tmp_bson ("{'_id': 1}");
+   bson_t *u = tmp_bson ("{'$set': {'x': 1}}");
+   bson_t *repl = tmp_bson ("{'x': 1}");
    bson_error_t error;
    bool r;
 
@@ -4255,28 +4257,58 @@ test_bulk_opts_parse (void)
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
-#define PARSE_ERROR(_msg, _fn, ...)                                            \
+#define RM_ERR(_msg, _fn, ...)                                                 \
    r = mongoc_bulk_operation_##_fn##_with_opts (bulk, q, __VA_ARGS__, &error); \
    BSON_ASSERT (!r);                                                           \
-   ASSERT_ERROR_CONTAINS (                                                     \
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, _msg)
+   ASSERT_ERROR_CONTAINS (error,                                               \
+                          MONGOC_ERROR_COMMAND,                                \
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,                    \
+                          "Invalid " _msg)
 
-   PARSE_ERROR ("Invalid option 'foo'", remove_one, tmp_bson ("{'foo': 1}"));
-   PARSE_ERROR ("Invalid option 'foo'", remove_many, tmp_bson ("{'foo': 1}"));
-   PARSE_ERROR (
-      "Invalid \"limit\" in opts: 2", remove_one, tmp_bson ("{'limit': 2}"));
-   PARSE_ERROR (
-      "Invalid \"limit\" in opts: 2", remove_many, tmp_bson ("{'limit': 2}"));
-   PARSE_ERROR (
-      "Invalid \"limit\" in opts: 0", remove_one, tmp_bson ("{'limit': 0}"));
-   PARSE_ERROR (
-      "Invalid \"limit\" in opts: 1", remove_many, tmp_bson ("{'limit': 1}"));
+#define UPDATE_ERR(_msg, _fn, ...)                          \
+   r = mongoc_bulk_operation_update_##_fn##_with_opts (     \
+      bulk, q, u, __VA_ARGS__, &error);                     \
+   BSON_ASSERT (!r);                                        \
+   ASSERT_ERROR_CONTAINS (error,                            \
+                          MONGOC_ERROR_COMMAND,             \
+                          MONGOC_ERROR_COMMAND_INVALID_ARG, \
+                          "Invalid " _msg)
 
-   /* ok */
-   BSON_ASSERT (mongoc_bulk_operation_remove_one_with_opts (
-      bulk, q, tmp_bson ("{'limit': 1}"), &error));
-   BSON_ASSERT (mongoc_bulk_operation_remove_many_with_opts (
-      bulk, q, tmp_bson ("{'limit': 0}"), &error));
+#define REPLACE_ERR(_msg, ...)                              \
+   r = mongoc_bulk_operation_replace_one_with_opts (        \
+      bulk, q, repl, __VA_ARGS__, &error);                  \
+   BSON_ASSERT (!r);                                        \
+   ASSERT_ERROR_CONTAINS (error,                            \
+                          MONGOC_ERROR_COMMAND,             \
+                          MONGOC_ERROR_COMMAND_INVALID_ARG, \
+                          "Invalid " _msg)
+
+   RM_ERR ("option 'foo'", remove_one, tmp_bson ("{'foo': 1}"));
+   RM_ERR ("option 'foo'", remove_many, tmp_bson ("{'foo': 1}"));
+   RM_ERR ("\"limit\" in opts: 2", remove_one, tmp_bson ("{'limit': 2}"));
+   RM_ERR ("\"limit\" in opts: 2", remove_many, tmp_bson ("{'limit': 2}"));
+   RM_ERR ("\"limit\" in opts: 0", remove_one, tmp_bson ("{'limit': 0}"));
+   RM_ERR ("\"limit\" in opts: 1", remove_many, tmp_bson ("{'limit': 1}"));
+
+   UPDATE_ERR ("option 'foo'", one, tmp_bson ("{'foo': 1}"));
+   UPDATE_ERR ("option 'foo'", many, tmp_bson ("{'foo': 1}"));
+   UPDATE_ERR ("\"multi\" in opts: true", one, tmp_bson ("{'multi': true}"));
+   UPDATE_ERR ("\"multi\" in opts: false", many, tmp_bson ("{'multi': false}"));
+
+   REPLACE_ERR ("option 'foo'", tmp_bson ("{'foo': 1}"));
+   REPLACE_ERR ("\"multi\": true in opts", tmp_bson ("{'multi': true}"));
+
+#define NO_ERR(_fn, ...)                                                   \
+   ASSERT_OR_PRINT (                                                       \
+      mongoc_bulk_operation_##_fn##_with_opts (bulk, __VA_ARGS__, &error), \
+      error)
+
+   /* for some reason we allow "multi" and "limit", if they equal the default */
+   NO_ERR (remove_one, q, tmp_bson ("{'limit': 1}"));
+   NO_ERR (remove_many, q, tmp_bson ("{'limit': 0}"));
+   NO_ERR (update_one, q, u, tmp_bson ("{'multi': false}"));
+   NO_ERR (update_many, q, u, tmp_bson ("{'multi': true}"));
+   NO_ERR (replace_one, q, repl, tmp_bson ("{'multi': false}"));
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -4439,7 +4471,7 @@ test_bulk_install (TestSuite *suite)
                       "/BulkOperation/replace_one_with_opts/keys",
                       test_replace_one_with_opts_check_keys);
    TestSuite_AddLive (suite,
-                      "/BulkOperation/replalce_one_with_opts_validate",
+                      "/BulkOperation/replace_one_with_opts_validate",
                       test_replace_one_with_opts_validate);
    TestSuite_AddLive (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_AddLive (

@@ -214,6 +214,38 @@ opts_structs = OrderedDict([
         bypass_option,
     ], validate='_mongoc_default_insert_vflags', allow_extra=False)),
 
+    ('mongoc_bulk_update_opts_t', Shared([
+        validate_option,
+        bypass_option,
+        collation_option,
+        ('upsert', {
+            'type': 'bool',
+            'help': 'If true, insert a document if none match ``selector``.'
+        }),
+        ('multi', {'type': 'bool', 'hidden': True})
+    ])),
+
+    ('mongoc_bulk_update_one_opts_t', Struct(
+        'mongoc_bulk_operation_t',
+        [('update', {'type': 'mongoc_bulk_update_opts_t'})],
+        multi='false',
+        validate='_mongoc_default_update_vflags',
+        allow_extra=False)),
+
+    ('mongoc_bulk_update_many_opts_t', Struct(
+        'mongoc_bulk_operation_t',
+        [('update', {'type': 'mongoc_bulk_update_opts_t'})],
+        multi='true',
+        validate='_mongoc_default_update_vflags',
+        allow_extra=False)),
+
+    ('mongoc_bulk_replace_one_opts_t', Struct(
+        'mongoc_bulk_operation_t',
+        [('update', {'type': 'mongoc_bulk_update_opts_t'})],
+        multi='false',
+        validate='_mongoc_default_replace_vflags',
+        allow_extra=False)),
+
     ('mongoc_bulk_remove_opts_t', Shared([
         collation_option,
         ('limit', {'type': 'int32_t', 'hidden': True})
