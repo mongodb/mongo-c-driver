@@ -21,7 +21,6 @@ Parameters
 
 * ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``document``: A :symbol:`bson:bson_t`.
-* ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/bulk-insert-opts.txt

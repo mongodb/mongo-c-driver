@@ -22,7 +22,6 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``documents``: An array of pointers to :symbol:`bson:bson_t`.
 * ``n_documents``: The length of ``documents``.
-* ``opts``: An optional :symbol:`bson:bson_t` containing additional options.
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the insert result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

@@ -21,7 +21,6 @@ Parameters
 
 * ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``selector``: A :symbol:`bson:bson_t` that selects which document to remove.
-* ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 .. include:: includes/bulk-remove-many-opts.txt
