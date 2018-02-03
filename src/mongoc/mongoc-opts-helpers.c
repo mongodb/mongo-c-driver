@@ -14,22 +14,31 @@ _mongoc_convert_document (mongoc_client_t *client,
    const uint8_t *data;
    bson_t value;
 
-   if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
-      bson_iter_document (iter, &len, &data);
-      bson_init_static (&value, data, len);
-      bson_copy_to (&value, doc);
-      bson_destroy (&value);
-      return true;
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Invalid field \"%s\" in opts, should contain document,"
+                      " not %s",
+                      bson_iter_key (iter),
+                      _mongoc_bson_type_to_str (bson_iter_type (iter)));
+      return false;
    }
 
-   bson_set_error (error,
-                   MONGOC_ERROR_COMMAND,
-                   MONGOC_ERROR_COMMAND_INVALID_ARG,
-                   "Invalid field \"%s\" in opts, should contain document,"
-                   " not %s",
-                   bson_iter_key (iter),
-                   _mongoc_bson_type_to_str (bson_iter_type (iter)));
-   return false;
+   bson_iter_document (iter, &len, &data);
+   if (!bson_init_static (&value, data, len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Corrupt BSON in field \"%s\" in opts",
+                      bson_iter_key (iter));
+      return false;
+   }
+
+   bson_destroy (doc);
+   bson_copy_to (&value, doc);
+
+   return true;
 }
 
 bool
