@@ -388,44 +388,19 @@ test_index_spec_modifiers (void)
    }
 }
 
-#undef COMMENT
-#define COMMENT                                                                \
-   "This is a long comment to ensure the opts and filter"                      \
-   " documents overflow the bson_t inline storage, therefore revealing memory" \
-   " management bugs when we run the tests in valgrind."                       \
-   " Far over the misty mountains cold"                                        \
-   " To dungeons deep and caverns old"                                         \
-   " We must away ere break of day"                                            \
-   " To seek the pale enchanted gold."                                         \
-   " "                                                                         \
-   " The dwarves of yore made mighty spells,"                                  \
-   " While hammers fell like ringing bells"                                    \
-   " In places deep, where dark things sleep,"                                 \
-   " In hollow halls beneath the fells."                                       \
-   " "                                                                         \
-   " For ancient king and elvish lord"                                         \
-   " There many a gleaming golden hoard"                                       \
-   " They shaped and wrought, and light they caught"                           \
-   " To hide in gems on hilt of sword."                                        \
-   " "                                                                         \
-   " On silver necklaces they strung"                                          \
-   " The flowering stars, on crowns they hung"                                 \
-   " The dragon-fire, in twisted wire"                                         \
-   " They meshed the light of moon and sun."
 
 static void
 test_comment (void)
 {
    test_collection_find_with_opts_t test_data = {0};
 
-   test_data.opts = "{'comment': '" COMMENT "'}";
-   test_data.expected_op_query = "{'$query': {}, '$comment': '" COMMENT "'}";
+   test_data.opts = "{'comment': 'COMMENT'}";
+   test_data.expected_op_query = "{'$query': {}, '$comment': 'COMMENT'}";
    test_data.expected_find_command =
-      "{'find': 'collection', 'filter': {}, 'comment': '" COMMENT "'}";
+      "{'find': 'collection', 'filter': {}, 'comment': 'COMMENT'}";
    _test_collection_find_with_opts (&test_data);
 }
 
-#undef COMMENT
 
 static void
 test_snapshot (void)
