@@ -1583,7 +1583,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    mongoc_insert_one_opts_t insert_one_opts;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bool ret;
+   bool ret = false;
 
    ENTRY;
 
@@ -1594,13 +1594,12 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    if (!_mongoc_insert_one_opts_parse (
           collection, opts, &insert_one_opts, error)) {
-      _mongoc_insert_one_opts_cleanup (&insert_one_opts);
-      return false;
+      GOTO (done);
    }
 
    if (!_mongoc_validate_new_document (
           document, insert_one_opts.crud.validate, error)) {
-      RETURN (false);
+      GOTO (done);
    }
 
    _mongoc_write_result_init (&result);
@@ -1626,8 +1625,9 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
 
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
-   _mongoc_insert_one_opts_cleanup (&insert_one_opts);
 
+done:
+   _mongoc_insert_one_opts_cleanup (&insert_one_opts);
    RETURN (ret);
 }
 
