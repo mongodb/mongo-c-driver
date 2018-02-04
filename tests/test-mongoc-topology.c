@@ -1489,13 +1489,15 @@ test_topology_install (TestSuite *suite)
                       test_topology_invalidate_server_single,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live);
+                      test_framework_skip_if_slow_or_live,
+                      test_framework_skip_if_valgrind);
    TestSuite_AddFull (suite,
                       "/Topology/invalidate_server/pooled",
                       test_topology_invalidate_server_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_slow_or_live);
+                      test_framework_skip_if_slow_or_live,
+                      test_framework_skip_if_valgrind);
    TestSuite_AddFull (suite,
                       "/Topology/invalid_cluster_node",
                       test_invalid_cluster_node,

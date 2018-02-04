@@ -159,6 +159,8 @@ int
 test_framework_skip_if_slow (void);
 int
 test_framework_skip_if_slow_or_live (void);
+int
+test_framework_skip_if_valgrind (void);
 
 typedef struct _debug_stream_stats_t {
    mongoc_client_t *client;

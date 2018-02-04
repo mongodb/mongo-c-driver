@@ -1807,6 +1807,14 @@ test_framework_skip_if_slow_or_live (void)
    return test_framework_skip_if_slow () && TestSuite_CheckLive ();
 }
 
+
+int
+test_framework_skip_if_valgrind (void)
+{
+   return test_suite_valgrind () ? 0 : 1;
+}
+
+
 int
 test_framework_skip_if_windows (void)
 {
