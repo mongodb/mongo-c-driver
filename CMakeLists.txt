@@ -900,7 +900,7 @@ foreach(
       set(MONGOC_LIBS "${MONGOC_LIBS} -L${FLAG_DIR} -l${FLAG_FILE}")
    elseif (FLAG MATCHES "^-.*")
       # Flag starts with dash, add it as-is.
-      set(pkg_config_libs "${pkg_config_libs} ${FLAG}")
+      set(MONGOC_LIBS "${MONGOC_LIBS} ${FLAG}")
    else ()
       # Flag doesn't start with dash, add it with a dash.
       set(MONGOC_LIBS "${MONGOC_LIBS} -l${FLAG}")
