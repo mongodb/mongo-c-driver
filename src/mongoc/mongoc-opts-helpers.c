@@ -84,12 +84,25 @@ _mongoc_convert_int64_positive (mongoc_client_t *client,
                                 int64_t *num,
                                 bson_error_t *error)
 {
-   if (BSON_ITER_HOLDS_NUMBER (iter) && bson_iter_as_int64 (iter) >= 0) {
-      *num = bson_iter_as_int64 (iter);
-      return true;
+   int64_t i;
+
+   if (!BSON_ITER_HOLDS_NUMBER (iter)) {
+      CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain number,"
+                      " not %s",
+                      bson_iter_key (iter),
+                      _mongoc_bson_type_to_str (bson_iter_type (iter)));
    }
 
-   CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
+   i = bson_iter_as_int64 (iter);
+   if (i <= 0) {
+      CONVERSION_ERR ("Invalid field \"%s\" in opts, should be greater than 0,"
+                      " not %" PRId64,
+                      bson_iter_key (iter),
+                      i);
+   }
+
+   *num = bson_iter_as_int64 (iter);
+   return true;
 }
 
 bool
@@ -128,7 +141,10 @@ _mongoc_convert_bool (mongoc_client_t *client,
       return true;
    }
 
-   CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
+   CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain bool,"
+                   " not %s",
+                   bson_iter_key (iter),
+                   _mongoc_bson_type_to_str (bson_iter_type (iter)));
 }
 
 bool
@@ -152,7 +168,10 @@ _mongoc_convert_utf8 (mongoc_client_t *client,
       return true;
    }
 
-   CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
+   CONVERSION_ERR ("Invalid field \"%s\" in opts, should contain string,"
+                   " not %s",
+                   bson_iter_key (iter),
+                   _mongoc_bson_type_to_str (bson_iter_type (iter)));
 }
 
 bool
