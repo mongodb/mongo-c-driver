@@ -242,7 +242,7 @@ test_large_ismaster (void *ctx)
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
    while (q.len < 1024 * 1024) {
       char buf[11];
-      snprintf (buf, sizeof (buf), "key_%06d", i++);
+      bson_snprintf (buf, sizeof (buf), "key_%06d", i++);
       BSON_APPEND_INT32 (&q, buf, 0);
    }
 
