@@ -521,6 +521,9 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
    BSON_ASSERT (iter);
 
    write_concern = mongoc_write_concern_new ();
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      goto fail;
+   }
 
    BSON_ASSERT (bson_iter_recurse (iter, &inner));
    while (bson_iter_next (&inner)) {

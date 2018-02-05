@@ -2844,37 +2844,30 @@ mongoc_bulk_operation_t *
 mongoc_collection_create_bulk_operation_with_opts (
    mongoc_collection_t *collection, const bson_t *opts)
 {
+   mongoc_bulk_opts_t bulk_opts;
    mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   bson_iter_t iter;
-   mongoc_write_concern_t *wc = NULL;
+   mongoc_write_concern_t *wc;
    mongoc_bulk_operation_t *bulk;
-   bson_error_t wc_invalid = {0};
+   bson_error_t err = {0};
 
    BSON_ASSERT (collection);
 
-   if (opts && bson_iter_init_find (&iter, opts, "writeConcern")) {
-      wc = _mongoc_write_concern_new_from_iter (&iter, &wc_invalid);
-   }
-
-   write_flags.ordered = _mongoc_lookup_bool (opts, "ordered", true);
-
+   (void) _mongoc_bulk_opts_parse (collection->client, opts, &bulk_opts, &err);
+   wc = COALESCE (bulk_opts.writeConcern, collection->write_concern);
+   write_flags.ordered = bulk_opts.ordered;
    bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
                                       write_flags,
-                                      wc ? wc : collection->write_concern);
+                                      wc);
 
-   mongoc_write_concern_destroy (wc); /* NULL is ok */
-
-   if (opts && bson_iter_init_find (&iter, opts, "sessionId")) {
-      (void) _mongoc_client_session_from_iter (
-         collection->client, &iter, &bulk->session, &bulk->result.error);
+   bulk->session = bulk_opts.client_session;
+   if (err.domain) {
+      /* _mongoc_bulk_opts_parse failed, above */
+      memcpy (&bulk->result.error, &err, sizeof (bson_error_t));
    }
 
-   if (wc_invalid.domain) {
-      /* _mongoc_write_concern_new_from_iter failed, above */
-      memcpy (&bulk->result.error, &wc_invalid, sizeof (bson_error_t));
-   }
+   _mongoc_bulk_opts_cleanup (&bulk_opts);
 
    return bulk;
 }

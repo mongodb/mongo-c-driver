@@ -1070,6 +1070,85 @@ _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_
 }
 
 bool
+_mongoc_bulk_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_bulk_opts_t *mongoc_bulk_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_bulk_opts->writeConcern = NULL;
+   mongoc_bulk_opts->write_concern_owned = false;
+   mongoc_bulk_opts->ordered = true;
+   mongoc_bulk_opts->client_session = NULL;
+   bson_init (&mongoc_bulk_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_bulk_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_bulk_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "ordered")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_bulk_opts->ordered,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               client,
+               &iter,
+               &mongoc_bulk_opts->client_session,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid option '%s'",
+                         bson_iter_key (&iter));
+         return false;
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_bulk_opts_cleanup (mongoc_bulk_opts_t *mongoc_bulk_opts)
+{
+   if (mongoc_bulk_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_bulk_opts->writeConcern);
+   }
+   bson_destroy (&mongoc_bulk_opts->extra);
+}
+
+bool
 _mongoc_bulk_insert_opts_parse (
    mongoc_client_t *client,
    const bson_t *opts,

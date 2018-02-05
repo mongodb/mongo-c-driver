@@ -217,6 +217,48 @@ test_bulk (void)
 
 
 static void
+_test_opt (const char *opts_json, const char *msg)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+
+   collection = get_test_collection (client, "test_bulk");
+   BSON_ASSERT (collection);
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson (opts_json));
+   BSON_ASSERT (bulk);
+
+   BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_opts (void)
+{
+   _test_opt ("{'foo': 1}", "Invalid option 'foo'");
+   _test_opt ("{'writeConcern': 1}", "Invalid writeConcern");
+   _test_opt ("{'writeConcern': {'w': 0, 'j': 1}}", "Invalid writeConcern");
+   _test_opt ("{'sessionId': 'hi'}", "Invalid sessionId");
+   _test_opt ("{'sessionId': 101}", "Invalid sessionId");
+   _test_opt ("{'ordered': 'yes'}",
+              "Invalid field \"ordered\" in opts, should contain bool");
+}
+
+
+static void
 test_bulk_error (void)
 {
    bson_t reply = {0};
@@ -822,8 +864,7 @@ test_update_with_opts_validate (void)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_update_with_opts_validate");
-   bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_update_one_with_opts (
       bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
@@ -993,8 +1034,7 @@ test_replace_one_with_opts_validate (void)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_replace_with_opts_validate");
-   bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_replace_one_with_opts (
       bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
@@ -1786,8 +1826,7 @@ test_insert_with_opts_validate (void)
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_insert_with_opts_validate");
-   bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson ("{'writeConcern': {'w': 1, 'j': true}}"));
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{'a.a': 1}"), NULL, &error));
@@ -1798,20 +1837,23 @@ test_insert_with_opts_validate (void)
       "invalid document for insert: keys cannot contain \".\": \"a.a\"");
 
    ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
-      bulk,
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
-      &error), error);
+                       bulk,
+                       tmp_bson ("{'a.a': 1}"),
+                       tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+                       &error),
+                    error);
    ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
-      bulk,
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
-      &error), error);
+                       bulk,
+                       tmp_bson ("{'a.a': 1}"),
+                       tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
+                       &error),
+                    error);
    ASSERT_OR_PRINT (!mongoc_bulk_operation_insert_with_opts (
-      bulk,
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
-      &error), error);
+                       bulk,
+                       tmp_bson ("{'a.a': 1}"),
+                       tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+                       &error),
+                    error);
    ASSERT_ERROR_CONTAINS (
       error,
       MONGOC_ERROR_COMMAND,
@@ -4341,6 +4383,7 @@ void
 test_bulk_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
+   TestSuite_AddLive (suite, "/BulkOperation/opts", test_opts);
    TestSuite_AddMockServerTest (suite, "/BulkOperation/error", test_bulk_error);
    TestSuite_AddMockServerTest (
       suite, "/BulkOperation/error/unordered", test_bulk_error_unordered);

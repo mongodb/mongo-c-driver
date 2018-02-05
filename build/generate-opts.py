@@ -231,6 +231,12 @@ opts_structs = OrderedDict([
         ('update', {'type': 'mongoc_update_opts_t'}),
     ], validate='_mongoc_default_replace_vflags')),
 
+    ('mongoc_bulk_opts_t', Struct([
+        write_concern_option,
+        ordered_option,
+        session_option,
+    ], allow_extra=False, ordered='true')),
+
     ('mongoc_bulk_insert_opts_t', Struct([
         validate_option,
         bypass_option,

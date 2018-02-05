@@ -99,6 +99,14 @@ typedef struct _mongoc_replace_one_opts_t {
    bson_t extra;
 } mongoc_replace_one_opts_t;
 
+typedef struct _mongoc_bulk_opts_t {
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   bool ordered;
+   mongoc_client_session_t *client_session;
+   bson_t extra;
+} mongoc_bulk_opts_t;
+
 typedef struct _mongoc_bulk_insert_opts_t {
    bson_validate_flags_t validate;
    mongoc_write_bypass_document_validation_t bypass;
@@ -232,6 +240,16 @@ _mongoc_replace_one_opts_parse (
 
 void
 _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_opts);
+
+bool
+_mongoc_bulk_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_bulk_opts_t *mongoc_bulk_opts,
+   bson_error_t *error);
+
+void
+_mongoc_bulk_opts_cleanup (mongoc_bulk_opts_t *mongoc_bulk_opts);
 
 bool
 _mongoc_bulk_insert_opts_parse (
