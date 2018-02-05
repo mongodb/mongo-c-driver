@@ -37,24 +37,29 @@ src_dir = normpath(joinpath(this_dir, '../src/mongoc'))
 doc_includes = normpath(joinpath(this_dir, '../doc/includes'))
 
 
+def flatten(items):
+    for item in items:
+        if isinstance(item, list):
+            # "yield from".
+            for subitem in flatten(item):
+                yield subitem
+        else:
+            yield item
+
+
 class Struct(OrderedDict):
-    def __init__(self, instance_type, items, generate_rst=True,
+    def __init__(self, items, generate_rst=True, generate_code=True,
                  allow_extra=True, **defaults):
         """Define an options struct.
 
-        - instance_type: A type like mongoc_client_t, mongoc_database_t, etc.
         - items: List of pairs: (optionName, info)
         - allow_extra: Whether to allow unrecognized options
         - defaults: Initial values for options
         """
-        super(Struct, self).__init__(items)
-        if instance_type is not None:
-            self.instance_type = instance_type
-            self.instance_name = re.sub(r'mongoc_(\w+)_t', r'\1', instance_type)
-        else:
-            self.instance_type = self.instance_name = ''
+        OrderedDict.__init__(self, list(flatten(items)))
         self.is_shared = False
         self.generate_rst = generate_rst
+        self.generate_code = generate_code
         self.allow_extra = allow_extra
         self.defaults = defaults
 
@@ -65,10 +70,34 @@ class Struct(OrderedDict):
 class Shared(Struct):
     def __init__(self, items, **defaults):
         """Define a struct that is shared by others."""
-        super(Shared, self).__init__(None, items, **defaults)
+        super(Shared, self).__init__(items, **defaults)
         self.is_shared = True
         self.generate_rst = False
 
+
+read_concern_option = ('readConcern', {
+    'type': 'document',
+    'help': 'Construct a :symbol:`mongoc_read_concern_t` and use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``. See the example code for :symbol:`mongoc_client_read_command_with_opts`. Read concern requires MongoDB 3.2 or later, otherwise an error is returned.'
+})
+
+write_concern_option = [
+    ('writeConcern', {
+        'type': 'mongoc_write_concern_t *',
+        'convert': '_mongoc_convert_write_concern',
+        'help': 'Construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.'
+    }),
+    ('write_concern_owned', {
+        'type': 'bool',
+        'internal': True,
+    })
+]
+
+session_option = ('sessionId', {
+    'type': 'mongoc_client_session_t *',
+    'convert': '_mongoc_convert_session_id',
+    'field': 'client_session',
+    'help': 'Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.'
+})
 
 ordered_option = ('ordered', {
     'type': 'bool',
@@ -83,7 +112,7 @@ validate_option = ('validate', {
 
 collation_option = ('collation', {
     'type': 'document',
-    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_.'
+    'help': 'Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.'
 })
 
 array_filters_option = ('arrayFilters', {
@@ -102,8 +131,14 @@ bypass_option = ('bypassDocumentValidation', {
     'help': 'Set to ``true`` to skip server-side schema validation of the provided BSON documents.'
 })
 
+server_option = ('serverId', {
+    'type': 'uint32_t',
+    'convert': '_mongoc_convert_server_id',
+    'help': 'To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.'
+})
+
 opts_structs = OrderedDict([
-    ('mongoc_find_one_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_find_one_opts_t', Struct([
         ('projection', {'type': 'document'}),
         ('sort', {'type': 'document'}),
         ('skip', {
@@ -148,21 +183,8 @@ opts_structs = OrderedDict([
     ], generate_rst=False)),
 
     ('mongoc_crud_opts_t', Shared([
-        ('writeConcern', {
-            'type': 'mongoc_write_concern_t *',
-            'convert': '_mongoc_convert_write_concern',
-            'help': 'Construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.'
-        }),
-        ('write_concern_owned', {
-            'type': 'bool',
-            'internal': True,
-        }),
-        ('sessionId', {
-            'type': 'mongoc_client_session_t *',
-            'convert': '_mongoc_convert_session_id',
-            'field': 'client_session',
-            'help': 'Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.'
-        }),
+        write_concern_option,
+        session_option,
         validate_option,
     ])),
 
@@ -173,43 +195,43 @@ opts_structs = OrderedDict([
         upsert_option,
     ])),
 
-    ('mongoc_insert_one_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_insert_one_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         bypass_option
     ], validate='_mongoc_default_insert_vflags')),
 
-    ('mongoc_insert_many_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_insert_many_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         ordered_option,
         bypass_option,
     ], validate='_mongoc_default_insert_vflags', ordered='true')),
 
-    ('mongoc_delete_one_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_delete_one_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         bypass_option,
         collation_option,
     ])),
 
-    ('mongoc_delete_many_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_delete_many_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         collation_option,
     ])),
 
-    ('mongoc_update_one_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_update_one_opts_t', Struct([
         ('update', {'type': 'mongoc_update_opts_t'}),
         array_filters_option,
     ], validate='_mongoc_default_update_vflags')),
 
-    ('mongoc_update_many_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_update_many_opts_t', Struct([
         ('update', {'type': 'mongoc_update_opts_t'}),
         array_filters_option,
     ], validate='_mongoc_default_update_vflags')),
 
-    ('mongoc_replace_one_opts_t', Struct('mongoc_collection_t', [
+    ('mongoc_replace_one_opts_t', Struct([
         ('update', {'type': 'mongoc_update_opts_t'}),
     ], validate='_mongoc_default_replace_vflags')),
 
-    ('mongoc_bulk_insert_opts_t', Struct('mongoc_bulk_operation_t', [
+    ('mongoc_bulk_insert_opts_t', Struct([
         validate_option,
         bypass_option,
     ], validate='_mongoc_default_insert_vflags', allow_extra=False)),
@@ -226,21 +248,18 @@ opts_structs = OrderedDict([
     ])),
 
     ('mongoc_bulk_update_one_opts_t', Struct(
-        'mongoc_bulk_operation_t',
         [('update', {'type': 'mongoc_bulk_update_opts_t'})],
         multi='false',
         validate='_mongoc_default_update_vflags',
         allow_extra=False)),
 
     ('mongoc_bulk_update_many_opts_t', Struct(
-        'mongoc_bulk_operation_t',
         [('update', {'type': 'mongoc_bulk_update_opts_t'})],
         multi='true',
         validate='_mongoc_default_update_vflags',
         allow_extra=False)),
 
     ('mongoc_bulk_replace_one_opts_t', Struct(
-        'mongoc_bulk_operation_t',
         [('update', {'type': 'mongoc_bulk_update_opts_t'})],
         multi='false',
         validate='_mongoc_default_replace_vflags',
@@ -251,13 +270,36 @@ opts_structs = OrderedDict([
         ('limit', {'type': 'int32_t', 'hidden': True})
     ])),
 
-    ('mongoc_bulk_remove_one_opts_t', Struct('mongoc_bulk_operation_t', [
+    ('mongoc_bulk_remove_one_opts_t', Struct([
         ('remove', {'type': 'mongoc_bulk_remove_opts_t'}),
     ], limit=1, allow_extra=False)),
 
-    ('mongoc_bulk_remove_many_opts_t', Struct('mongoc_bulk_operation_t', [
+    ('mongoc_bulk_remove_many_opts_t', Struct([
         ('remove', {'type': 'mongoc_bulk_remove_opts_t'}),
     ], limit=0, allow_extra=False)),
+
+    ('mongoc_read_write_opts_t', Struct([
+        read_concern_option,
+        write_concern_option,
+        session_option,
+        collation_option,
+        server_option,
+    ])),
+
+    # Only for documentation - we use mongoc_read_write_opts_t for real parsing.
+    ('mongoc_read_opts_t', Struct([
+        read_concern_option,
+        session_option,
+        collation_option,
+        server_option,
+    ], generate_code=False)),
+
+    ('mongoc_write_opts_t', Struct([
+        write_concern_option,
+        session_option,
+        collation_option,
+        server_option,
+    ], generate_code=False)),
 ])
 
 header_comment = """/**************************************************

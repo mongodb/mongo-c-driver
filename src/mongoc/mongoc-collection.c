@@ -1516,6 +1516,16 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
 }
 
 
+static void
+_mongoc_collection_update_crud (mongoc_crud_opts_t *crud,
+                                mongoc_collection_t *collection)
+{
+   if (!crud->write_concern_owned) {
+      crud->writeConcern = collection->write_concern;
+   }
+}
+
+
 bool
 mongoc_collection_insert (mongoc_collection_t *collection,
                           mongoc_insert_flags_t flags,
@@ -1593,9 +1603,11 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_insert_one_opts_parse (
-          collection, opts, &insert_one_opts, error)) {
+          collection->client, opts, &insert_one_opts, error)) {
       GOTO (done);
    }
+
+   _mongoc_collection_update_crud (&insert_one_opts.crud, collection);
 
    if (!_mongoc_validate_new_document (
           document, insert_one_opts.crud.validate, error)) {
@@ -1680,11 +1692,12 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_insert_many_opts_parse (
-          collection, opts, &insert_many_opts, error)) {
+          collection->client, opts, &insert_many_opts, error)) {
       _mongoc_insert_many_opts_cleanup (&insert_many_opts);
       return false;
    }
 
+   _mongoc_collection_update_crud (&insert_many_opts.crud, collection);
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_insert_idl (
       &command,
@@ -1903,11 +1916,12 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_update_one_opts_parse (
-          collection, opts, &update_one_opts, error)) {
+          collection->client, opts, &update_one_opts, error)) {
       _mongoc_update_one_opts_cleanup (&update_one_opts);
       return false;
    }
 
+   _mongoc_collection_update_crud (&update_one_opts.update.crud, collection);
    if (!_mongoc_validate_update (
           update, update_one_opts.update.crud.validate, error)) {
       _mongoc_update_one_opts_cleanup (&update_one_opts);
@@ -1954,11 +1968,12 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_update_many_opts_parse (
-          collection, opts, &update_many_opts, error)) {
+          collection->client, opts, &update_many_opts, error)) {
       _mongoc_update_many_opts_cleanup (&update_many_opts);
       return false;
    }
 
+   _mongoc_collection_update_crud (&update_many_opts.update.crud, collection);
    if (!_mongoc_validate_update (
           update, update_many_opts.update.crud.validate, error)) {
       _mongoc_update_many_opts_cleanup (&update_many_opts);
@@ -2006,11 +2021,12 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
 
    if (!_mongoc_replace_one_opts_parse (
-          collection, opts, &replace_one_opts, error)) {
+          collection->client, opts, &replace_one_opts, error)) {
       _mongoc_replace_one_opts_cleanup (&replace_one_opts);
       return false;
    }
 
+   _mongoc_collection_update_crud (&replace_one_opts.update.crud, collection);
    if (!_mongoc_validate_replace (
           replacement, replace_one_opts.update.crud.validate, error)) {
       _mongoc_replace_one_opts_cleanup (&replace_one_opts);
@@ -2269,10 +2285,11 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
    _mongoc_bson_init_if_set (reply);
    bson_append_int32 (&limit, "limit", 5, 1);
    if (!_mongoc_delete_one_opts_parse (
-          collection, opts, &delete_one_opts, error)) {
+          collection->client, opts, &delete_one_opts, error)) {
       GOTO (done);
    }
 
+   _mongoc_collection_update_crud (&delete_one_opts.crud, collection);
    ret = _mongoc_delete_one_or_many (collection,
                                      selector,
                                      &delete_one_opts.crud,
@@ -2307,10 +2324,11 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
 
    _mongoc_bson_init_if_set (reply);
    if (!_mongoc_delete_many_opts_parse (
-          collection, opts, &delete_many_opts, error)) {
+          collection->client, opts, &delete_many_opts, error)) {
       GOTO (done);
    }
 
+   _mongoc_collection_update_crud (&delete_many_opts.crud, collection);
    bson_append_int32 (&limit, "limit", 5, 0);
    ret = _mongoc_delete_one_or_many (collection,
                                      selector,

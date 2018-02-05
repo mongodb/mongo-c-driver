@@ -205,6 +205,110 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
 }
 
 
+#define OPTS_ERR(_code, ...)                                              \
+   do {                                                                   \
+      bson_set_error (                                                    \
+         error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_##_code, __VA_ARGS__); \
+      RETURN (false);                                                     \
+   } while (0)
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cmd_parts_append_opts_idl --
+ *
+ *       Append user-supplied options to @parts->command_extra, taking the
+ *       selected server's max wire version into account.
+ *
+ * Return:
+ *       True if the options were successfully applied. If any options are
+ *       invalid, returns false and fills out @error. In that case @parts is
+ *       invalid and must not be used.
+ *
+ * Side effects:
+ *       May partly apply options before returning an error.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cmd_parts_append_opts_idl (mongoc_cmd_parts_t *parts,
+                                  mongoc_read_write_opts_t *opts,
+                                  int max_wire_version,
+                                  bson_error_t *error)
+{
+   const char *command_name;
+   bool is_fam;
+   bool wc_allowed;
+
+   ENTRY;
+
+   /* not yet assembled */
+   BSON_ASSERT (!parts->assembled.command);
+
+   command_name = _mongoc_get_command_name (parts->body);
+
+   if (!command_name) {
+      OPTS_ERR (COMMAND_INVALID_ARG, "Empty command document");
+   }
+
+   is_fam = !strcasecmp (command_name, "findandmodify");
+
+   if (!bson_empty (&opts->collation)) {
+      if (max_wire_version < WIRE_VERSION_COLLATION) {
+         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
+                   "The selected server does not support collation");
+      }
+
+      if (!bson_append_document (
+             &parts->extra, "collation", 9, &opts->collation)) {
+         OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with 'collation' is too large");
+      }
+   }
+
+   wc_allowed =
+      (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
+      (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
+
+   if (opts->writeConcern && wc_allowed) {
+      parts->assembled.is_acknowledged =
+         mongoc_write_concern_is_acknowledged (opts->writeConcern);
+      if (!bson_append_document (
+             &parts->extra,
+             "writeConcern",
+             12,
+             _mongoc_write_concern_get_bson (opts->writeConcern))) {
+         OPTS_ERR (COMMAND_INVALID_ARG,
+                   "'opts' with 'writeConcern' is too large");
+      }
+   }
+
+   /* process explicit read concern */
+   if (!bson_empty (&opts->readConcern)) {
+      if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
+         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
+                   "The selected server does not support readConcern");
+      }
+
+      /* save readConcern for later, once we know about causal consistency */
+      bson_destroy (&parts->read_concern_document);
+      bson_copy_to (&opts->readConcern, &parts->read_concern_document);
+   }
+
+   if (opts->client_session) {
+      BSON_ASSERT (!parts->assembled.session);
+      parts->assembled.session = opts->client_session;
+   }
+
+   if (!bson_concat (&parts->extra, &opts->extra)) {
+      OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with extra fields is too large");
+   }
+
+   RETURN (true);
+}
+
+#undef OPTS_ERR
+
 static void
 _mongoc_cmd_parts_ensure_copied (mongoc_cmd_parts_t *parts)
 {

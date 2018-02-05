@@ -61,6 +61,7 @@
 #include "mongoc-stream-tls.h"
 #include "mongoc-ssl-private.h"
 #include "mongoc-cmd-private.h"
+#include "mongoc-opts-private.h"
 
 #endif
 
@@ -1713,14 +1714,14 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
+   mongoc_read_write_opts_t read_write_opts;
    mongoc_cmd_parts_t parts;
    const char *command_name;
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_cluster_t *cluster;
    bson_t reply_local;
    bson_t *reply_ptr;
-   uint32_t server_id;
-   bool explicit_write_concern;
+   int32_t wire_version;
    int32_t wc_wire_version;
    bool ret = false;
 
@@ -1733,6 +1734,10 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    mongoc_cmd_parts_init (&parts, client, db_name, flags, command);
    parts.is_read_command = (mode & MONGOC_CMD_READ);
    parts.is_write_command = (mode & MONGOC_CMD_WRITE);
+
+   if (!_mongoc_read_write_opts_parse (client, opts, &read_write_opts, error)) {
+      GOTO (err);
+   }
 
    command_name = _mongoc_get_command_name (command);
 
@@ -1759,18 +1764,11 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    }
 
    cluster = &client->cluster;
-   if (!_mongoc_get_server_id_from_opts (opts,
-                                         MONGOC_ERROR_COMMAND,
-                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                         &server_id,
-                                         error)) {
-      GOTO (err);
-   }
 
-   if (server_id) {
+   if (read_write_opts.serverId) {
       /* "serverId" passed in opts */
       server_stream = mongoc_cluster_stream_for_server (
-         cluster, server_id, true /* reconnect ok */, error);
+         cluster, read_write_opts.serverId, true /* reconnect ok */, error);
 
       if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
          parts.user_query_flags |= MONGOC_QUERY_SLAVE_OK;
@@ -1782,78 +1780,77 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
          mongoc_cluster_stream_for_reads (cluster, default_prefs, error);
    }
 
-   if (server_stream) {
-      int32_t wire_version = server_stream->sd->max_wire_version;
-      bson_iter_t iter;
-
-      if (opts && bson_iter_init (&iter, opts)) {
-         if (!mongoc_cmd_parts_append_opts (
-                &parts, &iter, wire_version, error)) {
-            GOTO (err);
-         }
-      }
-
-      if (mode & MONGOC_CMD_WRITE) {
-         explicit_write_concern = opts && bson_has_field (opts, "writeConcern");
-         wc_wire_version = !strcasecmp (command_name, "findandmodify")
-                              ? WIRE_VERSION_FAM_WRITE_CONCERN
-                              : WIRE_VERSION_CMD_WRITE_CONCERN;
-
-         if (explicit_write_concern && wire_version < wc_wire_version) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "\"%s\" command does not support writeConcern with "
-                            "wire version %d, wire version %d is required",
-                            command_name,
-                            wire_version,
-                            wc_wire_version);
-            GOTO (err);
-         }
-
-         /* use default write concern unless it's in opts */
-         if (!mongoc_write_concern_is_default (default_wc) &&
-             !explicit_write_concern && wire_version >= wc_wire_version) {
-            bson_append_document (&parts.extra,
-                                  "writeConcern",
-                                  12,
-                                  _mongoc_write_concern_get_bson (default_wc));
-         }
-      }
-
-      /* use read prefs and read concern for read commands, unless in opts */
-      if ((mode & MONGOC_CMD_READ) &&
-          !mongoc_read_concern_is_default (default_rc) &&
-          (!opts || !bson_has_field (opts, "readConcern"))) {
-         if (wire_version >= WIRE_VERSION_READ_CONCERN) {
-            bson_append_document (&parts.extra,
-                                  "readConcern",
-                                  11,
-                                  _mongoc_read_concern_get_bson (default_rc));
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                            "\"%s\" command does not support readConcern with "
-                            "wire version %d, wire version %d is required",
-                            command_name,
-                            wire_version,
-                            WIRE_VERSION_READ_CONCERN);
-            GOTO (err);
-         }
-      }
-
-      ret = _mongoc_client_command_with_stream (
-         client, &parts, server_stream, reply_ptr, error);
-
-      if (ret && (mode & MONGOC_CMD_WRITE)) {
-         ret = !_mongoc_parse_wc_err (reply_ptr, error);
-      }
-      if (reply_ptr == &reply_local) {
-         bson_destroy (reply_ptr);
-      }
-      GOTO (done);
+   if (!server_stream) {
+      GOTO (err);
    }
+
+   wire_version = server_stream->sd->max_wire_version;
+   if (!mongoc_cmd_parts_append_opts_idl (
+          &parts, &read_write_opts, wire_version, error)) {
+      GOTO (err);
+   }
+
+   if (mode & MONGOC_CMD_WRITE) {
+      wc_wire_version = !strcasecmp (command_name, "findandmodify")
+                           ? WIRE_VERSION_FAM_WRITE_CONCERN
+                           : WIRE_VERSION_CMD_WRITE_CONCERN;
+
+      if (read_write_opts.write_concern_owned &&
+          wire_version < wc_wire_version) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "\"%s\" command does not support writeConcern with "
+                         "wire version %d, wire version %d is required",
+                         command_name,
+                         wire_version,
+                         wc_wire_version);
+         GOTO (err);
+      }
+
+      /* use default write concern unless it's in opts */
+      if (!mongoc_write_concern_is_default (default_wc) &&
+          !read_write_opts.write_concern_owned &&
+          wire_version >= wc_wire_version) {
+         bson_append_document (&parts.extra,
+                               "writeConcern",
+                               12,
+                               _mongoc_write_concern_get_bson (default_wc));
+      }
+   }
+
+   /* use read prefs and read concern for read commands, unless in opts */
+   if ((mode & MONGOC_CMD_READ) &&
+       !mongoc_read_concern_is_default (default_rc) &&
+       bson_empty (&read_write_opts.readConcern)) {
+      if (wire_version >= WIRE_VERSION_READ_CONCERN) {
+         bson_append_document (&parts.extra,
+                               "readConcern",
+                               11,
+                               _mongoc_read_concern_get_bson (default_rc));
+      } else {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "\"%s\" command does not support readConcern with "
+                         "wire version %d, wire version %d is required",
+                         command_name,
+                         wire_version,
+                         WIRE_VERSION_READ_CONCERN);
+         GOTO (err);
+      }
+   }
+
+   ret = _mongoc_client_command_with_stream (
+      client, &parts, server_stream, reply_ptr, error);
+
+   if (ret && (mode & MONGOC_CMD_WRITE)) {
+      ret = !_mongoc_parse_wc_err (reply_ptr, error);
+   }
+   if (reply_ptr == &reply_local) {
+      bson_destroy (reply_ptr);
+   }
+   GOTO (done);
 
 err:
    if (reply) {
@@ -1867,6 +1864,7 @@ done:
    }
 
    mongoc_cmd_parts_cleanup (&parts);
+   _mongoc_read_write_opts_cleanup (&read_write_opts);
 
    RETURN (ret);
 }

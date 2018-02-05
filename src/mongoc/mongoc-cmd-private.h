@@ -34,6 +34,7 @@
 #include "mongoc-server-stream-private.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc.h"
+#include "mongoc-opts-private.h"
 
 BSON_BEGIN_DECLS
 
@@ -92,6 +93,12 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               bson_iter_t *iter,
                               int max_wire_version,
                               bson_error_t *error);
+
+bool
+mongoc_cmd_parts_append_opts_idl (mongoc_cmd_parts_t *parts,
+                                  mongoc_read_write_opts_t *opts,
+                                  int max_wire_version,
+                                  bson_error_t *error);
 
 bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,

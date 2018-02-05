@@ -215,7 +215,8 @@ mongoc_bulk_operation_remove_one_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_remove_one_opts_parse (bulk, opts, &remove_opts, error)) {
+   if (!_mongoc_bulk_remove_one_opts_parse (
+          bulk->client, opts, &remove_opts, error)) {
       _mongoc_bulk_remove_one_opts_cleanup (&remove_opts);
       RETURN (false);
    }
@@ -241,7 +242,8 @@ mongoc_bulk_operation_remove_many_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_remove_many_opts_parse (bulk, opts, &remove_opts, error)) {
+   if (!_mongoc_bulk_remove_many_opts_parse (
+          bulk->client, opts, &remove_opts, error)) {
       _mongoc_bulk_remove_many_opts_cleanup (&remove_opts);
       RETURN (false);
    }
@@ -350,7 +352,8 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_insert_opts_parse (bulk, opts, &insert_opts, error)) {
+   if (!_mongoc_bulk_insert_opts_parse (
+          bulk->client, opts, &insert_opts, error)) {
       GOTO (done);
    }
 
@@ -479,7 +482,8 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_update_one_opts_parse (bulk, opts, &update_opts, error)) {
+   if (!_mongoc_bulk_update_one_opts_parse (
+          bulk->client, opts, &update_opts, error)) {
       _mongoc_bulk_update_one_opts_cleanup (&update_opts);
       RETURN (false);
    }
@@ -505,7 +509,8 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_update_many_opts_parse (bulk, opts, &update_opts, error)) {
+   if (!_mongoc_bulk_update_many_opts_parse (
+          bulk->client, opts, &update_opts, error)) {
       _mongoc_bulk_update_many_opts_cleanup (&update_opts);
       RETURN (false);
    }
@@ -594,7 +599,8 @@ mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
 
    BULK_RETURN_IF_PRIOR_ERROR;
 
-   if (!_mongoc_bulk_replace_one_opts_parse (bulk, opts, &repl_opts, error)) {
+   if (!_mongoc_bulk_replace_one_opts_parse (
+          bulk->client, opts, &repl_opts, error)) {
       GOTO (done);
    }
 

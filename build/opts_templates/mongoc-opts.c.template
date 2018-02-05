@@ -2,31 +2,28 @@
 #include "mongoc-opts-private.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
+#include "mongoc-client-private.h"
 
 {{ header_comment }}
-
 {% for struct_type, description in opts_structs.items() %}
-{% if description.is_shared %}{% continue %}{% endif %}
+{% if description.is_shared or not description.generate_code %}{% continue %}{% endif %}
 {% set struct_name = struct_type.split('_t', -1)[0] %}
+
+
 bool
 _{{ struct_name }}_parse (
-   {{ description.instance_type }} *{{ description.instance_name }},
+   mongoc_client_t *client,
    const bson_t *opts,
    {{ struct_type }} *{{ struct_name }},
    bson_error_t *error)
 {
-{% if description.instance_type != 'mongoc_client_t *' %}
-   mongoc_client_t *client = {{ description.instance_name }}->client;
-{% endif %}
    bson_iter_t iter;
 
 {% for path, opt_name, info in paths(description) %}
 {% if info['type'] == 'bool' %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'false') }};
-{% elif info['type'] == 'int32_t' or info['type'] == 'int64_t' %}
+{% elif info['type'].startswith('int') or info['type'].startswith('uint') %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 0) }};
-{% elif info['type'] == 'mongoc_write_concern_t *' %}
-   {{ struct_name }}->{{ path }} = {{ description.instance_name }}->write_concern;
 {% elif info['type'] == 'bson_validate_flags_t' %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'BSON_VALIDATE_NONE') }};
 {% elif info['type'] == 'mongoc_write_bypass_document_validation_t' %}
@@ -132,6 +129,4 @@ _{{ struct_name }}_cleanup ({{ struct_type }} *{{ struct_name }})
 {% endif %}
 {% endfor %}
    bson_destroy (&{{struct_name }}->extra);
-}
-
-{% endfor %}
+}{% endfor %}

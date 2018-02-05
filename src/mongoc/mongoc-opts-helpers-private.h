@@ -69,4 +69,10 @@ _mongoc_convert_write_concern (mongoc_client_t *client,
                                mongoc_write_concern_t **wc,
                                bson_error_t *error);
 
+bool
+_mongoc_convert_server_id (mongoc_client_t *client,
+                           const bson_iter_t *iter,
+                           uint32_t *server_id,
+                           bson_error_t *error);
+
 #endif

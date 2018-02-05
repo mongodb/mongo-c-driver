@@ -2,6 +2,7 @@
 #include "mongoc-opts-private.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
+#include "mongoc-client-private.h"
 
 /**************************************************
  *
@@ -12,14 +13,14 @@
  *************************************************/
 /* clang-format off */
 
+
 bool
 _mongoc_find_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_find_one_opts_t *mongoc_find_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
    bson_init (&mongoc_find_one_opts->projection);
@@ -299,15 +300,14 @@ _mongoc_find_one_opts_cleanup (mongoc_find_one_opts_t *mongoc_find_one_opts)
 
 bool
 _mongoc_insert_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_insert_one_opts_t *mongoc_insert_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_insert_one_opts->crud.writeConcern = collection->write_concern;
+   mongoc_insert_one_opts->crud.writeConcern = NULL;
    mongoc_insert_one_opts->crud.write_concern_owned = false;
    mongoc_insert_one_opts->crud.client_session = NULL;
    mongoc_insert_one_opts->crud.validate = _mongoc_default_insert_vflags;
@@ -395,15 +395,14 @@ _mongoc_insert_one_opts_cleanup (mongoc_insert_one_opts_t *mongoc_insert_one_opt
 
 bool
 _mongoc_insert_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_insert_many_opts_t *mongoc_insert_many_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_insert_many_opts->crud.writeConcern = collection->write_concern;
+   mongoc_insert_many_opts->crud.writeConcern = NULL;
    mongoc_insert_many_opts->crud.write_concern_owned = false;
    mongoc_insert_many_opts->crud.client_session = NULL;
    mongoc_insert_many_opts->crud.validate = _mongoc_default_insert_vflags;
@@ -501,15 +500,14 @@ _mongoc_insert_many_opts_cleanup (mongoc_insert_many_opts_t *mongoc_insert_many_
 
 bool
 _mongoc_delete_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_delete_one_opts_t *mongoc_delete_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_delete_one_opts->crud.writeConcern = collection->write_concern;
+   mongoc_delete_one_opts->crud.writeConcern = NULL;
    mongoc_delete_one_opts->crud.write_concern_owned = false;
    mongoc_delete_one_opts->crud.client_session = NULL;
    mongoc_delete_one_opts->crud.validate = BSON_VALIDATE_NONE;
@@ -608,15 +606,14 @@ _mongoc_delete_one_opts_cleanup (mongoc_delete_one_opts_t *mongoc_delete_one_opt
 
 bool
 _mongoc_delete_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_delete_many_opts_t *mongoc_delete_many_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_delete_many_opts->crud.writeConcern = collection->write_concern;
+   mongoc_delete_many_opts->crud.writeConcern = NULL;
    mongoc_delete_many_opts->crud.write_concern_owned = false;
    mongoc_delete_many_opts->crud.client_session = NULL;
    mongoc_delete_many_opts->crud.validate = BSON_VALIDATE_NONE;
@@ -704,15 +701,14 @@ _mongoc_delete_many_opts_cleanup (mongoc_delete_many_opts_t *mongoc_delete_many_
 
 bool
 _mongoc_update_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_update_one_opts_t *mongoc_update_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_update_one_opts->update.crud.writeConcern = collection->write_concern;
+   mongoc_update_one_opts->update.crud.writeConcern = NULL;
    mongoc_update_one_opts->update.crud.write_concern_owned = false;
    mongoc_update_one_opts->update.crud.client_session = NULL;
    mongoc_update_one_opts->update.crud.validate = _mongoc_default_update_vflags;
@@ -832,15 +828,14 @@ _mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opt
 
 bool
 _mongoc_update_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_update_many_opts_t *mongoc_update_many_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_update_many_opts->update.crud.writeConcern = collection->write_concern;
+   mongoc_update_many_opts->update.crud.writeConcern = NULL;
    mongoc_update_many_opts->update.crud.write_concern_owned = false;
    mongoc_update_many_opts->update.crud.client_session = NULL;
    mongoc_update_many_opts->update.crud.validate = _mongoc_default_update_vflags;
@@ -960,15 +955,14 @@ _mongoc_update_many_opts_cleanup (mongoc_update_many_opts_t *mongoc_update_many_
 
 bool
 _mongoc_replace_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_replace_one_opts_t *mongoc_replace_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = collection->client;
    bson_iter_t iter;
 
-   mongoc_replace_one_opts->update.crud.writeConcern = collection->write_concern;
+   mongoc_replace_one_opts->update.crud.writeConcern = NULL;
    mongoc_replace_one_opts->update.crud.write_concern_owned = false;
    mongoc_replace_one_opts->update.crud.client_session = NULL;
    mongoc_replace_one_opts->update.crud.validate = _mongoc_default_replace_vflags;
@@ -1077,12 +1071,11 @@ _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_
 
 bool
 _mongoc_bulk_insert_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_insert_opts_t *mongoc_bulk_insert_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    mongoc_bulk_insert_opts->validate = _mongoc_default_insert_vflags;
@@ -1142,12 +1135,11 @@ _mongoc_bulk_insert_opts_cleanup (mongoc_bulk_insert_opts_t *mongoc_bulk_insert_
 
 bool
 _mongoc_bulk_update_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_update_one_opts_t *mongoc_bulk_update_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    mongoc_bulk_update_one_opts->update.validate = _mongoc_default_update_vflags;
@@ -1238,12 +1230,11 @@ _mongoc_bulk_update_one_opts_cleanup (mongoc_bulk_update_one_opts_t *mongoc_bulk
 
 bool
 _mongoc_bulk_update_many_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_update_many_opts_t *mongoc_bulk_update_many_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    mongoc_bulk_update_many_opts->update.validate = _mongoc_default_update_vflags;
@@ -1334,12 +1325,11 @@ _mongoc_bulk_update_many_opts_cleanup (mongoc_bulk_update_many_opts_t *mongoc_bu
 
 bool
 _mongoc_bulk_replace_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_replace_one_opts_t *mongoc_bulk_replace_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    mongoc_bulk_replace_one_opts->update.validate = _mongoc_default_replace_vflags;
@@ -1430,12 +1420,11 @@ _mongoc_bulk_replace_one_opts_cleanup (mongoc_bulk_replace_one_opts_t *mongoc_bu
 
 bool
 _mongoc_bulk_remove_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_remove_one_opts_t *mongoc_bulk_remove_one_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    bson_init (&mongoc_bulk_remove_one_opts->remove.collation);
@@ -1495,12 +1484,11 @@ _mongoc_bulk_remove_one_opts_cleanup (mongoc_bulk_remove_one_opts_t *mongoc_bulk
 
 bool
 _mongoc_bulk_remove_many_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_remove_many_opts_t *mongoc_bulk_remove_many_opts,
    bson_error_t *error)
 {
-   mongoc_client_t *client = bulk_operation->client;
    bson_iter_t iter;
 
    bson_init (&mongoc_bulk_remove_many_opts->remove.collation);
@@ -1558,4 +1546,108 @@ _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bu
    bson_destroy (&mongoc_bulk_remove_many_opts->extra);
 }
 
+bool
+_mongoc_read_write_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_read_write_opts_t *mongoc_read_write_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
 
+   bson_init (&mongoc_read_write_opts->readConcern);
+   mongoc_read_write_opts->writeConcern = NULL;
+   mongoc_read_write_opts->write_concern_owned = false;
+   mongoc_read_write_opts->client_session = NULL;
+   bson_init (&mongoc_read_write_opts->collation);
+   mongoc_read_write_opts->serverId = 0;
+   bson_init (&mongoc_read_write_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "readConcern")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_read_write_opts->readConcern,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_read_write_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_read_write_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               client,
+               &iter,
+               &mongoc_read_write_opts->client_session,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "collation")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_read_write_opts->collation,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "serverId")) {
+         if (!_mongoc_convert_server_id (
+               client,
+               &iter,
+               &mongoc_read_write_opts->serverId,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_read_write_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_read_write_opts_cleanup (mongoc_read_write_opts_t *mongoc_read_write_opts)
+{
+   bson_destroy (&mongoc_read_write_opts->readConcern);
+   if (mongoc_read_write_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_read_write_opts->writeConcern);
+   }
+   bson_destroy (&mongoc_read_write_opts->collation);
+   bson_destroy (&mongoc_read_write_opts->extra);
+}

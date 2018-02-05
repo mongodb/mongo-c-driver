@@ -143,9 +143,19 @@ typedef struct _mongoc_bulk_remove_many_opts_t {
    bson_t extra;
 } mongoc_bulk_remove_many_opts_t;
 
+typedef struct _mongoc_read_write_opts_t {
+   bson_t readConcern;
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bson_t collation;
+   uint32_t serverId;
+   bson_t extra;
+} mongoc_read_write_opts_t;
+
 bool
 _mongoc_find_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_find_one_opts_t *mongoc_find_one_opts,
    bson_error_t *error);
@@ -155,7 +165,7 @@ _mongoc_find_one_opts_cleanup (mongoc_find_one_opts_t *mongoc_find_one_opts);
 
 bool
 _mongoc_insert_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_insert_one_opts_t *mongoc_insert_one_opts,
    bson_error_t *error);
@@ -165,7 +175,7 @@ _mongoc_insert_one_opts_cleanup (mongoc_insert_one_opts_t *mongoc_insert_one_opt
 
 bool
 _mongoc_insert_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_insert_many_opts_t *mongoc_insert_many_opts,
    bson_error_t *error);
@@ -175,7 +185,7 @@ _mongoc_insert_many_opts_cleanup (mongoc_insert_many_opts_t *mongoc_insert_many_
 
 bool
 _mongoc_delete_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_delete_one_opts_t *mongoc_delete_one_opts,
    bson_error_t *error);
@@ -185,7 +195,7 @@ _mongoc_delete_one_opts_cleanup (mongoc_delete_one_opts_t *mongoc_delete_one_opt
 
 bool
 _mongoc_delete_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_delete_many_opts_t *mongoc_delete_many_opts,
    bson_error_t *error);
@@ -195,7 +205,7 @@ _mongoc_delete_many_opts_cleanup (mongoc_delete_many_opts_t *mongoc_delete_many_
 
 bool
 _mongoc_update_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_update_one_opts_t *mongoc_update_one_opts,
    bson_error_t *error);
@@ -205,7 +215,7 @@ _mongoc_update_one_opts_cleanup (mongoc_update_one_opts_t *mongoc_update_one_opt
 
 bool
 _mongoc_update_many_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_update_many_opts_t *mongoc_update_many_opts,
    bson_error_t *error);
@@ -215,7 +225,7 @@ _mongoc_update_many_opts_cleanup (mongoc_update_many_opts_t *mongoc_update_many_
 
 bool
 _mongoc_replace_one_opts_parse (
-   mongoc_collection_t *collection,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_replace_one_opts_t *mongoc_replace_one_opts,
    bson_error_t *error);
@@ -225,7 +235,7 @@ _mongoc_replace_one_opts_cleanup (mongoc_replace_one_opts_t *mongoc_replace_one_
 
 bool
 _mongoc_bulk_insert_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_insert_opts_t *mongoc_bulk_insert_opts,
    bson_error_t *error);
@@ -235,7 +245,7 @@ _mongoc_bulk_insert_opts_cleanup (mongoc_bulk_insert_opts_t *mongoc_bulk_insert_
 
 bool
 _mongoc_bulk_update_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_update_one_opts_t *mongoc_bulk_update_one_opts,
    bson_error_t *error);
@@ -245,7 +255,7 @@ _mongoc_bulk_update_one_opts_cleanup (mongoc_bulk_update_one_opts_t *mongoc_bulk
 
 bool
 _mongoc_bulk_update_many_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_update_many_opts_t *mongoc_bulk_update_many_opts,
    bson_error_t *error);
@@ -255,7 +265,7 @@ _mongoc_bulk_update_many_opts_cleanup (mongoc_bulk_update_many_opts_t *mongoc_bu
 
 bool
 _mongoc_bulk_replace_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_replace_one_opts_t *mongoc_bulk_replace_one_opts,
    bson_error_t *error);
@@ -265,7 +275,7 @@ _mongoc_bulk_replace_one_opts_cleanup (mongoc_bulk_replace_one_opts_t *mongoc_bu
 
 bool
 _mongoc_bulk_remove_one_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_remove_one_opts_t *mongoc_bulk_remove_one_opts,
    bson_error_t *error);
@@ -275,12 +285,22 @@ _mongoc_bulk_remove_one_opts_cleanup (mongoc_bulk_remove_one_opts_t *mongoc_bulk
 
 bool
 _mongoc_bulk_remove_many_opts_parse (
-   mongoc_bulk_operation_t *bulk_operation,
+   mongoc_client_t *client,
    const bson_t *opts,
    mongoc_bulk_remove_many_opts_t *mongoc_bulk_remove_many_opts,
    bson_error_t *error);
 
 void
 _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bulk_remove_many_opts);
+
+bool
+_mongoc_read_write_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_read_write_opts_t *mongoc_read_write_opts,
+   bson_error_t *error);
+
+void
+_mongoc_read_write_opts_cleanup (mongoc_read_write_opts_t *mongoc_read_write_opts);
 
 #endif /* MONGOC_OPTS_H */

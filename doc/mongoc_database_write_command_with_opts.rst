@@ -33,6 +33,8 @@ Parameters
 
 .. include:: includes/write-opts.txt
 
+Consult `the MongoDB Manual entry on Database Commands <https://docs.mongodb.com/manual/reference/command/>`_ for each command's arguments.
+
 Errors
 ------
 
