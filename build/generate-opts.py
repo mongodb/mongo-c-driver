@@ -48,16 +48,18 @@ def flatten(items):
 
 
 class Struct(OrderedDict):
-    def __init__(self, items, generate_rst=True, generate_code=True,
-                 allow_extra=True, **defaults):
+    def __init__(self, items, opts_name='opts', generate_rst=True,
+                 generate_code=True, allow_extra=True, **defaults):
         """Define an options struct.
 
         - items: List of pairs: (optionName, info)
+        - opts_name: Name of the const bson_t *opts parameter
         - allow_extra: Whether to allow unrecognized options
         - defaults: Initial values for options
         """
         OrderedDict.__init__(self, list(flatten(items)))
         self.is_shared = False
+        self.opts_name = opts_name
         self.generate_rst = generate_rst
         self.generate_code = generate_code
         self.allow_extra = allow_extra
@@ -284,6 +286,11 @@ opts_structs = OrderedDict([
         ('remove', {'type': 'mongoc_bulk_remove_opts_t'}),
     ], limit=0, allow_extra=False)),
 
+    ('mongoc_create_index_opts_t', Struct([
+        write_concern_option,
+        session_option,
+    ], opts_name='command_opts')),
+
     ('mongoc_read_write_opts_t', Struct([
         read_concern_option,
         write_concern_option,
@@ -382,7 +389,8 @@ for struct_name, struct in opts_structs.items():
     print(file_name)
     f = open(joinpath(doc_includes, file_name), 'w')
     f.write(
-        "``opts`` may be NULL or a BSON document with additional command options:\n\n")
+        "``%s`` may be NULL or a BSON document with additional"
+        " command options:\n\n" % struct.opts_name)
     document_opts(struct, f)
 
     f.close()

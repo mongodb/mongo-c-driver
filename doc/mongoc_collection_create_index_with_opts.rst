@@ -27,9 +27,10 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``keys``: A :symbol:`bson:bson_t`.
 * ``index_opts``: A mongoc_index_opt_t.
-* ``command_opts``: A :symbol:`bson:bson_t` with extra options, such as writeConcern or collation, or ``NULL``.
 * ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
+
+.. include:: includes/create-index-opts.txt
 
 Description
 -----------

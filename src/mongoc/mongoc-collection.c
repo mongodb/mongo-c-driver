@@ -1104,6 +1104,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
                                           bson_t *reply,
                                           bson_error_t *error)
 {
+   mongoc_create_index_opts_t parsed;
    mongoc_cmd_parts_t parts;
    const mongoc_index_opt_t *def_opt;
    const mongoc_index_opt_geo_t *def_geo;
@@ -1121,7 +1122,6 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bool reply_initialized = false;
    bool has_collation = false;
    mongoc_server_stream_t *server_stream = NULL;
-   bson_iter_t iter;
    mongoc_cluster_t *cluster;
 
    ENTRY;
@@ -1135,6 +1135,11 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    mongoc_cmd_parts_init (
       &parts, collection->client, collection->db, MONGOC_QUERY_NONE, &cmd);
    parts.is_write_command = true;
+
+   if (!_mongoc_create_index_opts_parse (
+          collection->client, opts, &parsed, error)) {
+      GOTO (done);
+   }
 
    /*
     * Generate the key name if it was not provided.
@@ -1253,18 +1258,28 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   if (opts && bson_iter_init (&iter, opts)) {
-      if (!mongoc_cmd_parts_append_opts (
-             &parts, &iter, server_stream->sd->max_wire_version, error)) {
-         GOTO (done);
-      }
+   if (!mongoc_cmd_parts_set_write_concern (&parts,
+                                            parsed.writeConcern,
+                                            server_stream->sd->max_wire_version,
+                                            error)) {
+      GOTO (done);
    }
+
    if (has_collation &&
        server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                       "The selected server does not support collation");
+      GOTO (done);
+   }
+
+   parts.assembled.session = parsed.client_session;
+   if (!bson_concat (&parts.extra, &parsed.extra)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "'opts' is too large");
       GOTO (done);
    }
 
@@ -1287,7 +1302,7 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
 done:
    bson_destroy (&cmd);
    bson_free (alloc_name);
-
+   _mongoc_create_index_opts_cleanup (&parsed);
    mongoc_server_stream_cleanup (server_stream);
    mongoc_cmd_parts_cleanup (&parts);
    if (!reply_initialized && reply) {

@@ -151,6 +151,13 @@ typedef struct _mongoc_bulk_remove_many_opts_t {
    bson_t extra;
 } mongoc_bulk_remove_many_opts_t;
 
+typedef struct _mongoc_create_index_opts_t {
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bson_t extra;
+} mongoc_create_index_opts_t;
+
 typedef struct _mongoc_read_write_opts_t {
    bson_t readConcern;
    mongoc_write_concern_t *writeConcern;
@@ -310,6 +317,16 @@ _mongoc_bulk_remove_many_opts_parse (
 
 void
 _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bulk_remove_many_opts);
+
+bool
+_mongoc_create_index_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_create_index_opts_t *mongoc_create_index_opts,
+   bson_error_t *error);
+
+void
+_mongoc_create_index_opts_cleanup (mongoc_create_index_opts_t *mongoc_create_index_opts);
 
 bool
 _mongoc_read_write_opts_parse (

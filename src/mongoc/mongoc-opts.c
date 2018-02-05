@@ -1626,6 +1626,80 @@ _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bu
 }
 
 bool
+_mongoc_create_index_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_create_index_opts_t *mongoc_create_index_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_create_index_opts->writeConcern = NULL;
+   mongoc_create_index_opts->write_concern_owned = false;
+   mongoc_create_index_opts->client_session = NULL;
+   bson_init (&mongoc_create_index_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_create_index_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_create_index_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               client,
+               &iter,
+               &mongoc_create_index_opts->client_session,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_create_index_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_create_index_opts_cleanup (mongoc_create_index_opts_t *mongoc_create_index_opts)
+{
+   if (mongoc_create_index_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_create_index_opts->writeConcern);
+   }
+   bson_destroy (&mongoc_create_index_opts->extra);
+}
+
+bool
 _mongoc_read_write_opts_parse (
    mongoc_client_t *client,
    const bson_t *opts,

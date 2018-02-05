@@ -212,10 +212,52 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       RETURN (false);                                                     \
    } while (0)
 
+
+bool
+mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
+                                    const mongoc_write_concern_t *wc,
+                                    int max_wire_version,
+                                    bson_error_t *error)
+{
+   const char *command_name;
+   bool is_fam;
+   bool wc_allowed;
+
+   ENTRY;
+
+   command_name = _mongoc_get_command_name (parts->body);
+
+   if (!command_name) {
+      OPTS_ERR (COMMAND_INVALID_ARG, "Empty command document");
+   }
+
+   is_fam = !strcasecmp (command_name, "findandmodify");
+
+   wc_allowed =
+      (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
+      (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
+
+   if (wc && wc_allowed) {
+      parts->assembled.is_acknowledged =
+         mongoc_write_concern_is_acknowledged (wc);
+      if (!bson_append_document (
+             &parts->extra,
+             "writeConcern",
+             12,
+             _mongoc_write_concern_get_bson ((mongoc_write_concern_t *) wc))) {
+         OPTS_ERR (COMMAND_INVALID_ARG,
+                   "'opts' with 'writeConcern' is too large");
+      }
+   }
+
+   RETURN (true);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cmd_parts_append_opts_idl --
+ * mongoc_cmd_parts_append_read_write --
  *
  *       Append user-supplied options to @parts->command_extra, taking the
  *       selected server's max wire version into account.
@@ -232,59 +274,36 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
  */
 
 bool
-mongoc_cmd_parts_append_opts_idl (mongoc_cmd_parts_t *parts,
-                                  mongoc_read_write_opts_t *opts,
-                                  int max_wire_version,
-                                  bson_error_t *error)
+mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
+                                    mongoc_read_write_opts_t *rw_opts,
+                                    int max_wire_version,
+                                    bson_error_t *error)
 {
-   const char *command_name;
-   bool is_fam;
-   bool wc_allowed;
-
    ENTRY;
 
    /* not yet assembled */
    BSON_ASSERT (!parts->assembled.command);
 
-   command_name = _mongoc_get_command_name (parts->body);
-
-   if (!command_name) {
-      OPTS_ERR (COMMAND_INVALID_ARG, "Empty command document");
-   }
-
-   is_fam = !strcasecmp (command_name, "findandmodify");
-
-   if (!bson_empty (&opts->collation)) {
+   if (!bson_empty (&rw_opts->collation)) {
       if (max_wire_version < WIRE_VERSION_COLLATION) {
          OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
                    "The selected server does not support collation");
       }
 
       if (!bson_append_document (
-             &parts->extra, "collation", 9, &opts->collation)) {
-         OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with 'collation' is too large");
+             &parts->extra, "collation", 9, &rw_opts->collation)) {
+         OPTS_ERR (COMMAND_INVALID_ARG,
+                   "'opts' with 'collation' is too large");
       }
    }
 
-   wc_allowed =
-      (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
-      (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
-
-   if (opts->writeConcern && wc_allowed) {
-      parts->assembled.is_acknowledged =
-         mongoc_write_concern_is_acknowledged (opts->writeConcern);
-      if (!bson_append_document (
-             &parts->extra,
-             "writeConcern",
-             12,
-             _mongoc_write_concern_get_bson (opts->writeConcern))) {
-         OPTS_ERR (COMMAND_INVALID_ARG,
-                   "'opts' with 'writeConcern' is too large");
-      }
+   if (!mongoc_cmd_parts_set_write_concern (
+          parts, rw_opts->writeConcern, max_wire_version, error)) {
+      RETURN (false);
    }
 
    /* process explicit read concern */
-   if (!bson_empty (&opts->readConcern)) {
+   if (!bson_empty (&rw_opts->readConcern)) {
       if (max_wire_version < WIRE_VERSION_READ_CONCERN) {
          OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
                    "The selected server does not support readConcern");
@@ -292,16 +311,17 @@ mongoc_cmd_parts_append_opts_idl (mongoc_cmd_parts_t *parts,
 
       /* save readConcern for later, once we know about causal consistency */
       bson_destroy (&parts->read_concern_document);
-      bson_copy_to (&opts->readConcern, &parts->read_concern_document);
+      bson_copy_to (&rw_opts->readConcern, &parts->read_concern_document);
    }
 
-   if (opts->client_session) {
+   if (rw_opts->client_session) {
       BSON_ASSERT (!parts->assembled.session);
-      parts->assembled.session = opts->client_session;
+      parts->assembled.session = rw_opts->client_session;
    }
 
-   if (!bson_concat (&parts->extra, &opts->extra)) {
-      OPTS_ERR (COMMAND_INVALID_ARG, "'opts' with extra fields is too large");
+   if (!bson_concat (&parts->extra, &rw_opts->extra)) {
+      OPTS_ERR (COMMAND_INVALID_ARG,
+                "'opts' with extra fields is too large");
    }
 
    RETURN (true);
