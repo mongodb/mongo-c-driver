@@ -208,41 +208,6 @@ _mongoc_convert_mongoc_write_bypass_document_validation_t (
    CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
 }
 
-/* TODO: delete */
-bool
-_mongoc_convert_read_concern (mongoc_client_t *client,
-                              const bson_iter_t *iter,
-                              mongoc_read_concern_t **rc,
-                              bson_error_t *error)
-{
-   bson_iter_t level;
-
-   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
-      CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
-   }
-
-   if (!bson_iter_recurse (iter, &level)) {
-      BSON_ERR ("Corrupt BSON in field \"%s\" in opts", bson_iter_key (iter));
-   }
-
-   if (!bson_iter_find (&level, "level")) {
-      CONVERSION_ERR ("No field \"level\" in field \"%s\" in opts",
-                      bson_iter_key (iter));
-   }
-
-   if (!BSON_ITER_HOLDS_UTF8 (&level)) {
-      CONVERSION_ERR ("Invalid \"%s\" level in opts, should contain string,"
-                      " not %s",
-                      bson_iter_key (iter),
-                      _mongoc_bson_type_to_str (bson_iter_type (iter)));
-   }
-
-   *rc = mongoc_read_concern_new ();
-   mongoc_read_concern_set_level (*rc, bson_iter_utf8 (iter, NULL));
-
-   return true;
-}
-
 bool
 _mongoc_convert_write_concern (mongoc_client_t *client,
                                const bson_iter_t *iter,
