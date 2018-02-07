@@ -37,6 +37,17 @@ _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
                                const char *host_and_port);
 
 bool
+_mongoc_host_list_from_string_with_err (mongoc_host_list_t *host_list,
+                                        const char *host_and_port,
+                                        bson_error_t *error);
+
+bool
+_mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *host_list,
+                                          const char *host,
+                                          uint16_t port,
+                                          bson_error_t *error);
+
+bool
 _mongoc_host_list_equal (const mongoc_host_list_t *host_a,
                          const mongoc_host_list_t *host_b);
 

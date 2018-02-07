@@ -48,6 +48,7 @@ test_mongoc_uri_new (void)
                             "=GSSAPI&" MONGOC_URI_AUTHMECHANISMPROPERTIES
                             "=\x80:mongodb"));
    ASSERT (!mongoc_uri_new ("mongodb://::"));
+   ASSERT (!mongoc_uri_new ("mongodb://[::1]::27017/"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost::27017"));
    ASSERT (!mongoc_uri_new ("mongodb://localhost,localhost::"));
    ASSERT (!mongoc_uri_new ("mongodb://local1,local2,local3/d?k"));
@@ -838,9 +839,44 @@ test_mongoc_host_list_from_string (void)
    mongoc_host_list_t host_list = {0};
 
    /* shouldn't be parsable */
+   capture_logs (true);
    ASSERT (!_mongoc_host_list_from_string (&host_list, ":27017"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
    ASSERT (!_mongoc_host_list_from_string (&host_list, "example.com:"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
    ASSERT (!_mongoc_host_list_from_string (&host_list, "localhost:999999999"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "::1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "]:1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "[]:1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1] foo"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
 
    /* normal parsing, host and port are split, host is downcased */
    ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
@@ -889,36 +925,15 @@ test_mongoc_host_list_from_string (void)
    ASSERT_CMPSTR (host_list.host, " ");
    ASSERT (host_list.port == 1234);
 
-   ASSERT (_mongoc_host_list_from_string (&host_list, "::1234"));
-   ASSERT_CMPSTR (host_list.host_and_port, "::1234");
-   ASSERT_CMPSTR (host_list.host, ":");
-   ASSERT (host_list.port == 1234);
-
-   ASSERT (_mongoc_host_list_from_string (&host_list, "]:1234"));
-   ASSERT_CMPSTR (host_list.host_and_port, "]:1234");
-   ASSERT_CMPSTR (host_list.host, "]");
-   ASSERT (host_list.port == 1234);
-
    ASSERT (_mongoc_host_list_from_string (&host_list, "[:1234"));
    ASSERT_CMPSTR (host_list.host_and_port, "[:1234");
    ASSERT_CMPSTR (host_list.host, "[");
-   ASSERT (host_list.port == 1234);
-
-   ASSERT (_mongoc_host_list_from_string (&host_list, "[]:1234"));
-   ASSERT_CMPSTR (host_list.host_and_port, "[]:1234");
-   ASSERT_CMPSTR (host_list.host, "");
    ASSERT (host_list.port == 1234);
 
    ASSERT (_mongoc_host_list_from_string (&host_list, "[:]"));
    ASSERT_CMPSTR (host_list.host_and_port, "[:]:27017");
    ASSERT_CMPSTR (host_list.host, ":");
    ASSERT (host_list.port == 27017);
-
-   ASSERT (_mongoc_host_list_from_string (&host_list, "[::1] foo"));
-   ASSERT_CMPSTR (host_list.host_and_port, "[::1] foo:27017");
-   ASSERT_CMPSTR (host_list.host, "[::1] foo");
-   ASSERT (host_list.port == 27017);
-   ASSERT (host_list.family == AF_INET);
 }
 
 

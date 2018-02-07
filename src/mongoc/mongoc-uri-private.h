@@ -33,7 +33,7 @@ mongoc_uri_append_host (mongoc_uri_t *uri,
                         uint16_t port,
                         bson_error_t *error);
 bool
-mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase);
+mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str);
 bool
 mongoc_uri_parse_options (mongoc_uri_t *uri,
                           const char *str,

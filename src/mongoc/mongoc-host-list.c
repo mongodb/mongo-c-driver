@@ -108,42 +108,119 @@ _mongoc_host_list_destroy_all (mongoc_host_list_t *host)
 bool
 _mongoc_host_list_from_string (mongoc_host_list_t *link_, const char *address)
 {
+   bson_error_t error = {0};
+   bool r = _mongoc_host_list_from_string_with_err (link_, address, &error);
+   if (!r) {
+      MONGOC_ERROR ("Could not parse address %s: %s", address, error.message);
+      return false;
+   }
+   return true;
+}
+
+bool
+_mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
+                                        const char *address,
+                                        bson_error_t *error)
+{
    char *close_bracket;
-   bool bracket_at_end;
    char *sport;
    uint16_t port;
-
-   if (*address == '\0') {
-      MONGOC_ERROR ("empty address in _mongoc_host_list_from_string");
-      BSON_ASSERT (false);
-   }
+   char *host;
+   bool ret;
+   bool ipv6 = false;
 
    close_bracket = strchr (address, ']');
-   bracket_at_end = close_bracket && *(close_bracket + 1) == '\0';
-   sport = strrchr (address, ':');
 
-   if (sport < close_bracket || (close_bracket && sport != close_bracket + 1)) {
-      /* ignore colons within IPv6 address like "[fe80::1]" */
-      sport = NULL;
+   /* if this is an ipv6 address. */
+   if (close_bracket) {
+      /* if present, the port should immediately follow after ] */
+      sport = strchr (close_bracket, ':');
+      if (sport > close_bracket + 1) {
+         return false;
+      }
+
+      /* otherwise ] should be the last char. */
+      if (!sport && *(close_bracket + 1) != '\0') {
+         return false;
+      }
+
+      if (*address != '[') {
+         return false;
+      }
+
+      ipv6 = true;
+   }
+   /* otherwise, just find the first : */
+   else {
+      sport = strchr (address, ':');
    }
 
    /* like "example.com:27019" or "[fe80::1]:27019", but not "[fe80::1]" */
    if (sport) {
+      if (sport == address) {
+         /* bad address like ":27017" */
+         return false;
+      }
+
       if (!mongoc_parse_port (&port, sport + 1)) {
          return false;
       }
 
-      link_->port = port;
+      /* if this is an ipv6 address, strip the [ and ] */
+      if (ipv6) {
+         host = bson_strndup (address + 1, close_bracket - address - 1);
+      } else {
+         host = bson_strndup (address, sport - address);
+      }
    } else {
-      link_->port = MONGOC_DEFAULT_PORT;
+      /* if this is an ipv6 address, strip the [ and ] */
+      if (ipv6) {
+         host = bson_strndup (address + 1, close_bracket - address - 1);
+      } else {
+         host = bson_strdup (address);
+      }
+      port = MONGOC_DEFAULT_PORT;
    }
 
-   /* like "[fe80::1]:27019" or ""[fe80::1]" */
-   if (*address == '[' && (bracket_at_end || (close_bracket && sport))) {
+   ret = _mongoc_host_list_from_hostport_with_err (link_, host, port, error);
+
+   bson_free (host);
+
+   return ret;
+}
+
+bool
+_mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
+                                          const char *host,
+                                          uint16_t port,
+                                          bson_error_t *error)
+{
+   size_t host_len = strlen (host);
+   link_->port = port;
+
+   if (host_len == 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                      "Empty hostname in URI");
+      return false;
+   }
+
+   if (host_len > BSON_HOST_NAME_MAX) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                      "Hostname provided in URI is too long, max is %d chars",
+                      BSON_HOST_NAME_MAX);
+      return false;
+   }
+
+   bson_strncpy (link_->host, host, host_len + 1);
+
+   /* like "fe80::1" or "::1" */
+   if (strchr (host, ':')) {
       link_->family = AF_INET6;
-      bson_strncpy (link_->host,
-                    address + 1,
-                    BSON_MIN (close_bracket - address, sizeof link_->host));
+
       mongoc_lowercase (link_->host, link_->host);
       bson_snprintf (link_->host_and_port,
                      sizeof link_->host_and_port,
@@ -151,33 +228,11 @@ _mongoc_host_list_from_string (mongoc_host_list_t *link_, const char *address)
                      link_->host,
                      link_->port);
 
-   } else if (strchr (address, '/') && strstr (address, ".sock")) {
+   } else if (strchr (host, '/') && strstr (host, ".sock")) {
       link_->family = AF_UNIX;
-
-      if (sport) {
-         /* weird: "/tmp/mongodb.sock:1234", ignore the port number */
-         bson_strncpy (link_->host,
-                       address,
-                       BSON_MIN (sport - address + 1, sizeof link_->host));
-      } else {
-         bson_strncpy (link_->host, address, sizeof link_->host);
-      }
-
-      bson_strncpy (
-         link_->host_and_port, link_->host, sizeof link_->host_and_port);
-   } else if (sport == address) {
-      /* bad address like ":27017" */
-      return false;
+      bson_strncpy (link_->host_and_port, link_->host, host_len + 1);
    } else {
       link_->family = AF_INET;
-
-      if (sport) {
-         bson_strncpy (link_->host,
-                       address,
-                       BSON_MIN (sport - address + 1, sizeof link_->host));
-      } else {
-         bson_strncpy (link_->host, address, sizeof link_->host);
-      }
 
       mongoc_lowercase (link_->host, link_->host);
       bson_snprintf (link_->host_and_port,

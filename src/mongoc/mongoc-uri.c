@@ -35,7 +35,7 @@
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-compression-private.h"
-
+#include "utlist.h"
 
 struct _mongoc_uri_t {
    char *str;
@@ -151,6 +151,27 @@ validate_srv_result (mongoc_uri_t *uri, const char *host, bson_error_t *error)
    return true;
 }
 
+bool
+mongoc_uri_append_host_and_port (mongoc_uri_t *uri,
+                                 const char *host_and_port,
+                                 bson_error_t *error)
+{
+   bool r;
+   mongoc_host_list_t *link = bson_malloc0 (sizeof (mongoc_host_list_t));
+   r = _mongoc_host_list_from_string_with_err (link, host_and_port, error);
+   if (!r) {
+      bson_free (link);
+      return false;
+   }
+
+   if (uri->is_srv && !validate_srv_result (uri, link->host, error)) {
+      bson_free (link);
+      return false;
+   }
+
+   LL_APPEND (uri->hosts, link);
+   return true;
+}
 
 bool
 mongoc_uri_append_host (mongoc_uri_t *uri,
@@ -158,54 +179,20 @@ mongoc_uri_append_host (mongoc_uri_t *uri,
                         uint16_t port,
                         bson_error_t *error)
 {
-   mongoc_host_list_t *iter;
-   mongoc_host_list_t *link_;
-
-   if (strlen (host) > BSON_HOST_NAME_MAX) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                      "Hostname provided in URI is too long, max is %d chars",
-                      BSON_HOST_NAME_MAX);
+   bool r;
+   mongoc_host_list_t *link = bson_malloc0 (sizeof (mongoc_host_list_t));
+   r = _mongoc_host_list_from_hostport_with_err (link, host, port, error);
+   if (!r) {
+      bson_free (link);
       return false;
    }
 
-   if (uri->is_srv && !validate_srv_result (uri, host, error)) {
+   if (uri->is_srv && !validate_srv_result (uri, link->host, error)) {
+      bson_free (link);
       return false;
    }
 
-   link_ = (mongoc_host_list_t *) bson_malloc0 (sizeof *link_);
-   bson_strncpy (link_->host, host, sizeof link_->host);
-   if (strchr (host, ':')) {
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "[%s]:%hu",
-                     host,
-                     port);
-      link_->family = AF_INET6;
-   } else if (strstr (host, ".sock")) {
-      bson_snprintf (
-         link_->host_and_port, sizeof link_->host_and_port, "%s", host);
-      link_->family = AF_UNIX;
-   } else {
-      bson_snprintf (link_->host_and_port,
-                     sizeof link_->host_and_port,
-                     "%s:%hu",
-                     host,
-                     port);
-      link_->family = AF_INET;
-   }
-   link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
-   link_->port = port;
-
-   if ((iter = uri->hosts)) {
-      for (; iter && iter->next; iter = iter->next) {
-      }
-      iter->next = link_;
-   } else {
-      uri->hosts = link_;
-   }
-
+   LL_APPEND (uri->hosts, link);
    return true;
 }
 
@@ -390,94 +377,37 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri,
    return true;
 }
 
-static bool
-mongoc_uri_parse_host6 (mongoc_uri_t *uri, const char *str)
-{
-   uint16_t port = MONGOC_DEFAULT_PORT;
-   const char *portstr;
-   const char *end_host;
-   char *hostname;
-   bson_error_t error;
-   bool r;
-
-   if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
-      if (!mongoc_parse_port (&port, portstr + 1)) {
-         return false;
-      }
-   }
-
-   hostname = scan_to_unichar (str + 1, ']', "", &end_host);
-
-   mongoc_uri_do_unescape (&hostname);
-   if (!hostname) {
-      return false;
-   }
-
-   mongoc_lowercase (hostname, hostname);
-   r = mongoc_uri_append_host (uri, hostname, port, &error);
-   if (!r) {
-      MONGOC_ERROR ("%s", error.message);
-   }
-
-   bson_free (hostname);
-
-   return r;
-}
-
-
 bool
-mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str, bool downcase)
+mongoc_uri_parse_host (mongoc_uri_t *uri, const char *host_and_port_in)
 {
-   uint16_t port;
-   const char *end_host;
-   char *hostname;
-   bson_error_t error;
+   char *host_and_port = bson_strdup (host_and_port_in);
+   bson_error_t err = {0};
    bool r;
 
-   if (*str == '\0') {
-      MONGOC_WARNING ("Empty hostname in URI");
-      return false;
-   }
-
-   if (*str == '[' && strchr (str, ']')) {
-      return mongoc_uri_parse_host6 (uri, str);
-   }
-
-   if ((hostname = scan_to_unichar (str, ':', "?/,", &end_host))) {
-      end_host++;
-      if (!mongoc_parse_port (&port, end_host)) {
-         bson_free (hostname);
-         return false;
-      }
-   } else {
-      hostname = bson_strdup (str);
-      port = MONGOC_DEFAULT_PORT;
-   }
-
-   if (mongoc_uri_has_unescaped_chars (hostname, "/")) {
+   /* unescape host. It doesn't hurt including port. */
+   if (mongoc_uri_has_unescaped_chars (host_and_port, "/")) {
       MONGOC_WARNING ("Unix Domain Sockets must be escaped (e.g. / = %%2F)");
-      bson_free (hostname);
+      bson_free (host_and_port);
       return false;
    }
 
-   mongoc_uri_do_unescape (&hostname);
-   if (!hostname) {
+   mongoc_uri_do_unescape (&host_and_port);
+   if (!host_and_port) {
       /* invalid */
+      bson_free (host_and_port);
       return false;
    }
 
-   if (downcase) {
-      mongoc_lowercase (hostname, hostname);
-   }
+   r = mongoc_uri_append_host_and_port (uri, host_and_port, &err);
 
-   r = mongoc_uri_append_host (uri, hostname, port, &error);
    if (!r) {
-      MONGOC_ERROR ("%s", error.message);
+      MONGOC_ERROR ("%s", err.message);
+      bson_free (host_and_port);
+      return false;
    }
 
-   bson_free (hostname);
-
-   return r;
+   bson_free (host_and_port);
+   return true;
 }
 
 
@@ -548,11 +478,7 @@ mongoc_uri_parse_hosts (mongoc_uri_t *uri, const char *hosts)
          s = bson_strdup (next);
          next = NULL;
       }
-      if (ends_with (s, ".sock")) {
-         if (!mongoc_uri_parse_host (uri, s, false /* downcase */)) {
-            goto error;
-         }
-      } else if (!mongoc_uri_parse_host (uri, s, true /* downcase */)) {
+      if (!mongoc_uri_parse_host (uri, s)) {
          goto error;
       }
       bson_free (s);
