@@ -692,7 +692,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
 #endif
 
    if (!client) {
-      /* Only usd by the Mock Server.
+      /* Only used by the Mock Server.
        * Set a callback to get the SNI, if provided */
       SSL_CTX_set_tlsext_servername_callback (ssl_ctx,
                                               _mongoc_stream_tls_openssl_sni);
