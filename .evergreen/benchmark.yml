@@ -33,12 +33,12 @@ c_driver_variables:
           set -o verbose
           CMAKE=/opt/cmake/bin/cmake
           cd src/libbson
-          $CMAKE -DCMAKE_INSTALL_PREFIX=../../mongoc . && make -j8 && make install
+          $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../mongoc . && make -j8 && make install
           cd ../..
-          $CMAKE -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
+          $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone https://github.com/mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
-          $CMAKE -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
+          $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
 
     mongodb:
       start_mongod_command: &start_mongod_command
