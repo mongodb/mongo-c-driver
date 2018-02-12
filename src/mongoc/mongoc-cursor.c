@@ -1156,6 +1156,7 @@ _mongoc_cursor_parse_opts_for_op_query (mongoc_cursor_t *cursor,
                             MONGOC_ERROR_BSON_INVALID,
                             "Error adding \"%s\" to query",
                             dollar_modifier);
+            bson_free (dollar_modifier);
             return NULL;
          }
          bson_free (dollar_modifier);
