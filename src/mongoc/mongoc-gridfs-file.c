@@ -272,7 +272,9 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs, const bson_t *data)
             GOTO (failure);
          }
          bson_iter_array (&iter, &buf_len, &buf);
-         bson_init_static (&file->bson_aliases, buf, buf_len);
+         if (!bson_init_static (&file->bson_aliases, buf, buf_len)) {
+            GOTO (failure);
+         }
       } else if (0 == strcmp (key, "metadata")) {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             GOTO (failure);
