@@ -1,3 +1,4 @@
+#include <mongoc-cursor-private.h>
 #include "mongoc.h"
 #include "mongoc-util-private.h"
 #include "mongoc-collection-private.h"
@@ -56,14 +57,14 @@ test_session_no_crypto (void *ctx)
    } while (0)
 
 
-#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)                              \
-   do {                                                                       \
-      /* need a match context when checking that lsids DON'T match */         \
-      char errmsg[1000];                                                      \
-      match_ctx_t ctx = {0};                                                  \
-      ctx.errmsg = errmsg;                                                    \
-      ctx.errmsg_len = sizeof (errmsg);                                       \
-      BSON_ASSERT (!match_bson_with_ctx ((_lsid_a), (_lsid_b), false, &ctx)); \
+#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)                               \
+   do {                                                                        \
+      /* need a match context when checking that lsids DON'T match */          \
+      char errmsg[1000];                                                       \
+      match_ctx_t _ctx = {0};                                                  \
+      _ctx.errmsg = errmsg;                                                    \
+      _ctx.errmsg_len = sizeof (errmsg);                                       \
+      BSON_ASSERT (!match_bson_with_ctx ((_lsid_a), (_lsid_b), false, &_ctx)); \
    } while (0)
 
 
@@ -1934,6 +1935,65 @@ test_find_indexes (session_test_t *test)
 }
 
 
+#define ASSERT_POOL_SIZE(_topology, _expected_size)             \
+   do {                                                         \
+      const mongoc_server_session_t *_tmp;                      \
+      int _n_sessions;                                          \
+      CDL_COUNT ((_topology)->session_pool, _tmp, _n_sessions); \
+      ASSERT_CMPINT (_n_sessions, ==, (int) (_expected_size));   \
+   } while (0)
+
+
+static void
+test_cursor_implicit_session (void *ctx)
+{
+   session_test_t *test;
+   mongoc_topology_t *topology;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   mongoc_client_session_t *cs;
+   bson_t find_lsid;
+   bson_error_t error;
+
+   test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
+   test->expect_explicit_lsid = false;
+   topology = test->client->topology;
+   cs = mongoc_client_start_session (test->client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+
+   mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
+   insert_10_docs (test);
+   cursor = mongoc_collection_find_with_opts (
+      test->collection, tmp_bson ("{}"), &test->opts, NULL);
+
+   BSON_ASSERT (!cursor->client_session);
+   mongoc_cursor_set_batch_size (cursor, 2);
+
+   /* start the cursor. it makes an implicit session & sends it with "find" */
+   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (cursor->client_session);
+   BSON_ASSERT (!cursor->explicit_session);
+   bson_copy_to (&cursor->client_session->server_session->lsid, &find_lsid);
+   ASSERT_POOL_SIZE (topology, 0);
+   ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
+
+   /* push a new server session into the pool */
+   mongoc_client_session_destroy (cs);
+   ASSERT_POOL_SIZE (topology, 1);
+   ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);
+
+   /* "getMore" uses the same lsid as "find" did */
+   bson_reinit (&test->sent_lsid);
+   ASSERT_CURSOR_COUNT (9, cursor);
+   ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   bson_destroy (&find_lsid);
+   mongoc_cursor_destroy (cursor);
+   session_test_destroy (test);
+}
+
+
 static void
 test_cmd_error (void *ctx)
 {
@@ -2265,6 +2325,13 @@ test_session_install (TestSuite *suite)
       suite, "/Session/collection_names", test_collection_names, true);
    add_session_test (suite, "/Session/bulk", test_bulk, false);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
+   TestSuite_AddFull (suite,
+                      "/Session/cursor_implicit_session",
+                      test_cursor_implicit_session,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/Session/cmd_error",
                       test_cmd_error,
