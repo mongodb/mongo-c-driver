@@ -580,6 +580,8 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 {
    static const char *timeout_msg =
       "No suitable servers found: `serverSelectionTimeoutMS` expired";
+
+   mongoc_topology_scanner_t *ts;
    int r;
    int64_t local_threshold_ms;
    mongoc_server_description_t *selected_server = NULL;
@@ -598,9 +600,11 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    int64_t expire_at;   /* when server selection timeout expires */
 
    BSON_ASSERT (topology);
-   if (!mongoc_topology_scanner_valid (topology->scanner)) {
+   ts = topology->scanner;
+
+   if (!mongoc_topology_scanner_valid (ts)) {
       if (error) {
-         mongoc_topology_scanner_get_error (topology->scanner, error);
+         mongoc_topology_scanner_get_error (ts, error);
          error->domain = MONGOC_ERROR_SERVER_SELECTION;
          error->code = MONGOC_ERROR_SERVER_SELECTION_FAILURE;
       }
@@ -640,12 +644,21 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                   &scanner_error,
                   error);
 
-               topology->stale = true;
                return 0;
             }
 
             sleep_usec = scan_ready - loop_end;
             if (sleep_usec > 0) {
+               if (try_once &&
+                   mongoc_topology_scanner_in_cooldown (ts, scan_ready)) {
+                  _mongoc_server_selection_error (
+                     "No servers yet eligible for rescan",
+                     &scanner_error,
+                     error);
+
+                  return 0;
+               }
+
                _mongoc_usleep (sleep_usec);
             }
 
@@ -713,7 +726,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                     &topology->mutex,
                                     (expire_at - loop_start) / 1000);
 
-         mongoc_topology_scanner_get_error (topology->scanner, &scanner_error);
+         mongoc_topology_scanner_get_error (ts, &scanner_error);
          mongoc_mutex_unlock (&topology->mutex);
 
 #ifdef _WIN32

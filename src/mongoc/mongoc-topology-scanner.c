@@ -508,7 +508,7 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
       }
 
       (void) mongoc_socket_connect (
-             sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, 0);
+         sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, 0);
 
       break;
    }
@@ -654,6 +654,62 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_scanner_node_in_cooldown --
+ *
+ *      Return true if @node has experienced a network error attempting
+ *      to call "ismaster" less than 5 seconds before @when, a timestamp in
+ *      microseconds.
+ *
+ *      Server Discovery and Monitoring Spec: "After a single-threaded client
+ *      gets a network error trying to check a server, the client skips
+ *      re-checking the server until cooldownMS has passed. This avoids
+ *      spending connectTimeoutMS on each unavailable server during each scan.
+ *      This value MUST be 5000 ms, and it MUST NOT be configurable."
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
+                                          int64_t when)
+{
+   if (node->last_failed == -1) {
+      return false; /* node is new, or connected */
+   }
+
+   return node->last_failed + 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS >= when;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_in_cooldown --
+ *
+ *      Return true if all nodes will be in cooldown at time @when, a
+ *      timestamp in microseconds.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
+                                     int64_t when)
+{
+   mongoc_topology_scanner_node_t *node;
+
+   DL_FOREACH (ts->nodes, node)
+   {
+      if (!mongoc_topology_scanner_node_in_cooldown (node, when)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_scanner_start --
  *
  *      Initializes the scanner and begins a full topology check. This
@@ -681,24 +737,23 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                bool obey_cooldown)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   int64_t cooldown = INT64_MAX;
+   bool skip;
+   int64_t now;
+
    BSON_ASSERT (ts);
 
    if (ts->in_progress) {
       return;
    }
 
-
-   if (obey_cooldown) {
-      /* when current cooldown period began */
-      cooldown =
-         bson_get_monotonic_time () - 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS;
-   }
+   now = bson_get_monotonic_time ();
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
-      /* check node if it last failed before current cooldown period began */
-      if (node->last_failed < cooldown) {
+      skip =
+         obey_cooldown && mongoc_topology_scanner_node_in_cooldown (node, now);
+
+      if (!skip) {
          if (mongoc_topology_scanner_node_setup (node, &node->last_error)) {
             BSON_ASSERT (!node->cmd);
             _begin_ismaster_cmd (ts, node, timeout_msec);

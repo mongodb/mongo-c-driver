@@ -495,27 +495,20 @@ test_max_wire_version_race_condition (void *ctx)
 
 
 static void
-test_cooldown_standalone (void *ctx)
+test_cooldown_standalone (void)
 {
    mock_server_t *server;
-   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_read_prefs_t *primary_pref;
    future_t *future;
    bson_error_t error;
    request_t *request;
    mongoc_server_description_t *sd;
-
-   if (!TestSuite_CheckMockServerAllowed ()) {
-      return;
-   }
+   int64_t start;
 
    server = mock_server_new ();
    mock_server_run (server);
-   uri = mongoc_uri_copy (mock_server_get_uri (server));
-   /* anything less than minHeartbeatFrequencyMS=500 is irrelevant */
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* first ismaster fails, selection fails */
@@ -528,14 +521,32 @@ test_cooldown_standalone (void *ctx)
    request_destroy (request);
    future_destroy (future);
 
+   /* second selection doesn't try to call ismaster: we're in cooldown */
+   start = bson_get_monotonic_time ();
+   sd = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ, primary_pref, &error);
+   BSON_ASSERT (!sd);
+   /* waited less than 500ms (minHeartbeatFrequencyMS), in fact
+    * didn't wait at all since all nodes are in cooldown */
+   ASSERT_CMPINT64 (bson_get_monotonic_time () - start, <, (int64_t) 500000);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No servers yet eligible for rescan");
+
    _mongoc_usleep (1000 * 1000); /* 1 second */
 
-   /* second selection doesn't try to call ismaster: we're in cooldown */
+   /* third selection doesn't try to call ismaster: we're still in cooldown */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    mock_server_set_request_timeout_msec (server, 100);
    BSON_ASSERT (!mock_server_receives_ismaster (server)); /* no ismaster call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No suitable servers");
+
    future_destroy (future);
    mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
@@ -557,13 +568,12 @@ test_cooldown_standalone (void *ctx)
    mongoc_server_description_destroy (sd);
    mongoc_read_prefs_destroy (primary_pref);
    mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
 
 
 static void
-test_cooldown_rs (void *ctx)
+test_cooldown_rs (void)
 {
    mock_server_t *servers[2]; /* two secondaries, no primary */
    char *uri_str;
@@ -576,10 +586,6 @@ test_cooldown_rs (void *ctx)
    bson_error_t error;
    request_t *request;
    mongoc_server_description_t *sd;
-
-   if (!TestSuite_CheckMockServerAllowed ()) {
-      return;
-   }
 
    for (i = 0; i < 2; i++) {
       servers[i] = mock_server_new ();
@@ -670,6 +676,62 @@ test_cooldown_rs (void *ctx)
    bson_free (uri_str);
    mock_server_destroy (servers[0]);
    mock_server_destroy (servers[1]);
+}
+
+
+/* test single-threaded client's cooldown with serverSelectionTryOnce false */
+static void
+test_cooldown_retry (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *primary_pref;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_server_description_t *sd;
+   int64_t start;
+   int64_t duration;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+   client = mongoc_client_new_from_uri (uri);
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   future = future_topology_select (
+      client->topology, MONGOC_SS_READ, primary_pref, &error);
+
+   /* first ismaster fails */
+   request = mock_server_receives_ismaster (server);
+   BSON_ASSERT (request);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* after cooldown passes, driver sends another ismaster */
+   start = bson_get_monotonic_time ();
+   request = mock_server_receives_ismaster (server);
+   BSON_ASSERT (request);
+   duration = bson_get_monotonic_time () - start;
+   /* waited at least cooldownMS, but not unreasonably longer than that */
+   ASSERT_CMPINT64 (duration, >, (int64_t) 5 * 1000 * 1000);
+   ASSERT_CMPINT64 (duration, <, (int64_t) 10 * 1000 * 1000);
+
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5 }");
+   sd = future_get_mongoc_server_description_ptr (future);
+   ASSERT_OR_PRINT (sd, error);
+   request_destroy (request);
+   future_destroy (future);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (primary_pref);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
 }
 
 
@@ -1510,18 +1572,24 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
-   TestSuite_AddFull (suite,
-                      "/Topology/cooldown/standalone",
-                      test_cooldown_standalone,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
-   TestSuite_AddFull (suite,
-                      "/Topology/cooldown/rs",
-                      test_cooldown_rs,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/cooldown/standalone",
+                                test_cooldown_standalone,
+                                NULL,
+                                NULL,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/cooldown/rs",
+                                test_cooldown_rs,
+                                NULL,
+                                NULL,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/cooldown/retry",
+                                test_cooldown_retry,
+                                NULL,
+                                NULL,
+                                test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Topology/multiple_selection_errors",
                       test_multiple_selection_errors,

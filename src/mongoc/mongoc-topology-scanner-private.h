@@ -128,6 +128,10 @@ void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
                                       bool failed);
 
+bool
+mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
+                                     int64_t when);
+
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                int64_t timeout_msec,
