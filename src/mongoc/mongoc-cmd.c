@@ -39,7 +39,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->prohibit_lsid = false;
    parts->allow_txn_number = MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN;
    parts->is_retryable_write = false;
-   parts->has_implicit_session = false;
+   parts->has_temp_session = false;
    parts->client = client;
    bson_init (&parts->read_concern_document);
    bson_init (&parts->extra);
@@ -76,7 +76,6 @@ mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
    BSON_ASSERT (parts);
    BSON_ASSERT (!parts->assembled.command);
    BSON_ASSERT (!parts->assembled.session);
-   BSON_ASSERT (bson_empty (&parts->extra));
 
    parts->assembled.session = cs;
 }
@@ -622,7 +621,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
          if (cs) {
             parts->assembled.session = cs;
-            parts->has_implicit_session = true;
+            parts->has_temp_session = true;
          }
       }
 
@@ -724,7 +723,8 @@ mongoc_cmd_parts_cleanup (mongoc_cmd_parts_t *parts)
    bson_destroy (&parts->extra);
    bson_destroy (&parts->assembled_body);
 
-   if (parts->has_implicit_session) {
+   if (parts->has_temp_session) {
+      /* client session returns its server session to server session pool */
       mongoc_client_session_destroy (parts->assembled.session);
    }
 }
