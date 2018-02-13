@@ -25,7 +25,10 @@ THE SOFTWARE.
 
 from docutils import nodes, utils
 from sphinx.environment import NoUri
-from sphinx.util.compat import Directive
+try:
+    from sphinx.util.compat import Directive
+except ImportError:
+    from docutils.parsers.rst import Directive
 
 
 def get_tags(s):
