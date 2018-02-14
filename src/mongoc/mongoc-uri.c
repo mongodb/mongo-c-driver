@@ -157,19 +157,19 @@ mongoc_uri_append_host_and_port (mongoc_uri_t *uri,
                                  bson_error_t *error)
 {
    bool r;
-   mongoc_host_list_t *link = bson_malloc0 (sizeof (mongoc_host_list_t));
-   r = _mongoc_host_list_from_string_with_err (link, host_and_port, error);
+   mongoc_host_list_t *link_ = bson_malloc0 (sizeof (mongoc_host_list_t));
+   r = _mongoc_host_list_from_string_with_err (link_, host_and_port, error);
    if (!r) {
-      bson_free (link);
+      bson_free (link_);
       return false;
    }
 
-   if (uri->is_srv && !validate_srv_result (uri, link->host, error)) {
-      bson_free (link);
+   if (uri->is_srv && !validate_srv_result (uri, link_->host, error)) {
+      bson_free (link_);
       return false;
    }
 
-   LL_APPEND (uri->hosts, link);
+   LL_APPEND (uri->hosts, link_);
    return true;
 }
 
@@ -180,19 +180,19 @@ mongoc_uri_append_host (mongoc_uri_t *uri,
                         bson_error_t *error)
 {
    bool r;
-   mongoc_host_list_t *link = bson_malloc0 (sizeof (mongoc_host_list_t));
-   r = _mongoc_host_list_from_hostport_with_err (link, host, port, error);
+   mongoc_host_list_t *link_ = bson_malloc0 (sizeof (mongoc_host_list_t));
+   r = _mongoc_host_list_from_hostport_with_err (link_, host, port, error);
    if (!r) {
-      bson_free (link);
+      bson_free (link_);
       return false;
    }
 
-   if (uri->is_srv && !validate_srv_result (uri, link->host, error)) {
-      bson_free (link);
+   if (uri->is_srv && !validate_srv_result (uri, link_->host, error)) {
+      bson_free (link_);
       return false;
    }
 
-   LL_APPEND (uri->hosts, link);
+   LL_APPEND (uri->hosts, link_);
    return true;
 }
 
