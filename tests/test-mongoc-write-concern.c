@@ -338,9 +338,15 @@ test_write_concern_from_iterator (void)
    _test_write_concern_from_iterator (
       "{'writeConcern': {'j': false}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -2}}", true, true);
+      "{'writeConcern': {'w': -1}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'w': -3}}", true, false);
+      "{'writeConcern': {'w': -2}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': -3}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': -4}}", false, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'w': -5}}", false, false);
    _test_write_concern_from_iterator (
       "{'writeConcern': {'w': 'majority', 'wtimeout': 42}}", true, false);
    _test_write_concern_from_iterator (

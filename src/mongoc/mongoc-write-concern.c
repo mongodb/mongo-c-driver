@@ -517,6 +517,7 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
 {
    bson_iter_t inner;
    mongoc_write_concern_t *write_concern;
+   int32_t w;
 
    BSON_ASSERT (iter);
 
@@ -529,8 +530,12 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
    while (bson_iter_next (&inner)) {
       if (BSON_ITER_IS_KEY (&inner, "w")) {
          if (BSON_ITER_HOLDS_INT32 (&inner)) {
-            mongoc_write_concern_set_w (write_concern,
-                                        bson_iter_int32 (&inner));
+            w = bson_iter_int32 (&inner);
+            if (w < MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED) {
+               goto fail;
+            }
+
+            mongoc_write_concern_set_w (write_concern, w);
          } else if (BSON_ITER_HOLDS_UTF8 (&inner)) {
             if (!strcmp (bson_iter_utf8 (&inner, NULL), "majority")) {
                /* mongoc_write_concern_set_wmajority() only assigns wtimeout if

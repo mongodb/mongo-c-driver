@@ -92,6 +92,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-max-staleness.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-concern.c \
+	tests/test-mongoc-read-write-concern.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-retryable-writes.c \
 	tests/test-mongoc-rpc.c \
@@ -199,6 +200,7 @@ EXTRA_DIST += \
 	$(wildcard tests/json/command_monitoring/*.json) \
 	$(wildcard tests/json/initial_dns_auth/*.json) \
 	$(wildcard tests/json/initial_dns_seedlist_discovery/*.json) \
+	$(wildcard tests/json/read_write_concern/*/*.json) \
 	$(wildcard tests/json/retryable_writes/*.json) \
 	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
