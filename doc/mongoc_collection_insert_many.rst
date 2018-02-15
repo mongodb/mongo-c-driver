@@ -10,7 +10,7 @@ Synopsis
 
   bool
   mongoc_collection_insert_many (mongoc_collection_t *collection,
-                                 const bson_t *documents,
+                                 const bson_t **documents,
                                  size_t n_documents,
                                  const bson_t *opts,
                                  bson_t *reply,
