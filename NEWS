@@ -24,11 +24,10 @@ Next release
       mongoc_collection_rename_with_opts
       mongoc_database_drop_with_opts
     Write concern behavior is unchanged for regular CRUD functions.
-  * Setting a negative writeConcern level of -2 or smaller is now prohibited.
-    The special "w" values -2 through -4 are used internally, but are not
-    allowed via the "opts" parameter to functions that accept BSON options,
-    nor allowed as a "w" option in the connection URI. The deprecated "w=-1"
-    is still allowed, as a synonym for "w=0".
+  * Setting a negative writeConcern level of -2 or smaller, via the "opts"
+    parameter to functions that accept BSON options, is now prohibited. The
+    special "w" values -2 through -4 are only used internally. The deprecated
+    "w=-1" is still allowed, as a synonym for "w=0".
 
 
 mongo-c-driver 1.9.0
