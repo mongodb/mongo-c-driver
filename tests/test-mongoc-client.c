@@ -649,7 +649,7 @@ test_mongoc_client_authenticate_timeout (void *context)
       return;
    }
 
-   server = mock_server_with_autoismaster (3);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_username (uri, "user");

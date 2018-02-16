@@ -1,6 +1,9 @@
 Next release
 ============
 
+This version drops support for MongoDB 2.6 and adds the following features and
+bugfixes:
+
   * The driver now handshakes SSL connections to multiple servers in a replica
     set or sharded cluster in parallel, so long as it uses OpenSSL or Windows
     SChannel. (SSL handshakes with Apple's Secure Transport are still serial.)

@@ -32,12 +32,12 @@ test_topology_scanner_helper (uint32_t id,
       abort ();
    }
 
-   /* mock servers are configured to return their ids as max wire version + 2*/
+   /* mock servers are configured to return distinct wire versions */
    BSON_ASSERT (bson);
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "maxWireVersion"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
    max_wire_version = (uint32_t) bson_iter_int32 (&iter);
-   ASSERT_CMPINT (max_wire_version, ==, id + 2);
+   ASSERT_CMPINT (max_wire_version, ==, id + WIRE_VERSION_MIN);
 
    (*finished)--;
 }
@@ -70,7 +70,7 @@ _test_topology_scanner (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server_with_autoismaster (i + 2);
+      servers[i] = mock_server_with_autoismaster (i + WIRE_VERSION_MIN);
       mock_server_set_rand_delay (servers[i], true);
 
 #ifdef MONGOC_ENABLE_SSL

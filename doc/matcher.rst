@@ -32,7 +32,6 @@ To test this, perform a ``mongodump`` of a single collection and pipe it to the 
 .. code-block:: none
 
   $ echo "db.test.insert({hello:'world'})" | mongo
-  MongoDB shell version: 2.6.1
   connecting to: test
   WriteResult({ "nInserted" : 1 })
   bye

@@ -1446,7 +1446,8 @@ test_incompatible_error (void)
    bson_error_t error;
    char *msg;
 
-   server = mock_server_with_autoismaster (1); /* incompatible */
+   /* incompatible */
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
@@ -1459,8 +1460,8 @@ test_incompatible_error (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_PROTOCOL,
                           MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "reports wire version 1, but this version of"
-                          " libmongoc requires at least 2 (MongoDB 2.6)");
+                          "reports wire version 2, but this version of"
+                          " libmongoc requires at least 3 (MongoDB 3.0)");
 
    mock_server_auto_ismaster (server,
                               "{'ok': 1.0,"
@@ -1499,7 +1500,8 @@ test_compatible_null_error_pointer (void)
    mongoc_topology_description_t *td;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (1); /* incompatible */
+   /* incompatible */
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    td = &client->topology->description;

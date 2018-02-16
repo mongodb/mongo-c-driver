@@ -36,19 +36,18 @@ get_distro ()
    echo $DISTRO
 }
 
-# get_mongodb_download_url_for "linux-distro-version-architecture" "latest|34|32|30|28|26|24"
+# get_mongodb_download_url_for "linux-distro-version-architecture" "latest|36|34|32|30"
 # Sets EXTRACT to aproprate extract command
-# Sets MONGODB_DOWNLOAD_URL to the aproprate download url
+# Sets MONGODB_DOWNLOAD_URL to the appropriate download url
 get_mongodb_download_url_for ()
 {
    _DISTRO=$1
    _VERSION=$2
 
-   VERSION_36="3.6.0-rc7"
-   VERSION_34="3.4.9"
-   VERSION_32="3.2.16"
+   VERSION_36="3.6.1"
+   VERSION_34="3.4.13"
+   VERSION_32="3.2.19"
    VERSION_30="3.0.15"
-   VERSION_26="2.6.12"
 
    EXTRACT="tar zxf"
    # getdata matrix on:
@@ -210,7 +209,6 @@ get_mongodb_download_url_for ()
       3.4) MONGODB_DOWNLOAD_URL=$MONGODB_34 ;;
       3.2) MONGODB_DOWNLOAD_URL=$MONGODB_32 ;;
       3.0) MONGODB_DOWNLOAD_URL=$MONGODB_30 ;;
-      2.6) MONGODB_DOWNLOAD_URL=$MONGODB_26 ;;
    esac
 
    [ -z "$MONGODB_DOWNLOAD_URL" ] && MONGODB_DOWNLOAD_URL="Unknown version: $_VERSION for $_DISTRO"

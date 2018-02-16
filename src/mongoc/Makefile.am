@@ -97,7 +97,6 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-cursor-array-private.h \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
 	src/mongoc/mongoc-cursor-private.h \
-	src/mongoc/mongoc-cursor-transform-private.h \
 	src/mongoc/mongoc-cyrus-private.h \
 	src/mongoc/mongoc-database-private.h \
 	src/mongoc/mongoc-errno-private.h \
@@ -175,7 +174,6 @@ libmongoc_la_SOURCES = \
 	src/mongoc/mongoc-cursor.c \
 	src/mongoc/mongoc-cursor-array.c \
 	src/mongoc/mongoc-cursor-cursorid.c \
-	src/mongoc/mongoc-cursor-transform.c \
 	src/mongoc/mongoc-database.c \
 	src/mongoc/mongoc-find-and-modify.c \
 	src/mongoc/mongoc-host-list.c \

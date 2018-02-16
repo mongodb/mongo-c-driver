@@ -1296,11 +1296,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
    if (!mechanism) {
-      if (sd->max_wire_version < WIRE_VERSION_SCRAM_DEFAULT) {
-         mechanism = "MONGODB-CR";
-      } else {
-         mechanism = "SCRAM-SHA-1";
-      }
+      mechanism = "SCRAM-SHA-1";
    }
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {

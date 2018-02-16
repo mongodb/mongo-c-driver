@@ -267,7 +267,7 @@ test_bulk_error (void)
    mock_server_t *mock_server;
    mongoc_client_t *client;
 
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
 
@@ -305,7 +305,7 @@ test_bulk_error_unordered (void)
       bson_destroy (&opts);
       return;
    }
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_WRITE_CMD);
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
@@ -2557,8 +2557,7 @@ _test_write_concern (bool ordered, bool multi_err)
    int32_t first_err;
    int32_t second_err;
 
-   /* set wire protocol version for legacy writes or write commands */
-   mock_server = mock_server_with_autoismaster (3);
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -2701,8 +2700,7 @@ _test_write_concern_err_api (int32_t error_api_version)
    request_t *request;
    uint32_t expected_code;
 
-   /* set wire protocol version for legacy writes or write commands */
-   mock_server = mock_server_with_autoismaster (3);
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    ASSERT (mongoc_client_set_error_api (client, error_api_version));
@@ -2834,8 +2832,7 @@ _test_wtimeout_plus_duplicate_key_err (void)
    future_t *future;
    request_t *request;
 
-   /* set wire protocol version for legacy writes or write commands */
-   mock_server = mock_server_with_autoismaster (3);
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -3806,8 +3803,8 @@ _test_bulk_hint (bool pooled, bool use_primary)
    future_t *future;
    request_t *request;
 
-   /* primary, 2 secondaries. set wire version for legacy writes / write cmds */
-   rs = mock_rs_with_autoismaster (3, true, 2, 0);
+   /* primary, 2 secondaries */
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN, true, 2, 0);
    mock_rs_run (rs);
 
    if (pooled) {

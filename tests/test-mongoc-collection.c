@@ -893,8 +893,7 @@ test_insert_command_keys (void)
    future_t *future;
    request_t *request;
 
-   /* maxWireVersion 3 allows write commands */
-   server = mock_server_with_autoismaster (3);
+   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
@@ -1620,7 +1619,6 @@ test_index_w_write_concern ()
    bson_t *opts = NULL;
    bool result;
    bool wire_version_5;
-   bool at_least_2 = test_framework_max_wire_version_at_least (2);
    bool is_replicaset = test_framework_is_replset ();
    bool is_mongos = test_framework_is_mongos ();
 
@@ -1675,13 +1673,7 @@ test_index_w_write_concern ()
    ASSERT (bson_validate (&reply, 0, NULL));
    result = mongoc_collection_drop_index (collection, "hello_1", &error);
    ASSERT_OR_PRINT (result, error);
-   if (at_least_2) {
-      ASSERT (!bson_empty (&reply));
-   } else {
-      /* On very old versions of the server, create_index_with_write_concern
-       * will give an empty reply even if the call succeeds */
-      ASSERT (bson_empty (&reply));
-   }
+   ASSERT (!bson_empty (&reply));
    bson_destroy (&reply);
 
    /* writeConcern that will result in writeConcernError */
@@ -1711,11 +1703,7 @@ test_index_w_write_concern ()
          ASSERT (!error.domain);
       }
 
-      if (at_least_2) {
-         ASSERT (!bson_empty (&reply));
-      } else {
-         ASSERT (bson_empty (&reply));
-      }
+      ASSERT (!bson_empty (&reply));
       bson_destroy (&reply);
    }
 
@@ -2928,7 +2916,7 @@ test_aggregate_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_AGG_CURSOR,
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
                                    true /* has primary */,
                                    1 /* secondary   */,
                                    0 /* arbiters    */);
@@ -2979,7 +2967,7 @@ test_aggregate_w_server_id_sharded (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (WIRE_VERSION_AGG_CURSOR);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -3408,7 +3396,7 @@ test_find_and_modify_write_concern_wire_32 (void)
 static void
 test_find_and_modify_write_concern_wire_pre_32 (void)
 {
-   test_find_and_modify_write_concern (2);
+   test_find_and_modify_write_concern (3);
 }
 
 static void
@@ -4393,7 +4381,7 @@ test_aggregate_secondary_sharded (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_mongos_new (2 /* wire version */);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -4543,7 +4531,6 @@ test_aggregate_with_collation (int wire)
    const bson_t *doc;
    bson_error_t error;
 
-   /* wire protocol version 0 */
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));

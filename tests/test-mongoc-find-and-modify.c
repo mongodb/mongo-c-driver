@@ -293,7 +293,7 @@ test_find_and_modify_write_concern_wire_32 (void)
 static void
 test_find_and_modify_write_concern_wire_pre_32 (void)
 {
-   test_find_and_modify_write_concern (2);
+   test_find_and_modify_write_concern (3);
 }
 
 static void

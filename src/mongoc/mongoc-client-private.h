@@ -42,15 +42,9 @@
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 2
+#define WIRE_VERSION_MIN 3
 #define WIRE_VERSION_MAX 6
 
-/* first version that supported aggregation cursors */
-#define WIRE_VERSION_AGG_CURSOR 1
-/* first version that supported "insert", "update", "delete" commands */
-#define WIRE_VERSION_WRITE_CMD 2
-/* first version when SCRAM-SHA-1 replaced MONGODB-CR as default auth mech */
-#define WIRE_VERSION_SCRAM_DEFAULT 3
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
 /* first version with "killCursors" command */

@@ -645,27 +645,18 @@ test_get_collection_info_regex (void)
    cursor = mongoc_database_find_collections (database, &name_filter, &error);
    END_IGNORE_DEPRECATIONS
 
-   if (test_framework_max_wire_version_at_least (3)) {
-      BSON_ASSERT (cursor);
-      BSON_ASSERT (!error.domain);
-      BSON_ASSERT (!error.code);
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
-      BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
-      BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
-      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
+   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
 
-      /* only one match */
-      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-      mongoc_cursor_destroy (cursor);
-   } else {
-      BSON_ASSERT (!cursor);
-      /* MongoDB 2.6 doesn't allow regex */
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_NAMESPACE,
-                             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
-                             "filter on name can only be a string");
-   }
+   /* only one match */
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   mongoc_cursor_destroy (cursor);
 
    bson_destroy (&name_filter);
    mongoc_collection_destroy (collection);
@@ -711,25 +702,16 @@ test_get_collection_info_with_opts_regex (void)
    cursor = mongoc_database_find_collections_with_opts (database, &opts);
    BSON_ASSERT (cursor);
 
-   if (test_framework_max_wire_version_at_least (3)) {
-      BSON_ASSERT (!error.domain);
-      BSON_ASSERT (!error.code);
+   BSON_ASSERT (!error.domain);
+   BSON_ASSERT (!error.code);
 
-      BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
-      BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
-      BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
+   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (bson_iter_init_find (&col_iter, doc, "name"));
+   BSON_ASSERT (0 == strcmp (bson_iter_utf8 (&col_iter, NULL), "abbbc"));
 
-      /* only one match */
-      BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   } else {
-      /* MongoDB 2.6 doesn't allow regex */
-      BSON_ASSERT (mongoc_cursor_error (cursor, &error));
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_NAMESPACE,
-                             MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
-                             "filter on name can only be a string");
-   }
+   /* only one match */
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    mongoc_cursor_destroy (cursor);
    bson_destroy (&opts);

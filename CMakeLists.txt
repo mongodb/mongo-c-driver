@@ -488,7 +488,6 @@ set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-cursor-transform.c
    ${SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
