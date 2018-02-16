@@ -41,7 +41,8 @@ typedef enum {
    MONGOC_ASYNC_CMD_TIMEOUT,
 } mongoc_async_cmd_result_t;
 
-typedef void (*mongoc_async_cmd_cb_t) (mongoc_async_cmd_result_t result,
+typedef void (*mongoc_async_cmd_cb_t) (mongoc_stream_t *stream,
+                                       mongoc_async_cmd_result_t result,
                                        const bson_t *bson,
                                        int64_t rtt_msec,
                                        void *data,

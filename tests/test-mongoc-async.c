@@ -52,7 +52,8 @@ get_localhost_stream (uint16_t port)
 
 
 static void
-test_ismaster_helper (mongoc_async_cmd_result_t result,
+test_ismaster_helper (mongoc_stream_t *stream,
+                      mongoc_async_cmd_result_t result,
                       const bson_t *bson,
                       int64_t rtt_msec,
                       void *data,
@@ -207,7 +208,8 @@ test_ismaster_ssl (void)
 #else
 
 static void
-test_large_ismaster_helper (mongoc_async_cmd_result_t result,
+test_large_ismaster_helper (mongoc_stream_t *stream,
+                            mongoc_async_cmd_result_t result,
                             const bson_t *bson,
                             int64_t rtt_msec,
                             void *data,

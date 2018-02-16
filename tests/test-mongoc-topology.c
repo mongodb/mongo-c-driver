@@ -349,15 +349,19 @@ _test_topology_invalidate_server (bool pooled)
       &client->cluster, fake_id, true, &error));
    mongoc_mutex_lock (&client->topology->mutex);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, fake_id);
-   BSON_ASSERT (sd);
-   BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
-   BSON_ASSERT (sd->error.domain != 0);
-   ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
-   BSON_ASSERT (bson_empty (&sd->last_is_master));
-   BSON_ASSERT (bson_empty (&sd->hosts));
-   BSON_ASSERT (bson_empty (&sd->passives));
-   BSON_ASSERT (bson_empty (&sd->arbiters));
-   BSON_ASSERT (bson_empty (&sd->compressors));
+   if (!pooled && test_framework_is_replset ()) {
+      BSON_ASSERT (!sd);
+   } else {
+      BSON_ASSERT (sd);
+      BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
+      BSON_ASSERT (sd->error.domain != 0);
+      ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
+      BSON_ASSERT (bson_empty (&sd->last_is_master));
+      BSON_ASSERT (bson_empty (&sd->hosts));
+      BSON_ASSERT (bson_empty (&sd->passives));
+      BSON_ASSERT (bson_empty (&sd->arbiters));
+      BSON_ASSERT (bson_empty (&sd->compressors));
+   }
    mongoc_mutex_unlock (&client->topology->mutex);
 
    mongoc_server_stream_cleanup (server_stream);
@@ -962,10 +966,17 @@ _test_server_removed_during_handshake (bool pooled)
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                          "removed from topology");
+   if (!pooled) {
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                             "Could not find stream for node");
+   } else {
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                             "removed from topology");
+   }
 
    sds = mongoc_client_get_server_descriptions (client, &n);
    ASSERT_CMPSIZE_T (n, ==, (size_t) 0);

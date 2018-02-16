@@ -60,6 +60,8 @@ struct _mock_server_t {
    bool ssl;
    mongoc_ssl_opt_t ssl_opts;
 #endif
+
+   mock_server_bind_opts_t bind_opts;
 };
 
 
@@ -312,16 +314,20 @@ uint16_t
 mock_server_run (mock_server_t *server)
 {
    mongoc_socket_t *ssock;
-   struct sockaddr_in bind_addr;
+   struct sockaddr_in default_bind_addr;
+   struct sockaddr_in *bind_addr;
    int optval;
    uint16_t bound_port;
+   size_t bind_addr_len = 0;
 
    /* CDRIVER-2115: don't run mock server tests on 32-bit */
    BSON_ASSERT (sizeof (void *) * 8 >= 64);
 
    MONGOC_INFO ("Starting mock server on port %d.", server->port);
-
-   ssock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   ssock = mongoc_socket_new (
+      server->bind_opts.family ? server->bind_opts.family : AF_INET,
+      SOCK_STREAM,
+      0);
    if (!ssock) {
       perror ("Failed to create socket.");
       return 0;
@@ -331,16 +337,24 @@ mock_server_run (mock_server_t *server)
    mongoc_socket_setsockopt (
       ssock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
-   memset (&bind_addr, 0, sizeof bind_addr);
+   memset (&default_bind_addr, 0, sizeof default_bind_addr);
 
-   bind_addr.sin_family = AF_INET;
-   bind_addr.sin_addr.s_addr = htonl (INADDR_ANY);
+   default_bind_addr.sin_family = AF_INET;
+   default_bind_addr.sin_addr.s_addr = htonl (INADDR_ANY);
 
    /* bind to unused port */
-   bind_addr.sin_port = htons (0);
+   default_bind_addr.sin_port = htons (0);
+
+   if (server->bind_opts.bind_addr) {
+      bind_addr = server->bind_opts.bind_addr;
+      bind_addr_len = server->bind_opts.bind_addr_len;
+   } else {
+      bind_addr = &default_bind_addr;
+      bind_addr_len = sizeof (default_bind_addr);
+   }
 
    if (-1 == mongoc_socket_bind (
-                ssock, (struct sockaddr *) &bind_addr, sizeof bind_addr)) {
+                ssock, (struct sockaddr *) bind_addr, bind_addr_len)) {
       perror ("Failed to bind socket");
       return 0;
    }
@@ -1061,8 +1075,9 @@ mock_server_receives_update (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request && !request_matches_update (
-                     request, ns, flags, selector_json, update_json)) {
+   if (request &&
+       !request_matches_update (
+          request, ns, flags, selector_json, update_json)) {
       request_destroy (request);
       return NULL;
    }
@@ -1903,4 +1918,10 @@ autoresponder_handle_destroy (autoresponder_handle_t *handle)
    if (handle->destructor) {
       handle->destructor (handle->data);
    }
+}
+
+void
+mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts)
+{
+   server->bind_opts = *opts;
 }

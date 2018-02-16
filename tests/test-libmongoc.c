@@ -623,6 +623,22 @@ test_framework_get_port (void)
    return (uint16_t) port;
 }
 
+char *
+test_framework_get_host_and_port (void)
+{
+   char *host = test_framework_get_host ();
+   uint16_t port = test_framework_get_port ();
+   char *host_and_port;
+   if (strchr (host, ':')) {
+      /* wrap IPv6 address in square brackets. */
+      host_and_port = bson_strdup_printf ("[%s]:%hu", host, port);
+   } else {
+      host_and_port = bson_strdup_printf ("%s:%hu", host, port);
+   }
+   bson_free (host);
+   return host_and_port;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -979,7 +995,7 @@ test_framework_get_unix_domain_socket_uri_str ()
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
+call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
 {
    char *user;
    char *password;
@@ -990,19 +1006,17 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 
    if (test_framework_get_user_password (&user, &password)) {
       uri_str =
-         bson_strdup_printf ("mongodb://%s:%s@%s:%hu%s",
+         bson_strdup_printf ("mongodb://%s:%s@%s%s",
                              user,
                              password,
-                             host,
-                             port,
+                             host_and_port,
                              test_framework_get_ssl () ? "/?ssl=true" : "");
       bson_free (user);
       bson_free (password);
    } else {
       uri_str =
-         bson_strdup_printf ("mongodb://%s:%hu%s",
-                             host,
-                             port,
+         bson_strdup_printf ("mongodb://%s%s",
+                             host_and_port,
                              test_framework_get_ssl () ? "/?ssl=true" : "");
    }
 
@@ -1053,15 +1067,11 @@ call_ismaster_with_host_and_port (char *host, uint16_t port, bson_t *reply)
 static void
 call_ismaster (bson_t *reply)
 {
-   char *host;
-   uint16_t port;
+   char *host_and_port = test_framework_get_host_and_port ();
 
-   host = test_framework_get_host ();
-   port = test_framework_get_port ();
+   call_ismaster_with_host_and_port (host_and_port, reply);
 
-   call_ismaster_with_host_and_port (host, port, reply);
-
-   bson_free (host);
+   bson_free (host_and_port);
 }
 
 
@@ -1661,7 +1671,7 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    sd = mongoc_topology_server_by_id (client->topology, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
 
-   call_ismaster_with_host_and_port (sd->host.host, sd->host.port, &reply);
+   call_ismaster_with_host_and_port (sd->host.host_and_port, &reply);
 
    ret = bson_iter_init_find (&iter, &reply, "secondary") &&
          bson_iter_as_bool (&iter);

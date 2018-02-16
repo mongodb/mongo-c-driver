@@ -113,10 +113,15 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    rtt_msec = (bson_get_monotonic_time () - acmd->cmd_started) / 1000;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
-      acmd->cb (result, &acmd->reply, rtt_msec, acmd->data, &acmd->error);
+      acmd->cb (acmd->stream,
+                result,
+                &acmd->reply,
+                rtt_msec,
+                acmd->data,
+                &acmd->error);
    } else {
       /* we're in ERROR, TIMEOUT, or CANCELED */
-      acmd->cb (result, NULL, rtt_msec, acmd->data, &acmd->error);
+      acmd->cb (acmd->stream, result, NULL, rtt_msec, acmd->data, &acmd->error);
    }
 
    mongoc_async_cmd_destroy (acmd);

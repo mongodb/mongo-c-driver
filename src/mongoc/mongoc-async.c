@@ -134,6 +134,9 @@ mongoc_async_run (mongoc_async_t *async)
 
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
+         bool remove_cmd = false;
+         mongoc_async_cmd_result_t result;
+
          if (now > acmd->connect_started + acmd->timeout_msec * 1000) {
             bson_set_error (&acmd->error,
                             MONGOC_ERROR_STREAM,
@@ -142,7 +145,16 @@ mongoc_async_run (mongoc_async_t *async)
                                ? "connection timeout"
                                : "socket timeout");
 
-            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT,
+            remove_cmd = true;
+            result = MONGOC_ASYNC_CMD_TIMEOUT;
+         } else if (acmd->state == MONGOC_ASYNC_CMD_CANCELED_STATE) {
+            remove_cmd = true;
+            result = MONGOC_ASYNC_CMD_ERROR;
+         }
+
+         if (remove_cmd) {
+            acmd->cb (acmd->stream,
+                      result,
                       NULL,
                       (now - acmd->connect_started) / 1000,
                       acmd->data,

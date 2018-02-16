@@ -5488,29 +5488,6 @@ tasks:
             URI: ""
 
 
-    - name: test-latest-server-noauth-nosasl-nossl-ipv4-only
-      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-only", "latest"]
-      depends_on:
-        - name: "debug-compile-nosasl-nossl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-nosasl-nossl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            IPV4_ONLY: "on"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            IPV4_ONLY: "on"
-            URI: ""
-
-
     - name: test-latest-server-noauth-nosasl-openssl
       tags: ["openssl", "nosasl", "noauth", "server", "latest"]
       depends_on:
@@ -6548,6 +6525,92 @@ tasks:
               ./autogen.sh --prefix=$(pwd)/install-dir --build x86_64-apple-darwin --with-libbson=bundled --disable-automatic-init-and-cleanup --disable-ssl --disable-sasl --disable-examples --disable-man-pages --disable-html-docs --disable-shm-counters --disable-shared --enable-static ${libmongocapi_configure_flags|}
               make all
 
+    - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://[::1]/"
+
+    - name: test-latest-server-ipv6-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://127.0.0.1/"
+
+    - name: test-latest-server-ipv4-client-localhost-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://localhost/"
+
+    - name: test-latest-server-ipv4-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://127.0.0.1/"
+
 # }}}
 
 buildvariants:
@@ -6779,7 +6842,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".latest .nossl !.nosasl !.ipv4-only"
+    - ".latest .nossl !.nosasl !.ipv4-ipv6"
     - ".3.6 .openssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"

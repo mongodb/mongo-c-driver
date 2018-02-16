@@ -647,6 +647,10 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    buf = bson_string_new (NULL);
 
+   if (suite->flags & TEST_DEBUGOUTPUT) {
+      test_msg ("Begin %s, seed %u", name, test->seed);
+   }
+
    for (i = 0; i < test->num_checks; i++) {
       if (!test->checks[i]()) {
          if (!suite->silent) {
@@ -668,9 +672,6 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    _Clock_GetMonotonic (&ts1);
 
-   if (suite->flags & TEST_DEBUGOUTPUT) {
-      test_msg ("Begin %s, seed %u", name, test->seed);
-   }
 
    if ((suite->flags & TEST_NOFORK)) {
 #ifdef MONGOC_TRACE

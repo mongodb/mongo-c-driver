@@ -2232,8 +2232,7 @@ test_mongoc_client_mismatched_me (void)
 static void
 _test_mongoc_client_ssl_opts (bool pooled)
 {
-   char *host;
-   uint16_t port;
+   char *host_and_port;
    char *uri_str;
    char *uri_str_auth;
    char *uri_str_auth_ssl;
@@ -2245,12 +2244,10 @@ _test_mongoc_client_ssl_opts (bool pooled)
    bson_error_t error;
    int add_ssl_to_uri;
 
-   host = test_framework_get_host ();
-   port = test_framework_get_port ();
+   host_and_port = test_framework_get_host_and_port ();
    uri_str = bson_strdup_printf (
-      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000&connectTimeoutMS=1000",
-      host,
-      port);
+      "mongodb://%s/?serverSelectionTimeoutMS=1000&connectTimeoutMS=1000",
+      host_and_port);
 
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
    uri_str_auth_ssl = bson_strdup_printf ("%s&ssl=true", uri_str_auth);
@@ -2299,7 +2296,7 @@ _test_mongoc_client_ssl_opts (bool pooled)
    bson_free (uri_str_auth_ssl);
    bson_free (uri_str_auth);
    bson_free (uri_str);
-   bson_free (host);
+   bson_free (host_and_port);
 };
 
 

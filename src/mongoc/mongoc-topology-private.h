@@ -142,4 +142,8 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 void
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
 
+void
+_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
+                                   bson_error_t *error);
+
 #endif

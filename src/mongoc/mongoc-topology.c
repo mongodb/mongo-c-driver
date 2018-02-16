@@ -49,8 +49,7 @@ _mongoc_topology_reconcile_add_nodes (void *item, void *ctx)
    if (!mongoc_topology_scanner_get_node (scanner, sd->id) &&
        !mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
       mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
-      mongoc_topology_scanner_scan (
-         scanner, sd->id, topology->connect_timeout_msec);
+      mongoc_topology_scanner_scan (scanner, sd->id);
    }
 
    return true;
@@ -173,8 +172,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
 
       /* add another ismaster call to the current scan - the scan continues
        * until all commands are done */
-      mongoc_topology_scanner_scan (
-         topology->scanner, sd->id, topology->connect_timeout_msec);
+      mongoc_topology_scanner_scan (topology->scanner, sd->id);
    } else {
       _mongoc_topology_update_no_lock (
          id, ismaster_response, rtt_msec, topology, error);
@@ -230,12 +228,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       bson_strdup (mongoc_uri_get_replica_set (uri));
 
    topology->uri = mongoc_uri_copy (uri);
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
-   topology->scanner =
-      mongoc_topology_scanner_new (topology->uri,
-                                   _mongoc_topology_scanner_setup_err_cb,
-                                   _mongoc_topology_scanner_cb,
-                                   topology);
 
    topology->single_threaded = single_threaded;
    if (single_threaded) {
@@ -273,6 +265,14 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_uri_get_option_as_int32 (topology->uri,
                                       MONGOC_URI_CONNECTTIMEOUTMS,
                                       MONGOC_DEFAULT_CONNECTTIMEOUTMS);
+
+   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
+   topology->scanner =
+      mongoc_topology_scanner_new (topology->uri,
+                                   _mongoc_topology_scanner_setup_err_cb,
+                                   _mongoc_topology_scanner_cb,
+                                   topology,
+                                   topology->connect_timeout_msec);
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);
@@ -412,7 +412,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
  *
  *--------------------------------------------------------------------------
  */
-static void
+void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error)
 {
@@ -423,8 +423,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
    _mongoc_handshake_freeze ();
 
    scanner = topology->scanner;
-   mongoc_topology_scanner_start (
-      scanner, (int32_t) topology->connect_timeout_msec, true);
+   mongoc_topology_scanner_start (scanner, true);
 
    mongoc_topology_scanner_work (topology->scanner);
 
@@ -1095,8 +1094,7 @@ _mongoc_topology_run_background (void *data)
 
          /* if we can start scanning, do so immediately */
          if (timeout <= 0) {
-            mongoc_topology_scanner_start (
-               topology->scanner, topology->connect_timeout_msec, false);
+            mongoc_topology_scanner_start (topology->scanner, false);
             break;
          } else {
             /* otherwise wait until someone:

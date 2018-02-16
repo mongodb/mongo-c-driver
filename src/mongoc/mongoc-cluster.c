@@ -50,6 +50,7 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-compression-private.h"
 #include "mongoc-cmd-private.h"
+#include "utlist.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -1568,6 +1569,7 @@ node_not_found (mongoc_topology_t *topology,
    mongoc_server_description_destroy (sd);
 }
 
+
 static void
 stream_not_found (mongoc_topology_t *topology,
                   uint32_t server_id,
@@ -1695,17 +1697,15 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 {
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
-   mongoc_stream_t *stream;
    mongoc_topology_scanner_node_t *scanner_node;
-   int64_t expire_at;
+   char *address;
 
    topology = cluster->client->topology;
    scanner_node =
       mongoc_topology_scanner_get_node (topology->scanner, server_id);
    BSON_ASSERT (scanner_node && !scanner_node->retired);
-   stream = scanner_node->stream;
 
-   if (stream) {
+   if (scanner_node->stream) {
       sd = mongoc_topology_server_by_id (topology, server_id, error);
 
       if (!sd) {
@@ -1718,47 +1718,25 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
          return NULL;
       }
 
-      if (!mongoc_topology_scanner_node_setup (scanner_node, error)) {
-         return NULL;
-      }
-      stream = scanner_node->stream;
-
-      expire_at =
-         bson_get_monotonic_time () + topology->connect_timeout_msec * 1000;
-      if (!mongoc_stream_wait (stream, expire_at)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_CONNECT,
-                         "Failed to connect to target host: '%s'",
-                         scanner_node->host.host_and_port);
+      /* save the scanner node address in case it is removed during the scan. */
+      address = bson_strdup (scanner_node->host.host_and_port);
+      _mongoc_topology_do_blocking_scan (topology, error);
+      if (error->code) {
+         bson_free (address);
          return NULL;
       }
 
-#ifdef MONGOC_ENABLE_SSL
-      if (cluster->client->use_ssl) {
-         bool r;
-         mongoc_stream_t *tls_stream;
+      scanner_node =
+         mongoc_topology_scanner_get_node (topology->scanner, server_id);
 
-         for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
-              tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
-         }
-
-         r = mongoc_stream_tls_handshake_block (
-            tls_stream,
-            scanner_node->host.host,
-            (int32_t) topology->connect_timeout_msec * 1000,
-            error);
-
-         if (!r) {
-            mongoc_topology_scanner_node_disconnect (scanner_node, true);
-            return NULL;
-         }
+      if (!scanner_node || !scanner_node->stream) {
+         stream_not_found (topology, server_id, address, error);
+         bson_free (address);
+         return NULL;
       }
-#endif
+      bson_free (address);
 
-      sd = _mongoc_stream_run_ismaster (
-         cluster, stream, scanner_node->host.host_and_port, server_id, error);
-
+      sd = mongoc_topology_server_by_id (topology, server_id, error);
       if (!sd) {
          return NULL;
       }
@@ -1772,7 +1750,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
    /* stream open but not auth'ed: first use since connect or reconnect */
    if (cluster->requires_auth && !scanner_node->has_auth) {
-      if (!_mongoc_cluster_auth_node (cluster, stream, sd, &sd->error)) {
+      if (!_mongoc_cluster_auth_node (
+             cluster, scanner_node->stream, sd, &sd->error)) {
          memcpy (error, &sd->error, sizeof *error);
          mongoc_server_description_destroy (sd);
          return NULL;
@@ -1781,7 +1760,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       scanner_node->has_auth = true;
    }
 
-   return mongoc_server_stream_new (&topology->description, sd, stream);
+   return mongoc_server_stream_new (
+      &topology->description, sd, scanner_node->stream);
 }
 
 

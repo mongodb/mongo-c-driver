@@ -48,6 +48,8 @@ test_framework_get_host (void);
 uint16_t
 test_framework_get_port (void);
 char *
+test_framework_get_host_and_port (void);
+char *
 test_framework_get_admin_user (void);
 char *
 test_framework_get_admin_password (void);

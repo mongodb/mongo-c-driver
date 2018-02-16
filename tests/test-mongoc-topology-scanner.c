@@ -1,4 +1,7 @@
 #include <mongoc.h>
+#include <mongoc-stream-private.h>
+#include <mongoc-socket-private.h>
+#include <mongoc-host-list-private.h>
 
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
@@ -9,6 +12,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
@@ -57,7 +61,7 @@ _test_topology_scanner (bool with_ssl)
 #endif
 
    topology_scanner = mongoc_topology_scanner_new (
-      NULL, NULL, &test_topology_scanner_helper, &finished);
+      NULL, NULL, &test_topology_scanner_helper, &finished, TIMEOUT);
 
 #ifdef MONGOC_ENABLE_SSL
    if (with_ssl) {
@@ -91,7 +95,7 @@ _test_topology_scanner (bool with_ssl)
    }
 
    for (i = 0; i < 3; i++) {
-      mongoc_topology_scanner_start (topology_scanner, TIMEOUT, false);
+      mongoc_topology_scanner_start (topology_scanner, false);
       mongoc_topology_scanner_work (topology_scanner);
       mongoc_topology_scanner_reset (topology_scanner);
    }
@@ -401,6 +405,157 @@ test_topology_scanner_blocking_initiator (void)
    mock_rs_destroy (rs);
 }
 
+static mock_server_t *
+_mock_server_listening_on (char *server_bind_to)
+{
+   mock_server_t *mock_server;
+   mock_server_bind_opts_t opts;
+   struct sockaddr_in ipv4_addr = {0};
+   struct sockaddr_in6 ipv6_addr = {0};
+
+   if (strcmp ("both", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv6_addr);
+      opts.family = AF_INET6;
+      ipv6_addr.sin6_family = AF_INET6;
+      ipv6_addr.sin6_port = htons (0);   /* any port */
+      ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
+      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+   } else if (strcmp ("ipv4", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv4_addr);
+      opts.family = AF_INET;
+      ipv4_addr.sin_family = AF_INET;
+      ipv4_addr.sin_port = htons (0);
+      inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
+      opts.bind_addr = &ipv4_addr;
+   } else if (strcmp ("ipv6", server_bind_to) == 0) {
+      opts.bind_addr_len = sizeof (ipv6_addr);
+      opts.family = AF_INET6;
+      ipv6_addr.sin6_family = AF_INET6;
+      ipv6_addr.sin6_port = htons (0);
+      inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr);
+      opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
+   } else {
+      fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
+      ASSERT (false);
+   }
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   mock_server_set_bind_opts (mock_server, &opts);
+   mock_server_run (mock_server);
+   return mock_server;
+}
+
+typedef struct dns_testcase {
+   char *server_bind_to;  /* ipv4, ipv6, or both */
+   char *client_hostname; /* 127.0.0.1, [::1], or localhost */
+   bool should_succeed;
+   int expected_ncmds;
+   char *expected_client_bind_to; /* ipv4, ipv6, or either */
+} dns_testcase_t;
+
+static void
+_test_topology_scanner_dns_helper (uint32_t id,
+                                   const bson_t *bson,
+                                   int64_t rtt_msec,
+                                   void *data,
+                                   const bson_error_t *error /* IN */)
+{
+   dns_testcase_t *testcase = (dns_testcase_t *) data;
+   if (testcase->should_succeed) {
+      ASSERT_OR_PRINT (!error->code, (*error));
+   } else {
+      ASSERT (error->code);
+      ASSERT_ERROR_CONTAINS ((*error),
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_CONNECT,
+                             "connection refused");
+   }
+}
+
+static void
+test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
+{
+   mongoc_host_list_t host;
+   mock_server_t *server;
+   mongoc_topology_scanner_t *ts;
+   char *host_str;
+   mongoc_socket_t *sock;
+   mongoc_topology_scanner_node_t *node;
+
+   server = _mock_server_listening_on (testcase->server_bind_to);
+   ts = mongoc_topology_scanner_new (
+      NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
+   host_str = bson_strdup_printf (
+      "%s:%d", testcase->client_hostname, mock_server_get_port (server));
+   _mongoc_host_list_from_string (&host, host_str);
+   /* we should only have one host. */
+   BSON_ASSERT (!host.next);
+   bson_free (host_str);
+
+   mongoc_topology_scanner_add (ts, &host, 1);
+   mongoc_topology_scanner_scan (ts, 1 /* any server id is ok. */);
+   ASSERT_CMPINT ((int) (ts->async->ncmds), ==, testcase->expected_ncmds);
+   mongoc_topology_scanner_work (ts);
+   node = mongoc_topology_scanner_get_node (ts, 1);
+
+   /* check the socket that the scanner found. */
+   if (testcase->should_succeed) {
+      ASSERT (node->stream->type == MONGOC_STREAM_SOCKET);
+      sock = mongoc_stream_socket_get_socket (
+         (mongoc_stream_socket_t *) node->stream);
+      if (strcmp ("ipv4", testcase->expected_client_bind_to) == 0) {
+         ASSERT (sock->domain == AF_INET);
+      } else if (strcmp ("ipv6", testcase->expected_client_bind_to) == 0) {
+         ASSERT (sock->domain == AF_INET6);
+      } else if (strcmp ("either", testcase->expected_client_bind_to) != 0) {
+         fprintf (stderr,
+                  "bad value for testcase->expected_client_bind_to=%s\n",
+                  testcase->expected_client_bind_to);
+         ASSERT (false);
+      }
+   }
+
+   mongoc_topology_scanner_destroy (ts);
+   mock_server_destroy (server);
+}
+
+/* test when clients try connecting to servers varying the DNS results of the
+ * clients and the socket binding of the server. */
+static void
+test_topology_scanner_dns ()
+{
+   /* server can bind to: {ipv4 only, ipv6 only, both}
+    * client can connect to: {127.0.0.1, ::1, localhost}
+    * there are 9 combinations. */
+   int ntests, i;
+   dns_testcase_t tests[] = {{"ipv4", "127.0.0.1", true, 1, "ipv4"},
+                             {"ipv4", "[::1]", false, 1, "n/a"},
+                             {"ipv6", "127.0.0.1", false, 1, "n/a"},
+                             {"ipv6", "[::1]", true, 1, "ipv6"},
+                             {"both", "127.0.0.1", true, 1, "ipv4"},
+                             {"both", "[::1]", true, 1, "ipv6"}};
+   /* these tests require a hostname mapping to both IPv4 and IPv6 local.
+ * this can be localhost normally, but some configurations may have localhost
+ * only mapping to 127.0.0.1, not ::1. */
+   dns_testcase_t tests_with_ipv4_and_ipv6_uri[] = {
+      {"ipv4", "<placeholder>", true, 2, "ipv4"},
+      {"ipv6", "<placeholder>", true, 2, "ipv6"},
+      {"both", "<placeholder>", true, 2, "either"}};
+   char *ipv4_and_ipv6_host =
+      test_framework_getenv ("MONGOC_TEST_IPV4_AND_IPV6_HOST");
+
+   ntests = sizeof (tests) / sizeof (dns_testcase_t);
+   for (i = 0; i < ntests; ++i) {
+      test_topology_scanner_dns_testcase (tests + i);
+   }
+
+   if (ipv4_and_ipv6_host) {
+      ntests = sizeof (tests_with_ipv4_and_ipv6_uri) / sizeof (dns_testcase_t);
+      for (i = 0; i < ntests; ++i) {
+         tests_with_ipv4_and_ipv6_uri[i].client_hostname = ipv4_and_ipv6_host;
+         test_topology_scanner_dns_testcase (tests_with_ipv4_and_ipv6_uri + i);
+      }
+   }
+}
 
 void
 test_topology_scanner_install (TestSuite *suite)
@@ -424,4 +579,6 @@ test_topology_scanner_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/blocking_initiator",
                                 test_topology_scanner_blocking_initiator);
+   TestSuite_AddMockServerTest (
+      suite, "/TOPOLOGY/dns", test_topology_scanner_dns);
 }

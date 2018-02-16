@@ -232,7 +232,8 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
       link_->family = AF_UNIX;
       bson_strncpy (link_->host_and_port, link_->host, host_len + 1);
    } else {
-      link_->family = AF_INET;
+      /* This is either an IPv4 or hostname. */
+      link_->family = AF_UNSPEC;
 
       mongoc_lowercase (link_->host, link_->host);
       bson_snprintf (link_->host_and_port,

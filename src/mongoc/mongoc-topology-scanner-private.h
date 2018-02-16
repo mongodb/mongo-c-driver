@@ -46,18 +46,18 @@ typedef void (*mongoc_topology_scanner_cb_t) (
    const bson_error_t *error /* IN */);
 
 struct mongoc_topology_scanner;
+struct mongoc_topology_scanner_node;
 
 typedef struct mongoc_topology_scanner_node {
    uint32_t id;
-   mongoc_async_cmd_t *cmd;
+   /* after scanning, this is set to the successful stream if one exists. */
    mongoc_stream_t *stream;
+
    int64_t timestamp;
    int64_t last_used;
    int64_t last_failed;
    bool has_auth;
    mongoc_host_list_t host;
-   struct addrinfo *dns_results;
-   struct addrinfo *current_dns_result;
    struct mongoc_topology_scanner *ts;
 
    struct mongoc_topology_scanner_node *next;
@@ -69,6 +69,7 @@ typedef struct mongoc_topology_scanner_node {
 
 typedef struct mongoc_topology_scanner {
    mongoc_async_t *async;
+   int64_t connect_timeout_msec;
    mongoc_topology_scanner_node_t *nodes;
    bson_t ismaster_cmd;
    bson_t ismaster_cmd_with_handshake;
@@ -99,7 +100,8 @@ mongoc_topology_scanner_new (
    const mongoc_uri_t *uri,
    mongoc_topology_scanner_setup_err_cb_t setup_err_cb,
    mongoc_topology_scanner_cb_t cb,
-   void *data);
+   void *data,
+   int64_t connect_timeout_msec);
 
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
@@ -113,9 +115,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              uint32_t id);
 
 void
-mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts,
-                              uint32_t id,
-                              int64_t timeout_msec);
+mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id);
 
 void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node);
@@ -134,7 +134,6 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
 
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
-                               int64_t timeout_msec,
                                bool obey_cooldown);
 
 void
@@ -150,7 +149,7 @@ mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,
 void
 mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
-bool
+void
 mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
                                     bson_error_t *error);
 
@@ -175,6 +174,15 @@ void
 _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts,
                                            const bson_t *cluster_time);
 
+/* cancel any pending async commands for a specific node. */
+void
+_mongoc_topology_scanner_node_cancel_commands (
+   mongoc_topology_scanner_node_t *node);
+
+/* return the number of pending async commands for a node. */
+int
+_mongoc_topology_scanner_node_count_acmds (
+   mongoc_topology_scanner_node_t *node);
 
 #ifdef MONGOC_ENABLE_SSL
 void

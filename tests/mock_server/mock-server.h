@@ -30,6 +30,12 @@
 typedef struct _mock_server_t mock_server_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;
 
+typedef struct _mock_server_bind_opts_t {
+   struct sockaddr_in *bind_addr;
+   size_t bind_addr_len;
+   int family;
+} mock_server_bind_opts_t;
+
 typedef bool (*autoresponder_t) (request_t *request, void *data);
 
 typedef void (*destructor_t) (void *data);
@@ -69,6 +75,10 @@ void
 mock_server_set_ssl_opts (mock_server_t *server, mongoc_ssl_opt_t *opts);
 
 #endif
+
+void
+mock_server_set_bind_opts (mock_server_t *server,
+                           mock_server_bind_opts_t *opts);
 
 uint16_t
 mock_server_run (mock_server_t *server);
