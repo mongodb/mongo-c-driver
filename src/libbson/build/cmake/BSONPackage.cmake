@@ -25,6 +25,6 @@ endfunction ()
 
 install_package_config_file ("1.0")
 
-if (BSON_ENABLE_STATIC)
+if (ENABLE_STATIC)
    install_package_config_file ("static-1.0")
 endif ()

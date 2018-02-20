@@ -2,13 +2,9 @@ cmake_minimum_required(VERSION 3.1)
 
 project (libbson C)
 
-if (ENABLE_STATIC STREQUAL ON OR ENABLE_STATIC STREQUAL AUTO)
-   # In the future we may need to check whether static dependencies are
-   # available. For now, AUTO means ON.
-   set (BSON_ENABLE_STATIC ON)
-endif ()
-
-if (ENABLE_TESTS AND NOT BSON_ENABLE_STATIC)
+# In the future we may need to check whether static dependencies are
+# available. For now, AUTO means ON.
+if (ENABLE_TESTS AND NOT ENABLE_STATIC MATCHES "ON|AUTO")
    message (FATAL_ERROR "-DENABLE_STATIC=OFF also requires -DENABLE_TESTS=OFF")
 endif ()
 
@@ -242,7 +238,7 @@ if (NOT UNIX)
    set(BSON_SYSTEM_LIBS ${BSON_SYSTEM_LIBS} ws2_32)
 endif()
 
-if (BSON_ENABLE_STATIC)
+if (ENABLE_STATIC MATCHES "ON|AUTO")
    add_library(bson_static STATIC ${SOURCES} ${HEADERS})
    set_target_properties(bson_static PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;BSON_STATIC;JSONSL_PARSE_NAN")
    set_target_properties(bson_static PROPERTIES VERSION ${BSON_VERSION})
@@ -333,7 +329,7 @@ install(
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
 )
-if (BSON_ENABLE_STATIC)
+if (ENABLE_STATIC MATCHES "ON|AUTO")
    install(
      TARGETS bson_static ${EXAMPLES}
      LIBRARY DESTINATION lib
@@ -374,7 +370,7 @@ install(
    lib/pkgconfig
 )
 
-if (BSON_ENABLE_STATIC)
+if (ENABLE_STATIC MATCHES "ON|AUTO")
    configure_file(
        ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
        ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
