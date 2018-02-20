@@ -35,6 +35,7 @@ function (sphinx_build_html target_name doc_dir)
 
    # Set PYTHONDONTWRITEBYTECODE to prevent .pyc clutter in the source directory
    add_custom_command (OUTPUT ${doc_htmls}
+      ${SPHINX_HTML_DIR}/.nojekyll ${SPHINX_HTML_DIR}/objects.inv
       COMMAND
       ${CMAKE_COMMAND} -E env
       "PYTHONDONTWRITEBYTECODE=1"

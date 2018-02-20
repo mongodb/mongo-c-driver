@@ -354,3 +354,29 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:bson-html>
    )
 endif ()
+
+add_subdirectory (build)
+# sub-directory 'doc' was already included above
+add_subdirectory (examples)
+add_subdirectory (src)
+add_subdirectory (tests)
+
+set_local_dist (src_libbson_DIST_local
+   CMakeLists.txt
+   COPYING
+   NEWS
+   README.rst
+   THIRD_PARTY_NOTICES
+   VERSION_CURRENT
+   VERSION_RELEASED
+)
+
+set (src_libbson_DIST
+   ${src_libbson_DIST_local}
+   ${src_libbson_build_DIST}
+   ${src_libbson_doc_DIST}
+   ${src_libbson_examples_DIST}
+   ${src_libbson_src_DIST}
+   ${src_libbson_tests_DIST}
+   PARENT_SCOPE
+)

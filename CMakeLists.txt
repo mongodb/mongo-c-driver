@@ -40,7 +40,11 @@ option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
 
 project (libmongoc C)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
+set (CMAKE_MODULE_PATH
+   ${CMAKE_MODULE_PATH}
+   ${PROJECT_SOURCE_DIR}/build/cmake
+   ${PROJECT_SOURCE_DIR}/build/cmake/make_dist
+)
 
 include (InstallRequiredSystemLibraries)
 
@@ -102,6 +106,13 @@ if (NOT ENABLE_BSON STREQUAL BUNDLED)
       endif ()
    endif ()
 endif ()
+
+unset (dist_generated CACHE)
+unset (dist_generated_depends CACHE)
+
+set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
+
+include (MakeDistFiles)
 
 if (NOT BSON_LIBRARIES)
    message ("  -- Using bundled libbson")
@@ -393,33 +404,37 @@ if (SNAPPY_INCLUDE_DIRS)
    include_directories ("${SNAPPY_INCLUDE_DIRS}")
 endif ()
 
+set (ZLIB_SOURCES
+   ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+   ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
+)
+# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
+# will look for zconf.h in that location.
+configure_file (
+   "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
+   "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
+   COPYONLY
+)
 if (ENABLE_ZLIB STREQUAL "BUNDLED")
    message (STATUS "Enabling zlib compression (bundled)")
    check_include_files ("unistd.h" HAVE_UNISTD_H)
    check_include_files ("stdarg.h" HAVE_STDARG_H)
    set (MONGOC_ENABLE_COMPRESSION 1)
    set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
-   set (SOURCES ${SOURCES}
-      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
-      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
-      )
-   configure_file (
-      "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
-   )
+   set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
 
    list (
       APPEND
@@ -964,5 +979,76 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
       $<$<STREQUAL:"${ENABLE_BSON}","BUNDLED">:bson-doc>
       $<$<STREQUAL:"${ENABLE_MAN_PAGES}","ON">:mongoc-man>
       $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
+   )
+endif ()
+
+# Implement 'dist' target
+#
+# CMake does not implement anything like 'dist' from autotools.
+# This implementation is based on the one in GnuCash.
+
+add_subdirectory (build)
+# sub-directory 'doc' was already included above
+add_subdirectory (examples)
+add_subdirectory (orchestration_configs)
+add_subdirectory (src)
+# 'src/libbson' was already included, so 'src' will not include it directly
+add_subdirectory (tests)
+
+set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_VERSION}")
+set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
+
+set (top_DIST_local
+   CMakeLists.txt
+   CONTRIBUTING.md
+   COPYING
+   NEWS
+   README.rst
+   THIRD_PARTY_NOTICES
+   VERSION_CURRENT
+   VERSION_RELEASED
+)
+
+set_local_dist (top_DIST ${top_DIST_local})
+
+set (ALL_DIST
+   ${top_DIST}
+   ${build_DIST}
+   ${doc_DIST}
+   ${examples_DIST}
+   ${orchestration_configs_DIST}
+   ${src_DIST}
+   ${src_libbson_DIST}
+   ${tests_DIST}
+)
+
+# Write a dist manifest
+string (REPLACE ";" "\n" ALL_DIST_LINES "${ALL_DIST}")
+file (WRITE ${CMAKE_BINARY_DIR}/dist_manifest.txt ${ALL_DIST_LINES})
+
+# This is the command that produces the distribution tarball
+add_custom_command (OUTPUT ${DIST_FILE}
+   COMMAND ${CMAKE_COMMAND}
+      -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
+      -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
+      -D MONGOC_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+      -D BUILD_SOURCE_DIR=${BUILD_SOURCE_DIR}
+      -D SHELL=${SHELL}
+      "-Ddist_generated=\"${dist_generated}\""
+      -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDist.cmake
+
+   DEPENDS
+      ${ALL_DIST} ${dist_generated_depends}
+)
+
+if (ENABLE_BSON STREQUAL BUNDLED AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+   # Since our 'dist' implementation does not add top-level targets for every
+   # file to be included, we declare a dependency on the 'mongo-doc' target so
+   # that documentation is built before the distribution tarball is generated.
+   add_custom_target (dist DEPENDS mongoc-doc ${DIST_FILE})
+else ()
+   message (WARNING
+      "'dist' target disabled. Set ENABLE_BSON=BUNDLED, ENABLE_MAN_PAGES=ON, \
+      and ENABLE_HTML_DOCS=ON to enable."
    )
 endif ()
