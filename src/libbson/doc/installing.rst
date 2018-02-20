@@ -173,13 +173,16 @@ Building on Windows
 
 Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.
 
-Let's start by generating Visual Studio project files for libbson. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.
+Let's start by generating Visual Studio project files for libbson. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft. We will be utilizing ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
 
 .. parsed-literal::
 
   > cd libbson-|release|
+  > mkdir cmake-build
+  > cd cmake-build
   > cmake -G "Visual Studio 14 2015 Win64" \\
-    "-DCMAKE_INSTALL_PREFIX=C:\\libbson"
+    "-DCMAKE_INSTALL_PREFIX=C:\\libbson" \\
+    ..
   > msbuild.exe ALL_BUILD.vcxproj
   > msbuild.exe INSTALL.vcxproj
 
@@ -189,9 +192,12 @@ By default, this will create a debug build of libbson. To enable release build a
 .. parsed-literal::
 
   > cd libbson-|release|
+  > mkdir cmake-build
+  > cd cmake-build
   > cmake -G "Visual Studio 14 2015 Win64" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\libbson" \\
-    "-DCMAKE_BUILD_TYPE=Release"
+    "-DCMAKE_BUILD_TYPE=Release" \\
+    ..
   > msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
   > msbuild.exe /p:Configuration=Release INSTALL.vcxproj
 
@@ -201,4 +207,5 @@ You can disable building the tests with:
 
   > cmake -G "Visual Studio 14 2015 Win64" \
     "-DCMAKE_INSTALL_PREFIX=C:\libbson" \
-    "-DENABLE_TESTS:BOOL=OFF"
+    "-DENABLE_TESTS:BOOL=OFF" \
+    ..
