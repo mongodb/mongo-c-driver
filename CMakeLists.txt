@@ -199,6 +199,10 @@ if (OPENSSL_FOUND)
       message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
          "You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
    endif ()
+   if (APPLE AND NOT OPENSSL_ROOT_DIR)
+      message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
+         " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
+   endif ()
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
    set (MONGOC_ENABLE_CRYPTO 1)
