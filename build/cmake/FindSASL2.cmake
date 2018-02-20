@@ -1,4 +1,4 @@
-include(CheckSymbolExists)
+include (CheckSymbolExists)
 
 message (STATUS "Searching for sasl/sasl.h")
 find_path (
@@ -13,7 +13,7 @@ else ()
 endif ()
 
 message (STATUS "Searching for libsasl2")
-find_library(
+find_library (
     SASL_LIBS NAMES sasl2
     PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib c:/sasl/lib
     DOC "Searching for libsasl2")

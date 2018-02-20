@@ -1,7 +1,7 @@
 if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC)
-   include(CheckCCompilerFlag)
+   include (CheckCCompilerFlag)
 
-   message(STATUS "Detecting available maintainer flags")
+   message (STATUS "Detecting available maintainer flags")
    file (READ "build/maintainer-flags.txt" MAINTAINER_FLAGS)
 
    # Convert file contents into a CMake list (where each element in the list
@@ -24,5 +24,5 @@ if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC)
       unset (FLAG_OK CACHE)
    endforeach ()
 
-   message(STATUS "Maintainer flags: ${CMAKE_C_FLAGS}")
+   message (STATUS "Maintainer flags: ${CMAKE_C_FLAGS}")
 endif ()

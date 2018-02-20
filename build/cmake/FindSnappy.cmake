@@ -1,11 +1,11 @@
-include(CheckSymbolExists)
+include (CheckSymbolExists)
 
 if (NOT (ENABLE_SNAPPY STREQUAL SYSTEM
    OR ENABLE_SNAPPY STREQUAL AUTO
    OR ENABLE_SNAPPY STREQUAL OFF))
    message (FATAL_ERROR
       "ENABLE_SNAPPY option must be SYSTEM, AUTO, or OFF")
-endif()
+endif ()
 
 
 if (ENABLE_SNAPPY STREQUAL OFF)
