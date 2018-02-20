@@ -1324,37 +1324,6 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
    END_IGNORE_DEPRECATIONS
 }
 
-mongoc_cursor_t *
-_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection)
-{
-   mongoc_database_t *db;
-   mongoc_collection_t *idx_collection;
-   mongoc_read_prefs_t *read_prefs;
-   bson_t query = BSON_INITIALIZER;
-   mongoc_cursor_t *cursor;
-
-   BSON_ASSERT (collection);
-
-   BSON_APPEND_UTF8 (&query, "ns", collection->ns);
-
-   db = mongoc_client_get_database (collection->client, collection->db);
-   BSON_ASSERT (db);
-
-   idx_collection = mongoc_database_get_collection (db, "system.indexes");
-   BSON_ASSERT (idx_collection);
-
-   /* Index Enumeration Spec: "run listIndexes on the primary node". */
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
-   cursor = mongoc_collection_find_with_opts (
-      idx_collection, &query, NULL, read_prefs);
-
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_collection_destroy (idx_collection);
-   mongoc_database_destroy (db);
-
-   return cursor;
-}
 
 mongoc_cursor_t *
 mongoc_collection_find_indexes (mongoc_collection_t *collection,
@@ -1404,30 +1373,21 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
       /* intentionally empty */
-   } else {
-      if (mongoc_cursor_error (cursor, &error)) {
-         if (error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
-            bson_t empty_arr = BSON_INITIALIZER;
-            /* collection does not exist. in accordance with the spec we return
-             * an empty array. Also we need to clear out the error. */
-            error.code = 0;
-            error.domain = 0;
-            mongoc_cursor_destroy (cursor);
-            cursor = _mongoc_collection_cursor_new (
-               collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
+   } else if (mongoc_cursor_error (cursor, &error) &&
+              error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
 
-            _mongoc_cursor_array_init (cursor, NULL, NULL);
-            _mongoc_cursor_array_set_bson (cursor, &empty_arr);
-            bson_destroy (&empty_arr);
-         } else if (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-            /* talking to an old server. */
-            /* clear out error. */
-            error.code = 0;
-            error.domain = 0;
-            mongoc_cursor_destroy (cursor);
-            cursor = _mongoc_collection_find_indexes_legacy (collection);
-         }
-      }
+      bson_t empty_arr = BSON_INITIALIZER;
+      /* collection does not exist. in accordance with the spec we return
+       * an empty array. Also we need to clear out the error. */
+      error.code = 0;
+      error.domain = 0;
+      mongoc_cursor_destroy (cursor);
+      cursor = _mongoc_collection_cursor_new (
+         collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
+
+      _mongoc_cursor_array_init (cursor, NULL, NULL);
+      _mongoc_cursor_array_set_bson (cursor, &empty_arr);
+      bson_destroy (&empty_arr);
    }
 
    bson_destroy (&cmd);
