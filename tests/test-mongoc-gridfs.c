@@ -178,6 +178,11 @@ test_remove (void)
    file = mongoc_gridfs_find_one_by_filename (gridfs, name, &error);
    ASSERT (!file);
 
+   /* ensure "error" is cleared if we successfully find no file */
+   ASSERT_CMPINT (error.domain, ==, 0);
+   ASSERT_CMPINT (error.code, ==, 0);
+   ASSERT_CMPSTR (error.message, "");
+
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 

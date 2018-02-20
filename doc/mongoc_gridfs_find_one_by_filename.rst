@@ -23,7 +23,7 @@ Parameters
 Description
 -----------
 
-Finds the first file matching the filename specified. If no file could be found, ``NULL`` is returned and error is set.
+Finds the first file matching the filename specified. If there is an error, NULL is returned and ``error`` is filled out; if there is no error but no matching file is found, NULL is returned and the error code and domain are 0.
 
 Errors
 ------
@@ -33,5 +33,4 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns a newly allocated :symbol:`mongoc_gridfs_file_t` if successful, otherwise ``NULL`` and error is set. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy()` when no longer in use.
-
+Returns a newly allocated :symbol:`mongoc_gridfs_file_t` if successful. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy()` when no longer in use.

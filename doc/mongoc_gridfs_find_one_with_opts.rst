@@ -26,7 +26,7 @@ Parameters
 Description
 -----------
 
-Find the first GridFS file matching ``filter``.
+Find the first GridFS file matching ``filter``. If there is an error, NULL is returned and ``error`` is filled out; if there is no error but no matching file is found, NULL is returned and the error code and domain are 0.
 
 See :symbol:`mongoc_collection_find_with_opts` for a description of the ``filter`` and ``opts`` parameters.
 
@@ -38,5 +38,4 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_gridfs_file_t` or ``NULL`` if no file could be found. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy()` if non-NULL.
-
+Returns a newly allocated :symbol:`mongoc_gridfs_file_t` if successful. You must free the resulting file with :symbol:`mongoc_gridfs_file_destroy()` when no longer in use.
