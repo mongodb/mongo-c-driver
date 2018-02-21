@@ -73,6 +73,7 @@ typedef enum {
    MONGOC_MD_FLAG_HAVE_SCHED_GETCPU,
    MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS,
    MONGOC_MD_FLAG_TRACE,
+   MONGOC_MD_FLAG_ENABLE_ICU,
    /* Add additional config flags here, above LAST_MONGOC_MD_FLAG. */
    LAST_MONGOC_MD_FLAG
 } mongoc_handshake_config_flag_bit_t;

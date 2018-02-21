@@ -71,6 +71,11 @@ _mongoc_scram_cache_copy (const mongoc_scram_cache_t *cache)
    return ret;
 }
 
+#ifdef MONGOC_ENABLE_ICU
+#include <unicode/usprep.h>
+#include <unicode/ustring.h>
+#endif
+
 
 void
 _mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
@@ -968,4 +973,138 @@ _mongoc_scram_step (mongoc_scram_t *scram,
    return true;
 }
 
+bool
+_mongoc_sasl_prep_required (const char *str)
+{
+   unsigned char c;
+   while (*str) {
+      c = (unsigned char) *str;
+      /* characters below 32 contain all of the control characters.
+       * characters above 127 are multibyte UTF-8 characters.
+       * character 127 is the DEL character. */
+      if (c < 32 || c >= 127) {
+         return true;
+      }
+      str++;
+   }
+   return false;
+}
+
+#ifdef MONGOC_ENABLE_ICU
+char *
+_mongoc_sasl_prep_impl (const char *name,
+                        const char *in_utf8,
+                        int in_utf8_len,
+                        bson_error_t *err)
+{
+   /* The flow is in_utf8 -> in_utf16 -> SASLPrep -> out_utf16 -> out_utf8. */
+   UChar *in_utf16, *out_utf16;
+   char *out_utf8;
+   int32_t in_utf16_len, out_utf16_len, out_utf8_len;
+   UErrorCode error_code = U_ZERO_ERROR;
+   UStringPrepProfile *prep;
+
+#define SASL_PREP_ERR_RETURN(msg)                        \
+   do {                                                  \
+      bson_set_error (err,                               \
+                      MONGOC_ERROR_SCRAM,                \
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR, \
+                      (msg),                             \
+                      name);                             \
+      return NULL;                                       \
+   } while (0)
+
+   /* 1. convert str to UTF-16. */
+   /* preflight to get the destination length. */
+   (void) u_strFromUTF8 (
+      NULL, 0, &in_utf16_len, in_utf8, in_utf8_len, &error_code);
+   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
+      SASL_PREP_ERR_RETURN ("could not calculate UTF-16 length of %s");
+   }
+
+   /* convert to UTF-16. */
+   error_code = U_ZERO_ERROR;
+   in_utf16 = bson_malloc (sizeof (UChar) *
+                           (in_utf16_len + 1)); /* add one for null byte. */
+   (void) u_strFromUTF8 (
+      in_utf16, in_utf16_len + 1, NULL, in_utf8, in_utf8_len, &error_code);
+   if (error_code) {
+      bson_free (in_utf16);
+      SASL_PREP_ERR_RETURN ("could not convert %s to UTF-16");
+   }
+
+   /* 2. perform SASLPrep. */
+   prep = usprep_openByType (USPREP_RFC4013_SASLPREP, &error_code);
+   if (error_code) {
+      bson_free (in_utf16);
+      SASL_PREP_ERR_RETURN ("could not start SASLPrep for %s");
+   }
+   /* preflight. */
+   out_utf16_len = usprep_prepare (
+      prep, in_utf16, in_utf16_len, NULL, 0, USPREP_DEFAULT, NULL, &error_code);
+   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
+      bson_free (in_utf16);
+      usprep_close (prep);
+      SASL_PREP_ERR_RETURN ("could not calculate SASLPrep length of %s");
+   }
+
+   /* convert. */
+   error_code = U_ZERO_ERROR;
+   out_utf16 = bson_malloc (sizeof (UChar) * (out_utf16_len + 1));
+   (void) usprep_prepare (prep,
+                          in_utf16,
+                          in_utf16_len,
+                          out_utf16,
+                          out_utf16_len + 1,
+                          USPREP_DEFAULT,
+                          NULL,
+                          &error_code);
+   if (error_code) {
+      bson_free (in_utf16);
+      bson_free (out_utf16);
+      usprep_close (prep);
+      SASL_PREP_ERR_RETURN ("could not execute SASLPrep for %s");
+   }
+   bson_free (in_utf16);
+   usprep_close (prep);
+
+   /* 3. convert back to UTF-8. */
+   /* preflight. */
+   (void) u_strToUTF8 (
+      NULL, 0, &out_utf8_len, out_utf16, out_utf16_len, &error_code);
+   if (error_code != U_BUFFER_OVERFLOW_ERROR) {
+      bson_free (out_utf16);
+      SASL_PREP_ERR_RETURN ("could not calculate UTF-8 length of %s");
+   }
+
+   /* convert. */
+   error_code = U_ZERO_ERROR;
+   out_utf8 = (char *) bson_malloc (
+      sizeof (char) * (out_utf8_len + 1)); /* add one for null byte. */
+   (void) u_strToUTF8 (
+      out_utf8, out_utf8_len + 1, NULL, out_utf16, out_utf16_len, &error_code);
+   if (error_code) {
+      bson_free (out_utf8);
+      bson_free (out_utf16);
+      SASL_PREP_ERR_RETURN ("could not convert %s back to UTF-8");
+   }
+   bson_free (out_utf16);
+   return out_utf8;
+#undef SASL_PREP_ERR_RETURN
+}
+#endif
+
+char *
+_mongoc_sasl_prep (const char *name,
+                   const char *in_utf8,
+                   int in_utf8_len,
+                   bson_error_t *err)
+{
+#ifdef MONGOC_ENABLE_ICU
+   return _mongoc_sasl_prep_impl (name, in_utf8, in_utf8_len, err);
+#else
+   fprintf (stderr, "sasl_prep is not enabled.");
+   BSON_ASSERT (false);
+#endif
+}
 #endif

@@ -48,6 +48,7 @@ option (ENABLE_RDTSCP
    "Fast performance counters on Intel using the RDTSCP instruction"
    OFF
 )
+set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
 
 project (mongo-c-driver C)
 
@@ -186,6 +187,8 @@ set (ZLIB_SOURCES
    ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
    ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
 )
+
+set (MONGOC_ENABLE_ICU 0)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 

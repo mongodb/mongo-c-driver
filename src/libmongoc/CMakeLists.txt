@@ -340,6 +340,20 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    set (SHM_LIBRARIES rt)
 endif ()
 
+if (NOT ENABLE_ICU MATCHES "AUTO|ON|OFF")
+   message (FATAL_ERROR, "ENABLE_ICU option must be AUTO, ON, or OFF")
+endif()
+
+if (NOT ENABLE_ICU STREQUAL OFF)
+   find_package (ICU COMPONENTS uc)
+   if (ICU_FOUND)
+      set (MONGOC_ENABLE_ICU 1)
+      include_directories ("${ICU_INCLUDE_DIR}")
+   elseif (ENABLE_ICU STREQUAL ON)
+      message (FATAL_ERROR "No ICU library found. If ICU is installed in a non-standard directory, define ICU_ROOT as the ICU installation path.")
+   endif()
+endif()
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -566,7 +580,7 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} Threads::Threads
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} Threads::Threads ${ICU_LIBRARIES}
 )
 
 if (WIN32)
@@ -826,7 +840,7 @@ set (libdir "\${prefix}/lib")
 foreach (
       FLAG
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES})
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${ICU_LIBRARIES})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)

@@ -110,6 +110,20 @@ _mongoc_scram_step (mongoc_scram_t *scram,
 void
 _mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache);
 
+/* returns false if this string does not need SASLPrep. It returns true
+ * conservatively, if str might need to be SASLPrep'ed. */
+bool
+_mongoc_sasl_prep_required (const char *str);
+
+/* returns the output of SASLPrep as a new string which must be freed. Returns
+ * null on error and sets err.
+ * `name` should be "username" or "password". */
+char *
+_mongoc_sasl_prep (const char *name,
+                   const char *in_utf8,
+                   int in_utf8_len,
+                   bson_error_t *err);
+
 BSON_END_DECLS
 
 
