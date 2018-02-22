@@ -728,6 +728,43 @@ test_cursor_new_tailable_await (void)
 
 
 static void
+test_cursor_new_ignores_fields (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   cursor = mongoc_cursor_new_from_command_reply (
+      client,
+      bson_copy (tmp_bson ("{'ok': 1,"
+                           " 'cursor': {"
+                           "     'id': 0,"
+                           "     'ns': 'test.foo',"
+                           "     'firstBatch': []"
+                           " },"
+                           " 'operationTime' : {},"
+                           " '$clusterTime': {},"
+                           " '$gleStats': {},"
+                           " 'batchSize': 10"
+                           "}")),
+      0);
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   ASSERT_MATCH (&cursor->opts, "{'batchSize': 10}");
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_cursor_new_invalid_filter (void)
 {
    mongoc_client_t *client;
@@ -1673,6 +1710,8 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_ignores_fields", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
       suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
    TestSuite_AddLive (

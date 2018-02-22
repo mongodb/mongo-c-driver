@@ -2244,8 +2244,14 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   bson_copy_to_excluding_noinit (
-      reply, &opts, "cursor", "ok", "operationTime", "$clusterTime", NULL);
+   bson_copy_to_excluding_noinit (reply,
+                                  &opts,
+                                  "cursor",
+                                  "ok",
+                                  "operationTime",
+                                  "$clusterTime",
+                                  "$gleStats",
+                                  NULL);
 
    cursor = _mongoc_cursor_new_with_opts (
       client, NULL, true /* is_find */, NULL, &opts, NULL, NULL);
