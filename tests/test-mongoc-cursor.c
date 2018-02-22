@@ -1026,8 +1026,7 @@ test_cursor_new_static (void)
    /* test heap-allocated bson */
    client = test_framework_client_new ();
    bson_copied = bson_copy (bson_alloced);
-   cursor = mongoc_cursor_new_from_command_reply (
-      client, bson_copied, 0);
+   cursor = mongoc_cursor_new_from_command_reply (client, bson_copied, 0);
 
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
