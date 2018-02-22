@@ -381,35 +381,33 @@ _mongoc_handshake_cleanup (void)
    _free_platform_string (_mongoc_handshake_get ());
 }
 
-static bool
+static void
 _append_platform_field (bson_t *doc, const char *platform)
 {
    int max_platform_str_size;
 
    /* Compute space left for platform field */
    max_platform_str_size =
-      HANDSHAKE_MAX_SIZE - (doc->len +
+      HANDSHAKE_MAX_SIZE - ((int) doc->len +
                             /* 1 byte for utf8 tag */
                             1 +
 
                             /* key size */
-                            strlen (HANDSHAKE_PLATFORM_FIELD) +
-                            1 +
+                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
                             /* 4 bytes for length of string */
                             4);
 
    if (max_platform_str_size <= 0) {
-      return false;
+      return;
    }
 
    max_platform_str_size =
-      BSON_MIN (max_platform_str_size, strlen (platform) + 1);
+      BSON_MIN (max_platform_str_size, (int) strlen (platform) + 1);
    bson_append_utf8 (
       doc, HANDSHAKE_PLATFORM_FIELD, -1, platform, max_platform_str_size - 1);
 
    BSON_ASSERT (doc->len <= HANDSHAKE_MAX_SIZE);
-   return true;
 }
 
 /*
@@ -483,7 +481,7 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
 {
    char *old_str = *s;
    char *prefix;
-   const int delim_len = strlen (" / ");
+   const int delim_len = (int) strlen (" / ");
    int space_for_suffix;
 
    BSON_ASSERT (s);
@@ -494,8 +492,12 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
       return;
    }
 
-   space_for_suffix = max_len - strlen (prefix) - delim_len;
-   BSON_ASSERT (space_for_suffix >= 0);
+   space_for_suffix = max_len - (int) strlen (prefix) - delim_len;
+
+   if (space_for_suffix <= 0) {
+      /* the old string already takes the whole allotted space */
+      return;
+   }
 
    *s = bson_strdup_printf ("%s / %.*s", prefix, space_for_suffix, suffix);
    BSON_ASSERT (strlen (*s) <= max_len);
@@ -518,8 +520,6 @@ mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
                               const char *platform)
 {
-   int max_size = 0;
-
    if (_mongoc_handshake_get ()->frozen) {
       MONGOC_ERROR ("Cannot set handshake more than once");
       return false;
@@ -533,16 +533,10 @@ mongoc_handshake_data_append (const char *driver_name,
                          driver_version,
                          HANDSHAKE_DRIVER_VERSION_MAX);
 
-   max_size =
-      HANDSHAKE_MAX_SIZE -
-      -_mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_type) -
-      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_name) -
-      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_version) -
-      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->os_architecture) -
-      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->driver_name) -
-      _mongoc_strlen_or_zero (_mongoc_handshake_get ()->driver_version);
+   /* allow practically any size for "platform", we'll trim it down in
+    * _mongoc_handshake_build_doc_with_application */
    _append_and_truncate (
-      &_mongoc_handshake_get ()->platform, platform, max_size);
+      &_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
 
    _mongoc_handshake_freeze ();
    return true;

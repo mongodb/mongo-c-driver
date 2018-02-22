@@ -276,6 +276,56 @@ test_mongoc_handshake_data_append_success (void)
    _reset_handshake ();
 }
 
+
+static void
+_test_platform (bool platform_oversized)
+{
+   mongoc_handshake_t *md;
+   size_t platform_len;
+   const char *platform_suffix = "b";
+   bson_t doc = BSON_INITIALIZER;
+
+   _mongoc_handshake_cleanup ();
+
+   md = _mongoc_handshake_get ();
+   md->frozen = false;
+   md->os_type = bson_strdup ("foo");
+   md->os_name = bson_strdup ("foo");
+   md->os_version = bson_strdup ("foo");
+   md->os_architecture = bson_strdup ("foo");
+   md->driver_name = bson_strdup ("foo");
+   md->driver_version = bson_strdup ("foo");
+
+   platform_len = HANDSHAKE_MAX_SIZE;
+   if (platform_oversized) {
+      platform_len += 100;
+   }
+
+   md->platform = bson_malloc (platform_len);
+   memset (md->platform, 'a', platform_len - 1);
+   md->platform[platform_len - 1] = '\0';
+
+   /* returns true, but ignores the suffix; there's no room */
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, platform_suffix));
+   ASSERT (!strstr (md->platform, "b"));
+   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
+   ASSERT_CMPUINT32 (doc.len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
+
+   bson_destroy (&doc);
+   _reset_handshake (); /* frees the strings created above */
+}
+
+
+static void test_mongoc_handshake_big_platform (void) {
+   _test_platform (false);
+}
+
+
+static void test_mongoc_handshake_oversized_platform (void) {
+   _test_platform (true);
+}
+
+
 static void
 test_mongoc_handshake_data_append_after_cmd (void)
 {
@@ -476,6 +526,12 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/success",
                                 test_mongoc_handshake_data_append_success);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/big_platform",
+                  test_mongoc_handshake_big_platform);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/oversized_platform",
+                  test_mongoc_handshake_oversized_platform);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/failure",
                   test_mongoc_handshake_data_append_after_cmd);
