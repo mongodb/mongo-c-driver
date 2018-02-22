@@ -354,6 +354,11 @@ _set_platform_string (mongoc_handshake_t *handshake)
          str, " LDFLAGS=%s", MONGOC_EVALUATE_STR (MONGOC_USER_SET_LDFLAGS));
    }
 
+   /* keep 25% free */
+   if (str->len > (HANDSHAKE_MAX_SIZE * 3 / 4)) {
+      bson_string_truncate (str, (HANDSHAKE_MAX_SIZE * 3 / 4));
+      bson_string_append (str, "…");
+   }
    handshake->platform = bson_string_free (str, false);
 }
 
