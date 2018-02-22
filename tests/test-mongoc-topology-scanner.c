@@ -416,6 +416,7 @@ _mock_server_listening_on (char *server_bind_to)
    if (strcmp ("both", server_bind_to) == 0) {
       opts.bind_addr_len = sizeof (ipv6_addr);
       opts.family = AF_INET6;
+      opts.ipv6_only = 0;
       ipv6_addr.sin6_family = AF_INET6;
       ipv6_addr.sin6_port = htons (0);   /* any port */
       ipv6_addr.sin6_addr = in6addr_any; /* either IPv4 or IPv6 */
@@ -423,6 +424,7 @@ _mock_server_listening_on (char *server_bind_to)
    } else if (strcmp ("ipv4", server_bind_to) == 0) {
       opts.bind_addr_len = sizeof (ipv4_addr);
       opts.family = AF_INET;
+      opts.ipv6_only = 0;
       ipv4_addr.sin_family = AF_INET;
       ipv4_addr.sin_port = htons (0);
       inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
@@ -430,6 +432,7 @@ _mock_server_listening_on (char *server_bind_to)
    } else if (strcmp ("ipv6", server_bind_to) == 0) {
       opts.bind_addr_len = sizeof (ipv6_addr);
       opts.family = AF_INET6;
+      opts.ipv6_only = 1;
       ipv6_addr.sin6_family = AF_INET6;
       ipv6_addr.sin6_port = htons (0);
       inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr);

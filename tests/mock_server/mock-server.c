@@ -337,6 +337,10 @@ mock_server_run (mock_server_t *server)
    mongoc_socket_setsockopt (
       ssock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
+   optval = server->bind_opts.ipv6_only;
+   mongoc_socket_setsockopt (
+      ssock, IPPROTO_IPV6, IPV6_V6ONLY, &optval, sizeof (optval));
+
    memset (&default_bind_addr, 0, sizeof default_bind_addr);
 
    default_bind_addr.sin_family = AF_INET;
@@ -1498,7 +1502,7 @@ mock_server_destroy (mock_server_t *server)
 static uint16_t
 get_port (mongoc_socket_t *sock)
 {
-   struct sockaddr_in bound_addr = {0};
+   struct sockaddr_storage bound_addr = {0};
    mongoc_socklen_t addr_len = (mongoc_socklen_t) sizeof bound_addr;
 
    if (mongoc_socket_getsockname (
@@ -1507,7 +1511,11 @@ get_port (mongoc_socket_t *sock)
       return 0;
    }
 
-   return ntohs (bound_addr.sin_port);
+   if (bound_addr.ss_family == AF_INET6) {
+      return ntohs (((struct sockaddr_in6 *) &bound_addr)->sin6_port);
+   } else {
+      return ntohs (((struct sockaddr_in *) &bound_addr)->sin_port);
+   }
 }
 
 

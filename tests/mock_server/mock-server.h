@@ -34,6 +34,7 @@ typedef struct _mock_server_bind_opts_t {
    struct sockaddr_in *bind_addr;
    size_t bind_addr_len;
    int family;
+   int ipv6_only;
 } mock_server_bind_opts_t;
 
 typedef bool (*autoresponder_t) (request_t *request, void *data);
