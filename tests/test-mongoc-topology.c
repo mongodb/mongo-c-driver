@@ -454,14 +454,29 @@ test_max_wire_version_race_condition (void *ctx)
    bson_error_t error;
    mongoc_server_stream_t *server_stream;
    uint32_t id;
+   bool r;
 
    /* connect directly and add our user, test is only valid with auth */
    client = test_framework_client_new ();
    database = mongoc_client_get_database (client, "test");
    mongoc_database_remove_user (database, "pink", &error);
-   ASSERT_OR_PRINT (1 == mongoc_database_add_user (
-                            database, "pink", "panther", NULL, NULL, &error),
-                    error);
+
+   /* MongoDB 4+ prohibits hashed password, call createUser directly until we
+    * update mongoc_database_add_user */
+   if (test_framework_max_wire_version_at_least (7)) {
+      r = mongoc_database_write_command_with_opts (
+         database,
+         tmp_bson ("{'createUser': 'pink', 'pwd': 'panther',"
+                   " 'roles': [{'role': 'read', 'db': 'test'}]}"),
+         NULL,
+         NULL,
+         &error);
+   } else {
+      r = mongoc_database_add_user (
+         database, "pink", "panther", NULL, NULL, &error);
+   }
+
+   ASSERT_OR_PRINT (r, error);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 
