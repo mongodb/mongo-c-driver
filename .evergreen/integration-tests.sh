@@ -73,7 +73,7 @@ case "$OS" in
       cd venv
       . Scripts/activate
       rm -rf mongo-orchestration
-      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
+      git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
       cd mongo-orchestration
       pip install .
       cd ../..
@@ -90,7 +90,7 @@ case "$OS" in
       cd venv
       . bin/activate
       rm -rf mongo-orchestration
-      git clone --depth 1 https://github.com/10gen/mongo-orchestration.git
+      git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
       cd mongo-orchestration
       # Our zSeries machines are static-provisioned, cache corruptions persist.
       if [ $(uname -m) = "s390x" ]; then
