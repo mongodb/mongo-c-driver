@@ -12,16 +12,16 @@ function (message)
 endfunction ()
 
 set (ENABLE_SSL AUTO CACHE STRING
-     "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
-     \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
-     Secure Channel, \"OPENSSL\", \"LIBRESSL\", \"AUTO\",\ or \"OFF\". These options are
-     case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
-     required for authenticating to MongoDB 3.0 and later.")
+   "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
+   \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
+   Secure Channel, \"OPENSSL\", \"LIBRESSL\", \"AUTO\",\ or \"OFF\". These options are
+   case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
+   required for authenticating to MongoDB 3.0 and later.")
 
 set (ENABLE_SASL AUTO CACHE STRING
-     "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
-     SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
-     \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
+   "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
+   SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
+   \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
 
 set (ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option (ENABLE_TESTS "Build MongoDB C Driver tests." ON)
@@ -55,7 +55,7 @@ endif ()
 include (MaintainerFlags)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
-  set (ENABLE_BUILD_DEPENDECIES ON)
+   set (ENABLE_BUILD_DEPENDECIES ON)
 endif ()
 
 if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED")
@@ -63,48 +63,48 @@ if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED")
 endif ()
 
 if (NOT ENABLE_BSON STREQUAL BUNDLED)
-  # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
-  # but you should use the standard CMAKE_PREFIX_PATH instead.
-  message (STATUS "Searching for libbson CMake packages")
-  find_package (libbson-1.0
-    "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
-    HINTS
-    ${BSON_ROOT_DIR})
+   # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
+   # but you should use the standard CMAKE_PREFIX_PATH instead.
+   message (STATUS "Searching for libbson CMake packages")
+   find_package (libbson-1.0
+      "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
+      HINTS
+      ${BSON_ROOT_DIR})
 
-  if (ENABLE_BSON STREQUAL SYSTEM AND NOT BSON_LIBRARIES)
-     message (FATAL_ERROR "System libbson not found")
-  endif ()
+   if (ENABLE_BSON STREQUAL SYSTEM AND NOT BSON_LIBRARIES)
+      message (FATAL_ERROR "System libbson not found")
+   endif ()
 
-  if (BSON_LIBRARIES)
-     message ("--   libbson found version \"${BSON_VERSION}\"")
-     message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-     message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+   if (BSON_LIBRARIES)
+      message ("--   libbson found version \"${BSON_VERSION}\"")
+      message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
+      message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
 
-     if (ENABLE_STATIC MATCHES "ON|AUTO")
-        find_package (libbson-static-1.0
+      if (ENABLE_STATIC MATCHES "ON|AUTO")
+         find_package (libbson-static-1.0
             "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
             HINTS
             ${BSON_ROOT_DIR})
 
-        if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
-           message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
-        endif ()
+         if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
+            message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
+         endif ()
 
-        if (BSON_STATIC_LIBRARY)
-           set (MONGOC_ENABLE_STATIC ON)
-        endif ()
+         if (BSON_STATIC_LIBRARY)
+            set (MONGOC_ENABLE_STATIC ON)
+         endif ()
 
-        message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
-        message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-        message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
-     endif ()
-  endif ()
+         message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
+         message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
+         message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
+      endif ()
+   endif ()
 endif ()
 
 if (NOT BSON_LIBRARIES)
    message ("  -- Using bundled libbson")
    if (ENABLE_STATIC MATCHES "ON|AUTO")
-     set (MONGOC_ENABLE_STATIC ON)
+      set (MONGOC_ENABLE_STATIC ON)
    endif ()
    add_subdirectory (src/libbson)
    # Defined in src/libbson/CMakeLists.txt
@@ -311,24 +311,24 @@ function (mongoc_get_accept_args ARG2 ARG3)
       accept (a, b, c);
       return 0;
    }
-  ")
+   ")
 
-  TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c CMAKE_FLAGS
-  "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
+   TRY_COMPILE (RES ${CMAKE_CURRENT_BINARY_DIR}
+   ${CMAKE_CURRENT_BINARY_DIR}/accept_test${VAR}.c CMAKE_FLAGS
+   "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'" OUTPUT_VARIABLE LOG2)
 
-  if (RES)
-     message (
-        STATUS
-        "Detected parameters: accept (int, ${ARG2_VAL} *, ${ARG3_VAL} *)")
+   if (RES)
+      message (
+         STATUS
+         "Detected parameters: accept (int, ${ARG2_VAL} *, ${ARG3_VAL} *)")
 
-     set (${ARG2} ${ARG2_VAL} PARENT_SCOPE)
-     set (${ARG3} ${ARG3_VAL} PARENT_SCOPE)
-     return ()
-  endif ()
+      set (${ARG2} ${ARG2_VAL} PARENT_SCOPE)
+      set (${ARG3} ${ARG3_VAL} PARENT_SCOPE)
+      return ()
+   endif ()
 
-  endforeach ()
-  endforeach ()
+   endforeach ()
+   endforeach ()
 
 endfunction ()
 
@@ -578,20 +578,20 @@ set (HEADERS
 
 if (NOT ENABLE_SSL STREQUAL OFF)
    set (SOURCES ${SOURCES}
-        ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
-        ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
-        ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
-        ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
    )
 
    if (OPENSSL_FOUND)
       message (STATUS "Compiling against OpenSSL")
       set (SOURCES ${SOURCES}
-           ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
-           ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-           ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
-           ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
-           ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
       )
       set (SSL_LIBS ${OPENSSL_LIBRARIES})
       include_directories (${OPENSSL_INCLUDE_DIR})
@@ -601,28 +601,28 @@ if (NOT ENABLE_SSL STREQUAL OFF)
    elseif (SECURE_TRANSPORT)
       message (STATUS "Compiling against Secure Transport")
       set (SOURCES ${SOURCES}
-              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-crypto-common-crypto.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-rand-common-crypto.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
       )
       set (SSL_LIBS "-framework CoreFoundation -framework Security")
    elseif (SECURE_CHANNEL)
       message (STATUS "Compiling against Secure Channel")
       set (SOURCES ${SOURCES}
-              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-crypto-cng.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-rand-cng.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
       )
       set (SSL_LIBS secur32.lib crypt32.lib Bcrypt.lib)
    elseif (LIBRESSL)
       message (STATUS "Compiling against LibreSSL")
       set (SOURCES ${SOURCES}
-              ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
-              ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
+         ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
       )
       set (SSL_LIBS -ltls -lcrypto)
    endif ()
@@ -852,26 +852,26 @@ file (COPY ${SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 install (
-  TARGETS mongoc_shared ${EXAMPLES}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
+   TARGETS mongoc_shared ${EXAMPLES}
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+   RUNTIME DESTINATION bin
 )
 
 if (MONGOC_ENABLE_STATIC)
    install (
-     TARGETS mongoc_shared mongoc_static ${EXAMPLES}
-     LIBRARY DESTINATION lib
-     ARCHIVE DESTINATION lib
-     RUNTIME DESTINATION bin
+      TARGETS mongoc_shared mongoc_static ${EXAMPLES}
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      RUNTIME DESTINATION bin
    )
 endif ()
 
 set (MONGOC_HEADER_INSTALL_DIR "include/libmongoc-${MONGOC_API_VERSION}")
 
 install (
-  FILES ${HEADERS}
-  DESTINATION "${MONGOC_HEADER_INSTALL_DIR}"
+   FILES ${HEADERS}
+   DESTINATION "${MONGOC_HEADER_INSTALL_DIR}"
 )
 
 # Define pkg-config files
@@ -884,7 +884,7 @@ foreach (
       ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${THREAD_LIB}
       ${ZLIB_LIBS} ${SNAPPY_LIBS})
 
-   if (IS_ABSOLUTE "${FLAG}" )
+   if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)
       get_filename_component (FLAG_FILE "${FLAG}" NAME_WE)
       STRING (REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
@@ -899,33 +899,33 @@ foreach (
 endforeach ()
 
 configure_file (
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
+   ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
 @ONLY)
 install (
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-  DESTINATION lib/pkgconfig
+   FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
+   DESTINATION lib/pkgconfig
 )
 if (MONGOC_ENABLE_STATIC)
    configure_file (
-     ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
-     ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
+      ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
    @ONLY)
    install (
-     FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-     DESTINATION lib/pkgconfig
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
+      DESTINATION lib/pkgconfig
    )
 endif ()
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
 if (MONGOC_ENABLE_SSL)
-  configure_file (
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
-  @ONLY)
-  install (
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
-    DESTINATION lib/pkgconfig
-  )
+   configure_file (
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in
+      ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
+   @ONLY)
+   install (
+      FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
+      DESTINATION lib/pkgconfig
+   )
 endif ()
 
 include (build/cmake/MongoCPackage.cmake)

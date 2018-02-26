@@ -51,23 +51,23 @@ endif ()
 # See https://public.kitware.com/Bug/view.php?id=15659
 CHECK_SYMBOL_EXISTS (snprintf stdio.h BSON_HAVE_SNPRINTF)
 if (NOT BSON_HAVE_SNPRINTF)
-  set (BSON_HAVE_SNPRINTF 0)
+   set (BSON_HAVE_SNPRINTF 0)
 else ()
-  set (BSON_HAVE_SNPRINTF 1)
+   set (BSON_HAVE_SNPRINTF 1)
 endif ()
 
 CHECK_FUNCTION_EXISTS (reallocf BSON_HAVE_REALLOCF)
 if (NOT BSON_HAVE_REALLOCF)
-  set (BSON_HAVE_REALLOCF 0)
+   set (BSON_HAVE_REALLOCF 0)
 endif ()
 
 CHECK_STRUCT_HAS_MEMBER ("struct timespec" tv_sec time.h BSON_HAVE_TIMESPEC)
 if (NOT BSON_HAVE_TIMESPEC)
-  message (STATUS "    no timespec struct")
-  set (BSON_HAVE_TIMESPEC 0)
+   message (STATUS "    no timespec struct")
+   set (BSON_HAVE_TIMESPEC 0)
 else ()
-  message (STATUS "    struct timespec found")
-  set (BSON_HAVE_TIMESPEC 1)
+   message (STATUS "    struct timespec found")
+   set (BSON_HAVE_TIMESPEC 1)
 endif ()
 
 CHECK_SYMBOL_EXISTS (gmtime_r time.h BSON_HAVE_GMTIME_R)
@@ -79,9 +79,9 @@ endif ()
 
 CHECK_FUNCTION_EXISTS (rand_r BSON_HAVE_RAND_R)
 if (NOT BSON_HAVE_RAND_R)
-  set (BSON_HAVE_RAND_R 0)
+   set (BSON_HAVE_RAND_R 0)
 else ()
-  set (BSON_HAVE_RAND_R 1)
+   set (BSON_HAVE_RAND_R 1)
 endif ()
 
 if (WIN32)
@@ -259,111 +259,111 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
 endif ()
 
 if (ENABLE_TESTS)
-    enable_testing ()
+   enable_testing ()
 
-    set (BSON_TEST_SOURCES
-         ${PROJECT_SOURCE_DIR}/tests/bson-tests.h
-         ${PROJECT_SOURCE_DIR}/tests/corpus-test.c
-         ${PROJECT_SOURCE_DIR}/tests/corpus-test.h
-         ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
-         ${PROJECT_SOURCE_DIR}/tests/TestSuite.h
-         ${PROJECT_SOURCE_DIR}/tests/test-libbson.c
-         ${PROJECT_SOURCE_DIR}/tests/test-atomic.c
-         ${PROJECT_SOURCE_DIR}/tests/test-bson.c
-         ${PROJECT_SOURCE_DIR}/tests/test-bson-corpus.c
-         ${PROJECT_SOURCE_DIR}/tests/test-endian.c
-         ${PROJECT_SOURCE_DIR}/tests/test-clock.c
-         ${PROJECT_SOURCE_DIR}/tests/test-decimal128.c
-         ${PROJECT_SOURCE_DIR}/tests/test-error.c
-         ${PROJECT_SOURCE_DIR}/tests/test-iso8601.c
-         ${PROJECT_SOURCE_DIR}/tests/test-iter.c
-         ${PROJECT_SOURCE_DIR}/tests/test-json.c
-         ${PROJECT_SOURCE_DIR}/tests/test-oid.c
-         ${PROJECT_SOURCE_DIR}/tests/test-reader.c
-         ${PROJECT_SOURCE_DIR}/tests/test-string.c
-         ${PROJECT_SOURCE_DIR}/tests/test-utf8.c
-         ${PROJECT_SOURCE_DIR}/tests/test-value.c
-         ${PROJECT_SOURCE_DIR}/tests/test-version.c
-         ${PROJECT_SOURCE_DIR}/tests/test-writer.c
-         ${PROJECT_SOURCE_DIR}/tests/test-bcon-basic.c
-         ${PROJECT_SOURCE_DIR}/tests/test-bcon-extract.c
-         ${PROJECT_SOURCE_DIR}/tests/json-test.c
-         ${PROJECT_SOURCE_DIR}/tests/json-test.c
-         ${PROJECT_SOURCE_DIR}/tests/json-test.h
-    )
+   set (BSON_TEST_SOURCES
+      ${PROJECT_SOURCE_DIR}/tests/bson-tests.h
+      ${PROJECT_SOURCE_DIR}/tests/corpus-test.c
+      ${PROJECT_SOURCE_DIR}/tests/corpus-test.h
+      ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
+      ${PROJECT_SOURCE_DIR}/tests/TestSuite.h
+      ${PROJECT_SOURCE_DIR}/tests/test-libbson.c
+      ${PROJECT_SOURCE_DIR}/tests/test-atomic.c
+      ${PROJECT_SOURCE_DIR}/tests/test-bson.c
+      ${PROJECT_SOURCE_DIR}/tests/test-bson-corpus.c
+      ${PROJECT_SOURCE_DIR}/tests/test-endian.c
+      ${PROJECT_SOURCE_DIR}/tests/test-clock.c
+      ${PROJECT_SOURCE_DIR}/tests/test-decimal128.c
+      ${PROJECT_SOURCE_DIR}/tests/test-error.c
+      ${PROJECT_SOURCE_DIR}/tests/test-iso8601.c
+      ${PROJECT_SOURCE_DIR}/tests/test-iter.c
+      ${PROJECT_SOURCE_DIR}/tests/test-json.c
+      ${PROJECT_SOURCE_DIR}/tests/test-oid.c
+      ${PROJECT_SOURCE_DIR}/tests/test-reader.c
+      ${PROJECT_SOURCE_DIR}/tests/test-string.c
+      ${PROJECT_SOURCE_DIR}/tests/test-utf8.c
+      ${PROJECT_SOURCE_DIR}/tests/test-value.c
+      ${PROJECT_SOURCE_DIR}/tests/test-version.c
+      ${PROJECT_SOURCE_DIR}/tests/test-writer.c
+      ${PROJECT_SOURCE_DIR}/tests/test-bcon-basic.c
+      ${PROJECT_SOURCE_DIR}/tests/test-bcon-extract.c
+      ${PROJECT_SOURCE_DIR}/tests/json-test.c
+      ${PROJECT_SOURCE_DIR}/tests/json-test.c
+      ${PROJECT_SOURCE_DIR}/tests/json-test.h
+   )
 
-    add_executable (test-libbson ${BSON_TEST_SOURCES})
+   add_executable (test-libbson ${BSON_TEST_SOURCES})
 
-    target_link_libraries (test-libbson bson_static)
-    target_compile_definitions (test-libbson PUBLIC "BSON_STATIC")
-    add_test (NAME test-libbson COMMAND test-libbson)
+   target_link_libraries (test-libbson bson_static)
+   target_compile_definitions (test-libbson PUBLIC "BSON_STATIC")
+   add_test (NAME test-libbson COMMAND test-libbson)
 
-    file (COPY ${PROJECT_SOURCE_DIR}/tests/binary ${PROJECT_SOURCE_DIR}/tests/json
-         DESTINATION ${PROJECT_BINARY_DIR}/tests)
+   file (COPY ${PROJECT_SOURCE_DIR}/tests/binary ${PROJECT_SOURCE_DIR}/tests/json
+      DESTINATION ${PROJECT_BINARY_DIR}/tests)
 endif ()  # ENABLE_TESTS
 
 function (add_example bin src)
-    set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
-    add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
+   set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
+   add_executable (${bin} ${BSON_EXAMPLE_SOURCES})
 
-    # Link against the shared lib like normal apps
-    target_link_libraries (${bin} bson_shared)
+   # Link against the shared lib like normal apps
+   target_link_libraries (${bin} bson_shared)
 
-    set (EXAMPLES ${EXAMPLES} ${bin})
+   set (EXAMPLES ${EXAMPLES} ${bin})
 endfunction ()
 
 if (ENABLE_EXAMPLES)
-    add_example (bcon-col-view examples/bcon-col-view.c)
-    add_example (bcon-speed examples/bcon-speed.c)
-    add_example (bson-metrics examples/bson-metrics.c)
-    if (NOT WIN32)
+   add_example (bcon-col-view examples/bcon-col-view.c)
+   add_example (bcon-speed examples/bcon-speed.c)
+   add_example (bson-metrics examples/bson-metrics.c)
+   if (NOT WIN32)
       add_example (bson-streaming-reader examples/bson-streaming-reader.c)
-    endif ()
-    add_example (bson-to-json examples/bson-to-json.c)
-    add_example (bson-validate examples/bson-validate.c)
-    add_example (json-to-bson examples/json-to-bson.c)
+   endif ()
+   add_example (bson-to-json examples/bson-to-json.c)
+   add_example (bson-validate examples/bson-validate.c)
+   add_example (json-to-bson examples/json-to-bson.c)
 endif () # ENABLE_EXAMPLES
 
 set (BSON_HEADER_INSTALL_DIR "include/libbson-${BSON_API_VERSION}")
 install (
-  TARGETS bson_shared ${EXAMPLES}
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
+   TARGETS bson_shared ${EXAMPLES}
+   LIBRARY DESTINATION lib
+   ARCHIVE DESTINATION lib
+   RUNTIME DESTINATION bin
 )
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    install (
-     TARGETS bson_static ${EXAMPLES}
-     LIBRARY DESTINATION lib
-     ARCHIVE DESTINATION lib
-     RUNTIME DESTINATION bin
+      TARGETS bson_static ${EXAMPLES}
+      LIBRARY DESTINATION lib
+      ARCHIVE DESTINATION lib
+      RUNTIME DESTINATION bin
    )
 endif ()
 install (
-  FILES ${HEADERS}
-  DESTINATION ${BSON_HEADER_INSTALL_DIR}
+   FILES ${HEADERS}
+   DESTINATION ${BSON_HEADER_INSTALL_DIR}
 )
 
 set (LIBBSON_LIBS "")
 foreach (_lib ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${BSON_LIBS})
    if (_lib MATCHES ".*/.*" OR _lib MATCHES "^-")
-    set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
-  else ()
-    set (LIBBSON_LIBS          "${LIBBSON_LIBS} -l${_lib}")
-  endif ()
+      set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
+   else ()
+      set (LIBBSON_LIBS          "${LIBBSON_LIBS} -l${_lib}")
+   endif ()
 endforeach ()
 # System dependencies don't match the above regexs, but also don't want the -l
 foreach (_lib ${BSON_SYSTEM_LIBS})
-    set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
+   set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
 endforeach ()
 
 set (VERSION "${BSON_VERSION}")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (libdir "\${prefix}/lib")
 configure_file (
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
-    @ONLY)
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
+   ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
+   @ONLY)
 
 install (
    FILES
@@ -374,9 +374,9 @@ install (
 
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    configure_file (
-       ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
-       ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
-       @ONLY)
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
+      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
+      @ONLY)
 
    install (
       FILES
