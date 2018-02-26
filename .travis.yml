@@ -13,10 +13,17 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mongodb; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew services start mongodb; fi
 
+before_script:
+  # Add an IPv6 config - see the corresponding Travis issue
+  # https://github.com/travis-ci/travis-ci/issues/8361
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
+      sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
+    fi
+
 services: mongodb
 
 env:
-  - CFLAGS="$CFLAGS -Werror -Wno-cast-align" 
+  - CFLAGS="$CFLAGS -Werror -Wno-cast-align"
 
 addons:
   apt:
@@ -24,6 +31,7 @@ addons:
       - gdb
 
 script:
+  - sudo sh -c 'echo "\n::1 localhost\n" >> /etc/hosts'
   - ulimit -a
   - ulimit -c unlimited || true
   - ./autogen.sh --enable-debug --enable-maintainer-flags --disable-automatic-init-and-cleanup --with-libbson=bundled
