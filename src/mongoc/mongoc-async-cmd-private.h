@@ -33,6 +33,7 @@
 BSON_BEGIN_DECLS
 
 typedef enum {
+   MONGOC_ASYNC_CMD_INITIATE,
    MONGOC_ASYNC_CMD_SETUP,
    MONGOC_ASYNC_CMD_SEND,
    MONGOC_ASYNC_CMD_RECV_LEN,
@@ -47,6 +48,7 @@ typedef struct _mongoc_async_cmd {
    mongoc_async_t *async;
    mongoc_async_cmd_state_t state;
    int events;
+   mongoc_async_cmd_initiate_t initiator;
    mongoc_async_cmd_setup_t setup;
    void *setup_ctx;
    mongoc_async_cmd_cb_t cb;
@@ -66,6 +68,7 @@ typedef struct _mongoc_async_cmd {
    bson_t reply;
    bool reply_needs_cleanup;
    char ns[MONGOC_NAMESPACE_MAX];
+   struct addrinfo *dns_result;
 
    struct _mongoc_async_cmd *next;
    struct _mongoc_async_cmd *prev;
@@ -74,6 +77,8 @@ typedef struct _mongoc_async_cmd {
 mongoc_async_cmd_t *
 mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
+                      struct addrinfo *dns_result,
+                      mongoc_async_cmd_initiate_t initiator,
                       mongoc_async_cmd_setup_t setup,
                       void *setup_ctx,
                       const char *dbname,

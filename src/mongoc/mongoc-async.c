@@ -69,6 +69,21 @@ mongoc_async_run (mongoc_async_t *async)
    }
 
    while (async->ncmds) {
+      /* check if any streams need to be initiated. */
+      DL_FOREACH_SAFE (async->cmds, acmd, tmp)
+      {
+         if (acmd->state == MONGOC_ASYNC_CMD_INITIATE) {
+            if (mongoc_async_cmd_run (acmd)) {
+               BSON_ASSERT (acmd->stream);
+            }
+         }
+      }
+
+      if (async->ncmds == 0) {
+         /* all cmds failed to initiate and removed themselves. */
+         break;
+      }
+
       /* ncmds grows if we discover a replica & start calling ismaster on it */
       if (poll_size < async->ncmds) {
          poller = (mongoc_stream_poll_t *) bson_realloc (
@@ -153,12 +168,7 @@ mongoc_async_run (mongoc_async_t *async)
          }
 
          if (remove_cmd) {
-            acmd->cb (acmd->stream,
-                      result,
-                      NULL,
-                      (now - acmd->connect_started) / 1000,
-                      acmd->data,
-                      &acmd->error);
+            acmd->cb (acmd, result, NULL, (now - acmd->connect_started) / 1000);
 
             /* Remove acmd from the async->cmds doubly-linked list */
             mongoc_async_cmd_destroy (acmd);

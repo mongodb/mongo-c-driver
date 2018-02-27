@@ -40,6 +40,8 @@ typedef mongoc_async_cmd_result_t (*_mongoc_async_cmd_phase_t) (
    mongoc_async_cmd_t *cmd);
 
 mongoc_async_cmd_result_t
+_mongoc_async_cmd_phase_initiate (mongoc_async_cmd_t *cmd);
+mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *cmd);
@@ -49,6 +51,7 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
 
 static const _mongoc_async_cmd_phase_t gMongocCMDPhases[] = {
+   _mongoc_async_cmd_phase_initiate,
    _mongoc_async_cmd_phase_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
@@ -113,15 +116,10 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    rtt_msec = (bson_get_monotonic_time () - acmd->cmd_started) / 1000;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
-      acmd->cb (acmd->stream,
-                result,
-                &acmd->reply,
-                rtt_msec,
-                acmd->data,
-                &acmd->error);
+      acmd->cb (acmd, result, &acmd->reply, rtt_msec);
    } else {
       /* we're in ERROR, TIMEOUT, or CANCELED */
-      acmd->cb (acmd->stream, result, NULL, rtt_msec, acmd->data, &acmd->error);
+      acmd->cb (acmd, result, NULL, rtt_msec);
    }
 
    mongoc_async_cmd_destroy (acmd);
@@ -155,7 +153,9 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
 void
 _mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd)
 {
-   if (acmd->setup) {
+   if (!acmd->stream) {
+      acmd->state = MONGOC_ASYNC_CMD_INITIATE;
+   } else if (acmd->setup) {
       acmd->state = MONGOC_ASYNC_CMD_SETUP;
    } else {
       acmd->state = MONGOC_ASYNC_CMD_SEND;
@@ -167,6 +167,8 @@ _mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd)
 mongoc_async_cmd_t *
 mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
+                      struct addrinfo *dns_result,
+                      mongoc_async_cmd_initiate_t initiator,
                       mongoc_async_cmd_setup_t setup,
                       void *setup_ctx,
                       const char *dbname,
@@ -179,12 +181,13 @@ mongoc_async_cmd_new (mongoc_async_t *async,
 
    BSON_ASSERT (cmd);
    BSON_ASSERT (dbname);
-   BSON_ASSERT (stream);
 
    acmd = (mongoc_async_cmd_t *) bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
+   acmd->dns_result = dns_result;
    acmd->timeout_msec = timeout_msec;
    acmd->stream = stream;
+   acmd->initiator = initiator;
    acmd->setup = setup;
    acmd->setup_ctx = setup_ctx;
    acmd->cb = cb;
@@ -224,6 +227,21 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
    _mongoc_buffer_destroy (&acmd->buffer);
 
    bson_free (acmd);
+}
+
+mongoc_async_cmd_result_t
+_mongoc_async_cmd_phase_initiate (mongoc_async_cmd_t *acmd)
+{
+   acmd->stream = acmd->initiator (acmd);
+   if (!acmd->stream) {
+      return MONGOC_ASYNC_CMD_ERROR;
+   }
+   if (acmd->setup) {
+      acmd->state = MONGOC_ASYNC_CMD_SETUP;
+   } else {
+      acmd->state = MONGOC_ASYNC_CMD_SEND;
+   }
+   return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }
 
 mongoc_async_cmd_result_t

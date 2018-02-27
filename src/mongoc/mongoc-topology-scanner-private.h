@@ -65,6 +65,13 @@ typedef struct mongoc_topology_scanner_node {
 
    bool retired;
    bson_error_t last_error;
+
+   /* the hostname for a node may resolve to multiple DNS results.
+    * dns_results has the full list of DNS results, ordered by host preference.
+    * successful_dns_result is the most recent successful DNS result.
+    */
+   struct addrinfo *dns_results;
+   struct addrinfo *successful_dns_result;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner {
@@ -173,16 +180,6 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
 void
 _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts,
                                            const bson_t *cluster_time);
-
-/* cancel any pending async commands for a specific node. */
-void
-_mongoc_topology_scanner_node_cancel_commands (
-   mongoc_topology_scanner_node_t *node);
-
-/* return the number of pending async commands for a node. */
-int
-_mongoc_topology_scanner_node_count_acmds (
-   mongoc_topology_scanner_node_t *node);
 
 #ifdef MONGOC_ENABLE_SSL
 void

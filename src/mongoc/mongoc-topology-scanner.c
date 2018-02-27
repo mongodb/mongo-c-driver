@@ -42,12 +42,10 @@
 /* forward declarations */
 static void
 mongoc_topology_scanner_ismaster_handler (
-   mongoc_stream_t *stream,
+   mongoc_async_cmd_t *acmd,
    mongoc_async_cmd_result_t async_status,
    const bson_t *ismaster_response,
-   int64_t rtt_msec,
-   void *data,
-   bson_error_t *error);
+   int64_t rtt_msec);
 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started (
@@ -64,6 +62,20 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (
    const mongoc_topology_scanner_t *ts,
    const mongoc_host_list_t *host,
    const bson_error_t *error);
+
+static mongoc_stream_t *
+_tcp_initiate (mongoc_async_cmd_t *acmd);
+
+/* cancel any pending async commands for a specific node excluding acmd.
+ * If acmd is NULL, cancel all async commands on the node. */
+static void
+_mongoc_topology_scanner_node_cancel_commands_excluding (
+   mongoc_topology_scanner_node_t *node, mongoc_async_cmd_t *acmd);
+
+/* return the number of pending async commands for a node. */
+static int
+_mongoc_topology_scanner_node_count_acmds (
+   mongoc_topology_scanner_node_t *node);
 
 static void
 _add_ismaster (bson_t *cmd)
@@ -130,7 +142,8 @@ _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
 
 static void
 _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
-                     mongoc_stream_t *stream)
+                     mongoc_stream_t *stream,
+                     struct addrinfo *dns_result)
 {
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
@@ -148,6 +161,8 @@ _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
 
    mongoc_async_cmd_new (ts->async,
                          stream,
+                         dns_result,
+                         _tcp_initiate,
                          ts->setup,
                          node->host.host,
                          "admin",
@@ -276,7 +291,7 @@ void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node)
 {
    /* cancel any pending commands. */
-   _mongoc_topology_scanner_node_cancel_commands (node);
+   _mongoc_topology_scanner_node_cancel_commands_excluding (node, NULL);
 
    node->retired = true;
 }
@@ -285,6 +300,11 @@ void
 mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
                                          bool failed)
 {
+   if (node->dns_results) {
+      freeaddrinfo (node->dns_results);
+      node->dns_results = NULL;
+      node->successful_dns_result = NULL;
+   }
    /* the node may or may not have succeeded in finding a working stream. */
    if (node->stream) {
       if (failed) {
@@ -370,20 +390,22 @@ mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
 
 static void
 mongoc_topology_scanner_ismaster_handler (
-   mongoc_stream_t *stream,
+   mongoc_async_cmd_t *acmd,
    mongoc_async_cmd_result_t async_status,
    const bson_t *ismaster_response,
-   int64_t rtt_msec,
-   void *data,
-   bson_error_t *error)
+   int64_t rtt_msec)
 {
+   mongoc_stream_t *stream;
    mongoc_topology_scanner_node_t *node;
    mongoc_topology_scanner_t *ts;
    int64_t now;
    const char *message;
+   void *data = acmd->data;
+   bson_error_t *error = &acmd->error;
 
    BSON_ASSERT (data);
 
+   stream = acmd->stream;
    node = (mongoc_topology_scanner_node_t *) data;
    ts = node->ts;
 
@@ -398,7 +420,10 @@ mongoc_topology_scanner_ismaster_handler (
    /* if no ismaster response, async cmd had an error or timed out. */
    if (!ismaster_response || async_status == MONGOC_ASYNC_CMD_ERROR ||
        async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
-      mongoc_stream_failed (stream);
+      /* the stream may have failed on initiation. */
+      if (stream) {
+         mongoc_stream_failed (stream);
+      }
 
       if (!node->stream &&
           _mongoc_topology_scanner_node_count_acmds (node) == 1) {
@@ -438,7 +463,7 @@ mongoc_topology_scanner_ismaster_handler (
       node->stream = stream;
 
       /* cancel all other commands on this node. */
-      _mongoc_topology_scanner_node_cancel_commands (node);
+      _mongoc_topology_scanner_node_cancel_commands_excluding (node, acmd);
    }
 
    ts->cb (node->id, ismaster_response, rtt_msec, ts->cb_data, error);
@@ -468,13 +493,35 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (
 #endif
    return stream;
 }
+
+/* attempt to create a new socket stream using this dns result. */
+static mongoc_stream_t *
+_tcp_initiate (mongoc_async_cmd_t *acmd)
+{
+   mongoc_topology_scanner_node_t *node =
+      (mongoc_topology_scanner_node_t *) acmd->data;
+   struct addrinfo *res = acmd->dns_result;
+   mongoc_socket_t *sock = NULL;
+
+   BSON_ASSERT (acmd->dns_result);
+   /* create a new non-blocking socket. */
+   if (!(sock = mongoc_socket_new (
+            res->ai_family, res->ai_socktype, res->ai_protocol))) {
+      return NULL;
+   }
+
+   (void) mongoc_socket_connect (
+      sock, res->ai_addr, (mongoc_socklen_t) res->ai_addrlen, 0);
+
+   return _mongoc_topology_scanner_node_setup_stream_for_tls (
+      node, mongoc_stream_socket_new (sock));
+}
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_topology_scanner_node_connect_tcp --
+ * mongoc_topology_scanner_node_setup_tcp --
  *
- *      Create a socket stream for each DNS record found for this node,
- *      begin non-blocking connects and async commands and return.
+ *      Create an async command for each DNS record found for this node.
  *
  * Returns:
  *      A bool. On failure error is set.
@@ -483,75 +530,50 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (
  */
 
 bool
-mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
-                                          bson_error_t *error)
+mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node,
+                                        bson_error_t *error)
 {
-   bool success = false;
-   mongoc_stream_t *stream;
-   mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
-   struct addrinfo *rp;
+   struct addrinfo *iter;
    char portstr[8];
    mongoc_host_list_t *host;
-   struct addrinfo *dns_results;
    int s;
 
    ENTRY;
 
    host = &node->host;
 
-   bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
+   if (!node->dns_results) {
+      bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
 
-   memset (&hints, 0, sizeof hints);
-   hints.ai_family = host->family;
-   hints.ai_socktype = SOCK_STREAM;
-   hints.ai_flags = 0;
-   hints.ai_protocol = 0;
+      memset (&hints, 0, sizeof hints);
+      hints.ai_family = host->family;
+      hints.ai_socktype = SOCK_STREAM;
+      hints.ai_flags = 0;
+      hints.ai_protocol = 0;
 
-   s = getaddrinfo (host->host, portstr, &hints, &dns_results);
+      s = getaddrinfo (host->host, portstr, &hints, &node->dns_results);
 
-   if (s != 0) {
-      mongoc_counter_dns_failure_inc ();
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                      "Failed to resolve '%s'",
-                      host->host);
-      return false;
-   }
-
-   mongoc_counter_dns_success_inc ();
-
-   for (rp = dns_results; rp; rp = rp->ai_next) {
-      /*
-       * Create a new non-blocking socket.
-       */
-      if (!(sock = mongoc_socket_new (
-               rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
-         continue;
+      if (s != 0) {
+         mongoc_counter_dns_failure_inc ();
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                         "Failed to resolve '%s'",
+                         host->host);
+         RETURN (false);
       }
 
-      (void) mongoc_socket_connect (
-         sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, 0);
-
-      stream = _mongoc_topology_scanner_node_setup_stream_for_tls (
-         node, mongoc_stream_socket_new (sock));
-      if (stream) {
-         _begin_ismaster_cmd (node, stream);
-         success = true;
-      }
+      mongoc_counter_dns_success_inc ();
    }
 
-   freeaddrinfo (dns_results);
-
-   if (!success) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to target host: '%s'",
-                      host->host_and_port);
+   LL_FOREACH2 (node->dns_results, iter, ai_next)
+   {
+      _begin_ismaster_cmd (node, NULL, iter);
    }
-   return success;
+
+
+   RETURN (true);
 }
 
 bool
@@ -608,7 +630,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    stream = _mongoc_topology_scanner_node_setup_stream_for_tls (
       node, mongoc_stream_socket_new (sock));
    if (stream) {
-      _begin_ismaster_cmd (node, stream);
+      _begin_ismaster_cmd (node, stream, NULL /* dns result. */);
       RETURN (true);
    }
    RETURN (false);
@@ -640,7 +662,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
-      _begin_ismaster_cmd (node, node->stream);
+      _begin_ismaster_cmd (node, node->stream, node->successful_dns_result);
       node->stream = NULL;
       return;
    }
@@ -652,13 +674,13 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_ismaster_cmd (node, stream);
+         _begin_ismaster_cmd (node, stream, NULL);
       }
    } else {
       if (node->host.family == AF_UNIX) {
          success = mongoc_topology_scanner_node_connect_unix (node, error);
       } else {
-         success = mongoc_topology_scanner_node_connect_tcp (node, error);
+         success = mongoc_topology_scanner_node_setup_tcp (node, error);
       }
    }
 
@@ -962,20 +984,21 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (
    }
 }
 
-void
-_mongoc_topology_scanner_node_cancel_commands (
-   mongoc_topology_scanner_node_t *node)
+static void
+_mongoc_topology_scanner_node_cancel_commands_excluding (
+   mongoc_topology_scanner_node_t *node, mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_t *iter;
    DL_FOREACH (node->ts->async->cmds, iter)
    {
-      if ((mongoc_topology_scanner_node_t *) iter->data == node) {
+      if ((mongoc_topology_scanner_node_t *) iter->data == node &&
+          iter != acmd) {
          iter->state = MONGOC_ASYNC_CMD_CANCELED_STATE;
       }
    }
 }
 
-int
+static int
 _mongoc_topology_scanner_node_count_acmds (mongoc_topology_scanner_node_t *node)
 {
    mongoc_async_cmd_t *iter;

@@ -52,15 +52,14 @@ get_localhost_stream (uint16_t port)
 
 
 static void
-test_ismaster_helper (mongoc_stream_t *stream,
+test_ismaster_helper (mongoc_async_cmd_t *acmd,
                       mongoc_async_cmd_result_t result,
                       const bson_t *bson,
-                      int64_t rtt_msec,
-                      void *data,
-                      bson_error_t *error)
+                      int64_t rtt_msec)
 {
-   struct result *r = (struct result *) data;
+   struct result *r = (struct result *) acmd->data;
    bson_iter_t iter;
+   bson_error_t *error = &acmd->error;
 
    if (result != MONGOC_ASYNC_CMD_SUCCESS) {
       fprintf (stderr, "error: %s\n", error->message);
@@ -140,6 +139,8 @@ test_ismaster_impl (bool with_ssl)
 
       mongoc_async_cmd_new (async,
                             sock_streams[i],
+                            NULL /* dns result, n/a. */,
+                            NULL,
                             setup,
                             setup_ctx,
                             "admin",
@@ -208,14 +209,13 @@ test_ismaster_ssl (void)
 #else
 
 static void
-test_large_ismaster_helper (mongoc_stream_t *stream,
+test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
                             mongoc_async_cmd_result_t result,
                             const bson_t *bson,
-                            int64_t rtt_msec,
-                            void *data,
-                            bson_error_t *error)
+                            int64_t rtt_msec)
 {
    bson_iter_t iter;
+   bson_error_t *error = &acmd->error;
 
    if (result != MONGOC_ASYNC_CMD_SUCCESS) {
       fprintf (stderr, "error: %s\n", error->message);
@@ -261,6 +261,8 @@ test_large_ismaster (void *ctx)
    async = mongoc_async_new ();
    mongoc_async_cmd_new (async,
                          sock_stream,
+                         NULL /* dns result, n/a. */,
+                         NULL,
 #ifdef MONGOC_ENABLE_SSL
                          test_framework_get_ssl () ? mongoc_async_cmd_tls_setup
                                                    : NULL,
