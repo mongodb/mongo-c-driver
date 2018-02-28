@@ -1,6 +1,5 @@
 #include <bcon.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 static void

@@ -1,4 +1,3 @@
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 #include <bcon.h>

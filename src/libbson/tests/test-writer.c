@@ -15,9 +15,8 @@
  */
 
 
-#include <time.h>
+#include <bson.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 
@@ -50,7 +49,7 @@ test_bson_writer_custom_realloc (void)
 
    bson_writer_destroy (writer);
 
-   BSON_ASSERT_CMPINT (x, >, 0);
+   ASSERT_CMPINT (x, >, 0);
 
    bson_free (buf);
 }
@@ -94,8 +93,7 @@ test_bson_writer_shared_buffer (void)
 
    bson_writer_destroy (writer);
 
-   BSON_ASSERT_CMPINT (n_bytes, <, (48 * 1024 * 1024));
-   BSON_ASSERT_CMPINT (rolled_back, ==, true);
+   ASSERT_CMPSIZE_T (n_bytes, <, (size_t) (48 * 1024 * 1024));
    BSON_ASSERT (rolled_back);
 
    bson_free (buf);

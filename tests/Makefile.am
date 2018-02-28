@@ -12,11 +12,14 @@ TEST_CFLAGS = $(MAINTAINER_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(ZLIB_CFLAGS) \
 	$(SASL_CFLAGS) \
+	-I$(top_srcdir)/tests \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
 	$(CPPFLAGS) \
 	-DBINARY_DIR="\"$(top_srcdir)/tests/binary\"" \
 	-DJSON_DIR="\"$(top_srcdir)/tests/json\"" \
+	-DBSON_BINARY_DIR="\"$(top_srcdir)/src/libbson/tests/binary\"" \
+	-DBSON_JSON_DIR="\"$(top_srcdir)/src/libbson/tests/json\"" \
 	-DCERT_TEST_DIR="\"$(top_srcdir)/tests/x509gen\"" \
 	-DOS_RELEASE_FILE_DIR="\"$(top_srcdir)/tests/release_files\""
 
@@ -44,6 +47,27 @@ TEST_LIBS += -lshlwapi
 endif
 
 test_libmongoc_SOURCES = \
+	src/libbson/tests/corpus-test.c \
+	src/libbson/tests/corpus-test.h \
+	src/libbson/tests/test-atomic.c \
+	src/libbson/tests/test-bson.c \
+	src/libbson/tests/test-bson-corpus.c \
+	src/libbson/tests/test-bson-error.c \
+	src/libbson/tests/test-bson-version.c \
+	src/libbson/tests/test-endian.c \
+	src/libbson/tests/test-clock.c \
+	src/libbson/tests/test-decimal128.c \
+	src/libbson/tests/test-iso8601.c \
+	src/libbson/tests/test-iter.c \
+	src/libbson/tests/test-json.c \
+	src/libbson/tests/test-oid.c \
+	src/libbson/tests/test-reader.c \
+	src/libbson/tests/test-string.c \
+	src/libbson/tests/test-utf8.c \
+	src/libbson/tests/test-value.c \
+	src/libbson/tests/test-writer.c \
+	src/libbson/tests/test-bcon-basic.c \
+	src/libbson/tests/test-bcon-extract.c \
 	tests/debug-stream.c \
 	tests/json-test.c \
 	tests/json-test.h \
@@ -136,7 +160,9 @@ test_libmongoc_SOURCES += \
 	tests/test-mongoc-cyrus.c
 endif
 test_libmongoc_CFLAGS = $(TEST_CFLAGS)
-test_libmongoc_LDADD = libmongoc.la $(TEST_LIBS)
+test_libmongoc_LDADD = libmongoc.la \
+					   src/libbson/.libs/libbson.la \
+					   $(TEST_LIBS)
 test_libmongoc_LDFLAGS = -no-undefined \
                          -rpath $(libdir)
 
@@ -206,7 +232,10 @@ EXTRA_DIST += \
 	$(wildcard tests/json/server_selection/rtt/*.json) \
 	$(wildcard tests/json/server_selection/server_selection/*/*/*.json) \
 	$(wildcard tests/json/srv/*.json) \
-	$(wildcard tests/json/max_staleness/*/*.json)
+	$(wildcard tests/json/max_staleness/*/*.json) \
+	$(wildcard src/libbson/tests/binary/*.bson) \
+	$(wildcard src/libbson/tests/json//*.json) \
+	$(wildcard src/libbson/tests/json/bson_corpus/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --

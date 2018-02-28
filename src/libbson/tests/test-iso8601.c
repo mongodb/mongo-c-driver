@@ -1,14 +1,7 @@
 #include <bson.h>
-#include <fcntl.h>
-#include <stdio.h>
 
-#include "bson-tests.h"
 #include "bson-iso8601-private.h"
 #include "TestSuite.h"
-
-#ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
-#endif
 
 #define IS_TIME_T_SMALL (sizeof (time_t) == sizeof (int32_t))
 

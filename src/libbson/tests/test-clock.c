@@ -1,7 +1,6 @@
 #include <bson.h>
 
 #include "TestSuite.h"
-#include "bson-tests.h"
 
 
 static void
@@ -14,7 +13,7 @@ test_get_monotonic_time (void)
    t2 = bson_get_monotonic_time ();
    BSON_ASSERT (t);
    BSON_ASSERT (t2);
-   BSON_ASSERT_CMPINT (t, <=, t2);
+   ASSERT_CMPINT64 (t, <=, t2);
 }
 
 

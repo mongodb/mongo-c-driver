@@ -258,50 +258,6 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
    endif ()
 endif ()
 
-if (ENABLE_TESTS)
-   enable_testing ()
-
-   set (BSON_TEST_SOURCES
-      ${PROJECT_SOURCE_DIR}/tests/bson-tests.h
-      ${PROJECT_SOURCE_DIR}/tests/corpus-test.c
-      ${PROJECT_SOURCE_DIR}/tests/corpus-test.h
-      ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
-      ${PROJECT_SOURCE_DIR}/tests/TestSuite.h
-      ${PROJECT_SOURCE_DIR}/tests/test-libbson.c
-      ${PROJECT_SOURCE_DIR}/tests/test-atomic.c
-      ${PROJECT_SOURCE_DIR}/tests/test-bson.c
-      ${PROJECT_SOURCE_DIR}/tests/test-bson-corpus.c
-      ${PROJECT_SOURCE_DIR}/tests/test-endian.c
-      ${PROJECT_SOURCE_DIR}/tests/test-clock.c
-      ${PROJECT_SOURCE_DIR}/tests/test-decimal128.c
-      ${PROJECT_SOURCE_DIR}/tests/test-error.c
-      ${PROJECT_SOURCE_DIR}/tests/test-iso8601.c
-      ${PROJECT_SOURCE_DIR}/tests/test-iter.c
-      ${PROJECT_SOURCE_DIR}/tests/test-json.c
-      ${PROJECT_SOURCE_DIR}/tests/test-oid.c
-      ${PROJECT_SOURCE_DIR}/tests/test-reader.c
-      ${PROJECT_SOURCE_DIR}/tests/test-string.c
-      ${PROJECT_SOURCE_DIR}/tests/test-utf8.c
-      ${PROJECT_SOURCE_DIR}/tests/test-value.c
-      ${PROJECT_SOURCE_DIR}/tests/test-version.c
-      ${PROJECT_SOURCE_DIR}/tests/test-writer.c
-      ${PROJECT_SOURCE_DIR}/tests/test-bcon-basic.c
-      ${PROJECT_SOURCE_DIR}/tests/test-bcon-extract.c
-      ${PROJECT_SOURCE_DIR}/tests/json-test.c
-      ${PROJECT_SOURCE_DIR}/tests/json-test.c
-      ${PROJECT_SOURCE_DIR}/tests/json-test.h
-   )
-
-   add_executable (test-libbson ${BSON_TEST_SOURCES})
-
-   target_link_libraries (test-libbson bson_static)
-   target_compile_definitions (test-libbson PUBLIC "BSON_STATIC")
-   add_test (NAME test-libbson COMMAND test-libbson)
-
-   file (COPY ${PROJECT_SOURCE_DIR}/tests/binary ${PROJECT_SOURCE_DIR}/tests/json
-      DESTINATION ${PROJECT_BINARY_DIR}/tests)
-endif ()  # ENABLE_TESTS
-
 function (add_example bin src)
    set (BSON_EXAMPLE_SOURCES ${PROJECT_SOURCE_DIR}/${src})
    add_executable (${bin} ${BSON_EXAMPLE_SOURCES})

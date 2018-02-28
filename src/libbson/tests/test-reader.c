@@ -15,15 +15,10 @@
  */
 
 
+#include <bson.h>
 #include <fcntl.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
-
-
-#ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
-#endif
 
 
 static void
@@ -56,7 +51,7 @@ test_reader_from_data (void)
 
    BSON_ASSERT (i == (4095 / 5));
 
-   BSON_ASSERT_CMPINT (eof, ==, true);
+   ASSERT_CMPINT (eof, ==, true);
 
    bson_free (buffer);
 
@@ -95,7 +90,7 @@ test_reader_from_data_overflow (void)
 
    BSON_ASSERT (i == (4095 / 5));
 
-   BSON_ASSERT_CMPINT (eof, ==, false);
+   ASSERT_CMPINT (eof, ==, false);
 
    bson_free (buffer);
 
@@ -114,7 +109,7 @@ test_reader_from_data_document_length_too_large (void)
 
    reader = bson_reader_new_from_data (buffer, 5);
    BSON_ASSERT (!bson_reader_read (reader, &eof));
-   BSON_ASSERT_CMPINT (eof, ==, false);
+   ASSERT_CMPINT (eof, ==, false);
 
    bson_free (buffer);
 
@@ -133,7 +128,7 @@ test_reader_from_data_document_length_too_small (void)
 
    reader = bson_reader_new_from_data (buffer, 5);
    BSON_ASSERT (!bson_reader_read (reader, &eof));
-   BSON_ASSERT_CMPINT (eof, ==, false);
+   ASSERT_CMPINT (eof, ==, false);
 
    bson_free (buffer);
 
@@ -159,10 +154,10 @@ test_reader_from_handle (void)
    const bson_t *b;
    bson_iter_t iter;
    uint32_t i;
-   bool eof;
+   bool eof = true;
    int fd;
 
-   fd = bson_open (BINARY_DIR "/stream.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/stream.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    reader = bson_reader_new_from_handle ((void *) &fd,
@@ -177,10 +172,10 @@ test_reader_from_handle (void)
       BSON_ASSERT (!bson_iter_next (&iter));
    }
 
-   BSON_ASSERT_CMPINT (eof, ==, false);
+   ASSERT_CMPINT (eof, ==, false);
    b = bson_reader_read (reader, &eof);
    BSON_ASSERT (!b);
-   BSON_ASSERT_CMPINT (eof, ==, true);
+   ASSERT_CMPINT (eof, ==, true);
    bson_reader_destroy (reader);
 }
 
@@ -192,10 +187,10 @@ test_reader_tell (void)
    const bson_t *b;
    uint32_t i;
    bson_iter_t iter;
-   bool eof;
+   bool eof = true;
    int fd;
 
-   fd = bson_open (BINARY_DIR "/stream.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/stream.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    reader = bson_reader_new_from_handle ((void *) &fd,
@@ -204,9 +199,9 @@ test_reader_tell (void)
 
    for (i = 0; i < 1000; i++) {
       if (i) {
-         BSON_ASSERT_CMPINT (5 * i, ==, bson_reader_tell (reader));
+         ASSERT_CMPINT (5 * i, ==, (int) bson_reader_tell (reader));
       } else {
-         BSON_ASSERT_CMPINT (0, ==, bson_reader_tell (reader));
+         ASSERT_CMPINT (0, ==, (int) bson_reader_tell (reader));
       }
       eof = false;
       b = bson_reader_read (reader, &eof);
@@ -215,11 +210,11 @@ test_reader_tell (void)
       BSON_ASSERT (!bson_iter_next (&iter));
    }
 
-   BSON_ASSERT_CMPINT (5000, ==, bson_reader_tell (reader));
-   BSON_ASSERT_CMPINT (eof, ==, false);
+   ASSERT_CMPINT (5000, ==, (int) bson_reader_tell (reader));
+   ASSERT (!eof);
    b = bson_reader_read (reader, &eof);
    BSON_ASSERT (!b);
-   BSON_ASSERT_CMPINT (eof, ==, true);
+   BSON_ASSERT (eof);
    bson_reader_destroy (reader);
 }
 
@@ -234,7 +229,7 @@ test_reader_from_handle_corrupt (void)
    bool eof;
    int fd;
 
-   fd = bson_open (BINARY_DIR "/stream_corrupt.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/stream_corrupt.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    reader = bson_reader_new_from_handle ((void *) &fd,
@@ -262,7 +257,7 @@ test_reader_grow_buffer (void)
    bool eof = false;
    int fd;
 
-   fd = bson_open (BINARY_DIR "/readergrow.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/readergrow.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    reader = bson_reader_new_from_handle ((void *) &fd,

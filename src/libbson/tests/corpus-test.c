@@ -17,7 +17,6 @@
 
 #include <bson.h>
 
-#include "TestSuite.h"
 #include "corpus-test.h"
 
 

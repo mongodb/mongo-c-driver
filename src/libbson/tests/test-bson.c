@@ -23,12 +23,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
-
-#ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
-#endif
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
@@ -44,7 +39,8 @@ get_bson (const char *filename)
    int fd;
 
    bson_snprintf (
-      real_filename, sizeof real_filename, BINARY_DIR "/%s", filename);
+      real_filename, sizeof real_filename, BSON_BINARY_DIR "/%s", filename);
+
    real_filename[sizeof real_filename - 1] = '\0';
 
    if (-1 == (fd = bson_open (real_filename, O_RDONLY))) {
@@ -66,11 +62,11 @@ test_bson_new (void)
    bson_t *b;
 
    b = bson_new ();
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    bson_destroy (b);
 
    b = bson_sized_new (32);
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    bson_destroy (b);
 }
 
@@ -82,7 +78,7 @@ test_bson_alloc (void)
    bson_t *b;
 
    b = bson_new ();
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    BSON_ASSERT ((b->flags & BSON_FLAG_INLINE));
    BSON_ASSERT (!(b->flags & BSON_FLAG_CHILD));
    BSON_ASSERT (!(b->flags & BSON_FLAG_STATIC));
@@ -93,7 +89,7 @@ test_bson_alloc (void)
     * This checks that we fit in the inline buffer size.
     */
    b = bson_sized_new (44);
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    BSON_ASSERT ((b->flags & BSON_FLAG_INLINE));
    bson_destroy (b);
 
@@ -101,7 +97,7 @@ test_bson_alloc (void)
     * Make sure we grow to next power of 2.
     */
    b = bson_sized_new (121);
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    BSON_ASSERT (!(b->flags & BSON_FLAG_INLINE));
    bson_destroy (b);
 
@@ -109,12 +105,12 @@ test_bson_alloc (void)
     * Make sure we grow to next power of 2.
     */
    b = bson_sized_new (129);
-   BSON_ASSERT_CMPINT (b->len, ==, 5);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) 5);
    BSON_ASSERT (!(b->flags & BSON_FLAG_INLINE));
    bson_destroy (b);
 
    b = bson_new_from_data (empty_bson, sizeof empty_bson);
-   BSON_ASSERT_CMPINT (b->len, ==, sizeof empty_bson);
+   ASSERT_CMPUINT32 (b->len, ==, (uint32_t) sizeof empty_bson);
    BSON_ASSERT ((b->flags & BSON_FLAG_INLINE));
    BSON_ASSERT (!memcmp (bson_get_data (b), empty_bson, sizeof empty_bson));
    bson_destroy (b);
@@ -533,7 +529,9 @@ test_bson_append_code_with_scope (void)
    bson_destroy (b);
 
    /* CDRIVER-2269 Test with malformed BSON from ticket */
-   reader = bson_reader_new_from_file (BINARY_DIR "/cdriver2269.bson", &err);
+   reader =
+      bson_reader_new_from_file (BSON_BINARY_DIR "/cdriver2269.bson", &err);
+
    BSON_ASSERT (reader);
    ticket_bson = bson_reader_read (reader, &eof);
    BSON_ASSERT (ticket_bson);
@@ -665,19 +663,19 @@ test_bson_append_iter (void)
    bson_iter_init (&iter, &c);
    r = bson_iter_next (&iter);
    BSON_ASSERT (r);
-   BSON_ASSERT_CMPSTR ("a", bson_iter_key (&iter));
-   BSON_ASSERT_CMPINT (BSON_TYPE_INT32, ==, bson_iter_type (&iter));
-   BSON_ASSERT_CMPINT (1, ==, bson_iter_int32 (&iter));
+   ASSERT_CMPSTR ("a", bson_iter_key (&iter));
+   ASSERT_CMPINT (BSON_TYPE_INT32, ==, bson_iter_type (&iter));
+   ASSERT_CMPINT (1, ==, bson_iter_int32 (&iter));
    r = bson_iter_next (&iter);
    BSON_ASSERT (r);
-   BSON_ASSERT_CMPSTR ("c", bson_iter_key (&iter));
-   BSON_ASSERT_CMPINT (BSON_TYPE_INT32, ==, bson_iter_type (&iter));
-   BSON_ASSERT_CMPINT (3, ==, bson_iter_int32 (&iter));
+   ASSERT_CMPSTR ("c", bson_iter_key (&iter));
+   ASSERT_CMPINT (BSON_TYPE_INT32, ==, bson_iter_type (&iter));
+   ASSERT_CMPINT (3, ==, bson_iter_int32 (&iter));
    r = bson_iter_next (&iter);
    BSON_ASSERT (r);
-   BSON_ASSERT_CMPINT (BSON_TYPE_UTF8, ==, bson_iter_type (&iter));
-   BSON_ASSERT_CMPSTR ("world", bson_iter_key (&iter));
-   BSON_ASSERT_CMPSTR ("hello", bson_iter_utf8 (&iter, NULL));
+   ASSERT_CMPINT (BSON_TYPE_UTF8, ==, bson_iter_type (&iter));
+   ASSERT_CMPSTR ("world", bson_iter_key (&iter));
+   ASSERT_CMPSTR ("hello", bson_iter_utf8 (&iter, NULL));
 
    bson_destroy (&b);
    bson_destroy (&c);
@@ -1090,7 +1088,7 @@ test_bson_validate_bool (void)
 
    ASSERT (bson_init_static (&bson, data, 9));
    ASSERT (!bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   BSON_ASSERT_CMPINT (err_offset, ==, 7);
+   ASSERT_CMPSIZE_T (err_offset, ==, (size_t) 7);
 
    ASSERT (bson_iter_init (&iter, &bson));
    ASSERT (!bson_iter_next (&iter));
@@ -1118,8 +1116,8 @@ test_bson_validate_dbpointer (void)
    ASSERT (bson_iter_next (&iter));
    ASSERT (BSON_ITER_HOLDS_DBPOINTER (&iter));
    bson_iter_dbpointer (&iter, &collection_len, &collection, &oid);
-   BSON_ASSERT_CMPSTR (collection, "b");
-   BSON_ASSERT_CMPINT (collection_len, ==, 1);
+   ASSERT_CMPSTR (collection, "b");
+   ASSERT_CMPINT (collection_len, ==, 1);
 
    /* replace the NULL terminator of "b" with 255 */
    ASSERT (data[12] == '\0');
@@ -1127,7 +1125,7 @@ test_bson_validate_dbpointer (void)
 
    ASSERT (bson_init_static (&bson, data, sizeof data));
    ASSERT (!bson_validate (&bson, BSON_VALIDATE_NONE, &err_offset));
-   BSON_ASSERT_CMPINT (err_offset, ==, 12);
+   ASSERT_CMPSIZE_T (err_offset, ==, (size_t) 12);
 
    ASSERT (bson_iter_init (&iter, &bson));
    ASSERT (!bson_iter_next (&iter));
@@ -1584,7 +1582,7 @@ test_bson_count_keys (void)
    BSON_ASSERT (bson_append_int32 (&b, "0", -1, 0));
    BSON_ASSERT (bson_append_int32 (&b, "1", -1, 1));
    BSON_ASSERT (bson_append_int32 (&b, "2", -1, 2));
-   BSON_ASSERT_CMPINT (bson_count_keys (&b), ==, 3);
+   ASSERT_CMPINT (bson_count_keys (&b), ==, 3);
    bson_destroy (&b);
 }
 
@@ -1656,10 +1654,10 @@ test_bson_copy_to_excluding_noinit (void)
    BSON_ASSERT (!r);
 
    i = bson_count_keys (&b);
-   BSON_ASSERT_CMPINT (i, ==, 2);
+   ASSERT_CMPINT (i, ==, 2);
 
    i = bson_count_keys (&c);
-   BSON_ASSERT_CMPINT (i, ==, 1);
+   ASSERT_CMPINT (i, ==, 1);
 
    bson_destroy (&b);
    bson_destroy (&c);

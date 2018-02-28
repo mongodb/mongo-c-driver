@@ -19,6 +19,7 @@
 #define TEST_SUITE_H
 
 
+#include <bson.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -37,13 +38,49 @@ extern "C" {
 #define BINARY_DIR "tests/binary"
 #endif
 
+#ifndef BSON_BINARY_DIR
+#define BSON_BINARY_DIR "src/libbson/tests/binary"
+#endif
+
 #ifndef JSON_DIR
 #define JSON_DIR "tests/json"
+#endif
+
+#ifndef BSON_JSON_DIR
+#define BSON_JSON_DIR "src/libbson/tests/json"
 #endif
 
 #ifndef CERT_TEST_DIR
 #define CERT_TEST_DIR "tests/x509gen"
 #endif
+
+
+#ifdef BSON_OS_WIN32
+#include <stdarg.h>
+#include <share.h>
+static __inline int
+bson_open (const char *filename, int flags, ...)
+{
+   int fd = -1;
+
+   if (_sopen_s (
+          &fd, filename, flags | _O_BINARY, _SH_DENYNO, _S_IREAD | _S_IWRITE) ==
+       NO_ERROR) {
+      return fd;
+   }
+
+   return -1;
+}
+#define bson_close _close
+#define bson_read(f, b, c) ((ssize_t) _read ((f), (b), (int) (c)))
+#define bson_write _write
+#else
+#define bson_open open
+#define bson_read read
+#define bson_close close
+#define bson_write write
+#endif
+
 
 #define CERT_CA CERT_TEST_DIR "/ca.pem"
 #define CERT_CRL CERT_TEST_DIR "/crl.pem"
@@ -62,6 +99,53 @@ extern "C" {
 
 void
 test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
+
+
+#define bson_eq_bson(bson, expected)                                          \
+   do {                                                                       \
+      char *bson_json, *expected_json;                                        \
+      const uint8_t *bson_data = bson_get_data ((bson));                      \
+      const uint8_t *expected_data = bson_get_data ((expected));              \
+      int unequal;                                                            \
+      unsigned o;                                                             \
+      int off = -1;                                                           \
+      unequal = ((expected)->len != (bson)->len) ||                           \
+                memcmp (bson_get_data ((expected)),                           \
+                        bson_get_data ((bson)),                               \
+                        (expected)->len);                                     \
+      if (unequal) {                                                          \
+         bson_json = bson_as_canonical_extended_json (bson, NULL);            \
+         expected_json = bson_as_canonical_extended_json ((expected), NULL);  \
+         for (o = 0; o < (bson)->len && o < (expected)->len; o++) {           \
+            if (bson_data[o] != expected_data[o]) {                           \
+               off = o;                                                       \
+               break;                                                         \
+            }                                                                 \
+         }                                                                    \
+         if (off == -1) {                                                     \
+            off = BSON_MAX ((expected)->len, (bson)->len) - 1;                \
+         }                                                                    \
+         fprintf (stderr,                                                     \
+                  "bson objects unequal (byte %u):\n(%s)\n(%s)\n",            \
+                  off,                                                        \
+                  bson_json,                                                  \
+                  expected_json);                                             \
+         {                                                                    \
+            int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640); \
+            int fd2 =                                                         \
+               bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);   \
+            BSON_ASSERT (fd1 != -1);                                               \
+            BSON_ASSERT (fd2 != -1);                                               \
+            BSON_ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len)); \
+            BSON_ASSERT ((expected)->len ==                                        \
+                    bson_write (fd2, expected_data, (expected)->len));        \
+            bson_close (fd1);                                                 \
+            bson_close (fd2);                                                 \
+         }                                                                    \
+         BSON_ASSERT (0);                                                          \
+      }                                                                       \
+   } while (0)
+
 
 #ifdef ASSERT
 #undef ASSERT
@@ -168,6 +252,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu64)
 #define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd")
 #define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zx")
+#define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f")
 #define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p")
 
 #define ASSERT_MEMCMP(a, b, n)                                       \
@@ -236,6 +321,40 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                                        \
    } while (0)
 
+#define ASSERT_CMPJSON(_a, _b)                                 \
+   do {                                                        \
+      size_t i = 0;                                            \
+      char *__a = (char *) (_a);                               \
+      char *__b = (char *) (_b);                               \
+      char *__aa = bson_malloc0 (strlen (__a) + 1);            \
+      char *__bb = bson_malloc0 (strlen (__b) + 1);            \
+      char *f = __a;                                           \
+      do {                                                     \
+         while (isspace (*__a))                                \
+            __a++;                                             \
+         __aa[i++] = *__a++;                                   \
+      } while (*__a);                                          \
+      i = 0;                                                   \
+      do {                                                     \
+         while (isspace (*__b))                                \
+            __b++;                                             \
+         __bb[i++] = *__b++;                                   \
+      } while (*__b);                                          \
+      if (!!strcmp ((__aa), (__bb))) {                         \
+         fprintf (stderr,                                      \
+                  "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n" \
+                  "%s:%d  %s()\n",                             \
+                  __aa,                                        \
+                  __bb,                                        \
+                  __FILE__,                                    \
+                  __LINE__,                                    \
+                  BSON_FUNC);                                  \
+         abort ();                                             \
+      }                                                        \
+      bson_free (__aa);                                        \
+      bson_free (__bb);                                        \
+      bson_free (f);                                           \
+   } while (0)
 
 #define ASSERT_CMPOID(a, b)                                 \
    do {                                                     \

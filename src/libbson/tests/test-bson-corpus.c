@@ -3,10 +3,6 @@
 #include "json-test.h"
 #include "corpus-test.h"
 
-#ifndef JSON_DIR
-#define JSON_DIR "tests/json"
-#endif
-
 
 #define IS_NAN(dec) (dec).high == 0x7c00000000000000ull
 
@@ -290,6 +286,6 @@ test_bson_corpus_cb (bson_t *scenario)
 void
 test_bson_corpus_install (TestSuite *suite)
 {
-   install_json_test_suite (
-      suite, JSON_DIR "/bson_corpus", test_bson_corpus_cb);
+   install_json_test_suite_with_check (
+      suite, BSON_JSON_DIR "/bson_corpus", test_bson_corpus_cb);
 }

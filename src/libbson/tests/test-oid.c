@@ -19,15 +19,11 @@
 #define BSON_INSIDE
 #include "bson-thread-private.h"
 #undef BSON_INSIDE
-#include <ctype.h>
-#include <fcntl.h>
-#include <time.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 #define N_THREADS 4

@@ -16,16 +16,8 @@
 
 
 #include <bson.h>
-#include <fcntl.h>
-#include <time.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
-
-#ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
-#endif
-
 
 #define FUZZ_N_PASSES 100000
 
@@ -70,8 +62,8 @@ test_bson_iter_utf8 (void)
    BSON_ASSERT (!strcmp (bson_iter_key (&iter), "foo"));
    BSON_ASSERT (!strcmp (bson_iter_utf8 (&iter, NULL), "bar"));
    s = bson_iter_dup_utf8 (&iter, &len);
-   BSON_ASSERT_CMPSTR ("bar", s);
-   BSON_ASSERT_CMPINT (len, ==, 3);
+   ASSERT_CMPSTR ("bar", s);
+   ASSERT_CMPINT (len, ==, 3);
    bson_free (s);
    BSON_ASSERT (bson_iter_next (&iter));
    BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
@@ -141,10 +133,10 @@ test_bson_iter_overflow (void)
    bson_iter_t iter;
    bson_t *b;
 
-   b = get_bson (BINARY_DIR "/overflow1.bson");
+   b = get_bson (BSON_BINARY_DIR "/overflow1.bson");
    BSON_ASSERT (!b);
 
-   b = get_bson (BINARY_DIR "/overflow2.bson");
+   b = get_bson (BSON_BINARY_DIR "/overflow2.bson");
    BSON_ASSERT (b);
    BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (!bson_iter_next (&iter));
@@ -161,7 +153,7 @@ test_bson_iter_binary_deprecated (void)
    bson_iter_t iter;
    bson_t *b;
 
-   b = get_bson (BINARY_DIR "/binary_deprecated.bson");
+   b = get_bson (BSON_BINARY_DIR "/binary_deprecated.bson");
    BSON_ASSERT (b);
 
    BSON_ASSERT (bson_iter_init (&iter, b));
@@ -181,7 +173,7 @@ test_bson_iter_timeval (void)
    bson_t *b;
    struct timeval tv;
 
-   b = get_bson (BINARY_DIR "/test26.bson");
+   b = get_bson (BSON_BINARY_DIR "/test26.bson");
    BSON_ASSERT (b);
 
    BSON_ASSERT (bson_iter_init (&iter, b));
@@ -200,7 +192,7 @@ test_bson_iter_trailing_null (void)
    bson_iter_t iter;
    bson_t *b;
 
-   b = get_bson (BINARY_DIR "/trailingnull.bson");
+   b = get_bson (BSON_BINARY_DIR "/trailingnull.bson");
    BSON_ASSERT (b);
    BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (!bson_iter_next (&iter));
@@ -441,7 +433,7 @@ test_bson_iter_overwrite_int32 (void)
    bson_iter_overwrite_int32 (&iter, 4321);
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
-   BSON_ASSERT_CMPINT (bson_iter_int32 (&iter), ==, 4321);
+   ASSERT_CMPINT (bson_iter_int32 (&iter), ==, 4321);
    bson_destroy (&b);
 }
 
@@ -459,7 +451,7 @@ test_bson_iter_overwrite_int64 (void)
    bson_iter_overwrite_int64 (&iter, 4641);
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
-   BSON_ASSERT_CMPINT (bson_iter_int64 (&iter), ==, 4641);
+   ASSERT_CMPINT64 (bson_iter_int64 (&iter), ==, (int64_t) 4641);
    bson_destroy (&b);
 }
 
@@ -505,7 +497,7 @@ test_bson_iter_overwrite_double (void)
    bson_iter_overwrite_double (&iter, 4641.1234);
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
    BSON_ASSERT (BSON_ITER_HOLDS_DOUBLE (&iter));
-   BSON_ASSERT_CMPINT (bson_iter_double (&iter), ==, 4641.1234);
+   ASSERT_CMPDOUBLE (bson_iter_double (&iter), ==, 4641.1234);
    bson_destroy (&b);
 }
 
@@ -523,7 +515,7 @@ test_bson_iter_overwrite_bool (void)
    bson_iter_overwrite_bool (&iter, false);
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
-   BSON_ASSERT_CMPINT (bson_iter_bool (&iter), ==, false);
+   ASSERT_CMPINT (bson_iter_bool (&iter), ==, false);
    bson_destroy (&b);
 }
 
@@ -563,7 +555,7 @@ test_bson_iter_init_find_case (void)
    bson_init (&b);
    BSON_ASSERT (bson_append_int32 (&b, "FOO", -1, 1234));
    BSON_ASSERT (bson_iter_init_find_case (&iter, &b, "foo"));
-   BSON_ASSERT_CMPINT (bson_iter_int32 (&iter), ==, 1234);
+   ASSERT_CMPINT (bson_iter_int32 (&iter), ==, 1234);
    bson_destroy (&b);
 }
 
@@ -575,7 +567,7 @@ test_bson_iter_find_descendant (void)
    bson_iter_t desc;
    bson_t *b;
 
-   b = get_bson (BINARY_DIR "/dotkey.bson");
+   b = get_bson (BSON_BINARY_DIR "/dotkey.bson");
    BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (bson_iter_find_descendant (&iter, "a.b.c.0", &desc));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&desc));
@@ -620,17 +612,17 @@ test_bson_iter_as_bool (void)
 
    bson_iter_init (&iter, &b);
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (true, ==, bson_iter_as_bool (&iter));
    bson_iter_next (&iter);
-   BSON_ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
+   ASSERT_CMPINT (false, ==, bson_iter_as_bool (&iter));
 
    bson_destroy (&b);
 }

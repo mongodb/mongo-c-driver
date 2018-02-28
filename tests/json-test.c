@@ -598,7 +598,11 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
    DIR *dir;
 
    dir = opendir (dir_path);
-   BSON_ASSERT (dir);
+   if (!dir) {
+      MONGOC_ERROR ("Cannot open \"%s\"", dir_path);
+      abort ();
+   }
+
    while ((entry = readdir (dir))) {
       BSON_ASSERT (paths_index < max_paths);
       if (strcmp (entry->d_name, "..") == 0 ||

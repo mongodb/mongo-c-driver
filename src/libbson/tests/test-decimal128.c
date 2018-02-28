@@ -16,10 +16,6 @@
 
 #include <bson.h>
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 

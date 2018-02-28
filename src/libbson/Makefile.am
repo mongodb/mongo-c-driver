@@ -16,9 +16,6 @@ endif
 if ENABLE_HTML_DOCS
 include doc/html/Makefile.am
 endif
-if ENABLE_TESTS
-include tests/Makefile.am
-endif
 
 if ENABLE_EXAMPLES
 include examples/Makefile.am

@@ -16,10 +16,7 @@
 
 
 #include <bson.h>
-#include <fcntl.h>
-#include <time.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 
@@ -265,9 +262,9 @@ test_bson_ascii_strtoll (void)
       errno = 0;
 
       rv = bson_ascii_strtoll (tests[i].str, &endptr, tests[i].base);
-      BSON_ASSERT_CMPINT (rv, ==, tests[i].rv);
-      BSON_ASSERT_CMPINT (errno, ==, tests[i]._errno);
-      BSON_ASSERT_CMPSTR (endptr, tests[i].remaining);
+      ASSERT_CMPINT64 (rv, ==, tests[i].rv);
+      ASSERT_CMPINT (errno, ==, tests[i]._errno);
+      ASSERT_CMPSTR (endptr, tests[i].remaining);
    }
 #undef END
 }
@@ -279,9 +276,9 @@ test_bson_strncpy (void)
    char buf[5];
 
    bson_strncpy (buf, "foo", sizeof buf);
-   BSON_ASSERT_CMPSTR ("foo", buf);
+   ASSERT_CMPSTR ("foo", buf);
    bson_strncpy (buf, "foobar", sizeof buf);
-   BSON_ASSERT_CMPSTR ("foob", buf);
+   ASSERT_CMPSTR ("foob", buf);
 }
 
 

@@ -701,6 +701,7 @@ function (mongoc_add_test test use_shared)
          # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
          set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
       endif ()
+      target_include_directories (${test} PRIVATE ${SOURCE_DIR}/tests)
       if (${use_shared})
          target_link_libraries (${test} mongoc_shared)
          target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
@@ -734,6 +735,27 @@ function (mongoc_add_example example use_shared)
 endfunction ()
 
 set (test-libmongoc-sources
+   ${SOURCE_DIR}src/libbson/tests/corpus-test.c
+   ${SOURCE_DIR}src/libbson/tests/corpus-test.h
+   ${SOURCE_DIR}src/libbson/tests/test-atomic.c
+   ${SOURCE_DIR}src/libbson/tests/test-bson.c
+   ${SOURCE_DIR}src/libbson/tests/test-bson-corpus.c
+   ${SOURCE_DIR}src/libbson/tests/test-bson-error.c
+   ${SOURCE_DIR}src/libbson/tests/test-bson-version.c
+   ${SOURCE_DIR}src/libbson/tests/test-endian.c
+   ${SOURCE_DIR}src/libbson/tests/test-clock.c
+   ${SOURCE_DIR}src/libbson/tests/test-decimal128.c
+   ${SOURCE_DIR}src/libbson/tests/test-iso8601.c
+   ${SOURCE_DIR}src/libbson/tests/test-iter.c
+   ${SOURCE_DIR}src/libbson/tests/test-json.c
+   ${SOURCE_DIR}src/libbson/tests/test-oid.c
+   ${SOURCE_DIR}src/libbson/tests/test-reader.c
+   ${SOURCE_DIR}src/libbson/tests/test-string.c
+   ${SOURCE_DIR}src/libbson/tests/test-utf8.c
+   ${SOURCE_DIR}src/libbson/tests/test-value.c
+   ${SOURCE_DIR}src/libbson/tests/test-writer.c
+   ${SOURCE_DIR}src/libbson/tests/test-bcon-basic.c
+   ${SOURCE_DIR}src/libbson/tests/test-bcon-extract.c
    ${SOURCE_DIR}/tests/debug-stream.c
    ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/mock_server/future.c

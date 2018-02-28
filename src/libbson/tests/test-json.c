@@ -2,24 +2,9 @@
 #define _CRT_RAND_S
 
 #include <bson.h>
-#include <bcon.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <bson-string.h>
-#include <bson-private.h>
 #include <math.h>
 
-#include "bson-config.h"
-#include "bson-tests.h"
 #include "TestSuite.h"
-
-#ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
-#endif
-
-#ifndef JSON_DIR
-#define JSON_DIR "tests/json"
-#endif
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -659,7 +644,7 @@ test_bson_as_json_stack_overflow (void)
 
    buf = bson_malloc0 (buflen);
 
-   fd = bson_open (BINARY_DIR "/stackoverflow.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/stackoverflow.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    r = bson_read (fd, buf, buflen);
@@ -692,7 +677,7 @@ test_bson_corrupt (void)
 
    buf = bson_malloc0 (buflen);
 
-   fd = bson_open (BINARY_DIR "/test55.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/test55.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    r = bson_read (fd, buf, buflen);
@@ -720,7 +705,7 @@ test_bson_corrupt_utf8 (void)
 
    buf = bson_malloc0 (buflen);
 
-   fd = bson_open (BINARY_DIR "/test56.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/test56.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    r = bson_read (fd, buf, buflen);
@@ -748,7 +733,7 @@ test_bson_corrupt_binary (void)
 
    buf = bson_malloc0 (buflen);
 
-   fd = bson_open (BINARY_DIR "/test57.bson", O_RDONLY);
+   fd = bson_open (BSON_BINARY_DIR "/test57.bson", O_RDONLY);
    BSON_ASSERT (-1 != fd);
 
    r = bson_read (fd, buf, buflen);
@@ -865,7 +850,7 @@ test_bson_json_read_buffering (void)
          }
 
          /* finished parsing */
-         BSON_ASSERT_CMPINT (
+         ASSERT_CMPINT (
             0, ==, bson_json_reader_read (reader, &bson_out, &error));
 
          bson_json_reader_destroy (reader);
@@ -1265,7 +1250,7 @@ test_bson_json_read_legacy_binary (void)
 static void
 test_json_reader_new_from_file (void)
 {
-   const char *path = JSON_DIR "/test.json";
+   const char *path = BSON_JSON_DIR "/test.json";
    const char *bar;
    const bson_oid_t *oid;
    bson_oid_t oid_expected;
@@ -1298,7 +1283,7 @@ test_json_reader_new_from_file (void)
 static void
 test_json_reader_new_from_bad_path (void)
 {
-   const char *bad_path = JSON_DIR "/does-not-exist";
+   const char *bad_path = BSON_JSON_DIR "/does-not-exist";
    bson_json_reader_t *reader;
    bson_error_t error;
 

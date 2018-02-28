@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
+#include <bson.h>
 
-#include "bson-tests.h"
 #include "TestSuite.h"
 
 
@@ -26,13 +26,13 @@ test_bson_error_basic (void)
 
    bson_set_error (&error, 123, 456, "%s %u", "localhost", 27017);
    BSON_ASSERT (!strcmp (error.message, "localhost 27017"));
-   BSON_ASSERT_CMPINT (error.domain, ==, 123);
-   BSON_ASSERT_CMPINT (error.code, ==, 456);
+   ASSERT_CMPINT (error.domain, ==, 123);
+   ASSERT_CMPINT (error.code, ==, 456);
 }
 
 
 void
-test_error_install (TestSuite *suite)
+test_bson_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/error/basic", test_bson_error_basic);
 }
