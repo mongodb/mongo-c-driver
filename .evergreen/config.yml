@@ -575,14 +575,6 @@ tasks:
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=no sh .evergreen/compile.sh
         - func: "upload build"
 
-    - name: test-bson
-      depends_on:
-        - name: "debug-compile"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile"
-        - func: "run tests bson"
 
     - name: test-latest-server-hardened
       tags: ["hardened", "latest"]
@@ -6930,7 +6922,6 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
     - "test-dns-openssl"
     - "test-dns-auth-openssl"
-    - "test-bson"
 
 - name: darwin
   display_name: "*Darwin, macOS (Apple LLVM)"
@@ -6955,7 +6946,6 @@ buildvariants:
     - ".3.2 .nossl !.nosasl"
     - "test-dns-darwinssl"
     - "test-dns-auth-darwinssl"
-    - "test-bson"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
@@ -6982,7 +6972,6 @@ buildvariants:
     - ".3.0 .nossl !.nosasl"
     - "test-dns-winssl"
     - "test-dns-auth-winssl"
-    - "test-bson"
 
 - name: windows-2015-32
   display_name: "Windows (i386) (VS 2015)"
@@ -7097,7 +7086,6 @@ buildvariants:
     - ".debug-compile .winssl .sspi"
     - ".latest .nossl .nosasl .server"
     - ".latest .winssl .sspi .server"
-    - "test-bson"
 
 - name: power8-rhel71
   display_name: "*Power8 (ppc64le) (RHEL 7.1)"
@@ -7141,7 +7129,6 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 ppc64le is only supported by MongoDB 3.4+
     - "test-dns-openssl"
-    - "test-bson"
 
 - name: arm-ubuntu1604
   display_name: "*ARM (aarch64) (Ubuntu 16.04)"
@@ -7165,7 +7152,6 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 aarch64 is only supported by MongoDB 3.4+
     - "test-dns-openssl"
-    - "test-bson"
 
 - name: zseries-rhel72
   display_name: "*zSeries (s390x) (RHEL 7.2)"
@@ -7206,7 +7192,6 @@ buildvariants:
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
     - "test-dns-openssl"
-    - "test-bson"
 
 - name: zseries-suse12
   display_name: "zSeries (s390x) SUSE12"

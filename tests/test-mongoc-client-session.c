@@ -1988,6 +1988,10 @@ test_cursor_implicit_session (void *ctx)
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
+   /* lsid returned after last batch, doesn't wait for mongoc_cursor_destroy */
+   check_session_returned (test, &find_lsid);
+   ASSERT_POOL_SIZE (topology, 2);
+
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
    session_test_destroy (test);

@@ -99,6 +99,16 @@ _mongoc_cursor_cursorid_start_batch (mongoc_cursor_t *cursor)
       }
    }
 
+   /* Driver Sessions Spec: "When an implicit session is associated with a
+    * cursor for use with getMore operations, the session MUST be returned to
+    * the pool immediately following a getMore operation that indicates that the
+    * cursor has been exhausted." */
+   if (cursor->rpc.reply.cursor_id == 0 && cursor->client_session &&
+       !cursor->explicit_session) {
+      mongoc_client_session_destroy (cursor->client_session);
+      cursor->client_session = NULL;
+   }
+
    return cid->in_batch;
 }
 
