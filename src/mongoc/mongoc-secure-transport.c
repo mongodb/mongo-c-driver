@@ -38,6 +38,12 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 /* Jailbreak Darwin Private API */
+/*
+ * An alternative to using SecIdentityCreate is to use
+ * SecIdentityCreateWithCertificate with a temporary keychain. However, doing so
+ * leads to memory bugs. Unfortunately, using this private API seems to be the
+ * best solution.
+ */
 SecIdentityRef
 SecIdentityCreate (CFAllocatorRef allocator,
                    SecCertificateRef certificate,
@@ -361,10 +367,11 @@ mongoc_secure_transport_setup_certificate (
 
    id = SecIdentityCreate (kCFAllocatorDefault, cert, key);
    secure_transport->my_cert =
-      CFArrayCreateMutableCopy (kCFAllocatorDefault, (CFIndex) 2, items);
+      CFArrayCreateMutable (kCFAllocatorDefault, 2, &kCFTypeArrayCallBacks);
 
-   CFArraySetValueAtIndex (secure_transport->my_cert, 0, id);
-   CFArraySetValueAtIndex (secure_transport->my_cert, 1, cert);
+   CFArrayAppendValue (secure_transport->my_cert, id);
+   CFArrayAppendValue (secure_transport->my_cert, cert);
+   CFRelease (id);
 
    /*
     *  Secure Transport assumes the following:
@@ -407,10 +414,12 @@ mongoc_secure_transport_setup_ca (
                CFArrayAppendValue (anchors, CFArrayGetValueAtIndex (items, i));
             }
          }
-         secure_transport->anchors = CFRetain (anchors);
+         secure_transport->anchors = anchors;
          CFRelease (items);
       } else if (type == kSecItemTypeCertificate) {
-         secure_transport->anchors = CFRetain (items);
+         secure_transport->anchors = items;
+      } else {
+         CFRelease (items);
       }
 
       /* This should be SSLSetCertificateAuthorities But the /TLS/ tests fail
