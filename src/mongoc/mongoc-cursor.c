@@ -1306,6 +1306,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    bool is_primary;
    mongoc_read_prefs_t *prefs = NULL;
    char db[MONGOC_NAMESPACE_MAX];
+   mongoc_session_opt_t *session_opts;
    bool ret = false;
 
    ENTRY;
@@ -1322,11 +1323,6 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   if (!opts || !bson_has_field (opts, "sessionId")) {
-      /* use the cursor's explicit session if any */
-      mongoc_cmd_parts_set_session (&parts, cursor->client_session);
-   }
-
    if (opts) {
       bson_iter_init (&iter, opts);
       if (!mongoc_cmd_parts_append_opts (&parts,
@@ -1337,10 +1333,27 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       }
    }
 
-   if (!cursor->client_session && parts.assembled.session) {
-      /* opts contains "sessionId" */
+   if (parts.assembled.session) {
+      /* initial query/aggregate/etc, and opts contains "sessionId" */
+      BSON_ASSERT (!cursor->client_session);
+      BSON_ASSERT (!cursor->explicit_session);
       cursor->client_session = parts.assembled.session;
       cursor->explicit_session = 1;
+   } else if (cursor->client_session) {
+      /* a getMore with implicit or explicit session already acquired */
+      mongoc_cmd_parts_set_session (&parts, cursor->client_session);
+   } else {
+      /* try to create an implicit session. not causally consistent. we keep
+       * the session but leave cursor->explicit_session as 0, so we use the
+       * same lsid for getMores but destroy the session when the cursor dies.
+       */
+      session_opts = mongoc_session_opts_new ();
+      mongoc_session_opts_set_causal_consistency (session_opts, false);
+      /* returns NULL if sessions aren't supported. ignore errors. */
+      cursor->client_session =
+         mongoc_client_start_session (cursor->client, session_opts, NULL);
+      mongoc_cmd_parts_set_session (&parts, cursor->client_session);
+      mongoc_session_opts_destroy (session_opts);
    }
 
    if (cursor->read_concern->level) {
@@ -2231,8 +2244,14 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (reply);
 
-   bson_copy_to_excluding_noinit (
-      reply, &opts, "cursor", "ok", "operationTime", "$clusterTime", NULL);
+   bson_copy_to_excluding_noinit (reply,
+                                  &opts,
+                                  "cursor",
+                                  "ok",
+                                  "operationTime",
+                                  "$clusterTime",
+                                  "$gleStats",
+                                  NULL);
 
    cursor = _mongoc_cursor_new_with_opts (
       client, NULL, true /* is_find */, NULL, &opts, NULL, NULL);
