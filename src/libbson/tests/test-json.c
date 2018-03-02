@@ -2781,11 +2781,11 @@ _test_json_produces_multiple (const char *json_in, int err_expected, ...)
          abort ();
       }
       if (bson_compare (&bson_in, bson_expected) != 0) {
-         char *exp = bson_as_json (bson_expected, NULL);
+         char *expect = bson_as_json (bson_expected, NULL);
          char *in = bson_as_json (&bson_in, NULL);
          fprintf (
-            stderr, "Got %s, but expected %s for input %s\n", exp, in, json);
-         bson_free (exp);
+            stderr, "Got %s, but expected %s for input %s\n", expect, in, json);
+         bson_free (expect);
          bson_free (in);
          abort ();
       }
