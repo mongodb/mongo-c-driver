@@ -1,3 +1,21 @@
+mongo-c-driver 1.9.3
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.3. This version fixes a
+session-management bug that could cause an authentication error while connected
+to MongoDB 3.6+ and iterating a cursor, and it permits the $gleStats modifier
+with mongoc_collection_aggregate.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.9.2
 ====================
 
