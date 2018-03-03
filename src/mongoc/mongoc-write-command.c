@@ -956,7 +956,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
          bson_set_error (&result->error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Collation is not supported by the selected server");
+                         "The selected server does not support collation");
          result->failed = true;
          EXIT;
       }

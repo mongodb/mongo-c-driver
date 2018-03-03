@@ -433,6 +433,18 @@ future_get_mongoc_change_stream_ptr (future_t *future)
    abort ();
 }
 
+mongoc_remove_flags_t
+future_get_mongoc_remove_flags_t (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_remove_flags_t (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
+   abort ();
+}
+
 const_mongoc_find_and_modify_opts_ptr
 future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
 {

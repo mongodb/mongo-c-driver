@@ -90,6 +90,7 @@ typedef_list = [
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
     typedef("mongoc_write_concern_ptr", "mongoc_write_concern_t *"),
     typedef("mongoc_change_stream_ptr", "mongoc_change_stream_t *"),
+    typedef("mongoc_remove_flags_t", None),
 
     # Const libmongoc.
     typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
@@ -394,6 +395,57 @@ future_functions = [
     future_function("void",
                     "mongoc_change_stream_destroy",
                     [param("mongoc_change_stream_ptr", "stream")]),
+
+    future_function("bool",
+                    "mongoc_collection_delete_one",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_delete_many",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_remove",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("mongoc_remove_flags_t", "flags"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_mongoc_write_concern_ptr", "write_concern"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_update_one",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_bson_ptr", "update"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_update_many",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_bson_ptr", "update"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_replace_one",
+                    [param("mongoc_collection_ptr", "coll"),
+                     param("const_bson_ptr", "selector"),
+                     param("const_bson_ptr", "replacement"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
 ]
 
 

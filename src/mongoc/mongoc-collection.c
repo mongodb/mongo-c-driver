@@ -1842,6 +1842,10 @@ _mongoc_collection_update_or_replace (
       bson_append_bool (extra, "upsert", 6, true);
    }
 
+   if (!bson_empty (&update_opts->collation)) {
+      bson_append_document (extra, "collation", 9, &update_opts->collation);
+   }
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update_idl (
       &command,
@@ -1851,6 +1855,10 @@ _mongoc_collection_update_or_replace (
       ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = bypass;
+   if (!bson_empty (&update_opts->collation)) {
+      command.flags.has_collation = true;
+   }
+
    _mongoc_collection_write_command_execute_idl (
       &command, collection, &update_opts->crud, &result);
 
@@ -2199,7 +2207,8 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
                             const bson_t *selector,
                             const mongoc_crud_opts_t *crud,
                             const bson_t *cmd_opts,
-                            const bson_t *opts,
+                            const bson_t *collation,
+                            bson_t *opts,
                             bson_t *reply,
                             bson_error_t *error)
 {
@@ -2214,12 +2223,21 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
    BSON_ASSERT (bson_empty0 (reply));
 
    _mongoc_write_result_init (&result);
+
+   if (!bson_empty (collation)) {
+      bson_append_document (opts, "collation", 9, collation);
+   }
+
    _mongoc_write_command_init_delete_idl (
       &command,
       selector,
       cmd_opts,
       opts,
       ++collection->client->cluster.operation_id);
+
+   if (!bson_empty (collation)) {
+      command.flags.has_collation = true;
+   }
 
    _mongoc_collection_write_command_execute_idl (
       &command, collection, crud, &result);
@@ -2269,6 +2287,7 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
                                      selector,
                                      &delete_one_opts.crud,
                                      &delete_one_opts.extra,
+                                     &delete_one_opts.collation,
                                      &limit,
                                      reply,
                                      error);
@@ -2279,7 +2298,6 @@ done:
 
    RETURN (ret);
 }
-
 
 bool
 mongoc_collection_delete_many (mongoc_collection_t *collection,
@@ -2309,6 +2327,7 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
                                      selector,
                                      &delete_many_opts.crud,
                                      &delete_many_opts.extra,
+                                     &delete_many_opts.collation,
                                      &limit,
                                      reply,
                                      error);
@@ -3006,9 +3025,8 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (!ret && is_retryable &&
-       (error->domain == MONGOC_ERROR_STREAM ||
-        mongoc_cluster_is_not_master_error (error))) {
+   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                mongoc_cluster_is_not_master_error (error))) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -3021,8 +3039,9 @@ retry:
       retry_server_stream =
          mongoc_cluster_stream_for_writes (cluster, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
          GOTO (retry);
       }

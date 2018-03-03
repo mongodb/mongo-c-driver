@@ -5433,6 +5433,38 @@ _test_delete_one_or_many (bool is_multi)
       ASSERT_CMPINT (ctx.commands_tested, ==, 5);
    }
 
+   /* Test deleting with collation. */
+   ctx.expected_command = "{'delete': 'coll'}";
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_COLLATION)) {
+      ret = mongoc_collection_insert_one (
+         coll, tmp_bson ("{'_id': 1, 'x': 11}"), NULL, NULL, &err);
+      ASSERT_OR_PRINT (ret, err);
+
+      ret = mongoc_collection_insert_one (
+         coll, tmp_bson ("{'_id': 2, 'x': 'ping'}"), NULL, NULL, &err);
+      ASSERT_OR_PRINT (ret, err);
+
+      ret = mongoc_collection_insert_one (
+         coll, tmp_bson ("{'_id': 3, 'x': 'pINg'}"), NULL, NULL, &err);
+      ASSERT_OR_PRINT (ret, err);
+
+      ret = fn (coll,
+                tmp_bson ("{'x': 'PING'}"),
+                tmp_bson ("{'collation': {'locale': 'en_US', 'strength': 2 }}"),
+                &reply,
+                &err);
+
+      ASSERT_OR_PRINT (ret, err);
+      if (is_multi) {
+         ASSERT_MATCH (&reply, "{'deletedCount': 2}");
+      } else {
+         ASSERT_MATCH (&reply, "{'deletedCount': 1}");
+      }
+      bson_destroy (&reply);
+
+      _test_no_docs_match (coll, "{'_id': 2}");
+   }
+
    bson_destroy (&opts_with_wc);
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_write_concern_destroy (wc);
@@ -5442,11 +5474,158 @@ _test_delete_one_or_many (bool is_multi)
    mongoc_client_destroy (client);
 }
 
+typedef future_t *(*future_delete_fn_t) (mongoc_collection_t *,
+                                         const bson_t *,
+                                         const bson_t *,
+                                         bson_t *,
+                                         bson_error_t *);
+
+static void
+_test_delete_collation (int wire, bool is_multi)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   future_delete_fn_t fn =
+      is_multi ? future_collection_delete_many : future_collection_delete_one;
+   char *expected_cmd;
+
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   future = fn (collection,
+                tmp_bson ("{}"),
+                tmp_bson ("{'collation': {'locale': 'en'}}"),
+                NULL,
+                &error);
+
+   expected_cmd =
+      bson_strdup_printf ("{'delete': 'collection', 'deletes': [{'q': {}, "
+                          "'limit': %d, 'collation': {'locale': 'en'}}]}",
+                          is_multi ? 0 : 1);
+
+   if (wire == WIRE_VERSION_COLLATION) {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, expected_cmd);
+      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      request_destroy (request);
+   } else {
+      ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "The selected server does not support collation");
+   }
+
+   bson_free (expected_cmd);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 static void
 test_delete_one_or_many (void)
 {
    _test_delete_one_or_many (true);
    _test_delete_one_or_many (false);
+}
+
+static void
+test_delete_collation (void)
+{
+   _test_delete_collation (WIRE_VERSION_COLLATION, true);
+   _test_delete_collation (WIRE_VERSION_COLLATION - 1, true);
+   _test_delete_collation (WIRE_VERSION_COLLATION, false);
+   _test_delete_collation (WIRE_VERSION_COLLATION - 1, false);
+}
+
+typedef future_t *(*future_update_fn_t) (mongoc_collection_t *,
+                                         const bson_t *,
+                                         const bson_t *,
+                                         const bson_t *,
+                                         bson_t *,
+                                         bson_error_t *);
+static void
+_test_update_or_replace_with_collation (int wire,
+                                        bool is_replace,
+                                        bool is_multi)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   future_update_fn_t fn;
+   char *expected_cmd;
+
+   if (is_replace) {
+      BSON_ASSERT (!is_multi);
+      fn = future_collection_replace_one;
+   } else {
+      fn = is_multi ? future_collection_update_many
+                    : future_collection_update_one;
+   }
+
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   future = fn (collection,
+                tmp_bson ("{}"),
+                tmp_bson ("{}"),
+                tmp_bson ("{'collation': {'locale': 'en'}}"),
+                NULL,
+                &error);
+
+   expected_cmd =
+      bson_strdup_printf ("{'update': 'collection', 'updates': [{'q': {}, 'u': "
+                          "{}, 'collation': {'locale': 'en'} %s }]}",
+                          is_multi ? ", 'multi': true" : "");
+
+   if (wire >= WIRE_VERSION_COLLATION) {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, expected_cmd);
+      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      request_destroy (request);
+   } else {
+      ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                             "The selected server does not support collation");
+   }
+
+   bson_free (expected_cmd);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_update_collation (void)
+{
+   _test_update_or_replace_with_collation (
+      WIRE_VERSION_COLLATION, false, false);
+   _test_update_or_replace_with_collation (WIRE_VERSION_COLLATION, false, true);
+   _test_update_or_replace_with_collation (WIRE_VERSION_COLLATION, true, false);
+
+   _test_update_or_replace_with_collation (
+      WIRE_VERSION_COLLATION - 1, false, false);
+   _test_update_or_replace_with_collation (
+      WIRE_VERSION_COLLATION - 1, false, true);
+   _test_update_or_replace_with_collation (
+      WIRE_VERSION_COLLATION - 1, true, false);
 }
 
 void
@@ -5641,4 +5820,8 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/update_many_validate", test_update_many_validate);
    TestSuite_AddLive (
       suite, "/Collection/delete_one_or_many", test_delete_one_or_many);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/delete/collation", test_delete_collation);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/update/collation", test_update_collation);
 }

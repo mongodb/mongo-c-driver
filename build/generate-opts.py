@@ -210,7 +210,6 @@ opts_structs = OrderedDict([
 
     ('mongoc_delete_one_opts_t', Struct([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
-        bypass_option,
         collation_option,
     ])),
 
