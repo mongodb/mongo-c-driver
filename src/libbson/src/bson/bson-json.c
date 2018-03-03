@@ -118,6 +118,7 @@ typedef struct {
 
 
 typedef enum {
+   BSON_JSON_FRAME_INITIAL = 0,
    BSON_JSON_FRAME_ARRAY,
    BSON_JSON_FRAME_DOC,
    BSON_JSON_FRAME_SCOPE,
@@ -268,59 +269,58 @@ _noop (void)
 #define STACK_BSON_CHILD STACK_BSON (0)
 #define STACK_I STACK_ELE (0, i)
 #define STACK_FRAME_TYPE STACK_ELE (0, type)
+#define STACK_IS_INITIAL (STACK_FRAME_TYPE == BSON_JSON_FRAME_INITIAL)
 #define STACK_IS_ARRAY (STACK_FRAME_TYPE == BSON_JSON_FRAME_ARRAY)
 #define STACK_IS_DOC (STACK_FRAME_TYPE == BSON_JSON_FRAME_DOC)
 #define STACK_IS_SCOPE (STACK_FRAME_TYPE == BSON_JSON_FRAME_SCOPE)
 #define STACK_IS_DBPOINTER (STACK_FRAME_TYPE == BSON_JSON_FRAME_DBPOINTER)
+#define FRAME_TYPE_HAS_BSON(_type) \
+   ((_type) == BSON_JSON_FRAME_SCOPE || (_type) == BSON_JSON_FRAME_DBPOINTER)
+#define STACK_HAS_BSON FRAME_TYPE_HAS_BSON (STACK_FRAME_TYPE)
 #define STACK_HAS_REF STACK_ELE (0, has_ref)
 #define STACK_HAS_ID STACK_ELE (0, has_id)
-#define STACK_PUSH_ARRAY(statement)             \
-   do {                                         \
-      if (bson->n >= (STACK_MAX - 1)) {         \
-         return;                                \
-      }                                         \
-      bson->n++;                                \
-      STACK_I = 0;                              \
-      STACK_FRAME_TYPE = BSON_JSON_FRAME_ARRAY; \
-      if (bson->n != 0) {                       \
-         statement;                             \
-      }                                         \
+#define STACK_PUSH(frame_type)                       \
+   do {                                              \
+      if (bson->n >= (STACK_MAX - 1)) {              \
+         return;                                     \
+      }                                              \
+      bson->n++;                                     \
+      if (STACK_HAS_BSON) {                          \
+         if (FRAME_TYPE_HAS_BSON (frame_type)) {     \
+            bson_reinit (STACK_BSON_CHILD);          \
+         } else {                                    \
+            bson_destroy (STACK_BSON_CHILD);         \
+         }                                           \
+      } else if (FRAME_TYPE_HAS_BSON (frame_type)) { \
+         bson_init (STACK_BSON_CHILD);               \
+      }                                              \
+      STACK_FRAME_TYPE = frame_type;                 \
    } while (0)
-#define STACK_PUSH_DOC(statement)             \
+#define STACK_PUSH_ARRAY(statement)       \
+   do {                                   \
+      STACK_PUSH (BSON_JSON_FRAME_ARRAY); \
+      STACK_I = 0;                        \
+      if (bson->n != 0) {                 \
+         statement;                       \
+      }                                   \
+   } while (0)
+#define STACK_PUSH_DOC(statement)       \
+   do {                                 \
+      STACK_PUSH (BSON_JSON_FRAME_DOC); \
+      STACK_HAS_REF = false;            \
+      STACK_HAS_ID = false;             \
+      if (bson->n != 0) {               \
+         statement;                     \
+      }                                 \
+   } while (0)
+#define STACK_PUSH_SCOPE                  \
+   do {                                   \
+      STACK_PUSH (BSON_JSON_FRAME_SCOPE); \
+      bson->code_data.in_scope = true;    \
+   } while (0)
+#define STACK_PUSH_DBPOINTER                  \
    do {                                       \
-      if (bson->n >= (STACK_MAX - 1)) {       \
-         return;                              \
-      }                                       \
-      bson->n++;                              \
-      STACK_FRAME_TYPE = BSON_JSON_FRAME_DOC; \
-      STACK_HAS_REF = false;                  \
-      STACK_HAS_ID = false;                   \
-      if (bson->n != 0) {                     \
-         statement;                           \
-      }                                       \
-   } while (0)
-#define STACK_PUSH_SCOPE(statement)             \
-   do {                                         \
-      if (bson->n >= (STACK_MAX - 1)) {         \
-         return;                                \
-      }                                         \
-      bson->n++;                                \
-      STACK_FRAME_TYPE = BSON_JSON_FRAME_SCOPE; \
-      bson->code_data.in_scope = true;          \
-      if (bson->n != 0) {                       \
-         statement;                             \
-      }                                         \
-   } while (0)
-#define STACK_PUSH_DBPOINTER(statement)             \
-   do {                                             \
-      if (bson->n >= (STACK_MAX - 1)) {             \
-         return;                                    \
-      }                                             \
-      bson->n++;                                    \
-      STACK_FRAME_TYPE = BSON_JSON_FRAME_DBPOINTER; \
-      if (bson->n != 0) {                           \
-         statement;                                 \
-      }                                             \
+      STACK_PUSH (BSON_JSON_FRAME_DBPOINTER); \
    } while (0)
 #define STACK_POP_ARRAY(statement) \
    do {                            \
@@ -1198,12 +1198,12 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
    } else if (bson->read_state == BSON_JSON_IN_SCOPE) {
       /* we've read "key" in {$code: "", $scope: {key: ""}}*/
       bson->read_state = BSON_JSON_REGULAR;
-      STACK_PUSH_SCOPE (bson_init (STACK_BSON_CHILD));
+      STACK_PUSH_SCOPE;
       _bson_json_save_map_key (bson, val, len);
    } else if (bson->read_state == BSON_JSON_IN_DBPOINTER) {
       /* we've read "$ref" or "$id" in {$dbPointer: {$ref: ..., $id: ...}} */
       bson->read_state = BSON_JSON_REGULAR;
-      STACK_PUSH_DBPOINTER (bson_init (STACK_BSON_CHILD));
+      STACK_PUSH_DBPOINTER;
       _bson_json_save_map_key (bson, val, len);
    }
 
@@ -1426,10 +1426,6 @@ _bson_json_read_append_code (bson_json_reader_t *reader,    /* IN */
       _bson_json_read_set_error (reader, "Error storing Javascript code");
    }
 
-   if (scope) {
-      bson_destroy (scope);
-   }
-
    /* keep the buffer but truncate it */
    code_data->key_buf.len = 0;
    code_data->has_code = code_data->has_scope = false;
@@ -1567,7 +1563,7 @@ _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
                                                   STACK_BSON_CHILD));
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_SCOPE_STARTMAP) {
       bson->read_state = BSON_JSON_REGULAR;
-      STACK_PUSH_SCOPE (bson_init (STACK_BSON_CHILD));
+      STACK_PUSH_SCOPE;
    } else if (bson->read_state == BSON_JSON_IN_BSON_TYPE_DBPOINTER_STARTMAP) {
       /* we've read last "}" in "{$dbPointer: {$id: ..., $ref: ...}}" */
       _bson_json_read_append_dbpointer (reader, bson);
@@ -1736,7 +1732,7 @@ _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
    } else if (bson->read_state == BSON_JSON_IN_SCOPE) {
       /* empty $scope */
       BSON_ASSERT (bson->code_data.has_scope);
-      STACK_PUSH_SCOPE (bson_init (STACK_BSON_CHILD));
+      STACK_PUSH_SCOPE;
       STACK_POP_SCOPE;
       bson->read_state = BSON_JSON_IN_BSON_TYPE;
       bson->bson_type = BSON_TYPE_CODE;
@@ -2160,6 +2156,18 @@ bson_json_reader_destroy (bson_json_reader_t *reader) /* IN */
    bson_free (b->key_buf.buf);
    bson_free (b->unescaped.buf);
    bson_free (b->dbpointer_key.buf);
+
+   /* destroy each bson_t initialized in parser stack frames */
+   for (i = 1; i < STACK_MAX; i++) {
+      if (b->stack[i].type == BSON_JSON_FRAME_INITIAL) {
+         /* highest the stack grew */
+         break;
+      }
+
+      if (FRAME_TYPE_HAS_BSON (b->stack[i].type)) {
+         bson_destroy (&b->stack[i].bson);
+      }
+   }
 
    for (i = 0; i < 3; i++) {
       bson_free (b->bson_type_buf[i].buf);

@@ -24,61 +24,57 @@ test_bson_json_allow_multiple (void)
    int32_t one;
    bson_error_t error;
    bson_json_reader_t *reader;
-   bson_json_reader_t *reader_multiple;
-   bson_t bson = BSON_INITIALIZER;
-   bool allow_multiple = true;
-   char *multiple_json = "{\"a\": 1}{\"b\": 1}";
+   bson_t bson;
+   const char *collection;
+   const bson_oid_t *oid;
+   bson_oid_t oid_expected;
+   int i;
+   /* nested JSON tests code that reuses parser stack frames, CDRIVER-2524 */
+   char *multiple_json =
+      "{\"a\": 1}"
+      "{\"b\": {\"$dbPointer\": "
+      "  {\"$ref\": \"c\", \"$id\": {\"$oid\": \"12341234123412abcdababcd\"}}}}"
+      "{\"c\": {\"x\": 1}}";
 
-   reader = bson_json_reader_new (
-      multiple_json, &test_bson_json_read_cb_helper, NULL, !allow_multiple, 0);
-   reader_multiple = bson_json_reader_new (
-      multiple_json, &test_bson_json_read_cb_helper, NULL, allow_multiple, 0);
-   BSON_ASSERT (reader);
-   BSON_ASSERT (reader_multiple);
+   bson_oid_init_from_string (&oid_expected, "12341234123412abcdababcd");
 
-   /* reader with allow_multiple false */
-   /* read first json */
-   ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
-   BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+   for (i = 0; i < 2; i++) {
+      reader = bson_json_reader_new (multiple_json,
+                                     &test_bson_json_read_cb_helper,
+                                     NULL,
+                                     i == 1 /* allow_multiple */,
+                                     0);
 
-   /* read second json */
-   bson_reinit (&bson);
-   ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
-   BCON_EXTRACT (&bson, "b", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+      BSON_ASSERT (reader);
 
-   /* start at the beginning of the string */
-   bson_reinit (&bson);
-   ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
-   BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+      /* read first json */
+      bson_init (&bson);
+      ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
+      BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
+      ASSERT_CMPINT (1, ==, one);
 
-   /* reader_multiple with allow_multiple true */
-   /* read first json */
-   bson_reinit (&bson);
-   ASSERT_CMPINT (
-      1, ==, bson_json_reader_read (reader_multiple, &bson, &error));
-   BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+      /* read second json */
+      bson_reinit (&bson);
+      ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
+      BCON_EXTRACT (&bson, "b", BCONE_DBPOINTER (collection, oid));
+      ASSERT_CMPSTR (collection, "c");
+      BSON_ASSERT (0 == bson_oid_compare (oid, &oid_expected));
 
-   /* read second json */
-   bson_reinit (&bson);
-   ASSERT_CMPINT (
-      1, ==, bson_json_reader_read (reader_multiple, &bson, &error));
-   BCON_EXTRACT (&bson, "b", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+      /* read third json */
+      bson_reinit (&bson);
+      ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
+      BCON_EXTRACT (&bson, "c", BCONE_INT32 (one));
+      ASSERT_CMPINT (1, ==, one);
 
-   /* start at the beginning of the string */
-   bson_reinit (&bson);
-   ASSERT_CMPINT (
-      1, ==, bson_json_reader_read (reader_multiple, &bson, &error));
-   BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
-   ASSERT_CMPINT (1, ==, one);
+      /* surprisingly, the reader begins at the start of the string again */
+      bson_init (&bson);
+      ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
+      BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
+      ASSERT_CMPINT (1, ==, one);
 
-   bson_json_reader_destroy (reader);
-   bson_json_reader_destroy (reader_multiple);
-   bson_destroy (&bson);
+      bson_json_reader_destroy (reader);
+      bson_destroy (&bson);
+   }
 }
 
 
