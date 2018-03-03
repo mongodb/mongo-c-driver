@@ -1467,6 +1467,7 @@ test_bson_json_number_long (void)
    BSON_ASSERT (bson_iter_init_find (&iter, &b, "x"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
    ASSERT_CMPINT64 (bson_iter_int64 (&iter), ==, (int64_t) INT64_MAX);
+   bson_destroy (&b);
 
    /* INT64_MIN */
    r = bson_init_from_json (
@@ -2257,7 +2258,7 @@ test_bson_json_empty_final_object (void)
 {
    const char *json = "{\"a\": {\"b\": {}}}";
    bson_t *bson = BCON_NEW ("a", "{", "b", "{", "}", "}");
-   bson_t b = BSON_INITIALIZER;
+   bson_t b;
    bool r;
    bson_error_t error;
 
@@ -2403,6 +2404,7 @@ test_bson_json_array_subdoc (void)
    BSON_ASSERT (r);
 
    bson_eq_bson (&b, &compare);
+   bson_destroy (&subdoc);
    bson_destroy (&compare);
    bson_destroy (&b);
 }

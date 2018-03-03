@@ -100,6 +100,7 @@ test_value_basic (void)
    BSON_ASSERT (!r);
 
    bson_destroy (doc);
+   bson_destroy (&sub);
    bson_destroy (&other);
 }
 
