@@ -17,7 +17,7 @@ Synopsis
 Parameters
 ----------
 
-* ``bson``: A :symbol:`bson_t`.
+* ``bson``: Pointer to an uninitialized :symbol:`bson_t`.
 * ``data``: A UTF-8 encoded string containing valid JSON.
 * ``len``: The length of ``data`` in bytes excluding a trailing ``\0`` or -1 to determine the length with ``strlen()``.
 * ``error``: An optional location for a :symbol:`bson_error_t`.
@@ -37,7 +37,7 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-Returns ``true`` if valid JSON was parsed, otherwise ``false`` and ``error`` is set.
+Returns ``true`` if valid JSON was parsed, otherwise ``false`` and ``error`` is set. On success, ``bson`` is initialized and must be freed with :symbol:`bson_destroy`, otherwise ``bson`` is invalid.
 
 .. only:: html
 

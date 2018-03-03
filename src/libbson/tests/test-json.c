@@ -1094,8 +1094,6 @@ test_bson_json_read_dbpointer (void)
       BSON_ASSERT (!r);
       ASSERT_ERROR_CONTAINS (
          error, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_INVALID_PARAM, *(p + 1));
-
-      bson_destroy (&b);
    }
 }
 
@@ -1353,8 +1351,6 @@ test_bson_json_read_invalid_binary (void)
 
    r = bson_init_from_json (&b, json, -1, &error);
    BSON_ASSERT (!r);
-
-   bson_destroy (&b);
 }
 
 static void
@@ -1929,8 +1925,6 @@ test_bson_json_uescape_bad (void)
                           BSON_ERROR_JSON,
                           BSON_JSON_ERROR_READ_CORRUPT_JS,
                           "UESCAPE_TOOSHORT");
-
-   bson_destroy (&b);
 }
 
 
