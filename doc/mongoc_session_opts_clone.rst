@@ -1,4 +1,4 @@
-:man_page: mongoc_session_opts_new
+:man_page: mongoc_session_opts_clone
 
 mongoc_session_opts_clone()
 ===========================
