@@ -1,4 +1,4 @@
-:man_page: debugging
+:man_page: mongoc_debugging
 
 Aids for Debugging
 ==================

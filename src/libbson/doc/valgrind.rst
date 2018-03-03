@@ -1,4 +1,4 @@
-:man_page: valgrind
+:man_page: bson_valgrind
 
 Use Valgrind to Check For BSON Data Leaks
 =========================================
