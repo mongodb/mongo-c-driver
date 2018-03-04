@@ -343,3 +343,14 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
 endif ()
 
 include (build/cmake/BSONPackage.cmake)
+
+if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
+   find_package (Sphinx REQUIRED)
+   add_subdirectory (doc)
+   add_custom_target (bson-doc
+      ALL
+      DEPENDS
+      $<$<STREQUAL:"${ENABLE_MAN_PAGES}","ON">:bson-man>
+      $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:bson-html>
+   )
+endif ()

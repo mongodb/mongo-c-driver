@@ -35,6 +35,8 @@ set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance cou
 set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
 set (ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
+option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
+option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
 
 project (libmongoc C)
 
@@ -951,3 +953,15 @@ if (MONGOC_ENABLE_SSL)
 endif ()
 
 include (build/cmake/MongoCPackage.cmake)
+
+if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
+   find_package (Sphinx REQUIRED)
+   add_subdirectory (doc)
+   add_custom_target (mongoc-doc
+      ALL
+      DEPENDS
+      $<$<STREQUAL:"${ENABLE_BSON}","BUNDLED">:bson-doc>
+      $<$<STREQUAL:"${ENABLE_MAN_PAGES}","ON">:mongoc-man>
+      $<$<STREQUAL:"${ENABLE_HTML_DOCS}","ON">:mongoc-html>
+   )
+endif ()
