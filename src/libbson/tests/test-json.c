@@ -67,7 +67,7 @@ test_bson_json_allow_multiple (void)
       ASSERT_CMPINT (1, ==, one);
 
       /* surprisingly, the reader begins at the start of the string again */
-      bson_init (&bson);
+      bson_reinit (&bson);
       ASSERT_CMPINT (1, ==, bson_json_reader_read (reader, &bson, &error));
       BCON_EXTRACT (&bson, "a", BCONE_INT32 (one));
       ASSERT_CMPINT (1, ==, one);
