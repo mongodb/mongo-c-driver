@@ -1470,15 +1470,17 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 
    BSON_ASSERT (sock);
 
-   if ((0 == getpeername (sock->sd, (struct sockaddr *) &addr, &len)) &&
-       (0 ==
-        getnameinfo (
-           (struct sockaddr *) &addr, len, host, sizeof host, NULL, 0, 0))) {
-      ret = bson_strdup (host);
-      RETURN (ret);
+   if (getpeername (sock->sd, (struct sockaddr *) &addr, &len)) {
+      RETURN (NULL);
    }
 
-   RETURN (NULL);
+   if (getnameinfo (
+          (struct sockaddr *) &addr, len, host, sizeof host, NULL, 0, 0)) {
+      RETURN (NULL);
+   }
+
+   ret = bson_strdup (host);
+   RETURN (ret);
 }
 
 
