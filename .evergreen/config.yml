@@ -6360,7 +6360,8 @@ tasks:
             SSL: "winssl"
             URI: ""
 
-    - name: authentication-tests-openssl
+    # Run special auth tests against our enterprise MongoDB instance.
+    - name: authentication-tests-openssl-nosasl
       tags: ["authentication-tests", "nosasl", "ssl", "openssl"]
       depends_on:
         - name: "debug-compile-nosasl-openssl"
@@ -6370,14 +6371,24 @@ tasks:
             BUILD_NAME: "debug-compile-nosasl-openssl"
         - func: "run auth tests"
 
-    - name: authentication-tests-darwinssl
-      tags: ["authentication-tests", "nosasl", "ssl", "darwinssl"]
+    - name: authentication-tests-openssl
+      tags: ["authentication-tests", "sasl", "ssl", "openssl"]
       depends_on:
-        - name: "debug-compile-nosasl-darwinssl"
+        - name: "debug-compile-sasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-darwinssl
+      tags: ["authentication-tests", "sasl", "ssl", "darwinssl"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
         - func: "run auth tests"
 
     - name: authentication-tests-winssl
@@ -6388,6 +6399,20 @@ tasks:
         - func: "fetch build"
           vars:
             BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "run auth tests"
+
+    # Catch leaks or double-frees of bson_t structs in auth code.
+    - name: authentication-tests-memcheck
+      tags: ["authentication-tests", "sasl", "ssl", "openssl", "memcheck"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=openssl CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
         - func: "run auth tests"
 
     - name: build-and-run-authentication-tests-openssl-0.9.8
@@ -6965,7 +6990,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .openssl"
+    - ".authentication-tests .openssl !.sasl"
     - ".authentication-tests .winssl"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
@@ -7011,7 +7036,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .openssl"
+    - ".authentication-tests .openssl !.sasl"
     - ".authentication-tests .winssl"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
@@ -7051,7 +7076,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .sspi"
-    - ".authentication-tests .openssl"
+    - ".authentication-tests .openssl !.sasl"
     - ".authentication-tests .winssl"
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
@@ -7105,8 +7130,8 @@ buildvariants:
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
-    # - ".authentication-tests .openssl .sasl" uncomment after CDRIVER-2000 is fixed
-    - ".authentication-tests .openssl"
+    # CDRIVER-2000 Kerberos doesn't work on PowerPC.
+    - ".authentication-tests .openssl !.sasl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".3.6 .openssl !.nosasl .server"
