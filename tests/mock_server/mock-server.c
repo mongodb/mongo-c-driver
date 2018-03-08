@@ -1561,6 +1561,7 @@ main_thread (void *data)
          server->sock, bson_get_monotonic_time () + 100 * 1000, &port);
 
       if (_mock_server_stopping (server)) {
+         mongoc_socket_destroy (client_sock);
          break;
       }
 
@@ -1576,14 +1577,17 @@ main_thread (void *data)
 #ifdef MONGOC_ENABLE_SSL
          mongoc_mutex_lock (&server->mutex);
          if (server->ssl) {
+            mongoc_stream_t *tls_stream;
             server->ssl_opts.weak_cert_validation = 1;
-            client_stream = mongoc_stream_tls_new_with_hostname (
+            tls_stream = mongoc_stream_tls_new_with_hostname (
                client_stream, NULL, &server->ssl_opts, 0);
-            if (!client_stream) {
+            if (!tls_stream) {
+               mongoc_stream_destroy (client_stream);
                mongoc_mutex_unlock (&server->mutex);
                perror ("Failed to attach tls stream");
                break;
             }
+            client_stream = tls_stream;
          }
          mongoc_mutex_unlock (&server->mutex);
 #endif

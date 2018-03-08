@@ -72,6 +72,7 @@ typedef struct mongoc_topology_scanner_node {
     */
    struct addrinfo *dns_results;
    struct addrinfo *successful_dns_result;
+   int64_t last_dns_cache;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner {
@@ -100,6 +101,7 @@ typedef struct mongoc_topology_scanner {
 
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
+   int64_t dns_cache_timeout_ms;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -181,11 +183,19 @@ void
 _mongoc_topology_scanner_set_cluster_time (mongoc_topology_scanner_t *ts,
                                            const bson_t *cluster_time);
 
+void
+_mongoc_topology_scanner_set_dns_cache_timeout (mongoc_topology_scanner_t *ts,
+                                                int64_t timeout_ms);
+
 #ifdef MONGOC_ENABLE_SSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
                                       mongoc_ssl_opt_t *opts);
 #endif
+
+/* for testing. */
+mongoc_stream_t *
+_mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd);
 
 BSON_END_DECLS
 

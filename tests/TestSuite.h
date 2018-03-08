@@ -134,15 +134,16 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640); \
             int fd2 =                                                         \
                bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);   \
-            BSON_ASSERT (fd1 != -1);                                               \
-            BSON_ASSERT (fd2 != -1);                                               \
-            BSON_ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len)); \
-            BSON_ASSERT ((expected)->len ==                                        \
-                    bson_write (fd2, expected_data, (expected)->len));        \
+            BSON_ASSERT (fd1 != -1);                                          \
+            BSON_ASSERT (fd2 != -1);                                          \
+            BSON_ASSERT ((bson)->len ==                                       \
+                         bson_write (fd1, bson_data, (bson)->len));           \
+            BSON_ASSERT ((expected)->len ==                                   \
+                         bson_write (fd2, expected_data, (expected)->len));   \
             bson_close (fd1);                                                 \
             bson_close (fd2);                                                 \
          }                                                                    \
-         BSON_ASSERT (0);                                                          \
+         BSON_ASSERT (0);                                                     \
       }                                                                       \
    } while (0)
 
@@ -490,6 +491,14 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                          \
    } while (0)
 
+/* don't check durations when testing with valgrind */
+#define ASSERT_WITHIN_TIME_INTERVAL(actual, minduration, maxduration) \
+   do {                                                               \
+      if (!test_suite_valgrind ()) {                                  \
+         ASSERT_CMPINT (actual, >=, minduration);                     \
+         ASSERT_CMPINT (actual, <, maxduration);                      \
+      }                                                               \
+   } while (0)
 
 #ifdef _WIN32
 #define gettestpid _getpid
@@ -567,6 +576,21 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             abort ();                                                  \
          }                                                             \
       }                                                                \
+   } while (0)
+
+#define ASSERT_WITH_MSG(_statement, ...)        \
+   do {                                         \
+      if (!(_statement)) {                      \
+         fprintf (stderr,                       \
+                  "FAIL:%s:%d  %s()\n  %s\n\n", \
+                  __FILE__,                     \
+                  __LINE__,                     \
+                  BSON_FUNC,                    \
+                  #_statement);                 \
+         fprintf (stderr, __VA_ARGS__);         \
+         fflush (stderr);                       \
+         abort ();                              \
+      }                                         \
    } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500

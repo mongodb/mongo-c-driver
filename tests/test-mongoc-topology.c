@@ -776,6 +776,12 @@ _test_select_succeed (bool try_once)
    secondary = mock_server_new ();
    mock_server_run (secondary);
 
+   /* Note: do not use localhost here. If localhost has both A and AAAA records,
+    * an attempt to connect to IPv6 occurs first. Most platforms refuse the IPv6
+    * attempt immediately, so IPv4 succeeds immediately. Windows is an
+    * exception, and waits 1 second before refusing:
+    * https://support.microsoft.com/en-us/help/175523/info-winsock-tcp-connection-performance-to-unused-ports
+    */
    /* primary auto-responds, secondary never responds */
    mock_server_auto_ismaster (primary,
                               "{'ok': 1,"
@@ -783,11 +789,11 @@ _test_select_succeed (bool try_once)
                               " 'setName': 'rs',"
                               "  'minWireVersion': 2,"
                               "  'maxWireVersion': 5,"
-                              " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
+                              " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
                               mock_server_get_port (primary),
                               mock_server_get_port (secondary));
 
-   uri_str = bson_strdup_printf ("mongodb://localhost:%hu,localhost:%hu/"
+   uri_str = bson_strdup_printf ("mongodb://127.0.0.1:%hu,127.0.0.1:%hu/"
                                  "?replicaSet=rs&connectTimeoutMS=%d",
                                  mock_server_get_port (primary),
                                  mock_server_get_port (secondary),

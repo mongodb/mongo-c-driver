@@ -35,6 +35,7 @@ typedef struct _mongoc_async {
 } mongoc_async_t;
 
 typedef enum {
+   MONGOC_ASYNC_CMD_CONNECTED,
    MONGOC_ASYNC_CMD_IN_PROGRESS,
    MONGOC_ASYNC_CMD_SUCCESS,
    MONGOC_ASYNC_CMD_ERROR,

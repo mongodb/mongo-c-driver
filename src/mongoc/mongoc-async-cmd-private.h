@@ -54,6 +54,7 @@ typedef struct _mongoc_async_cmd {
    mongoc_async_cmd_cb_t cb;
    void *data;
    bson_error_t error;
+   int64_t initiate_delay_ms;
    int64_t connect_started;
    int64_t cmd_started;
    int64_t timeout_msec;
@@ -79,6 +80,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
                       struct addrinfo *dns_result,
                       mongoc_async_cmd_initiate_t initiator,
+                      int64_t initiate_delay_ms,
                       mongoc_async_cmd_setup_t setup,
                       void *setup_ctx,
                       const char *dbname,

@@ -39,6 +39,7 @@ export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"
 export MONGOC_TEST_SERVER_LOG="json"
 export MONGOC_TEST_SKIP_MOCK="on"
+export MONGOC_TEST_IPV4_AND_IPV6_HOST="ipv4_and_ipv6.test.build.10gen.cc"
 
 if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"

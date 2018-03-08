@@ -769,6 +769,7 @@ set (test-libmongoc-sources
    ${SOURCE_DIR}/tests/mock_server/request.c
    ${SOURCE_DIR}/tests/test-conveniences.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
+   ${SOURCE_DIR}/tests/test-happy-eyeballs.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c

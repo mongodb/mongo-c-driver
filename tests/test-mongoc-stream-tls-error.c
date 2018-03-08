@@ -252,7 +252,13 @@ handshake_stall_client (void *ptr)
    }
    mongoc_mutex_unlock (&data->cond_mutex);
 
-   uri_str = bson_strdup_printf ("mongodb://localhost:%u/"
+   /* Note: do not use localhost here. If localhost has both A and AAAA records,
+    * an attempt to connect to IPv6 occurs first. Most platforms refuse the IPv6
+    * attempt immediately, so IPv4 succeeds immediately. Windows is an
+    * exception, and waits 1 second before refusing:
+    * https://support.microsoft.com/en-us/help/175523/info-winsock-tcp-connection-performance-to-unused-ports
+    */
+   uri_str = bson_strdup_printf ("mongodb://127.0.0.1:%u/"
                                  "?ssl=true&serverselectiontimeoutms=200&"
                                  "connecttimeoutms=%" PRId64,
                                  data->server_port,

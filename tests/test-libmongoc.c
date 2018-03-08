@@ -199,7 +199,8 @@ test_stream_tls_error_install (TestSuite *suite);
 extern void
 test_cyrus_install (TestSuite *suite);
 #endif
-
+extern void
+test_happy_eyeballs_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2198,6 +2199,43 @@ test_framework_skip_if_rs_version_6 (void)
              : 1;
 }
 
+bool
+test_framework_skip_if_no_dual_ip_hostname (void)
+{
+   struct addrinfo hints = {0}, *res = NULL, *iter;
+   int res_count = 0;
+   char *host = test_framework_getenv ("MONGOC_TEST_IPV4_AND_IPV6_HOST");
+   bool needs_free = false;
+   if (host) {
+      needs_free = true;
+   } else {
+      host = "localhost";
+   }
+
+   hints.ai_family = AF_UNSPEC;
+   hints.ai_socktype = SOCK_STREAM;
+   hints.ai_flags = 0;
+   hints.ai_protocol = 0;
+
+   BSON_ASSERT (getaddrinfo (host, "27017", &hints, &res) != -1);
+
+   iter = res;
+
+   while (iter) {
+      res_count++;
+      iter = iter->ai_next;
+   }
+
+   freeaddrinfo (res);
+   if (needs_free) {
+      bson_free (host);
+   }
+
+   ASSERT_CMPINT (res_count, >, 0);
+   ASSERT_CMPINT (res_count, <, 3);
+   return res_count == 2;
+}
+
 static char MONGOC_TEST_UNIQUE[32];
 
 int
@@ -2314,6 +2352,7 @@ main (int argc, char *argv[])
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    test_cyrus_install (&suite);
 #endif
+   test_happy_eyeballs_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

@@ -409,7 +409,7 @@ static mock_server_t *
 _mock_server_listening_on (char *server_bind_to)
 {
    mock_server_t *mock_server;
-   mock_server_bind_opts_t opts;
+   mock_server_bind_opts_t opts = {0};
    struct sockaddr_in ipv4_addr = {0};
    struct sockaddr_in6 ipv6_addr = {0};
 
@@ -557,6 +557,7 @@ test_topology_scanner_dns ()
          tests_with_ipv4_and_ipv6_uri[i].client_hostname = ipv4_and_ipv6_host;
          test_topology_scanner_dns_testcase (tests_with_ipv4_and_ipv6_uri + i);
       }
+      bson_free (ipv4_and_ipv6_host);
    }
 }
 
@@ -582,6 +583,8 @@ test_topology_scanner_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/blocking_initiator",
                                 test_topology_scanner_blocking_initiator);
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/dns", test_topology_scanner_dns);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/dns",
+                                test_topology_scanner_dns,
+                                test_framework_skip_if_no_dual_ip_hostname);
 }

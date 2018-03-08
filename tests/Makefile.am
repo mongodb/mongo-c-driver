@@ -88,6 +88,7 @@ test_libmongoc_SOURCES = \
 	tests/test-libmongoc.c \
 	tests/test-conveniences.c \
 	tests/test-conveniences.h \
+	tests/test-happy-eyeballs.c \
 	tests/test-mongoc-array.c \
 	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \
