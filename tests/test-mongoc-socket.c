@@ -82,7 +82,7 @@ socket_test_server (void *data_)
 
    _mongoc_usleep (data->server_sleep_ms * 1000);
    r = mongoc_stream_writev (stream, &iov, 1, TIMEOUT);
-   
+
    /* if we sleep the client times out, else assert the client reads the data */
    if (data->server_sleep_ms == 0) {
       BSON_ASSERT (r == 5);
@@ -402,6 +402,52 @@ test_mongoc_socket_sendv (void *ctx)
    mongoc_cond_destroy (&data.cond);
 }
 
+static void
+test_mongoc_socket_poll_refusal (void *ctx)
+{
+   mongoc_stream_poll_t *poller;
+   mongoc_socket_t *sock;
+   mongoc_stream_t *ssock;
+   int64_t start;
+
+   struct sockaddr_in ipv4_addr = {0};
+   ipv4_addr.sin_family = AF_INET;
+   inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
+   ipv4_addr.sin_port = htons (12345);
+
+   /* create a new non-blocking socket. */
+   sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+
+   mongoc_socket_connect (
+      sock, (struct sockaddr *) &ipv4_addr, sizeof (ipv4_addr), 0);
+
+   start = bson_get_monotonic_time ();
+
+   ssock = mongoc_stream_socket_new (sock);
+
+   poller = bson_malloc0 (sizeof (*poller));
+   poller->revents = 0;
+   poller->events = POLLOUT | POLLERR | POLLHUP;
+   poller->stream = ssock;
+
+   while (bson_get_monotonic_time () - start < 5000 * 1000) {
+      mongoc_stream_poll (poller, 1, 10 * 1000);
+      if (poller->revents & POLLHUP) {
+         break;
+      }
+   }
+
+   mongoc_stream_destroy (ssock);
+   bson_free (poller);
+
+#ifdef _WIN32
+   ASSERT_WITHIN_TIME_INTERVAL (
+      (int) (bson_get_monotonic_time () - start), 1000 * 500, 1500 * 1000);
+#else
+   ASSERT_WITHIN_TIME_INTERVAL (
+      (int) (bson_get_monotonic_time () - start), 0, 500);
+#endif
+}
 
 void
 test_socket_install (TestSuite *suite)
@@ -417,6 +463,12 @@ test_socket_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Socket/sendv",
                       test_mongoc_socket_sendv,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow);
+   TestSuite_AddFull (suite,
+                      "/Socket/connect_refusal",
+                      test_mongoc_socket_poll_refusal,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
