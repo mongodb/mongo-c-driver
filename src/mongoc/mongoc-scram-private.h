@@ -32,11 +32,30 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_SCRAM_HASH_SIZE 20
 
+#define MONGOC_SCRAM_B64_ENCODED_SIZE(n) (2 * n)
+
+#define MONGOC_SCRAM_B64_HASH_SIZE \
+   MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_SIZE)
+
+typedef struct _mongoc_scram_cache_t {
+   /* pre-secrets */
+   char *hashed_password;
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_SIZE];
+   uint32_t iterations;
+   /* secrets */
+   uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
+} mongoc_scram_cache_t;
+
 typedef struct _mongoc_scram_t {
    bool done;
    int step;
    char *user;
    char *pass;
+   char *hashed_password;
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_SIZE];
+   uint32_t iterations;
    uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
@@ -48,21 +67,23 @@ typedef struct _mongoc_scram_t {
 #ifdef MONGOC_ENABLE_CRYPTO
    mongoc_crypto_t crypto;
 #endif
+   mongoc_scram_cache_t *cache;
 } mongoc_scram_t;
 
 void
 _mongoc_scram_init (mongoc_scram_t *scram);
+
+mongoc_scram_cache_t *
+_mongoc_scram_get_cache (mongoc_scram_t *scram);
+
+void
+_mongoc_scram_set_cache (mongoc_scram_t *scram, mongoc_scram_cache_t *cache);
 
 void
 _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass);
 
 void
 _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user);
-
-void
-_mongoc_scram_set_client_key (mongoc_scram_t *scram,
-                              const uint8_t *client_key,
-                              size_t len);
 
 void
 _mongoc_scram_set_server_key (mongoc_scram_t *scram,
@@ -85,6 +106,9 @@ _mongoc_scram_step (mongoc_scram_t *scram,
                     uint32_t outbufmax,
                     uint32_t *outbuflen,
                     bson_error_t *error);
+
+void
+_mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache);
 
 BSON_END_DECLS
 

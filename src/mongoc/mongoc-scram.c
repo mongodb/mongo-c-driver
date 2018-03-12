@@ -33,10 +33,95 @@
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
 
-#define MONGOC_SCRAM_B64_ENCODED_SIZE(n) (2 * n)
 
-#define MONGOC_SCRAM_B64_HASH_SIZE \
-   MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_SIZE)
+/* Copies the cache's secrets to scram */
+static void
+_mongoc_scram_cache_apply_secrets (mongoc_scram_cache_t *cache,
+                                   mongoc_scram_t *scram)
+{
+   BSON_ASSERT (cache);
+   BSON_ASSERT (scram);
+
+   memcpy (scram->client_key, cache->client_key, sizeof (scram->client_key));
+   memcpy (scram->server_key, cache->server_key, sizeof (scram->server_key));
+   memcpy (scram->salted_password,
+           cache->salted_password,
+           sizeof (scram->salted_password));
+}
+
+
+static mongoc_scram_cache_t *
+_mongoc_scram_cache_copy (const mongoc_scram_cache_t *cache)
+{
+   mongoc_scram_cache_t *ret = NULL;
+
+   if (cache) {
+      ret = (mongoc_scram_cache_t *) bson_malloc0 (sizeof (*ret));
+      ret->hashed_password = bson_strdup (cache->hashed_password);
+      memcpy (
+         ret->decoded_salt, cache->decoded_salt, sizeof (ret->decoded_salt));
+      ret->iterations = cache->iterations;
+      memcpy (ret->client_key, cache->client_key, sizeof (ret->client_key));
+      memcpy (ret->server_key, cache->server_key, sizeof (ret->server_key));
+      memcpy (ret->salted_password,
+              cache->salted_password,
+              sizeof (ret->salted_password));
+   }
+
+   return ret;
+}
+
+
+void
+_mongoc_scram_cache_destroy (mongoc_scram_cache_t *cache)
+{
+   BSON_ASSERT (cache);
+
+   if (cache->hashed_password) {
+      bson_zero_free (cache->hashed_password, strlen (cache->hashed_password));
+   }
+
+   bson_free (cache);
+}
+
+
+/* Checks whether the cache contains scram's pre-secrets */
+static bool
+_mongoc_scram_cache_has_presecrets (mongoc_scram_cache_t *cache,
+                                    mongoc_scram_t *scram)
+{
+   BSON_ASSERT (cache);
+   BSON_ASSERT (scram);
+
+   return cache->hashed_password && scram->hashed_password &&
+          !strcmp (cache->hashed_password, scram->hashed_password) &&
+          cache->iterations == scram->iterations &&
+          !memcmp (cache->decoded_salt,
+                   scram->decoded_salt,
+                   sizeof (cache->decoded_salt));
+}
+
+
+mongoc_scram_cache_t *
+_mongoc_scram_get_cache (mongoc_scram_t *scram)
+{
+   BSON_ASSERT (scram);
+
+   return _mongoc_scram_cache_copy (scram->cache);
+}
+
+
+void
+_mongoc_scram_set_cache (mongoc_scram_t *scram, mongoc_scram_cache_t *cache)
+{
+   BSON_ASSERT (scram);
+
+   if (scram->cache) {
+      _mongoc_scram_cache_destroy (scram->cache);
+   }
+
+   scram->cache = _mongoc_scram_cache_copy (cache);
+}
 
 
 void
@@ -48,7 +133,7 @@ _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass)
       bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
-   scram->pass = bson_strdup (pass);
+   scram->pass = pass ? bson_strdup (pass) : NULL;
 }
 
 
@@ -58,40 +143,7 @@ _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user)
    BSON_ASSERT (scram);
 
    bson_free (scram->user);
-   scram->user = bson_strdup (user);
-}
-
-
-void
-_mongoc_scram_set_client_key (mongoc_scram_t *scram,
-                              const uint8_t *client_key,
-                              size_t len)
-{
-   BSON_ASSERT (scram);
-
-   memcpy (scram->client_key, client_key, len);
-}
-
-
-void
-_mongoc_scram_set_server_key (mongoc_scram_t *scram,
-                              const uint8_t *server_key,
-                              size_t len)
-{
-   BSON_ASSERT (scram);
-
-   memcpy (scram->server_key, server_key, len);
-}
-
-
-void
-_mongoc_scram_set_salted_password (mongoc_scram_t *scram,
-                                   const uint8_t *salted_password,
-                                   size_t len)
-{
-   BSON_ASSERT (scram);
-
-   memcpy (scram->salted_password, salted_password, len);
+   scram->user = user ? bson_strdup (user) : NULL;
 }
 
 
@@ -117,7 +169,42 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
       bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
+   if (scram->hashed_password) {
+      bson_zero_free (scram->hashed_password, strlen (scram->hashed_password));
+   }
+
    bson_free (scram->auth_message);
+
+   if (scram->cache) {
+      _mongoc_scram_cache_destroy (scram->cache);
+   }
+}
+
+
+/* Updates the cache with scram's last-used pre-secrets and secrets */
+static void
+_mongoc_scram_update_cache (mongoc_scram_t *scram)
+{
+   mongoc_scram_cache_t *cache;
+
+   BSON_ASSERT (scram);
+
+   if (scram->cache) {
+      _mongoc_scram_cache_destroy (scram->cache);
+   }
+
+   cache = (mongoc_scram_cache_t *) bson_malloc0 (sizeof (*cache));
+   cache->hashed_password = bson_strdup (scram->hashed_password);
+   memcpy (
+      cache->decoded_salt, scram->decoded_salt, sizeof (cache->decoded_salt));
+   cache->iterations = scram->iterations;
+   memcpy (cache->client_key, scram->client_key, sizeof (cache->client_key));
+   memcpy (cache->server_key, scram->server_key, sizeof (cache->server_key));
+   memcpy (cache->salted_password,
+           scram->salted_password,
+           sizeof (cache->salted_password));
+
+   scram->cache = cache;
 }
 
 
@@ -613,12 +700,21 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    if (iterations < 0) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_SCRAM,
-         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
-         "SCRAM Failure: iterations is negative in sasl step2");
+      bson_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: iterations is negative in sasl step2");
       goto FAIL;
+   }
+
+   /* Save the presecrets for caching */
+   scram->hashed_password = bson_strdup (hashed_password);
+   scram->iterations = iterations;
+   memcpy (scram->decoded_salt, decoded_salt, sizeof (scram->decoded_salt));
+
+   if (scram->cache &&
+       _mongoc_scram_cache_has_presecrets (scram->cache, scram)) {
+      _mongoc_scram_cache_apply_secrets (scram->cache, scram);
    }
 
    if (!*scram->salted_password) {
@@ -815,6 +911,9 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          "SCRAM Failure: could not verify server signature in sasl step 3");
       goto FAIL;
    }
+
+   /* Update the cache if authentication succeeds */
+   _mongoc_scram_update_cache (scram);
 
    goto CLEANUP;
 
