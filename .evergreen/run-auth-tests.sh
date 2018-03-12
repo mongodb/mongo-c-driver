@@ -10,6 +10,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # ATLAS_FREE=${atlas_free} # Evergreen variable
 # ATLAS_REPLSET=${atlas_replset} # Evergreen variable
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
+# OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
 
 
 C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
@@ -76,12 +77,14 @@ if [ $SSL -eq 1 ]; then
       echo "Authenticating using X.509"
       $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
    fi
-   echo "Connecting to Atlas Free Tier"
-   $PING "$ATLAS_FREE&${C_TIMEOUT}"
-   echo "Connecting to Atlas Replica Set"
-   $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
-   echo "Connecting to Atlas Sharded Cluster"
-   $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+   if [ "${OBSOLETE_TLS}" != "true" ]; then
+      echo "Connecting to Atlas Free Tier"
+      $PING "$ATLAS_FREE&${C_TIMEOUT}"
+      echo "Connecting to Atlas Replica Set"
+      $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
+      echo "Connecting to Atlas Sharded Cluster"
+      $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+   fi
 fi
 
 echo "Authenticating using PLAIN"

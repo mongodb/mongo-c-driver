@@ -365,7 +365,7 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' sh .evergreen/run-auth-tests.sh
+           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' OBSOLETE_TLS='${obsolete_tls}' sh .evergreen/run-auth-tests.sh
 
   "run mock server tests":
     - command: shell.exec
@@ -6404,6 +6404,8 @@ tasks:
               set -o xtrace
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
+          vars:
+            obsolete_tls: true
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.0
@@ -6420,6 +6422,8 @@ tasks:
               set -o xtrace
               DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
         - func: "run auth tests"
+          vars:
+            obsolete_tls: true
         - func: "upload build"
 
     - name: build-and-run-authentication-tests-openssl-1.0.1
