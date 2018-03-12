@@ -612,13 +612,22 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto FAIL;
    }
 
+   if (iterations < 0) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_SCRAM,
+         MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+         "SCRAM Failure: iterations is negative in sasl step2");
+      goto FAIL;
+   }
+
    if (!*scram->salted_password) {
       _mongoc_scram_salt_password (scram,
                                    hashed_password,
                                    (uint32_t) strlen (hashed_password),
                                    decoded_salt,
                                    decoded_salt_len,
-                                   iterations);
+                                   (uint32_t) iterations);
    }
 
    _mongoc_scram_generate_client_proof (scram, outbuf, outbufmax, outbuflen);
