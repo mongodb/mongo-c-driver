@@ -48,7 +48,7 @@ _mongoc_scram_set_pass (mongoc_scram_t *scram, const char *pass)
       bson_zero_free (scram->pass, strlen (scram->pass));
    }
 
-   scram->pass = pass ? bson_strdup (pass) : NULL;
+   scram->pass = bson_strdup (pass);
 }
 
 
@@ -58,7 +58,7 @@ _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user)
    BSON_ASSERT (scram);
 
    bson_free (scram->user);
-   scram->user = user ? bson_strdup (user) : NULL;
+   scram->user = bson_strdup (user);
 }
 
 
