@@ -132,6 +132,8 @@ MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       Acc
 MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          Ignore hostname verification of the certificate (e.g. Man In The Middle, using valid certificate, but issued for another hostname)
 ========================================== ================================= =========================================================================================================================================================================================================================
 
+See :symbol:`mongoc_ssl_opt_t` for details about these options and about building libmongoc with SSL support.
+
 .. _sdam_uri_options:
 
 Server Discovery, Monitoring, and Selection Options

@@ -78,6 +78,8 @@ Support for OpenSSL 1.1 and later was added in 1.4.0.
 
 When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution, if the ``ca_file`` and ``ca_dir`` are not set.
 
+Many MongoDB deployments, including MongoDB Atlas, require the TLS 1.1 protocol or newer. OpenSSL 1.0.1 or newer is required to support modern TLS protocols.
+
 LibreSSL / libtls
 -----------------
 
