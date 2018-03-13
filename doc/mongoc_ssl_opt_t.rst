@@ -69,16 +69,20 @@ The MongoDB C Driver will automatically verify the validity of the server certif
 
 To overwrite this behaviour, it is possible to disable hostname validation, and/or allow otherwise invalid certificates. This behaviour is controlled using the ``allow_invalid_hostname`` and ``weak_cert_validation`` fields. By default, both are set to ``false``. It is not recommended to change these defaults as it exposes the client to *Man In The Middle* attacks (when ``allow_invalid_hostname`` is set) and otherwise invalid certificates when ``weak_cert_validation`` is set to ``true``.
 
-Native TLS Support on Linux (OpenSSL)
--------------------------------------
+OpenSSL
+-------
 
-The MongoDB C Driver supports the dominating TLS library (OpenSSL) and crypto libraries (OpenSSL's libcrypto) on Linux and Unix platforms.
+The MongoDB C Driver uses OpenSSL, if available, on Linux and Unix platforms, including macOS.
 
-Support for OpenSSL 1.1 and later was added in 1.4.0.
+Industry best practices and some regulations require the use of TLS 1.1 or newer, which requires at least OpenSSL 1.0.1. However, some operating systems such as older macOS ship outdated OpenSSL libraries. Check your OpenSSL version like so::
+
+  $ openssl version
+
+On macOS we recommend using `Secure Transport`_ instead. On other Unixes, upgrade your OpenSSL to a recent version (at least 1.0.1), or install a recent version in a non-system path and build against it with::
+
+  cmake -DOPENSSL_ROOT_DIR=/absolute/path/to/openssl
 
 When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution, if the ``ca_file`` and ``ca_dir`` are not set.
-
-Many MongoDB deployments, including MongoDB Atlas, require the TLS 1.1 protocol or newer. OpenSSL 1.0.1 or newer is required to support modern TLS protocols.
 
 LibreSSL / libtls
 -----------------
@@ -98,10 +102,14 @@ When ``ca_file`` is provided, the driver will only allow server certificates iss
 
 When ``crl_file`` is provided, the driver will import the revocation list to the ``System Local Machine Root`` certificate store.
 
+.. _Secure Transport:
+
 Native TLS Support on Mac OS X / Darwin (Secure Transport)
 ----------------------------------------------------------
 
-The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native TLS library (Secure Transport), and its native crypto library (Common Crypto, or CC).
+The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native TLS library (Secure Transport), and its native crypto library (Common Crypto, or CC). To ensure you build with Secure Transport instead of any OpenSSL library installed on your system::
+
+  cmake -DENABLE_SSL=DARWIN
 
 When compiled against Secure Transport, the ``ca_dir`` option is not supported, and will issue an error if used.
 
