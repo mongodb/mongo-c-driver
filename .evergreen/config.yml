@@ -6392,13 +6392,13 @@ tasks:
         - func: "run auth tests"
 
     - name: authentication-tests-winssl
-      tags: ["authentication-tests", "nosasl", "ssl", "winssl"]
+      tags: ["authentication-tests", "sspi", "ssl", "winssl"]
       depends_on:
-        - name: "debug-compile-nosasl-winssl"
+        - name: "debug-compile-sspi-winssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-nosasl-winssl"
+            BUILD_NAME: "debug-compile-sspi-winssl"
         - func: "run auth tests"
 
     # Catch leaks or double-frees of bson_t structs in auth code.
