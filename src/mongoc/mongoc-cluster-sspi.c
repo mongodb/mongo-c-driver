@@ -26,8 +26,10 @@
 #include "mongoc-util-private.h"
 
 
-mongoc_sspi_client_state_t *
-_mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
+static mongoc_sspi_client_state_t *
+_mongoc_cluster_sspi_new (mongoc_uri_t *uri,
+                          mongoc_stream_t *stream,
+                          const char *hostname)
 {
    WCHAR *service; /* L"serviceName@hostname@REALM" */
    const char *service_name = "mongodb";
@@ -35,36 +37,30 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
    const char *service_realm = NULL;
    char *service_ascii = NULL;
    mongoc_sspi_client_state_t *state;
-   const char *tmp_creds;
-   int service_ascii_len;
-   const bson_t *options;
-   int tmp_creds_len;
+   size_t service_ascii_len;
+   size_t tmp_creds_len;
    bson_t properties;
    bson_iter_t iter;
+   char real_name[BSON_HOST_NAME_MAX + 1];
    int service_len;
-   int user_len = 0;
-   int pass_len = 0;
    WCHAR *pass = NULL;
    WCHAR *user = NULL;
+   size_t user_len = 0;
+   size_t pass_len = 0;
    int res;
 
-   options = mongoc_uri_get_options (uri);
+   state = (mongoc_sspi_client_state_t *) bson_malloc0 (sizeof *state);
+   _mongoc_sasl_set_properties (&state->sasl, uri);
 
-   if (!mongoc_uri_get_mechanism_properties (uri, &properties)) {
-      bson_init (&properties);
+   if (state->sasl.canonicalize_host_name &&
+       _mongoc_sasl_get_canonicalized_name (
+          stream, real_name, sizeof real_name)) {
+      hostname = real_name;
    }
 
-   if (bson_iter_init_find_case (
-          &iter, options, MONGOC_URI_GSSAPISERVICENAME) &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      service_name = bson_iter_utf8 (&iter, NULL);
-   }
-   if (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      service_name = bson_iter_utf8 (&iter, NULL);
-   }
-
-   if (bson_iter_init_find_case (&iter, &properties, "SERVICE_REALM") &&
+   /* service realm is an SSPI-specific feature */
+   if (mongoc_uri_get_mechanism_properties (uri, &properties) &&
+       bson_iter_init_find_case (&iter, &properties, "SERVICE_REALM") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       service_realm = bson_iter_utf8 (&iter, NULL);
       service_ascii =
@@ -76,38 +72,52 @@ _mongoc_cluster_sspi_new (mongoc_uri_t *uri, const char *hostname)
 
    /* this is donated to the sspi */
    service = calloc (service_ascii_len + 1, sizeof (WCHAR));
-   service_len = MultiByteToWideChar (
-      CP_UTF8, 0, service_ascii, service_ascii_len, service, service_ascii_len);
+   service_len = MultiByteToWideChar (CP_UTF8,
+                                      0,
+                                      service_ascii,
+                                      (int) service_ascii_len,
+                                      service,
+                                      (int) service_ascii_len);
    service[service_len] = L'\0';
    bson_free (service_ascii);
 
-
-   tmp_creds = mongoc_uri_get_password (uri);
-   if (tmp_creds) {
-      tmp_creds_len = strlen (tmp_creds);
+   if (state->sasl.pass) {
+      tmp_creds_len = strlen (state->sasl.pass);
 
       /* this is donated to the sspi */
       pass = calloc (tmp_creds_len + 1, sizeof (WCHAR));
-      pass_len = MultiByteToWideChar (
-         CP_UTF8, 0, tmp_creds, tmp_creds_len, pass, tmp_creds_len);
+      pass_len = MultiByteToWideChar (CP_UTF8,
+                                      0,
+                                      state->sasl.pass,
+                                      (int) tmp_creds_len,
+                                      pass,
+                                      (int) tmp_creds_len);
       pass[pass_len] = L'\0';
    }
 
-   tmp_creds = mongoc_uri_get_username (uri);
-   if (tmp_creds) {
-      tmp_creds_len = strlen (tmp_creds);
+   if (state->sasl.user) {
+      tmp_creds_len = strlen (state->sasl.user);
 
       /* this is donated to the sspi */
       user = calloc (tmp_creds_len + 1, sizeof (WCHAR));
-      user_len = MultiByteToWideChar (
-         CP_UTF8, 0, tmp_creds, tmp_creds_len, user, tmp_creds_len);
+      user_len = MultiByteToWideChar (CP_UTF8,
+                                      0,
+                                      state->sasl.user,
+                                      (int) tmp_creds_len,
+                                      user,
+                                      (int) tmp_creds_len);
       user[user_len] = L'\0';
    }
 
-   state = (mongoc_sspi_client_state_t *) bson_malloc0 (sizeof *state);
-   res = _mongoc_sspi_auth_sspi_client_init (
-      service, flags, user, user_len, NULL, 0, pass, pass_len, state);
-
+   res = _mongoc_sspi_auth_sspi_client_init (service,
+                                             flags,
+                                             user,
+                                             (ULONG) user_len,
+                                             NULL,
+                                             0,
+                                             pass,
+                                             (ULONG) pass_len,
+                                             state);
 
    if (res != MONGOC_SSPI_AUTH_GSS_ERROR) {
       return state;
@@ -151,7 +161,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    int step;
    mongoc_server_stream_t *server_stream;
 
-   state = _mongoc_cluster_sspi_new (cluster->uri, sd->host.host);
+   state = _mongoc_cluster_sspi_new (cluster->uri, stream, sd->host.host);
 
    if (!state) {
       bson_set_error (error,
@@ -170,13 +180,15 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          res = _mongoc_sspi_auth_sspi_client_step (state, buf);
       } else if (res == MONGOC_SSPI_AUTH_GSS_COMPLETE) {
          char *response;
-         const char *tmp_creds = mongoc_uri_get_username (cluster->uri);
-         int tmp_creds_len = strlen (tmp_creds);
+         size_t tmp_creds_len = strlen (state->sasl.user);
 
          res = _mongoc_sspi_auth_sspi_client_unwrap (state, buf);
          response = bson_strdup (state->response);
-         _mongoc_sspi_auth_sspi_client_wrap (
-            state, response, (SEC_CHAR*) tmp_creds, tmp_creds_len, 0);
+         _mongoc_sspi_auth_sspi_client_wrap (state,
+                                             response,
+                                             (SEC_CHAR *) state->sasl.user,
+                                             (ULONG) tmp_creds_len,
+                                             0);
          bson_free (response);
       }
 
@@ -192,12 +204,17 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       if (step == 0) {
-         _mongoc_cluster_build_sasl_start (
-            &cmd, "GSSAPI", state->response, strlen (state->response));
+         _mongoc_cluster_build_sasl_start (&cmd,
+                                           "GSSAPI",
+                                           state->response,
+                                           (uint32_t) strlen (state->response));
       } else {
          if (state->response) {
             _mongoc_cluster_build_sasl_continue (
-               &cmd, conv_id, state->response, strlen (state->response));
+               &cmd,
+               conv_id,
+               state->response,
+               (uint32_t) strlen (state->response));
          } else {
             _mongoc_cluster_build_sasl_continue (&cmd, conv_id, "", 0);
          }

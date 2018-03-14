@@ -34,6 +34,7 @@ case "$OS" in
       chmod +x ./Debug/* src/libbson/Debug/*
       PING="./Debug/mongoc-ping.exe"
       TEST_GSSAPI="./Debug/test-mongoc-gssapi.exe"
+      IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
       ;;
 
    darwin)
@@ -42,6 +43,7 @@ case "$OS" in
       export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       TEST_GSSAPI="./test-mongoc-gssapi"
+      IP_ADDR=`dig $AUTH_HOST +short | tail -1`
       ;;
 
    *)
@@ -53,6 +55,7 @@ case "$OS" in
       export LD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       TEST_GSSAPI="./test-mongoc-gssapi"
+      IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
 esac
 
 if test -f /tmp/drivers.keytab; then
@@ -94,11 +97,16 @@ echo "Authenticating using default auth mechanism"
 $PING "mongodb://${AUTH_MONGODBCR}@${AUTH_HOST}/mongodb-cr?${C_TIMEOUT}"
 
 if [ $SASL -eq 1 ]; then
-echo "Authenticating using GSSAPI"
+   echo "Authenticating using GSSAPI"
    $PING "mongodb://${AUTH_GSSAPI}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
+
+   echo "Authenticating with CANONICALIZE_HOST_NAME"
+   $PING "mongodb://${AUTH_GSSAPI}@${IP_ADDR}/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true&${C_TIMEOUT}"
+
    echo "Test threaded GSSAPI auth"
    MONGOC_TEST_GSSAPI_HOST="${AUTH_HOST}" MONGOC_TEST_GSSAPI_USER="${AUTH_GSSAPI}" $TEST_GSSAPI
    echo "Threaded GSSAPI auth OK"
+
    if [ "${OS%_*}" = "cygwin" ]; then
       echo "Authenticating using GSSAPI (service realm: LDAPTEST.10GEN.CC)"
       $PING "mongodb://${AUTH_CROSSREALM}@${AUTH_HOST}/?authMechanism=GSSAPI&authMechanismProperties=SERVICE_REALM:LDAPTEST.10GEN.CC&${C_TIMEOUT}"
@@ -106,4 +114,3 @@ echo "Authenticating using GSSAPI"
       $PING "mongodb://${AUTH_GSSAPI_UTF8}@${AUTH_HOST}/?authMechanism=GSSAPI&${C_TIMEOUT}"
    fi
 fi
-

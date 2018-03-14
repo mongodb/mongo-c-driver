@@ -22,6 +22,7 @@
 #endif
 
 #include <bson.h>
+#include "mongoc-sasl-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -39,6 +40,7 @@ BSON_BEGIN_DECLS
 #define MONGOC_SSPI_AUTH_GSS_CONTINUE 0
 
 typedef struct {
+   mongoc_sasl_t sasl;
    CredHandle cred;
    CtxtHandle ctx;
    WCHAR *spn;
