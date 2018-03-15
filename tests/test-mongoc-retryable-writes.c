@@ -65,13 +65,13 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 
    while (bson_iter_next (&iter)) {
       bson_t document;
-      bool success;
+      bool r;
       bson_t opts = BSON_INITIALIZER;
 
       bson_iter_bson (&iter, &document);
-      success = mongoc_bulk_operation_insert_with_opts (
+      r = mongoc_bulk_operation_insert_with_opts (
          bulk, &document, &opts, &error);
-      ASSERT_OR_PRINT (success, error);
+      ASSERT_OR_PRINT (r, error);
 
       bson_destroy (&opts);
    }
@@ -91,15 +91,15 @@ activate_fail_point (mongoc_client_t *client,
                      const bson_t *opts)
 {
    bson_t *command;
-   bool success;
+   bool r;
    bson_error_t error;
 
    command = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite'}");
    bson_copy_to_excluding_noinit (opts, command, "configureFailPoint", NULL);
 
-   success = mongoc_client_command_simple_with_server_id (
+   r = mongoc_client_command_simple_with_server_id (
       client, "admin", command, NULL, server_id, NULL, &error);
-   ASSERT_OR_PRINT (success, error);
+   ASSERT_OR_PRINT (r, error);
 }
 
 
@@ -107,15 +107,15 @@ static void
 deactivate_fail_point (mongoc_client_t *client, uint32_t server_id)
 {
    bson_t *command;
-   bool success;
+   bool r;
    bson_error_t error;
 
    command = tmp_bson (
       "{'configureFailPoint': 'onPrimaryTransactionalWrite', 'mode': 'off'}");
 
-   success = mongoc_client_command_simple_with_server_id (
+   r = mongoc_client_command_simple_with_server_id (
       client, "admin", command, NULL, server_id, NULL, &error);
-   ASSERT_OR_PRINT (success, error);
+   ASSERT_OR_PRINT (r, error);
 }
 
 
@@ -124,7 +124,7 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
 {
    const char *name;
    bson_t args;
-   bool success;
+   bool r;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
 
@@ -136,14 +136,14 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
 
       bson_lookup_doc (&args, "filter", &filter);
 
-      success = mongoc_bulk_operation_remove_one_with_opts (
+      r = mongoc_bulk_operation_remove_one_with_opts (
          bulk, &filter, &opts, &error);
    } else if (!strcmp (name, "insertOne")) {
       bson_t document;
 
       bson_lookup_doc (&args, "document", &document);
 
-      success = mongoc_bulk_operation_insert_with_opts (
+      r = mongoc_bulk_operation_insert_with_opts (
          bulk, &document, &opts, &error);
    } else if (!strcmp (name, "replaceOne")) {
       bson_t filter;
@@ -157,7 +157,7 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
             &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
       }
 
-      success = mongoc_bulk_operation_replace_one_with_opts (
+      r = mongoc_bulk_operation_replace_one_with_opts (
          bulk, &filter, &replacement, &opts, &error);
    } else if (!strcmp (name, "updateOne")) {
       bson_t filter;
@@ -171,14 +171,14 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
             &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
       }
 
-      success = mongoc_bulk_operation_update_one_with_opts (
+      r = mongoc_bulk_operation_update_one_with_opts (
          bulk, &filter, &update, &opts, &error);
    } else {
       test_error ("unrecognized request name %s", name);
       abort ();
    }
 
-   ASSERT_OR_PRINT (success, error);
+   ASSERT_OR_PRINT (r, error);
 
    bson_destroy (&args);
    bson_destroy (&opts);
@@ -308,12 +308,12 @@ create_bulk_write_opts (const bson_t *test, mongoc_client_session_t *session)
       _mongoc_lookup_bool (test, "operation.arguments.options.ordered", true));
 
    if (session) {
-      bool success;
+      bool r;
       bson_error_t error;
 
-      success = mongoc_client_session_append (session, opts, &error);
+      r = mongoc_client_session_append (session, opts, &error);
 
-      ASSERT_OR_PRINT (success, error);
+      ASSERT_OR_PRINT (r, error);
    }
 
    return opts;
@@ -415,12 +415,12 @@ create_find_and_modify_opts (const char *name,
    mongoc_find_and_modify_opts_set_flags (opts, flags);
 
    if (session) {
-      bool success;
+      bool r;
       bson_t extra = BSON_INITIALIZER;
       bson_error_t error;
 
-      success = mongoc_client_session_append (session, &extra, &error);
-      ASSERT_OR_PRINT (success, error);
+      r = mongoc_client_session_append (session, &extra, &error);
+      ASSERT_OR_PRINT (r, error);
 
       ASSERT (mongoc_find_and_modify_opts_append (opts, &extra));
       bson_destroy (&extra);
@@ -439,7 +439,7 @@ find_and_modify (mongoc_collection_t *collection,
    bson_t args;
    bson_t filter;
    mongoc_find_and_modify_opts_t *opts;
-   bool success;
+   bool r;
    bson_t reply;
    bson_error_t error;
 
@@ -448,14 +448,14 @@ find_and_modify (mongoc_collection_t *collection,
    bson_lookup_doc (test, "operation.arguments.filter", &filter);
 
    opts = create_find_and_modify_opts (name, &args, session);
-   success = mongoc_collection_find_and_modify_with_opts (
+   r = mongoc_collection_find_and_modify_with_opts (
       collection, &filter, opts, &reply, &error);
    mongoc_find_and_modify_opts_destroy (opts);
 
    if (_mongoc_lookup_bool (test, "outcome.error", false)) {
-      ASSERT (!success);
+      ASSERT (!r);
    } else {
-      ASSERT_OR_PRINT (success, error);
+      ASSERT_OR_PRINT (r, error);
    }
 
    if (bson_has_field (test, "outcome.result")) {
@@ -492,13 +492,13 @@ insert_many (mongoc_collection_t *collection,
 
    while (bson_iter_next (&iter)) {
       bson_t document;
-      bool success;
+      bool r;
       bson_error_t error;
 
       bson_iter_bson (&iter, &document);
-      success =
+      r =
          mongoc_bulk_operation_insert_with_opts (bulk, &document, NULL, &error);
-      ASSERT_OR_PRINT (success, error);
+      ASSERT_OR_PRINT (r, error);
    }
 
    execute_bulk_operation (bulk, test);
