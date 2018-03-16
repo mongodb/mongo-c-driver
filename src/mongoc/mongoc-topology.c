@@ -26,7 +26,6 @@
 #include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
-#include "mongoc-host-list-private.h"
 #include "mongoc-trace-private.h"
 
 #include "utlist.h"
@@ -38,10 +37,10 @@ static void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 
 static bool
-_mongoc_topology_reconcile_add_nodes (void *item, void *ctx)
+_mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
+                                      mongoc_topology_t *topology,
+                                      bool scan_new_nodes)
 {
-   mongoc_server_description_t *sd = item;
-   mongoc_topology_t *topology = (mongoc_topology_t *) ctx;
    mongoc_topology_scanner_t *scanner = topology->scanner;
 
    /* quickly search by id, then check if a node for this host was retired in
@@ -49,28 +48,34 @@ _mongoc_topology_reconcile_add_nodes (void *item, void *ctx)
    if (!mongoc_topology_scanner_get_node (scanner, sd->id) &&
        !mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
       mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
-      mongoc_topology_scanner_scan (scanner, sd->id);
+      if (scan_new_nodes) {
+         mongoc_topology_scanner_scan (scanner, sd->id);
+      }
    }
 
    return true;
 }
 
 void
-mongoc_topology_reconcile (mongoc_topology_t *topology)
+mongoc_topology_reconcile (mongoc_topology_t *topology, bool scan_new_nodes)
 {
-   mongoc_topology_scanner_node_t *ele, *tmp;
    mongoc_topology_description_t *description;
-   mongoc_topology_scanner_t *scanner;
+   mongoc_set_t *servers;
+   mongoc_server_description_t *sd;
+   int i;
+   mongoc_topology_scanner_node_t *ele, *tmp;
 
    description = &topology->description;
-   scanner = topology->scanner;
+   servers = description->servers;
 
    /* Add newly discovered nodes */
-   mongoc_set_for_each (
-      description->servers, _mongoc_topology_reconcile_add_nodes, topology);
+   for (i = 0; i < (int) servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
+      _mongoc_topology_reconcile_add_nodes (sd, topology, scan_new_nodes);
+   }
 
    /* Remove removed nodes */
-   DL_FOREACH_SAFE (scanner->nodes, ele, tmp)
+   DL_FOREACH_SAFE (topology->scanner->nodes, ele, tmp)
    {
       if (!mongoc_topology_description_server_by_id (
              description, ele->id, NULL)) {
@@ -86,7 +91,8 @@ _mongoc_topology_update_no_lock (uint32_t id,
                                  const bson_t *ismaster_response,
                                  int64_t rtt_msec,
                                  mongoc_topology_t *topology,
-                                 const bson_error_t *error /* IN */)
+                                 const bson_error_t *error /* IN */,
+                                 bool scan_new_nodes)
 {
    mongoc_topology_description_handle_ismaster (
       &topology->description, id, ismaster_response, rtt_msec, error);
@@ -94,7 +100,7 @@ _mongoc_topology_update_no_lock (uint32_t id,
    /* The processing of the ismaster results above may have added/removed
     * server descriptions. We need to reconcile that with our monitoring agents
     */
-   mongoc_topology_reconcile (topology);
+   mongoc_topology_reconcile (topology, scan_new_nodes);
 
    /* return false if server removed from topology */
    return mongoc_topology_description_server_by_id (
@@ -167,15 +173,23 @@ _mongoc_topology_scanner_cb (uint32_t id,
     * client MUST change its type to Unknown only after it has retried the
     * server once." */
    if (!ismaster_response && sd && sd->type != MONGOC_SERVER_UNKNOWN) {
-      _mongoc_topology_update_no_lock (
-         id, ismaster_response, rtt_msec, topology, error);
+      _mongoc_topology_update_no_lock (id,
+                                       ismaster_response,
+                                       rtt_msec,
+                                       topology,
+                                       error,
+                                       true /* scan_new_nodes */);
 
       /* add another ismaster call to the current scan - the scan continues
        * until all commands are done */
       mongoc_topology_scanner_scan (topology->scanner, sd->id);
    } else {
-      _mongoc_topology_update_no_lock (
-         id, ismaster_response, rtt_msec, topology, error);
+      _mongoc_topology_update_no_lock (id,
+                                       ismaster_response,
+                                       rtt_msec,
+                                       topology,
+                                       error,
+                                       true /* scan_new_nodes */);
 
       mongoc_cond_broadcast (&topology->cond_client);
    }
@@ -920,18 +934,13 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
 
    mongoc_mutex_lock (&topology->mutex);
 
-   mongoc_topology_description_handle_ismaster (&topology->description,
-                                                sd->id,
-                                                &sd->last_is_master,
-                                                sd->round_trip_time_msec,
-                                                NULL);
-
-   _mongoc_topology_scanner_set_cluster_time (
-      topology->scanner, &topology->description.cluster_time);
-
    /* return false if server was removed from topology */
-   has_server = mongoc_topology_description_server_by_id (
-                   &topology->description, sd->id, NULL) != NULL;
+   has_server = _mongoc_topology_update_no_lock (sd->id,
+                                                 &sd->last_is_master,
+                                                 sd->round_trip_time_msec,
+                                                 topology,
+                                                 NULL,
+                                                 false /* scan_new_nodes */);
 
    /* if pooled, wake threads waiting in mongoc_topology_server_by_id */
    mongoc_cond_broadcast (&topology->cond_client);
