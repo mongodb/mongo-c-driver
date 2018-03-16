@@ -2232,8 +2232,7 @@ test_framework_skip_if_no_dual_ip_hostname (void)
    }
 
    ASSERT_CMPINT (res_count, >, 0);
-   ASSERT_CMPINT (res_count, <, 3);
-   return res_count == 2;
+   return res_count > 1;
 }
 
 static char MONGOC_TEST_UNIQUE[32];

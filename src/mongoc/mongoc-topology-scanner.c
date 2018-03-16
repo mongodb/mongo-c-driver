@@ -867,6 +867,9 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       return;
    }
 
+   /* delete retired nodes */
+   mongoc_topology_scanner_reset (ts);
+
    now = bson_get_monotonic_time ();
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)

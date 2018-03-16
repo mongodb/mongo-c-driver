@@ -529,12 +529,12 @@ _test_topology_reconcile_retire (bool pooled)
    secondary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    BSON_ASSERT (selects_server (client, secondary_read_prefs, secondary));
 
-   /* remove secondary from primary's config, trigger handshake */
+   /* remove secondary from primary's config */
+   mongoc_mutex_lock (&topology->mutex);
    RS_RESPONSE_TO_ISMASTER (primary, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting scanner nodes (also includes step 6) */
-   mongoc_mutex_lock (&topology->mutex);
    DL_FOREACH (topology->scanner->nodes, node)
    {
       BSON_ASSERT (node);
@@ -557,9 +557,13 @@ _test_topology_reconcile_retire (bool pooled)
 
    /* single mode frees node: mongoc_cluster_fetch_stream_single scans and
     * updates topology. pooled mode only retires node. */
-   BSON_ASSERT (!node || node->retired);
+   if (pooled) {
+      BSON_ASSERT(node->retired);
+   } else {
+      BSON_ASSERT(!node);
+   }
 
-   /* step 7: trigger a scan by selecting with an unsatisfyable read preference.
+   /* step 7: trigger a scan by selecting with an unsatisfiable read preference.
     * should not crash with BSON_ASSERT. */
    tag_read_prefs = mongoc_read_prefs_new (MONGOC_READ_NEAREST);
    mongoc_read_prefs_add_tag (tag_read_prefs, tmp_bson ("{'key': 'value'}"));
