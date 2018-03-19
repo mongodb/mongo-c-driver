@@ -1766,6 +1766,20 @@ test_framework_session_timeout_minutes (void)
 }
 
 
+void
+test_framework_get_max_wire_version (int64_t *max_version)
+{
+   bson_t reply;
+   bson_iter_t iter;
+
+   call_ismaster (&reply);
+   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "maxWireVersion"));
+   *max_version = bson_iter_as_int64 (&iter);
+
+   bson_destroy (&reply);
+}
+
+
 int
 test_framework_skip_if_auth (void)
 {
@@ -1908,19 +1922,11 @@ test_framework_skip_if_no_uds (void)
 bool
 test_framework_max_wire_version_at_least (int version)
 {
-   bson_t reply;
-   bson_iter_t iter;
-   bool at_least;
-
-   call_ismaster (&reply);
+   int64_t max_version;
 
    BSON_ASSERT (version > 0);
-   at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion") &&
-               bson_iter_as_int64 (&iter) >= version);
-
-   bson_destroy (&reply);
-
-   return at_least;
+   test_framework_get_max_wire_version (&max_version);
+   return max_version >= version;
 }
 
 
@@ -2149,6 +2155,15 @@ test_framework_skip_if_max_wire_version_less_than_6 (void)
       return 0;
    }
    return test_framework_max_wire_version_at_least (6);
+}
+
+int
+test_framework_skip_if_max_wire_version_more_than_6 (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   return test_framework_max_wire_version_at_least (6) ? 0 : 1;
 }
 
 int

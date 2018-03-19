@@ -111,7 +111,7 @@ The following options are supported.
 =======================  ==================  ===================  ==================
 Option                   BSON type           Option               BSON type
 =======================  ==================  ===================  ==================
-``projection``           document            ``maxScan``          non-negative int64
+``projection``           document            ``max``              document
 ``sort``                 document            ``maxTimeMS``        non-negative int64
 ``skip``                 non-negative int64  ``maxAwaitTimeMS``   non-negative int64
 ``limit``                non-negative int64  ``min``              document
@@ -120,9 +120,8 @@ Option                   BSON type           Option               BSON type
 ``hint``                 string or document  ``returnKey``        bool
 ``allowPartialResults``  bool                ``showRecordId``     bool
 ``awaitData``            bool                ``singleBatch``      bool
-``collation``            document            ``snapshot``         bool
-``comment``              string              ``tailable``         bool
-``max``                  document
+``collation``            document            ``tailable``         bool
+``comment``              string
 =======================  ==================  ===================  ==================
 
 All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS".
@@ -132,6 +131,11 @@ If no new documents are found, the tailable cursor receives an empty batch. The 
 
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
+
+Deprecated Options
+------------------
+
+The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` option, a non-negative int64, is deprecated in MongoDB 4.0 and will be removed in a future MongoDB version. Both options are supported by the C Driver with older MongoDB versions.
 
 See Also
 --------

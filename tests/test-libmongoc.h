@@ -104,6 +104,8 @@ test_framework_server_is_secondary (mongoc_client_t *client,
                                     uint32_t server_id);
 int64_t
 test_framework_session_timeout_minutes (void);
+void
+test_framework_get_max_wire_version (int64_t *max_version);
 bool
 test_framework_clustertime_supported (void);
 bool
@@ -131,6 +133,8 @@ int
 test_framework_skip_if_max_wire_version_less_than_5 (void);
 int
 test_framework_skip_if_max_wire_version_less_than_6 (void);
+int
+test_framework_skip_if_max_wire_version_more_than_6 (void);
 int
 test_framework_skip_if_not_rs_version_5 (void);
 int

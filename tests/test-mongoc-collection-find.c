@@ -1,7 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-cursor-private.h>
-#include "mongoc-uri-private.h"
-#include "mongoc-client-private.h"
+#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -15,7 +14,7 @@ typedef struct {
    /* if do_live is true (the default), actually query the server using the
     * appropriate wire protocol: either OP_QUERY or a "find" command */
    bool do_live;
-   bool requires_wire_version_4;
+   int32_t max_wire_version;
    const char *docs;
    bson_t *docs_bson;
    const char *query_input;
@@ -41,7 +40,7 @@ typedef struct {
 
 #define TEST_COLLECTION_FIND_INIT \
    {                              \
-      true, false                 \
+      true, INT32_MAX             \
    }
 
 
@@ -358,10 +357,8 @@ _test_collection_find_command (test_collection_find_t *test_data)
 static void
 _test_collection_find (test_collection_find_t *test_data)
 {
-   /* catch typos in tests' setup */
    if (test_data->query_input) {
-      BSON_ASSERT (test_data->requires_wire_version_4 ||
-                   test_data->expected_op_query);
+      BSON_ASSERT (test_data->expected_op_query);
    }
 
    BSON_ASSERT (test_data->expected_find_command);
@@ -373,15 +370,16 @@ _test_collection_find (test_collection_find_t *test_data)
    test_data->expected_result_bson = tmp_bson (test_data->expected_result);
    test_data->n_results = bson_count_keys (test_data->expected_result_bson);
 
-   if (test_data->do_live && (!test_data->requires_wire_version_4 ||
-                              test_framework_max_wire_version_at_least (4))) {
-      _test_collection_find_live (test_data);
+   if (test_data->do_live) {
+      int64_t max_version;
+
+      test_framework_get_max_wire_version (&max_version);
+      if (test_data->max_wire_version >= max_version) {
+         _test_collection_find_live (test_data);
+      }
    }
 
-   if (!test_data->requires_wire_version_4) {
-      _test_collection_op_query (test_data);
-   }
-
+   _test_collection_op_query (test_data);
    _test_collection_find_command (test_data);
 }
 
@@ -540,34 +538,39 @@ test_fields (void)
 
 
 static void
-test_int_modifiers (void)
+_test_int_modifier (const char *mod)
 {
-   const char *modifiers[] = {
-      "maxScan", "maxTimeMS",
-   };
-
-   const char *mod;
-   size_t i;
    char *query;
    char *find_command;
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
 
    test_data.expected_result = test_data.docs = "[{'_id': 1}]";
 
-   for (i = 0; i < sizeof (modifiers) / sizeof (const char *); i++) {
-      mod = modifiers[i];
-      query = bson_strdup_printf ("{'$query': {}, '$%s': 9999}", mod);
+   query = bson_strdup_printf ("{'$query': {}, '$%s': 9999}", mod);
 
-      /* find command has same modifier, without the $-prefix */
-      find_command = bson_strdup_printf (
-         "{'find': 'collection', 'filter': {}, '%s': 9999}", mod);
+   /* find command has same modifier, without the $-prefix */
+   find_command = bson_strdup_printf (
+      "{'find': 'collection', 'filter': {}, '%s': 9999}", mod);
 
-      test_data.expected_op_query = test_data.query_input = query;
-      test_data.expected_find_command = find_command;
-      _test_collection_find (&test_data);
-      bson_free (query);
-      bson_free (find_command);
-   }
+   test_data.expected_op_query = test_data.query_input = query;
+   test_data.expected_find_command = find_command;
+   _test_collection_find (&test_data);
+   bson_free (query);
+   bson_free (find_command);
+}
+
+
+static void
+test_maxscan (void *ctx)
+{
+   _test_int_modifier ("maxScan");
+}
+
+
+static void
+test_maxtimems (void)
+{
+   _test_int_modifier ("maxTimeMS");
 }
 
 
@@ -576,7 +579,8 @@ test_index_spec_modifiers (void)
 {
    /* don't include $max, it needs a slightly different argument to succeed */
    const char *modifiers[] = {
-      "hint", "min",
+      "hint",
+      "min",
    };
 
    const char *mod;
@@ -637,6 +641,8 @@ static void
 test_snapshot (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   /* "snapshot" dropped in MongoDB 4.0, wire version 7 */
+   test_data.max_wire_version = 6;
    test_data.docs = "[{'_id': 1}]";
    test_data.query_input = "{'$query': {}, '$snapshot': true}";
    test_data.expected_op_query = test_data.query_input;
@@ -1207,8 +1213,14 @@ test_collection_find_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/find/newoption", test_newoption);
    TestSuite_AddLive (suite, "/Collection/find/orderby", test_orderby);
    TestSuite_AddLive (suite, "/Collection/find/fields", test_fields);
+   TestSuite_AddFull (suite,
+                      "/Collection/find/modifiers/maxscan",
+                      test_maxscan,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_more_than_6);
    TestSuite_AddLive (
-      suite, "/Collection/find/modifiers/integer", test_int_modifiers);
+      suite, "/Collection/find/modifiers/maxtimems", test_maxtimems);
    TestSuite_AddLive (suite,
                       "/Collection/find/modifiers/index_spec",
                       test_index_spec_modifiers);
