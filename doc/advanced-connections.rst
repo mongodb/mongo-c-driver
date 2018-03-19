@@ -89,6 +89,11 @@ The MongoDB C Driver will automatically resolve IPv6 addresses from host names. 
 
   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://[::1]:27017");
 
+Connecting with IPv4 and IPv6
+-----------------------------
+
+.. include:: includes/ipv4-and-ipv6.txt
+
 Connecting to a UNIX Domain Socket
 ----------------------------------
 

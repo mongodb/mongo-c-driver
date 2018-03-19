@@ -32,7 +32,7 @@ Format
 
 #. "mongodb" is the specifier of the MongoDB protocol. Use "mongodb+srv" with a single service name in place of "host1" to specify the initial list of servers with an SRV record.
 #. An optional username and password.
-#. The only required part of the uri.  This specifies either a hostname, IP address or UNIX domain socket.
+#. The only required part of the uri.  This specifies either a hostname, IPv4 address, IPv6 address enclosed in "[" and "]", or UNIX domain socket.
 #. An optional port number.  Defaults to :27017.
 #. Extra optional hosts and ports.  You would specify multiple hosts, for example, for connections to replica sets.
 #. The name of the database to authenticate if the connection string includes authentication credentials.  If /database is not specified and the connection string includes credentials, defaults to the 'admin' database.
@@ -78,6 +78,11 @@ If you have configured an `SRV record <https://www.ietf.org/rfc/rfc2782.txt>`_ w
 The driver prefixes the service name with "_mongodb._tcp.", then performs a DNS SRV query to resolve the service name to one or more hostnames. If this query succeeds, the driver performs a DNS TXT query on the service name (without the "_mongodb._tcp" prefix) for additional URI options configured as TXT records.
 
 On Unix, the MongoDB C Driver relies on libresolv to look up SRV and TXT records. If libresolv is unavailable, then using a "mongodb+srv" URI will cause an error. If your libresolv lacks ``res_nsearch`` then the driver will fall back to ``res_search``, which is not thread-safe.
+
+IPv4 and IPv6
+-------------
+
+.. include:: includes/ipv4-and-ipv6.txt
 
 Connection Options
 ------------------

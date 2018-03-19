@@ -33,6 +33,11 @@ bugfixes:
     "w=-1" is still allowed, as a synonym for "w=0".
   * The Kerberos URI option authMechanismProperties=CANONICALIZE_HOST_NAME:true
     is now implemented with the Windows Kerberos provider, SSPI.
+  * IPv6 is now fully supported and conforms to RFC-6555. If a hostname has both
+    IPv4 and IPv6 DNS records, the driver tries connecting with IPv6 first. If a
+    connection can't be established after 250ms then IPv4 is tried in parallel.
+    Whichever succeeds connection first cancels the other. The successful DNS
+    result is cached for 10 minutes.
 
 
 mongo-c-driver 1.9.0
