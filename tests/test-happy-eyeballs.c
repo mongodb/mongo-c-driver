@@ -395,11 +395,11 @@ retry:
 static void
 test_happy_eyeballs_dns_cache (void)
 {
-   const int e = 100;
+#define E 1000
    he_testcase_t testcase = {
       CLIENT_WITH_DNS_CACHE_TIMEOUT (both, 1000),
       SERVERS (SERVER (ipv4, LISTEN), SERVER (ipv6, LISTEN)),
-      EXPECT (ipv6, NCMDS (2), DURATION_MS (0, e)),
+      EXPECT (ipv6, NCMDS (2), DURATION_MS (0, E)),
    };
    _testcase_setup (&testcase);
    _testcase_run (&testcase);
@@ -423,12 +423,19 @@ test_happy_eyeballs_dns_cache (void)
    _testcase_run (&testcase);
 
    _testcase_teardown (&testcase);
+#undef E
+}
+
+void
+test_happy_eyeballs_retirement ()
+{
+   /* test connecting to a retired node that fails to initiate a connection. */
 }
 
 void
 test_happy_eyeballs_install (TestSuite *suite)
 {
-#define E 200  /* epsilon. wiggle room for time constraints. */
+#define E 1000 /* epsilon. wiggle room for time constraints. */
 #define HE 250 /* delay before ipv4 if ipv6 does not finish. */
    int i, ntests;
 

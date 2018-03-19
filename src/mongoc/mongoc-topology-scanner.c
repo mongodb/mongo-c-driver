@@ -421,8 +421,10 @@ _async_success (mongoc_async_cmd_t *acmd,
    mongoc_stream_t *stream = acmd->stream;
    mongoc_topology_scanner_t *ts = node->ts;
 
-   if (node->retired && stream) {
-      mongoc_stream_failed (stream);
+   if (node->retired) {
+      if (stream) {
+         mongoc_stream_failed (stream);
+      }
       return;
    }
 
@@ -452,17 +454,16 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
    int64_t now = bson_get_monotonic_time ();
    const char *message;
 
-   if (node->retired && stream) {
-      mongoc_stream_failed (stream);
-      return;
-   }
-
-   node->last_used = now;
-
    /* the stream may have failed on initiation. */
    if (stream) {
       mongoc_stream_failed (stream);
    }
+
+   if (node->retired) {
+      return;
+   }
+
+   node->last_used = now;
 
    if (!node->stream && _count_acmds (node) == 1) {
       /* there are no remaining streams, connecting has failed. */

@@ -2,6 +2,7 @@
 #include <mongoc-stream-private.h>
 #include <mongoc-socket-private.h>
 #include <mongoc-host-list-private.h>
+#include <utlist.h>
 
 #include "mongoc-util-private.h"
 #include "mongoc-client-private.h"
@@ -561,6 +562,63 @@ test_topology_scanner_dns ()
    }
 }
 
+static void
+_retired_fails_to_initiate_cb (uint32_t id,
+                               const bson_t *bson,
+                               int64_t rtt_msec,
+                               void *data,
+                               const bson_error_t *error /* IN */)
+{
+   /* this should never get called. */
+  BSON_ASSERT(false);
+}
+
+static mongoc_stream_t *
+null_initiator (mongoc_async_cmd_t *acmd)
+{
+   return NULL;
+}
+
+/* test when a retired node fails to initiate a stream. CDRIVER-1972 introduced
+ * a bug in which the topology callback would be incorrectly called when a
+ * retired node failed to establish a connection.
+ */
+static void
+test_topology_retired_fails_to_initiate ()
+{
+   mock_server_t *server;
+   mongoc_topology_scanner_t *scanner;
+   mongoc_async_cmd_t *acmd;
+   mongoc_host_list_t host_list;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+
+   scanner = mongoc_topology_scanner_new (
+      NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
+
+   _mongoc_host_list_from_string (&host_list,
+                                  mock_server_get_host_and_port (server));
+
+   mongoc_topology_scanner_add (scanner, &host_list, 1);
+   mongoc_topology_scanner_start (scanner, false);
+   BSON_ASSERT (scanner->async->ncmds > 0);
+   /* retire the node */
+   scanner->nodes->retired = true;
+   /* override the stream initiator of every async command, simulating
+    * a failed mongoc_socket_new or mongoc_stream_connect. */
+   DL_FOREACH (scanner->async->cmds, acmd)
+   {
+      scanner->async->cmds->initiator = null_initiator;
+   }
+
+   mongoc_topology_scanner_work (scanner);
+   /* we expect the scanner callback not to get called. */
+
+   mongoc_topology_scanner_destroy (scanner);
+   mock_server_destroy (server);
+}
+
 void
 test_topology_scanner_install (TestSuite *suite)
 {
@@ -587,4 +645,7 @@ test_topology_scanner_install (TestSuite *suite)
                                 "/TOPOLOGY/dns",
                                 test_topology_scanner_dns,
                                 test_framework_skip_if_no_dual_ip_hostname);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/retired_fails_to_initiate",
+                                test_topology_retired_fails_to_initiate);
 }
