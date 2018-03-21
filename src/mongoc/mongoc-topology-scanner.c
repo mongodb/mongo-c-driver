@@ -78,6 +78,11 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (
    const mongoc_host_list_t *host,
    const bson_error_t *error);
 
+
+/* reset "retired" nodes that failed or were removed in the previous scan */
+static void
+_delete_retired_nodes (mongoc_topology_scanner_t *ts);
+
 /* cancel any pending async commands for a specific node excluding acmd.
  * If acmd is NULL, cancel all async commands on the node. */
 static void
@@ -868,8 +873,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       return;
    }
 
-   /* delete retired nodes */
-   mongoc_topology_scanner_reset (ts);
+   _delete_retired_nodes (ts);
 
    now = bson_get_monotonic_time ();
 
@@ -889,7 +893,8 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
  *
  * mongoc_topology_scanner_finish_scan --
  *
- *      Summarizes all scanner node errors into one error message.
+ *      Summarizes all scanner node errors into one error message,
+ *      deletes retired nodes.
  *
  *--------------------------------------------------------------------------
  */
@@ -922,6 +927,8 @@ _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts)
 
    bson_strncpy ((char *) &error->message, msg->str, sizeof (error->message));
    bson_string_free (msg, true);
+
+   _delete_retired_nodes (ts);
 }
 
 /*
@@ -961,30 +968,6 @@ mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,
    BSON_ASSERT (error);
 
    memcpy (error, &ts->error, sizeof (bson_error_t));
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_topology_scanner_reset --
- *
- *      Reset "retired" nodes that failed or were removed in the previous
- *      scan.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
-{
-   mongoc_topology_scanner_node_t *node, *tmp;
-
-   DL_FOREACH_SAFE (ts->nodes, node, tmp)
-   {
-      if (node->retired) {
-         mongoc_topology_scanner_node_destroy (node, true);
-      }
-   }
 }
 
 /*
@@ -1071,6 +1054,20 @@ _mongoc_topology_scanner_set_dns_cache_timeout (mongoc_topology_scanner_t *ts,
                                                 int64_t timeout_ms)
 {
    ts->dns_cache_timeout_ms = timeout_ms;
+}
+
+/* reset "retired" nodes that failed or were removed in the previous scan */
+static void
+_delete_retired_nodes (mongoc_topology_scanner_t *ts)
+{
+   mongoc_topology_scanner_node_t *node, *tmp;
+
+   DL_FOREACH_SAFE (ts->nodes, node, tmp)
+   {
+      if (node->retired) {
+         mongoc_topology_scanner_node_destroy (node, true);
+      }
+   }
 }
 
 static void

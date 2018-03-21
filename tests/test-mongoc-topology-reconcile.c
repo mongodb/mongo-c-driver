@@ -1,8 +1,8 @@
 #include <mongoc.h>
-#include <mongoc-util-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-client-pool-private.h"
+#include "mongoc-util-private.h"
 #include "utlist.h"
 
 #include "mock_server/future.h"
@@ -38,6 +38,29 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
    mongoc_mutex_unlock (&topology->mutex);
 
    return sought;
+}
+
+
+static bool
+has_server_description (mongoc_topology_t *topology, const char *host_and_port)
+{
+   mongoc_set_t *servers = topology->description.servers;
+   bool found = false;
+   int i;
+   mongoc_server_description_t *sd;
+
+   mongoc_mutex_lock (&topology->mutex);
+   for (i = 0; i < (int) topology->description.servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
+      if (!strcmp (sd->host.host_and_port, host_and_port)) {
+         found = true;
+         break;
+      }
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return found;
 }
 
 
@@ -426,9 +449,12 @@ test_topology_reconcile_from_handshake (void *ctx)
 
    ASSERT_OR_PRINT (r, error);
 
-   /* added nodes for one or more newly discovered replicas */
+   /* added server descriptions */
+   ASSERT_CMPSIZE_T (topology->description.servers->items_len, >, (size_t) 1);
+
+   /* didn't add nodes yet, since we're not in the scanner loop */
    DL_COUNT (topology->scanner->nodes, node, count);
-   ASSERT_CMPINT (count, >, 1);
+   ASSERT_CMPINT (count, ==, 1);
 
    /* if CDRIVER-2073 isn't fixed, then when we discovered the other replicas
     * during the handshake, we also created mongoc_async_cmd_t's for them
@@ -553,14 +579,18 @@ _test_topology_reconcile_retire (bool pooled)
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   node = get_node (topology, mock_server_get_host_and_port (secondary));
+   BSON_ASSERT (!has_server_description (
+      topology, mock_server_get_host_and_port (secondary)));
 
-   /* single mode frees node: mongoc_cluster_fetch_stream_single scans and
-    * updates topology. pooled mode only retires node. */
+   /* server removed from topology description. in pooled mode, the scanner node
+    * is untouched, in single mode mongoc_cluster_fetch_stream_single scans and
+    * updates topology */
+   node = get_node (topology, mock_server_get_host_and_port (secondary));
    if (pooled) {
-      BSON_ASSERT(node->retired);
+      BSON_ASSERT (node);
+      BSON_ASSERT (!node->retired);
    } else {
-      BSON_ASSERT(!node);
+      BSON_ASSERT (!node);
    }
 
    /* step 7: trigger a scan by selecting with an unsatisfiable read preference.
@@ -569,6 +599,9 @@ _test_topology_reconcile_retire (bool pooled)
    mongoc_read_prefs_add_tag (tag_read_prefs, tmp_bson ("{'key': 'value'}"));
    BSON_ASSERT (
       !mongoc_client_select_server (client, false, tag_read_prefs, NULL));
+
+   BSON_ASSERT (
+      !get_node (topology, mock_server_get_host_and_port (secondary)));
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -610,8 +643,9 @@ test_topology_reconcile_retire_pooled (void)
  * 3. cluster handshakes the new connection by calling isMaster on the primary
  * 4. the primary suddenly includes a new secondary in its host list, perhaps
  *    because the secondary was added
- * 5. scanner adds the secondary scanner node, and erroneously creates an
- *    async_cmd_t for it, although it's not in the scanner loop
+ * 5. _mongoc_topology_update_from_handshake adds the secondary to the topology
+ *    and erroneously creates a scanner node with an async_cmd_t for it,
+ *    although it's not in the scanner loop
  * 6. on the next mongoc_topology_scanner_start, assert (!node->cmd) fails
  *
  * test that in step 5 the new node has no new async_cmd_t
@@ -676,17 +710,28 @@ _test_topology_reconcile_add (bool pooled)
    node->stream = NULL;
 
    /* step 3: run "ping" on primary, triggering a connection and handshake, thus
-    * step 4 & 5: the primary tells the scanner to add the secondary node */
+    * step 4 & 5: we add the secondary to the topology description */
    future = future_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
    request = mock_server_receives_command (
       primary, "admin", MONGOC_QUERY_NONE, "{'ping': 1}");
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
-   BSON_ASSERT (get_node (topology, mock_server_get_host_and_port (secondary)));
 
-   /* no asymc_cmd_t is created, since we're not in the scanner loop */
-   BSON_ASSERT (!topology->scanner->async->cmds);
+   /* added server description */
+   BSON_ASSERT (has_server_description (
+      topology, mock_server_get_host_and_port (secondary)));
+
+   node = get_node (topology, mock_server_get_host_and_port (secondary));
+   if (pooled) {
+      /* no asymc_cmd_t is created, since we're not in the scanner loop */
+      BSON_ASSERT (!topology->scanner->async->cmds);
+      BSON_ASSERT (!node);
+   } else {
+      /* in single mode the client completes a scan inline and frees all cmds */
+      BSON_ASSERT (!topology->scanner->async->cmds);
+      BSON_ASSERT (node);
+   }
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

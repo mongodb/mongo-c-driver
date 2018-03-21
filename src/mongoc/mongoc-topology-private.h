@@ -75,6 +75,9 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
+void
+mongoc_topology_reconcile (mongoc_topology_t *topology);
+
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t *read_prefs,
