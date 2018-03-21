@@ -602,6 +602,122 @@ test_topology_reconcile_retire_pooled (void)
 }
 
 
+/* CDRIVER-2552 in mongoc_topology_scanner_start, assert (!node->cmd)
+ * failed after this sequence in libmongoc 1.6.0:
+ *
+ * 1. scanner discovers a replica set with primary
+ * 2. cluster opens a new stream to the primary
+ * 3. cluster handshakes the new connection by calling isMaster on the primary
+ * 4. the primary suddenly includes a new secondary in its host list, perhaps
+ *    because the secondary was added
+ * 5. scanner adds the secondary scanner node, and erroneously creates an
+ *    async_cmd_t for it, although it's not in the scanner loop
+ * 6. on the next mongoc_topology_scanner_start, assert (!node->cmd) fails
+ *
+ * test that in step 5 the new node has no new async_cmd_t
+ */
+static void
+_test_topology_reconcile_add (bool pooled)
+{
+   mock_server_t *secondary;
+   mock_server_t *primary;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_topology_t *topology;
+   mongoc_read_prefs_t *primary_read_prefs;
+   mongoc_topology_scanner_node_t *node;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   secondary = mock_server_new ();
+   primary = mock_server_new ();
+   mock_server_run (secondary);
+   mock_server_run (primary);
+
+   /* omit secondary from primary's ismaster, to start with */
+   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary);
+   RS_RESPONSE_TO_ISMASTER (secondary, false, false, secondary, primary);
+
+   /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
+    * otherwise we skip second scan in pooled mode and don't hit the assert */
+   uri_str = bson_strdup_printf (
+      "mongodb://%s,%s/?replicaSet=rs"
+      "&serverSelectionTimeoutMS=600&heartbeatFrequencyMS=999999999",
+      mock_server_get_host_and_port (primary),
+      mock_server_get_host_and_port (secondary));
+
+   uri = mongoc_uri_new (uri_str);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      topology = _mongoc_client_pool_get_topology (pool);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new (uri_str);
+      topology = client->topology;
+   }
+
+   /* step 1: discover primary */
+   primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   BSON_ASSERT (selects_server (client, primary_read_prefs, primary));
+
+   /* add secondary to primary's config */
+   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary, secondary);
+
+   /* step 2: cluster opens new stream to primary - force new stream in single
+    * mode by disconnecting primary scanner node */
+   node = get_node (topology, mock_server_get_host_and_port (primary));
+   BSON_ASSERT (node);
+   BSON_ASSERT (node->stream);
+   mongoc_stream_destroy (node->stream);
+   node->stream = NULL;
+
+   /* step 3: run "ping" on primary, triggering a connection and handshake, thus
+    * step 4 & 5: the primary tells the scanner to add the secondary node */
+   future = future_client_read_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
+   request = mock_server_receives_command (
+      primary, "admin", MONGOC_QUERY_NONE, "{'ping': 1}");
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   BSON_ASSERT (get_node (topology, mock_server_get_host_and_port (secondary)));
+
+   /* no asymc_cmd_t is created, since we're not in the scanner loop */
+   BSON_ASSERT (!topology->scanner->async->cmds);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   future_destroy (future);
+   mock_server_destroy (primary);
+   mock_server_destroy (secondary);
+   mongoc_read_prefs_destroy (primary_read_prefs);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+static void
+test_topology_reconcile_add_single (void)
+{
+   _test_topology_reconcile_add (false);
+}
+
+
+static void
+test_topology_reconcile_add_pooled (void)
+{
+   _test_topology_reconcile_add (true);
+}
+
+
 void
 test_topology_reconcile_install (TestSuite *suite)
 {
@@ -632,5 +748,13 @@ test_topology_reconcile_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/reconcile/retire/single",
                                 test_topology_reconcile_retire_single,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/reconcile/add/pooled",
+                                test_topology_reconcile_add_pooled,
+                                test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/reconcile/add/single",
+                                test_topology_reconcile_add_single,
                                 test_framework_skip_if_slow);
 }
