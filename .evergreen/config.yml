@@ -496,6 +496,13 @@ post:
 
 tasks:
 
+    - name: check-public-headers
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: sh ./.evergreen/check-public-headers.sh
 
     - name: getdata
       commands:
@@ -6715,6 +6722,7 @@ buildvariants:
     - name: "link-with-bson-mingw"
       distros:
       - windows-64-vs2013-compile
+    - "check-public-headers"
 
 - name: clang34ubuntu
   display_name: "clang 3.4 (Ubuntu 14.04)"
