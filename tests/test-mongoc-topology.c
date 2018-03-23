@@ -1553,6 +1553,85 @@ test_compatible_null_error_pointer (void)
    mock_server_destroy (server);
 }
 
+static void
+test_cluster_time_updated_during_handshake ()
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool r;
+   bson_error_t error;
+   char *cluster_time;
+   const char *cluster_time_fmt;
+   mongoc_server_description_t *sd;
+
+   cluster_time_fmt = "{'clusterTime': {'$timestamp': {'t': %d, 'i': 1}},"
+                      "'signature': {"
+                      " 'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+                      "  'keyId': {'$numberLong': '6446735049323708417'}"
+                      "},"
+                      "'operationTime': {'$timestamp': {'t': 1, 'i': 1}}}";
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_autoresponds (server, auto_ping, NULL, NULL);
+   cluster_time = bson_strdup_printf (cluster_time_fmt, 1);
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
+                              "'minWireVersion': 2, 'maxWireVersion': 7, "
+                              "'hosts': ['%s'], '$clusterTime': %s}",
+                              mock_server_get_host_and_port (server),
+                              cluster_time);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* set a large heartbeatFrequencyMS so we don't do a background scan in
+    * between the first scan and handshake. */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+
+   /* ensure a topology scan has run, populating the topology description
+    * cluster time. */
+   sd = mongoc_client_select_server (client, false, NULL, &error);
+   ASSERT_OR_PRINT (sd, error);
+   mongoc_server_description_destroy (sd);
+
+   /* check the cluster time stored on the topology description. */
+   mongoc_mutex_lock (&client->topology->mutex);
+   ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
+   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_free (cluster_time);
+   cluster_time = bson_strdup_printf (cluster_time_fmt, 2);
+
+   /* primary changes clusterTime */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
+                              "'minWireVersion': 2, 'maxWireVersion': 7, "
+                              "'hosts': ['%s'], '$clusterTime': %s}",
+                              mock_server_get_host_and_port (server),
+                              cluster_time);
+
+   /* remove the node from the cluster to trigger an ismaster handshake. */
+   mongoc_cluster_disconnect_node (
+      &client->cluster, 1, false /* invalidate */, NULL);
+
+   /* opens new stream and does an ismaster handshake (in pooled mode only). */
+   r = mongoc_client_command_simple (
+      client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (r, error);
+   mongoc_mutex_lock (&client->topology->mutex);
+   ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
+   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_free (cluster_time);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+}
 
 void
 test_topology_install (TestSuite *suite)
@@ -1690,4 +1769,7 @@ test_topology_install (TestSuite *suite)
                                 "/Topology/compatible_null_error_pointer",
                                 test_compatible_null_error_pointer,
                                 test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/handshake/updates_clustertime",
+                                test_cluster_time_updated_during_handshake);
 }
