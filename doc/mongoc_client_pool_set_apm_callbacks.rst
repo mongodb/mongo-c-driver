@@ -15,6 +15,8 @@ Synopsis
 
 Register a set of callbacks to receive Application Performance Monitoring events.
 
+The callbacks are copied by the pool and may be destroyed at any time after.
+
 Parameters
 ----------
 
