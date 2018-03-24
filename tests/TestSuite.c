@@ -22,10 +22,6 @@
 
 #include "mongoc-thread-private.h"
 
-#if defined(__APPLE__)
-#include <mach/mach_time.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,11 +35,6 @@
 
 #else
 #include <windows.h>
-#endif
-
-#if defined(BSON_HAVE_CLOCK_GETTIME)
-#include <time.h>
-#include <sys/time.h>
 #endif
 
 #include "test-libmongoc.h"
@@ -60,38 +51,6 @@ static TestSuite *gTestSuite;
 #define TEST_DEBUGOUTPUT (1 << 3)
 #define TEST_TRACE (1 << 4)
 #define TEST_VALGRIND (1 << 5)
-
-
-#define NANOSEC_PER_SEC 1000000000UL
-
-#if !defined(BSON_HAVE_TIMESPEC)
-struct timespec {
-   time_t tv_sec;
-   long tv_nsec;
-};
-#endif
-
-
-#if defined(_WIN32) && !defined(BSON_HAVE_SNPRINTF)
-static int
-snprintf (char *str, size_t size, const char *format, ...)
-{
-   int r = -1;
-   va_list ap;
-
-   va_start (ap, format);
-   if (size != 0) {
-      r = _vsnprintf_s (str, size, _TRUNCATE, format, ap);
-   }
-   if (r == -1) {
-      r = _vscprintf (format, ap);
-   }
-   va_end (ap);
-
-   return r;
-}
-#endif
-
 
 static void
 test_msg (const char *format, ...)
@@ -118,64 +77,6 @@ test_error (const char *format, ...)
    va_end (ap);
    abort ();
 }
-
-
-void
-_Clock_GetMonotonic (struct timespec *ts) /* OUT */
-{
-#if defined(BSON_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-   clock_gettime (CLOCK_MONOTONIC, ts);
-#elif defined(__APPLE__)
-   static mach_timebase_info_data_t info = {0};
-   static double ratio;
-   uint64_t atime;
-
-   if (!info.denom) {
-      mach_timebase_info (&info);
-      ratio = info.numer / info.denom;
-   }
-
-   atime = mach_absolute_time () * ratio;
-   ts->tv_sec = atime * 1e-9;
-   ts->tv_nsec = atime - (ts->tv_sec * 1e9);
-#elif defined(_WIN32)
-   /* GetTickCount64() returns milliseconds */
-   ULONGLONG ticks = GetTickCount64 ();
-   ts->tv_sec = ticks / 1000;
-
-   /* milliseconds -> microseconds -> nanoseconds*/
-   ts->tv_nsec = (ticks % 1000) * 1000 * 1000;
-#elif defined(__hpux__)
-   uint64_t nsec = gethrtime ();
-
-   ts->tv_sec = (int64_t) (nsec / 1e9);
-   ts->tv_nsec = (int32_t) (nsec - (double) ts->tv_sec * 1e9);
-#else
-#warning "Monotonic clock is not yet supported on your platform."
-#endif
-}
-
-
-void
-_Clock_Subtract (struct timespec *ts, /* OUT */
-                 struct timespec *x,  /* IN */
-                 struct timespec *y)  /* IN */
-{
-   struct timespec r;
-
-   ASSERT (x);
-   ASSERT (y);
-
-   r.tv_sec = (x->tv_sec - y->tv_sec);
-
-   if ((r.tv_nsec = (x->tv_nsec - y->tv_nsec)) < 0) {
-      r.tv_nsec += NANOSEC_PER_SEC;
-      r.tv_sec -= 1;
-   }
-
-   *ts = r;
-}
-
 
 static void
 TestSuite_SeedRand (TestSuite *suite, /* IN */
@@ -634,16 +535,14 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
                    Test *test,       /* IN */
                    int *count)       /* INOUT */
 {
-   struct timespec ts1;
-   struct timespec ts2;
-   struct timespec ts3;
+   int64_t t1, t2, t3;
    char name[MAX_TEST_NAME_LENGTH];
    bson_string_t *buf;
    bson_string_t *mock_server_log_buf;
    size_t i;
    int status = 0;
 
-   snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+   bson_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
 
    buf = bson_string_new (NULL);
 
@@ -670,7 +569,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
       }
    }
 
-   _Clock_GetMonotonic (&ts1);
+   t1 = bson_get_monotonic_time ();
 
 
    if ((suite->flags & TEST_NOFORK)) {
@@ -695,25 +594,27 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
       goto done;
    }
 
-   _Clock_GetMonotonic (&ts2);
-   _Clock_Subtract (&ts3, &ts2, &ts1);
+   t2 = bson_get_monotonic_time ();
+   t3 = t2 - t1;
+   /* CDRIVER-2567: check that bson_get_monotonic_time does not wrap. */
+   BSON_ASSERT (t3 >= 0);
 
    bson_string_append_printf (buf,
                               "    { \"status\": \"%s\", "
                               "\"test_file\": \"%s\", "
                               "\"seed\": \"%u\", "
-                              "\"start\": %u.%09u, "
-                              "\"end\": %u.%09u, "
-                              "\"elapsed\": %u.%09u ",
+                              "\"start\": %u.%06u, "
+                              "\"end\": %u.%06u, "
+                              "\"elapsed\": %u.%06u ",
                               (status == 0) ? "PASS" : "FAIL",
                               name,
                               test->seed,
-                              (unsigned) ts1.tv_sec,
-                              (unsigned) ts1.tv_nsec,
-                              (unsigned) ts2.tv_sec,
-                              (unsigned) ts2.tv_nsec,
-                              (unsigned) ts3.tv_sec,
-                              (unsigned) ts3.tv_nsec);
+                              (unsigned) t1 / (1000 * 1000),
+                              (unsigned) t1 % (1000 * 1000),
+                              (unsigned) t2 / (1000 * 1000),
+                              (unsigned) t2 % (1000 * 1000),
+                              (unsigned) t3 / (1000 * 1000),
+                              (unsigned) t3 % (1000 * 1000));
 
    mock_server_log_buf = suite->mock_server_log_buf;
 
@@ -974,7 +875,7 @@ TestSuite_TestMatchesName (const TestSuite *suite,
    char name[128];
    bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
 
-   snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+   bson_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
 
    if (star) {
       /* e.g. testname is "/Client*" and name is "/Client/authenticate" */

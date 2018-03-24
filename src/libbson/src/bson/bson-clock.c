@@ -121,8 +121,10 @@ bson_get_monotonic_time (void)
 {
 #if defined(BSON_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
    struct timespec ts;
+   /* ts.tv_sec may be a four-byte integer on 32 bit machines, so cast to
+    * int64_t to avoid truncation. */
    clock_gettime (CLOCK_MONOTONIC, &ts);
-   return ((ts.tv_sec * 1000000UL) + (ts.tv_nsec / 1000UL));
+   return (((int64_t) ts.tv_sec * 1000000) + (ts.tv_nsec / 1000));
 #elif defined(__APPLE__)
    static mach_timebase_info_data_t info = {0};
    static double ratio = 0.0;
@@ -139,7 +141,7 @@ bson_get_monotonic_time (void)
 #elif defined(_WIN32)
    /* Despite it's name, this is in milliseconds! */
    int64_t ticks = GetTickCount64 ();
-   return (ticks * 1000L);
+   return (ticks * 1000);
 #elif defined(__hpux__)
    int64_t nanosec = gethrtime ();
    return (nanosec / 1000UL);
@@ -148,6 +150,6 @@ bson_get_monotonic_time (void)
    struct timeval tv;
 
    bson_gettimeofday (&tv);
-   return (tv.tv_sec * 1000000UL) + tv.tv_usec;
+   return ((int64_t) tv.tv_sec * 1000000) + tv.tv_usec;
 #endif
 }
