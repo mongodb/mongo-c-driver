@@ -1568,8 +1568,8 @@ test_cluster_time_updated_during_handshake ()
 
    cluster_time_fmt = "{'clusterTime': {'$timestamp': {'t': %d, 'i': 1}},"
                       "'signature': {"
-                      " 'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-                      "  'keyId': {'$numberLong': '6446735049323708417'}"
+                      "'hash': {'$binary': {'subType': '0', 'base64': 'Yw=='}},"
+                      "'keyId': {'$numberLong': '6446735049323708417'}"
                       "},"
                       "'operationTime': {'$timestamp': {'t': 1, 'i': 1}}}";
 
