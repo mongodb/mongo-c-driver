@@ -4,19 +4,39 @@
     {
       "id": "sh01",
       "shardParams": {
-        "procParams": {
-          "shardsvr": true,
-          "port": 27217
-        }
+        "members": [
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27217
+            }
+          },
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27218
+            }
+          }
+        ]
       }
     },
     {
       "id": "sh02",
       "shardParams": {
-        "procParams": {
-          "shardsvr": true,
-          "port": 27218
-        }
+        "members": [
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27219
+            }
+          },
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27220
+            }
+          }
+        ]
       }
     }
   ],

@@ -7,33 +7,49 @@
     {
       "id": "sh01",
       "shardParams": {
-        "procParams": {
-          "shardsvr": true,
-          "setParameter" : { "enableTestCommands": 1 },
-          "port": 27217
-        }
+        "members": [
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27217
+            }
+          },
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27218
+            }
+          }
+        ]
       }
     },
     {
       "id": "sh02",
       "shardParams": {
-        "procParams": {
-          "shardsvr": true,
-          "setParameter" : { "enableTestCommands": 1 },
-          "port": 27218
-        }
+        "members": [
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27219
+            }
+          },
+          {
+            "procParams": {
+              "shardsvr": true,
+              "port": 27220
+            }
+          }
+        ]
       }
     }
   ],
   "routers": [
     {
-      "setParameter" : { "enableTestCommands": 1 },
       "port": 27017,
       "ipv6": true,
       "bind_ip": ""
     },
     {
-      "setParameter" : { "enableTestCommands": 1 },
       "port": 27018,
       "ipv6": true,
       "bind_ip": ""
