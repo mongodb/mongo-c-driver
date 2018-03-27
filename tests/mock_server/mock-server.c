@@ -320,9 +320,6 @@ mock_server_run (mock_server_t *server)
    uint16_t bound_port;
    size_t bind_addr_len = 0;
 
-   /* CDRIVER-2115: don't run mock server tests on 32-bit */
-   BSON_ASSERT (sizeof (void *) * 8 >= 64);
-
    MONGOC_INFO ("Starting mock server on port %d.", server->port);
    ssock = mongoc_socket_new (
       server->bind_opts.family ? server->bind_opts.family : AF_INET,

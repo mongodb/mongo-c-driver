@@ -225,13 +225,7 @@ TestSuite_CheckMockServerAllowed (void)
    if (test_framework_getenv_bool ("MONGOC_TEST_SKIP_MOCK")) {
       return 0;
    }
-
-   /* CDRIVER-2115: don't run mock server tests on 32-bit */
-   if (sizeof (void *) * 8 >= 64) {
-      return 1;
-   } else {
-      return 0;
-   }
+   return 1;
 }
 
 static void
