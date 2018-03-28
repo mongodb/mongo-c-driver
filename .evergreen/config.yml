@@ -6646,12 +6646,9 @@ buildvariants:
 - name: releng
   display_name: "**Release Archive Creator"
   run_on:
-    - ubuntu1404-build
+    - ubuntu1604-test
   tasks:
     - name: "make-release-archive"
-      distros: # Run on any of these variants, whichever will schedule us first
-      - ubuntu1604-build
-      - ubuntu1604-test
     - "release-compile"
     - "debug-compile"
     - ".debug-compile .stdflags !.c89"
@@ -6659,63 +6656,29 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
     - name: "link-with-cmake"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-cmake-ssl"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-cmake-snappy"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-cmake-windows"
       distros:
       - windows-64-vs2015-compile
-      - windows-64-vs2015-test
     - name: "link-with-cmake-windows-ssl"
       distros:
       - windows-64-vs2015-compile
-      - windows-64-vs2015-test
     - name: "link-with-cmake-windows-snappy"
       distros:
       - windows-64-vs2015-compile
-      - windows-64-vs2015-test
     - name: "link-with-cmake-mingw"
       distros:
       - windows-64-vs2013-compile
     - name: "link-with-pkg-config"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-pkg-config-ssl"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-pkg-config-mac"
       distros:
       - macos-1012
     - name: "link-with-bson"
-      distros:
-      - ubuntu1604-build
-      - ubuntu1604-test
-      - ubuntu1404-build
-      - ubuntu1404-test
     - name: "link-with-bson-windows"
       distros:
       - windows-64-vs2015-compile
-      - windows-64-vs2015-test
     - name: "link-with-bson-mac"
       distros:
       - macos-1012
@@ -6748,7 +6711,7 @@ buildvariants:
   expansions:
     CC: "clang"
   run_on:
-  - debian81-build
+  - debian81-test
   tasks:
     - "release-compile"
     - "debug-compile"
@@ -6765,7 +6728,6 @@ buildvariants:
   display_name: "OpenSSL / LibreSSL"
   run_on:
     - archlinux-build
-    - archlinux-test
   tasks:
     - "build-and-run-authentication-tests-openssl-0.9.8"
     - "build-and-run-authentication-tests-openssl-1.0.0"
@@ -6775,13 +6737,12 @@ buildvariants:
     - "build-and-run-authentication-tests-openssl-1.0.1-fips"
     - "build-and-run-authentication-tests-libressl-2.5"
 
-
 - name: clang37
   display_name: "clang 3.7 (Archlinux)"
   expansions:
     CC: "clang"
   run_on:
-    - archlinux-build
+    - archlinux-test
   tasks:
     - "release-compile"
     - "debug-compile"
@@ -6801,7 +6762,6 @@ buildvariants:
     CC: "clang"
     MARCH: "i386"
   run_on:
-    - ubuntu1604-build
     - ubuntu1604-test
   tasks:
     - "debug-compile-scan-build"
@@ -6819,7 +6779,6 @@ buildvariants:
   expansions:
     CC: "clang"
   run_on:
-    - ubuntu1604-build
     - ubuntu1604-test
   tasks:
     - ".compression"
@@ -6843,7 +6802,7 @@ buildvariants:
   expansions:
     CC: "gcc"
   run_on:
-    - ubuntu1204-build
+    - ubuntu1204-test
   tasks:
     - "release-compile"
     - "debug-compile"
@@ -6905,7 +6864,7 @@ buildvariants:
   expansions:
     CC: "gcc"
   run_on:
-  - debian81-build
+  - debian81-test
   tasks:
     - "release-compile"
     - "debug-compile"
@@ -6923,7 +6882,6 @@ buildvariants:
     CC: "gcc"
     MARCH: "i386"
   run_on:
-  - ubuntu1604-build
   - ubuntu1604-test
   tasks:
     - "debug-compile-coverage"
@@ -6940,7 +6898,6 @@ buildvariants:
   expansions:
     CC: "gcc"
   run_on:
-  - ubuntu1604-build
   - ubuntu1604-test
   tasks:
     - ".compression"
@@ -7131,7 +7088,6 @@ buildvariants:
   batchtime: 1440 # 1 day
   run_on:
   - rhel71-power8-build
-  - rhel71-power8-test
   tasks:
     - ".compression !.snappy"
     - "release-compile"
@@ -7151,7 +7107,6 @@ buildvariants:
     CC: "gcc"
   batchtime: 1440 # 1 day
   run_on:
-  - ubuntu1604-power8-build
   - ubuntu1604-power8-test
   tasks:
     - "debug-compile-scan-build"
@@ -7174,7 +7129,6 @@ buildvariants:
   batchtime: 1440 # 1 day
   run_on:
   - ubuntu1604-arm64-large
-  - ubuntu1604-arm64-small
   tasks:
     - ".compression !.snappy"
     - "debug-compile-scan-build"
@@ -7197,7 +7151,6 @@ buildvariants:
   batchtime: 1440 # 1 day
   run_on:
   - rhel72-zseries-test
-  - rhel72-zseries-build
   tasks:
     - "release-compile"
     - "debug-compile"
@@ -7216,7 +7169,6 @@ buildvariants:
   batchtime: 1440 # 1 day
   run_on:
   - ubuntu1604-zseries-large
-  - ubuntu1604-zseries-small
   tasks:
     - "debug-compile-coverage"
     - "release-compile"
@@ -7236,7 +7188,6 @@ buildvariants:
     CC: "gcc"
   batchtime: 1440 # 1 day
   run_on:
-  - suse12-zseries-build
   - suse12-zseries-test
   tasks:
     - ".compression !.snappy"
