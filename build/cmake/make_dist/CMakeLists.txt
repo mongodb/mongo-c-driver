@@ -1,5 +1,6 @@
 set (build_cmake_make_dist_MODULES
    MakeDist.cmake
+   MakeDistCheck.cmake
    MakeDistFiles.cmake
 )
 

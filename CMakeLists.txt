@@ -982,9 +982,9 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    )
 endif ()
 
-# Implement 'dist' target
+# Implement 'dist' and 'distcheck' targets
 #
-# CMake does not implement anything like 'dist' from autotools.
+# CMake does not implement anything like 'dist' and 'distcheck' from autotools.
 # This implementation is based on the one in GnuCash.
 
 add_subdirectory (build)
@@ -1046,9 +1046,23 @@ if (ENABLE_BSON STREQUAL BUNDLED AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTM
    # file to be included, we declare a dependency on the 'mongo-doc' target so
    # that documentation is built before the distribution tarball is generated.
    add_custom_target (dist DEPENDS mongoc-doc ${DIST_FILE})
+
+   add_custom_target (distcheck DEPENDS dist
+      COMMAND ${CMAKE_COMMAND}
+         -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
+         -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+         -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
+         -D CMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+         -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+         -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
+   )
 else ()
    message (WARNING
-      "'dist' target disabled. Set ENABLE_BSON=BUNDLED, ENABLE_MAN_PAGES=ON, \
-      and ENABLE_HTML_DOCS=ON to enable."
+      "'dist'/'distcheck' targets disabled. Set ENABLE_BSON=BUNDLED, \
+      ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
    )
 endif ()
+
+add_custom_target (check
+   COMMAND ${CMAKE_COMMAND} -E echo "'check' target does nothing for now"
+)

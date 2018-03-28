@@ -4,9 +4,11 @@ set (build_cmake_MODULES
    FindResSearch.cmake
    FindSASL2.cmake
    FindSnappy.cmake
+   FindSphinx.cmake
    LoadVersion.cmake
    MaintainerFlags.cmake
    MongoCPackage.cmake
+   SphinxBuild.cmake
 )
 
 set (build_cmake_PKGCONFIG
