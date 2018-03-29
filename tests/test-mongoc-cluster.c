@@ -1334,6 +1334,52 @@ dollar_query_test_t tests[] = {
     true},
    {NULL}};
 
+static void
+test_cluster_ismaster_fails (void)
+{
+   mock_server_t *mock_server;
+   mongoc_uri_t *uri;
+   mongoc_server_description_t *sd;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   request_t *request;
+   future_t *future;
+   bson_error_t error;
+   int autoresponder_id;
+
+   mock_server = mock_server_new ();
+   autoresponder_id =
+      mock_server_auto_ismaster (mock_server, "{ 'isMaster': 1.0 }");
+   mock_server_run (mock_server);
+   uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
+   /* increase heartbeatFrequencyMS to prevent background server selection. */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   pool = mongoc_client_pool_new (uri);
+   mongoc_uri_destroy (uri);
+   client = mongoc_client_pool_pop (pool);
+   /* do server selection to add this server to the topology. this does not add
+    * a cluster node for this server. */
+   sd = mongoc_client_select_server (client, false, NULL, NULL);
+   BSON_ASSERT (sd);
+   mongoc_server_description_destroy (sd);
+   mock_server_remove_autoresponder (mock_server, autoresponder_id);
+   /* now create a cluster node by running a command. */
+   future = future_client_command_simple (
+      client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   /* the client adds a cluster node, creating a stream to the server, and then
+    * sends an ismaster request. */
+   request = mock_server_receives_ismaster (mock_server);
+   /* CDRIVER-2576: the server replies with an error, so
+    * _mongoc_stream_run_ismaster returns NULL, which
+    * _mongoc_cluster_run_ismaster must check. */
+   mock_server_replies_simple (request, "{'ok': 0}");
+   request_destroy (request);
+   future_wait (future);
+   future_destroy (future);
+   mock_server_destroy (mock_server);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
 
 void
 test_cluster_install (TestSuite *suite)
@@ -1455,4 +1501,6 @@ test_cluster_install (TestSuite *suite)
                                 "/Cluster/not_master_auth/pooled/op_msg",
                                 test_not_master_auth_pooled_op_msg,
                                 test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/ismaster_fails", test_cluster_ismaster_fails);
 }
