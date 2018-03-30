@@ -14,3 +14,5 @@ mongoc_stat_LDFLAGS = \
 mongoc_stat_LDADD = \
 	$(BSON_LIBS) \
 	$(SHM_LIB)
+
+EXTRA_DIST += src/tools/CMakeLists.txt

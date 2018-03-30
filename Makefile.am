@@ -56,6 +56,7 @@ EXTRA_DIST += \
 	VERSION_RELEASED
 
 EXTRA_DIST += $(wildcard orchestration_configs/*/*)
+EXTRA_DIST += orchestration_configs/CMakeLists.txt
 
 dist-hook:
 	-rm -rf $(distdir)/doc/html/.buildinfo $(distdir)/doc/html/.doctrees

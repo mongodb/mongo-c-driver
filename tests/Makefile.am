@@ -195,6 +195,7 @@ DISTCLEANFILES += \
 .PHONY: valgrind debug
 
 EXTRA_DIST += \
+	tests/CMakeLists.txt \
 	tests/binary/delete1.dat \
 	tests/binary/empty.dat \
 	tests/binary/get_more1.dat \

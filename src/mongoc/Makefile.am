@@ -359,3 +359,5 @@ endif
 
 EXTRA_DIST += $(MONGOC_DEF_FILES) $(NOINST_H_FILES)
 
+EXTRA_DIST += src/mongoc/CMakeLists.txt
+

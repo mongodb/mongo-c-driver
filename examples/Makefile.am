@@ -163,3 +163,5 @@ EXTRA_DIST += \
 	examples/compile-with-pkg-config-static.sh \
 	examples/cmake/find_package/CMakeLists.txt \
 	examples/cmake/find_package_static/CMakeLists.txt
+
+EXTRA_DIST += examples/CMakeLists.txt

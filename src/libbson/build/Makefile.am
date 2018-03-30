@@ -1,3 +1,5 @@
-EXTRA_DIST += build/maintainer-flags.txt
+EXTRA_DIST += \
+	build/CMakeLists.txt \
+	build/maintainer-flags.txt
 
 include build/cmake/Makefile.am

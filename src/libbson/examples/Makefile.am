@@ -10,6 +10,7 @@ EXAMPLE_STREAMING_LDFLAGS = $(SOCKET_LDFLAGS)
 
 # These files are included when we generate docs from include-and-link.rst
 EXTRA_DIST += \
+	examples/CMakeLists.txt \
 	examples/hello_bson.c \
 	examples/compile-with-pkg-config.sh \
 	examples/compile-with-pkg-config-static.sh \

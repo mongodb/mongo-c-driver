@@ -27,6 +27,7 @@ endif
 
 
 EXTRA_DIST += \
+	src/CMakeLists.txt \
 	src/libmongoc-1.0.pc.in \
 	src/libmongoc-ssl-1.0.pc.in \
 	src/libmongoc-static-1.0.pc.in

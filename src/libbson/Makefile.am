@@ -40,6 +40,8 @@ EXTRA_DIST += CMakeLists.txt \
     VERSION_CURRENT \
     VERSION_RELEASED
 
+EXTRA_DIST += tests/CMakeLists.txt
+
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                                   \
 	       (cd "$(srcdir)" &&                                            \

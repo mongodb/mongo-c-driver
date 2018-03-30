@@ -3,3 +3,5 @@ NOINST_H_FILES += \
 
 libbson_la_SOURCES += \
 	src/jsonsl/jsonsl.c
+
+EXTRA_DIST += src/jsonsl/CMakeLists.txt

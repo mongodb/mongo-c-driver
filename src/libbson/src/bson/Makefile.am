@@ -91,7 +91,8 @@ libbson_la_LIBADD =
 
 EXTRA_DIST += \
 	src/bson/bson-config.h.in \
-	src/bson/bson-version.h.in
+	src/bson/bson-version.h.in \
+	src/bson/CMakeLists.txt
 
 DISTCLEANFILES += \
 	src/bson/bson-stdint.h
